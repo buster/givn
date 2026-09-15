@@ -178,6 +178,7 @@ fn when_consumer_initializes_givn(world: &mut GivnWorld) {
         "givn init failed: {}",
         String::from_utf8_lossy(&output.stderr)
     );
+    world.last_output = Some(output);
 }
 
 #[then("the commit succeeds")]
@@ -389,4 +390,101 @@ pub(crate) fn git_with_givn_path(
         }
     }
     command.output().expect("run git with givn")
+}
+
+#[given("an initialized Fossil project")]
+fn given_initialized_fossil_project(world: &mut GivnWorld) {
+    world.env = Some(common::make_fossil_root());
+}
+
+#[when(
+    regex = r##"^the consumer commits with message "([^"]+)" attributing LLM "([^"]+)", reasoning "([^"]+)", and harness "([^"]+)"$"##
+)]
+fn when_givn_commit_with_context(
+    world: &mut GivnWorld,
+    message: String,
+    llm: String,
+    reasoning: String,
+    harness: String,
+) {
+    let env = world.env.as_ref().expect("project root");
+    std::fs::write(env.root().join("fixture.txt"), &message).expect("write fixture");
+    let output = common::run_givn_with_envs(
+        env,
+        &["commit", "-m", &message],
+        &[
+            ("GIVN_ATTRIBUTION_ACTIVE", "1"),
+            ("GIVN_ATTRIBUTION_LLM", &llm),
+            ("GIVN_ATTRIBUTION_REASONING", &reasoning),
+            ("GIVN_ATTRIBUTION_HARNESS", &harness),
+        ],
+    );
+    world.last_output = Some(output);
+}
+
+#[when(regex = r##"^the consumer commits with message "([^"]+)" without attribution context$"##)]
+fn when_givn_commit_without_context(world: &mut GivnWorld, message: String) {
+    let env = world.env.as_ref().expect("project root");
+    std::fs::write(env.root().join("fixture.txt"), &message).expect("write fixture");
+    // Strip the harness attribution context explicitly: the outer suite may
+    // run inside a harness that exports it.
+    let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_givn"));
+    command
+        .args(["commit", "-m", &message])
+        .current_dir(env.root())
+        .env_remove("GIVN_FEATURES")
+        .env("FOSSIL_USER", "fixture")
+        .env_remove("GIVN_ATTRIBUTION_ACTIVE")
+        .env_remove("GIVN_ATTRIBUTION_LLM")
+        .env_remove("GIVN_ATTRIBUTION_REASONING")
+        .env_remove("GIVN_ATTRIBUTION_HARNESS");
+    let output = command.output().expect("spawn givn");
+    world.last_output = Some(output);
+}
+
+/// The message of the most recent revision, on either backend.
+fn latest_revision_message(world: &GivnWorld) -> String {
+    let env = world.env.as_ref().expect("project root");
+    match env.backend() {
+        common::BackendKind::Git => {
+            let out = git(&env.root(), &["log", "-1", "--format=%B"]);
+            String::from_utf8_lossy(&out.stdout).into_owned()
+        }
+        common::BackendKind::Fossil => {
+            crate::steps::archive_proof_support::fossil_latest_comment(env)
+        }
+    }
+}
+
+#[then("the revision message carries the managed attribution trailer")]
+fn then_message_has_trailer(world: &mut GivnWorld) {
+    let message = latest_revision_message(world);
+    assert!(
+        message.contains("Co-Authored-By:") && message.contains(" with Givn "),
+        "the revision message carries no managed trailer: {message}"
+    );
+}
+
+#[then("the revision message carries no managed attribution trailer")]
+fn then_message_has_no_trailer(world: &mut GivnWorld) {
+    let message = latest_revision_message(world);
+    assert!(
+        !message.contains(" with Givn "),
+        "the revision message unexpectedly carries the managed trailer: {message}"
+    );
+}
+
+#[when(regex = r#"^the consumer commits only "([^"]+)" with message "([^"]+)"$"#)]
+fn when_givn_commit_named_path(world: &mut GivnWorld, path: String, message: String) {
+    let env = world.env.as_ref().expect("project root");
+    let output = common::run_givn(env, &["commit", "-m", &message, &path]);
+    world.last_output = Some(output);
+}
+
+#[then(regex = r#"^the latest revision does not contain "([^"]+)"$"#)]
+fn then_latest_revision_lacks(world: &mut GivnWorld, path: String) {
+    assert!(
+        !crate::steps::archive_proof_support::revision_contains(world, &path),
+        "the latest revision unexpectedly contains {path}"
+    );
 }

@@ -15,10 +15,11 @@ is in the [ADR register](adr/README.md); mechanics are in [chapter 8](08-crosscu
 | Domain ownership | Explicit `usecase.md` documents own capabilities; reusable behavior is represented by typed fragments. |
 | Ideation continuity | Stable use-case IDs, confirmed Persona references, and explicit Handoff connect topic state to proposals and permanent specs. |
 | State | Filesystem-derived from effective artifact paths, markers, and `.givn-skip`. |
+| SCM backend | One selection seam probes the project root: a Git worktree selects Git; a Fossil checkout selects Fossil; both markers, no version control, a nested root, or a missing executable are refused by name before mutation. The archive and the managed upgrade run on the selected backend. No configuration key declares the backend. ADR-071 records the boundary. |
 | Agent integration | Selected `.opencode`, `.agents`, and `.claude` targets; only givn-owned fenced blocks may be changed in `AGENTS.md`. |
-| Commit attribution | A checked-in Git message hook consumes optional process-scoped attribution; OpenCode and Claude adapters provide best-effort runtime values without making human commits a gate. |
+| Commit attribution | `givn commit` is the SCM-neutral commit path; on Git a checked-in message hook additionally stamps raw commits, while a Fossil checkout relies on `givn commit`. OpenCode and Claude adapters provide best-effort runtime values without making human commits a gate. |
 | Test execution | `verify.command` and `verify.e2e_command` come from `givn/commands.yaml`; lint is separate. |
-| Archive publication | Forward-only and Git-backed: the merged archive candidate is committed before verification, each verification scope runs once and reports fail-closed counts, and the verification receipt is committed as finalization. A failed candidate is repaired forward, never rolled back. ADR-070 records the boundary. |
+| Archive publication | Forward-only and SCM-backed (Git or Fossil): the merged archive candidate revision is published before verification, each verification scope runs once and reports fail-closed counts, and the verification receipt is committed as finalization. Publication is witness-bounded and exact on both backends (ADR-072). A failed candidate is repaired forward, never rolled back. ADR-070 records the proof boundary. |
 | Product start | One author-owned `run:` declaration in `givn/commands.yaml` documents and gates how the built product starts; `givn run` executes it with a std-only readiness probe, a greppable ready line, a spec'd exit-code contract, and unix signal forwarding. ADR-067 records the declare-and-execute boundary. |
 | Gate safety | `givn check tasks|review` contains non-deactivatable mandatory checks; `post` is additive customization. |
 | Arc42 | `givn init` enables addons by default unless `--no-addons`; Arc42 chapters are scaffolded at fixed `docs/arc42/`. |
@@ -66,7 +67,8 @@ model dependencies exist.
 
 `givn upgrade` refreshes the managed configuration scaffold while preserving
 uncommented project values. For the exact 0.2.0-to-0.3.0 route it first requires
-a clean Git worktree, refreshes managed generated integrations, commits only
-the allowlisted Givn paths, and creates a migration maintenance change that
-records the first commit. Ejected facets, durable docs, specs, and user-owned
-files remain project-owned and are handled by the LLM through that change.
+a clean checkout of the selected backend, refreshes managed generated
+integrations, commits only the allowlisted Givn paths, and creates a migration
+maintenance change that records the first commit. Ejected facets, durable docs,
+specs, and user-owned files remain project-owned and are handled by the LLM
+through that change.

@@ -4,7 +4,7 @@ use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
-use cucumber::{given, then};
+use cucumber::{given, then, when};
 
 use super::archive_proof_support as support;
 use crate::common;
@@ -21,6 +21,51 @@ fn ready_change(world: &mut GivnWorld, id: String) {
     support::ready_change(world, &id, false, "pass");
 }
 
+#[given(regex = r#"^a (Git|Fossil) project with a completed change "([^"]+)" ready to archive$"#)]
+fn backend_ready_change(world: &mut GivnWorld, backend: String, id: String) {
+    support::ready_change_on(world, support::backend_kind(&backend), &id, false, "pass");
+    world.snapshot_on_run = true;
+    world.skip_auto_commit = true;
+}
+
+#[then("the candidate revision is published")]
+fn candidate_revision_published(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    assert!(
+        support::revision_contains(world, &format!("givn/archive/{id}/verification.json")),
+        "the candidate revision does not contain the pending receipt; stderr: {}",
+        crate::steps::stderr(world)
+    );
+}
+
+#[then("the candidate revision contains exactly the merged corpus paths")]
+fn candidate_revision_exact_paths(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let prefixes = [
+        "givn/specs/".to_string(),
+        format!("givn/archive/{id}/"),
+        format!("givn/changes/{id}/"),
+    ];
+    let paths = support::revision_paths(world);
+    assert!(!paths.is_empty(), "the candidate revision changed no paths");
+    for path in &paths {
+        assert!(
+            prefixes.iter().any(|prefix| path.starts_with(prefix)),
+            "the candidate revision contains a path outside the merged corpus: {path}"
+        );
+    }
+    assert!(
+        paths.iter().any(|path| path.starts_with("givn/specs/")),
+        "the candidate revision does not contain the merged permanent specs"
+    );
+    assert!(
+        paths
+            .iter()
+            .any(|path| path == &format!("givn/archive/{id}/verification.json")),
+        "the candidate revision does not contain the pending receipt"
+    );
+}
+
 #[given(
     regex = r#"^a givn project with a completed change "([^"]+)" whose delta adds an @e2e scenario$"#
 )]
@@ -31,6 +76,8 @@ fn ready_change_with_e2e(world: &mut GivnWorld, id: String) {
 #[given("a givn project without Git version control")]
 fn project_without_git(world: &mut GivnWorld) {
     world.env = Some(common::make_init_root_without_git());
+    world.snapshot_on_run = true;
+    world.skip_auto_commit = true;
 }
 
 #[given("a givn project nested inside a larger Git repository")]
@@ -47,6 +94,30 @@ fn nested_project(world: &mut GivnWorld) {
     );
     world.cwd_override = Some(nested);
     world.env = Some(env);
+    world.snapshot_on_run = true;
+    world.skip_auto_commit = true;
+}
+
+#[given(regex = r#"^the project has an EXTRA file "([^"]+)"$"#)]
+fn extra_file(world: &mut GivnWorld, path: String) {
+    let target = support::project_base(world).join(&path);
+    if let Some(parent) = target.parent() {
+        fs::create_dir_all(parent).expect("create parent dir");
+    }
+    fs::write(&target, "extra\n").expect("write EXTRA file");
+    world.skip_auto_commit = true;
+}
+
+#[given(regex = r#"^the project has an edited file "([^"]+)"$"#)]
+fn edited_file(world: &mut GivnWorld, path: String) {
+    let target = support::project_base(world).join(&path);
+    if let Some(parent) = target.parent() {
+        fs::create_dir_all(parent).expect("create parent dir");
+    }
+    fs::write(&target, "// original\n").expect("write tracked file");
+    common::commit_fixture(support::env(world));
+    fs::write(&target, "// edited\n").expect("edit tracked file");
+    world.skip_auto_commit = true;
 }
 
 #[given(regex = r#"^the project has an uncommitted change to "([^"]+)"$"#)]
@@ -106,6 +177,34 @@ fn runner_records_invocations(world: &mut GivnWorld) {
     set_runner_kind(world, "record");
 }
 
+#[when(
+    regex = r"^the user runs `givn archive --change ([^`]+)` without the `fossil` executable on PATH$"
+)]
+fn archive_without_fossil(world: &mut GivnWorld, id: String) {
+    let env = world.env.as_ref().expect("project root");
+    if world.snapshot_on_run {
+        world.scm_fixture.snapshot = Some(
+            crate::steps::scm_backend_selection_steps::snapshot_tree(&env.root()),
+        );
+        world.snapshot_on_run = false;
+    }
+    let empty_bin = env.path("no-fossil-bin");
+    fs::create_dir_all(&empty_bin).expect("create empty PATH directory");
+    let path = empty_bin.to_string_lossy().into_owned();
+    let out = common::run_givn_with_envs(env, &["archive", "--change", &id], &[("PATH", &path)]);
+    world.last_change_id = Some(id);
+    world.last_output = Some(out);
+}
+
+#[then("stderr names the missing `fossil` executable")]
+fn stderr_names_missing_fossil(world: &mut GivnWorld) {
+    let stderr = crate::steps::stderr(world);
+    assert!(
+        stderr.contains("`fossil`") && stderr.contains("not found"),
+        "stderr does not name the missing `fossil` executable: {stderr}"
+    );
+}
+
 #[given("a commit hook rejects the archive candidate commit")]
 fn rejecting_commit_hook(world: &mut GivnWorld) {
     let hooks = support::root(world).join(".git/hooks");
@@ -118,6 +217,90 @@ fn rejecting_commit_hook(world: &mut GivnWorld) {
     world.skip_auto_commit = true;
 }
 
+#[given("a commit hook rejects the archive candidate revision")]
+fn rejecting_commit_hook_backend(world: &mut GivnWorld) {
+    match support::env(world).backend() {
+        common::BackendKind::Git => {
+            let hooks = support::root(world).join(".git/hooks");
+            fs::create_dir_all(&hooks).expect("create hooks dir");
+            let hook = hooks.join("commit-msg");
+            fs::write(&hook, "#!/bin/sh\nexit 1\n").expect("write rejecting hook");
+            let mut permissions = fs::metadata(&hook).expect("hook metadata").permissions();
+            permissions.set_mode(0o755);
+            fs::set_permissions(&hook, permissions).expect("make hook executable");
+        }
+        common::BackendKind::Fossil => {
+            let out = common::fossil(
+                support::env(world),
+                &[
+                    "hook",
+                    "add",
+                    "--command",
+                    "exit 1",
+                    "--type",
+                    "before-commit",
+                ],
+            );
+            assert!(
+                out.status.success(),
+                "fossil hook add failed: {}",
+                String::from_utf8_lossy(&out.stderr)
+            );
+        }
+    }
+    world.skip_auto_commit = true;
+}
+
+#[when("the commit hook accepts the archive candidate revision")]
+fn accepting_commit_hook(world: &mut GivnWorld) {
+    match support::env(world).backend() {
+        common::BackendKind::Git => {
+            let hook = support::root(world).join(".git/hooks/commit-msg");
+            fs::remove_file(&hook).expect("remove rejecting hook");
+        }
+        common::BackendKind::Fossil => {
+            let out = common::fossil(support::env(world), &["hook", "delete", "all"]);
+            assert!(
+                out.status.success(),
+                "fossil hook delete failed: {}",
+                String::from_utf8_lossy(&out.stderr)
+            );
+        }
+    }
+    world.skip_auto_commit = false;
+}
+
+#[then("stderr names the candidate revision rejection")]
+fn stderr_names_candidate_revision_rejection(world: &mut GivnWorld) {
+    let stderr = crate::steps::stderr(world);
+    assert!(
+        stderr.contains("candidate revision") && stderr.contains("rejected"),
+        "stderr missing candidate rejection: {stderr}"
+    );
+}
+
+#[then("the tested revision contains the merged permanent specs")]
+fn tested_revision_contains_merged_specs(world: &mut GivnWorld) {
+    let id = world
+        .last_change_id
+        .clone()
+        .expect("a change id is required");
+    let receipt = support::receipt(world, &id);
+    let tested = receipt["tested_revision"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+    assert!(
+        !tested.is_empty(),
+        "the receipt does not name the tested revision: {receipt}"
+    );
+    let merged = "givn/specs/demo-cap/demo-cap.feature";
+    assert!(
+        support::revision_contains_at(world, &tested, merged),
+        "the tested revision {tested} does not contain {merged}"
+    );
+}
+
 #[given(regex = r#"^an unproven archive candidate "([^"]+)" whose full suite failed$"#)]
 fn unproven_candidate_failed_suite(world: &mut GivnWorld, id: String) {
     support::ready_change(world, &id, false, "fail");
@@ -128,6 +311,79 @@ fn unproven_candidate_failed_suite(world: &mut GivnWorld, id: String) {
         String::from_utf8_lossy(&out.stdout)
     );
     world.last_change_id = Some(id);
+}
+
+#[given(
+    regex = r#"^an unproven archive candidate "([^"]+)" in a (Git|Fossil) project whose full suite failed$"#
+)]
+fn backend_unproven_candidate_failed_suite(world: &mut GivnWorld, id: String, backend: String) {
+    support::ready_change_on(world, support::backend_kind(&backend), &id, false, "fail");
+    let out = support::run_archive(world, &id);
+    assert!(
+        !out.status.success(),
+        "fixture archive unexpectedly succeeded: {}",
+        String::from_utf8_lossy(&out.stdout)
+    );
+    world.last_change_id = Some(id);
+}
+
+#[then("the verification receipt names the repaired revision")]
+fn receipt_names_repaired_revision(world: &mut GivnWorld) {
+    receipt_names_tested_commit(world);
+}
+
+#[then("the verification receipt names the tested revision")]
+fn receipt_names_tested_revision(world: &mut GivnWorld) {
+    let id = world
+        .last_change_id
+        .clone()
+        .expect("a change id is required");
+    let receipt = support::receipt(world, &id);
+    let tested = receipt["tested_revision"].as_str().unwrap_or_default();
+    assert!(
+        !tested.is_empty(),
+        "the receipt does not name the tested revision: {receipt}"
+    );
+    assert_eq!(tested, support::parent_revision(world));
+}
+
+#[then("the history has a finalization revision after the tested revision")]
+fn history_has_finalization_revision(world: &mut GivnWorld) {
+    let current = support::current_revision(world);
+    let parent = support::parent_revision(world);
+    assert_ne!(
+        current, parent,
+        "the current revision is not a finalization revision after the tested revision"
+    );
+    let id = world
+        .last_change_id
+        .clone()
+        .expect("a change id is required");
+    let receipt = support::receipt(world, &id);
+    assert_eq!(
+        receipt["tested_revision"].as_str().unwrap_or_default(),
+        parent
+    );
+}
+
+#[then("the finalization revision contains only the resolved evidence paths")]
+fn finalization_revision_only_evidence(world: &mut GivnWorld) {
+    let id = world
+        .last_change_id
+        .clone()
+        .expect("a change id is required");
+    let archive_prefix = format!("givn/archive/{id}/");
+    let paths = support::revision_paths(world);
+    assert!(
+        !paths.is_empty(),
+        "the finalization revision changed no paths"
+    );
+    for path in &paths {
+        assert!(
+            path.starts_with(&archive_prefix) || path == "README.md",
+            "the finalization revision contains a path outside the resolved evidence: {path}"
+        );
+    }
 }
 
 #[given(regex = r#"^an unproven archive candidate "([^"]+)" whose coverage gate failed$"#)]
@@ -152,7 +408,7 @@ fn unproven_candidate_failed_coverage(world: &mut GivnWorld, id: String) {
 #[given("the developer commits a repair")]
 fn developer_commits_repair(world: &mut GivnWorld) {
     let env = support::env(world);
-    common::git_commit_all(env, "fix: repair the candidate");
+    common::commit_fixture(env);
 }
 
 #[given("the full suite now passes against the merged permanent specs")]
@@ -236,8 +492,8 @@ fn stderr_mentions_git(world: &mut GivnWorld) {
 fn stderr_says_repo_root(world: &mut GivnWorld) {
     let stderr = crate::steps::stderr(world);
     assert!(
-        stderr.contains("must be the repository root"),
-        "stderr missing repository-root message: {stderr}"
+        stderr.contains("must be the worktree top level") && stderr.contains("nested inside"),
+        "stderr missing the boundary message: {stderr}"
     );
 }
 
@@ -272,7 +528,7 @@ fn stderr_says_corrupt(world: &mut GivnWorld) {
 fn stderr_names_candidate_rejection(world: &mut GivnWorld) {
     let stderr = crate::steps::stderr(world);
     assert!(
-        stderr.contains("candidate commit") && stderr.contains("rejected"),
+        stderr.contains("candidate revision") && stderr.contains("rejected"),
         "stderr missing candidate rejection: {stderr}"
     );
 }
@@ -406,6 +662,20 @@ fn candidate_state_committed(world: &mut GivnWorld) {
     );
 }
 
+#[then("the merged state is present in the checkout but not committed")]
+fn merged_state_in_checkout_uncommitted(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let dirty = support::dirty_entries(world);
+    assert!(
+        dirty.iter().any(|path| path.starts_with("givn/specs/")),
+        "the merged state is not present in the checkout: {dirty:?}"
+    );
+    assert!(
+        !support::revision_contains(world, &format!("givn/archive/{id}/verification.json")),
+        "the merged state was committed despite the rejected hook"
+    );
+}
+
 #[then("the merged state is staged but not committed")]
 fn merged_state_staged(world: &mut GivnWorld) {
     let id = world
@@ -440,9 +710,8 @@ fn receipt_names_tested_commit(world: &mut GivnWorld) {
         .clone()
         .expect("a change id is required");
     let receipt = support::receipt(world, &id);
-    let tested = receipt["tested_commit"].as_str().unwrap_or_default();
-    let parent = common::git(support::env(world), &["rev-parse", "HEAD~1"]);
-    let parent = String::from_utf8_lossy(&parent.stdout).trim().to_string();
+    let tested = receipt["tested_revision"].as_str().unwrap_or_default();
+    let parent = support::parent_revision(world);
     assert_eq!(tested, parent);
 }
 
@@ -515,7 +784,7 @@ fn finalization_commit_after_tested(world: &mut GivnWorld) {
         .expect("a change id is required");
     let receipt = support::receipt(world, &id);
     assert_eq!(
-        receipt["tested_commit"].as_str().unwrap_or_default(),
+        receipt["tested_revision"].as_str().unwrap_or_default(),
         parent
     );
 }
@@ -573,7 +842,7 @@ fn set_runner_kind(world: &mut GivnWorld, kind: &str) {
     support::ensure_env(world);
     let env = support::env(world);
     support::write_result_runner(env, kind);
-    common::git_commit_all(env, "fixture: runner change");
+    common::commit_fixture(env);
 }
 
 fn read_permanent_specs(world: &GivnWorld) -> String {

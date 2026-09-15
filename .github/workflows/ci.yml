@@ -51,6 +51,9 @@ jobs:
       - name: Run library tests
         run: cargo nextest run --locked --lib --no-tests=warn
 
+      - name: Install Fossil
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fossil
+
       - name: Run repository acceptance suites
         run: |
           set -euo pipefail

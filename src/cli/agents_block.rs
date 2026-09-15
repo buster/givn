@@ -100,10 +100,14 @@ fn upsert_after_title(content: &str, name: &str, body: &str) -> String {
     let block = format!("{begin}\n{body}\n{end}");
 
     let Some(title_end) = first_title_end(&content) else {
-        if content.trim().is_empty() {
+        // Without a leading H1 the block goes at the very top; trim the
+        // leading newlines so repeated refreshes cannot accumulate blank
+        // lines between the block and the rest of the file.
+        let rest = content.trim_start_matches('\n');
+        if rest.trim().is_empty() {
             return format!("{block}\n");
         }
-        return format!("{block}\n\n{content}");
+        return format!("{block}\n\n{rest}");
     };
 
     let before = content[..title_end].trim_end_matches('\n');
@@ -227,6 +231,14 @@ mod tests {
             result,
             "<!-- givn:begin:coverage-badge -->\nBADGES\n<!-- givn:end:coverage-badge -->\n\nIntro\n"
         );
+    }
+
+    #[test]
+    fn apply_after_title_is_stable_without_a_heading() {
+        let first = upsert_after_title("Intro\n", "coverage-badge", "BADGES");
+        let second = upsert_after_title(&first, "coverage-badge", "BADGES");
+        assert_eq!(first, second, "refresh must not accumulate blank lines");
+        assert!(second.contains("<!-- givn:end:coverage-badge -->\n\nIntro\n"));
     }
 
     #[test]

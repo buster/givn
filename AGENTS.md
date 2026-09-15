@@ -39,6 +39,7 @@ binary.
 ## Testing
 
 - Rust suite: `cargo nextest run` (default), `GIVN_TEST_RUNNER=cargo ./run-tests.sh` for the libtest fallback.
+- The acceptance suite requires both `git` and `fossil` on PATH (the archive scenarios exercise a real Fossil checkout).
 - Run `cargo clippy --workspace --all-targets -- -D warnings` for lint coverage.
 
 ## Performance & simplicity
@@ -72,9 +73,11 @@ auto-maintained by `givn init` / `givn skills sync` — do not edit it by hand.
 - Tick off each task in `tasks.md` immediately after completing it —
   an unchecked box means that scenario is not done. Never batch-check
   boxes at the end.
-- One atomic `git commit` per scenario (RED+GREEN+REFACTOR together).
-  No commit, or a commit touching only the spec, means the work is not
-  done. Record the commit hash in tasks.md.
+- One atomic `givn commit -m "feat(<capability>): <scenario title>"` per
+  scenario (RED+GREEN+REFACTOR together); it works on Git and Fossil. A raw
+  Git commit is stamped by the hook, a raw Fossil check-in is not. No
+  commit, or a commit touching only the spec, means the work is not done.
+  Record the revision identifier in tasks.md.
 - The full workflow, available commands, and skills are documented in the
   output of these commands — this block is intentionally just a pointer.
 <!-- givn:end:givn-project -->

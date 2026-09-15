@@ -8,20 +8,20 @@ repository's development scripts.
 
 | Command | Purpose |
 | --- | --- |
-| `givn init [--force] [--no-extras] [--no-addons]` | Scaffold `givn/{specs,changes,archive}`, write `givn/config.yaml`, generate skills/commands, add the AGENTS.md hint block. Enables all addons and extras by default. |
+| `givn init [--force] [--no-addons] [--agents <list>]` | Scaffold `givn/{specs,changes,archive}`, write `givn/config.yaml`, generate skills/commands, add the AGENTS.md hint block. Enables all addons and extras by default. |
 | `givn new <id> [--skip a,b,c]` | Create a change scaffold under `givn/changes/<id>/`. `--skip` marks artifacts as intentionally not produced (reverse engineering). |
 | `givn instructions [<artifact>] [--change <id>] [--json]` | No artifact: context-aware guidance on what to do next. With an artifact id: that artifact's writing instructions. |
 | `givn lint [--change <id>] [paths...]` | Static Gherkin check only (syntax, `@wip`, delta tags). Exit 0 clean / 1 parse error / 2 `@wip` present. Runs no tests. |
-| `givn check [<artifact>] [--change <id>]` | Run an artifact's `post` hooks on demand; blocking `givn check review --change <id>` also runs the semantic report gate. |
-| `givn status [--change <id>] [--json]` | Lifecycle state: artifact checklist, current stage, task progress with pending task descriptions, next required/optional steps. Filesystem-derived, no separate state file. |
+| `givn check [<artifact>] [--change <id>]` | Run an artifact's `post` hooks on demand; blocking `givn check review --change <id>` also runs the overlap, routing, and integrity gates. |
+| `givn status [--change <id>] [--json]` | Lifecycle state: artifact checklist, current stage, task progress with pending task descriptions, next required/optional steps; the text view opens with `SCM: git`, `SCM: fossil`, or `SCM: none (archive and managed upgrade are unavailable)`. Filesystem-derived, no separate state file. |
 | `givn graph [--change <id>] [--json]` | Show the artifact workflow graph: nodes, `requires` edges, optional/gates-archive flags, post hooks; overlays live status with `--change`. |
-| `givn archive --change <id>` | Archive a completed change, forward-only and Git-backed. Requires a clean committed worktree; commits the merged candidate, runs the regular and E2E verification scopes once with fail-closed runner results, runs the optional coverage gate, and commits the verification receipt (`givn/archive/<id>/verification.json`). A failed candidate remains unproven and resumable; an already proven archive is refused. |
+| `givn archive --change <id>` | Archive a completed change, forward-only and SCM-backed (Git or Fossil). Requires a clean committed checkout; publishes the merged candidate revision, runs the regular and E2E verification scopes once with fail-closed runner results, runs the optional coverage gate, and publishes the verification receipt (`givn/archive/<id>/verification.json`). A failed candidate remains unproven and resumable; an already proven archive is refused. |
 | `givn run [--port <n>] [--print]` | Start the product declared in the `run:` block of `givn/commands.yaml`. Hands the port to the product through `port_env` (ephemeral port when the caller passes none), prints `givn run: ready at <url>` once readiness is observed, forwards SIGINT/SIGTERM (exit 130/143), and forwards the product's exit code. `--print` emits one sh-eval-able start line without starting. |
 | `givn eject <target> [--force]` | Write an embedded default facet into the project for editing (`design:template`, `review:instruction`, `skill:givn-propose`, `manifest`). |
 | `givn addons list` / `enable <name>` / `disable <name>` | Manage opt-in addon artifact/policy sets. |
-| `givn extras install` / `uninstall` | Enable/disable the curated extras skill+command bundle. |
+| `givn commit -m <message> [paths...]` | Create one attributed revision through the selected backend (Git or Fossil); records the named paths, or every pending change, and appends the managed `Co-Authored-By` trailer when the harness provides attribution context. |
 | `givn skills sync` | Regenerate all skills, commands, and AGENTS.md blocks from current templates. |
-| `givn upgrade` | Refresh and commit managed config/agent files in a clean Git project; apply declared migration bundles when required; backfill the run-declaration scaffold into an existing `givn/commands.yaml` when the `run:` key is absent (idempotent, committed with the managed upgrade). |
+| `givn upgrade` | Refresh and commit managed config/agent files in a clean checkout of the selected backend; apply declared migration bundles when required; backfill the run-declaration scaffold into an existing `givn/commands.yaml` when the `run:` key is absent (idempotent, committed with the managed upgrade). |
 | `givn completions <bash\|zsh\|fish>` | Print a shell completion script. |
 
 ## Agent skills
@@ -103,9 +103,6 @@ Key sections:
   display `name` (built-in hook names always ignore `allow_failure`).
 - `addons:` / `extras:` — see tables above.
 
-Semantic retrieval knobs are environment variables, not config keys — see the
-semantic duplicate pipeline section in [`workflow.md`](workflow.md).
-
 ## What givn creates in your project
 
 ```
@@ -113,12 +110,10 @@ givn/
 ├── config.yaml                       # documented + versioned: overlay + verify.command
 ├── commands.yaml                     # project-owned test and coverage scripts
 ├── specs/<group>/<cap>.feature       # permanent merged spec (source of truth)
-├── .spec-index.json                  # E5 embedding index (incremental, content-hashed)
 ├── changes/<id>/                     # active change (state = which files exist)
 │   ├── proposal.md
 │   ├── specs/<group>/<cap>.feature   # delta: @givn.delta + added|modified|removed
 │   ├── design.md  tasks.md  design-review.md  review.md
-│   ├── semantic-review.md            # generated evidence/classification worklist
 │   └── arc42.md                      # optional: arc42 addon marker (STATUS: DONE)
 ├── archive/<id>/                     # archived changes: report, verification.json, results/
 └── (ejected overrides, on demand)

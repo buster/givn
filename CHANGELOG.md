@@ -4,6 +4,31 @@ All notable changes to Givn are documented in this file.
 
 The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
+## [Unreleased]
+
+### Added
+
+- **Fossil support across the lifecycle**: backend selection from project
+  markers, the archive write path (witness-bounded candidate and finalization
+  revisions, resume republication after a rejected hook), the managed upgrade
+  and migration plans, and `givn commit` — the SCM-neutral attributed commit
+  path (raw `fossil commit` carries no attribution; the Git hook still stamps
+  raw Git commits).
+- `givn status` reports the active backend (`SCM: git`, `SCM: fossil`, or
+  `SCM: none` with the unavailable note).
+- ADR-072 (witness-bounded publication) and the ADR-071 amendment for the
+  managed upgrade on both backends.
+
+### Changed
+
+- `givn init` installs attribution plumbing only where the backend supports
+  it (Fossil reports `commit attribution: givn commit path only`), warns
+  instead of refusing when no backend exists, and the generated guidance
+  names the backend-valid commit path.
+- Integrity and receipt vocabulary is backend-neutral ("revision
+  identifier", "candidate/tested revision").
+- The archive/upgrade scenarios and documentation no longer assume Git.
+
 ## [0.7.0] - 2026-09-10
 
 ### Changed

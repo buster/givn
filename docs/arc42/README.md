@@ -20,10 +20,27 @@ run-declaration gate; the durable run-declaration facts live in chapters 3,
 6.15, 8.16, and the glossary.
 
 The `archive-proof` change proposes ADR-070: archive publication becomes
-forward-only and Git-backed, with a committed candidate, fail-closed
-per-scope runner results, and a verification receipt committed as the
+forward-only and SCM-backed (Git or Fossil), with a published candidate, fail-closed
+per-scope runner results, and a verification receipt published as the
 evidence-only finalization. Durable archive facts live in chapters 2, 3, 5,
 6.7, 8.6, 8.9, 8.12, and the glossary.
+
+The `scm-backend` change records ADR-071: repository-state commands select the
+version-control backend through one seam (a Git worktree first, then a Fossil
+checkout) and refuse absence, ambiguity, a nested root, or a missing executable
+by name. Durable facts live in chapters 2 (TC-21, TC-33), 3, 4, 5, 6.13/6.16,
+8.18, 10 (Q-50), and 11 (R-63, R-64, D-20).
+
+The `maintain-project` change amends ADR-071: the managed upgrade and
+migration bundles run on Git and Fossil through the same seam, with
+allowlist-only force staging on both. Durable facts live in chapters 2
+(TC-21), 3, 4, 5, 6.13, 8.18, and the glossary; D-20 is repaid.
+
+The `archive-change` change records ADR-072: publication through the seam is
+witness-bounded, the archive runs on Git and Fossil, and a candidate whose
+publication a hook rejected is republished on resume. Durable facts live in
+chapters 2 (TC-21, TC-31, TC-32), 3, 4, 5, 6.7/6.13/6.16, 7.3, 8.18, 10
+(Q-92), 11 (R-65, R-66), and the glossary.
 
 Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
 register](adr/README.md) for status, relationships, evidence, reserved IDs, and
@@ -49,7 +66,7 @@ historical records.
 ## Related Documents
 
 - [`../../README.md`](../../README.md) - user-facing project overview.
-- [`../TASKS.md`](../TASKS.md) - project implementation task breakdown.
+- [`../workflow.md`](../workflow.md) - ordered workflow phases, gates, and chokepoints.
 - [`../migrations/0.2.0-to-0.3.0.md`](../migrations/0.2.0-to-0.3.0.md) - LLM prompt pack for the 0.3.0 project migration.
 - [`../migrations/README.md`](../migrations/README.md) - release-owned migration bundle and aggregate-plan contract.
 

@@ -4,7 +4,6 @@ use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
 
 pub const MIGRATION_CATALOG_PATH: &str = "migrations/catalog.yaml";
 
@@ -318,8 +317,7 @@ pub fn prepare_legacy_upgrade(
         target_version,
         bundles,
     )?;
-    commit_migration_plan(project_root, &migration_dir, &change_id)?;
-    let commit_b = git_commit_hash(project_root)?;
+    let commit_b = commit_migration_plan(project_root, &migration_dir, &change_id)?;
 
     println!("Prepared Givn {target_version} migration from {source_version}.");
     println!("  managed upgrade commit (A): {commit_a}");
@@ -350,7 +348,10 @@ pub fn prepare_managed_upgrade(
     target_version: &str,
     commit_message: &str,
 ) -> Result<Option<String>> {
-    ensure_clean_git(project_root)?;
+    let backend = crate::scm::select(project_root)?;
+    if !backend.dirty_entries()?.is_empty() {
+        bail!("automatic managed upgrade requires a clean checkout; no files were changed");
+    }
 
     let managed_paths = crate::skills::targets::managed_generated_paths(project_root)?;
     let commands_path = project_root.join("givn/commands.yaml");
@@ -366,7 +367,13 @@ pub fn prepare_managed_upgrade(
         return Err(error);
     }
 
-    match commit_managed_upgrade(project_root, config_path, &managed_paths, commit_message) {
+    match commit_managed_upgrade(
+        project_root,
+        &backend,
+        config_path,
+        &managed_paths,
+        commit_message,
+    ) {
         Ok(hash) => Ok(hash),
         Err(error) => {
             snapshot.restore().ok();
@@ -407,6 +414,7 @@ fn apply_managed_upgrade(config_path: &Path, upgraded: &str, project_root: &Path
 
 fn commit_managed_upgrade(
     project_root: &Path,
+    backend: &crate::scm::Backend,
     config_path: &Path,
     managed_paths: &[PathBuf],
     commit_message: &str,
@@ -416,32 +424,47 @@ fn commit_managed_upgrade(
         project_root.join("givn/commands.yaml"),
     ];
     paths.extend(managed_paths.iter().cloned());
-    stage_paths(project_root, paths)?;
+    let relative = relative_managed_paths(project_root, paths)?;
+    backend
+        .stage_paths(&relative, true)
+        .context("the selected backend could not stage the managed upgrade files")?;
 
-    if !has_staged_changes(project_root)? {
+    if !backend.has_staged_changes()? {
         return Ok(None);
     }
 
-    let output = git(project_root, ["commit", "-m", commit_message])?;
-    if !output.status.success() {
-        bail!(
-            "Git could not create the managed upgrade commit: {}",
-            command_output(&output)
-        );
-    }
-    Ok(Some(git_commit_hash(project_root)?))
+    backend
+        .commit_staged(commit_message)
+        .context("the selected backend could not create the managed upgrade revision")?;
+    Ok(Some(backend.revision()?))
 }
 
-fn has_staged_changes(project_root: &Path) -> Result<bool> {
-    let output = git(project_root, ["diff", "--cached", "--quiet", "--exit-code"])?;
-    match output.status.code() {
-        Some(0) => Ok(false),
-        Some(1) => Ok(true),
-        _ => bail!(
-            "could not inspect staged managed files: {}",
-            command_output(&output)
-        ),
+/// Existing managed paths, relative to the project root. Path filtering is
+/// project knowledge and stays here; staging is the backend's operation.
+fn relative_managed_paths<I>(project_root: &Path, paths: I) -> Result<Vec<PathBuf>>
+where
+    I: IntoIterator<Item = PathBuf>,
+{
+    let relative_paths: Vec<PathBuf> = paths
+        .into_iter()
+        .filter(|path| path.exists())
+        .map(|path| {
+            path.strip_prefix(project_root)
+                .map(Path::to_path_buf)
+                .with_context(|| {
+                    format!(
+                        "managed path '{}' is outside project root '{}'",
+                        path.display(),
+                        project_root.display()
+                    )
+                })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    if relative_paths.is_empty() {
+        bail!("automatic upgrade produced no managed files to commit");
     }
+    Ok(relative_paths)
 }
 
 fn write_aggregate_migration_plan(
@@ -550,24 +573,12 @@ fn write_aggregate_migration_files(
 
     std::fs::write(
         migration_dir.join("proposal.md"),
-        aggregate_migration_proposal(
-            change_id,
-            source_version,
-            target_version,
-            commit_a,
-            bundles,
-        )?,
+        aggregate_migration_proposal(change_id, source_version, target_version, commit_a, bundles)?,
     )
     .context("write migration proposal")?;
     std::fs::write(
         migration_dir.join("design.md"),
-        aggregate_migration_design(
-            change_id,
-            source_version,
-            target_version,
-            commit_a,
-            bundles,
-        )?,
+        aggregate_migration_design(change_id, source_version, target_version, commit_a, bundles)?,
     )
     .context("write migration design")?;
     Ok(())
@@ -668,129 +679,24 @@ fn render_bundle_asset(
         .replace("{{MIGRATION_GUIDE}}", MIGRATION_GUIDE))
 }
 
-fn commit_migration_plan(project_root: &Path, migration_dir: &Path, change_id: &str) -> Result<()> {
-    stage_paths(project_root, [migration_dir.to_path_buf()])?;
-    let output = git(
-        project_root,
-        [
-            "commit",
-            "-m",
-            &format!("docs(upgrade): record aggregate migration plan {change_id}"),
-        ],
-    )?;
-    if !output.status.success() {
-        bail!(
-            "Git could not create the aggregate migration-plan commit: {}",
-            command_output(&output)
-        );
-    }
-    Ok(())
-}
-
-fn stage_paths<I>(project_root: &Path, paths: I) -> Result<()>
-where
-    I: IntoIterator<Item = PathBuf>,
-{
-    let relative_paths: Vec<PathBuf> = paths
-        .into_iter()
-        .filter(|path| path.exists())
-        .map(|path| {
-            path.strip_prefix(project_root)
-                .map(Path::to_path_buf)
-                .with_context(|| {
-                    format!(
-                        "managed path '{}' is outside project root '{}'",
-                        path.display(),
-                        project_root.display()
-                    )
-                })
-        })
-        .collect::<Result<Vec<_>>>()?;
-
-    if relative_paths.is_empty() {
-        bail!("automatic upgrade produced no managed files to commit");
-    }
-
-    // Force is safe here because every path came from the managed allowlist;
-    // never widen this to a directory or the complete worktree.
-    let mut args = vec!["add".to_string(), "-f".to_string(), "--".to_string()];
-    args.extend(
-        relative_paths
-            .iter()
-            .map(|path| path.to_string_lossy().into_owned()),
-    );
-    let output = git(project_root, args.iter().map(String::as_str))?;
-    if !output.status.success() {
-        bail!(
-            "Git could not stage managed upgrade files: {}",
-            command_output(&output)
-        );
-    }
-    Ok(())
-}
-
-fn ensure_clean_git(project_root: &Path) -> Result<()> {
-    let repository =
-        git(project_root, ["rev-parse", "--is-inside-work-tree"]).map_err(|error| {
-            anyhow::anyhow!("automatic managed upgrade requires a Git repository: {error}")
-        })?;
-    if !repository.status.success() || String::from_utf8_lossy(&repository.stdout).trim() != "true"
-    {
-        bail!("automatic managed upgrade requires a Git repository; no files were changed");
-    }
-
-    let status = git(
-        project_root,
-        ["status", "--porcelain", "--untracked-files=all"],
-    )?;
-    if !status.status.success() {
-        bail!(
-            "could not inspect Git worktree before automatic upgrade: {}",
-            command_output(&status)
-        );
-    }
-    if !status.stdout.is_empty() {
-        bail!("automatic managed upgrade requires a clean Git worktree; no files were changed");
-    }
-    Ok(())
-}
-
-fn git<I, S>(project_root: &Path, args: I) -> Result<Output>
-where
-    I: IntoIterator<Item = S>,
-    S: AsRef<std::ffi::OsStr>,
-{
-    Command::new("git")
-        .current_dir(project_root)
-        .args(args)
-        .output()
-        .context("run Git command for automatic upgrade")
-}
-
-fn git_commit_hash(project_root: &Path) -> Result<String> {
-    let output = git(project_root, ["rev-parse", "HEAD"])?;
-    if !output.status.success() {
-        bail!(
-            "could not read the automatic upgrade commit hash: {}",
-            command_output(&output)
-        );
-    }
-    let hash = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    if hash.is_empty() {
-        bail!("Git returned an empty automatic upgrade commit hash");
-    }
-    Ok(hash)
-}
-
-fn command_output(output: &Output) -> String {
-    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-    match (stdout.is_empty(), stderr.is_empty()) {
-        (true, true) => format!("exit code {}", output.status.code().unwrap_or(-1)),
-        (false, true) => stdout,
-        (true, false) => stderr,
-        (false, false) => format!("{stdout}; {stderr}"),
-    }
+fn commit_migration_plan(
+    project_root: &Path,
+    migration_dir: &Path,
+    change_id: &str,
+) -> Result<String> {
+    let backend = crate::scm::select(project_root)?;
+    let relative = relative_managed_paths(project_root, [migration_dir.to_path_buf()])?;
+    backend
+        .stage_paths(&relative, true)
+        .context("the selected backend could not stage the aggregate migration plan")?;
+    backend
+        .commit_staged(&format!(
+            "docs(upgrade): record aggregate migration plan {change_id}"
+        ))
+        .context("the selected backend could not create the aggregate migration-plan revision")?;
+    backend
+        .revision()
+        .context("read the migration-plan revision")
 }
 
 struct FileSnapshot {
@@ -838,6 +744,7 @@ impl FileSnapshot {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::process::Command;
 
     fn bundle(id: &str, source: &str, target: &str, order: u32) -> MigrationBundle {
         MigrationBundle {
@@ -993,9 +900,11 @@ mod tests {
             assert!(output.status.success(), "git {:?} failed", args);
         }
 
-        let before = git_commit_hash(directory.path()).unwrap();
+        let backend = crate::scm::select(directory.path()).unwrap();
+        let before = backend.revision().unwrap();
         let result = commit_managed_upgrade(
             directory.path(),
+            &backend,
             &config,
             std::slice::from_ref(&config),
             "chore(givn): refresh managed files",
@@ -1003,6 +912,6 @@ mod tests {
         .unwrap();
 
         assert_eq!(result, None);
-        assert_eq!(git_commit_hash(directory.path()).unwrap(), before);
+        assert_eq!(backend.revision().unwrap(), before);
     }
 }

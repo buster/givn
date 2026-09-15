@@ -56,7 +56,6 @@ The agent receives stable, actionable candidates and findings.
 
 - spec-progress-output
 - spec-duplicates
-- release-strict-model-overrides
 
 ## Interactions
 

@@ -19,7 +19,7 @@ pub fn run_integrity_hook(
         }
     };
 
-    check_hash_presence(&change_dir)?;
+    check_revision_identifier_presence(&change_dir)?;
     check_promised_files_exist(&change_dir)?;
     check_visual_review(&change_dir)?;
     check_deferrals(&change_dir)?;
@@ -419,8 +419,9 @@ fn check_coverage_config() -> Result<()> {
     Ok(())
 }
 
-/// Check that every `- [x] COMMIT:` line in tasks.md has a non-placeholder hash.
-fn check_hash_presence(change_dir: &Path) -> Result<()> {
+/// Check that every `- [x] COMMIT:` line in tasks.md records a usable,
+/// non-placeholder revision identifier.
+fn check_revision_identifier_presence(change_dir: &Path) -> Result<()> {
     let tasks_path = change_dir.join("tasks.md");
     if !tasks_path.exists() {
         // No tasks.md — nothing to check.
@@ -453,7 +454,7 @@ fn check_hash_presence(change_dir: &Path) -> Result<()> {
 
         if hash.is_empty() || hash == "—" || hash == "-" {
             errors.push(format!(
-                "line {}: commit hash is empty (expected `<hash>` after `- [x] COMMIT:`)",
+                "line {}: revision identifier is empty (expected `<identifier>` after `- [x] COMMIT:`)",
                 line_idx + 1
             ));
             continue;
@@ -469,7 +470,7 @@ fn check_hash_presence(change_dir: &Path) -> Result<()> {
             || hash.contains("<!--")
         {
             errors.push(format!(
-                "line {}: commit hash is a placeholder: `{}`",
+                "line {}: revision identifier is a placeholder: `{}`",
                 line_idx + 1,
                 hash
             ));
@@ -479,7 +480,7 @@ fn check_hash_presence(change_dir: &Path) -> Result<()> {
         // Check for duplicate hashes — each scenario requires its own atomic commit.
         if !seen_hashes.insert(hash.to_string()) {
             errors.push(format!(
-                "line {}: commit hash `{}` is also used by another task — \
+                "line {}: revision identifier `{}` is also used by another task — \
                  each scenario needs its own atomic commit",
                 line_idx + 1,
                 hash
@@ -490,7 +491,7 @@ fn check_hash_presence(change_dir: &Path) -> Result<()> {
     if !found_any {
         // No COMMIT lines found — this is a finding (no commit evidence recorded).
         errors.push(
-            "no `- [x] COMMIT:` lines found in tasks.md — commit hashes must be recorded"
+            "no `- [x] COMMIT:` lines found in tasks.md — revision identifiers must be recorded"
                 .to_string(),
         );
     }
@@ -1014,7 +1015,7 @@ mod tests {
             "- [x] COMMIT: a1b2c3d4 -- Scenario one\n",
         )
         .unwrap();
-        assert!(check_hash_presence(&change).is_ok());
+        assert!(check_revision_identifier_presence(&change).is_ok());
     }
 
     #[test]
@@ -1025,28 +1026,28 @@ mod tests {
             "- [x] COMMIT: ___ -- Scenario one\n",
         )
         .unwrap();
-        assert!(check_hash_presence(&change).is_err());
+        assert!(check_revision_identifier_presence(&change).is_err());
     }
 
     #[test]
     fn hash_presence_fails_with_empty_hash() {
         let (_dir, change) = make_change_dir();
         std::fs::write(change.join("tasks.md"), "- [x] COMMIT: \n").unwrap();
-        assert!(check_hash_presence(&change).is_err());
+        assert!(check_revision_identifier_presence(&change).is_err());
     }
 
     #[test]
     fn hash_presence_fails_with_no_commit_lines() {
         let (_dir, change) = make_change_dir();
         std::fs::write(change.join("tasks.md"), "- [x] Some other task\n").unwrap();
-        assert!(check_hash_presence(&change).is_err());
+        assert!(check_revision_identifier_presence(&change).is_err());
     }
 
     #[test]
     fn hash_presence_skips_when_no_tasks_md() {
         let (_dir, change) = make_change_dir();
         // Don't create tasks.md
-        assert!(check_hash_presence(&change).is_ok());
+        assert!(check_revision_identifier_presence(&change).is_ok());
     }
 
     #[test]
@@ -1057,7 +1058,7 @@ mod tests {
             "- [x] COMMIT: a1b2c3d4 -- Scenario one\n- [x] COMMIT: a1b2c3d4 -- Scenario two\n",
         )
         .unwrap();
-        assert!(check_hash_presence(&change).is_err());
+        assert!(check_revision_identifier_presence(&change).is_err());
     }
 
     #[test]
@@ -1068,7 +1069,7 @@ mod tests {
             "- [x] COMMIT: a1b2c3d4 -- Scenario one\n- [x] COMMIT: e5f6g7h8 -- Scenario two\n",
         )
         .unwrap();
-        assert!(check_hash_presence(&change).is_ok());
+        assert!(check_revision_identifier_presence(&change).is_ok());
     }
 
     #[test]
