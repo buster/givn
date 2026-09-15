@@ -81,6 +81,15 @@ Feature: Commit attribution
     Then  the command exits 0
     And  the revision message carries the managed attribution trailer
 
+  Scenario: The commit wrapper records only the named paths on Fossil
+    Given  an initialized Fossil project
+    And  the project has an uncommitted change to "first.txt"
+    And  the project has an uncommitted change to "second.txt"
+    When  the consumer commits only "first.txt" with message "feat: first"
+    Then  the command exits 0
+    And  the latest revision contains "first.txt"
+    And  the latest revision does not contain "second.txt"
+
   Scenario: The commit wrapper without attribution context leaves the message unchanged
     Given  a Givn project with the shared commit-attribution hook active
     When  the consumer commits with message "fix parser" without attribution context

@@ -473,3 +473,18 @@ fn then_message_has_no_trailer(world: &mut GivnWorld) {
         "the revision message unexpectedly carries the managed trailer: {message}"
     );
 }
+
+#[when(regex = r#"^the consumer commits only "([^"]+)" with message "([^"]+)"$"#)]
+fn when_givn_commit_named_path(world: &mut GivnWorld, path: String, message: String) {
+    let env = world.env.as_ref().expect("project root");
+    let output = common::run_givn(env, &["commit", "-m", &message, &path]);
+    world.last_output = Some(output);
+}
+
+#[then(regex = r#"^the latest revision does not contain "([^"]+)"$"#)]
+fn then_latest_revision_lacks(world: &mut GivnWorld, path: String) {
+    assert!(
+        !crate::steps::archive_proof_support::revision_contains(world, &path),
+        "the latest revision unexpectedly contains {path}"
+    );
+}

@@ -39,9 +39,20 @@ pub fn run(message: &str, paths: &[String]) -> Result<()> {
     if !backend.has_staged_changes()? {
         bail!("nothing to commit: the checkout has no pending changes");
     }
-    backend
-        .commit_staged(&stamped)
-        .with_context(|| "the revision was rejected".to_string())?;
+    match &backend {
+        // Fossil has no index: a bare commit would include every pending
+        // change, so named paths are committed explicitly.
+        crate::scm::Backend::Fossil(checkout) if !paths.is_empty() => {
+            let relative: Vec<std::path::PathBuf> =
+                paths.iter().map(std::path::PathBuf::from).collect();
+            checkout
+                .commit_paths(&stamped, &relative)
+                .with_context(|| "the revision was rejected".to_string())?;
+        }
+        _ => backend
+            .commit_staged(&stamped)
+            .with_context(|| "the revision was rejected".to_string())?,
+    }
     println!(
         "[{}] committed revision on the {} backend",
         crate::subprocess::local_timestamp(),

@@ -57,7 +57,7 @@ stubs. Mechanical check, not a judgment call:
    the interaction was never real, regardless of what the assertion checks.
 7. Identify the exact file(s) `verify.e2e_command` actually invokes — read
    the command, not just a filename containing "e2e". Inspect the working
-   state (for example `git status` on Git) and
+   state (for example `git status` on Git, `fossil changes` on Fossil) and
    search the tree (including untracked/uncommitted files) for any other
    `@e2e` step implementation of the same capability. Reviewing a weaker
    implementation while a stronger, real-interface one already exists

@@ -95,10 +95,21 @@ pub fn select(project_root: &Path) -> Result<Backend> {
             }
             Ok(Backend::Git(crate::git::Worktree::at(project_root)))
         }
-        (true, Some(marker)) => bail!(
-            "ambiguous version control at '{}': both a Git worktree marker and a Fossil checkout marker ({marker}) are present",
-            project_root.display()
-        ),
+        (true, Some(marker)) => {
+            // A Git worktree that merely *contains* the root (its top level
+            // differs) does not own it; the root-local Fossil marker wins.
+            // Only markers at the root itself are ambiguous.
+            if git_top_level(project_root)? == canonical(project_root) {
+                bail!(
+                    "ambiguous version control at '{}': both a Git worktree marker and a Fossil checkout marker ({marker}) are present",
+                    project_root.display()
+                );
+            }
+            fossil_executable(project_root)?;
+            Ok(Backend::Fossil(crate::fossil::FossilCheckout::at(
+                project_root,
+            )))
+        }
         (false, Some(_)) => {
             fossil_executable(project_root)?;
             Ok(Backend::Fossil(crate::fossil::FossilCheckout::at(
