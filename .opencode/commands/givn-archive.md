@@ -62,6 +62,12 @@ On success, `givn archive` will have:
 - Merged delta `.feature` files into `givn/specs/` (stripped `@givn.*` tags).
 - Moved `givn/changes/<id>/` to `givn/archive/<id>/`.
 
+Then update the originating change seed, if the proposal's Use-Case Context
+records one: set its status line to `Status: implemented in <change-id>` — or
+`Status: withdrawn` with a one-line reason when the change was abandoned.
+Leave the rest of the seed unchanged. When the proposal records no seed,
+record "no seed" explicitly in your summary.
+
 Run a regression check against the permanent specs:
 ```sh
 givn lint

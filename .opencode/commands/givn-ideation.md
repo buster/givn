@@ -59,4 +59,6 @@ Frame → Event Storming → Use Case Definition → Use Case Elaboration → Ha
 - Handoff presents the use-case mapping, Persona promotion decisions, source
   topic, open questions, and change seeds for explicit confirmation. It never
   silently promotes a Persona or performs Handoff as a side effect.
+- Handoff writes every change seed with `Status: ready` and the seed schema
+  from the `givn-ideation` skill.
 - One question at a time; never batch.
