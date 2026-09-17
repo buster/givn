@@ -2,7 +2,7 @@
 
 Feature: lint-command
 
-  @givn.added @wip
+  @givn.added
   Scenario: A blocking finding renders its severity
     Given a project root with givn/ initialised
     And a .feature file at "givn/specs/bad/bad.feature" with:
