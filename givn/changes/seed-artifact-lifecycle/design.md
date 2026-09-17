@@ -113,9 +113,8 @@ JSON output carries the same findings with `kind`/`level`.
 |---|---|
 | The ideation guidance carries the seed schema and its status values | generated givn-ideation guidance phrases: "change seed", "Status: ready", "proposed by", "implemented in", "superseded by", "withdrawn", "Accepted decisions", "Suggested start" |
 | A change seed without a status line is reported as an advisory | stderr `[SEED ]` + "no valid status line", a clean seed not reported, exit 0 |
-| A change seed proposed by a missing change is reported as an advisory | stderr `[SEED ]` + the id on the no-features path, exit 0 |
+| A change seed proposed by a missing change is reported as an advisory | stderr `[SEED ]` + the id on the no-features path, a seed proposed by an active change not reported, exit 0 |
 | A change seed proposed by an archived change is reported as stale | stderr `[SEED ]` + "already archived", exit 0 |
-| A change seed proposed by an active change is not reported | clean summary on stdout, exit 0 |
 | An unrecognised seed status is reported and a status after prose is honoured | `[SEED ]` for `Status: done`, prose-preceded `Status: ready` not reported |
 | An advisory seed finding is counted in the summary and still exits 0 | stderr `givn lint: 1 file(s) checked, 1 finding(s)`, exit 0 |
 | The propose and archive commands carry the seed stamping instructions | generated givn-propose command contains "proposed by"; generated givn-archive command contains "implemented in" |
