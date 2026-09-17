@@ -34,7 +34,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     Then the command fails
     And stderr contains "unknown artifact"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The design-review template carries the per-question record shape
     Given a givn project
     When the user runs `givn eject design-review:template`
