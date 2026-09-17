@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "term-introduction-discipline",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "10f1dd34cb37041c56651c39c4c8ea12c89437ce",
+  "tested_revision": "10f1dd34cb37041c56651c39c4c8ea12c89437ce",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 10.306893814
+    },
+    "regular": {
+      "status": "passed",
+      "total": 521,
+      "passed": 521,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 41.827522588
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 7417,
+    "line_valid": 9398,
+    "line_percent": 78
+  },
   "started_at_unix": 1789651081,
-  "finished_at_unix": null
+  "finished_at_unix": 1789651166
 }
