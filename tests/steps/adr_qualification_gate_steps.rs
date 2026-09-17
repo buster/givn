@@ -15,8 +15,10 @@ fn guidance(world: &GivnWorld) -> &str {
 
 #[given("the ADR qualification guidance is available")]
 fn adr_qualification_guidance_is_available(world: &mut GivnWorld) {
-    let content = std::fs::read_to_string(crate::common::repo_path("assets/addons/arc42-docs/instructions.md"))
-        .expect("read canonical Arc42 instruction");
+    let content = std::fs::read_to_string(crate::common::repo_path(
+        "assets/addons/arc42-docs/instructions.md",
+    ))
+    .expect("read canonical Arc42 instruction");
     world.additional_output = Some(content);
 }
 
@@ -375,8 +377,10 @@ fn guidance_does_not_require_adr_for_chapter(world: &mut GivnWorld) {
 
 #[given("the change-level Arc42 assessment template is available")]
 fn change_level_arc42_template_is_available(world: &mut GivnWorld) {
-    let content = std::fs::read_to_string(crate::common::repo_path("assets/addons/arc42-docs/impact-assessment-template.md"))
-        .expect("read Arc42 impact template");
+    let content = std::fs::read_to_string(crate::common::repo_path(
+        "assets/addons/arc42-docs/impact-assessment-template.md",
+    ))
+    .expect("read Arc42 impact template");
     world.additional_output = Some(content);
 }
 
@@ -408,10 +412,12 @@ fn marker_does_not_duplicate_madr(world: &mut GivnWorld) {
 
 #[given("the consolidated ADR register guidance is available")]
 fn consolidated_adr_register_guidance_is_available(world: &mut GivnWorld) {
-    let register =
-        std::fs::read_to_string(crate::common::repo_path("docs/arc42/adr/README.md")).expect("read ADR directory register");
-    let chapter = std::fs::read_to_string(crate::common::repo_path("docs/arc42/09-architecture-decisions.md"))
-        .expect("read Arc42 chapter 9");
+    let register = std::fs::read_to_string(crate::common::repo_path("docs/arc42/adr/README.md"))
+        .expect("read ADR directory register");
+    let chapter = std::fs::read_to_string(crate::common::repo_path(
+        "docs/arc42/09-architecture-decisions.md",
+    ))
+    .expect("read Arc42 chapter 9");
     world.additional_output = Some(format!("{register}\n{chapter}"));
 }
 
@@ -461,8 +467,8 @@ fn maintainer_compares_register_and_sources(world: &mut GivnWorld) {
 
 #[given("the consolidated ADR register and canonical sources are available")]
 fn consolidated_register_and_sources_are_available(world: &mut GivnWorld) {
-    let register =
-        fs::read_to_string(crate::common::repo_path("docs/arc42/adr/README.md")).expect("read consolidated ADR register");
+    let register = fs::read_to_string(crate::common::repo_path("docs/arc42/adr/README.md"))
+        .expect("read consolidated ADR register");
     let design = [
         "givn/changes/adr-qualification-gate/design.md",
         "givn/archive/adr-qualification-gate/design.md",
@@ -732,8 +738,10 @@ fn author_compares_effective_and_generated_sources(world: &mut GivnWorld) {
 #[then("the canonical source uses strict AND qualification semantics")]
 fn canonical_source_uses_strict_and(world: &mut GivnWorld) {
     let _ = world;
-    let canonical = fs::read_to_string(crate::common::repo_path("assets/addons/arc42-docs/instructions.md"))
-        .expect("read canonical qualification instruction");
+    let canonical = fs::read_to_string(crate::common::repo_path(
+        "assets/addons/arc42-docs/instructions.md",
+    ))
+    .expect("read canonical qualification instruction");
     for clause in [
         "qualification = alternatives",
         "AND architectural_impact",
@@ -1060,10 +1068,7 @@ fn design_template_is_available(world: &mut GivnWorld) {
 
 #[when("an author reads the Technology Decisions guidance")]
 fn author_reads_technology_decisions(world: &mut GivnWorld) {
-    assert!(
-        !guidance(world).is_empty(),
-        "design template is empty"
-    );
+    assert!(!guidance(world).is_empty(), "design template is empty");
 }
 
 #[then("the template says justification belongs in the design")]
@@ -1132,8 +1137,10 @@ fn template_instructs_fill_from_record(world: &mut GivnWorld) {
 
 #[given("the design-review instruction is available")]
 fn design_review_instruction_is_available(world: &mut GivnWorld) {
-    let content = std::fs::read_to_string(crate::common::repo_path("assets/instructions/design-review.md"))
-        .expect("read design-review instruction");
+    let content = std::fs::read_to_string(crate::common::repo_path(
+        "assets/instructions/design-review.md",
+    ))
+    .expect("read design-review instruction");
     world.additional_output = Some(content);
 }
 

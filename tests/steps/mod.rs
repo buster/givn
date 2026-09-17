@@ -1316,7 +1316,10 @@ fn change_usecase_document_records_persona(world: &mut GivnWorld, path: String, 
         .replace("<scenario title>", "S")
         .replace("<actor role>", "Fixture operator")
         .replace("<the domain goal>", "Exercise the fixture behavior.")
-        .replace("## Personas\n\n- none\n", &format!("## Personas\n\n- {persona}\n"));
+        .replace(
+            "## Personas\n\n- none\n",
+            &format!("## Personas\n\n- {persona}\n"),
+        );
     let file_path = env.path(&path);
     if let Some(parent) = file_path.parent() {
         std::fs::create_dir_all(parent).expect("create parent dirs for use-case document");
