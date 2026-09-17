@@ -123,9 +123,11 @@ For each artifact:
    `## Capability Routing` table — one row per capability the change touches,
    recording route's recommendation and the decision (`EXTEND <capability>` or
    `NEW in <usecase-id>`). Deviations from route are allowed but must carry a
-   rationale in the table. The specs step reads this table, not the proposal's
-   prose; `givn check review` compares the recorded decision against the delta
-   that was actually authored.
+   rationale in the table. When route reports no signal, omit the
+   recommendation and record the decision with its rationale directly; the
+   recorded decision stays mandatory either way. The specs step reads this
+   table, not the proposal's prose; `givn check review` compares the recorded
+   decision against the delta that was actually authored.
 - **Use-case context**: when a stable use-case ID or ideation change seed is
   available, read its `usecase.md` and record the ID, source topic, and
   confirmed affected Persona IDs. Do not invent Personas or copy Persona
