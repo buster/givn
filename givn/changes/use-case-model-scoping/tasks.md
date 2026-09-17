@@ -63,22 +63,41 @@ introduced, and the new scenarios are guidance-content and document variants.
 
 ### canonical-usecase-contract
 
-- [ ] Scenario: `The durable use-case model publishes the canonical definition and rules`
-  - [ ] RED: removed `@wip` from this scenario only; ran the single-scenario
+- [x] Scenario: `The durable use-case model publishes the canonical definition and rules`
+  - [x] RED: removed `@wip` from this scenario only; ran the single-scenario
         command → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/use-case-model-scoping/specs cargo test --locked --test features_runner -- --name "The durable use-case model publishes the canonical definition and rules"
+        Step panicked. Captured output: not implemented
+        1 scenario (1 failed)
         ```
-  - [ ] GREEN: wrote `docs/use-case-model.md` (definition, eight rules,
+  - [x] GREEN: wrote `docs/use-case-model.md` (definition, eight rules,
         authoring requirements, ten criteria, both worked examples with
         criteria tie-ins) and added the pointers to `docs/workflow.md` and
-        `docs/reference.md`. Files: `docs/use-case-model.md`,
-        `docs/workflow.md`, `docs/reference.md`. Run → zero. Evidence:
+        `docs/reference.md`; implemented the twelve steps. Files:
+        `docs/use-case-model.md`, `docs/workflow.md`, `docs/reference.md`,
+        `tests/steps/spec_discovery_deterministic_steps.rs`. Run → zero.
+        Evidence:
         ```
+        ✔ Given the durable use-case model document is inspected
+        ✔ When a maintainer reads the definition and the scoping rules
+        ✔ Then the document defines a use case as a contract between one primary actor and the system
+        ✔ And ... the promotion rule ... placement test ... ten review rejection criteria
+        ✔ And ... the worked split of an observing mega-leaf
+        ✔ And ... the promotion of a conjunction-goal leaf into a summary and its split
+        ✔ And ... both criteria tie-ins
+        ✔ And ... the workflow and reference documents point at the use-case model
+        1 feature
+        1 scenario (1 passed)
+        12 steps (12 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        12 steps (12 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(canonical-usecase-contract): The durable use-case model publishes the canonical definition and rules`
+  - [x] COMMIT: `<hash>` -- `feat(canonical-usecase-contract): The durable use-case model publishes the canonical definition and rules`
 
 - [ ] Scenario: `The generated use-case document template carries the authoring guidance`
   - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:

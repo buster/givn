@@ -77,6 +77,11 @@ Enforcement: none. Ideation produces no manifest artifact — no `givn status`
 stage, no gates, no `check` involvement. It is visible only through its state
 directory and the published topic document.
 
+Use-case model: the canonical definition, the eight scoping rules, the
+authoring requirements, and the review rejection criteria live in
+[`use-case-model.md`](use-case-model.md). The ideation skill carries the
+authoring rules; the review instruction carries the criteria.
+
 Term record: crystallizing terms are kept in `givn/ideation/<topic-id>/domain-terms.md`.
 Each entry records the term, its status (`candidate`, `confirmed`, or
 `rejected`), a one-sentence definition, a contrast, its first use, and the
