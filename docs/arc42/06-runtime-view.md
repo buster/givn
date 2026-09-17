@@ -125,6 +125,15 @@ the deterministic overlap scan:
 Precedence is parse error `1`, duplicate title `3`, WIP `2`, then clean `0`.
 JSON output is a findings array; it is not test-runner output.
 
+The default whole-tree scope additionally scans change seeds under
+`givn/ideation/*/changes/*.md` for status hygiene. A missing or unrecognised
+`Status:` line, a `proposed by` change that does not exist, and a
+`proposed by` change that is already archived are reported on stderr with the
+`[SEED ]` label. The findings are advisory: they are counted in the summary's
+finding count but never change the exit code. The scan is a no-op without
+`givn/ideation/`, and explicit paths or `--change` keep their current scope
+without seed advisories.
+
 ## 6.5 `givn status` and `givn graph`
 
 Both commands load the effective manifest and derive state from the change

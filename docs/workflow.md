@@ -60,7 +60,7 @@ cases.
 | event storming | domain events in past tense, reverse narrative ("which events must happen for this?"), commands/actors/policies, hotspots parked | `eventstorming.md`, `domain-terms.md`, `questions.md` |
 | use case definition | slice event sequences that culminate in value; goal levels, bounded contexts; personas rank value | `use-case-definitions.md` with affected stakeholder types |
 | use case elaboration | per use case: rules, concrete examples, contract — Gherkin-ready | `use-cases/<uc-id>.md`, persona reviews |
-| handoff | publish and promote | `docs/ideation/<topic-id>.md`, change seeds under `changes/`, term merges, persona promotion into `givn/personas/` |
+| handoff | publish and promote | `docs/ideation/<topic-id>.md`, change seeds under `changes/` (each with `Status: ready`), term merges, persona promotion into `givn/personas/` |
 
 Properties:
 
@@ -114,6 +114,7 @@ COMMIT   One revision for RED+GREEN+REFACTOR via
 |---|---|---|
 | duplicates / coverage / tree | `givn spec …` | deterministic duplicate and coverage reports over the permanent corpus; no model or network dependency |
 | lint warnings | `givn lint [--change <id>]` | `shape_match` overlaps, subsets, scenarios longer than 14 steps |
+| seed status | `givn lint` (default scope) | missing or unrecognised seed status, a `proposed by` change that does not exist, a `proposed by` change that is already archived; advisory, exit code unchanged |
 | missing index notice | `givn check review` | hints to run `givn spec index` first |
 
 ### Blocking
