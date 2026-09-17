@@ -1179,21 +1179,33 @@ fn skill_points_at_cheaper_home(_world: &mut GivnWorld) {
 }
 
 #[when("an author reads the chapter-selection guidance")]
-fn author_reads_chapter_selection(_world: &mut GivnWorld) {
-    unimplemented!()
+fn author_reads_chapter_selection(world: &mut GivnWorld) {
+    assert!(
+        !guidance(world).is_empty(),
+        "qualification guidance is empty"
+    );
 }
 
 #[then("the guidance treats correlated rows as a double-check")]
-fn guidance_treats_correlated_rows_as_double_check(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_treats_correlated_rows_as_double_check(world: &mut GivnWorld) {
+    assert!(
+        guidance(world).contains("treat correlated rows as a prompt to"),
+        "guidance does not treat correlated rows as a double-check"
+    );
 }
 
 #[then("the guidance says an affected chapter does not by itself qualify an ADR")]
-fn guidance_affected_chapter_does_not_qualify(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_affected_chapter_does_not_qualify(world: &mut GivnWorld) {
+    assert!(
+        guidance(world).contains("does not by itself qualify an ADR"),
+        "guidance does not say an affected chapter fails to qualify an ADR"
+    );
 }
 
 #[then("the guidance does not normalize an ADR per change")]
-fn guidance_does_not_normalize_adr_per_change(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_does_not_normalize_adr_per_change(world: &mut GivnWorld) {
+    assert!(
+        !guidance(world).contains("a single change routinely triggers rows 3, 5, 6, 9, and 11"),
+        "guidance still normalizes a routine row set that includes row 9"
+    );
 }
