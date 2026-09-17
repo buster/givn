@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "dialog-question-quality",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "72ab5967ff7aa46a933ea45c178a7cf39b135d39",
+  "tested_revision": "72ab5967ff7aa46a933ea45c178a7cf39b135d39",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 9.208711273
+    },
+    "regular": {
+      "status": "passed",
+      "total": 512,
+      "passed": 512,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 39.295065195
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 7332,
+    "line_valid": 9315,
+    "line_percent": 78
+  },
   "started_at_unix": 1789645917,
-  "finished_at_unix": null
+  "finished_at_unix": 1789646019
 }
