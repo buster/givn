@@ -14,6 +14,9 @@ Feature: ideation-skill
     And  the generated givn-ideation guidance contains "Handoff"
     And  the generated givn-ideation guidance contains "one question at a time"
     And  the generated givn-ideation guidance contains "quality review"
+    And  the generated givn-ideation guidance contains "givn instructions dialog"
+    And  the generated givn-ideation guidance contains "In practice:"
+    And  the generated givn-ideation guidance contains "Rejected:"
 
   Scenario: The ideation guidance binds personas to the artifacts that affect them
     Given  a givn project with all agent skill targets enabled
