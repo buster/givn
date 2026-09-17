@@ -35,7 +35,7 @@ the decision is not re-opened.
 | 3 | [term-introduction-discipline](03-term-introduction-discipline.md) | Term proliferation (T2 options 2 and 4) | 1 | archived (proven, `56e1e588`) |
 | 4 | [use-case-model-scoping](04-use-case-model-scoping.md) | Use-case scoping (T3 option A) | 1 | archived (proven, `fe2a5a10`) |
 | 5 | [adr-qualification-hardening](05-adr-qualification-hardening.md) | ADR overuse (T4 options A and C) | 4 | archived (proven, `fbace10f`) |
-| 6 | [persona-identity-reuse](06-persona-identity-reuse.md) | Persona fragmentation (T5 options 1, 2, 4) | 4 | ready |
+| 6 | [persona-identity-reuse](06-persona-identity-reuse.md) | Persona fragmentation (T5 options 1, 2, 4) | 4 | archived (proven, `dd8ac2fb`) |
 | 7 | [guarantee-question-traceability](07-guarantee-question-traceability.md) | Guarantees over open prerequisites (M5 options A and B) | 2, 4 | ready |
 | 8 | [finding-severity-routing-signal](08-finding-severity-routing-signal.md) | Ignored advisory output (M6 options A and B) | — | ready |
 
