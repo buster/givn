@@ -108,8 +108,8 @@ Good:
      v1 non-goal of server operation.
 - Resolution: Posture A now, Posture C later, Posture B possibly in
   between. Chosen: Posture A — v1 is local-only; the binding model must
-  not be shaped around infrastructure that does not exist yet. Rejected
-  now: Posture C reopens the v1 non-goal and requires server operation;
+  not be shaped around infrastructure that does not exist yet. Rejected:
+  Posture C reopens the v1 non-goal and requires server operation;
   Posture B adds credential handling and polling semantics to the first
   binding implementation without a user need that justifies them.
 ```

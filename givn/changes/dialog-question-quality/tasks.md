@@ -102,22 +102,42 @@ for those actions remain the real-interface evidence.
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `f50e5790` -- `feat(instruction-integrity): The canonical dialog policy is retrievable through the Givn CLI`
+  - [x] COMMIT: `f6c1db11` -- `feat(instruction-integrity): The canonical dialog policy is retrievable through the Givn CLI`
 
-- [ ] Scenario: `The canonical dialog policy demonstrates the full question record`
-  - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `The canonical dialog policy demonstrates the full question record`
+  - [x] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/dialog-question-quality/specs cargo test --locked --test features_runner -- --name "The canonical dialog policy demonstrates the full question record"
+        Step panicked. Captured output: not implemented
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: completed the policy's worked example (bad one-liner vs. full
-        record with context, per-option meaning, example, gain, cost, and
-        rejected alternatives) and the "one-line gloss on first use" rule.
-        Files: `assets/instructions/dialog.md`. Run → zero. Evidence:
+  - [x] GREEN: completed the policy's worked example (bad one-liner vs. full
+        record with context, per-option Meaning/In practice/Gain/Cost, and the
+        `Rejected:` line) and the "one-line gloss on first use" rule. Files:
+        `assets/instructions/dialog.md`,
+        `tests/steps/instruction_integrity_steps.rs`. `cargo clean -p givn`,
+        then the targeted run → zero. Evidence:
         ```
+        ✔ Given the canonical dialog policy is requested
+        ✔ When an author reads the option treatment and the record shape
+        ✔ Then the policy requires every option's meaning gain cost and concrete example
+        ✔ And the policy requires the rejected alternatives with their reasons
+        ✔ And the policy rejects an outcome-only resolution
+        ✔ And the policy requires a gloss for every cross-reference
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(instruction-integrity): The canonical dialog policy demonstrates the full question record`
+  - [x] COMMIT: `<hash>` -- `feat(instruction-integrity): The canonical dialog policy demonstrates the full question record`
 
 - [ ] Scenario: `The dialog policy is retrievable without an active change`
   - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
