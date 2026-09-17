@@ -2,9 +2,29 @@
 
 ## Grilling log
 
-| # | Branch | Question | Recommended answer | Outcome |
-|---|---|---|---|---|
-| 1 | | | | |
+The table is the scannable index; the full record for each question is
+written in a per-question block below it. The `Question` cell holds the short
+title, not the whole record.
+
+| # | Branch | Question | Outcome |
+|---|---|---|---|
+| 1 | | | |
+
+### Q1 — <short title in domain language>
+
+- Status: open | closed <date> (<decider>)
+- Blocks: <the decision or work item this question blocks, one line>
+- Context: <why the question exists — the problem, the constraints, and what
+  changes depending on the answer, 2-5 sentences>
+- Question: <full standalone question>
+- Recommended: <the recommended answer, with its reason>
+- Options:
+  1. **<option name>** — <what it means>
+     In practice: <concrete example of what the user sees or the system does>
+     Gain: <what improves>
+     Cost: <what gets harder or is given up>
+- Resolution: **<chosen option>** because <reason>. Rejected: <option>
+  because <reason>; <option> because <reason>.
 
 ## Resolved by codebase exploration
 
