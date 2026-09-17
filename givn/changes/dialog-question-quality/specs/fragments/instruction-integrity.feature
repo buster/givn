@@ -27,7 +27,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     Then the command exits 0
     And the CLI output contains the named-artifact rule
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unresolvable instruction id keeps the known-artifact error
     Given a project root with givn/ initialised
     When the author requests an unknown instruction through the Givn CLI
