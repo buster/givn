@@ -17,7 +17,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And the guidance rejects an oversized leaf
     And the guidance rejects relationship misuse
 
-  @givn.added @wip
+  @givn.added
   Scenario: The design-review guidance points at the use-case scope criteria
     Given the design-review instructions are requested
     When the reviewer reads the use-case branch
