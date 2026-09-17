@@ -686,16 +686,52 @@ fn template_preserves_placeholders(world: &mut GivnWorld) {
 // --- finding-severity-routing-signal: route confidence fixtures ------------
 
 #[given("a spec discovery project whose corpus contains two capabilities that invoke `givn lint`")]
-fn corpus_two_lint_capabilities(_world: &mut GivnWorld) {
-    unimplemented!()
+fn corpus_two_lint_capabilities(world: &mut GivnWorld) {
+    let env = make_bare_root();
+    for capability in ["lint-tool", "lint-check"] {
+        write_feature(
+            &env,
+            &format!("givn/specs/gates/{capability}.feature"),
+            &format!("Feature: Lint\n\n  Scenario: One\n    When the user runs `givn lint`\n"),
+        );
+    }
+    write_usecase(&env, "gates", "lint-tool", "A checker.", "Check the tool.", "Lint runs");
+    world.env = Some(env);
 }
 
 #[given("a spec discovery project whose corpus contains a goal-aligned and a goal-mismatched capability")]
-fn corpus_goal_aligned_and_mismatched(_world: &mut GivnWorld) {
-    unimplemented!()
+fn corpus_goal_aligned_and_mismatched(world: &mut GivnWorld) {
+    let env = make_bare_root();
+    write_feature(
+        &env,
+        "givn/specs/alignment/coverage-tool.feature",
+        "Feature: Coverage tool\n\n  Scenario: One\n    Given a coverage report exists\n    Then the command exits 0\n",
+    );
+    write_usecase(
+        &env,
+        "alignment",
+        "coverage-tool",
+        "A maintainer.",
+        "Validate coverage reports.",
+        "Coverage runs",
+    );
+    write_feature(
+        &env,
+        "givn/specs/gates/lint-tool.feature",
+        "Feature: Lint tool\n\n  Scenario: One\n    Given a coverage report exists\n    And a coverage report is stale\n    Then the command exits 0\n",
+    );
+    write_usecase(&env, "gates", "lint-tool", "A checker.", "Check the tool.", "Lint runs");
+    world.env = Some(env);
 }
 
 #[given("an active change whose proposal describes coverage report validation")]
-fn change_with_coverage_proposal(_world: &mut GivnWorld) {
-    unimplemented!()
+fn change_with_coverage_proposal(world: &mut GivnWorld) {
+    let env = env_of(world);
+    let change = env.root().join("givn/changes/route-me");
+    std::fs::create_dir_all(&change).unwrap();
+    std::fs::write(
+        change.join("proposal.md"),
+        "Add coverage report validation.\n\nThe change validates the coverage report before publication.\n",
+    )
+    .unwrap();
 }
