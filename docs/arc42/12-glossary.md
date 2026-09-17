@@ -22,6 +22,7 @@
 | **Artifact** | A lifecycle document or generated path described by the effective manifest. It may have `requires`, `optional`, and configurable `post` hooks. |
 | **Capability** | A named behavior unit, represented by one `.feature` file under a use case. A capability is not itself a use case; it is owned by one. |
 | **Cascade** | Project-overrides-first lookup for an individual template, instruction, skill, or command asset, with embedded content as fallback. |
+| **Dialog policy** | The canonical instruction (`dialog`) for how every interactive step phrases and records a question: named artifacts, four-part option treatment, cross-reference glosses, standalone answerability, rejected alternatives, one question at a time. Surfaces reference it; they do not restate it. |
 | **Conditional section** | A marked region of a template retained only when its declared addon condition matches the current effective addon set; it is dropped from the generated file otherwise. |
 | **Change** | A unit of work under `givn/changes/<id>/` that, once archived, moves to `givn/archive/<id>/`. |
 | **Archive candidate** | A change whose accepted material has been merged into the permanent corpus at its archive location and published as a revision, but which has not yet passed archive verification. Anti-terms: pending change, merged change. |

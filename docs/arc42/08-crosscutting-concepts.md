@@ -86,12 +86,28 @@ permission to weaken the assertion.
 Project overrides can replace the effective policy through the cascade. Generated
 skills and commands are snapshots and have no independent policy authority.
 
+The resolved `dialog` instruction is the single normative source for how every
+interactive step phrases and records a question: named artifacts, the four-part
+option treatment (meaning, gain, cost, concrete example), cross-reference
+glosses, standalone answerability, rejected alternatives, and one question at a
+time. Interactive surfaces (ideation, explore, grilling commands, proposal
+ambiguity, design-review grilling) reference it; they do not restate its rules.
+
 ### 8.3b Machine-readable Instruction Contract
 
 `givn instructions <artifact> --json` emits one JSON object with exactly the
 effective artifact `id`, `generates`, `requires`, and resolved `instruction`.
 Human-readable mode emits instruction text. The object is resolved from the
 effective manifest and the project-overrides-first instruction cascade.
+
+A policy instruction (`dialog`) has no lifecycle stage, so it is not a manifest
+artifact and is not resolved through the artifact graph. When the id is not a
+manifest artifact, the command falls back to the instruction cascade; a
+resolvable policy emits the same JSON shape with empty `generates` and
+`requires` arrays, and an unresolvable id keeps the unknown-artifact error.
+This lookup boundary is recorded here because it is not a qualified ADR
+candidate: reversal is a single-function change with no migration or consumer
+interface break beyond the documented shape.
 
 ## 8.4 Project Directory Layout
 
