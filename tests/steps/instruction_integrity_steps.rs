@@ -744,3 +744,75 @@ fn template_carries_topic_stances(world: &mut GivnWorld) {
         "persona template does not carry a dated topic stances appendix"
     );
 }
+
+// --- guarantee-question-traceability: instruction steps --------------------
+
+#[given("the proposal instructions are requested")]
+fn proposal_instructions_requested(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[when("an author reads the question disposition rule")]
+fn author_reads_question_disposition(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance requires each intersecting seed question to be dispositioned")]
+fn guidance_requires_seed_disposition(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance names the answered carried and out-of-scope dispositions")]
+fn guidance_names_dispositions(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance rejects a bare deferral to the design")]
+fn guidance_rejects_bare_deferral(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance assigns stable question IDs")]
+fn guidance_assigns_question_ids(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance marks the disposition rule advisory without an ideation source")]
+fn guidance_marks_advisory_without_source(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[given("the design and design-review instructions are requested")]
+fn design_and_design_review_requested(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[when("a maintainer reads the ledger contract")]
+fn maintainer_reads_ledger_contract(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance requires a decisions ledger mapping each question ID")]
+fn guidance_requires_ledger(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance records decisions as \"Decides D\" with their realization")]
+fn guidance_records_decides(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance records the seed question reference beside the ledger ID")]
+fn guidance_records_seed_reference(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the design-review guidance treats an unresolved unrecorded question as a finding")]
+fn design_review_treats_unresolved_as_finding(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance rejects an unqualified guarantee whose prerequisite is open")]
+fn review_rejects_unqualified_guarantee(_world: &mut GivnWorld) {
+    unimplemented!()
+}
