@@ -2,7 +2,7 @@
 
 Feature: ideation-skill
 
-  @givn.added @wip
+  @givn.added
   Scenario: The ideation guidance carries the seed schema and its status values
     Given  a givn project with all agent skill targets enabled
     When  the user runs `givn skills sync`
