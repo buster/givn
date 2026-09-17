@@ -119,6 +119,7 @@
 | **Domain terms** | The per-topic candidate file `givn/ideation/<topic-id>/domain-terms.md` holding domain terms as they crystallize; candidates are merged into the durable term list at handoff by user decision. Anti-term: glossary candidates (the always-on guidance may not name the addon-owned artifact). |
 | **Persona promotion** | The user-approved copy of a validated persona into the project-level persona collection at handoff; repeated promotion of the same segment merges. Anti-term: export. |
 | **Change seed** | The per-use-case proposal seed written into the topic state at handoff; the user starts the normal proposal flow from it, handoff never starts a change. Anti-terms: stub, pre-proposal. |
+| **Seed status** | The first line after a change seed's title: `ready`, `proposed by <change-id>`, `implemented in <change-id>`, `superseded by <reference>`, or `withdrawn`. Proposal planning and archiving stamp it; only the status line changes on supersession. |
 | **Quality review** | A fresh-context, rubric-based advisory review at an ideation phase boundary. Anti-term: gate (binary-owned checks keep that word). |
 | **Open question** | A recorded unknown parked in the topic state instead of being debated. Anti-term: blocker. |
 | **Handoff** | The ideation step that publishes the topic document under the project docs, proposes glossary and persona merges, and writes change seeds. |
