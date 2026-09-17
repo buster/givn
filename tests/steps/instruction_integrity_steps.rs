@@ -15,7 +15,7 @@ fn policy(world: &GivnWorld) -> &str {
 
 #[given("the canonical specs guidance is requested")]
 fn canonical_specs_guidance_requested(world: &mut GivnWorld) {
-    let content = std::fs::read_to_string("assets/instructions/specs.md")
+    let content = std::fs::read_to_string(crate::common::repo_path("assets/instructions/specs.md"))
         .expect("read canonical specs instruction");
     world.additional_output = Some(content);
 }
@@ -74,7 +74,7 @@ fn design_guidance(world: &GivnWorld) -> &str {
 #[given("the design instructions are requested")]
 fn design_instructions_requested(world: &mut GivnWorld) {
     let content =
-        std::fs::read_to_string("assets/instructions/design.md").expect("read design instruction");
+        std::fs::read_to_string(crate::common::repo_path("assets/instructions/design.md")).expect("read design instruction");
     world.additional_output = Some(content);
 }
 
@@ -128,18 +128,18 @@ fn review_guidance(world: &GivnWorld) -> &str {
 #[given("a semantic review contains classified candidates")]
 fn semantic_review_contains_candidates(world: &mut GivnWorld) {
     let instruction =
-        std::fs::read_to_string("assets/instructions/review.md").expect("read review instruction");
+        std::fs::read_to_string(crate::common::repo_path("assets/instructions/review.md")).expect("read review instruction");
     let template =
-        std::fs::read_to_string("assets/templates/review.md").expect("read review template");
+        std::fs::read_to_string(crate::common::repo_path("assets/templates/review.md")).expect("read review template");
     world.additional_output = Some(format!("{instruction}\n{template}"));
 }
 
 #[given("the review instructions are requested")]
 fn review_instructions_requested(world: &mut GivnWorld) {
     let instruction =
-        std::fs::read_to_string("assets/instructions/review.md").expect("read review instruction");
+        std::fs::read_to_string(crate::common::repo_path("assets/instructions/review.md")).expect("read review instruction");
     let template =
-        std::fs::read_to_string("assets/templates/review.md").expect("read review template");
+        std::fs::read_to_string(crate::common::repo_path("assets/templates/review.md")).expect("read review template");
     world.additional_output = Some(format!("{instruction}\n{template}"));
 }
 
@@ -307,11 +307,11 @@ fn specs_guidance(world: &GivnWorld) -> &str {
 #[given("the synchronized agent guidance for the specs workflow")]
 fn synchronized_specs_guidance(world: &mut GivnWorld) {
     let specs =
-        std::fs::read_to_string("assets/instructions/specs.md").expect("read specs instruction");
+        std::fs::read_to_string(crate::common::repo_path("assets/instructions/specs.md")).expect("read specs instruction");
     let command =
-        std::fs::read_to_string("assets/commands/givn-spec.md").expect("read specs command");
+        std::fs::read_to_string(crate::common::repo_path("assets/commands/givn-spec.md")).expect("read specs command");
     let skill =
-        std::fs::read_to_string("assets/skills/givn-spec/SKILL.md.tmpl").expect("read specs skill");
+        std::fs::read_to_string(crate::common::repo_path("assets/skills/givn-spec/SKILL.md.tmpl")).expect("read specs skill");
     world.additional_output = Some(format!("{specs}\n{command}\n{skill}"));
 }
 
@@ -455,7 +455,7 @@ fn dialog_policy(world: &GivnWorld) -> &str {
 
 #[given("the canonical dialog policy is requested")]
 fn canonical_dialog_policy_requested(world: &mut GivnWorld) {
-    let content = std::fs::read_to_string("assets/instructions/dialog.md")
+    let content = std::fs::read_to_string(crate::common::repo_path("assets/instructions/dialog.md"))
         .expect("read canonical dialog instruction");
     world.additional_output = Some(content);
 }
@@ -520,7 +520,7 @@ fn author_requests_unknown_instruction(world: &mut GivnWorld) {
 
 #[given("the design-review instructions are requested")]
 fn design_review_instructions_requested(world: &mut GivnWorld) {
-    let content = std::fs::read_to_string("assets/instructions/design-review.md")
+    let content = std::fs::read_to_string(crate::common::repo_path("assets/instructions/design-review.md"))
         .expect("read design-review instruction");
     world.additional_output = Some(content);
 }
