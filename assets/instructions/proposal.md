@@ -38,6 +38,11 @@ language that a non-technical stakeholder can read and validate.
 - **Question IDs.** Open questions carry stable IDs `D1`, `D2`, … (`D<n>` in
   the templates) with the full question and its option treatment; the
   design's ledger resolves each ID.
+- **Capability routing.** Run `givn spec route --change <id>`. When it
+  reports signal, record route's recommendation and the decision in the
+  Capability Routing table. When it reports no signal, omit the
+  recommendation column and record the decision with its rationale directly.
+  The recorded decision stays mandatory either way.
 - **Persona confirmation.** A change with a user-visible surface (a browser interface, a terminal interface, or CLI text output) names at least one confirmed Persona, or records `none` with the reason and the operator confirmation.
 
 **Structure:**

@@ -25,9 +25,11 @@
 ## Capability Routing
 
 > Run `givn spec route` and record its recommendation and your decision
-> for every capability this change touches. Editing this table IS the
-> declaration — `givn check review` compares what you write here against
-> the delta you actually author, not against a re-run of `route`.
+> for every capability this change touches. When route reports no signal,
+> omit the recommendation column and record the decision with its rationale
+> directly. Editing this table IS the declaration — `givn check review`
+> compares what you write here against the delta you actually author, not
+> against a re-run of `route`.
 
 | Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
 |---|---|---|---|

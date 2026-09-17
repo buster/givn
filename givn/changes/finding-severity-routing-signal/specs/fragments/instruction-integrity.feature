@@ -2,9 +2,10 @@
 
 Feature: Instruction and skill guidance remains complete and machine-readable
 
-  @givn.added @wip
+  @givn.added
   Scenario: The propose guidance carries the no-signal routing rule
-    Given the proposal instructions are requested
+    Given a givn project
+    And the proposal instructions are requested
     When an author reads the routing rule
     Then the guidance tells the author to omit the recommendation when route reports no signal
     And the guidance keeps the recorded decision mandatory
