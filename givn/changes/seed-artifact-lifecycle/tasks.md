@@ -100,21 +100,35 @@ phrases).
 
 ### prose-consolidation
 
-- [ ] Scenario: `The propose and archive commands carry the seed stamping instructions`
-  - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `The propose and archive commands carry the seed stamping instructions`
+  - [x] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/seed-artifact-lifecycle/specs cargo test --locked --test features_runner -- --name "The propose and archive commands carry the seed stamping instructions"
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: added the stamping instructions to
+  - [x] GREEN: added the stamping instructions to
         `assets/commands/givn-propose.md`, `assets/instructions/proposal.md`,
         `assets/templates/proposal.md`, and `assets/commands/givn-archive.md`.
         Files: those four assets. `cargo clean -p givn`, then the targeted run
         → zero. Evidence:
         ```
+        ✔ Given a givn project with all agent skill targets enabled
+        ✔ When the user runs `givn skills sync`
+        ✔ Then the generated givn-propose command contains "proposed by"
+        ✔ And the generated givn-archive command contains "implemented in"
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(prose-consolidation): The propose and archive commands carry the seed stamping instructions`
+  - [x] COMMIT: `<hash>` -- `feat(prose-consolidation): The propose and archive commands carry the seed stamping instructions`
 
 ### lint-command
 

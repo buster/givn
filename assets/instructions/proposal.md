@@ -23,6 +23,10 @@ language that a non-technical stakeholder can read and validate.
   ideation change seed, read its `usecase.md` and record the ID, source topic,
   and confirmed affected Persona IDs. Never invent or auto-promote Personas;
   do not copy Persona biographies into the proposal.
+- **Seed stamping.** When the change originates from an ideation change seed,
+  record the seed path in the proposal's Use-Case Context and set the seed's
+  status line to `Status: proposed by <change-id>`. The seed's original text
+  stays unchanged; only the status line is edited.
 - **Persona confirmation.** A change with a user-visible surface (a browser interface, a terminal interface, or CLI text output) names at least one confirmed Persona, or records `none` with the reason and the operator confirmation.
 
 **Structure:**
