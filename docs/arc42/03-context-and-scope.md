@@ -48,6 +48,7 @@ not alter other content.
 | `GIVN_RESULT_FILE` | out | Per-scope result path exported to the verification runner; the runner writes the fail-closed scenario-count contract Givn reconciles. |
 | `givn instructions --json` | out | One object with `id`, `generates`, `requires`, and resolved `instruction`. |
 | `givn instructions arc42-docs` / `design-review` | out | Effective ADR qualification and review guidance; the project cascade may override the default source. |
+| `givn instructions dialog` | out | The canonical dialog policy for interactive questions; a policy instruction with no lifecycle stage, resolved through the same project-overrides-first cascade. |
 | `givn spec find/tree/duplicates/progress/coverage/route` | in/out | Deterministic specification queries: overlap fingerprints, duplicate findings, coverage inventory, and migration comparison. |
 | `givn check review --change <id>` | in/out | Mandatory checks and the overlap disposition gate. |
 | `givn readme check` | out | Deterministic README report: open placeholders, legacy scaffold texts, development and run managed block damage, unmanaged or missing README; exit status reflects findings. |
