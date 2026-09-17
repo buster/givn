@@ -130,6 +130,10 @@ For each artifact:
   available, read its `usecase.md` and record the ID, source topic, and
   confirmed affected Persona IDs. Do not invent Personas or copy Persona
   biographies into the proposal.
+- **Seed stamping**: when the change originates from an ideation change seed,
+  read the seed, record its path in the proposal's Use-Case Context, and set
+  the seed's status line to `Status: proposed by <change-id>`. Leave the rest
+  of the seed unchanged.
 
 **specs** (specs/**/*.feature):
 - One .feature file per capability under its use-case ID:
