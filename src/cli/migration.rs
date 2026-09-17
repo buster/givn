@@ -596,8 +596,8 @@ fn aggregate_migration_proposal(
 ## Aggregate migration\n\n\
 This maintenance change migrates a project from Givn {source_version} to the\
 installed Givn {target_version} contract. Managed preparation was recorded in\
-Commit A `{commit_a}`. The migration phases below are one ordered plan; complete\
-each phase before continuing to the next.\n\n\
+Commit A `{commit_a}`. The migration phases below are one ordered plan; work\
+each phase in order and follow the completion rules in its bundle.\n\n\
 ## Scope\n\n\
 The LLM must inspect project evidence and derive project-specific tasks. It must\
 preserve project-owned overrides and must not invent domain behavior, tests,\
@@ -638,9 +638,9 @@ fn aggregate_migration_design(
 - upgrade_commit: `{commit_a}`\n\
 - migration_type: aggregate maintenance change without a product specification\n\n\
 ## Execution order\n\n\
-Complete the following phases strictly in sequence. Do not create independent\
-parallel migration changes for these bundles. The complete sequence is also\
-recorded in `migration.yaml`.\n\n"
+Work the following phases strictly in sequence. Follow each bundle's own \
+completion rules; a bundle may direct that the repairs run as named follow-up \
+changes. The complete sequence is also recorded in `migration.yaml`.\n\n"
     );
     for (index, bundle) in bundles.iter().enumerate() {
         output.push_str(&format!(
@@ -659,7 +659,7 @@ recorded in `migration.yaml`.\n\n"
         output.push_str("\n\n");
     }
     output.push_str(
-        "## Completion boundary\n\nThis generated design does not contain `DESIGN-REVIEW: PASS`, `REVIEW: PASS`, or implementation evidence. The project LLM must derive tasks and complete the normal Givn gates after the ordered bundle phases are understood.\n",
+        "## Completion boundary\n\nThis generated design does not contain `DESIGN-REVIEW: PASS`, `REVIEW: PASS`, or implementation evidence. The project LLM must derive tasks and complete the normal Givn gates after the ordered bundle phases are understood, including any follow-up changes a bundle names.\n",
     );
     Ok(output)
 }
