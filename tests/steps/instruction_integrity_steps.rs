@@ -675,3 +675,35 @@ fn guidance_requires_goal_shaped_names(world: &mut GivnWorld) {
         "specs guidance does not require goal-shaped capability names"
     );
 }
+
+// --- persona-identity-reuse: persona template steps ------------------------
+
+#[given("the persona template is inspected")]
+fn persona_template_inspected(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[when("an author reads the persona schema")]
+fn author_reads_persona_schema(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the template names the authority boundary and evaluation capability")]
+fn template_names_authority_and_evaluation(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the template names the own vocabulary and success criterion")]
+fn template_names_vocabulary_and_success(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the template carries an append-only running record")]
+fn template_carries_running_record(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the template carries a dated topic stances appendix")]
+fn template_carries_topic_stances(_world: &mut GivnWorld) {
+    unimplemented!()
+}
