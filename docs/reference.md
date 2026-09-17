@@ -46,6 +46,11 @@ Emitted by `givn init` / `givn skills sync` to `.agents/skills/<name>/SKILL.md`
 | `givn-reverse-engineer` | Discover an existing capability's black-box boundary and write descriptive baseline specs. |
 | `givn-characterize` | Execute the characterization loop against existing behaviour, with testability seams and a reverse review. |
 
+The use-case model — the canonical definition, the eight scoping rules, the
+authoring requirements, and the review rejection criteria — is documented in
+[`use-case-model.md`](use-case-model.md). The ideation skill carries the
+authoring rules; the review instruction carries the criteria.
+
 ## Addons
 
 Opt-in sets enabled via `givn addons enable <name>` or `addons: { <name>: true }`

@@ -2,7 +2,7 @@
 
 Feature: Canonical use-case contract
 
-  @givn.added @wip
+  @givn.added
   Scenario: The durable use-case model publishes the canonical definition and rules
     Given the durable use-case model document is inspected
     When a maintainer reads the definition and the scoping rules
