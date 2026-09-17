@@ -186,9 +186,10 @@ as "no issue found" if genuinely clean):
 
 ## Return format
 
-Phrase every question with artifact names in domain language and identifiers
-in parentheses; give every option a concrete example. Never return a bare
-identifier or an abstract label.
+Phrase and record every question per the canonical dialog policy
+(`givn instructions dialog`): name artifacts in domain language with
+identifiers in parentheses, and give every option its meaning, gain, cost,
+and a concrete example. Never return a bare identifier or an abstract label.
 
 Return a JSON array of objects, ordered by priority (most critical first):
 
@@ -230,9 +231,11 @@ If any `resolved_by_codebase` items were found, report them first:
 
 Then work through `questions` one at a time.
 
-**Dialog discipline.** Name every artifact in domain language with its
-identifier in parentheses, and give every option a concrete example. Never
-present a bare identifier or an abstract label as a question.
+**Dialog discipline.** Follow the canonical dialog policy
+(`givn instructions dialog`) for every question: name every artifact in domain
+language with its identifier in parentheses, and give every option its
+meaning, gain, cost, and a concrete example. Never present a bare identifier
+or an abstract label.
 
 <bad_example>
 **Q1 (Scope):** Should UC1 use D2 or D3? ADR12 says no.
@@ -314,10 +317,14 @@ Based on the grilling outcome, edit the existing artifacts as needed:
 
 ### 2. Write design-review.md
 
-Write `givn/changes/<id>/design-review.md` following this template structure:
+Write `givn/changes/<id>/design-review.md` following this template structure.
+Every grilling question gets its full record: the presentation to the user
+carries the full option treatment (meaning, gain, cost, and a concrete
+example), and the record below the index table carries the recommended answer
+and the rejected alternatives.
 
 ## Grilling log
-| # | Branch | Question | Recommended | Outcome |
+| # | Branch | Question | Outcome |
 
 ## Resolved by codebase exploration
 | Branch | Finding |

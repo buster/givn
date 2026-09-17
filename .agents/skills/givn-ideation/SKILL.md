@@ -95,6 +95,28 @@ All ideation work lives under `givn/ideation/<topic-id>/`:
 - `domain-terms.md` — domain terms as they crystallize.
 - `changes/<uc-id>.md` — one change seed per use case, written at handoff.
 
+Every `questions.md` entry uses this stable schema:
+
+```markdown
+## Q<N> — <short title in domain language>
+
+- Status: open | closed <date> (<decider>)
+- Blocks: <the decision or work item this question blocks, one line>
+- Context: <why the question exists — the problem, the constraints, and
+  what changes depending on the answer, 2–5 sentences>
+- Question: <full standalone question>
+- Options:
+  1. **<option name>** — <what it means>
+     In practice: <concrete example of what the user sees or the system does>
+     Gain: <what improves>
+     Cost: <what gets harder or is given up>
+- Resolution: **<chosen option>** because <reason>. Rejected: <option>
+  because <reason>; <option> because <reason>.
+```
+
+A closed question keeps its full text, options, gains, costs, examples, and
+rejected alternatives. An outcome-only resolution is not a valid record.
+
 Use-case drafts use the same identity and contract vocabulary as permanent
 specifications. Each `use-cases/<uc-id>.md` uses this stable schema:
 
@@ -147,10 +169,12 @@ The last phase produces the readable record:
 
 ## One question at a time
 
-Ask exactly one question at a time and wait for the answer before the next.
-If the outcome of a step is unclear, you do not have an example — you have a
-question. Record it in the questions log and move on; never debate opinions
-in place of a missing answer.
+Follow the canonical dialog policy (`givn instructions dialog`): one question
+at a time, every option with its meaning, gain, cost, and a concrete example,
+and every question answerable standalone. Ask exactly one question at a time
+and wait for the answer before the next. If the outcome of a step is unclear,
+you do not have an example — you have a question. Record it in the questions
+log and move on; never debate opinions in place of a missing answer.
 
 ## Event Storming
 

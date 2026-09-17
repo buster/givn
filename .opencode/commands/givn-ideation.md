@@ -16,6 +16,9 @@ description and confirm it with the user.
 ## Stance
 
 - One question at a time — wait for each answer before the next.
+- Follow the canonical dialog policy (`givn instructions dialog`): every
+  question answerable standalone, every option with its meaning, gain, cost,
+  and a concrete example.
 - The user confirms every persona, every recorded decision, every update.
 - Findings from reviews and personas are advisory; the user arbitrates.
 - Park unknowns in the open question log instead of debating them.
