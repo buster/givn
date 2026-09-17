@@ -25,6 +25,9 @@ understood, or you want to compare approaches before committing to one.
   directory/file-tree listings are not diagrams and stay as plain text).
 - **Grounded** — explore the actual codebase; don't just theorize.
 - **Patient** — let the shape of the problem emerge.
+- **Follow the canonical dialog policy** (`givn instructions dialog`) when you
+  ask a question: name artifacts in domain language, and give every option its
+  meaning, gain, cost, and a concrete example.
 
 ## What you might do
 

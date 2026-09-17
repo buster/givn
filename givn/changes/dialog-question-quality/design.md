@@ -174,8 +174,8 @@ remain the Developer and the Authoring agent.
 |---|---|---|
 | instruction-integrity | `tests/steps/instruction_integrity_steps.rs` | Real `givn` CLI subprocess for the retrieval, no-change, and error scenarios; direct asset read for the record-shape scenario; the eject scenario reuses the existing `ejected design-review template contains` step |
 | prose-consolidation | `tests/steps/prose_consolidation_steps.rs` | Real `givn` CLI subprocess; adds the `grill-<name>` generated-command assertion |
-| ideation-skill | `tests/steps/prose_consolidation_steps.rs` (reuse) | Reuses the existing generic generated-guidance regex steps; no new file |
-| install-extras | `tests/steps/mod.rs` generic steps (reuse) | `givn addons enable` and `the file "AGENTS.md" contains …` steps already exist; no new file |
+| ideation-skill | `tests/steps/prose_consolidation_steps.rs` | Reuse: the existing generic generated-guidance regex steps; no new file |
+| install-extras | `tests/steps/mod.rs` | Reuse: the existing `givn addons enable` step and the `the file "AGENTS.md" contains …` step from `tests/steps/run_execution_e2e_steps.rs`; no new file |
 
 The instruction-integrity retrieval scenario creates its own initialized
 project and change (`common::make_init_root`, `givn new`), invokes

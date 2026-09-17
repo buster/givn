@@ -231,6 +231,9 @@ proceeds. It must NOT produce `design-review`, `tasks`, or `review`.
 
 If the subagent flags ambiguities that require user input, surface them and
 wait before spawning again (or re-prompting the subagent with the answers).
+Phrase and record every question to the user per the canonical dialog policy
+(`givn instructions dialog`): name artifacts in domain language, and give
+every option its meaning, gain, cost, and a concrete example.
 
 ### 6b. Hand off to design-review
 
