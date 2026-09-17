@@ -105,5 +105,6 @@ has been calculated explicitly. It must refuse a dirty or non-version-controlled
 project before writing and must never force-stage a directory or the complete
 worktree.
 Domain specs, source code, ejected facets, durable Arc42 content, and
-architecture decisions remain project-owned and are changed only through the
-LLM-guided maintenance change.
+architecture decisions remain project-owned and are changed only through
+LLM-guided project changes — the maintenance change or the follow-up changes
+it names.

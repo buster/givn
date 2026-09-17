@@ -79,4 +79,5 @@ The managed route requires a version-controlled project and a clean checkout.
 Projects without a usable backend and dirty projects receive no partial update;
 the public migration guide describes the evidence-preserving recovery path. A
 migration catalog route may span multiple versions, but all of its bundle
-phases are delivered in one ordered aggregate maintenance change.
+phases are inventoried in one ordered aggregate maintenance change; a bundle
+may direct that the repairs run as named follow-up changes.
