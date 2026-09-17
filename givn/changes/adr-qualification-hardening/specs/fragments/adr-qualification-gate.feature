@@ -2,7 +2,7 @@
 
 Feature: Strict qualification and canonical routing of architecture decisions
 
-  @givn.added @wip
+  @givn.added
   Scenario: The guidance carries the three falsification tests
     Given the ADR qualification guidance is available
     When an author reads the falsification tests
