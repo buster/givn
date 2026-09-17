@@ -67,7 +67,7 @@ fn run_with_root(
             None => "givn/".to_string(),
         };
         if json {
-            println!("{}", serde_json::to_string_pretty(&findings)?);
+            println!("{}", findings_json(&findings)?);
         } else {
             for finding in &findings {
                 render_prose(finding);
@@ -178,7 +178,7 @@ fn run_with_root(
                             contradiction: false,
                         });
                     } else {
-                        eprintln!("[WARN] {}  {}", specs_dir.display(), message);
+                        eprintln!("[WARN] finding  {}  {}", specs_dir.display(), message);
                         eprintln!(
                             "       Restore @e2e tags or remove the e2e tasks from tasks.md."
                         );
@@ -230,7 +230,7 @@ fn run_with_root(
     }
 
     if json {
-        println!("{}", serde_json::to_string_pretty(&findings)?);
+        println!("{}", findings_json(&findings)?);
     } else {
         for finding in &findings {
             render_prose(finding);
@@ -495,8 +495,54 @@ fn parse_seed_status(content: &str) -> SeedStatus {
     SeedStatus::Missing
 }
 
+/// The severity of one lint finding. Descriptive: the exit-code flags still
+/// drive the exit code, so an advisory-only run exits 0.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Severity {
+    Advisory,
+    Finding,
+    Blocking,
+}
+
+impl Severity {
+    fn as_str(self) -> &'static str {
+        match self {
+            Severity::Advisory => "advisory",
+            Severity::Finding => "finding",
+            Severity::Blocking => "blocking",
+        }
+    }
+}
+
+/// The one registry mapping a finding kind to its severity. New kinds
+/// register here; rendering never changes.
+fn severity_for(kind: &str) -> Severity {
+    match kind {
+        "parse_error" | "duplicate_title" | "empty_feature" | "usecase_invalid"
+        | "fragment_invalid" | "dangling_capability_ref" | "ambiguous_relationship_target"
+        | "dangling_use_case_ref" | "use_case_cycle" | "extend_fragment"
+        | "interaction_mismatch" => Severity::Blocking,
+        "wip" | "e2e_intent" => Severity::Finding,
+        _ => Severity::Advisory,
+    }
+}
+
+/// Render findings as JSON objects with the original fields plus `severity`.
+fn findings_json(findings: &[Finding]) -> Result<String> {
+    let enriched: Vec<serde_json::Value> = findings
+        .iter()
+        .map(|finding| {
+            let mut value = serde_json::to_value(finding)?;
+            value["severity"] = serde_json::json!(severity_for(&finding.kind).as_str());
+            Ok(value)
+        })
+        .collect::<Result<Vec<_>>>()?;
+    Ok(serde_json::to_string_pretty(&enriched)?)
+}
+
 /// Render one finding in the human-readable format on stderr.
 fn render_prose(finding: &Finding) {
+    let severity = severity_for(&finding.kind).as_str();
     let level = match finding.kind.as_str() {
         "duplicate_title" => "DUPL ",
         "shape_match" => "SHAPE",
@@ -520,7 +566,7 @@ fn render_prose(finding: &Finding) {
     match finding.kind.as_str() {
         "duplicate_title" => {
             eprintln!(
-                "[{level}] {location}  duplicate scenario title '{}'",
+                "[{level}] {severity}  {location}  duplicate scenario title '{}'",
                 finding.titles.first().map(String::as_str).unwrap_or("?")
             );
         }
@@ -528,34 +574,34 @@ fn render_prose(finding: &Finding) {
             let (a, b) = (finding.titles[0].as_str(), finding.titles[1].as_str());
             if finding.contradiction {
                 eprintln!(
-                    "[{level}] {location}  related_scenario: '{a}' and '{b}' share a shape but their facts contradict"
+                    "[{level}] {severity}  {location}  related_scenario: '{a}' and '{b}' share a shape but their facts contradict"
                 );
             } else {
                 eprintln!(
-                    "[{level}] {location}  scenarios '{a}' and '{b}' share a shape — consider merging"
+                    "[{level}] {severity}  {location}  scenarios '{a}' and '{b}' share a shape — consider merging"
                 );
             }
         }
         "subset" => {
             eprintln!(
-                "[{level}] {location}  subset: scenario '{a}' is a subset of '{b}'",
+                "[{level}] {severity}  {location}  subset: scenario '{a}' is a subset of '{b}'",
                 a = finding.titles[0],
                 b = finding.titles[1]
             );
         }
         "long_scenario" => {
             eprintln!(
-                "[{level}] {location}  long scenario: '{title}' has more than {} steps",
+                "[{level}] {severity}  {location}  long scenario: '{title}' has more than {} steps",
                 crate::overlap::analysis::LONG_SCENARIO_STEP_THRESHOLD,
                 title = finding.titles.first().map(String::as_str).unwrap_or("?")
             );
         }
         "empty_feature" => {
-            eprintln!("[{level}] {location}  feature has zero scenarios");
+            eprintln!("[{level}] {severity}  {location}  feature has zero scenarios");
         }
         _ => {
             eprintln!(
-                "[{level}] {location}  {}",
+                "[{level}] {severity}  {location}  {}",
                 finding.titles.first().map(String::as_str).unwrap_or("?")
             );
         }
