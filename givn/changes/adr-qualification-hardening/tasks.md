@@ -58,99 +58,212 @@ variants.
 
 ### adr-qualification-gate
 
-- [ ] Scenario: `The guidance carries the three falsification tests`
-  - [ ] RED: removed `@wip` from this scenario only; ran the single-scenario
+- [x] Scenario: `The guidance carries the three falsification tests`
+  - [x] RED: removed `@wip` from this scenario only; ran the single-scenario
         command → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/adr-qualification-hardening/specs cargo test --locked --test features_runner -- --name "The guidance carries the three falsification tests"
+Step panicked. Captured output: not implemented
+1 scenario (1 failed)
+2 steps (1 passed, 1 failed)
         ```
-  - [ ] GREEN: added the falsification tests block (three tests, non-examples,
+  - [x] GREEN: added the falsification tests block (three tests, non-examples,
         pass case, kind-not-count, no cap) to
-        `assets/addons/arc42-docs/instructions.md`. Files:
-        `assets/addons/arc42-docs/instructions.md`. `cargo clean -p givn`,
-        then the targeted run → zero. Evidence:
+        `assets/addons/arc42-docs/instructions.md`; implemented the eight steps.
+        Files: `assets/addons/arc42-docs/instructions.md`,
+        `tests/steps/adr_qualification_gate_steps.rs`. `cargo clean -p givn`, then the targeted run → zero.
+        Evidence:
         ```
+        ✔ When an author reads the falsification tests
+        ✔ Then the guidance fails a single-change reversible decision
+        ✔ And ... the multi-change constraint, product-behavior exclusion, non-examples
+        ✔ And ... still qualifies, kind-not-count, no numeric ADR cap
+        1 feature
+        1 scenario (1 passed)
+        9 steps (9 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        ✔ When an author reads the falsification tests
+        ✔ Then the guidance fails a single-change reversible decision
+        ✔ And ... the multi-change constraint, product-behavior exclusion, non-examples
+        ✔ And ... still qualifies, kind-not-count, no numeric ADR cap
+        1 feature
+        1 scenario (1 passed)
+        9 steps (9 passed)
         ```
   - [x] COMMIT: `4203f326` -- `feat(adr-qualification-gate): The guidance carries the three falsification tests`
 
-- [ ] Scenario: `The design template keeps decision justification in the design`
-  - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `The design template keeps decision justification in the design`
+  - [x] RED: removed `@wip` from this scenario only; ran the single-scenario
+        command → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/adr-qualification-hardening/specs cargo test --locked --test features_runner -- --name "The design template keeps decision justification in the design"
+Step panicked. Captured output: not implemented
+1 scenario (1 failed)
         ```
-  - [ ] GREEN: added the Technology Decisions prompt to
-        `assets/templates/design.md`. Files: `assets/templates/design.md`.
-        `cargo clean -p givn`, then the targeted run → zero. Evidence:
+  - [x] GREEN: added the Technology Decisions prompt to
+        `assets/templates/design.md`; implemented the four steps. Files:
+        `assets/templates/design.md`,
+        `tests/steps/adr_qualification_gate_steps.rs`. `cargo clean -p givn`, then the targeted run → zero.
+        Evidence:
         ```
+        ✔ Given the design template is available
+        ✔ When an author reads the Technology Decisions guidance
+        ✔ Then the template says justification belongs in the design
+        ✔ And the template forbids ADR candidacy unless the falsification tests pass
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        ✔ Given the design template is available
+        ✔ When an author reads the Technology Decisions guidance
+        ✔ Then the template says justification belongs in the design
+        ✔ And the template forbids ADR candidacy unless the falsification tests pass
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
   - [x] COMMIT: `bd73138d` -- `feat(adr-qualification-gate): The design template keeps decision justification in the design`
 
-- [ ] Scenario: `The impact assessment records the verdict before drafting`
-  - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `The impact assessment records the verdict before drafting`
+  - [x] RED: removed `@wip` from this scenario only; ran the single-scenario
+        command → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/adr-qualification-hardening/specs cargo test --locked --test features_runner -- --name "The impact assessment records the verdict before drafting"
+Step panicked. Captured output: not implemented
+1 scenario (1 failed)
+2 steps (1 passed, 1 failed)
         ```
-  - [ ] GREEN: added the blank verdict placeholders and the placement rule to
+  - [x] GREEN: added the blank verdict placeholders and the placement rule to
         `assets/addons/arc42-docs/impact-assessment-template.md`; updated the
-        stale template description in
-        `assets/addons/arc42-docs/instructions.md`. Files: those two assets.
-        `cargo clean -p givn`, then the targeted run → zero. Evidence:
+        stale template description in `assets/addons/arc42-docs/instructions.md`;
+        implemented the two steps. Files: those two assets plus
+        `tests/steps/adr_qualification_gate_steps.rs`. `cargo clean -p givn`, then the targeted run → zero.
+        Evidence:
         ```
+        ✔ When a maintainer reads the verdict placement rule
+        ✔ Then the marker requires the structured verdict before drafting
+        1 feature
+        1 scenario (1 passed)
+        3 steps (3 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        ✔ When a maintainer reads the verdict placement rule
+        ✔ Then the marker requires the structured verdict before drafting
+        1 feature
+        1 scenario (1 passed)
+        3 steps (3 passed)
         ```
   - [x] COMMIT: `aa5a0e91` -- `feat(adr-qualification-gate): The impact assessment records the verdict before drafting`
 
-- [ ] Scenario: `The ADR template ships with no pre-passed qualification values`
-  - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `The ADR template ships with no pre-passed qualification values`
+  - [x] RED: removed `@wip` from this scenario only; ran the single-scenario
+        command → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/adr-qualification-hardening/specs cargo test --locked --test features_runner -- --name "The ADR template ships with no pre-passed qualification values"
+Step panicked. Captured output: not implemented
+1 scenario (1 failed)
         ```
-  - [ ] GREEN: blanked the verdict fields in
+  - [x] GREEN: blanked the verdict fields in
         `assets/addons/arc42-docs/chapters/adr/adr-template.md` and added the
-        fill-from-the-record instruction. Files:
-        `assets/addons/arc42-docs/chapters/adr/adr-template.md`. `cargo clean
-        -p givn`, then the targeted run → zero. Evidence:
+        fill-from-the-record instruction; implemented the four steps. Files:
+        `assets/addons/arc42-docs/chapters/adr/adr-template.md`,
+        `tests/steps/adr_qualification_gate_steps.rs`. `cargo clean -p givn`, then the targeted run → zero.
+        Evidence:
         ```
+        ✔ Given the ADR template is available
+        ✔ When an author prepares to copy the template
+        ✔ Then the template contains no pre-passed qualification verdict
+        ✔ And the template instructs the author to fill the verdict from the record
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        ✔ Given the ADR template is available
+        ✔ When an author prepares to copy the template
+        ✔ Then the template contains no pre-passed qualification verdict
+        ✔ And the template instructs the author to fill the verdict from the record
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
   - [x] COMMIT: `418f7c18` -- `feat(adr-qualification-gate): The ADR template ships with no pre-passed qualification values`
 
-- [ ] Scenario: `Design-review requires the cheaper-home challenge for a new ADR`
-  - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `Design-review requires the cheaper-home challenge for a new ADR`
+  - [x] RED: removed `@wip` from this scenario only; ran the single-scenario
+        command → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/adr-qualification-hardening/specs cargo test --locked --test features_runner -- --name "Design-review requires the cheaper-home challenge for a new ADR"
+Step panicked. Captured output: not implemented
+1 scenario (1 failed)
         ```
-  - [ ] GREEN: added the challenge to
+  - [x] GREEN: added the challenge to
         `assets/instructions/design-review.md`, the matching branch in
         `assets/commands/givn-design-review.md`, and the pointer in
-        `assets/skills/givn-design-review/SKILL.md.tmpl`; ran
-        `givn skills sync` so the generated copies carry it. Files: those
-        three assets plus `.opencode`, `.agents`, `.claude`. `cargo clean -p
-        givn`, then the targeted run → zero. Evidence:
+        `assets/skills/givn-design-review/SKILL.md.tmpl`; ran `givn skills sync`
+        so the generated copies carry it; implemented the five steps. Files:
+        those three assets plus `.opencode`, `.agents`, `.claude`, and
+        `tests/steps/adr_qualification_gate_steps.rs`. `cargo clean -p givn`, then the targeted run → zero.
+        Evidence:
         ```
+        ✔ When a reviewer reads the ADR branch
+        ✔ Then the instruction requires the cheaper-home challenge for every proposed new ADR
+        ✔ And the design-review command requires the cheaper-home challenge
+        ✔ And the design-review skill points at the requirement
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        ✔ When a reviewer reads the ADR branch
+        ✔ Then the instruction requires the cheaper-home challenge for every proposed new ADR
+        ✔ And the design-review command requires the cheaper-home challenge
+        ✔ And the design-review skill points at the requirement
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
   - [x] COMMIT: `086d1ed6` -- `feat(adr-qualification-gate): Design-review requires the cheaper-home challenge for a new ADR`
 
-- [ ] Scenario: `The chapter-selection guidance does not normalize row 9`
-  - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `The chapter-selection guidance does not normalize row 9`
+  - [x] RED: removed `@wip` from this scenario only; ran the single-scenario
+        command → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/adr-qualification-hardening/specs cargo test --locked --test features_runner -- --name "The chapter-selection guidance does not normalize row 9"
+Step panicked. Captured output: not implemented
+1 scenario (1 failed)
+2 steps (1 passed, 1 failed)
         ```
-  - [ ] GREEN: reworded the row-9 paragraph in
-        `assets/addons/arc42-docs/instructions.md`. Files:
-        `assets/addons/arc42-docs/instructions.md`. `cargo clean -p givn`,
-        then the targeted run → zero. Evidence:
+  - [x] GREEN: reworded the row-9 paragraph in
+        `assets/addons/arc42-docs/instructions.md`; implemented the four steps.
+        Files: `assets/addons/arc42-docs/instructions.md`,
+        `tests/steps/adr_qualification_gate_steps.rs`. `cargo clean -p givn`, then the targeted run → zero.
+        Evidence:
         ```
+        ✔ When an author reads the chapter-selection guidance
+        ✔ Then the guidance treats correlated rows as a double-check
+        ✔ And the guidance says an affected chapter does not by itself qualify an ADR
+        ✔ And the guidance does not normalize an ADR per change
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        ✔ When an author reads the chapter-selection guidance
+        ✔ Then the guidance treats correlated rows as a double-check
+        ✔ And the guidance says an affected chapter does not by itself qualify an ADR
+        ✔ And the guidance does not normalize an ADR per change
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
   - [x] COMMIT: `2cf72220` -- `feat(adr-qualification-gate): The chapter-selection guidance does not normalize row 9`
 
