@@ -684,3 +684,32 @@ generated `usecase.md` template carries the authoring conventions.
 This is authoring guidance, not a machine check: no parser warning, router
 rule, or archive-time capability move is introduced. The one-capability-leaf
 warning and every other lint finding are unchanged.
+
+## 8.22 Persona Identity and Reuse
+
+A persona is a stable identity, not a topic stance. A new persona exists only
+when it differs from an existing one in at least one of three disjunctive
+criteria: authority boundary (what it may do or decide), evaluation capability
+(what it can judge), or own vocabulary (terms it uses or refuses). The
+`assets/templates/persona.md` schema carries a stable core (role, authority
+boundary, evaluation capability, own vocabulary, success criterion) and an
+append-only running record; topic-specific demands go into a dated topic
+stances appendix, never into the stable core.
+
+Reuse comes first: inventory `givn/personas/` and every sibling topic's
+`personas/` against the stakeholder types, match by ID or record a
+one-sentence new-segment justification naming the distinguishing criterion,
+keep a reused topic file to the standard header line (`Reuse:` / `New:`)
+plus new record entries, and append record entries to the project persona at
+handoff with a user-confirmed merged diff. The topic file stays as historical
+record; the biography lives in one place.
+
+Reference validation is deliberately asymmetric: `givn lint` reports an
+advisory `[PERS ]` finding when a `## Personas` entry in an active change
+use-case document or an ideation use case resolves to no project or topic
+persona file, while `givn check review` enforces the resolution for a
+declared visual interface's `PERSONAS:` line. The reasoned
+`none — <reason + operator confirmation>` path stays valid for a change
+without a user-visible surface. User confirmation before use, the review
+duty, the cap (at most three segments per stakeholder type, about ten total),
+advisory findings with user arbitration, and no auto-promotion are unchanged.
