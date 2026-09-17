@@ -23,12 +23,24 @@ pub struct RouteCandidate {
     pub evidence: Vec<String>,
 }
 
+/// The confidence of the routed recommendation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RouteConfidence {
+    Signal,
+    NoSignal,
+}
+
 /// The routed recommendation for a proposal.
 #[derive(Debug, Clone, Serialize)]
 pub struct RouteReport {
     pub candidates: Vec<RouteCandidate>,
     /// Best-matching use case when no capability scores meaningfully.
     pub suggested_usecase: Option<String>,
+    /// Explicit confidence: no signal on a tie or below-threshold overlap.
+    pub confidence: RouteConfidence,
+    /// Human-readable reason when the confidence is no signal.
+    pub note: Option<String>,
 }
 
 struct CapabilityInfo {
@@ -37,6 +49,11 @@ struct CapabilityInfo {
     /// subcommand -> invocation count.
     invocations: BTreeMap<String, usize>,
     text: String,
+    /// The owning use case's Goal + Rules text, lowercased (empty when the
+    /// use case document is missing or unreadable).
+    goal_rules: String,
+    /// The capability's interaction consumer actions, lowercased.
+    interactions: String,
 }
 
 /// Extract `givn <subcommand>` invocations from text — only real
@@ -75,6 +92,39 @@ fn backticked_tokens(text: &str) -> Vec<String> {
         rest = &after[end + 1..];
     }
     tokens
+}
+
+fn usecase_ownership_text(usecase_dir: &Path) -> (String, String) {
+    let path = usecase_dir.join("usecase.md");
+    let Ok(content) = std::fs::read_to_string(&path) else {
+        return (String::new(), String::new());
+    };
+    let mut goal_rules = String::new();
+    let mut interactions = String::new();
+    let mut section = "";
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if let Some(heading) = trimmed.strip_prefix("## ") {
+            section = match heading {
+                "Goal" | "Rules" => "goal_rules",
+                "Interactions" => "interactions",
+                _ => "",
+            };
+            continue;
+        }
+        match section {
+            "goal_rules" => {
+                goal_rules.push_str(trimmed);
+                goal_rules.push('\n');
+            }
+            "interactions" => {
+                interactions.push_str(trimmed);
+                interactions.push('\n');
+            }
+            _ => {}
+        }
+    }
+    (goal_rules.to_lowercase(), interactions.to_lowercase())
 }
 
 fn load_capabilities(root: &Path) -> Result<Vec<CapabilityInfo>> {
@@ -117,6 +167,7 @@ fn load_capabilities(root: &Path) -> Result<Vec<CapabilityInfo>> {
                     crate::spec::cluster::count_invocations_for(&step.value, &mut invocations);
                 }
             }
+            let (goal_rules, interactions) = usecase_ownership_text(&usecase_dir);
             caps.push(CapabilityInfo {
                 name: file
                     .file_stem()
@@ -126,6 +177,8 @@ fn load_capabilities(root: &Path) -> Result<Vec<CapabilityInfo>> {
                 usecase: usecase.clone(),
                 invocations,
                 text: text.to_lowercase(),
+                goal_rules,
+                interactions,
             });
         }
     }
@@ -184,10 +237,12 @@ pub fn route(root: &Path, proposal_text: &str) -> Result<RouteReport> {
     for cap in &caps {
         let mut score = 0.0;
         let mut evidence = Vec::new();
+        let mut command_overlap = false;
 
         // 1. Command surface (strongest signal).
         for (sub, count) in &proposal_subcommands {
             if let Some(cap_count) = cap.invocations.get(sub) {
+                command_overlap = true;
                 let weight = 3.0 + (*count.min(cap_count) as f64 - 1.0) * 0.5;
                 score += weight;
                 evidence.push(format!(
@@ -205,7 +260,55 @@ pub fn route(root: &Path, proposal_text: &str) -> Result<RouteReport> {
             }
         }
 
-        // 3. Lexical overlap with capability text (capped).
+        // 3. Ownership evidence: the owning use case's Goal/Rules text.
+        let mut ownership_hits = 0usize;
+        for word in &proposal_words {
+            if cap.goal_rules.contains(word.as_str()) {
+                ownership_hits += 1;
+                if ownership_hits >= 3 {
+                    break;
+                }
+            }
+        }
+        if ownership_hits > 0 {
+            score += ownership_hits as f64 * 2.0;
+            evidence.push(format!(
+                "{ownership_hits} goal or rules words match the owning use case"
+            ));
+        }
+
+        // 4. Ownership evidence: the capability name and its owning use case.
+        let name_lower = cap.name.to_lowercase();
+        let usecase_lower = cap.usecase.to_lowercase();
+        let named = proposal_words
+            .iter()
+            .any(|word| *word == name_lower || *word == usecase_lower)
+            || proposal_tokens.iter().any(|token| {
+                token.to_lowercase() == name_lower || token.to_lowercase() == usecase_lower
+            });
+        if named {
+            score += 2.0;
+            evidence.push(format!("proposal names `{}` or its use case", cap.name));
+        }
+
+        // 5. Ownership evidence: the capability's interaction consumer actions.
+        let mut interaction_hits = 0usize;
+        for word in &proposal_words {
+            if cap.interactions.contains(word.as_str()) {
+                interaction_hits += 1;
+                if interaction_hits >= 3 {
+                    break;
+                }
+            }
+        }
+        if interaction_hits > 0 {
+            score += interaction_hits as f64;
+            evidence.push(format!(
+                "{interaction_hits} interaction words match the capability"
+            ));
+        }
+
+        // 6. Lexical overlap with capability text (capped).
         let mut word_hits = 0usize;
         for word in &proposal_words {
             if cap.text.contains(word.as_str()) {
@@ -218,6 +321,12 @@ pub fn route(root: &Path, proposal_text: &str) -> Result<RouteReport> {
         if word_hits > 0 {
             score += word_hits as f64 * 0.2;
             evidence.push(format!("{word_hits} content words overlap"));
+        }
+
+        // Scatter penalty: no goal ownership and no command overlap.
+        if ownership_hits == 0 && !command_overlap {
+            score *= 0.5;
+            evidence.push("no goal ownership for this proposal".to_string());
         }
 
         if score > 0.0 {
@@ -238,43 +347,88 @@ pub fn route(root: &Path, proposal_text: &str) -> Result<RouteReport> {
     });
     candidates.truncate(10);
 
-    // 4. Use-case affinity for the NEW fallback.
+    // 7. Use-case affinity for the NEW fallback.
     let affinity = usecase_affinity(root, &proposal_words)?;
-    let suggested_usecase = affinity
-        .into_iter()
-        .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
+    let mut affinity_ranked: Vec<(String, f64)> = affinity.into_iter().collect();
+    affinity_ranked.sort_by(|a, b| {
+        b.1.partial_cmp(&a.1)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.0.cmp(&b.0))
+    });
+    let top_affinity = affinity_ranked.first().cloned();
+    let affinity_tied = match (&top_affinity, affinity_ranked.get(1)) {
+        (Some((_, a)), Some((_, b))) => (a - b).abs() < 0.01,
+        _ => false,
+    };
+    let suggested_usecase = top_affinity
+        .clone()
         .filter(|(_, score)| *score > 0.0)
         .map(|(usecase, _)| usecase);
+
+    // 8. Confidence.
+    let (confidence, note) = if candidates.is_empty() {
+        (
+            RouteConfidence::NoSignal,
+            Some("no command, token, or lexical overlap".to_string()),
+        )
+    } else if candidates.len() >= 2 && (candidates[0].score - candidates[1].score).abs() < 0.01 {
+        (
+            RouteConfidence::NoSignal,
+            Some(format!("the top candidates tie at {:.2}", candidates[0].score)),
+        )
+    } else if candidates[0].score >= 3.0 {
+        (RouteConfidence::Signal, None)
+    } else if let Some((_, affinity_score)) = &top_affinity {
+        if *affinity_score >= 2.0 && !affinity_tied {
+            (RouteConfidence::Signal, None)
+        } else {
+            (
+                RouteConfidence::NoSignal,
+                Some("no use-case affinity clears the signal floor".to_string()),
+            )
+        }
+    } else {
+        (
+            RouteConfidence::NoSignal,
+            Some("no use-case affinity signal".to_string()),
+        )
+    };
 
     Ok(RouteReport {
         candidates,
         suggested_usecase,
+        confidence,
+        note,
     })
 }
 
-/// Print the report with an EXTEND / NEW recommendation.
+/// Print the report with an EXTEND / NEW recommendation and its confidence.
 pub fn print_report(report: &RouteReport) {
+    if report.confidence == RouteConfidence::NoSignal {
+        let reason = report.note.as_deref().unwrap_or("no clear winner");
+        println!("recommendation: no signal — {reason}");
+        println!(
+            "\nno ranked list is printed without signal; record the decision in the \
+proposal's Capability Routing table with its rationale."
+        );
+        return;
+    }
+
     let top = report.candidates.first();
     let extend = top.filter(|c| c.score >= 3.0);
     match extend {
         Some(top) => {
             println!(
-                "recommendation: EXTEND {} (use case '{}', score {:.2})",
+                "recommendation: EXTEND {} (use case '{}', score {:.2}) — confidence: signal",
                 top.capability, top.usecase, top.score
             );
         }
-        None => {
-            match &report.suggested_usecase {
-                Some(usecase) => println!("recommendation: NEW in {usecase}"),
-                None => println!("recommendation: NEW (no use-case affinity signal)"),
-            };
-            if let Some(top) = top {
-                println!(
-                    "  closest existing capability: {} (use case '{}', score {:.2}) — below the extend bar",
-                    top.capability, top.usecase, top.score
-                );
+        None => match &report.suggested_usecase {
+            Some(usecase) => {
+                println!("recommendation: NEW in {usecase} — confidence: signal");
             }
-        }
+            None => println!("recommendation: NEW (no use-case affinity signal)"),
+        },
     }
     println!("\nranked candidates:");
     for c in &report.candidates {
@@ -286,13 +440,7 @@ pub fn print_report(report: &RouteReport) {
             println!("         - {e}");
         }
     }
-    if report.candidates.is_empty() {
-        println!("  (no signal — the proposal has no command, token, or lexical overlap)");
-    }
-    println!(
-        "\nrecord the decision in the proposal's Capability Routing table; \
-this ranking is advisory only."
-    );
+    println!("\nrecord the decision in the proposal's Capability Routing table.");
 }
 
 #[cfg(test)]
@@ -343,6 +491,77 @@ mod tests {
         assert_eq!(report.candidates[0].capability, "lint-tool");
         assert_eq!(report.candidates[0].usecase, "linters");
         assert!(report.candidates[0].score >= 3.0, "extend bar");
+    }
+
+    #[test]
+    fn goal_aligned_capability_ranks_above_lexically_similar_candidate() {
+        let root = tempfile::TempDir::new().unwrap();
+        let base = root.path().join("givn/specs");
+        std::fs::create_dir_all(base.join("alignment")).unwrap();
+        std::fs::write(
+            base.join("alignment/coverage-tool.feature"),
+            "Feature: Coverage tool\n\n  Scenario: One\n    Given a coverage report exists\n    Then the command exits 0\n",
+        )
+        .unwrap();
+        std::fs::write(
+            base.join("alignment/usecase.md"),
+            "# Use case: alignment\n\n## Level\n\n!\n\n## Goal\n\nValidate coverage reports.\n\n## Rules\n\n- Reports stay current.\n",
+        )
+        .unwrap();
+        std::fs::create_dir_all(base.join("gates")).unwrap();
+        std::fs::write(
+            base.join("gates/lint-tool.feature"),
+            "Feature: Lint tool\n\n  Scenario: One\n    Given a coverage report exists\n    And a coverage report is stale\n    Then the command exits 0\n",
+        )
+        .unwrap();
+        std::fs::write(
+            base.join("gates/usecase.md"),
+            "# Use case: gates\n\n## Level\n\n!\n\n## Goal\n\nCheck the tool.\n\n## Rules\n\n- Keep it deterministic.\n",
+        )
+        .unwrap();
+        let report = route(root.path(), "Add coverage report validation.").unwrap();
+        assert_eq!(report.confidence, RouteConfidence::Signal);
+        assert_eq!(report.candidates[0].capability, "coverage-tool");
+        assert!(
+            report.candidates[0].score >= 3.0,
+            "aligned candidate must clear the extend bar: {:?}",
+            report.candidates
+        );
+        let mismatched = report
+            .candidates
+            .iter()
+            .find(|c| c.capability == "lint-tool")
+            .expect("mismatched candidate present");
+        assert!(
+            mismatched.score < report.candidates[0].score,
+            "goal-aligned candidate must outrank the lexically similar one"
+        );
+    }
+
+    #[test]
+    fn tied_top_candidates_report_no_signal() {
+        let root = tempfile::TempDir::new().unwrap();
+        let base = root.path().join("givn/specs");
+        std::fs::create_dir_all(base.join("gates")).unwrap();
+        for capability in ["lint-tool", "lint-check"] {
+            std::fs::write(
+                base.join(format!("gates/{capability}.feature")),
+                "Feature: Lint\n\n  Scenario: One\n    When the user runs `givn lint`\n",
+            )
+            .unwrap();
+        }
+        std::fs::write(
+            base.join("gates/usecase.md"),
+            "# Use case: gates\n\n## Level\n\n!\n\n## Goal\n\nCheck the tool.\n\n## Rules\n\n- Keep it deterministic.\n",
+        )
+        .unwrap();
+        let report = route(root.path(), "Extend the `givn lint` command.").unwrap();
+        assert_eq!(report.confidence, RouteConfidence::NoSignal);
+        assert!(
+            report.note.as_deref().unwrap_or_default().contains("tie"),
+            "note={:?}",
+            report.note
+        );
     }
 
     #[test]
