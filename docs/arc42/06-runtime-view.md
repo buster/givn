@@ -130,9 +130,16 @@ The default whole-tree scope additionally scans change seeds under
 `Status:` line, a `proposed by` change that does not exist, and a
 `proposed by` change that is already archived are reported on stderr with the
 `[SEED ]` label. The findings are advisory: they are counted in the summary's
-finding count but never change the exit code. The scan is a no-op without
-`givn/ideation/`, and explicit paths or `--change` keep their current scope
-without seed advisories.
+finding count but never change the exit code. The seed scan is a no-op without
+`givn/ideation/`, and explicit paths keep their current scope without seed
+advisories.
+
+Persona references in active change use-case documents and ideation use cases
+are scanned against `givn/personas/` and every topic's `personas/`. A dangling
+reference is reported on stderr with the `[PERS ]` label; the finding is
+advisory and never changes the exit code. Forward references during an active
+ideation topic stay quiet, and the persona scan runs in both the default and
+`--change` scopes.
 
 ## 6.5 `givn status` and `givn graph`
 
@@ -182,7 +189,8 @@ every delta `@e2e` scenario at each declared viewport, plus one
 `<viewport>--<state>.png` for every state the contract declares; for
 `terminal` it requires a committed transcript per scenario. A declared visual
 interface also requires a `PERSONAS:` line in `review.md` naming at least one
-confirmed Persona. `review.md` must carry `VISUAL-REVIEW: PASS`;
+confirmed Persona whose value resolves to `givn/personas/<id>.md`; a reasoned
+`none` is valid only for a change without a user-visible surface. `review.md` must carry `VISUAL-REVIEW: PASS`;
 `VISUAL-REVIEW: UNVERIFIED` fails until a human resolves it. A `DEFERRAL:`
 line anywhere in `review.md` requires a matching `OPERATOR-DECISION:` record.
 
