@@ -360,6 +360,10 @@ Authoring requirements for the contract:
   observable outcome and nothing else.
 - Out of scope: names excluded actor goals (with owning use-case IDs when they
   exist), not excluded mechanisms.
+- Open prerequisites: a rule or guarantee that depends on an unresolved
+  question carries `(open: Q<N>)` after the statement, naming the question in
+  `questions.md`. A qualified statement must not be presented as unconditional.
+  The qualifier stays until the question closes; closing the question removes the qualifier in the same edit.
 
 ## Quality reviews
 

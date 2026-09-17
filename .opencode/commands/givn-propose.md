@@ -134,6 +134,13 @@ For each artifact:
   read the seed, record its path in the proposal's Use-Case Context, and set
   the seed's status line to `Status: proposed by <change-id>`. Leave the rest
   of the seed unchanged.
+- **Question disposition**: for an ideation-sourced change, disposition every
+  intersecting seed question in the proposal before specs — answered (with
+  its source), carried (with an owner and the deciding artifact), or out of
+  scope (with a reason). An undispositioned intersecting question blocks the
+  specs step; the rule is advisory without an ideation source. "Resolved in
+  `design.md`" alone is not a disposition. Number the open questions `D1`,
+  `D2`, … so the design ledger can resolve each one.
 
 **specs** (specs/**/*.feature):
 - One .feature file per capability under its use-case ID:
