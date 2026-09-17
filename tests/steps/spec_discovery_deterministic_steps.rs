@@ -682,3 +682,20 @@ fn template_preserves_placeholders(world: &mut GivnWorld) {
         );
     }
 }
+
+// --- finding-severity-routing-signal: route confidence fixtures ------------
+
+#[given("a spec discovery project whose corpus contains two capabilities that invoke `givn lint`")]
+fn corpus_two_lint_capabilities(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[given("a spec discovery project whose corpus contains a goal-aligned and a goal-mismatched capability")]
+fn corpus_goal_aligned_and_mismatched(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[given("an active change whose proposal describes coverage report validation")]
+fn change_with_coverage_proposal(_world: &mut GivnWorld) {
+    unimplemented!()
+}

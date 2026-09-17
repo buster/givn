@@ -878,3 +878,20 @@ fn review_rejects_unqualified_guarantee(world: &mut GivnWorld) {
         "review guidance does not reject an unqualified guarantee with an open prerequisite"
     );
 }
+
+// --- finding-severity-routing-signal: routing rule steps -------------------
+
+#[when("an author reads the routing rule")]
+fn author_reads_routing_rule(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance tells the author to omit the recommendation when route reports no signal")]
+fn guidance_omits_recommendation_without_signal(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance keeps the recorded decision mandatory")]
+fn guidance_keeps_decision_mandatory(_world: &mut GivnWorld) {
+    unimplemented!()
+}
