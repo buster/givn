@@ -30,7 +30,7 @@ the decision is not re-opened.
 
 | # | Change | Source findings | Depends on | Status |
 |---|---|---|---|---|
-| 1 | [dialog-question-quality](01-dialog-question-quality.md) | Terse unanswerable questions (T1 A, T1 B questions, T1 C) | — | ready |
+| 1 | [dialog-question-quality](01-dialog-question-quality.md) | Terse unanswerable questions (T1 A, T1 B questions, T1 C) | — | archived (proven, `b97669e0`) |
 | 2 | [seed-artifact-lifecycle](02-seed-artifact-lifecycle.md) | T1 B seeds + seed lifecycle (M2 A) | 1 | ready |
 | 3 | [term-introduction-discipline](03-term-introduction-discipline.md) | Term proliferation (T2 options 2 and 4) | 1 | ready |
 | 4 | [use-case-model-scoping](04-use-case-model-scoping.md) | Use-case scoping (T3 option A) | 1 | ready |
