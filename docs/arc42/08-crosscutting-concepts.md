@@ -733,3 +733,25 @@ bare "resolved in `design.md`" is not a disposition. The design records
 design-review verifies that each `D<n>` resolves or is carried with a named
 owner; an unresolved, unrecorded item is a finding. The qualifier and the
 ledger are authoring contracts, not runtime checks.
+
+## 8.24 Finding Severity and Route Confidence
+
+Every lint finding kind is classified in one data-driven table as `advisory`,
+`finding`, or `blocking`. Blocking covers parse errors, duplicate titles,
+empty features, use-case document errors, and the use-case graph findings;
+finding covers WIP and e2e-intent; advisory covers shape matches, subsets,
+long scenarios, seed status, and persona references. The classification is
+descriptive: the existing exit-code flags still drive the exit code, so
+advisory-only runs exit 0, and the prose output appends the severity after
+the existing short label while the JSON output carries a `severity` field.
+New finding kinds register in the one table without touching rendering.
+
+`givn spec route` reports an explicit confidence verdict. Scoring weights
+ownership evidence above lexical overlap: command-surface invocations,
+structural tokens, the owning use case's Goal and Rules text, and the
+capability's interaction consumer actions; a candidate with no goal ownership
+and no command overlap is penalized. No signal is reported when there are no
+candidates, when the top two candidates tie within `0.01`, or when the
+new-use-case path has a tied or below-floor top affinity; a no-signal report
+prints its reason and omits the ranked list. The recorded routing decision in
+the proposal remains the declaration.
