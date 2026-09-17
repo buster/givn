@@ -2,7 +2,7 @@
 
 Feature: lint-command
 
-  @givn.added @wip
+  @givn.added
   Scenario: A change seed without a status line is reported as an advisory
     Given a project root with givn/ initialised
     And a change seed at "givn/ideation/topic/changes/seed-one.md" with:

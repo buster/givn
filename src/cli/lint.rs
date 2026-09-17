@@ -28,6 +28,17 @@ fn run_with_root(
     paths: Vec<String>,
     json: bool,
 ) -> Result<i32> {
+    // Advisory seed-status hygiene runs in the default whole-tree scope only.
+    // It must not change the exit-code contract, so it is rendered and counted
+    // separately from the blocking flags.
+    let default_scope = paths.is_empty() && change.is_none();
+    let mut findings: Vec<Finding> = if default_scope {
+        check_seed_status(project_root)
+    } else {
+        Vec::new()
+    };
+    let advisory_count = findings.len();
+
     let feature_files = if !paths.is_empty() {
         paths.iter().map(std::path::PathBuf::from).collect()
     } else if let Some(id) = change {
@@ -36,35 +47,32 @@ fn run_with_root(
         if !change_dir.exists() {
             anyhow::bail!("change '{id}' not found");
         }
-        let specs_dir = change_dir.join("specs");
-        let files = collect_feature_files(&specs_dir);
-        if files.is_empty() {
-            if json {
-                println!("[]");
-            } else {
-                println!("givn lint: no .feature files found under givn/changes/{id}/specs/");
-            }
-            return Ok(0);
-        }
-        files
+        collect_feature_files(&change_dir.join("specs"))
     } else {
         // Default: check all .feature files under givn/ in the project,
         // excluding the archive tree (historical, no longer executable).
         let archive_root = project_root.join("givn/archive");
-        let files = collect_feature_files(&project_root.join("givn"))
+        collect_feature_files(&project_root.join("givn"))
             .into_iter()
             .filter(|p| !p.starts_with(&archive_root))
-            .collect::<Vec<_>>();
-        if files.is_empty() {
-            if json {
-                println!("[]");
-            } else {
-                println!("givn lint: no .feature files found under givn/");
-            }
-            return Ok(0);
-        }
-        files
+            .collect::<Vec<_>>()
     };
+
+    if feature_files.is_empty() && paths.is_empty() {
+        let scope = match change {
+            Some(id) => format!("givn/changes/{id}/specs/"),
+            None => "givn/".to_string(),
+        };
+        if json {
+            println!("{}", serde_json::to_string_pretty(&findings)?);
+        } else {
+            for finding in &findings {
+                render_prose(finding);
+            }
+            println!("givn lint: no .feature files found under {scope}");
+        }
+        return Ok(0);
+    }
 
     let mut has_parse_error = false;
     let mut has_wip = false;
@@ -72,8 +80,7 @@ fn run_with_root(
     let mut has_empty_feature = false;
     let mut has_use_case_error = false;
     let mut total_files = 0;
-    let mut total_errors = 0;
-    let mut findings: Vec<Finding> = Vec::new();
+    let mut total_errors = advisory_count;
 
     for path in &feature_files {
         total_files += 1;
@@ -247,6 +254,122 @@ fn run_with_root(
     Ok(exit_code)
 }
 
+/// The parsed status of a change seed.
+enum SeedStatus {
+    /// A known status that needs no change lookup.
+    Valid,
+    /// No `Status:` line, an unrecognised value, or an empty reference.
+    Missing,
+    /// `proposed by <change-id>` — the referenced change must be resolved.
+    Proposed(String),
+}
+
+/// Advisory seed-status hygiene for `givn/ideation/*/changes/*.md`.
+///
+/// Tolerant by design: only the first `Status:` line is read; prose before and
+/// after it is ignored. Findings are advisory and never affect the exit code.
+fn check_seed_status(project_root: &std::path::Path) -> Vec<Finding> {
+    let ideation_root = project_root.join("givn/ideation");
+    if !ideation_root.is_dir() {
+        return Vec::new();
+    }
+
+    let mut topic_dirs: Vec<std::path::PathBuf> = std::fs::read_dir(&ideation_root)
+        .map(|entries| {
+            entries
+                .flatten()
+                .map(|entry| entry.path())
+                .filter(|path| path.is_dir())
+                .collect()
+        })
+        .unwrap_or_default();
+    topic_dirs.sort();
+
+    let mut seeds: Vec<std::path::PathBuf> = Vec::new();
+    for topic in topic_dirs {
+        let changes_dir = topic.join("changes");
+        let mut files: Vec<std::path::PathBuf> = std::fs::read_dir(&changes_dir)
+            .map(|entries| {
+                entries
+                    .flatten()
+                    .map(|entry| entry.path())
+                    .filter(|path| {
+                        path.is_file()
+                            && path
+                                .extension()
+                                .is_some_and(|extension| extension.eq_ignore_ascii_case("md"))
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        files.sort();
+        seeds.extend(files);
+    }
+
+    let mut findings = Vec::new();
+    for seed in seeds {
+        let content = std::fs::read_to_string(&seed).unwrap_or_default();
+        let message = match parse_seed_status(&content) {
+            SeedStatus::Valid => None,
+            SeedStatus::Missing => Some(
+                "change seed has no valid status line (expected ready, proposed by <change-id>, \
+                 implemented in <change-id>, superseded by <reference>, or withdrawn)"
+                    .to_string(),
+            ),
+            SeedStatus::Proposed(id) => {
+                if project_root.join("givn/changes").join(&id).is_dir() {
+                    None
+                } else if project_root.join("givn/archive").join(&id).is_dir() {
+                    Some(format!(
+                        "change seed is proposed by '{id}', but that change is already archived"
+                    ))
+                } else {
+                    Some(format!(
+                        "change seed is proposed by '{id}', but no such change exists"
+                    ))
+                }
+            }
+        };
+        if let Some(message) = message {
+            findings.push(Finding {
+                kind: "seed_status".to_string(),
+                level: "warning".to_string(),
+                files: vec![seed.display().to_string()],
+                titles: vec![message],
+                contradiction: false,
+            });
+        }
+    }
+    findings
+}
+
+/// Read the first `Status:` line of a seed and classify its value.
+fn parse_seed_status(content: &str) -> SeedStatus {
+    let Some(value) = content
+        .lines()
+        .find_map(|line| line.trim().strip_prefix("Status:").map(str::trim))
+    else {
+        return SeedStatus::Missing;
+    };
+
+    if value == "ready"
+        || value.starts_with("ready ")
+        || value.starts_with("withdrawn")
+        || value.starts_with("implemented in ")
+        || value.starts_with("superseded by ")
+    {
+        return SeedStatus::Valid;
+    }
+    if let Some(id) = value
+        .strip_prefix("proposed by ")
+        .map(str::trim)
+        .filter(|id| !id.is_empty())
+    {
+        return SeedStatus::Proposed(id.to_string());
+    }
+    SeedStatus::Missing
+}
+
 /// Render one finding in the human-readable format on stderr.
 fn render_prose(finding: &Finding) {
     let level = match finding.kind.as_str() {
@@ -255,6 +378,7 @@ fn render_prose(finding: &Finding) {
         "subset" => "SUBST",
         "long_scenario" => "LONG ",
         "empty_feature" => "EMPTY",
+        "seed_status" => "SEED ",
         "usecase_invalid" | "fragment_invalid" => "UCDOC",
         "dangling_use_case_ref" => "UCREF",
         "use_case_cycle" => "UCCYC",
