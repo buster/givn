@@ -234,21 +234,42 @@ for those actions remain the real-interface evidence.
 
 ### ideation-skill
 
-- [ ] Scenario: `The ideation guidance carries the phase ladder and the one-question rule`
-  - [ ] RED: removed `@wip` from this modified scenario only; run → non-zero.
+- [x] Scenario: `The ideation guidance carries the phase ladder and the one-question rule`
+  - [x] RED: removed `@wip` from this modified scenario only; run → non-zero.
         Evidence:
         ```
+        GIVN_FEATURES=givn/changes/dialog-question-quality/specs cargo test --locked --test features_runner -- --name "The ideation guidance carries the phase ladder and the one-question rule"
+        1 feature
+        1 scenario (1 failed)
+        9 steps (8 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: added the policy reference and the `questions.md` entry schema
+  - [x] GREEN: added the policy reference and the `questions.md` entry schema
         to `assets/skills/givn-ideation/SKILL.md.tmpl`, keeping "one question
-        at a time". Files: `assets/skills/givn-ideation/SKILL.md.tmpl`. Run →
-        zero. Evidence:
+        at a time". Files: `assets/skills/givn-ideation/SKILL.md.tmpl`.
+        `cargo clean -p givn`, then the targeted run → zero. Evidence:
         ```
+        ✔ When the user runs `givn skills sync`
+        ✔ Then the generated givn-ideation guidance contains "Event Storming"
+        ✔ And ... "Use Case Definition"
+        ✔ And ... "Use Case Elaboration"
+        ✔ And ... "Handoff"
+        ✔ And ... "one question at a time"
+        ✔ And ... "quality review"
+        ✔ And ... "givn instructions dialog"
+        ✔ And ... "In practice:"
+        ✔ And ... "Rejected:"
+        1 feature
+        1 scenario (1 passed)
+        11 steps (11 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        11 steps (11 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(ideation-skill): The ideation guidance carries the phase ladder and the one-question rule`
+  - [x] COMMIT: `<hash>` -- `feat(ideation-skill): The ideation guidance carries the phase ladder and the one-question rule`
 
 ### prose-consolidation
 
