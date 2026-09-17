@@ -1324,6 +1324,18 @@ fn change_usecase_document_records_persona(world: &mut GivnWorld, path: String, 
     std::fs::write(&file_path, document).expect("write use-case document");
 }
 
+#[given(regex = r#"^the change use-case document also records the persona "([^"]+)"$"#)]
+fn change_usecase_document_also_records_persona(world: &mut GivnWorld, persona: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let path = env.path("givn/changes/persona-change/specs/persona-change/usecase.md");
+    let content = std::fs::read_to_string(&path).expect("read use-case document");
+    let updated = content.replace("## Personas\n\n", &format!("## Personas\n\n- {persona}\n"));
+    std::fs::write(&path, updated).expect("append persona to use-case document");
+}
+
 #[given(regex = r#"^a project persona file "([^"]+)" exists$"#)]
 fn project_persona_file_exists(world: &mut GivnWorld, id: String) {
     let env = world
