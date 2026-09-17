@@ -27,7 +27,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     When the reviewer reads the use-case scope criteria
     Then the guidance rejects an unqualified guarantee whose prerequisite is open
 
-  @givn.added @wip
+  @givn.added
   Scenario: The proposal design and design-review templates carry the ledger shapes
     Given a givn project
     When the user runs `givn eject proposal:template`
