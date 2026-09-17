@@ -42,6 +42,8 @@
 
 > What language, framework, libraries, or patterns will be used?
 > Justify decisions made here (why this approach over alternatives?).
+> Technology-decision justification belongs in `design.md`; do not promote it
+> to ADR candidacy unless the qualification falsification tests pass.
 >
 > **Version freshness (mandatory):** never write a version number from
 > memory. For each versioned choice below, state "latest" / the ecosystem's
