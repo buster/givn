@@ -51,7 +51,7 @@ are guidance-content variants.
       cargo check --locked --tests
       Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.54s
       ```
-- [x] COMMIT: `<hash>` -- `test(term-introduction-discipline): strict-mode proof and step skeletons`
+- [x] COMMIT: `7055b201` -- `test(term-introduction-discipline): strict-mode proof and step skeletons`
 
 ## Scenarios
 
@@ -95,7 +95,7 @@ are guidance-content variants.
         1 scenario (1 passed)
         14 steps (14 passed)
         ```
-  - [x] COMMIT: `<hash>` -- `feat(ideation-skill): The ideation guidance carries the term schema and the collision procedure`
+  - [x] COMMIT: `ee29e914` -- `feat(ideation-skill): The ideation guidance carries the term schema and the collision procedure`
 
 ### domain-skill-trigger
 
@@ -132,26 +132,42 @@ are guidance-content variants.
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `<hash>` -- `feat(domain-skill-trigger): The domain-modeling guidance carries the term introduction test`
+  - [x] COMMIT: `7feefd86` -- `feat(domain-skill-trigger): The domain-modeling guidance carries the term introduction test`
 
 ## Final checks
 
-- [ ] Run the full suite (`./run-tests.sh`) → zero exit. Evidence:
+- [x] Run the full suite (`./run-tests.sh`) → zero exit. The first run caught
+      the permanent template-conditional-rendering `@e2e` contract: the
+      ideation skill must not name a disabled addon. Fixed by wrapping the
+      glossary step and the term-test reference in their addon conditionals
+      (commit `0cdc09f3`). Evidence:
       ```
+      Summary [27.563s] 505 tests run: 505 passed, 0 skipped
       ```
-- [ ] Run the e2e suite (`./run-tests.sh --e2e`) → zero exit. Evidence:
+- [x] Run the e2e suite (`./run-tests.sh --e2e`) → zero exit. Evidence:
       ```
+      Summary [5.149s] 88 tests run: 88 passed, 417 skipped
       ```
-- [ ] Run the change delta suite
+- [x] Run the change delta suite
       (`GIVN_FEATURES=givn/changes/term-introduction-discipline/specs cargo test --locked --test features_runner`)
       → zero exit. Evidence:
       ```
+      2 features
+      2 scenarios (2 passed)
+      20 steps (20 passed)
       ```
-- [ ] Grep every touched step-definition file for empty/no-op bodies → 0.
+- [x] Grep every touched step-definition file for empty/no-op bodies → 0.
       Evidence:
       ```
+      grep -n "unimplemented!\|todo!()" tests/steps/fix_domain_modeling_skill_trigger_steps.rs
+      (no matches)
       ```
-- [ ] Confirm commit count matches scenario task count and every task has a
-      recorded hash.
-- [ ] Confirm `givn lint --change term-introduction-discipline` has no parse
-      errors (exit 0 or 2).
+- [x] Confirm commit count matches scenario task count and every task has a
+      recorded hash: one setup commit (`7055b201`), two scenario commits
+      (`ee29e914`, `7feefd86`), and one full-suite fix commit (`0cdc09f3`).
+- [x] Confirm `givn lint --change term-introduction-discipline` has no parse
+      errors (exit 0). Evidence:
+      ```
+      givn lint: 2 file(s) checked — clean
+      exit 0
+      ```
