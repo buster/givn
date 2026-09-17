@@ -2,7 +2,7 @@
 
 Feature: lint-command
 
-  @givn.added @wip
+  @givn.added
   Scenario: A dangling persona reference is reported as an advisory
     Given a project root with givn/ initialised
     And a change use-case document at "givn/changes/persona-change/specs/persona-change/usecase.md" records the persona "missing-persona"
