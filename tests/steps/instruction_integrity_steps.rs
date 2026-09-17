@@ -645,21 +645,33 @@ fn rejects_relationship_misuse(world: &mut GivnWorld) {
 }
 
 #[when("an author reads the capability placement guidance")]
-fn author_reads_placement_guidance(_world: &mut GivnWorld) {
-    unimplemented!()
+fn author_reads_placement_guidance(world: &mut GivnWorld) {
+    assert!(
+        !specs_guidance(world).is_empty(),
+        "specs guidance must not be empty"
+    );
 }
 
 #[then("the guidance carries the placement test")]
-fn guidance_carries_placement_test(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_carries_placement_test(world: &mut GivnWorld) {
+    assert!(
+        specs_guidance(world).contains("placement test"),
+        "specs guidance does not carry the placement test"
+    );
 }
 
 #[then("the guidance rejects a channel as an answer")]
-fn guidance_rejects_channel_answer(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_rejects_channel_answer(world: &mut GivnWorld) {
+    assert!(
+        specs_guidance(world).contains("Channel is never an answer"),
+        "specs guidance does not reject a channel as an answer"
+    );
 }
 
 #[then("the guidance requires goal-shaped capability names")]
-fn guidance_requires_goal_shaped_names(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_requires_goal_shaped_names(world: &mut GivnWorld) {
+    assert!(
+        specs_guidance(world).contains("goal-shaped"),
+        "specs guidance does not require goal-shaped capability names"
+    );
 }
