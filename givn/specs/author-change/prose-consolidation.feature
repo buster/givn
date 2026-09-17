@@ -103,3 +103,8 @@ Feature: prose-consolidation
     And  the generated givn-propose command contains "givn instructions dialog"
     And  the generated grill-me command contains "givn instructions dialog"
     And  the generated grill-with-docs command contains "givn instructions dialog"
+  Scenario: The propose and archive commands carry the seed stamping instructions
+    Given  a givn project with all agent skill targets enabled
+    When  the user runs `givn skills sync`
+    Then  the generated givn-propose command contains "proposed by"
+    And  the generated givn-archive command contains "implemented in"
