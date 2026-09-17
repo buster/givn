@@ -975,3 +975,140 @@ fn engine_records_remain_archived(world: &mut GivnWorld) {
     }
     assert!(file_exists(&active_adr_path("ADR-069")));
 }
+
+// --- adr-qualification-hardening: falsification and verdict steps ----------
+
+#[when("an author reads the falsification tests")]
+fn author_reads_falsification_tests(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance fails a single-change reversible decision")]
+fn guidance_fails_single_change_reversible(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance fails a decision that constrains no future change")]
+fn guidance_fails_no_multi_change_constraint(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance fails workflow behavior unless it also moves a boundary")]
+fn guidance_fails_product_behavior(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance names the misplaced-decision non-examples")]
+fn guidance_names_non_examples(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance still qualifies a genuine boundary decision")]
+fn guidance_still_qualifies_boundary(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance classifies by kind rather than count")]
+fn guidance_classifies_by_kind(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance states there is no numeric ADR cap")]
+fn guidance_states_no_numeric_cap(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[given("the design template is available")]
+fn design_template_is_available(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[when("an author reads the Technology Decisions guidance")]
+fn author_reads_technology_decisions(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the template says justification belongs in the design")]
+fn template_says_justification_belongs_in_design(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the template forbids ADR candidacy unless the falsification tests pass")]
+fn template_forbids_adr_candidacy(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[when("a maintainer reads the verdict placement rule")]
+fn maintainer_reads_verdict_placement(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the marker requires the structured verdict before drafting")]
+fn marker_requires_verdict_before_drafting(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[given("the ADR template is available")]
+fn adr_template_is_available(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[when("an author prepares to copy the template")]
+fn author_prepares_to_copy_template(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the template contains no pre-passed qualification verdict")]
+fn template_contains_no_prepassed_verdict(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the template instructs the author to fill the verdict from the record")]
+fn template_instructs_fill_from_record(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[given("the design-review instruction is available")]
+fn design_review_instruction_is_available(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[when("a reviewer reads the ADR branch")]
+fn reviewer_reads_adr_branch(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the instruction requires the cheaper-home challenge for every proposed new ADR")]
+fn instruction_requires_cheaper_home(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the design-review command requires the cheaper-home challenge")]
+fn command_requires_cheaper_home(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the design-review skill points at the requirement")]
+fn skill_points_at_cheaper_home(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[when("an author reads the chapter-selection guidance")]
+fn author_reads_chapter_selection(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance treats correlated rows as a double-check")]
+fn guidance_treats_correlated_rows_as_double_check(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance says an affected chapter does not by itself qualify an ADR")]
+fn guidance_affected_chapter_does_not_qualify(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance does not normalize an ADR per change")]
+fn guidance_does_not_normalize_adr_per_change(_world: &mut GivnWorld) {
+    unimplemented!()
+}
