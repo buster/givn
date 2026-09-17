@@ -33,7 +33,7 @@ Feature: ideation-skill
     And  the generated givn-ideation command contains "match"
     And  the generated givn-ideation command contains "separate from Actors"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The persona template carries the stable core and the running record
     Given the persona template is inspected
     When an author reads the persona schema
