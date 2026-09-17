@@ -92,7 +92,7 @@ Feature: lint-command
     And stderr contains "no valid status line"
     And stderr does not contain "seed-prose"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An advisory seed finding is counted in the summary and still exits 0
     Given a project root with givn/ initialised
     And a change seed at "givn/ideation/topic/changes/seed-five.md" with:
