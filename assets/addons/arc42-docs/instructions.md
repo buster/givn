@@ -303,10 +303,10 @@ placeholders, ellipses, generic option names, or unfilled prompts.
 
 Every individual ADR file is written and tailored from the self-contained
 template at `docs/arc42/adr/adr-template.md`. The template embeds the
-frontmatter block, the Qualification gate (`ADR-QUALIFICATION: PASS`), the LLM
-qualification verdict, the MADR checklist evidence, and every required MADR
-section, so it is authoritative at authoring time even when this instruction is
-not loaded. Copy that template to
+frontmatter block, a blank Qualification section filled from the structured
+verdict recorded in the change assessment, the MADR checklist evidence, and
+every required MADR section, so it is authoritative at authoring time even
+when this instruction is not loaded. Copy that template to
 `docs/arc42/adr/ADR-NNNN-short-slug.md` and tailor it to the decision. Use every
 MADR section; do not omit a section because the decision seems small. The
 Context and Problem Statement is 2-4 sentences, Considered Options lists real,

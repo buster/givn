@@ -1083,13 +1083,16 @@ fn template_forbids_adr_candidacy(world: &mut GivnWorld) {
 }
 
 #[when("a maintainer reads the verdict placement rule")]
-fn maintainer_reads_verdict_placement(_world: &mut GivnWorld) {
-    unimplemented!()
+fn maintainer_reads_verdict_placement(world: &mut GivnWorld) {
+    assert!(!guidance(world).is_empty(), "Arc42 template is empty");
 }
 
 #[then("the marker requires the structured verdict before drafting")]
-fn marker_requires_verdict_before_drafting(_world: &mut GivnWorld) {
-    unimplemented!()
+fn marker_requires_verdict_before_drafting(world: &mut GivnWorld) {
+    assert!(
+        guidance(world).contains("before creating or editing any MADR file"),
+        "marker does not require the structured verdict before drafting"
+    );
 }
 
 #[given("the ADR template is available")]
