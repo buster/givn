@@ -30,6 +30,44 @@ fn run_artifact(
     project_root: &std::path::Path,
     json: bool,
 ) -> Result<()> {
+    let manifest = load_effective()?;
+    let artifact_definition = manifest.artifacts.iter().find(|a| a.id == artifact);
+
+    let Some(artifact_definition) = artifact_definition else {
+        // A non-artifact id may be a policy instruction (e.g. `dialog`). It is
+        // resolved through the same instruction cascade before any change
+        // context is required, so a canonical policy is reachable in any
+        // initialized project. An unresolvable id keeps the artifact error.
+        let content = crate::config::cascade::resolve_instruction(artifact).map_err(|_| {
+            let known: Vec<&str> = manifest.artifacts.iter().map(|a| a.id.as_str()).collect();
+            anyhow::anyhow!(
+                "unknown artifact '{}'. Known artifacts: {}",
+                artifact,
+                known.join(", ")
+            )
+        })?;
+        let skill_to_load =
+            domain_skill_to_load(manifest.addons.domain_modeling, manifest.addons.arc42);
+        if json {
+            let mut out = serde_json::json!({
+                "id": artifact,
+                "generates": Vec::<String>::new(),
+                "requires": Vec::<String>::new(),
+                "instruction": content,
+            });
+            if let Some(skill) = skill_to_load {
+                out["skill_to_load"] = serde_json::json!(skill);
+            }
+            println!("{}", serde_json::to_string_pretty(&out)?);
+        } else {
+            println!("{content}");
+            if let Some(skill) = skill_to_load {
+                println!("Skill to load now: `{skill}`");
+            }
+        }
+        return Ok(());
+    };
+
     // Resolve change: use explicit --change, or auto-select single active.
     let _change = match change {
         Some(id) => {
@@ -37,7 +75,6 @@ fn run_artifact(
             id.to_string()
         }
         None => {
-            let manifest = load_effective()?;
             let changes = list_changes(project_root, &manifest);
             match changes.len() {
                 0 => bail!("No active changes. Create one with `givn new <id>` first."),
@@ -47,19 +84,6 @@ fn run_artifact(
         }
     };
     // --change is validated/resolved; artifact instructions are not change-specific.
-    let manifest = load_effective()?;
-    let artifact_definition = match manifest.artifacts.iter().find(|a| a.id == artifact) {
-        Some(definition) => definition,
-        None => {
-            let known: Vec<&str> = manifest.artifacts.iter().map(|a| a.id.as_str()).collect();
-            bail!(
-                "unknown artifact '{}'. Known artifacts: {}",
-                artifact,
-                known.join(", ")
-            );
-        }
-    };
-
     let content = crate::config::cascade::resolve_instruction(artifact)?;
     let skill_to_load =
         domain_skill_to_load(manifest.addons.domain_modeling, manifest.addons.arc42);
