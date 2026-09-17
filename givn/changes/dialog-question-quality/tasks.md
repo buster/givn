@@ -39,22 +39,30 @@ for those actions remain the real-interface evidence.
 
 ## Setup
 
-- [ ] Confirm strict mode and the runner: `tests/features_runner.rs` uses
+- [x] Confirm strict mode and the runner: `tests/features_runner.rs` uses
       `.fail_on_skipped()`; `verify.command` is `./run-tests.sh` and
       `verify.e2e_command` is `./run-tests.sh --e2e`. No new runner is needed.
-- [ ] Proof-of-strictness: write a temporary feature file with one undefined
-      step, run it, confirm non-zero exit, then delete the probe. Paste the
-      command and output here:
+- [x] Proof-of-strictness: wrote a temporary `tests/strict-mode-probe.feature`
+      with one undefined step, ran it, confirmed non-zero exit, then deleted
+      the probe. Evidence:
       ```
+      GIVN_FEATURES=tests/strict-mode-probe.feature cargo test --locked --test features_runner
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      Step doesn't match any function
+      exit status: 1
       ```
-- [ ] Create the step skeletons in `tests/steps/instruction_integrity_steps.rs`
-      (new steps for the retrieval, record-shape, no-change, and error
+- [x] Created the step skeletons in `tests/steps/instruction_integrity_steps.rs`
+      (14 new steps for the retrieval, record-shape, no-change, and error
       scenarios) and the `grill-<name>` command step in
       `tests/steps/prose_consolidation_steps.rs`, all with `unimplemented!()`
-      bodies; `cargo check --locked --tests` succeeds. Paste the output:
+      bodies. Evidence:
       ```
+      cargo check --locked --tests
+      Finished `dev` profile [unoptimized + debuginfo] target(s) in 11.14s
       ```
-- [ ] COMMIT: `<hash>` -- `test(dialog-question-quality): strict-mode proof and step skeletons`
+- [x] COMMIT: `1e1f8d6` -- `test(dialog-question-quality): strict-mode proof and step skeletons`
 
 ## Scenarios
 
