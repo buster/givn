@@ -1,4 +1,4 @@
-# Proposal: migrate-0-7-0-to-0-8-0
+# Proposal: release-0-8-0
 
 ## Use-Case Context
 

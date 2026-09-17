@@ -58,8 +58,8 @@ the amended bundle is what 0.8.0 ships.
 
 ## Out of Scope
 
-- Re-publishing or rewriting the already archived `migrate-0-7-0-to-0-8-0`
-  release change; this change amends the bundle and the guide only.
+- Re-publishing or rewriting the already archived `release-0-8-0` release record (renamed from
+  `migrate-0-7-0-to-0-8-0` to free the canonical migration-plan ID); this change amends the bundle and the guide only.
 - A version bump; the release is untagged.
 - Performing any consumer project's retrofit.
 

@@ -1,4 +1,4 @@
-# Tasks: migrate-0-7-0-to-0-8-0
+# Tasks: release-0-8-0
 
 Release-owned maintenance change: `specs` is skipped, no product behavior
 changes. The deliverable is the 0.8.0 version bump plus the
