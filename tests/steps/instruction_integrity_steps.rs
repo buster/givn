@@ -679,31 +679,68 @@ fn guidance_requires_goal_shaped_names(world: &mut GivnWorld) {
 // --- persona-identity-reuse: persona template steps ------------------------
 
 #[given("the persona template is inspected")]
-fn persona_template_inspected(_world: &mut GivnWorld) {
-    unimplemented!()
+fn persona_template_inspected(world: &mut GivnWorld) {
+    let content = std::fs::read_to_string(crate::common::repo_path("assets/templates/persona.md"))
+        .expect("read persona template");
+    world.additional_output = Some(content);
 }
 
 #[when("an author reads the persona schema")]
-fn author_reads_persona_schema(_world: &mut GivnWorld) {
-    unimplemented!()
+fn author_reads_persona_schema(world: &mut GivnWorld) {
+    assert!(
+        !world
+            .additional_output
+            .as_deref()
+            .expect("persona template was not loaded")
+            .is_empty(),
+        "persona template must not be empty"
+    );
 }
 
 #[then("the template names the authority boundary and evaluation capability")]
-fn template_names_authority_and_evaluation(_world: &mut GivnWorld) {
-    unimplemented!()
+fn template_names_authority_and_evaluation(world: &mut GivnWorld) {
+    let content = world
+        .additional_output
+        .as_deref()
+        .expect("persona template was not loaded");
+    assert!(
+        content.contains("Authority boundary") && content.contains("Evaluation capability"),
+        "persona template does not name the authority boundary and evaluation capability"
+    );
 }
 
 #[then("the template names the own vocabulary and success criterion")]
-fn template_names_vocabulary_and_success(_world: &mut GivnWorld) {
-    unimplemented!()
+fn template_names_vocabulary_and_success(world: &mut GivnWorld) {
+    let content = world
+        .additional_output
+        .as_deref()
+        .expect("persona template was not loaded");
+    assert!(
+        content.contains("Own vocabulary") && content.contains("Success criterion"),
+        "persona template does not name the own vocabulary and success criterion"
+    );
 }
 
 #[then("the template carries an append-only running record")]
-fn template_carries_running_record(_world: &mut GivnWorld) {
-    unimplemented!()
+fn template_carries_running_record(world: &mut GivnWorld) {
+    let content = world
+        .additional_output
+        .as_deref()
+        .expect("persona template was not loaded");
+    assert!(
+        content.contains("Running record") && content.contains("append-only"),
+        "persona template does not carry an append-only running record"
+    );
 }
 
 #[then("the template carries a dated topic stances appendix")]
-fn template_carries_topic_stances(_world: &mut GivnWorld) {
-    unimplemented!()
+fn template_carries_topic_stances(world: &mut GivnWorld) {
+    let content = world
+        .additional_output
+        .as_deref()
+        .expect("persona template was not loaded");
+    assert!(
+        content.contains("Topic stances") && content.contains("<YYYY-MM-DD>"),
+        "persona template does not carry a dated topic stances appendix"
+    );
 }
