@@ -21,7 +21,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And the guidance records the seed question reference beside the ledger ID
     And the design-review guidance treats an unresolved unrecorded question as a finding
 
-  @givn.added @wip
+  @givn.added
   Scenario: The review instruction rejects an unqualified guarantee with an open prerequisite
     Given the review instructions are requested
     When the reviewer reads the use-case scope criteria
