@@ -618,3 +618,26 @@ findings (label `[SEED ]`) for a missing or unrecognised status line, a
 `proposed by` change that does not exist, and a `proposed by` change that is
 already archived. The scan parses only the first `Status:` line, is a no-op
 without `givn/ideation/`, and never changes the exit-code contract.
+
+## 8.20 Term Introduction Discipline
+
+The ideation term record (`givn/ideation/<topic-id>/domain-terms.md`) uses a
+fixed entry schema: term, status (`candidate`, `confirmed`, `rejected`),
+one-sentence definition, contrast ("X, not Y"), first use (file:line), and the
+collision check. A `candidate` needs only the definition and first use; a
+`confirmed` term requires the term introduction test and a recorded
+search-before-coin check; a `rejected` term keeps its definition and reason.
+
+The search-before-coin procedure is executed and recorded before `confirmed`:
+grep the durable glossary for the term and its synonyms; grep every sibling
+topic's term record and the repository; record the commands and hit counts.
+"No collision" without recorded commands is not a record. The term
+introduction test requires a genus and differentia definition, a contrast
+pair, and one concrete domain sentence; a term whose genus slot cannot be
+filled is not ready.
+
+This is authoring guidance, not a machine check: the generated ideation and
+domain-modeling skills carry the schema, the procedure, and the test, and the
+ideation quality review verifies recorded checks. Handoff proposes only
+`confirmed` terms for the durable glossary and reports `rejected` terms with
+their reason. No parser, lint, or glossary gate is introduced.
