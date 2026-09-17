@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "persona-identity-reuse",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "160f345b975f4669c758bfedc9a2e1c9fad08892",
+  "tested_revision": "160f345b975f4669c758bfedc9a2e1c9fad08892",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 9.664948166
+    },
+    "regular": {
+      "status": "passed",
+      "total": 542,
+      "passed": 542,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 43.446862352
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 7528,
+    "line_valid": 9513,
+    "line_percent": 79
+  },
   "started_at_unix": 1789654825,
-  "finished_at_unix": null
+  "finished_at_unix": 1789654919
 }
