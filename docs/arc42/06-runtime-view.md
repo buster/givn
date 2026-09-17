@@ -345,7 +345,9 @@ An existing active or archived migration plan is reported and never
 overwritten. The generated plan contains no product feature delta and no
 fabricated design-review, task, implementation, or review evidence. The
 project LLM must continue the normal workflow and archive the maintenance plan
-after all project-specific decisions and verification are complete.
+once its inventory is complete and every deviation names a follow-up change
+or an in-flight one; the follow-up changes carry the repairs through the
+normal gates.
 
 At archive time, a maintenance change whose `.givn-skip` lists `specs` has no
 delta to merge. Its verification scopes run against the permanent project
