@@ -132,20 +132,39 @@ phrases).
 
 ### lint-command
 
-- [ ] Scenario: `A change seed without a status line is reported as an advisory`
-  - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `A change seed without a status line is reported as an advisory`
+  - [x] RED: removed `@wip` from this scenario only; the production change was
+        stashed back to the committed skeleton, and the targeted run → non-zero.
+        Evidence:
         ```
+        GIVN_FEATURES=givn/changes/seed-artifact-lifecycle/specs cargo test --locked --test features_runner -- --name "A change seed without a status line is reported as an advisory"
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+        Step panicked. Captured output: not implemented
+        exit status: 1
         ```
-  - [ ] GREEN: implemented `check_seed_status` in `src/cli/lint.rs` (scan,
+  - [x] GREEN: implemented `check_seed_status` in `src/cli/lint.rs` (scan,
         tolerant status parse, `seed_status` findings, `[SEED ]` rendering,
         advisory counting) and the two new steps in `tests/steps/mod.rs`.
         Files: `src/cli/lint.rs`, `tests/steps/mod.rs`. Run → zero. Evidence:
         ```
+        ✔ And a change seed at "givn/ideation/topic/changes/seed-clean.md" with:
+        ✔ When the user runs `givn lint`
+        ✔ Then the command exits 0
+        ✔ And stderr contains "[SEED ]"
+        ✔ And stderr contains "no valid status line"
+        ✔ And stderr does not contain "seed-clean"
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(lint-command): A change seed without a status line is reported as an advisory`
+  - [x] COMMIT: `<hash>` -- `feat(lint-command): A change seed without a status line is reported as an advisory`
 
 - [ ] Scenario: `A change seed proposed by a missing change is reported as an advisory`
   - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
