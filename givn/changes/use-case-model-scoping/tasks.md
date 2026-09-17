@@ -99,21 +99,37 @@ introduced, and the new scenarios are guidance-content and document variants.
         ```
   - [x] COMMIT: `<hash>` -- `feat(canonical-usecase-contract): The durable use-case model publishes the canonical definition and rules`
 
-- [ ] Scenario: `The generated use-case document template carries the authoring guidance`
-  - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `The generated use-case document template carries the authoring guidance`
+  - [x] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/use-case-model-scoping/specs cargo test --locked --test features_runner -- --name "The generated use-case document template carries the authoring guidance"
+        Step panicked. Captured output: not implemented
+        1 scenario (1 failed)
         ```
-  - [ ] GREEN: added the primary-actor convention, the numbered main-flow
+  - [x] GREEN: added the primary-actor convention, the numbered main-flow
         pairing, the extension-format bullet, and the promotion note to
         `src/gherkin/usecase_md.rs::usecase_md_template()`, preserving all six
-        fixture placeholders. Files: `src/gherkin/usecase_md.rs`. Run → zero.
+        fixture placeholders; implemented the seven steps. Files:
+        `src/gherkin/usecase_md.rs`,
+        `tests/steps/spec_discovery_deterministic_steps.rs`. Run → zero.
         Evidence:
         ```
+        ✔ Then the template names the primary-actor convention
+        ✔ And the template shows the extension format
+        ✔ And the template numbers the main-flow example
+        ✔ And the template carries the promotion note
+        ✔ And the template preserves the fixture placeholders
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(canonical-usecase-contract): The generated use-case document template carries the authoring guidance`
+  - [x] COMMIT: `<hash>` -- `feat(canonical-usecase-contract): The generated use-case document template carries the authoring guidance`
 
 ### ideation-skill
 

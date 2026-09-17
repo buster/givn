@@ -440,27 +440,31 @@ pub fn usecase_md_template() -> String {
 
 ## Actors
 
-- <actor role>
+- <actor role> (the first actor is the primary actor; mark additional actors `Supporting:`)
 
 ## Goal
 
 <the domain goal>
 
+A leaf whose flow names three or more distinct actor goals, or whose success
+guarantee is a conjunction, must be promoted to `+` and split.
+
 ## Trigger
 
-<what starts this use case>
+<what starts this use case; an actor action or event, never a state or desire>
 
 ## Preconditions
 
-- <precondition>
+- <precondition that holds before the trigger>
 
 ## Main flow
 
-1. <first step>
+1. <actor intention>; System responsibility: <what the system does>
+2. <next actor intention>; System responsibility: <what the system does>
 
 ## Extensions
 
-- none
+- <step>: <condition> → <handling>; protects <guarantee>
 
 ## Rules
 
