@@ -589,3 +589,32 @@ only for the calculated managed allowlist), and revision-content checks; the
 archive and the managed upgrade consume them. Publication is witness-bounded
 on both backends (ADR-072): the exact dirty set is validated against the
 resolved publication paths before anything is recorded.
+
+## 8.19 The Change Seed Lifecycle
+
+A change seed (`givn/ideation/<topic-id>/changes/<uc-id>.md`) is the handoff
+record between ideation and proposal planning. It carries a fixed schema
+(use-case ID, topic source, Persona IDs, accepted decisions with their option
+treatment, full open questions, and the suggested start order) and a status
+line as the first line after its title:
+
+```text
+Status: ready
+Status: proposed by <change-id>
+Status: implemented in <change-id>
+Status: superseded by <reference>
+Status: withdrawn
+```
+
+Handoff writes `ready`; proposal planning stamps `proposed by <change-id>`
+and records the seed path in the proposal's Use-Case Context; archiving stamps
+`implemented in <change-id>` or `withdrawn` with a one-line reason, or records
+"no seed". These transitions are authoring guidance, not runtime code: no
+command reads or writes a seed except the advisory lint scan. A superseding
+decision edits only the status line; the seed's original text stays.
+
+The default whole-tree `givn lint` scope reports advisory `seed_status`
+findings (label `[SEED ]`) for a missing or unrecognised status line, a
+`proposed by` change that does not exist, and a `proposed by` change that is
+already archived. The scan parses only the first `Status:` line, is a no-op
+without `givn/ideation/`, and never changes the exit-code contract.
