@@ -28,7 +28,7 @@ Feature: Visual Review Gate
     Then  the command exits non-zero
     And  stderr contains "none — operator confirmed"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A change without a visual interface passes review with a reasoned none
     Given  a givn project with a change that has passed design-review
     And  the change's design.md declares no visual design contract
