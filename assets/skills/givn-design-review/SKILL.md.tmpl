@@ -36,9 +36,10 @@ the relevant codebase, then returns a ranked question list with recommended
 answers. The orchestrator presents questions to the user one at a time — waiting
 for each answer before the next.
 
-When presenting a question, name every artifact in domain language with its
-identifier in parentheses, and give every option a concrete example. Never
-present a bare identifier or an abstract label as a question.
+When presenting a question, follow the canonical dialog policy
+(`givn instructions dialog`): name every artifact in domain language with its
+identifier in parentheses, and give every option its meaning, gain, cost, and
+a concrete example. Never present a bare identifier or an abstract label.
 
 <bad_example>
 Q1: Should UC1 use D2 or D3? ADR12 says no.

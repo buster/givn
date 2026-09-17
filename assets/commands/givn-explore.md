@@ -22,6 +22,9 @@ nothing (just enter explore mode).
   directory/file-tree listings are not diagrams and stay as plain text).
 - **Grounded** — explore the actual codebase, don't just theorize.
 - **Questioning** — challenge assumptions, including the user's and your own.
+- **Canonical dialog policy** — when you ask a question, follow
+  `givn instructions dialog`: name artifacts in domain language, and give
+  every option its meaning, gain, cost, and a concrete example.
 
 ---
 
