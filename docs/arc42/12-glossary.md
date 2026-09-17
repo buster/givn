@@ -73,6 +73,8 @@
 | **ADR** | Architecture Decision Record. Active records live in `adr/`; historical records live in `adr/archive/`. |
 | **Current architecture contract** | Only an ADR with `status: accepted` and no supersession relationship. Proposed and archived records do not bind the current system. |
 | **ADR candidate** | A proposed choice that is evaluated for architectural significance before an ADR file is created. |
+| **Finding severity** | The `advisory`, `finding`, or `blocking` classification of a lint finding from one mapping table; it is descriptive and the existing exit-code contract still drives the exit code. |
+| **Route confidence** | The explicit `signal` or `no signal` verdict of `givn spec route`; no signal is reported on a top-two tie or below-threshold overlap, and the ranked list is then omitted. |
 | **Falsification tests** | Three fail-fast checks applied after the five qualification dimensions: single-change reversibility, no multi-change constraint, and the product-behavior exclusion. They classify by kind, not count. |
 | **Open-question qualifier** | The `(open: Q<N>)` marker on a use-case rule or guarantee whose prerequisite is unresolved; it stays until the question closes and is removed in the same edit. |
 | **Decision ledger** | The `Decides D<n>: <decision> — <where it is realized>` record in a design that maps every proposal question ID to its resolution or a named owner. |
