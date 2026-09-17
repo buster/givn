@@ -23,7 +23,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     When the reviewer reads the use-case branch
     Then the guidance points at the use-case scope criteria
 
-  @givn.added @wip
+  @givn.added
   Scenario: The specs guidance carries the capability placement test
     Given the synchronized agent guidance for the specs workflow
     When an author reads the capability placement guidance

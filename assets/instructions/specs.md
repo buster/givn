@@ -69,6 +69,15 @@ Capability Routing table), create or update that use-case document as part of
 the change. A reusable fragment keeps its own document and its interactions
 are not copied into every including use case.
 
+### Capability placement
+
+Before recording a `NEW in <usecase-id>` capability, apply the placement test
+from `docs/use-case-model.md`: which actor goal does completing this capability
+advance? Channel is never an answer — a browser or CLI variant of an action
+lives under the action's goal. Capability names are goal-shaped, never
+component- or channel-shaped (no server, backend, store, service, panel,
+browser, or CLI names).
+
 Each normalized inventory entry MUST have exactly one matching `@e2e` scenario
 in the capability's `.feature` file. If an entry has no corresponding scenario, the
 spec is incomplete. Variants, error cases, and flag combinations of the same
