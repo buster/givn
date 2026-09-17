@@ -62,27 +62,47 @@ for those actions remain the real-interface evidence.
       cargo check --locked --tests
       Finished `dev` profile [unoptimized + debuginfo] target(s) in 11.14s
       ```
-- [x] COMMIT: `1e1f8d6` -- `test(dialog-question-quality): strict-mode proof and step skeletons`
+- [x] COMMIT: `b24db59a` -- `test(dialog-question-quality): strict-mode proof and step skeletons`
 
 ## Scenarios
 
 ### instruction-integrity
 
-- [ ] Scenario: `The canonical dialog policy is retrievable through the Givn CLI`
-  - [ ] RED: removed `@wip` from this scenario only; ran the single-scenario
+- [x] Scenario: `The canonical dialog policy is retrievable through the Givn CLI`
+  - [x] RED: removed `@wip` from this scenario only; ran the single-scenario
         command → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/dialog-question-quality/specs cargo test --locked --test features_runner -- --name "The canonical dialog policy is retrievable through the Givn CLI"
+        Step panicked. Captured output: not implemented
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: wrote `assets/instructions/dialog.md` and reordered the
-        non-artifact fallback in `src/cli/instructions.rs` ahead of change
-        resolution. Files: `assets/instructions/dialog.md`,
-        `src/cli/instructions.rs`. Run → zero. Evidence:
+  - [x] GREEN: wrote `assets/instructions/dialog.md` and moved the
+        non-artifact policy fallback in `src/cli/instructions.rs` ahead of
+        change resolution. Files: `assets/instructions/dialog.md` (new),
+        `src/cli/instructions.rs`, `tests/steps/instruction_integrity_steps.rs`.
+        `cargo clean -p givn` first (rust_embed does not track `assets/`), then
+        the targeted run → zero. Evidence:
         ```
+        ✔ Given a Givn project with an active change for the dialog policy
+        ✔ When the author requests the dialog policy through the Givn CLI
+        ✔ Then the CLI output contains the named-artifact rule
+        ✔ And the CLI output contains the option treatment rule
+        ✔ And the CLI output contains the standalone-answerability rule
+        ✔ And the CLI output contains the rejected-alternative rule
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(instruction-integrity): The canonical dialog policy is retrievable through the Givn CLI`
+  - [x] COMMIT: `f50e5790` -- `feat(instruction-integrity): The canonical dialog policy is retrievable through the Givn CLI`
 
 - [ ] Scenario: `The canonical dialog policy demonstrates the full question record`
   - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:

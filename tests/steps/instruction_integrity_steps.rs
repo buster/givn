@@ -368,34 +368,82 @@ fn guidance_keeps_deterministic_toolchain(world: &mut GivnWorld) {
 
 // --- dialog-question-quality: dialog policy steps --------------------------
 
+fn cli_stdout(world: &GivnWorld) -> String {
+    let output = world
+        .last_output
+        .as_ref()
+        .expect("no CLI output was captured");
+    assert!(
+        output.status.success(),
+        "CLI command failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout).into_owned()
+}
+
 #[given("a Givn project with an active change for the dialog policy")]
-fn dialog_policy_project(_world: &mut GivnWorld) {
-    unimplemented!()
+fn dialog_policy_project(world: &mut GivnWorld) {
+    let env = crate::common::make_init_root();
+    let output = crate::common::run_givn(&env, &["new", "dialog-question-quality"]);
+    assert!(output.status.success(), "create fixture change failed");
+    world.env = Some(env);
 }
 
 #[when("the author requests the dialog policy through the Givn CLI")]
-fn author_requests_dialog_policy(_world: &mut GivnWorld) {
-    unimplemented!()
+fn author_requests_dialog_policy(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("dialog fixture is missing");
+    world.last_output = Some(crate::common::run_givn(
+        env,
+        &[
+            "instructions",
+            "dialog",
+            "--change",
+            "dialog-question-quality",
+        ],
+    ));
 }
 
 #[then("the CLI output contains the named-artifact rule")]
-fn cli_contains_named_artifact_rule(_world: &mut GivnWorld) {
-    unimplemented!()
+fn cli_contains_named_artifact_rule(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("domain language") && output.contains("identifier in parentheses"),
+        "dialog policy missing the named-artifact rule: {output}"
+    );
 }
 
 #[then("the CLI output contains the option treatment rule")]
-fn cli_contains_option_treatment_rule(_world: &mut GivnWorld) {
-    unimplemented!()
+fn cli_contains_option_treatment_rule(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    for marker in [
+        "what it means",
+        "what it gains",
+        "what it costs",
+        "concrete example",
+    ] {
+        assert!(
+            output.contains(marker),
+            "dialog policy missing option treatment marker {marker:?}: {output}"
+        );
+    }
 }
 
 #[then("the CLI output contains the standalone-answerability rule")]
-fn cli_contains_answerability_rule(_world: &mut GivnWorld) {
-    unimplemented!()
+fn cli_contains_answerability_rule(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("answerable standalone") && output.contains("without opening another file"),
+        "dialog policy missing the standalone-answerability rule: {output}"
+    );
 }
 
 #[then("the CLI output contains the rejected-alternative rule")]
-fn cli_contains_rejected_alternative_rule(_world: &mut GivnWorld) {
-    unimplemented!()
+fn cli_contains_rejected_alternative_rule(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("rejected alternatives") && output.contains("resolution"),
+        "dialog policy missing the rejected-alternative rule: {output}"
+    );
 }
 
 #[given("the canonical dialog policy is requested")]
