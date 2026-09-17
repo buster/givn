@@ -36,6 +36,14 @@ classification reasoning and the quality of a persona disposition stay
 guidance-level. This remains an extension of the same boundary, not a new
 record.
 
+ADR-028 is amended a fourth time by the `persona-identity-reuse` change. The
+same integrity member's persona disposition now resolves its value against
+the project persona collection: a declared visual interface's `PERSONAS:`
+line must name a persona that exists at `givn/personas/<id>.md`, and a
+reasoned `none` is valid only for a change without a user-visible surface.
+The identity criteria and the reuse protocol stay guidance-level. This
+remains an extension of the same boundary, not a new record.
+
 ADR-071 is accepted by the `scm-backend` change: repository-state commands ask
 one selection seam which version-control system owns the project root. Detection
 uses the project's own markers (Git worktree first, then a Fossil checkout) and

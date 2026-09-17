@@ -55,12 +55,13 @@ The project needs to run project commands at lifecycle gates while preventing a 
 
 Chosen option: **Keep mandatory checks in the binary and use `post` for additional hooks**. `givn check tasks` always runs WIP protection and `verify.command`. `givn check review` always runs `verify`, `verify-e2e`, `integrity`, and, for a named change, overlap checks. These mandatory checks are not disabled by removing or marking a `post` entry. Configured `post` hooks run separately; built-in names (`verify`, `verify-e2e`, `lint`, `integrity`) cannot be downgraded with `allow_failure`, while custom shell commands can.
 
-The `run-command`, `visual-ui-review`, and `web-ui-verification-hardening`
-changes each amended this decision by adding a member to the integrity
-mandatory check — the run declaration, the visual verdict and evidence, and
-the persona disposition, state evidence, and deferral pair respectively. The
-register in [`../09-architecture-decisions.md`](../09-architecture-decisions.md)
-records the amendments.
+The `run-command`, `visual-ui-review`, `web-ui-verification-hardening`, and
+`persona-identity-reuse` changes each amended this decision by adding a member
+to the integrity mandatory check — the run declaration, the visual verdict and
+evidence, the persona disposition with state evidence and deferral pair, and
+the persona-ID resolution respectively. The register in
+[`../09-architecture-decisions.md`](../09-architecture-decisions.md) records
+the amendments.
 
 ### Consequences
 
