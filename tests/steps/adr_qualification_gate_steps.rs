@@ -1052,23 +1052,34 @@ fn guidance_states_no_numeric_cap(world: &mut GivnWorld) {
 }
 
 #[given("the design template is available")]
-fn design_template_is_available(_world: &mut GivnWorld) {
-    unimplemented!()
+fn design_template_is_available(world: &mut GivnWorld) {
+    let content = std::fs::read_to_string(crate::common::repo_path("assets/templates/design.md"))
+        .expect("read design template");
+    world.additional_output = Some(content);
 }
 
 #[when("an author reads the Technology Decisions guidance")]
-fn author_reads_technology_decisions(_world: &mut GivnWorld) {
-    unimplemented!()
+fn author_reads_technology_decisions(world: &mut GivnWorld) {
+    assert!(
+        !guidance(world).is_empty(),
+        "design template is empty"
+    );
 }
 
 #[then("the template says justification belongs in the design")]
-fn template_says_justification_belongs_in_design(_world: &mut GivnWorld) {
-    unimplemented!()
+fn template_says_justification_belongs_in_design(world: &mut GivnWorld) {
+    assert!(
+        guidance(world).contains("belongs in `design.md`"),
+        "design template does not keep justification in the design"
+    );
 }
 
 #[then("the template forbids ADR candidacy unless the falsification tests pass")]
-fn template_forbids_adr_candidacy(_world: &mut GivnWorld) {
-    unimplemented!()
+fn template_forbids_adr_candidacy(world: &mut GivnWorld) {
+    assert!(
+        guidance(world).contains("falsification tests pass"),
+        "design template does not gate ADR candidacy on the falsification tests"
+    );
 }
 
 #[when("a maintainer reads the verdict placement rule")]
