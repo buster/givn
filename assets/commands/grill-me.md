@@ -20,8 +20,10 @@ Read in order: `proposal.md`, the `.feature` specs, `design.md`, `tasks.md`.
 
 ### 2. Ask one question at a time
 
-Pose a single sharp question, wait for the answer, then follow up. Do not dump
-a checklist. Good grills:
+Follow the canonical dialog policy (`givn instructions dialog`): name
+artifacts in domain language, and give every option its meaning, gain, cost,
+and a concrete example. Pose a single sharp question, wait for the answer,
+then follow up. Do not dump a checklist. Good grills:
 
 - What is the single most likely way this breaks in production?
 - Which step's assertion is fake — a no-op disguised as a check?

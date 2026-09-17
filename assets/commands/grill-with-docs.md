@@ -27,8 +27,11 @@ Gather the authoritative material:
 
 ### 2. Cross-check, one question at a time
 
-For each plan element, ask: which source supports it, and which source
-contradicts it? Pose one question, cite the source, wait. Examples:
+Follow the canonical dialog policy (`givn instructions dialog`): name
+artifacts in domain language, and give every option its meaning, gain, cost,
+and a concrete example. For each plan element, ask: which source supports it,
+and which source contradicts it? Pose one question, cite the source, wait.
+Examples:
 
 - "tasks.md says the flow is write-config -> set_extras -> sync, but design.md
   pitfall #4 warns about --force wiping the flag. Is the ordering covered?"
