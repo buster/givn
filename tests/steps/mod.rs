@@ -1305,16 +1305,47 @@ fn overlay_fails_with(world: &mut GivnWorld, needle: String) {
 // --- persona-identity-reuse: fixture Givens --------------------------------
 
 #[given(regex = r#"^a change use-case document at "([^"]+)" records the persona "([^"]+)"$"#)]
-fn change_usecase_document_records_persona(_world: &mut GivnWorld, _path: String, _persona: String) {
-    unimplemented!()
+fn change_usecase_document_records_persona(world: &mut GivnWorld, path: String, persona: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let document = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", "persona-change")
+        .replace("<capability-id>", "persona-change")
+        .replace("<scenario title>", "S")
+        .replace("<actor role>", "Fixture operator")
+        .replace("<the domain goal>", "Exercise the fixture behavior.")
+        .replace("## Personas\n\n- none\n", &format!("## Personas\n\n- {persona}\n"));
+    let file_path = env.path(&path);
+    if let Some(parent) = file_path.parent() {
+        std::fs::create_dir_all(parent).expect("create parent dirs for use-case document");
+    }
+    std::fs::write(&file_path, document).expect("write use-case document");
 }
 
 #[given(regex = r#"^a project persona file "([^"]+)" exists$"#)]
-fn project_persona_file_exists(_world: &mut GivnWorld, _id: String) {
-    unimplemented!()
+fn project_persona_file_exists(world: &mut GivnWorld, id: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let path = env.path(&format!("givn/personas/{id}.md"));
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).expect("create personas dir");
+    }
+    std::fs::write(&path, format!("# Persona: {id}\n")).expect("write persona file");
 }
 
 #[given(regex = r#"^a topic persona file at "([^"]+)" exists$"#)]
-fn topic_persona_file_exists(_world: &mut GivnWorld, _path: String) {
-    unimplemented!()
+fn topic_persona_file_exists(world: &mut GivnWorld, path: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let file_path = env.path(&path);
+    if let Some(parent) = file_path.parent() {
+        std::fs::create_dir_all(parent).expect("create topic personas dir");
+    }
+    std::fs::write(&file_path, "# Persona: topic\n").expect("write topic persona file");
 }

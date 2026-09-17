@@ -28,15 +28,18 @@ fn run_with_root(
     paths: Vec<String>,
     json: bool,
 ) -> Result<i32> {
-    // Advisory seed-status hygiene runs in the default whole-tree scope only.
-    // It must not change the exit-code contract, so it is rendered and counted
-    // separately from the blocking flags.
+    // Advisory hygiene checks must not change the exit-code contract, so they
+    // are rendered and counted separately from the blocking flags.
     let default_scope = paths.is_empty() && change.is_none();
+    let change_scope = paths.is_empty() && change.is_some();
     let mut findings: Vec<Finding> = if default_scope {
         check_seed_status(project_root)
     } else {
         Vec::new()
     };
+    if default_scope || change_scope {
+        findings.extend(check_persona_references(project_root, change));
+    }
     let advisory_count = findings.len();
 
     let feature_files = if !paths.is_empty() {
@@ -343,6 +346,128 @@ fn check_seed_status(project_root: &std::path::Path) -> Vec<Finding> {
     findings
 }
 
+/// Advisory persona-reference hygiene for active change use-case documents
+/// and ideation use cases. A `## Personas` entry resolves when the ID names a
+/// file under `givn/personas/` or any topic's `personas/`. Matching is
+/// ID-only; the finding never affects the exit code.
+fn check_persona_references(project_root: &std::path::Path, change: Option<&str>) -> Vec<Finding> {
+    let mut documents: Vec<std::path::PathBuf> = Vec::new();
+
+    let changes_root = project_root.join("givn/changes");
+    let change_ids: Vec<String> = match change {
+        Some(id) => vec![id.to_string()],
+        None => read_dir_names(&changes_root),
+    };
+    for id in change_ids {
+        let specs_dir = changes_root.join(&id).join("specs");
+        for usecase in read_dir_names(&specs_dir) {
+            let path = specs_dir.join(&usecase).join("usecase.md");
+            if path.is_file() {
+                documents.push(path);
+            }
+        }
+    }
+
+    if change.is_none() {
+        let ideation_root = project_root.join("givn/ideation");
+        for topic in read_dir_names(&ideation_root) {
+            let use_cases = ideation_root.join(&topic).join("use-cases");
+            for entry in read_dir_names(&use_cases) {
+                let path = use_cases.join(format!("{entry}.md"));
+                if path.is_file() {
+                    documents.push(path);
+                }
+            }
+        }
+    }
+
+    let project_personas = project_root.join("givn/personas");
+    let ideation_root = project_root.join("givn/ideation");
+
+    let mut findings = Vec::new();
+    for document in documents {
+        let content = std::fs::read_to_string(&document).unwrap_or_default();
+        for persona in persona_entries(&content) {
+            if resolves_persona(&project_personas, &ideation_root, &persona) {
+                continue;
+            }
+            findings.push(Finding {
+                kind: "persona_ref".to_string(),
+                level: "warning".to_string(),
+                files: vec![document.display().to_string()],
+                titles: vec![format!(
+                    "persona reference '{persona}' matches no project or topic persona file"
+                )],
+                contradiction: false,
+            });
+        }
+    }
+    findings
+}
+
+/// Names of the immediate subdirectories of `dir`, sorted; empty when absent.
+fn read_dir_names(dir: &std::path::Path) -> Vec<String> {
+    let mut names: Vec<String> = std::fs::read_dir(dir)
+        .map(|entries| {
+            entries
+                .flatten()
+                .filter(|entry| entry.path().is_dir())
+                .filter_map(|entry| entry.file_name().into_string().ok())
+                .collect()
+        })
+        .unwrap_or_default();
+    names.sort();
+    names
+}
+
+/// The `## Personas` bullet entries of a use-case document, tolerantly.
+fn persona_entries(content: &str) -> Vec<String> {
+    let mut entries = Vec::new();
+    let mut in_section = false;
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("## ") {
+            in_section = trimmed == "## Personas";
+            continue;
+        }
+        if !in_section {
+            continue;
+        }
+        let Some(value) = trimmed
+            .strip_prefix("- ")
+            .or_else(|| trimmed.strip_prefix("* "))
+        else {
+            continue;
+        };
+        let value = value.trim();
+        if !value.is_empty() && !value.eq_ignore_ascii_case("none") {
+            entries.push(value.to_string());
+        }
+    }
+    entries
+}
+
+fn resolves_persona(
+    project_personas: &std::path::Path,
+    ideation_root: &std::path::Path,
+    persona: &str,
+) -> bool {
+    if project_personas.join(format!("{persona}.md")).is_file() {
+        return true;
+    }
+    for topic in read_dir_names(ideation_root) {
+        if ideation_root
+            .join(&topic)
+            .join("personas")
+            .join(format!("{persona}.md"))
+            .is_file()
+        {
+            return true;
+        }
+    }
+    false
+}
+
 /// Read the first `Status:` line of a seed and classify its value.
 fn parse_seed_status(content: &str) -> SeedStatus {
     let Some(value) = content
@@ -379,6 +504,7 @@ fn render_prose(finding: &Finding) {
         "long_scenario" => "LONG ",
         "empty_feature" => "EMPTY",
         "seed_status" => "SEED ",
+        "persona_ref" => "PERS ",
         "usecase_invalid" | "fragment_invalid" => "UCDOC",
         "dangling_use_case_ref" => "UCREF",
         "use_case_cycle" => "UCCYC",
