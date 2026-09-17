@@ -2,7 +2,7 @@
 
 Feature: install-extras
 
-  @givn.added @wip
+  @givn.added
   Scenario: The absolute-mode policy block carries the dialog context rule
     Given a project root with givn/ initialised without addons
     And givn addon "absolute_mode" is "false"
