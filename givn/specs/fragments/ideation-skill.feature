@@ -136,3 +136,9 @@ Feature: ideation-skill
     And  the template names the own vocabulary and success criterion
     And  the template carries an append-only running record
     And  the template carries a dated topic stances appendix
+  Scenario: The ideation guidance carries the open-question qualifier rule
+    Given  a givn project with all agent skill targets enabled
+    When  the user runs `givn skills sync`
+    Then  the generated givn-ideation guidance contains "(open: Q<N>)"
+    And  the generated givn-ideation guidance contains "must not be presented as unconditional"
+    And  the generated givn-ideation guidance contains "removes the qualifier"
