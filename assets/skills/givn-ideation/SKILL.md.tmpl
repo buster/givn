@@ -129,8 +129,10 @@ Status is `candidate`, `confirmed`, or `rejected`:
 
 - `candidate` — the definition and first use are sufficient.
 - `confirmed` — requires a genus-and-differentia definition, a contrast pair,
-  and one concrete domain sentence (the full term introduction test lives in
-  `givn-domain-modeling`) plus a recorded collision check.
+  and one concrete domain sentence plus a recorded collision check.
+{{#if addons.domain_modeling}}
+  The full term introduction test lives in `givn-domain-modeling`.
+{{/if}}
 - `rejected` — keeps the definition and the rejection reason; never deleted.
 
 Escape `|` as `\|` inside the Collision check cell and prefer hit-count
@@ -247,8 +249,12 @@ Model the domain as a chain of past-tense domain events.
 - Term collisions (same word, different meaning; different words, same
   meaning) go to the domain terms file. Before a term reaches `confirmed`,
   run and record the search-before-coin procedure:
-  1. Grep the durable glossary (`docs/arc42/12-glossary.md` when the arc42
-     addon is enabled) for the term and its synonyms.
+{{#if addons.arc42}}
+  1. Grep the durable glossary (`docs/arc42/12-glossary.md`) for the term and
+     its synonyms.
+{{else}}
+  1. Grep the project's durable documentation for the term and its synonyms.
+{{/if}}
   2. Grep every sibling topic's `domain-terms.md` and the repository for the
      term.
   3. Record the commands run and the hit counts in the `Collision check`
