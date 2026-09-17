@@ -179,6 +179,7 @@ The last phase produces the readable record:
 - Write one change seed per use case with a suggested start order, using the
   seed schema below. Each seed is input to `/givn-propose`, not a proposal
   and not a change.
+- Map each elaborated `!` use case to its own permanent leaf document — never to a capability inside another goal.
 - Before publishing, show the use-case-to-permanent mapping, Persona
   promotion choices, and change seeds. Handoff occurs only after the user
   confirms those records; never auto-promote or auto-start.
@@ -259,12 +260,57 @@ Model the domain as a chain of past-tense domain events.
 
 Cut the event chain into use cases.
 
-- A sequence of events that culminates in value is a use case.
-- Size each one: a user goal (`!`) is change-sized; a summary (`+`) groups
-  several; a subfunction (`-`) is a step inside a scenario, not a use case.
-- Name the boundary each use case lives in; term collisions mark boundaries.
-- Tag each use case with the affected stakeholders — their personas will
-  review it.
+> A use case is a contract between one primary actor and the system: the
+> actor's single goal, stated as observable outcome, with the success and
+> minimal guarantees the system makes while pursuing it. A use case stays
+> true if the system is rebuilt with different technology.
+
+A sequence of events that culminates in value is a use case. Size each one
+with these falsifiable rules; the durable reference with the worked example is
+`docs/use-case-model.md`:
+
+1. **One goal, one primary actor.** The goal is one active-verb phrase naming
+   the primary actor's outcome. Falsification: an "and" joining two verb
+   phrases in Goal, or two distinct outcomes in the success guarantee, means
+   split. Closure test: the actor could stop afterward and the system is left
+   consistent.
+2. **Goal-shaped, never component-shaped.** No use-case or capability name may
+   name a technical component, mechanism, or channel (server, backend, store,
+   service, panel, browser, CLI). Placement test for every capability: which
+   actor goal does completing this advance? Channel is never an answer; a
+   browser or CLI variant of an action lives under the action's goal.
+3. **Level discipline.** `!` owns capabilities directly. `+` owns zero direct
+   capabilities and only child `!` via `Includes: usecase:`; its coverage is
+   the union of its children. The promotion rule: a leaf whose flow names
+   three or more distinct actor goals, or whose success guarantee is a
+   conjunction, must be promoted to `+` and split. `-` stays ideation-only.
+4. **Mutation containment.** The guarantees declare the case as observing
+   (read-only) or changing. An observing case owns zero mutating
+   interactions; a capability whose scenarios assert a state change belongs
+   under a goal whose success guarantee names that change.
+5. **Extension discipline.** Every extension names the main-flow step it
+   branches from and the guarantee it protects or the recovery it performs.
+   An extension introducing a new actor goal, a new success outcome, or a new
+   capability is a new use case or a capability under another goal — never an
+   extension.
+6. **Precondition and flow consistency.** Preconditions hold before the
+   trigger and are never established by the main flow. The success guarantee
+   is established by the flow, never assumed. The trigger is an actor action
+   or event, never a state or desire.
+7. **Implementation independence.** Goal, Trigger, Main flow, and Guarantees
+   must remain true if the system were rebuilt in another language and
+   framework. Mechanism vocabulary (branches, compare-and-swap, loopback,
+   tokens, manifests, signals) never appears in those sections. Non-human
+   actors use "X for Y" notation (`Agent for the Requester`); a bare system
+   actor's behavior is a subfunction.
+8. **Relationship semantics.** `Includes` means unconditional reuse (summary
+   to child, leaf to fragment substrate). `Extends` means optional insertion
+   under a stated condition recorded in the extending document; never targets
+   fragments. The graph stays acyclic.
+
+Name the boundary each use case lives in; term collisions mark boundaries.
+Tag each use case with the affected stakeholders — their personas will review
+it.
 
 ## Use Case Elaboration
 
@@ -277,6 +323,20 @@ Elaborate one defined use case at a time.
   and success guarantees.
 - Only now shape scenario skeletons: preconditions become Given, trigger and
   actor action become When, guarantees become Then.
+
+Authoring requirements for the contract:
+
+- Actors: the first actor is the primary actor; mark additional actors
+  `Supporting:`. Goal and Trigger name the primary actor.
+- Main flow: numbered steps, each pairing actor intention with system
+  responsibility (`N. Actor <intent>; System <responsibility>`); numbers let
+  extensions reference them.
+- Extensions: `- <step>: <condition> → <handling>; protects <guarantee>`. An
+  extension that adds a new outcome is never an extension.
+- Guarantees: Minimal is true even on failure; Success is the goal's
+  observable outcome and nothing else.
+- Out of scope: names excluded actor goals (with owning use-case IDs when they
+  exist), not excluded mechanisms.
 
 ## Quality reviews
 
