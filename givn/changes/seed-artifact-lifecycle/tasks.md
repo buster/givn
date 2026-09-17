@@ -166,18 +166,33 @@ phrases).
         ```
   - [x] COMMIT: `<hash>` -- `feat(lint-command): A change seed without a status line is reported as an advisory`
 
-- [ ] Scenario: `A change seed proposed by a missing change is reported as an advisory`
-  - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `A change seed proposed by a missing change is reported as an advisory`
+  - [x] RED: removed `@wip` from this scenario only; `src/cli/lint.rs` was
+        restored to the pre-check revision (`b5ed5fab`), and the targeted run →
+        non-zero. The scenario also carries the active-change guard (a seed
+        proposed by an existing change must not be reported); the guard was
+        folded in from the standalone scenario during implementation because
+        it could only pass vacuously against pre-change code. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/seed-artifact-lifecycle/specs cargo test --locked --test features_runner -- --name "A change seed proposed by a missing change is reported as an advisory"
+        Step panicked. Captured output: stderr missing "[SEED ]":
+        1 scenario (1 failed)
+        8 steps (7 passed, 1 failed)
         ```
-  - [ ] GREEN: covered by the seed check's dangling branch and the early-return
+  - [x] GREEN: covered by the seed check's dangling branch and the early-return
         rendering. Files: `src/cli/lint.rs`. Run → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        10 steps (10 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        10 steps (10 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(lint-command): A change seed proposed by a missing change is reported as an advisory`
+  - [x] COMMIT: `<hash>` -- `feat(lint-command): A change seed proposed by a missing change is reported as an advisory`
 
 - [ ] Scenario: `A change seed proposed by an archived change is reported as stale`
   - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
@@ -191,19 +206,6 @@ phrases).
         ```
         ```
   - [ ] COMMIT: `<hash>` -- `feat(lint-command): A change seed proposed by an archived change is reported as stale`
-
-- [ ] Scenario: `A change seed proposed by an active change is not reported`
-  - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
-        ```
-        ```
-  - [ ] GREEN: covered by the active-change branch. Files: `src/cli/lint.rs`.
-        Run → zero. Evidence:
-        ```
-        ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
-        ```
-        ```
-  - [ ] COMMIT: `<hash>` -- `feat(lint-command): A change seed proposed by an active change is not reported`
 
 - [ ] Scenario: `An unrecognised seed status is reported and a status after prose is honoured`
   - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:

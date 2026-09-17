@@ -23,20 +23,28 @@ Feature: lint-command
     And stderr contains "no valid status line"
     And stderr does not contain "seed-clean"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A change seed proposed by a missing change is reported as an advisory
     Given a project root with givn/ initialised
+    And an existing change named "active-change"
     And a change seed at "givn/ideation/topic/changes/seed-two.md" with:
       """
       # Change seed: add-widget
 
       Status: proposed by ghost-change
       """
+    And a change seed at "givn/ideation/topic/changes/seed-active.md" with:
+      """
+      # Change seed: add-gadget
+
+      Status: proposed by active-change
+      """
     When the user runs `givn lint`
     Then the command exits 0
     And stdout contains a line "givn lint: no .feature files found under givn/"
     And stderr contains "[SEED ]"
     And stderr contains "ghost-change"
+    And stderr does not contain "seed-active"
 
   @givn.added @wip
   Scenario: A change seed proposed by an archived change is reported as stale
@@ -52,26 +60,6 @@ Feature: lint-command
     Then the command exits 0
     And stderr contains "[SEED ]"
     And stderr contains "already archived"
-
-  @givn.added @wip
-  Scenario: A change seed proposed by an active change is not reported
-    Given a project root with givn/ initialised
-    And an existing change named "active-change"
-    And a change seed at "givn/ideation/topic/changes/seed-active.md" with:
-      """
-      # Change seed: add-widget
-
-      Status: proposed by active-change
-      """
-    And a .feature file at "givn/specs/foo/foo.feature" with:
-      """
-      Feature: Foo
-        Scenario: Bar
-          Given x
-      """
-    When the user runs `givn lint`
-    Then the command exits 0
-    And stdout contains a line "givn lint: 1 file(s) checked — clean"
 
   @givn.added @wip
   Scenario: An unrecognised seed status is reported and a status after prose is honoured

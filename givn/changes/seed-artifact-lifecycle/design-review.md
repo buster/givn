@@ -337,7 +337,7 @@ None.
 | Artifact | Change summary |
 |---|---|
 | `givn/changes/seed-artifact-lifecycle/design.md` | Early-return contract, empty-reference classification, count-in-summary scenario, propose/archive phrase scenario, sibling e2e coverage, workflow update, step-definition rows. |
-| `givn/changes/seed-artifact-lifecycle/specs/verify-change/lint-command.feature` | Rewritten to six scenarios: missing status (with clean-seed guard), dangling, stale, active, unrecognised/prose, mixed-run count. |
+| `givn/changes/seed-artifact-lifecycle/specs/verify-change/lint-command.feature` | Rewritten to five scenarios: missing status (with clean-seed guard), dangling (with active-change guard), stale, unrecognised/prose, mixed-run count. The standalone active-change scenario was folded into the dangling scenario during implementation: it could only pass vacuously against pre-change code, so it rides as a guard on a RED-able scenario. |
 | `givn/changes/seed-artifact-lifecycle/specs/author-change/prose-consolidation.feature` | New delta: propose/archive stamping phrases. |
 | `givn/changes/seed-artifact-lifecycle/proposal.md` | Added the `prose-consolidation` routing row. |
 | `givn/changes/seed-artifact-lifecycle/arc42.md` | Corrected the chapter 12 wording. |
