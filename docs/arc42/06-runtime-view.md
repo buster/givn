@@ -125,6 +125,12 @@ the deterministic overlap scan:
 Precedence is parse error `1`, duplicate title `3`, WIP `2`, then clean `0`.
 JSON output is a findings array; it is not test-runner output.
 
+Every finding is classified as `advisory`, `finding`, or `blocking` from one
+mapping table; the prose output appends the severity after the existing short
+label, and the JSON output carries a `severity` field. The classification is
+descriptive: the existing exit-code flags still drive the exit code, so an
+advisory-only run exits 0.
+
 The default whole-tree scope additionally scans change seeds under
 `givn/ideation/*/changes/*.md` for status hygiene. A missing or unrecognised
 `Status:` line, a `proposed by` change that does not exist, and a
@@ -427,3 +433,21 @@ scoped commit operations; the managed upgrade consumes them. The Fossil backend
 exposes the clean-state witness (including `EXTRA` entries), revision identity,
 witness-bounded publication, allowlist staging, and revision-content checks;
 the archive and the managed upgrade consume them (section 6.13).
+
+## 6.17 `givn spec route`
+
+The command ranks capability-routing candidates against the permanent corpus
+and reports a confidence verdict. Scoring weights ownership evidence above
+lexical overlap: command-surface invocations, structural tokens, the owning
+use case's Goal and Rules text, and the capability's interaction consumer
+actions; a candidate with no goal ownership and no command overlap has its
+score halved (the scatter penalty).
+
+Confidence rules, in order: no candidates reports no signal; a top-two tie
+within `0.01` reports no signal; a top score at or above the extend bar
+(`3.0`) reports signal; otherwise the new-use-case path reports signal only
+when a unique top use-case affinity reaches the floor (`2.0`), and no signal
+on a tie or below the floor. A no-signal report prints the reason and omits
+the ranked list, so the output never presents ranking noise as a
+recommendation. The recorded decision in the proposal remains the
+declaration; the command stays advisory.
