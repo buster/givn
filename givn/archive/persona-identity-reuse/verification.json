@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "change": "persona-identity-reuse",
+  "status": "pending",
+  "candidate_revision": null,
+  "tested_revision": null,
+  "scopes": {},
+  "coverage": null,
+  "started_at_unix": 1789654825,
+  "finished_at_unix": null
+}
