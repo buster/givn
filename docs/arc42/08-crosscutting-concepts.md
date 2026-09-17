@@ -459,6 +459,25 @@ ADR stores the rationale for one independent durable architecture decision and
 links to those facts. A refinement amends an existing ADR. The runtime does not
 infer architectural significance or validate the LLM verdict.
 
+Three falsification tests make the gate fail fast, applied after the five
+dimensions: single-change reversibility (implementable and reversible within
+one change, one component); no multi-change constraint (constrains fewer than
+two future changes or components); and the product-behavior exclusion
+(observable workflow behavior ownable by a use case plus Gherkin fails the
+lower-level-artifact dimension unless it also moves a component, authority, or
+deployment boundary stated in the verdict). The tests classify by kind, not
+count; there is no numeric ADR cap.
+
+The structured verdict is recorded in the change's Arc42 impact assessment
+before any MADR file is created; the ADR template ships blank and is filled
+from that record. For every proposed `NEW_ADR`, design-review must name the
+cheaper home — the specific canonical artifact that would own the rationale
+instead — and a missing challenge is a finding. The chapter-selection guidance
+treats correlated rows as a double-check; an affected chapter does not by
+itself qualify an ADR. Technology-decision justification belongs in
+`design.md` and is not promoted to ADR candidacy unless the falsification
+tests pass.
+
 ## 8.16 The Run Declaration and `givn run`
 
 The `run:` block in `givn/commands.yaml` declares how the built product starts:

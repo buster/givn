@@ -73,6 +73,8 @@
 | **ADR** | Architecture Decision Record. Active records live in `adr/`; historical records live in `adr/archive/`. |
 | **Current architecture contract** | Only an ADR with `status: accepted` and no supersession relationship. Proposed and archived records do not bind the current system. |
 | **ADR candidate** | A proposed choice that is evaluated for architectural significance before an ADR file is created. |
+| **Falsification tests** | Three fail-fast checks applied after the five qualification dimensions: single-change reversibility, no multi-change constraint, and the product-behavior exclusion. They classify by kind, not count. |
+| **Cheaper-home challenge** | The design-review requirement that every proposed `NEW_ADR` names the specific canonical artifact that would own the rationale instead; a missing challenge is a finding. |
 | **Qualification verdict** | The structured authoring result containing the five mandatory gate outcomes, supporting `must_be_shared` evidence, route, and route-specific target. It is not a runtime result. |
 | **Mandatory qualification dimension** | One of `alternatives`, `architectural_impact`, `durable_consequence`, `lower_level_artifact`, or `existing_adr_check`; all five must pass. |
 | **Canonical artifact** | The one authoritative location for a piece of information: Gherkin spec, design/code, Arc42 chapter, process guidance, or project documentation. |
