@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "adr-qualification-hardening",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "1712ff072d7f4f91cddb369fcd11fc14efa7ef27",
+  "tested_revision": "1712ff072d7f4f91cddb369fcd11fc14efa7ef27",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 10.573664978
+    },
+    "regular": {
+      "status": "passed",
+      "total": 534,
+      "passed": 534,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 40.618710409
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 7421,
+    "line_valid": 9402,
+    "line_percent": 78
+  },
   "started_at_unix": 1789653661,
-  "finished_at_unix": null
+  "finished_at_unix": 1789653747
 }
