@@ -371,8 +371,19 @@ fn ensure_fixture_usecase(env: &common::TestEnv, feature_path: &str, content: &s
 
 #[given(regex = r#"^a change seed at "([^"]+)" with:$"#)]
 fn change_seed_at(world: &mut GivnWorld, path: String, step: &Step) {
-    let _ = (world, path, step);
-    unimplemented!()
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let content = step
+        .docstring
+        .as_ref()
+        .expect("docstring content for change seed step");
+    let file_path = env.path(&path);
+    if let Some(parent) = file_path.parent() {
+        std::fs::create_dir_all(parent).expect("create parent dirs for change seed");
+    }
+    std::fs::write(&file_path, content).expect("write change seed");
 }
 
 #[given(regex = r#"^a feature file with a removed-wip placeholder at "([^"]+)"$"#)]
@@ -634,8 +645,14 @@ fn stderr_contains(world: &mut GivnWorld, needle: String) {
 }
 
 #[then(regex = r#"^stderr does not contain "(.*)"$"#)]
-fn stderr_does_not_contain(_world: &mut GivnWorld, _needle: String) {
-    unimplemented!()
+fn stderr_does_not_contain(world: &mut GivnWorld, needle: String) {
+    let s = stderr(world);
+    assert!(
+        !s.contains(&needle),
+        "expected stderr to not contain {:?}\nactual stderr:\n{}",
+        needle,
+        s,
+    );
 }
 
 #[then(regex = r"^the (\w+) finding appears before the (\w+) finding on stderr$")]
