@@ -17,7 +17,7 @@ Feature: ideation-skill
     And  the generated givn-ideation guidance contains "one persona with three stance blocks"
     And  the generated givn-ideation guidance contains "record entries only"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The ideation guidance keeps the confirmed persona behaviors
     Given  a givn project with all agent skill targets enabled
     When  the user runs `givn skills sync`
