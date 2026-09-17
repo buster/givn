@@ -36,12 +36,18 @@ commands without pipelines, so the recorded command stays inside its column.
 The Event Storming collision bullet becomes a three-step procedure that must
 be executed and recorded before a term reaches `confirmed`:
 
-1. Grep the durable glossary (`docs/arc42/12-glossary.md` when the arc42 addon
-   is enabled) for the term and its synonyms.
+1. Grep the durable glossary for the term and its synonyms. With the arc42
+   addon enabled the step names `docs/arc42/12-glossary.md`; without it the
+   step greps the project's durable documentation, because generated guidance
+   must never name a disabled addon (the ideation skill ships with no addons).
 2. Grep every sibling topic's `domain-terms.md` and the repository for the
    term.
 3. Record the commands run and the hit counts in the `Collision check` column.
    "No collision" without recorded commands is not a record.
+
+The confirmed-term reference to the term introduction test is wrapped in the
+same `domain_modeling` conditional for the same reason; the one-line criteria
+stay unconditional so `confirmed` remains reachable without the skill.
 
 ## Term Introduction Test
 
