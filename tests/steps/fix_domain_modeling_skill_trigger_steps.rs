@@ -374,3 +374,30 @@ fn review_checks_ubiquitous_language(world: &mut GivnWorld) {
         "review check does not reference the arc42 glossary"
     );
 }
+
+// --- term-introduction-discipline: term introduction test steps ------------
+
+#[when("an agent reads the term introduction test")]
+fn agent_reads_term_introduction_test(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the body requires a genus and differentia definition")]
+fn body_requires_genus_and_differentia(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the body requires a contrast pair")]
+fn body_requires_contrast_pair(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the body requires one concrete domain sentence")]
+fn body_requires_concrete_sentence(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the body demonstrates a failure when the genus slot cannot be filled")]
+fn body_demonstrates_genus_failure(_world: &mut GivnWorld) {
+    unimplemented!()
+}
