@@ -242,18 +242,29 @@ phrases).
         ```
   - [x] COMMIT: `<hash>` -- `feat(lint-command): An unrecognised seed status is reported and a status after prose is honoured`
 
-- [ ] Scenario: `An advisory seed finding is counted in the summary and still exits 0`
-  - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `An advisory seed finding is counted in the summary and still exits 0`
+  - [x] RED: removed `@wip` from this scenario only; `src/cli/lint.rs` restored
+        to `b5ed5fab`, run → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/seed-artifact-lifecycle/specs cargo test --locked --test features_runner -- --name "An advisory seed finding is counted in the summary and still exits 0"
+        Step panicked. Captured output: stderr missing "[SEED ]":
+        1 scenario (1 failed)
+        6 steps (5 passed, 1 failed)
         ```
-  - [ ] GREEN: covered by the advisory count and exit-code neutrality. Files:
+  - [x] GREEN: covered by the advisory count and exit-code neutrality. Files:
         `src/cli/lint.rs`. Run → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(lint-command): An advisory seed finding is counted in the summary and still exits 0`
+  - [x] COMMIT: `<hash>` -- `feat(lint-command): An advisory seed finding is counted in the summary and still exits 0`
 
 ## Final checks
 
