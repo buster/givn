@@ -115,8 +115,14 @@ fn generated_command_contains(world: &mut GivnWorld, command: String, text: Stri
 }
 
 #[then(regex = r##"^the generated grill-([a-z-]+) command contains "([^"]+)"$"##)]
-fn generated_grill_command_contains(_world: &mut GivnWorld, _command: String, _text: String) {
-    unimplemented!()
+fn generated_grill_command_contains(world: &mut GivnWorld, command: String, text: String) {
+    let path = env(world).path(&format!(".opencode/commands/grill-{command}.md"));
+    let content = fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read generated command {}: {error}", path.display()));
+    assert!(
+        content.contains(&text),
+        "command missing {text:?}: {content}"
+    );
 }
 
 #[then(regex = r##"^generated guidance does not contain "([^"]+)"$"##)]

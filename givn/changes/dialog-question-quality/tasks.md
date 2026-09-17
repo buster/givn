@@ -273,26 +273,51 @@ for those actions remain the real-interface evidence.
 
 ### prose-consolidation
 
-- [ ] Scenario: `Generated interactive guidance points to the canonical dialog policy`
-  - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `Generated interactive guidance points to the canonical dialog policy`
+  - [x] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/dialog-question-quality/specs cargo test --locked --test features_runner -- --name "Generated interactive guidance points to the canonical dialog policy"
+        1 feature
+        1 scenario (1 failed)
+        4 steps (3 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: added the `givn instructions dialog` pointer to
-        `assets/skills/givn-ideation/SKILL.md.tmpl`,
+  - [x] GREEN: added the `givn instructions dialog` pointer to the explore
+        skill and command, the ideation command, the propose command's
+        ambiguity handoff, both grill commands, and both design-review
+        surfaces (replacing the duplicated dialog-discipline rule text with
+        the reference while keeping the bad/good example); added the
+        `grill-<name>` command step. Files:
         `assets/skills/givn-explore/SKILL.md.tmpl`,
         `assets/skills/givn-design-review/SKILL.md.tmpl`,
-        `assets/commands/givn-ideation.md`, `assets/commands/givn-explore.md`,
+        `assets/commands/givn-explore.md`, `assets/commands/givn-ideation.md`,
         `assets/commands/givn-propose.md`, `assets/commands/grill-me.md`,
-        `assets/commands/grill-with-docs.md`, and
-        `assets/commands/givn-design-review.md`; added the `grill-<name>`
-        command step. Files: the eight assets plus
-        `tests/steps/prose_consolidation_steps.rs`. Run → zero. Evidence:
+        `assets/commands/grill-with-docs.md`,
+        `assets/commands/givn-design-review.md`,
+        `tests/steps/prose_consolidation_steps.rs`. `cargo clean -p givn`,
+        then the targeted run → zero. Evidence:
         ```
+        ✔ When the user runs `givn skills sync`
+        ✔ Then the generated givn-ideation guidance contains "givn instructions dialog"
+        ✔ And ... givn-explore guidance
+        ✔ And ... givn-design-review guidance
+        ✔ And ... givn-design-review command
+        ✔ And ... givn-ideation command
+        ✔ And ... givn-explore command
+        ✔ And ... givn-propose command
+        ✔ And ... grill-me command
+        ✔ And ... grill-with-docs command
+        1 feature
+        1 scenario (1 passed)
+        11 steps (11 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        11 steps (11 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(prose-consolidation): Generated interactive guidance points to the canonical dialog policy`
+  - [x] COMMIT: `<hash>` -- `feat(prose-consolidation): Generated interactive guidance points to the canonical dialog policy`
 
 ### install-extras
 
