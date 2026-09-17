@@ -120,6 +120,7 @@
 | **Persona promotion** | The user-approved copy of a validated persona into the project-level persona collection at handoff; repeated promotion of the same segment merges. Anti-term: export. |
 | **Change seed** | The per-use-case proposal seed written into the topic state at handoff; the user starts the normal proposal flow from it, handoff never starts a change. Anti-terms: stub, pre-proposal. |
 | **Seed status** | The first line after a change seed's title: `ready`, `proposed by <change-id>`, `implemented in <change-id>`, `superseded by <reference>`, or `withdrawn`. Proposal planning and archiving stamp it; only the status line changes on supersession. |
+| **Term record** | The `domain-terms.md` entry for one domain term: status (`candidate`, `confirmed`, `rejected`), one-sentence definition, contrast, first use, and the recorded collision check. A `confirmed` term has passed the term introduction test. |
 | **Quality review** | A fresh-context, rubric-based advisory review at an ideation phase boundary. Anti-term: gate (binary-owned checks keep that word). |
 | **Open question** | A recorded unknown parked in the topic state instead of being debated. Anti-term: blocker. |
 | **Handoff** | The ideation step that publishes the topic document under the project docs, proposes glossary and persona merges, and writes change seeds. |
