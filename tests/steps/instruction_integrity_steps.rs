@@ -505,8 +505,9 @@ fn policy_requires_cross_reference_gloss(world: &mut GivnWorld) {
 }
 
 #[when("the author requests the dialog policy through the Givn CLI without a change")]
-fn author_requests_dialog_policy_without_change(_world: &mut GivnWorld) {
-    unimplemented!()
+fn author_requests_dialog_policy_without_change(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("dialog fixture is missing");
+    world.last_output = Some(crate::common::run_givn(env, &["instructions", "dialog"]));
 }
 
 #[when("the author requests an unknown instruction through the Givn CLI")]
