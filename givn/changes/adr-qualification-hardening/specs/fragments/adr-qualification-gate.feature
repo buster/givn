@@ -27,7 +27,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     When a maintainer reads the verdict placement rule
     Then the marker requires the structured verdict before drafting
 
-  @givn.added @wip
+  @givn.added
   Scenario: The ADR template ships with no pre-passed qualification values
     Given the ADR template is available
     When an author prepares to copy the template
