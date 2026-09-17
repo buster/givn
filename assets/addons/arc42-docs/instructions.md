@@ -342,11 +342,10 @@ does not by itself qualify an ADR.
 | 11 | New risks or technical debt (including every "Bad, because..." consequence recorded against a new ADR in chapter 09) | 11 risks-and-technical-debt |
 | 12 | New domain terms | 12 glossary |
 
-Rows are not mutually exclusive: a single change routinely triggers rows 3,
-5, 6, 9, and 11 together (new user-facing capability -> new context, new
-modules, new flow, a tradeoff decision, and the consequence of that
-tradeoff). Treat correlated rows as a prompt to double-check, not evidence
-you can skip re-reading the table for each one.
+Rows are not mutually exclusive: treat correlated rows as a prompt to
+double-check, not evidence that any one of them is affected. An affected
+chapter does not by itself qualify an ADR; apply the qualification gate to
+each candidate, and a change may legitimately have no ADR at all.
 
 ## Output
 

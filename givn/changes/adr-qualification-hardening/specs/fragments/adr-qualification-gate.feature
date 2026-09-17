@@ -42,7 +42,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And the design-review command requires the cheaper-home challenge
     And the design-review skill points at the requirement
 
-  @givn.added @wip
+  @givn.added
   Scenario: The chapter-selection guidance does not normalize row 9
     Given the ADR qualification guidance is available
     When an author reads the chapter-selection guidance
