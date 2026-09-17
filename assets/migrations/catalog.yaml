@@ -38,3 +38,9 @@ migrations:
     order: 50
     proposal_asset: "migrations/0.6.0-to-0.7.0/proposal.md"
     design_asset: "migrations/0.6.0-to-0.7.0/design.md"
+  - id: migrate-0-7-0-to-0-8-0
+    source_version: "0.7.0"
+    target_version: "0.8.0"
+    order: 60
+    proposal_asset: "migrations/0.7.0-to-0.8.0/proposal.md"
+    design_asset: "migrations/0.7.0-to-0.8.0/design.md"

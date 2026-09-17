@@ -769,6 +769,17 @@ mod tests {
     }
 
     #[test]
+    fn migration_path_routes_0_7_0_to_the_current_release() {
+        let path = migration_path("0.7.0", env!("CARGO_PKG_VERSION")).unwrap();
+        assert_eq!(
+            path.iter()
+                .map(|bundle| bundle.id.as_str())
+                .collect::<Vec<_>>(),
+            ["migrate-0-7-0-to-0-8-0"]
+        );
+    }
+
+    #[test]
     fn migration_path_orders_multiple_bundles() {
         let catalog = MigrationCatalog {
             schema_version: MIGRATION_CATALOG_SCHEMA_VERSION,
