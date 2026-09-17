@@ -44,7 +44,9 @@
 | **Manifest** | YAML data describing artifacts, dependencies, archive requirements, verify settings, coverage settings, and addons. |
 | **Manifest overlay** | Project YAML applied to the embedded manifest. `givn/config.yaml` is applied first; `givn/commands.yaml` is applied later. |
 | **Permanent spec** | A tag-stripped `.feature` under `givn/specs/<usecase-id>/`, used as the durable behavior source. |
-| **Use case** | A domain goal or summary of domain goals represented by `usecase.md`, with actors, guarantees, rules, capabilities, interactions, and typed relationships. Anti-terms: group, cluster, folder, bucket. |
+| **Use case** | A contract between one primary actor and the system: the actor's single goal, stated as observable outcome, with the success and minimal guarantees the system makes while pursuing it. Represented by `usecase.md`, with actors, guarantees, rules, capabilities, interactions, and typed relationships. Anti-terms: group, cluster, folder, bucket. |
+| **Primary actor** | The actor whose single goal a use case contracts; named first in `## Actors`, with additional actors marked `Supporting:`. Anti-term: main actor. |
+| **Summary use case** | A `+` use case that owns zero direct capabilities and only child leaves via `Includes`; its coverage is the union of its children. A leaf whose flow names three or more distinct actor goals must be promoted to it and split. |
 | **`«include»` relationship** | A directed dependency from a use case to another use case or typed fragment whose behavior it always needs; recorded under `usecase.md`'s `## Includes`. Anti-terms: depends on, uses (prose). |
 | **`«extend»` relationship** | A conditional or error-path behavior contribution from one use case to a base use case; recorded under `usecase.md`'s `## Extends`. Extensions cannot target fragments. Anti-term: optional feature. |
 | **Fragment** | Reusable behavior with no independent user goal, represented under `givn/specs/fragments/` and included by use cases. Fragments are not use cases. |
