@@ -95,8 +95,11 @@ validator.
 With an artifact id, the command loads the effective manifest, validates the
 artifact, resolves its instruction through the project-overrides-first cascade,
 and prints either the text or one JSON object containing `id`, `generates`,
-`requires`, and `instruction`. A sole active change is auto-selected when no
-`--change` is given; multiple active changes require an explicit id.
+`requires`, and `instruction`. An id that is not a manifest artifact falls back
+to the same instruction cascade: a resolvable policy instruction (`dialog`) is
+served with empty `generates` and `requires` arrays, an unresolvable id keeps
+the existing unknown-artifact error. A sole active change is auto-selected when
+no `--change` is given; multiple active changes require an explicit id.
 
 Without an artifact id, the command reports context-aware generic guidance from
 the project state. It does not create lifecycle artifacts. When the readme
