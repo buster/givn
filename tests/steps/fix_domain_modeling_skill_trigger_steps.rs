@@ -378,26 +378,44 @@ fn review_checks_ubiquitous_language(world: &mut GivnWorld) {
 // --- term-introduction-discipline: term introduction test steps ------------
 
 #[when("an agent reads the term introduction test")]
-fn agent_reads_term_introduction_test(_world: &mut GivnWorld) {
-    unimplemented!()
+fn agent_reads_term_introduction_test(world: &mut GivnWorld) {
+    assert!(
+        !skill_template(world).is_empty(),
+        "skill template must not be empty"
+    );
 }
 
 #[then("the body requires a genus and differentia definition")]
-fn body_requires_genus_and_differentia(_world: &mut GivnWorld) {
-    unimplemented!()
+fn body_requires_genus_and_differentia(world: &mut GivnWorld) {
+    let content = skill_template(world);
+    assert!(
+        content.contains("Genus + differentia") && content.contains("is a `<kind>` that"),
+        "body does not require a genus and differentia definition"
+    );
 }
 
 #[then("the body requires a contrast pair")]
-fn body_requires_contrast_pair(_world: &mut GivnWorld) {
-    unimplemented!()
+fn body_requires_contrast_pair(world: &mut GivnWorld) {
+    let content = skill_template(world);
+    assert!(
+        content.contains("Contrast pair") && content.contains("not `<near neighbour>`"),
+        "body does not require a contrast pair"
+    );
 }
 
 #[then("the body requires one concrete domain sentence")]
-fn body_requires_concrete_sentence(_world: &mut GivnWorld) {
-    unimplemented!()
+fn body_requires_concrete_sentence(world: &mut GivnWorld) {
+    assert!(
+        skill_template(world).contains("concrete domain sentence"),
+        "body does not require one concrete domain sentence"
+    );
 }
 
 #[then("the body demonstrates a failure when the genus slot cannot be filled")]
-fn body_demonstrates_genus_failure(_world: &mut GivnWorld) {
-    unimplemented!()
+fn body_demonstrates_genus_failure(world: &mut GivnWorld) {
+    let content = skill_template(world);
+    assert!(
+        content.contains("Substrate") && content.contains("has no referent"),
+        "body does not demonstrate the genus-slot failure"
+    );
 }
