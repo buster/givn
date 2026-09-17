@@ -87,8 +87,10 @@ Required branches:
   addon instruction. Only a structured verdict with every mandatory gate
   passing requires a MADR. A non-qualifying choice names exactly one canonical
   lower-level artifact; a refinement amends an existing ADR and a replacement
-  supersedes it. `Must be shared` is supporting evidence only. This is guidance,
-  not runtime enforcement.
+  supersedes it. For every proposed `NEW_ADR`, name the cheaper home: the
+  specific canonical artifact that would own the rationale instead; a missing
+  cheaper home is a finding. `Must be shared` is supporting evidence only. This
+  is guidance, not runtime enforcement.
 - **Architecture documentation (arc42)** — independently re-derive the
   expected chapter set before trusting `arc42.md`'s claim: walk all 12 rows of
   the arc42-docs instruction's selection table yourself against

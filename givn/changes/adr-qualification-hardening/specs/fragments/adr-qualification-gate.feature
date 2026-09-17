@@ -34,7 +34,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     Then the template contains no pre-passed qualification verdict
     And the template instructs the author to fill the verdict from the record
 
-  @givn.added @wip
+  @givn.added
   Scenario: Design-review requires the cheaper-home challenge for a new ADR
     Given the design-review instruction is available
     When a reviewer reads the ADR branch
