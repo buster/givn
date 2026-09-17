@@ -2,7 +2,7 @@
 
 Feature: Instruction and skill guidance remains complete and machine-readable
 
-  @givn.added @wip
+  @givn.added
   Scenario: The proposal instruction carries the question disposition rule
     Given the proposal instructions are requested
     When an author reads the question disposition rule
