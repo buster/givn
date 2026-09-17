@@ -131,6 +131,10 @@ as "no issue found" if genuinely clean):
 
 - **Scope** — does the spec match what the proposal asked for? Anything extra?
   Anything missing? Is "done" unambiguous?
+- **Decision ledger** — does every proposal question ID (`D<n>`) resolve in
+  the design's `## Decisions` ledger or is it explicitly carried with a named
+  owner? Does a seed-sourced question keep its seed reference (`D2 (seed
+  Q5)`)? An unresolved, unrecorded item is a finding.
 - **Tech choices** — is the stack in design.md the right fit? Are there simpler
   alternatives that satisfy all the observable behaviours in the spec?
 - **Missing scenarios** — are there observable behaviours implied by the proposal
