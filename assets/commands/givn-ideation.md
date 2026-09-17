@@ -51,6 +51,10 @@ Frame → Event Storming → Use Case Definition → Use Case Elaboration → Ha
 - Never write givn change artifacts — change seeds only, at handoff.
 - Handoff never starts a change — the user runs the normal proposal flow.
 - Never invent a persona the user has not confirmed.
+- Reuse before minting: inventory the project personas and every sibling
+  topic's personas, then match by ID or record a one-sentence justification
+  naming the distinguishing criterion (authority boundary, evaluation
+  capability, or own vocabulary). A reused topic file is record-only.
 - Draft use cases with the permanent `usecase.md` schema and stable kebab-case
   use-case IDs. The same ID must survive topic state, change seed, change-side
   `usecase.md`, and permanent archive.
