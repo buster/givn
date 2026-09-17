@@ -21,11 +21,11 @@ Feature: Explore scenarios in the current change
     And stdout contains "recommendation: EXTEND coverage-tool"
     And stdout contains "confidence: signal"
 
-  @givn.removed @wip
+  @givn.removed
   Scenario: A proposal with no matching surface recommends NEW
     Given placeholder
 
-  @givn.added @wip
+  @givn.added
   Scenario: A proposal with no matching surface reports no signal
     Given a spec discovery project whose corpus contains a capability that invokes `givn lint`
     And an active change whose proposal describes internal widget plumbing with no command surface
