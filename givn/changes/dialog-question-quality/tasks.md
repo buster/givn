@@ -139,20 +139,35 @@ for those actions remain the real-interface evidence.
         ```
   - [x] COMMIT: `<hash>` -- `feat(instruction-integrity): The canonical dialog policy demonstrates the full question record`
 
-- [ ] Scenario: `The dialog policy is retrievable without an active change`
-  - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `The dialog policy is retrievable without an active change`
+  - [x] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/dialog-question-quality/specs cargo test --locked --test features_runner -- --name "The dialog policy is retrievable without an active change"
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: confirmed the fallback resolves before change resolution (the
-        previous scenario's production code); adjusted the branch order if the
-        no-change path still failed. Files: `src/cli/instructions.rs`. Run →
-        zero. Evidence:
+  - [x] GREEN: the fallback from the first scenario already resolves before
+        change resolution; implemented the no-change When step. Files:
+        `tests/steps/instruction_integrity_steps.rs`. Run → zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/dialog-question-quality/specs cargo test --locked --test features_runner -- --name "The dialog policy is retrievable without an active change"
+        ✔ Given a project root with givn/ initialised
+        ✔ When the author requests the dialog policy through the Givn CLI without a change
+        ✔ Then the command exits 0
+        ✔ And the CLI output contains the named-artifact rule
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(instruction-integrity): The dialog policy is retrievable without an active change`
+  - [x] COMMIT: `<hash>` -- `feat(instruction-integrity): The dialog policy is retrievable without an active change`
 
 - [ ] Scenario: `An unresolvable instruction id keeps the known-artifact error`
   - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:

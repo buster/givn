@@ -20,7 +20,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And the policy rejects an outcome-only resolution
     And the policy requires a gloss for every cross-reference
 
-  @givn.added @wip
+  @givn.added
   Scenario: The dialog policy is retrievable without an active change
     Given a project root with givn/ initialised
     When the author requests the dialog policy through the Givn CLI without a change
