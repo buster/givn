@@ -1131,28 +1131,51 @@ fn template_instructs_fill_from_record(world: &mut GivnWorld) {
 }
 
 #[given("the design-review instruction is available")]
-fn design_review_instruction_is_available(_world: &mut GivnWorld) {
-    unimplemented!()
+fn design_review_instruction_is_available(world: &mut GivnWorld) {
+    let content = std::fs::read_to_string(crate::common::repo_path("assets/instructions/design-review.md"))
+        .expect("read design-review instruction");
+    world.additional_output = Some(content);
 }
 
 #[when("a reviewer reads the ADR branch")]
-fn reviewer_reads_adr_branch(_world: &mut GivnWorld) {
-    unimplemented!()
+fn reviewer_reads_adr_branch(world: &mut GivnWorld) {
+    assert!(
+        !guidance(world).is_empty(),
+        "design-review instruction is empty"
+    );
 }
 
 #[then("the instruction requires the cheaper-home challenge for every proposed new ADR")]
-fn instruction_requires_cheaper_home(_world: &mut GivnWorld) {
-    unimplemented!()
+fn instruction_requires_cheaper_home(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(
+        content.contains("cheaper home") && content.contains("NEW_ADR"),
+        "design-review instruction does not require the cheaper-home challenge"
+    );
 }
 
 #[then("the design-review command requires the cheaper-home challenge")]
 fn command_requires_cheaper_home(_world: &mut GivnWorld) {
-    unimplemented!()
+    let content = std::fs::read_to_string(crate::common::repo_path(
+        "assets/commands/givn-design-review.md",
+    ))
+    .expect("read design-review command");
+    assert!(
+        content.contains("cheaper home"),
+        "design-review command does not require the cheaper-home challenge"
+    );
 }
 
 #[then("the design-review skill points at the requirement")]
 fn skill_points_at_cheaper_home(_world: &mut GivnWorld) {
-    unimplemented!()
+    let content = std::fs::read_to_string(crate::common::repo_path(
+        "assets/skills/givn-design-review/SKILL.md.tmpl",
+    ))
+    .expect("read design-review skill template");
+    assert!(
+        content.contains("cheaper home"),
+        "design-review skill does not point at the cheaper-home challenge"
+    );
 }
 
 #[when("an author reads the chapter-selection guidance")]
