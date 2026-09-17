@@ -32,7 +32,7 @@ the decision is not re-opened.
 |---|---|---|---|---|
 | 1 | [dialog-question-quality](01-dialog-question-quality.md) | Terse unanswerable questions (T1 A, T1 B questions, T1 C) | — | archived (proven, `b97669e0`) |
 | 2 | [seed-artifact-lifecycle](02-seed-artifact-lifecycle.md) | T1 B seeds + seed lifecycle (M2 A) | 1 | archived (proven, `3497b37a`) |
-| 3 | [term-introduction-discipline](03-term-introduction-discipline.md) | Term proliferation (T2 options 2 and 4) | 1 | ready |
+| 3 | [term-introduction-discipline](03-term-introduction-discipline.md) | Term proliferation (T2 options 2 and 4) | 1 | archived (proven, `56e1e588`) |
 | 4 | [use-case-model-scoping](04-use-case-model-scoping.md) | Use-case scoping (T3 option A) | 1 | ready |
 | 5 | [adr-qualification-hardening](05-adr-qualification-hardening.md) | ADR overuse (T4 options A and C) | 4 | ready |
 | 6 | [persona-identity-reuse](06-persona-identity-reuse.md) | Persona fragmentation (T5 options 1, 2, 4) | 4 | ready |
