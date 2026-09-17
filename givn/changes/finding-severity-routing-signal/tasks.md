@@ -26,11 +26,21 @@ Capabilities and step files:
 
 ## Setup
 
-- [ ] Confirm strict mode and the runner. No new runner is needed.
-- [ ] Proof-of-strictness: temporary probe feature, non-zero exit, delete.
-- [ ] Create the step skeletons with `unimplemented!()` bodies; `cargo check
-      --locked --tests` succeeds.
-- [ ] COMMIT: `<hash>` -- `test(finding-severity-routing-signal): strict-mode proof and step skeletons`
+- [x] Confirm strict mode and the runner: `.fail_on_skipped()`; `verify.command` is `./run-tests.sh`.
+- [x] Proof-of-strictness: temporary probe → non-zero exit, then deleted. Evidence:
+      ```
+      GIVN_FEATURES=tests/strict-mode-probe.feature cargo test --locked --test features_runner
+      1 scenario (1 failed)
+      1 step (1 failed)
+      exit status: 1
+      ```
+- [x] Created the step skeletons (three route Givens, three instruction steps)
+      with `unimplemented!()` bodies. Evidence:
+      ```
+      cargo check --locked --tests
+      Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.90s
+      ```
+- [x] COMMIT: `<hash>` -- `test(finding-severity-routing-signal): strict-mode proof and step skeletons`
 
 ## Scenarios
 
