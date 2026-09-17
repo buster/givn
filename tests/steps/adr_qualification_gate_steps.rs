@@ -1096,23 +1096,38 @@ fn marker_requires_verdict_before_drafting(world: &mut GivnWorld) {
 }
 
 #[given("the ADR template is available")]
-fn adr_template_is_available(_world: &mut GivnWorld) {
-    unimplemented!()
+fn adr_template_is_available(world: &mut GivnWorld) {
+    let content = std::fs::read_to_string(crate::common::repo_path(
+        "assets/addons/arc42-docs/chapters/adr/adr-template.md",
+    ))
+    .expect("read ADR template");
+    world.additional_output = Some(content);
 }
 
 #[when("an author prepares to copy the template")]
-fn author_prepares_to_copy_template(_world: &mut GivnWorld) {
-    unimplemented!()
+fn author_prepares_to_copy_template(world: &mut GivnWorld) {
+    assert!(!guidance(world).is_empty(), "ADR template is empty");
 }
 
 #[then("the template contains no pre-passed qualification verdict")]
-fn template_contains_no_prepassed_verdict(_world: &mut GivnWorld) {
-    unimplemented!()
+fn template_contains_no_prepassed_verdict(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(
+        !content.contains("ADR-QUALIFICATION: PASS"),
+        "ADR template still ships a pre-passed qualification marker"
+    );
+    assert!(
+        !content.contains("qualification: QUALIFIED"),
+        "ADR template still ships a pre-passed qualification value"
+    );
 }
 
 #[then("the template instructs the author to fill the verdict from the record")]
-fn template_instructs_fill_from_record(_world: &mut GivnWorld) {
-    unimplemented!()
+fn template_instructs_fill_from_record(world: &mut GivnWorld) {
+    assert!(
+        guidance(world).contains("Fill every value from the structured verdict"),
+        "ADR template does not instruct filling the verdict from the record"
+    );
 }
 
 #[given("the design-review instruction is available")]
