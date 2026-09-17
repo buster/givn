@@ -96,6 +96,7 @@ decisions.
 - [x] Archive: the maintenance change archives with `specs` skipped; the
       verification scopes run against the permanent corpus.
 
-## Post-merge maintainer action (not this change)
+## Post-merge maintainer action (not part of this change)
 
-- [ ] Annotated `v0.8.0` tag after merge, per the 0.6.0/0.7.0 precedent.
+After merge, create the annotated `v0.8.0` tag, per the 0.6.0/0.7.0
+precedent. This is a maintainer action, not a change task.
