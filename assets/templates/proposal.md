@@ -39,4 +39,16 @@
 
 ## Open Questions
 
-> List any unresolved decisions or unknowns before moving to specs.
+> One entry per question, with a stable ID, the full question with its option
+> treatment (context, per-option meaning, gain, cost, and a concrete example),
+> and a Disposition: answered (with its source), carried (with an owner and
+> the artifact that will decide it), or out of scope (with a reason).
+
+### D1 — <short title>
+
+- Question: <full standalone question>
+- Options:
+  1. **<option name>** — <what it means>; gain: <what improves>; cost: <what
+     gets harder or is given up>; in practice: <concrete example>
+- Disposition: <answered | carried | out of scope> — <source, owner and
+  deciding artifact, or reason>

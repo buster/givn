@@ -747,39 +747,73 @@ fn template_carries_topic_stances(world: &mut GivnWorld) {
 
 // --- guarantee-question-traceability: instruction steps --------------------
 
+fn traceability_guidance(world: &GivnWorld) -> &str {
+    world
+        .additional_output
+        .as_deref()
+        .expect("traceability guidance was not loaded")
+}
+
 #[given("the proposal instructions are requested")]
-fn proposal_instructions_requested(_world: &mut GivnWorld) {
-    unimplemented!()
+fn proposal_instructions_requested(world: &mut GivnWorld) {
+    let instruction = std::fs::read_to_string(crate::common::repo_path("assets/instructions/proposal.md"))
+        .expect("read proposal instruction");
+    let command = std::fs::read_to_string(crate::common::repo_path("assets/commands/givn-propose.md"))
+        .expect("read propose command");
+    world.additional_output = Some(format!("{instruction}\n{command}"));
 }
 
 #[when("an author reads the question disposition rule")]
-fn author_reads_question_disposition(_world: &mut GivnWorld) {
-    unimplemented!()
+fn author_reads_question_disposition(world: &mut GivnWorld) {
+    assert!(
+        !traceability_guidance(world).is_empty(),
+        "proposal guidance must not be empty"
+    );
 }
 
 #[then("the guidance requires each intersecting seed question to be dispositioned")]
-fn guidance_requires_seed_disposition(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_requires_seed_disposition(world: &mut GivnWorld) {
+    let content = traceability_guidance(world);
+    assert!(
+        content.contains("intersecting seed question") && content.contains("dispositioned"),
+        "guidance does not require dispositioning intersecting seed questions"
+    );
 }
 
 #[then("the guidance names the answered carried and out-of-scope dispositions")]
-fn guidance_names_dispositions(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_names_dispositions(world: &mut GivnWorld) {
+    let content = traceability_guidance(world);
+    for marker in ["answered", "carried", "out of scope"] {
+        assert!(
+            content.contains(marker),
+            "guidance is missing the {marker:?} disposition"
+        );
+    }
 }
 
 #[then("the guidance rejects a bare deferral to the design")]
-fn guidance_rejects_bare_deferral(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_rejects_bare_deferral(world: &mut GivnWorld) {
+    assert!(
+        traceability_guidance(world).contains("is not a disposition"),
+        "guidance does not reject a bare deferral to the design"
+    );
 }
 
 #[then("the guidance assigns stable question IDs")]
-fn guidance_assigns_question_ids(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_assigns_question_ids(world: &mut GivnWorld) {
+    let content = traceability_guidance(world);
+    assert!(
+        content.contains("`D1`") && content.contains("D<n>"),
+        "guidance does not assign stable question IDs"
+    );
 }
 
 #[then("the guidance marks the disposition rule advisory without an ideation source")]
-fn guidance_marks_advisory_without_source(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_marks_advisory_without_source(world: &mut GivnWorld) {
+    assert!(
+        traceability_guidance(world).contains("advisory without an ideation source"),
+        "guidance does not mark the rule advisory without an ideation source"
+    );
 }
 
 #[given("the design and design-review instructions are requested")]
