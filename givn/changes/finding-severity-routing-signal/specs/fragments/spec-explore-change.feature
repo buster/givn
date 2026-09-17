@@ -2,7 +2,7 @@
 
 Feature: Explore scenarios in the current change
 
-  @givn.added @wip
+  @givn.added
   Scenario: A tied route reports no signal
     Given a spec discovery project whose corpus contains two capabilities that invoke `givn lint`
     And an active change whose proposal describes extending the lint command
