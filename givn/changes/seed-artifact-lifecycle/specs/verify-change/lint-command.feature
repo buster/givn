@@ -61,7 +61,7 @@ Feature: lint-command
     And stderr contains "[SEED ]"
     And stderr contains "already archived"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unrecognised seed status is reported and a status after prose is honoured
     Given a project root with givn/ initialised
     And a change seed at "givn/ideation/topic/changes/seed-unrecognised.md" with:

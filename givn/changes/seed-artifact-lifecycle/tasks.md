@@ -218,18 +218,29 @@ phrases).
         ```
   - [x] COMMIT: `<hash>` -- `feat(lint-command): A change seed proposed by an archived change is reported as stale`
 
-- [ ] Scenario: `An unrecognised seed status is reported and a status after prose is honoured`
-  - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `An unrecognised seed status is reported and a status after prose is honoured`
+  - [x] RED: removed `@wip` from this scenario only; `src/cli/lint.rs` restored
+        to `b5ed5fab`, run → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/seed-artifact-lifecycle/specs cargo test --locked --test features_runner -- --name "An unrecognised seed status is reported and a status after prose is honoured"
+        Step panicked. Captured output: stderr missing "[SEED ]":
+        1 scenario (1 failed)
+        7 steps (6 passed, 1 failed)
         ```
-  - [ ] GREEN: covered by the tolerant first-match parse and the unrecognised
+  - [x] GREEN: covered by the tolerant first-match parse and the unrecognised
         classification. Files: `src/cli/lint.rs`. Run → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        9 steps (9 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        9 steps (9 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(lint-command): An unrecognised seed status is reported and a status after prose is honoured`
+  - [x] COMMIT: `<hash>` -- `feat(lint-command): An unrecognised seed status is reported and a status after prose is honoured`
 
 - [ ] Scenario: `An advisory seed finding is counted in the summary and still exits 0`
   - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
