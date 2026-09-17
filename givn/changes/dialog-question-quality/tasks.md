@@ -198,21 +198,39 @@ for those actions remain the real-interface evidence.
         ```
   - [x] COMMIT: `<hash>` -- `feat(instruction-integrity): An unresolvable instruction id keeps the known-artifact error`
 
-- [ ] Scenario: `The design-review template carries the per-question record shape`
-  - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `The design-review template carries the per-question record shape`
+  - [x] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/dialog-question-quality/specs cargo test --locked --test features_runner -- --name "The design-review template carries the per-question record shape"
+        1 feature
+        1 scenario (1 failed)
+        5 steps (4 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: reshaped `assets/templates/design-review.md` — index table
-        `# | Branch | Question | Outcome` plus the per-question blocks with
+  - [x] GREEN: reshaped `assets/templates/design-review.md` — index table
+        `# | Branch | Question | Outcome` plus the per-question block with
         `Context:`, `Options:`, `In practice:`, `Gain:`, `Cost:`,
         `Recommended:`, and `Resolution:` with rejected alternatives. Files:
-        `assets/templates/design-review.md`. Run → zero. Evidence:
+        `assets/templates/design-review.md`. `cargo clean -p givn`, then the
+        targeted run → zero. Evidence:
         ```
+        ✔ When the user runs `givn eject design-review:template`
+        ✔ Then the ejected design-review template contains "Branch"
+        ✔ And the ejected design-review template contains "Outcome"
+        ✔ And the ejected design-review template contains "In practice:"
+        ✔ And the ejected design-review template contains "Recommended:"
+        ✔ And the ejected design-review template contains "Rejected:"
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(instruction-integrity): The design-review template carries the per-question record shape`
+  - [x] COMMIT: `<hash>` -- `feat(instruction-integrity): The design-review template carries the per-question record shape`
 
 ### ideation-skill
 
