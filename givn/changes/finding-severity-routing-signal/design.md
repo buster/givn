@@ -153,7 +153,7 @@ Gherkin actors stay the user and the agent.
 
 | Capability | Step definition file | Interface |
 |---|---|---|
-| lint-command | `tests/steps/mod.rs` generic steps | Real `givn lint` subprocess; no new steps |
+| lint-command | `tests/steps/mod.rs` | Real `givn lint` subprocess; reuse of the generic steps; no new steps |
 | spec-explore-change | `tests/steps/spec_discovery_deterministic_steps.rs` | Real `givn spec route` subprocess; adds two corpus Givens |
 | instruction-integrity | `tests/steps/instruction_integrity_steps.rs` | Direct asset reads; adds the routing-rule When and Thens |
 
