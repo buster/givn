@@ -17,7 +17,7 @@ Feature: lint-command
     And stderr does not contain "known-persona"
     And stderr does not contain "topic-persona"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The change scope reports a dangling persona reference
     Given a project root with givn/ initialised
     And a change use-case document at "givn/changes/persona-change/specs/persona-change/usecase.md" records the persona "missing-persona"
