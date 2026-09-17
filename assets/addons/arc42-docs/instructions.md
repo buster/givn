@@ -125,6 +125,27 @@ If any mandatory dimension fails, do not create an ADR. Route the decision once
 to its canonical artifact. Do not copy the same rationale into the ADR archive,
 an Arc42 chapter, and a process document.
 
+### Falsification tests
+
+Three fail-fast tests make the gate decisive. A candidate fails the gate when
+any of these holds, no matter how the five dimensions were argued. A decision
+that fixes a component, authority, or deployment boundary with durable
+consequences still qualifies; the tests classify by kind, not count, and there
+is no numeric ADR cap — a foundational change may legitimately mint several
+genuine ADRs.
+
+1. **Single-change reversibility.** The decision is fully implementable and
+   reversible within one change and touches one component. File count or
+   interface breadth does not change this. Non-example: a project identity key split is a data-model decision owned by `design.md` and the glossary.
+2. **No multi-change constraint.** The decision does not constrain at least
+   two future changes or two components. A boundary nobody else builds
+   against is a local decision. Non-example: a terminal state value plus its presentation filtering is feature behavior owned by the capability spec and design.
+3. **Product-behavior exclusion.** The candidate is observable workflow
+   behavior ownable by a use case plus Gherkin (who authorizes what, in which
+   order, with which state values). It fails `lower_level_artifact` unless it
+   also moves a component, authority, or deployment boundary, and that
+   boundary is stated in the verdict. Non-examples: an assumption-and-go-ahead gate and a human evaluation gate are workflow behavior; a change-request entity with crash-safety requirements is a domain entity, not a workflow gate.
+
 ### Qualification exclusions and LLM procedure
 
 The four checklist items are evidence prompts, not independent qualification
