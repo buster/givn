@@ -446,34 +446,62 @@ fn cli_contains_rejected_alternative_rule(world: &mut GivnWorld) {
     );
 }
 
+fn dialog_policy(world: &GivnWorld) -> &str {
+    world
+        .additional_output
+        .as_deref()
+        .expect("dialog policy was not loaded")
+}
+
 #[given("the canonical dialog policy is requested")]
-fn canonical_dialog_policy_requested(_world: &mut GivnWorld) {
-    unimplemented!()
+fn canonical_dialog_policy_requested(world: &mut GivnWorld) {
+    let content = std::fs::read_to_string("assets/instructions/dialog.md")
+        .expect("read canonical dialog instruction");
+    world.additional_output = Some(content);
 }
 
 #[when("an author reads the option treatment and the record shape")]
-fn author_reads_option_treatment(_world: &mut GivnWorld) {
-    unimplemented!()
+fn author_reads_option_treatment(world: &mut GivnWorld) {
+    assert!(
+        !dialog_policy(world).is_empty(),
+        "dialog policy must not be empty"
+    );
 }
 
 #[then("the policy requires every option's meaning gain cost and concrete example")]
-fn policy_requires_option_treatment(_world: &mut GivnWorld) {
-    unimplemented!()
+fn policy_requires_option_treatment(world: &mut GivnWorld) {
+    let content = dialog_policy(world);
+    for marker in ["Meaning:", "In practice:", "Gain:", "Cost:"] {
+        assert!(
+            content.contains(marker),
+            "dialog policy missing option treatment marker {marker:?}: {content}"
+        );
+    }
 }
 
 #[then("the policy requires the rejected alternatives with their reasons")]
-fn policy_requires_rejected_alternatives(_world: &mut GivnWorld) {
-    unimplemented!()
+fn policy_requires_rejected_alternatives(world: &mut GivnWorld) {
+    let content = dialog_policy(world);
+    assert!(
+        content.contains("Rejected:") && content.contains("Resolution:"),
+        "dialog policy does not record rejected alternatives with the resolution: {content}"
+    );
 }
 
 #[then("the policy rejects an outcome-only resolution")]
-fn policy_rejects_outcome_only_resolution(_world: &mut GivnWorld) {
-    unimplemented!()
+fn policy_rejects_outcome_only_resolution(world: &mut GivnWorld) {
+    assert!(
+        dialog_policy(world).contains("An outcome-only resolution is not a"),
+        "dialog policy does not reject an outcome-only resolution"
+    );
 }
 
 #[then("the policy requires a gloss for every cross-reference")]
-fn policy_requires_cross_reference_gloss(_world: &mut GivnWorld) {
-    unimplemented!()
+fn policy_requires_cross_reference_gloss(world: &mut GivnWorld) {
+    assert!(
+        dialog_policy(world).contains("one-line gloss on first use"),
+        "dialog policy does not require a cross-reference gloss"
+    );
 }
 
 #[when("the author requests the dialog policy through the Givn CLI without a change")]

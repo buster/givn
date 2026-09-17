@@ -11,7 +11,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And the CLI output contains the standalone-answerability rule
     And the CLI output contains the rejected-alternative rule
 
-  @givn.added @wip
+  @givn.added
   Scenario: The canonical dialog policy demonstrates the full question record
     Given the canonical dialog policy is requested
     When an author reads the option treatment and the record shape
