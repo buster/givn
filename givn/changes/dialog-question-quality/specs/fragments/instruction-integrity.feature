@@ -2,7 +2,7 @@
 
 Feature: Instruction and skill guidance remains complete and machine-readable
 
-  @givn.added @wip
+  @givn.added
   Scenario: The canonical dialog policy is retrievable through the Givn CLI
     Given a Givn project with an active change for the dialog policy
     When the author requests the dialog policy through the Givn CLI

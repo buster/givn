@@ -1,0 +1,118 @@
+# Instruction: dialog
+
+The canonical dialog policy. It applies to every interactive step that asks
+the user a question: ideation, explore, `grill-me`, `grill-with-docs`,
+proposal ambiguity flagging, design-review grilling, review dispositions, and
+archive confirmations.
+
+A question that cannot be answered from what is written is a defect, not a
+style choice.
+
+## Rule 1 — Name artifacts in domain language
+
+Name every artifact in domain language with its identifier in parentheses.
+Never present a bare identifier or an abstract label.
+
+<bad_example>
+**Q1 (Scope):** Should UC1 use D2 or D3? ADR12 says no.
+</bad_example>
+
+<good_example>
+**Q1 (Scope):** Should the password-reset use case (UC1) store reset tokens in
+the database (D2) or derive them from a signed secret (D3)? The
+stateless-sessions decision (ADR-012) argues against server-side state.
+</good_example>
+
+## Rule 2 — Give every option the full treatment
+
+Every option states four things: what it means, what it gains, what it costs,
+and one concrete example of what the user sees or what the system does. Never
+a bare letter or abstract label. "A now, C later, B possibly in between" is
+not an option; it is a code whose meaning exists nowhere.
+
+## Rule 3 — Gloss every cross-reference
+
+Every cross-reference (use case, question, ADR, invariant, risk, event number)
+carries a one-line gloss on first use per file or per turn. The reader must be
+able to answer without opening another file.
+
+## Rule 4 — A question is answerable standalone
+
+A question names the decision it blocks, the context that forces it, the
+options with their gains and costs, and a concrete example of each. The reader
+must be able to decide without opening another file and without re-deriving
+the trade-offs.
+
+## Rule 5 — Record the rejected alternatives
+
+The resolution records what was rejected and why, not only the chosen
+outcome. "Rule settled: B" is not a resolution.
+
+## Rule 6 — One question at a time
+
+Ask one question, wait for the answer, then continue. Never batch questions.
+
+## The record shape
+
+A question record keeps the full text, options, gains, costs, examples, and
+rejected alternatives after it closes. An outcome-only resolution is not a
+valid record.
+
+Bad:
+
+```text
+Closed via Q12: A now, C later, B possibly in between.
+```
+
+Good:
+
+```markdown
+## Q12 — Remote capabilities vs the v1 posture
+
+- Status: closed 2026-09-15 (user)
+- Blocks: whether bindings may reach remote services in v1; shapes the
+  binding model, credential handling, and the tracker write path.
+- Context: the composition plan allows six independently bound project
+  services. Remote services need credentials and, for push delivery,
+  inbound reachability. kiekste v1 runs locally with no server operation.
+  The decision determines whether the binding model is built around
+  local-only services or takes on remote infrastructure now.
+- Question: should v1 support bindings to remote services, and if so, in
+  which form?
+- Options:
+  1. **Posture A — locally reachable bindings only.**
+     Meaning: every bound service runs on the same host as kiekste; no
+     credentials are stored.
+     In practice: a Fossil tracker binding points at a local repository; a
+     hosted GitHub tracker is not selectable.
+     Gain: no credential store, no inbound network surface, the simplest
+     security model; the binding implementation stays small.
+     Cost: remote trackers and chats cannot be used at all; bridging is
+     manual.
+  2. **Posture B — outbound-only remote access.**
+     Meaning: kiekste may call remote services over outbound HTTPS with
+     stored credentials; remote services cannot call kiekste.
+     In practice: a GitHub tracker binding polls issues and posts comments;
+     incoming answers arrive on the next poll.
+     Gain: hosted services usable without inbound reachability; covers
+     most tracker and chat needs.
+     Cost: credential storage and rotation; answer latency equals the poll
+     interval; no webhooks.
+  3. **Posture C — full remote integration.**
+     Meaning: remote services can call kiekste (webhooks, OAuth), enabling
+     push delivery.
+     In practice: a tracker comment reaches the engine immediately through
+     a public endpoint.
+     Gain: lowest latency, native integration.
+     Cost: public endpoint, OAuth flows, secret management; reopens the
+     v1 non-goal of server operation.
+- Resolution: Posture A now, Posture C later, Posture B possibly in
+  between. Chosen: Posture A — v1 is local-only; the binding model must
+  not be shaped around infrastructure that does not exist yet. Rejected
+  now: Posture C reopens the v1 non-goal and requires server operation;
+  Posture B adds credential handling and polling semantics to the first
+  binding implementation without a user need that justifies them.
+```
+
+Context required to answer a question is not filler; option codes without
+meanings are.
