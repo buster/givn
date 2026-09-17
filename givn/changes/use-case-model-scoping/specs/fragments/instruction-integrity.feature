@@ -2,7 +2,7 @@
 
 Feature: Instruction and skill guidance remains complete and machine-readable
 
-  @givn.added @wip
+  @givn.added
   Scenario: The review instruction carries the use-case scope rejection criteria
     Given the review instructions are requested
     When the reviewer reads the use-case scope criteria
