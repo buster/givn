@@ -2,7 +2,7 @@
 
 Feature: Domain-modeling skill is triggered and routed
 
-  @givn.added @wip
+  @givn.added
   Scenario: The domain-modeling guidance carries the term introduction test
     Given the domain-modeling skill template is inspected
     When an agent reads the term introduction test
