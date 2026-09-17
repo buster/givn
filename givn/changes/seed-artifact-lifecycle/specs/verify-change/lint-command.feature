@@ -46,7 +46,7 @@ Feature: lint-command
     And stderr contains "ghost-change"
     And stderr does not contain "seed-active"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A change seed proposed by an archived change is reported as stale
     Given a project root with givn/ initialised
     And a change "done-change" exists in archive
