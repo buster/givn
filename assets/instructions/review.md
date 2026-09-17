@@ -227,7 +227,8 @@ document section that proves it; the durable reference is
 - **Extension without a step reference** — `## Extensions` omits its
   main-flow step, or adds a new success outcome.
 - **Inconsistent preconditions** — a precondition is established by the flow;
-  the success guarantee is assumed; the trigger is a state or desire.
+  the success guarantee is assumed; the trigger is a state or desire; an
+  unqualified guarantee whose prerequisite is open (`(open: Q<N>)`).
 - **Mechanism vocabulary** — `## Goal`, `## Trigger`, or the guarantees name
   a mechanism.
 - **Component- or channel-shaped name** — a use-case or capability name names

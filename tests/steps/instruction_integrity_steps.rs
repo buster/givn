@@ -872,6 +872,9 @@ fn design_review_treats_unresolved_as_finding(world: &mut GivnWorld) {
 }
 
 #[then("the guidance rejects an unqualified guarantee whose prerequisite is open")]
-fn review_rejects_unqualified_guarantee(_world: &mut GivnWorld) {
-    unimplemented!()
+fn review_rejects_unqualified_guarantee(world: &mut GivnWorld) {
+    assert!(
+        review_guidance(world).contains("(open: Q<N>)"),
+        "review guidance does not reject an unqualified guarantee with an open prerequisite"
+    );
 }
