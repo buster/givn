@@ -6,9 +6,43 @@ refresh and the `givn_config_version` bump are already done by `givn upgrade`
 (Commit {{UPGRADE_COMMIT}}). This maintenance change carries the
 project-specific work.
 
-Work the phases in order. Within each phase, one artifact per edit, and run
-the affected checks after each edit. Stop and ask the human when a decision is
-not derivable from the project's own artifacts.
+## Execution model
+
+This change is the **inventory and plan**, not the repair site.
+
+- Build one row per artifact deviation with its disposition and the follow-up
+  change that will fix it. The repairs run in the follow-up changes through
+  the normal gates (proposal, specs, design, review, archive), never in this
+  change.
+- This change edits no corpus artifact except the term collision-check cells
+  (evidence gathering, Phase 4).
+- This change archives once every row has a disposition and a named or
+  in-flight follow-up; the inventory is the durable record. The migration is
+  complete when the follow-up changes archive.
+- Work the phases in order; within a phase, inventory one artifact kind at a
+  time and stop to ask the human when a disposition is not derivable from the
+  project's own artifacts.
+
+Follow-up change ids are kebab-case `<verb>-<object>` (for example
+`split-run-a-project`). An id is **in-flight** when `givn/changes/<id>/`
+exists at inventory time; otherwise it is **named** (recorded here, not yet
+scaffolded). An archived change is never named as a pending follow-up.
+
+## Inventory and dispositions
+
+Record the inventory in this change's `design.md` (append it below this
+bundle text) as one table per artifact kind, using this shape:
+
+```markdown
+| Artifact | Deviation (criterion or test) | Disposition | Follow-up change id |
+|---|---|---|---|
+| givn/specs/run-a-project/usecase.md | R1 goal conjunction, R9 oversized leaf | split into child leaves | split-run-a-project |
+```
+
+Every row names exactly one deviation family and one follow-up. When a
+`proposed` ADR's owning change has already archived or does not exist,
+re-qualify the record in this change (accepted, or rejected with a canonical
+destination) or create a new named follow-up; never name an archived change.
 
 ## Preflight
 
@@ -17,11 +51,9 @@ not derivable from the project's own artifacts.
    `givn/changes/migrate-0-7-0-to-0-8-0/`.
 2. Confirm the checkout is clean and committed before the first edit.
 3. Inventory the corpus: `givn spec tree`, the permanent `givn/specs/`
-   directories, `givn/personas/`, every `givn/ideation/*/personas/`, and
-   `docs/arc42/adr/`.
-4. Record the inventory (file, planned disposition) in this change's
-   `migration.yaml` or a notes section of `design.md`, so the migration is
-   auditable.
+   directories, `givn/personas/`, every `givn/ideation/*/personas/`,
+   `docs/arc42/adr/`, and the term and seed records.
+4. Start the disposition tables; one row per artifact kind.
 
 ## Enforcement boundary
 
@@ -34,10 +66,14 @@ Only two of the rules below are machine-checked:
 
 The use-case scoping rules, the persona identity criteria, and the ADR
 falsification tests are authoring and review guidance. A green suite does not
-by itself prove this migration; the checks are the recorded dispositions and
-the human-confirmed diffs.
+by itself prove this migration; the checks are the recorded dispositions, the
+follow-up changes, and the human-confirmed diffs.
 
-## Phase 1 — Use-case model
+## Phase 1 — Use-case model (inventory)
+
+These are inventory criteria: list the failing criteria per use-case
+document and name the follow-up that repairs them. The repair itself runs in
+the follow-up change.
 
 ### The definition
 
@@ -56,7 +92,9 @@ the human-confirmed diffs.
    may name a technical component, mechanism, or channel (server, backend,
    store, service, panel, browser, CLI). Placement test for every capability:
    which actor goal does completing this advance? Channel is never an answer;
-   a browser or CLI variant of an action lives under the action's goal.
+   a browser or CLI variant of an action lives under the action's goal. A
+   failing name is renamed in the follow-up, which moves the `.feature` file
+   and updates every reference.
 3. **Level discipline.** `!` owns capabilities directly. `+` owns zero direct
    capabilities and only child `!` via `Includes: usecase:`; its coverage is
    the union of its children. A leaf whose flow names three or more distinct
@@ -104,28 +142,23 @@ the human-confirmed diffs.
 The same criteria ship in `givn instructions review`; the generated ideation
 guidance carries the definition and rules. Use them as the live references.
 
-### Procedure
+### Inventory rows
 
-1. For each permanent use-case document, list the failing criteria. Example:
-   a leaf whose `## Goal` is "Manage the run and publish results" fails R1
-   (two verb phrases) and R9 if its flow names three goals.
-2. Repair one capability at a time:
-   - **Split a conjunction goal** into one goal per outcome, each with its own
-     primary actor and its own leaf document.
-   - **Promote an oversized leaf** to `+` and move each capability under the
-     child goal it advances; the summary owns no direct capability.
-   - **Re-home a misplaced capability** under the goal it advances; a browser
-     or CLI variant moves under the action's goal, not under a channel name.
-   - **Move a mutation** under a changing goal whose success guarantee names
-     the change.
-   - **Rewrite extensions** to `- <step>: <condition> → <handling>; protects
-     <guarantee>`, or move the new outcome into its own use case.
-3. After each move, run the affected `.feature` files and `givn lint`; a
-   moved capability keeps its scenarios unchanged.
-4. Record each split, promotion, and re-homing in this change's `design.md`
-   with the before/after use-case IDs.
+One row per failing document, for example:
 
-## Phase 2 — Personas
+```markdown
+| Artifact | Deviation (criterion or test) | Disposition | Follow-up change id |
+|---|---|---|---|
+| givn/specs/run-a-project/usecase.md | R1 goal conjunction, R9 oversized leaf | promote to `+` and split into child leaves | split-run-a-project |
+| givn/specs/follow-the-run/usecase.md | R4 mutation under an observing goal, R8 channel name | re-home mutations; rename | refocus-follow-the-run |
+| givn/specs/run-a-project/repository-backend.feature | R8 component-shaped name | rename capability and file | rename-repository-backend |
+```
+
+The follow-up performs the repair: split, promote, re-home, rename, or
+rewrite extensions, one capability per edit, running the affected feature
+files and `givn lint` after each move.
+
+## Phase 2 — Personas (inventory)
 
 ### Identity criteria
 
@@ -137,9 +170,8 @@ one of — the criteria are disjunctive, not conjunctive:
 - **own vocabulary** — terms it uses or refuses.
 
 Topic-specific demands go into a dated topic-stances appendix, never into the
-stable core. One role sliced by which mechanism it touches (for example an
-adapter implementer by port) is one persona with stance blocks when the
-authority and evaluation match.
+stable core. One role sliced by which mechanism it touches is one persona
+with stance blocks when the authority and evaluation match.
 
 ### File schema
 
@@ -176,30 +208,20 @@ Reuse: <persona-id>, base <short-hash or date>; this file adds record entries on
 New: <persona-id> — <distinguishing criterion>
 ```
 
-### Procedure
+### Inventory rows
 
-1. Inventory `givn/personas/` and every sibling topic's `personas/` against
-   the project's stakeholder types.
-2. Collapse segments that share all three criteria into one project persona;
-   keep their differences as dated topic stances.
-3. Migrate each project persona file to the schema above; move topic-flavored
-   interests, goals, and pain points into the stances appendix.
-4. Convert each reused topic copy to the `Reuse:` header with record entries
-   only; never leave a second biography copy.
-5. At handoff, append-merge record entries into the project persona with a
-   user-confirmed diff; the topic file stays as historical record.
-6. Resolve every `## Personas` entry against `givn/personas/<id>.md` or a
-   topic's `personas/<id>.md`; `givn lint` reports the rest as `[PERS ]`
-   advisories. A visual change's `PERSONAS:` value must resolve in
-   `givn check review`; a reasoned `none` is valid only for a change without
-   a user-visible surface.
+One row per persona file, reference, or topic copy: identity-criteria
+deviation (which segments collapse and why), schema gap, dangling
+reference, or biography copy. The follow-up consolidates, migrates, converts
+to the `Reuse:` header, append-merges at handoff with a user-confirmed diff,
+and resolves the reference.
 
 Preserved behaviors: the user confirms every persona before use; personas
 review every artifact that affects their stakeholder type; at most three
 segments per stakeholder type and about ten in total; findings are advisory
 with user arbitration; promotion never happens automatically.
 
-## Phase 3 — ADRs
+## Phase 3 — ADRs (re-qualification here, repairs in the follow-up)
 
 ### Falsification tests
 
@@ -226,80 +248,83 @@ The tests classify by kind, not count; there is no numeric cap.
 
 ### Procedure
 
-1. For each active record in `docs/arc42/adr/`, re-run the five mandatory
-   dimensions plus the three falsification tests and the cheaper-home
-   challenge: name the specific canonical artifact (feature specification,
-   design, Arc42 chapter, process documentation, project documentation, or
-   code) that would own the rationale instead.
-2. A qualified record stays. A record that fails is routed once:
-   - move the rationale to the chosen canonical home;
-   - remove the record from the active register (`docs/arc42/09-...`) and
-     `docs/arc42/adr/README.md`;
-   - record the historical-scope note — record ID, failing test, destination
-     — in this migration change's `design.md`. Do **not** copy the record
-     into `docs/arc42/adr/archive/`: a record that fails the gate is not a
-     historical ADR.
-3. Replace a stale project-local ADR template: delete
-   `docs/arc42/adr/adr-template.md`, run `givn addons enable arc42` to
-   re-scaffold missing files, then confirm the file no longer contains
-   `ADR-QUALIFICATION: PASS` or `qualification: QUALIFIED`.
-4. Record the structured verdict (qualification, the five gates,
+1. For every **accepted** record in `docs/arc42/adr/`, re-run the five
+   mandatory dimensions plus the three falsification tests and the
+   cheaper-home challenge: name the specific canonical artifact (feature
+   specification, design, Arc42 chapter, process documentation, project
+   documentation, or code) that would own the rationale instead. Record the
+   verdict and the audit note here.
+2. A qualified record stays. A record that fails gets a row: the rationale
+   moves once to the chosen canonical home, the record leaves the active
+   register (`docs/arc42/09-...`) and `docs/arc42/adr/README.md`, and this
+   change keeps the audit note (record ID, failing test, destination). The
+   removal and the rationale move are the follow-up's work. Do **not** copy
+   the record into `docs/arc42/adr/archive/`: a record that fails the gate is
+   not a historical ADR.
+3. Every **proposed** record gets a row naming its owning change as the
+   follow-up that must qualify it before that change archives. If the owner
+   has archived or does not exist, re-qualify the record here or create a new
+   named follow-up; never name an archived change as pending.
+4. A project-local ADR template copy that carries a pre-passed verdict gets a
+   row: the follow-up deletes `docs/arc42/adr/adr-template.md`, runs
+   `givn addons enable arc42` to re-scaffold missing files, and confirms the
+   file no longer contains `ADR-QUALIFICATION: PASS` or
+   `qualification: QUALIFIED`.
+5. Record the structured verdict (qualification, the five gates,
    supporting-only shared evidence, routing, and the route target) in the
    change assessment (`arc42.md`) before creating or editing any MADR.
-5. New decisions follow the same gate: the design's Technology Decisions
+6. New decisions follow the same gate: the design's Technology Decisions
    justification stays in `design.md` unless the falsification tests pass.
 
-## Phase 4 — Smaller adoptions
+## Phase 4 — Smaller adoptions (inventory, one exception)
 
-1. **Dialog policy.** Run `givn instructions dialog` and follow it in every
-   interactive step: named artifacts with identifiers in parentheses, the
-   four-part option treatment (meaning, gain, cost, concrete example),
-   cross-reference glosses, standalone answerability, rejected alternatives,
-   one question at a time.
-2. **Change seeds.** Give every seed a status line after its title:
-   `ready`, `proposed by <change-id>`, `implemented in <change-id>`,
-   `superseded by <reference>`, or `withdrawn`. Classify existing seeds
-   honestly — a consumed seed stamped `ready` misleads the next planner;
-   `givn lint` reports a missing or contradicted status as a `[SEED ]`
-   advisory. Add the content schema (use-case ID, topic, Personas, suggested
-   start, accepted decisions with option treatment, full open questions).
+1. **Dialog policy.** Read `givn instructions dialog` and follow it in every
+   interactive step. This is reading, not a repair; no row.
+2. **Change seeds.** Every seed gets a row: classify it with one of the five
+   statuses (`ready`, `proposed by <change-id>`, `implemented in
+   <change-id>`, `superseded by <reference>`, `withdrawn`) and list the
+   missing content schema (use-case ID, topic, Personas, suggested start,
+   accepted decisions with option treatment, full open questions). A consumed
+   seed stamped `ready` is a deviation; `givn lint` reports a missing or
+   contradicted status as a `[SEED ]` advisory.
 3. **Term records.** Migrate `domain-terms.md` entries to
    term/status/definition/contrast/first-use/collision-check with
-   `candidate`, `confirmed`, and `rejected` statuses. A `confirmed` term
-   keeps its status only with the pasted search commands and hit counts in
-   the collision-check cell ("no collision" without commands is not a
-   record); rejected terms keep their definition and reason and are never
-   deleted.
-4. **Guarantee qualifiers and decision ledger.** A rule or guarantee that
-   depends on an unresolved question carries `(open: Q<N>)`; closing the
-   question removes the qualifier in the same edit. Proposal questions carry
-   `D<n>` IDs with the option treatment and a disposition (answered with its
-   source, carried with an owner and the deciding artifact, or out of scope
-   with a reason); the design records `Decides D<n>: <decision> — <where it
-   is realized>` for every ID.
-5. **Severity and routing output.** Re-read `givn lint`: every finding now
-   carries `advisory`, `finding`, or `blocking`, and advisory findings do not
-   change the exit code. `givn spec route` reports explicit confidence
-   (`signal` or `no signal`); with no signal the proposal omits the
-   recommendation and records the decision with its rationale.
+   `candidate`, `confirmed`, and `rejected` statuses. **This is the one
+   exception to the no-repair rule**: re-run every existing `confirmed`
+   term's search now and record the commands and hit counts in the
+   collision-check cell; "no collision" without commands is not a record. A
+   collision found becomes a follow-up row that renames or rejects the term.
+   Rejected terms keep their definition and reason and are never deleted.
+4. **Guarantee qualifiers and decision ledger.** Rows for every use-case rule
+   or guarantee with an unresolved prerequisite (add `(open: Q<N>)`) and
+   every proposal question missing a `D<n>` ID, option treatment, or
+   disposition; the follow-up adds them and the design records
+   `Decides D<n>: <decision> — <where it is realized>`.
+5. **Severity and routing output.** Re-read `givn lint` (findings carry
+   `advisory`, `finding`, or `blocking`; advisory findings do not change the
+   exit code) and `givn spec route` (`signal` or `no signal`). This is
+   reading, not a repair; no row.
 
-## Phase 5 — Ejected overrides
+## Phase 5 — Ejected overrides (inventory)
 
 1. Inventory overrides: uncommented settings in `givn/config.yaml`, files
-   under `givn/artifacts/`, and project skill overrides under
-   `givn/skills/`.
-2. For each, compare against the {{TARGET_VERSION}} embedded default
-   (`givn eject` can materialize a fresh copy for comparison) and re-apply
-   only genuine project-specific edits on top.
-3. Never hand-patch the old rule text back into a stale copy. Managed
-   generated files (skills, commands, AGENTS.md blocks) were already
-   refreshed by `givn upgrade`; only ejected facets are project-owned.
+   under `givn/artifacts/`, and project skill overrides under `givn/skills/`.
+   One row per override that carries pre-{{TARGET_VERSION}} rule text or a
+   stale default.
+2. The follow-up re-ejects each facet from the {{TARGET_VERSION}} binary and
+   re-applies only genuine project-specific edits; it never hand-patches the
+   old rule text back into a stale copy. Managed generated files (skills,
+   commands, AGENTS.md blocks) were already refreshed by `givn upgrade`; only
+   ejected facets are project-owned.
 
 ## Validation and completion
 
-1. `givn lint` and `givn check review` pass; the `[PERS ]` advisories are
-   resolved or explicitly recorded as forward references.
-2. The project's own suite passes (`verify.command`).
-3. The next archive runs cleanly under the {{TARGET_VERSION}} rules.
-4. The recorded inventory has a disposition for every use case, persona, and
-   ADR, and the migration change archives through the normal flow.
+1. This change edited no corpus artifact except the term collision-check
+   cells; every row names a follow-up change or an in-flight one; no archived
+   change is named as pending.
+2. `givn lint` and `givn check review` pass; the `[PERS ]` advisories are
+   inventoried or explicitly recorded as forward references.
+3. The project's own suite passes (`verify.command`).
+4. The inventory is committed with this change and the maintenance change
+   archives through the normal flow; the migration is complete when every
+   follow-up change has archived.
