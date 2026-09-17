@@ -369,6 +369,12 @@ fn ensure_fixture_usecase(env: &common::TestEnv, feature_path: &str, content: &s
     std::fs::write(path, document).expect("write fixture use-case document");
 }
 
+#[given(regex = r#"^a change seed at "([^"]+)" with:$"#)]
+fn change_seed_at(world: &mut GivnWorld, path: String, step: &Step) {
+    let _ = (world, path, step);
+    unimplemented!()
+}
+
 #[given(regex = r#"^a feature file with a removed-wip placeholder at "([^"]+)"$"#)]
 fn feature_file_removed_wip_placeholder(world: &mut GivnWorld, path: String) {
     let env = world
@@ -625,6 +631,11 @@ fn stdout_contains_quoted(world: &mut GivnWorld, needle: String) {
 fn stderr_contains(world: &mut GivnWorld, needle: String) {
     let s = stderr(world);
     assert!(s.contains(&needle), "stderr missing {:?}: {}", needle, s);
+}
+
+#[then(regex = r#"^stderr does not contain "(.*)"$"#)]
+fn stderr_does_not_contain(_world: &mut GivnWorld, _needle: String) {
+    unimplemented!()
 }
 
 #[then(regex = r"^the (\w+) finding appears before the (\w+) finding on stderr$")]
