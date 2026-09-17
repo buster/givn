@@ -114,6 +114,11 @@ fn generated_command_contains(world: &mut GivnWorld, command: String, text: Stri
     );
 }
 
+#[then(regex = r##"^the generated grill-([a-z-]+) command contains "([^"]+)"$"##)]
+fn generated_grill_command_contains(_world: &mut GivnWorld, _command: String, _text: String) {
+    unimplemented!()
+}
+
 #[then(regex = r##"^generated guidance does not contain "([^"]+)"$"##)]
 fn generated_guidance_does_not_contain(world: &mut GivnWorld, text: String) {
     let mut content = String::new();
