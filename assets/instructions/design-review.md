@@ -29,8 +29,10 @@ Required branches — cover every one (or explicitly record "no issue found"):
   implementation? What is the mitigation?
 - **Use-case and Persona context** — confirm use-case identity, contract,
   capability ownership, typed relationships, confirmed Persona coverage, and
-  explicit dispositions. Reject invented or silently promoted Personas and
-  any use of Persona biographies as Gherkin actors.
+  explicit dispositions. Run the use-case scope rejection criteria from the
+  review instruction (`givn instructions review`) against the use-case
+  contract. Reject invented or silently promoted Personas and any use of
+  Persona biographies as Gherkin actors.
 - **Visual design contract** — for a change that introduces or visibly changes
   a screen, `design.md` must contain the `## Visual Design Contract` section
   with its `Interface:` line and viewports. When no approved design exists,

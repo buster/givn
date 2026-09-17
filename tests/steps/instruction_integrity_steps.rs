@@ -519,18 +519,34 @@ fn author_requests_unknown_instruction(world: &mut GivnWorld) {
 // --- use-case-model-scoping: rejection criteria and placement test steps ---
 
 #[given("the design-review instructions are requested")]
-fn design_review_instructions_requested(_world: &mut GivnWorld) {
-    unimplemented!()
+fn design_review_instructions_requested(world: &mut GivnWorld) {
+    let content = std::fs::read_to_string("assets/instructions/design-review.md")
+        .expect("read design-review instruction");
+    world.additional_output = Some(content);
 }
 
 #[when("the reviewer reads the use-case branch")]
-fn reviewer_reads_use_case_branch(_world: &mut GivnWorld) {
-    unimplemented!()
+fn reviewer_reads_use_case_branch(world: &mut GivnWorld) {
+    assert!(
+        !world
+            .additional_output
+            .as_deref()
+            .expect("design-review guidance was not loaded")
+            .is_empty(),
+        "design-review guidance must not be empty"
+    );
 }
 
 #[then("the guidance points at the use-case scope criteria")]
-fn guidance_points_at_scope_criteria(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_points_at_scope_criteria(world: &mut GivnWorld) {
+    let content = world
+        .additional_output
+        .as_deref()
+        .expect("design-review guidance was not loaded");
+    assert!(
+        content.contains("use-case scope rejection criteria"),
+        "design-review guidance does not point at the use-case scope criteria"
+    );
 }
 
 #[when("the reviewer reads the use-case scope criteria")]
