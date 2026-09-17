@@ -1,4 +1,4 @@
-# arc42 Documentation Update: migrate-0-7-0-to-0-8-0
+# arc42 Documentation Update: release-0-8-0
 
 ## Impact assessment
 
