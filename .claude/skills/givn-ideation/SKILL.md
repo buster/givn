@@ -60,20 +60,43 @@ For every stakeholder type, create one or more personas — concrete persona
 segments with interests of their own. An avid reader and a collector are two
 personas of the same stakeholder type.
 
+Reuse comes first: inventory `givn/personas/` and every sibling topic's
+`personas/` into a session-state table against the topic's stakeholder types,
+then match by ID or record a one-sentence new-segment justification naming
+the distinguishing criterion. A new persona exists only when it differs from
+an existing one in at least one of — the criteria are disjunctive, not
+conjunctive:
+
+- **authority boundary** — what it may do or decide;
+- **evaluation capability** — what it can judge;
+- **own vocabulary** — terms it uses or refuses.
+
+The three adapter-implementer-shaped files collapse to one persona with three stance blocks: they share the authority (ship an adapter against a port) and the evaluation (the conformance suite), so they are one persona segment, not three. Topic-specific demands go into a dated `## Topic stances` appendix,
+never into Role, Interests, or Goals.
+
+Persona files use the schema in `assets/templates/persona.md`: a stable core
+(role, authority boundary, evaluation capability, own vocabulary, success
+criterion) and an append-only running record of dated entries per review or
+topic stance. A reused persona's topic-local file contains a header line plus
+new record entries only — never a biography copy:
+
+```text
+Reuse: <persona-id>, base <short-hash or date>; this file adds record entries only
+New: <persona-id> — <distinguishing criterion>
+```
+
 - Create the persona files after Frame; the user confirms every persona
   before it is used. Never invent a persona the user has not confirmed.
-- Each persona file carries: role, interests, goals, pain points, success
-  criterion, its own vocabulary, and a running record of decisions, needs,
-  and open demands — updated after every review the persona takes part in.
 - Personas review every artifact that affects their stakeholder type: a
   light reaction to the event storming, value ranking during Use Case
   Definition, critique of their use cases during Use Case Elaboration.
 - Cap: at most three persona segments per stakeholder type, about ten in
   total.
 - Findings are advisory; the user arbitrates.
-- At handoff, persona promotion moves validated personas into the
-  project-level persona collection where later workflow phases can consult
-  them. Repeated promotion of the same persona segment merges.
+- At handoff, persona promotion appends the validated persona's record
+  entries into the project-level persona collection with a user-confirmed
+  merged diff; the topic file stays as historical record. Repeated promotion
+  of the same persona segment merges; never auto-promote.
 
 The phase ladder: Frame → Event Storming → Use Case Definition → Use Case
 Elaboration → Handoff. Run them in order; never skip ahead.
