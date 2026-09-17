@@ -21,7 +21,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     Then the template says justification belongs in the design
     And the template forbids ADR candidacy unless the falsification tests pass
 
-  @givn.added @wip
+  @givn.added
   Scenario: The impact assessment records the verdict before drafting
     Given the change-level Arc42 assessment template is available
     When a maintainer reads the verdict placement rule
