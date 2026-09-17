@@ -2,7 +2,7 @@
 
 Feature: ideation-skill
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation guidance carries the phase ladder and the one-question rule
     Given  a givn project with all agent skill targets enabled
     When  the user runs `givn skills sync`
