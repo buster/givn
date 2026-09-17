@@ -4,7 +4,7 @@ All notable changes to Givn are documented in this file.
 
 The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
-## [Unreleased]
+## [0.8.0] - 2026-09-17
 
 ### Added
 
@@ -18,6 +18,27 @@ Versions are selected manually and use annotated `vX.Y.Z` Git tags.
   `SCM: none` with the unavailable note).
 - ADR-072 (witness-bounded publication) and the ADR-071 amendment for the
   managed upgrade on both backends.
+- `givn instructions dialog`: the canonical dialog policy for every
+  interactive step — named artifacts, the four-part option treatment,
+  cross-reference glosses, standalone answerability, rejected alternatives,
+  one question at a time.
+- Change seeds gain a content schema and a status lifecycle (`ready`,
+  `proposed by`, `implemented in`, `superseded by`, `withdrawn`), with
+  propose- and archive-time stamping and an advisory `[SEED ]` lint check.
+- Term records gain a status/contrast/collision-check schema, the
+  search-before-coin procedure, and the term introduction test.
+- `docs/use-case-model.md`: the canonical use-case definition, the eight
+  scoping rules, the authoring requirements, the ten review rejection
+  criteria (R1-R10), and the worked before/after example.
+- Persona identity criteria (authority boundary, evaluation capability, own
+  vocabulary), a stable-core/running-record template, the reuse-first
+  protocol, and persona reference validation (`[PERS ]` lint advisories and
+  the visual `PERSONAS:` review gate).
+- `(open: Q<N>)` guarantee qualifiers and the `D<n>` question IDs with the
+  design's `Decides D<n>` decision ledger.
+- Lint findings carry a severity (`advisory`, `finding`, `blocking`), and
+  `givn spec route` reports explicit confidence with ownership-weighted
+  scoring.
 
 ### Changed
 
@@ -28,6 +49,12 @@ Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 - Integrity and receipt vocabulary is backend-neutral ("revision
   identifier", "candidate/tested revision").
 - The archive/upgrade scenarios and documentation no longer assume Git.
+- Release 0.8.0 ships the `migrate-0-7-0-to-0-8-0` migration bundle for
+  projects created with 0.7.0: it walks the project LLM through bringing
+  existing use-case documents, personas, and ADRs under the hardened model,
+  adopting the dialog policy, seed statuses, term records, and the decision
+  ledger, and re-synchronizing ejected overrides. The managed refresh and
+  `givn_config_version` bump remain with `givn upgrade`.
 
 ## [0.7.0] - 2026-09-10
 
