@@ -210,6 +210,33 @@ invented or silently promoted Personas.
 
 Record the disposition for every confirmed Persona; when none is confirmed, record the reason. A user-visible surface requires at least one confirmed Persona.
 
+### Use-case scope rejection criteria
+
+A review fails when any of these holds. Each criterion names the observable
+document section that proves it; the durable reference is
+`docs/use-case-model.md`.
+
+- **Goal conjunction** — `## Goal` joins two verb phrases, or
+  `## Success guarantee` names two outcomes.
+- **Missing primary actor** — `## Actors` has no identifiable primary, or
+  `## Trigger` does not name them.
+- **Placement failure** — `## Capabilities` contains a capability that fails
+  the placement test for this goal.
+- **Mutation under an observing goal** — a capability's scenarios assert a
+  state change while the guarantees declare observation.
+- **Extension without a step reference** — `## Extensions` omits its
+  main-flow step, or adds a new success outcome.
+- **Inconsistent preconditions** — a precondition is established by the flow;
+  the success guarantee is assumed; the trigger is a state or desire.
+- **Mechanism vocabulary** — `## Goal`, `## Trigger`, or the guarantees name
+  a mechanism.
+- **Component- or channel-shaped name** — a use-case or capability name names
+  a technical component or channel.
+- **Oversized leaf** — a leaf's `## Main flow` names three or more actor
+  goals.
+- **Relationship misuse** — `Extends` without a stated condition; an
+  end-user goal placed as a fragment or vice versa.
+
 ## Visual review (conditional)
 
 Run this block when the change's design declares a visual interface (a
