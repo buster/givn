@@ -515,3 +515,95 @@ fn author_requests_unknown_instruction(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("dialog fixture is missing");
     world.last_output = Some(crate::common::run_givn(env, &["instructions", "not-an-artifact"]));
 }
+
+// --- use-case-model-scoping: rejection criteria and placement test steps ---
+
+#[given("the design-review instructions are requested")]
+fn design_review_instructions_requested(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[when("the reviewer reads the use-case branch")]
+fn reviewer_reads_use_case_branch(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance points at the use-case scope criteria")]
+fn guidance_points_at_scope_criteria(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[when("the reviewer reads the use-case scope criteria")]
+fn reviewer_reads_scope_criteria(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance rejects a goal conjunction")]
+fn rejects_goal_conjunction(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance rejects a missing primary actor")]
+fn rejects_missing_primary_actor(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance rejects a capability that fails the placement test")]
+fn rejects_placement_failure(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance rejects a mutating scenario under an observing goal")]
+fn rejects_mutation_under_observing_goal(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance rejects an extension without a step reference")]
+fn rejects_extension_without_step(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance rejects a precondition established by the flow")]
+fn rejects_flow_precondition(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance rejects mechanism vocabulary in the goal trigger or guarantees")]
+fn rejects_mechanism_vocabulary(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance rejects a component- or channel-shaped name")]
+fn rejects_component_channel_name(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance rejects an oversized leaf")]
+fn rejects_oversized_leaf(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance rejects relationship misuse")]
+fn rejects_relationship_misuse(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[when("an author reads the capability placement guidance")]
+fn author_reads_placement_guidance(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance carries the placement test")]
+fn guidance_carries_placement_test(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance rejects a channel as an answer")]
+fn guidance_rejects_channel_answer(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the guidance requires goal-shaped capability names")]
+fn guidance_requires_goal_shaped_names(_world: &mut GivnWorld) {
+    unimplemented!()
+}

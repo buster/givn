@@ -473,3 +473,100 @@ fn specs_unchanged(world: &mut GivnWorld) {
     let before = world.additional_output.as_ref().expect("snapshot missing");
     assert_eq!(*before, contents, "permanent specifications changed");
 }
+
+// --- use-case-model-scoping: canonical use-case contract steps -------------
+
+#[given("the durable use-case model document is inspected")]
+fn durable_usecase_model_inspected(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[when("a maintainer reads the definition and the scoping rules")]
+fn maintainer_reads_definition_and_rules(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the document defines a use case as a contract between one primary actor and the system")]
+fn document_defines_use_case(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the document carries the promotion rule for a leaf with three or more actor goals")]
+fn document_carries_promotion_rule(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the document carries the placement test for a capability")]
+fn document_carries_placement_test(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the document carries the ten review rejection criteria")]
+fn document_carries_ten_criteria(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the document carries the worked split of an observing mega-leaf")]
+fn document_carries_observing_split(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the document carries the promotion of a conjunction-goal leaf into a summary and its split")]
+fn document_carries_conjunction_promotion(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the worked observing case is tied to the mutation-containment and component-name criteria")]
+fn observing_case_tied_to_criteria(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the worked conjunction case is tied to the goal-conjunction and oversized-leaf criteria")]
+fn conjunction_case_tied_to_criteria(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the workflow document points at the use-case model")]
+fn workflow_points_at_model(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the reference document points at the use-case model")]
+fn reference_points_at_model(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[given("the canonical use-case document template is inspected")]
+fn canonical_usecase_template_inspected(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[when("a maintainer reads the template guidance")]
+fn maintainer_reads_template_guidance(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the template names the primary-actor convention")]
+fn template_names_primary_actor_convention(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the template shows the extension format")]
+fn template_shows_extension_format(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the template numbers the main-flow example")]
+fn template_numbers_main_flow(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the template carries the promotion note")]
+fn template_carries_promotion_note(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the template preserves the fixture placeholders")]
+fn template_preserves_placeholders(_world: &mut GivnWorld) {
+    unimplemented!()
+}
