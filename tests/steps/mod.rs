@@ -1301,3 +1301,20 @@ fn overlay_fails_with(world: &mut GivnWorld, needle: String) {
         needle
     );
 }
+
+// --- persona-identity-reuse: fixture Givens --------------------------------
+
+#[given(regex = r#"^a change use-case document at "([^"]+)" records the persona "([^"]+)"$"#)]
+fn change_usecase_document_records_persona(_world: &mut GivnWorld, _path: String, _persona: String) {
+    unimplemented!()
+}
+
+#[given(regex = r#"^a project persona file "([^"]+)" exists$"#)]
+fn project_persona_file_exists(_world: &mut GivnWorld, _id: String) {
+    unimplemented!()
+}
+
+#[given(regex = r#"^a topic persona file at "([^"]+)" exists$"#)]
+fn topic_persona_file_exists(_world: &mut GivnWorld, _path: String) {
+    unimplemented!()
+}
