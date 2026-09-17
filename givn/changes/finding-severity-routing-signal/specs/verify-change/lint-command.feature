@@ -13,7 +13,7 @@ Feature: lint-command
     Then the command exits 1
     And stderr contains "[ERROR] blocking"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An advisory finding renders its severity and keeps the exit code
     Given a project root with givn/ initialised
     And a .feature file at "givn/specs/aaa/aaa.feature" with:
