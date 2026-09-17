@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "change": "migrate-0-7-0-to-0-8-0",
+  "change": "release-0-8-0",
   "status": "proven",
   "candidate_revision": "fcecb4ec82b05342ff81c54378e868281db5f8c6",
   "tested_revision": "fcecb4ec82b05342ff81c54378e868281db5f8c6",

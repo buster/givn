@@ -1,4 +1,4 @@
-# Design Review: migrate-0-7-0-to-0-8-0
+# Design Review: release-0-8-0
 
 ## Grilling log
 
@@ -305,9 +305,9 @@ None.
 
 | Artifact | Change summary |
 |---|---|
-| `givn/changes/migrate-0-7-0-to-0-8-0/design.md` | Rules inlined for the bundle; ADR note moved to the migration ledger; enforcement boundary; overrides phase; seed/term specifics; route unit test; smoke-test recipe; changelog folding; tag note. |
-| `givn/changes/migrate-0-7-0-to-0-8-0/arc42.md` | Rows 9 and 11 reasons corrected. |
-| `givn/changes/migrate-0-7-0-to-0-8-0/proposal.md` | Unreleased multi-SCM work named as part of 0.8.0. |
+| `givn/changes/release-0-8-0/design.md` | Rules inlined for the bundle; ADR note moved to the migration ledger; enforcement boundary; overrides phase; seed/term specifics; route unit test; smoke-test recipe; changelog folding; tag note. |
+| `givn/changes/release-0-8-0/arc42.md` | Rows 9 and 11 reasons corrected. |
+| `givn/changes/release-0-8-0/proposal.md` | Unreleased multi-SCM work named as part of 0.8.0. |
 
 ## Sign-off
 
