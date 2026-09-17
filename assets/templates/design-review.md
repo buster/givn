@@ -107,6 +107,7 @@ Edits applied to existing artifacts as a result of grilling.
 ## Sign-off
 
 - [ ] Every branch of the design tree has been walked.
+- [ ] Every proposal question ID (`D<n>`) resolves in the design's `## Decisions` ledger or is carried with a named owner.
 - [ ] All questions are resolved.
 - [ ] `design.md` reflects any decisions reached during grilling.
 - [ ] `specs/**/*.feature` updated if any missing scenarios were identified.

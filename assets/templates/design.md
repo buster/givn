@@ -54,6 +54,16 @@
 > | (e.g. Node.js) | (e.g. latest LTS) | (e.g. resolve via `nvm install --lts` at setup time) |
 > | (e.g. Playwright) | (e.g. 1.49.x) | (e.g. checked npmjs.com/package/playwright at design time) |
 
+## Decisions
+
+> The ledger resolving the proposal's open questions. One entry per question
+> ID; every `D<n>` either appears here or is explicitly carried with a named
+> owner. A question that originated in an ideation seed records the seed
+> reference beside the ledger ID.
+
+- Decides D1: <decision> — <where it is realized>
+- Carried D2 (seed Q5): <why it stays open> — owner: <who>, decided in: <artifact>
+
 ## Step Definitions
 
 > Location of step definition files — **one file per capability**, never one

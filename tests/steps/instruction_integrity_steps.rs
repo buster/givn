@@ -817,33 +817,58 @@ fn guidance_marks_advisory_without_source(world: &mut GivnWorld) {
 }
 
 #[given("the design and design-review instructions are requested")]
-fn design_and_design_review_requested(_world: &mut GivnWorld) {
-    unimplemented!()
+fn design_and_design_review_requested(world: &mut GivnWorld) {
+    let design = std::fs::read_to_string(crate::common::repo_path("assets/instructions/design.md"))
+        .expect("read design instruction");
+    let design_review =
+        std::fs::read_to_string(crate::common::repo_path("assets/instructions/design-review.md"))
+            .expect("read design-review instruction");
+    let command =
+        std::fs::read_to_string(crate::common::repo_path("assets/commands/givn-design-review.md"))
+            .expect("read design-review command");
+    world.additional_output = Some(format!("{design}\n{design_review}\n{command}"));
 }
 
 #[when("a maintainer reads the ledger contract")]
-fn maintainer_reads_ledger_contract(_world: &mut GivnWorld) {
-    unimplemented!()
+fn maintainer_reads_ledger_contract(world: &mut GivnWorld) {
+    assert!(
+        !traceability_guidance(world).is_empty(),
+        "ledger guidance must not be empty"
+    );
 }
 
 #[then("the guidance requires a decisions ledger mapping each question ID")]
-fn guidance_requires_ledger(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_requires_ledger(world: &mut GivnWorld) {
+    let content = traceability_guidance(world);
+    assert!(
+        content.contains("ledger") && content.contains("D<n>"),
+        "guidance does not require a decisions ledger mapping question IDs"
+    );
 }
 
 #[then("the guidance records decisions as \"Decides D\" with their realization")]
-fn guidance_records_decides(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_records_decides(world: &mut GivnWorld) {
+    assert!(
+        traceability_guidance(world).contains("Decides D"),
+        "guidance does not record decisions as Decides D"
+    );
 }
 
 #[then("the guidance records the seed question reference beside the ledger ID")]
-fn guidance_records_seed_reference(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_records_seed_reference(world: &mut GivnWorld) {
+    assert!(
+        traceability_guidance(world).contains("seed Q"),
+        "guidance does not record the seed question reference beside the ledger ID"
+    );
 }
 
 #[then("the design-review guidance treats an unresolved unrecorded question as a finding")]
-fn design_review_treats_unresolved_as_finding(_world: &mut GivnWorld) {
-    unimplemented!()
+fn design_review_treats_unresolved_as_finding(world: &mut GivnWorld) {
+    let content = traceability_guidance(world);
+    assert!(
+        content.contains("unresolved, unrecorded") && content.contains("finding"),
+        "design-review guidance does not treat an unresolved question as a finding"
+    );
 }
 
 #[then("the guidance rejects an unqualified guarantee whose prerequisite is open")]

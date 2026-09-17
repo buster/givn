@@ -24,6 +24,16 @@ Write the technical design (the HOW layer). Implementation detail belongs here.
   `behave -n "<title>"`.
 - Any other technical decision the implementer needs before writing tasks.
 
+## Decisions ledger (mandatory)
+
+Add a `## Decisions` section resolving the proposal's open questions. Every
+`D<n>` either appears there as `Decides D<n>: <decision> — <where it is
+realized>`, or is explicitly carried with a named owner. A question that
+originated in an ideation seed records the seed reference beside the ledger
+ID (`Decides D2 (seed Q5): …`), so the question-to-decision link is readable
+from the proposal and the design alone. An unresolved, unrecorded `D<n>` is a
+design-review finding.
+
 ## Use-case traceability
 
 Read the selected `usecase.md` and relevant ideation change seed. Add a table

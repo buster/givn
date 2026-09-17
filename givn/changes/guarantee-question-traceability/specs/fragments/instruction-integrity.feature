@@ -12,7 +12,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And the guidance assigns stable question IDs
     And the guidance marks the disposition rule advisory without an ideation source
 
-  @givn.added @wip
+  @givn.added
   Scenario: The design and design-review guidance carry the decision ledger
     Given the design and design-review instructions are requested
     When a maintainer reads the ledger contract

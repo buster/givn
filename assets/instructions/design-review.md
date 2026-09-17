@@ -33,6 +33,10 @@ Required branches — cover every one (or explicitly record "no issue found"):
   review instruction (`givn instructions review`) against the use-case
   contract. Reject invented or silently promoted Personas and any use of
   Persona biographies as Gherkin actors.
+- **Decision ledger** — verify that every proposal question ID (`D<n>`)
+  resolves in the design's `## Decisions` ledger or is explicitly carried
+  with a named owner, and that a seed-sourced question keeps its seed
+  reference (`D2 (seed Q5)`). An unresolved, unrecorded item is a finding.
 - **Visual design contract** — for a change that introduces or visibly changes
   a screen, `design.md` must contain the `## Visual Design Contract` section
   with its `Interface:` line and viewports. When no approved design exists,
