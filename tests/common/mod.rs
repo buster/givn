@@ -281,6 +281,16 @@ pub fn run_givn(env: &TestEnv, args: &[&str]) -> Output {
     run_givn_with_env(env, args, None)
 }
 
+/// Resolve a repository-relative path independent of the process cwd.
+///
+/// The in-process `givn run` scenario temporarily changes the process-wide
+/// current directory, and the single-process runner (`cargo test`) shares one
+/// process across scenarios; anchoring repo-relative reads at the manifest
+/// directory removes that race.
+pub fn repo_path(relative: &str) -> std::path::PathBuf {
+    std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(relative)
+}
+
 /// Invoke the `givn` binary with one optional environment override.
 pub fn run_givn_with_env(
     env: &TestEnv,

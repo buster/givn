@@ -485,7 +485,7 @@ fn model_document(world: &GivnWorld) -> &str {
 
 #[given("the durable use-case model document is inspected")]
 fn durable_usecase_model_inspected(world: &mut GivnWorld) {
-    let content = std::fs::read_to_string("docs/use-case-model.md")
+    let content = std::fs::read_to_string(crate::common::repo_path("docs/use-case-model.md"))
         .expect("read docs/use-case-model.md");
     world.additional_output = Some(content);
 }
@@ -596,7 +596,7 @@ fn conjunction_case_tied_to_criteria(world: &mut GivnWorld) {
 
 #[then("the workflow document points at the use-case model")]
 fn workflow_points_at_model(_world: &mut GivnWorld) {
-    let content = std::fs::read_to_string("docs/workflow.md").expect("read docs/workflow.md");
+    let content = std::fs::read_to_string(crate::common::repo_path("docs/workflow.md")).expect("read docs/workflow.md");
     assert!(
         content.contains("use-case-model.md"),
         "workflow document does not point at the use-case model"
@@ -605,7 +605,7 @@ fn workflow_points_at_model(_world: &mut GivnWorld) {
 
 #[then("the reference document points at the use-case model")]
 fn reference_points_at_model(_world: &mut GivnWorld) {
-    let content = std::fs::read_to_string("docs/reference.md").expect("read docs/reference.md");
+    let content = std::fs::read_to_string(crate::common::repo_path("docs/reference.md")).expect("read docs/reference.md");
     assert!(
         content.contains("use-case-model.md"),
         "reference document does not point at the use-case model"
