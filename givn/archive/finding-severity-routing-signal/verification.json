@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "finding-severity-routing-signal",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "dd52696f27c6c835ceff2e5d45f3307b282b93c1",
+  "tested_revision": "dd52696f27c6c835ceff2e5d45f3307b282b93c1",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 10.412556697
+    },
+    "regular": {
+      "status": "passed",
+      "total": 553,
+      "passed": 553,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 44.306239319
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 7658,
+    "line_valid": 9650,
+    "line_percent": 79
+  },
   "started_at_unix": 1789657086,
-  "finished_at_unix": null
+  "finished_at_unix": 1789657188
 }
