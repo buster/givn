@@ -641,3 +641,27 @@ domain-modeling skills carry the schema, the procedure, and the test, and the
 ideation quality review verifies recorded checks. Handoff proposes only
 `confirmed` terms for the durable glossary and reports `rejected` terms with
 their reason. No parser, lint, or glossary gate is introduced.
+
+## 8.21 Use-Case Model Discipline
+
+A use case is a contract between one primary actor and the system: the
+actor's single goal as observable outcome, with the success and minimal
+guarantees the system makes while pursuing it. The model's eight scoping
+rules gate authoring: one goal and one primary actor; goal-shaped rather than
+component-shaped names; level discipline (`!` owns capabilities directly, `+`
+owns only child leaves, a leaf with three or more distinct actor goals is
+promoted and split); mutation containment; extension discipline; precondition
+and flow consistency; implementation independence; and relationship
+semantics.
+
+The durable document `docs/use-case-model.md` carries the definition, the
+rules, the authoring requirements, the ten review rejection criteria (R1–R10),
+and the worked before/after example. The generated ideation guidance carries
+the definition, the rules, and the authoring requirements; the review
+instruction carries the criteria; the specs instruction and the spec skill
+carry the capability placement test for new-capability routing; and the
+generated `usecase.md` template carries the authoring conventions.
+
+This is authoring guidance, not a machine check: no parser warning, router
+rule, or archive-time capability move is introduced. The one-capability-leaf
+warning and every other lint finding are unchanged.

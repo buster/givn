@@ -53,6 +53,7 @@ historical measurement is not a current quality claim.
 | R-66 | The repository acceptance suite now depends on the `fossil` executable; a machine without it cannot run the Fossil scenarios. | Low | Medium | CI installs the distribution package and the local prerequisite is recorded in `AGENTS.md`; the scenarios fail loudly with a missing executable rather than skipping. |
 | R-67 | An interactive surface restates the dialog rules instead of referencing the canonical dialog policy, and the copies drift. | Medium | Medium | The policy lives in one asset served by `givn instructions dialog`; the generated-guidance scenario asserts the pointers, and review scans the listed surfaces for competing rule text. |
 | R-68 | A term is confirmed without a real collision check ("no collision" with no recorded commands), and the collision surfaces only when a user challenges the vocabulary mid-ideation. | Medium | Medium | The term record requires the pasted commands and hit counts before `confirmed`; the ideation quality review verifies recorded checks, and Handoff proposes only confirmed terms for the durable glossary. |
+| R-69 | Capability absorption continues where reviewers are lax: the use-case scoping rules are prose, and the only size signal still punishes small leaves. | Medium | Medium | Each rejection criterion names the observable document section that proves it, so review is mechanical rather than tonal; the structural router/parser fix is deliberately deferred and recorded as accepted risk. |
 
 ## 11.2 Deliberate Technical Debt
 
