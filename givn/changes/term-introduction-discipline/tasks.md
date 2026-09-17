@@ -99,22 +99,40 @@ are guidance-content variants.
 
 ### domain-skill-trigger
 
-- [ ] Scenario: `The domain-modeling guidance carries the term introduction test`
-  - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `The domain-modeling guidance carries the term introduction test`
+  - [x] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/term-introduction-discipline/specs cargo test --locked --test features_runner -- --name "The domain-modeling guidance carries the term introduction test"
+        Step panicked. Captured output: not implemented
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
         ```
-  - [ ] GREEN: added the term introduction test (genus + differentia, contrast
+  - [x] GREEN: added the term introduction test (genus + differentia, contrast
         pair, one concrete domain sentence, the Substrate failure, and the
         folded generic-word set) to
-        `assets/skills/givn-domain-modeling/SKILL.md.tmpl`. Files:
-        `assets/skills/givn-domain-modeling/SKILL.md.tmpl`. `cargo clean -p
-        givn`, then the targeted run → zero. Evidence:
+        `assets/skills/givn-domain-modeling/SKILL.md.tmpl`; implemented the
+        five new steps. Files:
+        `assets/skills/givn-domain-modeling/SKILL.md.tmpl`,
+        `tests/steps/fix_domain_modeling_skill_trigger_steps.rs`. `cargo clean
+        -p givn`, then the targeted run → zero. Evidence:
         ```
+        ✔ Given the domain-modeling skill template is inspected
+        ✔ When an agent reads the term introduction test
+        ✔ Then the body requires a genus and differentia definition
+        ✔ And the body requires a contrast pair
+        ✔ And the body requires one concrete domain sentence
+        ✔ And the body demonstrates a failure when the genus slot cannot be filled
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(domain-skill-trigger): The domain-modeling guidance carries the term introduction test`
+  - [x] COMMIT: `<hash>` -- `feat(domain-skill-trigger): The domain-modeling guidance carries the term introduction test`
 
 ## Final checks
 

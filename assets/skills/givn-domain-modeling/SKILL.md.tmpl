@@ -75,6 +75,27 @@ Record in the glossary:
   observes. (Shopping list example: open / item added / item marked bought /
   item hidden for this trip / trip reset.)
 
+## Term introduction test
+
+A term may become `confirmed` in the term record (`domain-terms.md` in the
+`givn-ideation` skill) only when all three exist:
+
+1. **Genus + differentia** — "a `<Term>` is a `<kind>` that `<distinguishes
+   it>`". Example: "a Port is the interface contract at which one
+   implementation can be replaced".
+2. **Contrast pair** — "`Term`, not `<near neighbour>`" with the distinction.
+   Example: "Port, not Boundary — a boundary is a limit that must not be
+   crossed".
+3. **One concrete domain sentence** using the term.
+
+If the genus slot cannot be filled, the term is not ready. Example failure:
+"a Substrate is a kind of ___" has no referent, so the underlying concepts
+must be named separately.
+
+Generic words never qualify on their own: `list`, `item`, `data`, `record`,
+`entity`, `node`, `object`, `manager`, `service`, `handler`, `container`.
+Name the domain noun and give its contrast pair.
+
 ## Rules
 
 - Stay in domain language. No class names, DB schemas, or framework types
@@ -89,7 +110,4 @@ Record in the glossary:
 - Keep it short - one page that the design, the lint gate, and the review all
   build on.
 
-## Default anti-term list
 
-`list`, `item`, `data`, `record`, `entity`, `node`, `object`, `manager`,
-`service`, `handler`, `container`. Project can extend via the glossary.
