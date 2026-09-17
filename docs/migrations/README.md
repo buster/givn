@@ -21,7 +21,9 @@ Rust conditional.
 `givn upgrade` resolves the version gap through the declared bundle edges. If
 multiple bundles are required, it creates one aggregate maintenance change with
 `migration.yaml`, ordered phase sections, and all bundle Proposal/Design
-content. The LLM must complete the phases in order. If no bundle route applies,
+content. The LLM works the phases in order and follows each bundle's own
+completion rules; a bundle may direct that its repairs run as named follow-up
+changes rather than in the maintenance change. If no bundle route applies,
 Givn performs only the managed config/guidance refresh and creates no migration
 change.
 
@@ -37,7 +39,7 @@ for generated metadata. The 0.2.0-to-0.3.0 bundle additionally uses
 their own complete prompts instead of relying on that guide.
 
 The current bundle is `migrate-0-7-0-to-0-8-0` (source 0.7.0, target 0.8.0,
-order 60). It carries the use-case, persona, and ADR model hardening plus the
-dialog policy, seed statuses, term records, guarantee qualifiers, and the
-decision ledger as a self-contained maintenance phase; the human-facing
-companion guide is [`0.7.0-to-0.8.0.md`](0.7.0-to-0.8.0.md).
+order 60). It inventories the use-case, persona, and ADR model hardening plus
+the dialog policy, seed statuses, term records, guarantee qualifiers, and the
+decision ledger, and names the follow-up changes that carry the repairs; the
+human-facing companion guide is [`0.7.0-to-0.8.0.md`](0.7.0-to-0.8.0.md).
