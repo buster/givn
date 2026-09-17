@@ -511,6 +511,7 @@ fn author_requests_dialog_policy_without_change(world: &mut GivnWorld) {
 }
 
 #[when("the author requests an unknown instruction through the Givn CLI")]
-fn author_requests_unknown_instruction(_world: &mut GivnWorld) {
-    unimplemented!()
+fn author_requests_unknown_instruction(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("dialog fixture is missing");
+    world.last_output = Some(crate::common::run_givn(env, &["instructions", "not-an-artifact"]));
 }
