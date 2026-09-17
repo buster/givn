@@ -8,6 +8,7 @@
 
 - Use-case ID: <usecase-id or none>
 - Ideation topic: <topic-id or none>
+- Seed path: <givn/ideation/<topic-id>/changes/<uc-id>.md or none>
 - Confirmed Personas: <persona-id>, or none — <reason + operator confirmation>
 
 ## Problem / Opportunity
