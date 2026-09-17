@@ -22,33 +22,47 @@ already owns:
 `givn upgrade` refreshed your managed config and guidance and created this
 maintenance change from the release-owned bundle. The remaining work is
 project-specific: your use-case documents, personas, and ADRs are yours, and
-no runtime gate rewrites them. Without this migration they stay outside the
-model the new guidance, lint, and review apply.
+no runtime gate rewrites them.
 
 ## Proposed Solution
 
-Work the bundle's `design.md` phases in order, one artifact at a time:
+This maintenance change is the **inventory and plan**, not the repair site.
+Work the bundle's `design.md` phases in order and record one row per artifact
+deviation with its disposition and the follow-up change that will fix it. The
+repairs themselves run as normal changes — each with its own specification
+deltas, review, and archive — so a split, merge, or removal passes the same
+gates as any other work.
 
-1. Bring every permanent use-case document under the canonical definition and
-   the eight scoping rules (inlined in the design), fixing R1-R10 rejection
-   criteria.
-2. Consolidate and migrate personas to the stable core plus running record,
-   and resolve dangling references.
-3. Re-qualify every active ADR against the falsification tests and route
-   non-qualifying records to one canonical home with a historical-scope note
-   in this change.
-4. Adopt the dialog policy, seed statuses, term records, guarantee
-   qualifiers, and the decision ledger; re-read the lint severity and route
-   confidence output.
-5. Re-synchronize ejected overrides from the {{TARGET_VERSION}} binary.
+The settled rules:
 
-Incremental repair is the expected path. Do not rewrite the corpus in one
-pass; move one capability, one persona, or one ADR per edit and run the
-affected checks after each.
+1. **Full retrofit.** Nothing is grandfathered; every permanent use case,
+   persona, and accepted ADR is brought into the model.
+2. **Inventory and plan.** This change records every deviation and its
+   follow-up; it edits no corpus artifact except the term collision-check
+   cells.
+3. **Archive timing.** This change archives once every deviation names a
+   follow-up change (or an in-flight one); the inventory is the durable
+   record, and the migration is complete when the follow-ups archive.
+4. **ADR scope.** Accepted records are re-qualified here; a `proposed` record
+   is listed against the owning change that must qualify it before that
+   change archives. An archived change is never named as a pending
+   follow-up.
+5. **Non-qualifying ADRs.** The rationale moves once to one canonical home,
+   the record leaves the register and both indexes, and this change keeps the
+   audit note (ID, failing test, destination). It is never copied into
+   `docs/arc42/adr/archive/`.
+6. **Renames.** Component- and channel-shaped capability and use-case names
+   are renamed in the follow-up, which moves the `.feature` file and updates
+   every reference; one use case per follow-up change.
+7. **Term evidence.** Every existing `confirmed` term gets its search re-run
+   and the commands and hit counts recorded in the record; a collision found
+   becomes a follow-up that renames or rejects the term.
 
 ## Out of Scope
 
-- Changing product behavior, specifications, or test scenarios.
+- Performing the repairs in this change: splits, merges, removals, and
+  renames run as the named follow-up changes.
+- Changing product behavior, specifications, or test scenarios here.
 - Deleting artifacts: a non-qualifying ADR's rationale moves once to its
   canonical home; the record leaves the register but the migration records
   where it went.
@@ -56,9 +70,8 @@ affected checks after each.
 
 ## Completion Boundary
 
-The migration is complete when every permanent use-case document passes the
-scoping rules or carries a recorded repair plan, every persona reference
-resolves and every persona file follows the schema, every active ADR has a
-recorded qualification verdict, the adoptions are recorded, ejected overrides
-are re-synchronized, and the project's next review and archive run cleanly
-under the {{TARGET_VERSION}} rules.
+This change is complete when every permanent use case, persona, accepted
+ADR, term record, R8 name, seed, and ejected override has an inventory row
+with a disposition and a named or in-flight follow-up change, and the
+collision-check cells carry their re-run evidence. The migration itself is
+complete when every follow-up change has archived through the normal gates.
