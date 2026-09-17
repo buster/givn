@@ -14,7 +14,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And the guidance classifies by kind rather than count
     And the guidance states there is no numeric ADR cap
 
-  @givn.added @wip
+  @givn.added
   Scenario: The design template keeps decision justification in the design
     Given the design template is available
     When an author reads the Technology Decisions guidance
