@@ -534,58 +534,98 @@ fn guidance_points_at_scope_criteria(_world: &mut GivnWorld) {
 }
 
 #[when("the reviewer reads the use-case scope criteria")]
-fn reviewer_reads_scope_criteria(_world: &mut GivnWorld) {
-    unimplemented!()
+fn reviewer_reads_scope_criteria(world: &mut GivnWorld) {
+    assert!(
+        !review_guidance(world).is_empty(),
+        "review guidance must not be empty"
+    );
+}
+
+fn scope_criteria(world: &GivnWorld) -> &str {
+    world
+        .additional_output
+        .as_deref()
+        .expect("review guidance was not loaded")
 }
 
 #[then("the guidance rejects a goal conjunction")]
-fn rejects_goal_conjunction(_world: &mut GivnWorld) {
-    unimplemented!()
+fn rejects_goal_conjunction(world: &mut GivnWorld) {
+    assert!(
+        scope_criteria(world).contains("Goal conjunction"),
+        "review guidance does not reject Goal conjunction"
+    );
 }
 
 #[then("the guidance rejects a missing primary actor")]
-fn rejects_missing_primary_actor(_world: &mut GivnWorld) {
-    unimplemented!()
+fn rejects_missing_primary_actor(world: &mut GivnWorld) {
+    assert!(
+        scope_criteria(world).contains("Missing primary actor"),
+        "review guidance does not reject Missing primary actor"
+    );
 }
 
 #[then("the guidance rejects a capability that fails the placement test")]
-fn rejects_placement_failure(_world: &mut GivnWorld) {
-    unimplemented!()
+fn rejects_placement_failure(world: &mut GivnWorld) {
+    assert!(
+        scope_criteria(world).contains("Placement failure"),
+        "review guidance does not reject Placement failure"
+    );
 }
 
 #[then("the guidance rejects a mutating scenario under an observing goal")]
-fn rejects_mutation_under_observing_goal(_world: &mut GivnWorld) {
-    unimplemented!()
+fn rejects_mutation_under_observing_goal(world: &mut GivnWorld) {
+    assert!(
+        scope_criteria(world).contains("Mutation under an observing goal"),
+        "review guidance does not reject Mutation under an observing goal"
+    );
 }
 
 #[then("the guidance rejects an extension without a step reference")]
-fn rejects_extension_without_step(_world: &mut GivnWorld) {
-    unimplemented!()
+fn rejects_extension_without_step(world: &mut GivnWorld) {
+    assert!(
+        scope_criteria(world).contains("Extension without a step reference"),
+        "review guidance does not reject Extension without a step reference"
+    );
 }
 
 #[then("the guidance rejects a precondition established by the flow")]
-fn rejects_flow_precondition(_world: &mut GivnWorld) {
-    unimplemented!()
+fn rejects_flow_precondition(world: &mut GivnWorld) {
+    assert!(
+        scope_criteria(world).contains("Inconsistent preconditions"),
+        "review guidance does not reject Inconsistent preconditions"
+    );
 }
 
 #[then("the guidance rejects mechanism vocabulary in the goal trigger or guarantees")]
-fn rejects_mechanism_vocabulary(_world: &mut GivnWorld) {
-    unimplemented!()
+fn rejects_mechanism_vocabulary(world: &mut GivnWorld) {
+    assert!(
+        scope_criteria(world).contains("Mechanism vocabulary"),
+        "review guidance does not reject Mechanism vocabulary"
+    );
 }
 
 #[then("the guidance rejects a component- or channel-shaped name")]
-fn rejects_component_channel_name(_world: &mut GivnWorld) {
-    unimplemented!()
+fn rejects_component_channel_name(world: &mut GivnWorld) {
+    assert!(
+        scope_criteria(world).contains("Component- or channel-shaped name"),
+        "review guidance does not reject Component- or channel-shaped name"
+    );
 }
 
 #[then("the guidance rejects an oversized leaf")]
-fn rejects_oversized_leaf(_world: &mut GivnWorld) {
-    unimplemented!()
+fn rejects_oversized_leaf(world: &mut GivnWorld) {
+    assert!(
+        scope_criteria(world).contains("Oversized leaf"),
+        "review guidance does not reject Oversized leaf"
+    );
 }
 
 #[then("the guidance rejects relationship misuse")]
-fn rejects_relationship_misuse(_world: &mut GivnWorld) {
-    unimplemented!()
+fn rejects_relationship_misuse(world: &mut GivnWorld) {
+    assert!(
+        scope_criteria(world).contains("Relationship misuse"),
+        "review guidance does not reject Relationship misuse"
+    );
 }
 
 #[when("an author reads the capability placement guidance")]
