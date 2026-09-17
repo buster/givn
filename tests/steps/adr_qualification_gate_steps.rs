@@ -979,43 +979,76 @@ fn engine_records_remain_archived(world: &mut GivnWorld) {
 // --- adr-qualification-hardening: falsification and verdict steps ----------
 
 #[when("an author reads the falsification tests")]
-fn author_reads_falsification_tests(_world: &mut GivnWorld) {
-    unimplemented!()
+fn author_reads_falsification_tests(world: &mut GivnWorld) {
+    assert!(
+        !guidance(world).is_empty(),
+        "qualification guidance is empty"
+    );
 }
 
 #[then("the guidance fails a single-change reversible decision")]
-fn guidance_fails_single_change_reversible(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_fails_single_change_reversible(world: &mut GivnWorld) {
+    assert!(
+        guidance(world).contains("Single-change reversibility"),
+        "guidance does not carry the single-change reversibility test"
+    );
 }
 
 #[then("the guidance fails a decision that constrains no future change")]
-fn guidance_fails_no_multi_change_constraint(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_fails_no_multi_change_constraint(world: &mut GivnWorld) {
+    assert!(
+        guidance(world).contains("No multi-change constraint"),
+        "guidance does not carry the multi-change constraint test"
+    );
 }
 
 #[then("the guidance fails workflow behavior unless it also moves a boundary")]
-fn guidance_fails_product_behavior(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_fails_product_behavior(world: &mut GivnWorld) {
+    assert!(
+        guidance(world).contains("Product-behavior exclusion"),
+        "guidance does not carry the product-behavior exclusion test"
+    );
 }
 
 #[then("the guidance names the misplaced-decision non-examples")]
-fn guidance_names_non_examples(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_names_non_examples(world: &mut GivnWorld) {
+    let content = guidance(world);
+    for marker in [
+        "project identity key split",
+        "terminal state value",
+        "assumption-and-go-ahead gate",
+        "human evaluation gate",
+        "change-request entity",
+    ] {
+        assert!(
+            content.contains(marker),
+            "guidance is missing the non-example {marker:?}"
+        );
+    }
 }
 
 #[then("the guidance still qualifies a genuine boundary decision")]
-fn guidance_still_qualifies_boundary(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_still_qualifies_boundary(world: &mut GivnWorld) {
+    assert!(
+        guidance(world).contains("still qualifies"),
+        "guidance does not state that a genuine boundary decision still qualifies"
+    );
 }
 
 #[then("the guidance classifies by kind rather than count")]
-fn guidance_classifies_by_kind(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_classifies_by_kind(world: &mut GivnWorld) {
+    assert!(
+        guidance(world).contains("classify by kind, not count"),
+        "guidance does not classify by kind rather than count"
+    );
 }
 
 #[then("the guidance states there is no numeric ADR cap")]
-fn guidance_states_no_numeric_cap(_world: &mut GivnWorld) {
-    unimplemented!()
+fn guidance_states_no_numeric_cap(world: &mut GivnWorld) {
+    assert!(
+        guidance(world).contains("no numeric ADR cap"),
+        "guidance does not state that there is no numeric ADR cap"
+    );
 }
 
 #[given("the design template is available")]
