@@ -47,20 +47,20 @@ Capabilities and step files:
 
 ### ideation-skill
 
-- [ ] Scenario: `The ideation guidance carries the open-question qualifier rule`
-  - [ ] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
+- [x] Scenario: `The ideation guidance carries the open-question qualifier rule`
+  - [x] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
         ```
         GIVN_FEATURES=givn/changes/guarantee-question-traceability/specs cargo test --locked --test features_runner -- --name "The ideation guidance carries the open-question qualifier rule"
         Step panicked. Captured output: givn-ideation guidance missing "(open: Q<N>)"
         1 scenario (1 failed)
         ```
-  - [ ] GREEN: added the `(open: Q<N>)` qualifier rule to `assets/skills/givn-ideation/SKILL.md.tmpl`. Files: that asset. `cargo clean -p givn` where assets changed, then the targeted run → zero. Evidence:
+  - [x] GREEN: added the `(open: Q<N>)` qualifier rule to `assets/skills/givn-ideation/SKILL.md.tmpl`. Files: that asset. `cargo clean -p givn` where assets changed, then the targeted run → zero. Evidence:
         ```
         1 feature
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
         1 feature
         1 scenario (1 passed)
@@ -70,20 +70,20 @@ Capabilities and step files:
 
 ### instruction-integrity
 
-- [ ] Scenario: `The proposal instruction carries the question disposition rule`
-  - [ ] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
+- [x] Scenario: `The proposal instruction carries the question disposition rule`
+  - [x] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
         ```
         GIVN_FEATURES=givn/changes/guarantee-question-traceability/specs cargo test --locked --test features_runner -- --name "The proposal instruction carries the question disposition rule"
         Step panicked. Captured output: not implemented
         1 scenario (1 failed)
         ```
-  - [ ] GREEN: added the disposition rule to `assets/instructions/proposal.md`, `assets/commands/givn-propose.md`, and `assets/templates/proposal.md`. Files: those three assets. `cargo clean -p givn` where assets changed, then the targeted run → zero. Evidence:
+  - [x] GREEN: added the disposition rule to `assets/instructions/proposal.md`, `assets/commands/givn-propose.md`, and `assets/templates/proposal.md`. Files: those three assets. `cargo clean -p givn` where assets changed, then the targeted run → zero. Evidence:
         ```
         1 feature
         1 scenario (1 passed)
         7 steps (7 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
         1 feature
         1 scenario (1 passed)
@@ -93,20 +93,20 @@ Capabilities and step files:
 
 ### instruction-integrity
 
-- [ ] Scenario: `The design and design-review guidance carry the decision ledger`
-  - [ ] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
+- [x] Scenario: `The design and design-review guidance carry the decision ledger`
+  - [x] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
         ```
         GIVN_FEATURES=givn/changes/guarantee-question-traceability/specs cargo test --locked --test features_runner -- --name "The design and design-review guidance carry the decision ledger"
         Step panicked. Captured output: not implemented
         1 scenario (1 failed)
         ```
-  - [ ] GREEN: added the ledger contract to `assets/instructions/design.md`, `assets/templates/design.md`, `assets/instructions/design-review.md`, `assets/commands/givn-design-review.md`, and `assets/templates/design-review.md`. Files: those five assets. `cargo clean -p givn` where assets changed, then the targeted run → zero. Evidence:
+  - [x] GREEN: added the ledger contract to `assets/instructions/design.md`, `assets/templates/design.md`, `assets/instructions/design-review.md`, `assets/commands/givn-design-review.md`, and `assets/templates/design-review.md`. Files: those five assets. `cargo clean -p givn` where assets changed, then the targeted run → zero. Evidence:
         ```
         1 feature
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
         1 feature
         1 scenario (1 passed)
@@ -116,21 +116,21 @@ Capabilities and step files:
 
 ### instruction-integrity
 
-- [ ] Scenario: `The review instruction rejects an unqualified guarantee with an open prerequisite`
-  - [ ] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
+- [x] Scenario: `The review instruction rejects an unqualified guarantee with an open prerequisite`
+  - [x] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
         ```
         GIVN_FEATURES=givn/changes/guarantee-question-traceability/specs cargo test --locked --test features_runner -- --name "The review instruction rejects an unqualified guarantee with an open prerequisite"
         Step panicked. Captured output: not implemented
         1 scenario (1 failed)
         3 steps (2 passed, 1 failed)
         ```
-  - [ ] GREEN: added the open-prerequisite line to `assets/instructions/review.md`. Files: that asset. `cargo clean -p givn` where assets changed, then the targeted run → zero. Evidence:
+  - [x] GREEN: added the open-prerequisite line to `assets/instructions/review.md`. Files: that asset. `cargo clean -p givn` where assets changed, then the targeted run → zero. Evidence:
         ```
         1 feature
         1 scenario (1 passed)
         3 steps (3 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
         1 feature
         1 scenario (1 passed)
@@ -140,21 +140,21 @@ Capabilities and step files:
 
 ### instruction-integrity
 
-- [ ] Scenario: `The proposal design and design-review templates carry the ledger shapes`
-  - [ ] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
+- [x] Scenario: `The proposal design and design-review templates carry the ledger shapes`
+  - [x] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
         ```
         restored the three templates from the setup revision (4ef5e023):
         Step panicked. Captured output: givn/artifacts/proposal/proposal.md lacks "Disposition"
         1 scenario (1 failed)
         5 steps (4 passed, 1 failed)
         ```
-  - [ ] GREEN: covered by the template edits in the earlier scenarios; this scenario ejects and asserts them. Files: none. `cargo clean -p givn` where assets changed, then the targeted run → zero. Evidence:
+  - [x] GREEN: covered by the template edits in the earlier scenarios; this scenario ejects and asserts them. Files: none. `cargo clean -p givn` where assets changed, then the targeted run → zero. Evidence:
         ```
         1 feature
         1 scenario (1 passed)
         8 steps (8 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
         1 feature
         1 scenario (1 passed)
