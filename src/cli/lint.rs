@@ -518,9 +518,16 @@ impl Severity {
 /// register here; rendering never changes.
 fn severity_for(kind: &str) -> Severity {
     match kind {
-        "parse_error" | "duplicate_title" | "empty_feature" | "usecase_invalid"
-        | "fragment_invalid" | "dangling_capability_ref" | "ambiguous_relationship_target"
-        | "dangling_use_case_ref" | "use_case_cycle" | "extend_fragment"
+        "parse_error"
+        | "duplicate_title"
+        | "empty_feature"
+        | "usecase_invalid"
+        | "fragment_invalid"
+        | "dangling_capability_ref"
+        | "ambiguous_relationship_target"
+        | "dangling_use_case_ref"
+        | "use_case_cycle"
+        | "extend_fragment"
         | "interaction_mismatch" => Severity::Blocking,
         "wip" | "e2e_intent" => Severity::Finding,
         _ => Severity::Advisory,

@@ -30,8 +30,10 @@ const FIXTURE_CHANGE_ID: &str = "domain-skill-trigger";
 
 #[given("the domain-modeling skill template is inspected")]
 fn domain_modeling_template_inspected(world: &mut GivnWorld) {
-    let content = std::fs::read_to_string(crate::common::repo_path("assets/skills/givn-domain-modeling/SKILL.md.tmpl"))
-        .expect("read domain-modeling skill template");
+    let content = std::fs::read_to_string(crate::common::repo_path(
+        "assets/skills/givn-domain-modeling/SKILL.md.tmpl",
+    ))
+    .expect("read domain-modeling skill template");
     world.additional_output = Some(content);
 }
 
@@ -275,22 +277,28 @@ fn guidance_does_not_mention_domain_skill(world: &mut GivnWorld) {
 
 #[given("the design-review skill template is inspected")]
 fn design_review_template_inspected(world: &mut GivnWorld) {
-    let content = std::fs::read_to_string(crate::common::repo_path("assets/skills/givn-design-review/SKILL.md.tmpl"))
-        .expect("read design-review skill template");
+    let content = std::fs::read_to_string(crate::common::repo_path(
+        "assets/skills/givn-design-review/SKILL.md.tmpl",
+    ))
+    .expect("read design-review skill template");
     world.additional_output = Some(content);
 }
 
 #[given("the review skill template is inspected")]
 fn review_template_inspected(world: &mut GivnWorld) {
-    let content = std::fs::read_to_string(crate::common::repo_path("assets/skills/givn-review/SKILL.md.tmpl"))
-        .expect("read review skill template");
+    let content = std::fs::read_to_string(crate::common::repo_path(
+        "assets/skills/givn-review/SKILL.md.tmpl",
+    ))
+    .expect("read review skill template");
     world.additional_output = Some(content);
 }
 
 #[given("a placeholder removed scenario")]
 fn placeholder_removed_scenario(_world: &mut GivnWorld) {
-    let template = std::fs::read_to_string(crate::common::repo_path("assets/skills/givn-domain-modeling/SKILL.md.tmpl"))
-        .expect("domain-modeling skill template must exist for the placeholder step");
+    let template = std::fs::read_to_string(crate::common::repo_path(
+        "assets/skills/givn-domain-modeling/SKILL.md.tmpl",
+    ))
+    .expect("domain-modeling skill template must exist for the placeholder step");
     assert!(
         template.contains("givn-domain-modeling"),
         "skill template asset is not loadable"

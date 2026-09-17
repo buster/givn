@@ -960,7 +960,9 @@ mod tests {
             "an unresolved persona ID must fail the check"
         );
         assert!(check_persona_disposition("PERSONAS: none\n", &change).is_err());
-        assert!(check_persona_disposition("PERSONAS: none — operator confirmed\n", &change).is_err());
+        assert!(
+            check_persona_disposition("PERSONAS: none — operator confirmed\n", &change).is_err()
+        );
         assert!(check_persona_disposition("PERSONAS:\n", &change).is_err());
         assert!(check_persona_disposition("no marker\n", &change).is_err());
     }
