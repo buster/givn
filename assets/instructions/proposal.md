@@ -27,6 +27,17 @@ language that a non-technical stakeholder can read and validate.
   record the seed path in the proposal's Use-Case Context and set the seed's
   status line to `Status: proposed by <change-id>`. The seed's original text
   stays unchanged; only the status line is edited.
+- **Question disposition.** When the change originates from an ideation seed,
+  every intersecting seed question is dispositioned in the proposal before
+  specs: **answered** with its source, **carried** with an owner and the
+  artifact that will decide it, or **out of scope** with a reason. An
+  undispositioned intersecting question blocks the specs step; the same
+  structure is advisory without an ideation source. "Resolved in `design.md`"
+  alone is not a disposition. A statement qualified `(open: Q<N>)` names a
+  question that must be dispositioned here.
+- **Question IDs.** Open questions carry stable IDs `D1`, `D2`, … (`D<n>` in
+  the templates) with the full question and its option treatment; the
+  design's ledger resolves each ID.
 - **Persona confirmation.** A change with a user-visible surface (a browser interface, a terminal interface, or CLI text output) names at least one confirmed Persona, or records `none` with the reason and the operator confirmation.
 
 **Structure:**
