@@ -288,6 +288,11 @@ fn change_passed_design_review(world: &mut GivnWorld) {
     // Write design-review.md with PASS marker.
     let dr_path = change_dir_for(world, "test-change").join("design-review.md");
     std::fs::write(&dr_path, "DESIGN-REVIEW: PASS\n").unwrap();
+    // The visual-review fixtures name `fixture-persona`; the review-time
+    // persona resolution needs the file to exist.
+    let personas = project_root(world).join("givn/personas");
+    std::fs::create_dir_all(&personas).unwrap();
+    std::fs::write(personas.join("fixture-persona.md"), "# Persona: fixture\n").unwrap();
 }
 
 #[given(regex = r"^the change's tasks\.md contains `(.+)`$")]

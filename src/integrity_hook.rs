@@ -234,14 +234,15 @@ fn check_visual_review(change_dir: &Path) -> Result<()> {
         ),
     }
 
-    check_persona_disposition(&review)?;
+    check_persona_disposition(&review, change_dir)?;
     check_visual_evidence(change_dir, &contract)
 }
 
 /// A declared visual interface requires a `PERSONAS:` line naming at least
-/// one confirmed Persona. Fenced examples in the review template do not
+/// one confirmed Persona, and the value must resolve to a persona file in
+/// the project collection. Fenced examples in the review template do not
 /// satisfy the check.
-fn check_persona_disposition(review: &str) -> Result<()> {
+fn check_persona_disposition(review: &str, change_dir: &Path) -> Result<()> {
     let stripped = strip_fenced_blocks(review);
     let Some(value) = persona_disposition(&stripped) else {
         bail!(
@@ -253,6 +254,22 @@ fn check_persona_disposition(review: &str) -> Result<()> {
         bail!(
             "a declared visual interface requires at least one confirmed Persona — \
              'PERSONAS: {value}' is not a confirmed persona"
+        );
+    }
+    // change_dir is <project_root>/givn/changes/<id>; the persona collection
+    // lives at <project_root>/givn/personas.
+    let project_root = change_dir
+        .parent()
+        .and_then(Path::parent)
+        .and_then(Path::parent);
+    let resolved = project_root
+        .map(|root| root.join("givn/personas").join(format!("{value}.md")))
+        .is_some_and(|path| path.is_file());
+    if !resolved {
+        bail!(
+            "the persona disposition '{value}' matches no file in givn/personas/ — \
+             name a confirmed persona or record a reasoned none for a change \
+             without a user-visible surface"
         );
     }
     Ok(())
@@ -928,20 +945,32 @@ mod tests {
 
     #[test]
     fn persona_disposition_requires_a_confirmed_persona() {
+        let (dir, change) = make_change_dir();
+        let personas = dir.path().join("givn/personas");
+        std::fs::create_dir_all(&personas).unwrap();
+        std::fs::write(personas.join("shopper-anna.md"), "# Persona\n").unwrap();
+
         assert_eq!(
             persona_disposition("PERSONAS: shopper-anna\n"),
             Some("shopper-anna".to_string())
         );
-        assert!(check_persona_disposition("PERSONAS: shopper-anna\n").is_ok());
-        assert!(check_persona_disposition("PERSONAS: none\n").is_err());
-        assert!(check_persona_disposition("PERSONAS:\n").is_err());
-        assert!(check_persona_disposition("no marker\n").is_err());
+        assert!(check_persona_disposition("PERSONAS: shopper-anna\n", &change).is_ok());
+        assert!(
+            check_persona_disposition("PERSONAS: unknown-persona\n", &change).is_err(),
+            "an unresolved persona ID must fail the check"
+        );
+        assert!(check_persona_disposition("PERSONAS: none\n", &change).is_err());
+        assert!(check_persona_disposition("PERSONAS: none — operator confirmed\n", &change).is_err());
+        assert!(check_persona_disposition("PERSONAS:\n", &change).is_err());
+        assert!(check_persona_disposition("no marker\n", &change).is_err());
     }
 
     #[test]
     fn fenced_persona_scaffold_does_not_count() {
+        let (dir, change) = make_change_dir();
+        std::fs::create_dir_all(dir.path().join("givn/personas")).unwrap();
         let review = "```\nPERSONAS: fixture-persona\n```\n";
-        assert!(check_persona_disposition(review).is_err());
+        assert!(check_persona_disposition(review, &change).is_err());
     }
 
     #[test]
