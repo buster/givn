@@ -20,6 +20,8 @@ Communication policy for all work in this project.
 - Work from examples. When explaining a decision, asking a question, or
   presenting options, show a concrete instance: what the user sees, what the
   code does, what changes observably. A label is not an example.
+- Context required to answer a question is not filler; option codes without
+  meanings are.
 
   <bad_example>
   UC1 blocks D3. ADR12 overrides both. Option A or B?

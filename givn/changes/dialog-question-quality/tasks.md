@@ -321,22 +321,39 @@ for those actions remain the real-interface evidence.
 
 ### install-extras
 
-- [ ] Scenario: `The absolute-mode policy block carries the dialog context rule`
-  - [ ] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `The absolute-mode policy block carries the dialog context rule`
+  - [x] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/dialog-question-quality/specs cargo test --locked --test features_runner -- --name "The absolute-mode policy block carries the dialog context rule"
+        1 feature
+        1 scenario (1 failed)
+        5 steps (4 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: added the "Context required to answer a question is not
+  - [x] GREEN: added the "Context required to answer a question is not
         filler; option codes without meanings are." line to
-        `assets/addons/absolute-mode/policy.md`, then ran
-        `givn addons enable absolute_mode` in this repository to refresh the
-        local `AGENTS.md` block. Files: `assets/addons/absolute-mode/policy.md`,
-        `AGENTS.md`. Run → zero. Evidence:
+        `assets/addons/absolute-mode/policy.md`, reinstalled the binary, and
+        ran `givn addons enable absolute_mode` in this repository to refresh
+        the local `AGENTS.md` block. Files:
+        `assets/addons/absolute-mode/policy.md`, `AGENTS.md`. `cargo clean -p
+        givn`, then the targeted run → zero. Evidence:
         ```
+        ✔ Given a project root with givn/ initialised without addons
+        ✔ And givn addon "absolute_mode" is "false"
+        ✔ When the user runs `givn addons enable absolute_mode`
+        ✔ Then the command exits 0
+        ✔ And the file "AGENTS.md" contains "Context required to answer a question is not filler"
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(install-extras): The absolute-mode policy block carries the dialog context rule`
+  - [x] COMMIT: `<hash>` -- `feat(install-extras): The absolute-mode policy block carries the dialog context rule`
 
 ## Final checks
 
