@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "use-case-model-scoping",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
-  "started_at_unix": 1789652242,
-  "finished_at_unix": null
+  "status": "proven",
+  "candidate_revision": "474a9bdd3b7c6be904dac9b0c48446dfe93ff3f9",
+  "tested_revision": "474a9bdd3b7c6be904dac9b0c48446dfe93ff3f9",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 9.613899911
+    },
+    "regular": {
+      "status": "passed",
+      "total": 528,
+      "passed": 528,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 40.746309382
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 7421,
+    "line_valid": 9402,
+    "line_percent": 78
+  },
+  "started_at_unix": 1789652663,
+  "finished_at_unix": 1789652749
 }
