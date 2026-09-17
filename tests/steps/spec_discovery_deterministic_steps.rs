@@ -510,7 +510,8 @@ fn document_defines_use_case(world: &mut GivnWorld) {
 fn document_carries_promotion_rule(world: &mut GivnWorld) {
     let content = model_document(world);
     assert!(
-        content.contains("Promotion rule") && content.contains("three or more distinct actor goals"),
+        content.contains("Promotion rule")
+            && content.contains("three or more distinct actor goals"),
         "document does not carry the promotion rule"
     );
 }
@@ -564,7 +565,9 @@ fn document_carries_observing_split(world: &mut GivnWorld) {
     }
 }
 
-#[then("the document carries the promotion of a conjunction-goal leaf into a summary and its split")]
+#[then(
+    "the document carries the promotion of a conjunction-goal leaf into a summary and its split"
+)]
 fn document_carries_conjunction_promotion(world: &mut GivnWorld) {
     let content = model_document(world);
     assert!(
@@ -588,15 +591,15 @@ fn observing_case_tied_to_criteria(world: &mut GivnWorld) {
 #[then("the worked conjunction case is tied to the goal-conjunction and oversized-leaf criteria")]
 fn conjunction_case_tied_to_criteria(world: &mut GivnWorld) {
     assert!(
-        model_document(world)
-            .contains("fails R1 (goal conjunction) and R9 (oversized leaf)"),
+        model_document(world).contains("fails R1 (goal conjunction) and R9 (oversized leaf)"),
         "conjunction example is not tied to R1 and R9"
     );
 }
 
 #[then("the workflow document points at the use-case model")]
 fn workflow_points_at_model(_world: &mut GivnWorld) {
-    let content = std::fs::read_to_string(crate::common::repo_path("docs/workflow.md")).expect("read docs/workflow.md");
+    let content = std::fs::read_to_string(crate::common::repo_path("docs/workflow.md"))
+        .expect("read docs/workflow.md");
     assert!(
         content.contains("use-case-model.md"),
         "workflow document does not point at the use-case model"
@@ -605,7 +608,8 @@ fn workflow_points_at_model(_world: &mut GivnWorld) {
 
 #[then("the reference document points at the use-case model")]
 fn reference_points_at_model(_world: &mut GivnWorld) {
-    let content = std::fs::read_to_string(crate::common::repo_path("docs/reference.md")).expect("read docs/reference.md");
+    let content = std::fs::read_to_string(crate::common::repo_path("docs/reference.md"))
+        .expect("read docs/reference.md");
     assert!(
         content.contains("use-case-model.md"),
         "reference document does not point at the use-case model"
@@ -692,14 +696,23 @@ fn corpus_two_lint_capabilities(world: &mut GivnWorld) {
         write_feature(
             &env,
             &format!("givn/specs/gates/{capability}.feature"),
-            &format!("Feature: Lint\n\n  Scenario: One\n    When the user runs `givn lint`\n"),
+            "Feature: Lint\n\n  Scenario: One\n    When the user runs `givn lint`\n",
         );
     }
-    write_usecase(&env, "gates", "lint-tool", "A checker.", "Check the tool.", "Lint runs");
+    write_usecase(
+        &env,
+        "gates",
+        "lint-tool",
+        "A checker.",
+        "Check the tool.",
+        "Lint runs",
+    );
     world.env = Some(env);
 }
 
-#[given("a spec discovery project whose corpus contains a goal-aligned and a goal-mismatched capability")]
+#[given(
+    "a spec discovery project whose corpus contains a goal-aligned and a goal-mismatched capability"
+)]
 fn corpus_goal_aligned_and_mismatched(world: &mut GivnWorld) {
     let env = make_bare_root();
     write_feature(
@@ -720,7 +733,14 @@ fn corpus_goal_aligned_and_mismatched(world: &mut GivnWorld) {
         "givn/specs/gates/lint-tool.feature",
         "Feature: Lint tool\n\n  Scenario: One\n    Given a coverage report exists\n    And a coverage report is stale\n    Then the command exits 0\n",
     );
-    write_usecase(&env, "gates", "lint-tool", "A checker.", "Check the tool.", "Lint runs");
+    write_usecase(
+        &env,
+        "gates",
+        "lint-tool",
+        "A checker.",
+        "Check the tool.",
+        "Lint runs",
+    );
     world.env = Some(env);
 }
 

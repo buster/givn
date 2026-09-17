@@ -374,7 +374,10 @@ pub fn route(root: &Path, proposal_text: &str) -> Result<RouteReport> {
     } else if candidates.len() >= 2 && (candidates[0].score - candidates[1].score).abs() < 0.01 {
         (
             RouteConfidence::NoSignal,
-            Some(format!("the top candidates tie at {:.2}", candidates[0].score)),
+            Some(format!(
+                "the top candidates tie at {:.2}",
+                candidates[0].score
+            )),
         )
     } else if candidates[0].score >= 3.0 {
         (RouteConfidence::Signal, None)
