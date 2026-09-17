@@ -12,7 +12,7 @@ Feature: Explore scenarios in the current change
     And stdout contains "tie"
     And stdout does not contain "ranked candidates"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A goal-aligned capability ranks above a lexically similar candidate
     Given a spec discovery project whose corpus contains a goal-aligned and a goal-mismatched capability
     And an active change whose proposal describes coverage report validation
