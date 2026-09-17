@@ -57,23 +57,45 @@ are guidance-content variants.
 
 ### ideation-skill
 
-- [ ] Scenario: `The ideation guidance carries the term schema and the collision procedure`
-  - [ ] RED: removed `@wip` from this scenario only; ran the single-scenario
+- [x] Scenario: `The ideation guidance carries the term schema and the collision procedure`
+  - [x] RED: removed `@wip` from this scenario only; ran the single-scenario
         command → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/term-introduction-discipline/specs cargo test --locked --test features_runner -- --name "The ideation guidance carries the term schema and the collision procedure"
+        1 scenario (1 failed)
+        4 steps (3 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: added the term schema, status rules, escaping rule, the
+  - [x] GREEN: added the term schema, status rules, escaping rule, the
         three-step collision procedure, the quality-review branch, and the
         Handoff rule to `assets/skills/givn-ideation/SKILL.md.tmpl`; added the
         pointer to `docs/workflow.md`. Files:
         `assets/skills/givn-ideation/SKILL.md.tmpl`, `docs/workflow.md`.
         `cargo clean -p givn`, then the targeted run → zero. Evidence:
         ```
+        ✔ Then the generated givn-ideation guidance contains "domain-terms.md"
+        ✔ And ... "`candidate`, `confirmed`, or `rejected`"
+        ✔ And ... "Contrast"
+        ✔ And ... "First use"
+        ✔ And ... "definition and first use"
+        ✔ And ... "recorded collision check"
+        ✔ And ... "only `confirmed` terms"
+        ✔ And ... "never deleted"
+        ✔ And ... "givn-domain-modeling"
+        ✔ And ... "Collision check"
+        ✔ And ... "Grep the durable glossary"
+        ✔ And ... "without recorded commands is not a record"
+        1 feature
+        1 scenario (1 passed)
+        14 steps (14 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        14 steps (14 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(ideation-skill): The ideation guidance carries the term schema and the collision procedure`
+  - [x] COMMIT: `<hash>` -- `feat(ideation-skill): The ideation guidance carries the term schema and the collision procedure`
 
 ### domain-skill-trigger
 

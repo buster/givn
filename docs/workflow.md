@@ -77,6 +77,14 @@ Enforcement: none. Ideation produces no manifest artifact — no `givn status`
 stage, no gates, no `check` involvement. It is visible only through its state
 directory and the published topic document.
 
+Term record: crystallizing terms are kept in `givn/ideation/<topic-id>/domain-terms.md`.
+Each entry records the term, its status (`candidate`, `confirmed`, or
+`rejected`), a one-sentence definition, a contrast, its first use, and the
+recorded collision check; a `confirmed` term has passed the term introduction
+test and a recorded search-before-coin check. The canonical schema lives in
+the `givn-ideation` skill and the test in the `givn-domain-modeling` skill;
+this document does not duplicate either.
+
 ## 4. The implement loop
 
 Per scenario, normative rules:
