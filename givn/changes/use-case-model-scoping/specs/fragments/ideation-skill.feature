@@ -19,7 +19,7 @@ Feature: ideation-skill
     And  the generated givn-ideation guidance contains "Implementation independence"
     And  the generated givn-ideation guidance contains "Relationship semantics"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The ideation guidance carries the authoring requirements and the handoff mapping
     Given  a givn project with all agent skill targets enabled
     When  the user runs `givn skills sync`
