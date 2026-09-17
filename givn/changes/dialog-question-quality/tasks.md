@@ -137,7 +137,7 @@ for those actions remain the real-interface evidence.
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `<hash>` -- `feat(instruction-integrity): The canonical dialog policy demonstrates the full question record`
+  - [x] COMMIT: `17acb19e` -- `feat(instruction-integrity): The canonical dialog policy demonstrates the full question record`
 
 - [x] Scenario: `The dialog policy is retrievable without an active change`
   - [x] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
@@ -167,7 +167,7 @@ for those actions remain the real-interface evidence.
         1 scenario (1 passed)
         4 steps (4 passed)
         ```
-  - [x] COMMIT: `<hash>` -- `feat(instruction-integrity): The dialog policy is retrievable without an active change`
+  - [x] COMMIT: `2001fb6b` -- `feat(instruction-integrity): The dialog policy is retrievable without an active change`
 
 - [x] Scenario: `An unresolvable instruction id keeps the known-artifact error`
   - [x] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
@@ -196,7 +196,7 @@ for those actions remain the real-interface evidence.
         1 scenario (1 passed)
         4 steps (4 passed)
         ```
-  - [x] COMMIT: `<hash>` -- `feat(instruction-integrity): An unresolvable instruction id keeps the known-artifact error`
+  - [x] COMMIT: `60e8cdc5` -- `feat(instruction-integrity): An unresolvable instruction id keeps the known-artifact error`
 
 - [x] Scenario: `The design-review template carries the per-question record shape`
   - [x] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
@@ -230,7 +230,7 @@ for those actions remain the real-interface evidence.
         1 scenario (1 passed)
         7 steps (7 passed)
         ```
-  - [x] COMMIT: `<hash>` -- `feat(instruction-integrity): The design-review template carries the per-question record shape`
+  - [x] COMMIT: `d2749d63` -- `feat(instruction-integrity): The design-review template carries the per-question record shape`
 
 ### ideation-skill
 
@@ -269,7 +269,7 @@ for those actions remain the real-interface evidence.
         1 scenario (1 passed)
         11 steps (11 passed)
         ```
-  - [x] COMMIT: `<hash>` -- `feat(ideation-skill): The ideation guidance carries the phase ladder and the one-question rule`
+  - [x] COMMIT: `da258888` -- `feat(ideation-skill): The ideation guidance carries the phase ladder and the one-question rule`
 
 ### prose-consolidation
 
@@ -317,7 +317,7 @@ for those actions remain the real-interface evidence.
         1 scenario (1 passed)
         11 steps (11 passed)
         ```
-  - [x] COMMIT: `<hash>` -- `feat(prose-consolidation): Generated interactive guidance points to the canonical dialog policy`
+  - [x] COMMIT: `22a81c6c` -- `feat(prose-consolidation): Generated interactive guidance points to the canonical dialog policy`
 
 ### install-extras
 
@@ -353,21 +353,40 @@ for those actions remain the real-interface evidence.
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `<hash>` -- `feat(install-extras): The absolute-mode policy block carries the dialog context rule`
+  - [x] COMMIT: `fb13bf15` -- `feat(install-extras): The absolute-mode policy block carries the dialog context rule`
 
 ## Final checks
 
-- [ ] Run the full suite (`./run-tests.sh`) → zero exit. Evidence:
+- [x] Run the full suite (`./run-tests.sh`) → zero exit. Evidence:
       ```
+      Summary [26.559s] 491 tests run: 491 passed, 0 skipped
       ```
-- [ ] Run the e2e suite (`./run-tests.sh --e2e`) → zero exit. Evidence:
+- [x] Run the e2e suite (`./run-tests.sh --e2e`) → zero exit. Evidence:
       ```
+      Summary [5.179s] 88 tests run: 88 passed, 403 skipped
       ```
-- [ ] Grep every touched step-definition file for empty/no-op bodies → 0.
+- [x] Run the change delta suite
+      (`GIVN_FEATURES=givn/changes/dialog-question-quality/specs cargo test --locked --test features_runner`)
+      → zero exit. Evidence:
+      ```
+      4 features
+      8 scenarios (8 passed)
+      54 steps (54 passed)
+      ```
+- [x] Grep every touched step-definition file for empty/no-op bodies → 0.
       Evidence:
       ```
+      grep -n "unimplemented!\|todo!()" tests/steps/instruction_integrity_steps.rs tests/steps/prose_consolidation_steps.rs
+      (no matches)
       ```
-- [ ] Confirm commit count matches scenario task count and every task has a
-      recorded hash.
-- [ ] Confirm `givn lint --change dialog-question-quality` has no parse errors
-      (exit 0 or 2).
+- [x] Confirm commit count matches scenario task count and every task has a
+      recorded hash: one setup commit (`b24db59a`) plus eight scenario
+      commits (`f6c1db11`, `17acb19e`, `2001fb6b`, `60e8cdc5`, `d2749d63`,
+      `da258888`, `22a81c6c`, `fb13bf15`).
+- [x] Confirm `givn lint --change dialog-question-quality` has no parse errors
+      (exit 0). Evidence:
+      ```
+      givn lint: 4 file(s) checked — clean
+      exit 0
+      ```
+      (53 overlap warnings remain; review records their dispositions.)
