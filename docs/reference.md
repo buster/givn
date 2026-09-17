@@ -10,7 +10,7 @@ repository's development scripts.
 | --- | --- |
 | `givn init [--force] [--no-addons] [--agents <list>]` | Scaffold `givn/{specs,changes,archive}`, write `givn/config.yaml`, generate skills/commands, add the AGENTS.md hint block. Enables all addons and extras by default. |
 | `givn new <id> [--skip a,b,c]` | Create a change scaffold under `givn/changes/<id>/`. `--skip` marks artifacts as intentionally not produced (reverse engineering). |
-| `givn instructions [<artifact>] [--change <id>] [--json]` | No artifact: context-aware guidance on what to do next. With an artifact id: that artifact's writing instructions. |
+| `givn instructions [<artifact>] [--change <id>] [--json]` | No artifact: context-aware guidance on what to do next. With an artifact id: that artifact's writing instructions. A non-artifact policy id (`dialog`) resolves through the same instruction cascade and is available without an active change. |
 | `givn lint [--change <id>] [paths...]` | Static Gherkin check only (syntax, `@wip`, delta tags). Exit 0 clean / 1 parse error / 2 `@wip` present. Runs no tests. |
 | `givn check [<artifact>] [--change <id>]` | Run an artifact's `post` hooks on demand; blocking `givn check review --change <id>` also runs the overlap, routing, and integrity gates. |
 | `givn status [--change <id>] [--json]` | Lifecycle state: artifact checklist, current stage, task progress with pending task descriptions, next required/optional steps; the text view opens with `SCM: git`, `SCM: fossil`, or `SCM: none (archive and managed upgrade are unavailable)`. Filesystem-derived, no separate state file. |
