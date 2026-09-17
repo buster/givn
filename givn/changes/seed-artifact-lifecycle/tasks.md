@@ -62,23 +62,41 @@ phrases).
 
 ### ideation-skill
 
-- [ ] Scenario: `The ideation guidance carries the seed schema and its status values`
-  - [ ] RED: removed `@wip` from this scenario only; ran the single-scenario
+- [x] Scenario: `The ideation guidance carries the seed schema and its status values`
+  - [x] RED: removed `@wip` from this scenario only; ran the single-scenario
         command → non-zero. Evidence:
         ```
+        GIVN_FEATURES=givn/changes/seed-artifact-lifecycle/specs cargo test --locked --test features_runner -- --name "The ideation guidance carries the seed schema and its status values"
+        1 scenario (1 failed)
+        4 steps (3 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: added the seed schema and status values to
+  - [x] GREEN: added the seed schema and status values to
         `assets/skills/givn-ideation/SKILL.md.tmpl`; added the guardrail to
         `assets/commands/givn-ideation.md`. Files:
         `assets/skills/givn-ideation/SKILL.md.tmpl`,
         `assets/commands/givn-ideation.md`. `cargo clean -p givn`, then the
         targeted run → zero. Evidence:
         ```
+        ✔ Then the generated givn-ideation guidance contains "change seed"
+        ✔ And ... "Status: ready"
+        ✔ And ... "proposed by"
+        ✔ And ... "implemented in"
+        ✔ And ... "superseded by"
+        ✔ And ... "withdrawn"
+        ✔ And ... "Accepted decisions"
+        ✔ And ... "Suggested start"
+        1 feature
+        1 scenario (1 passed)
+        10 steps (10 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        10 steps (10 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(ideation-skill): The ideation guidance carries the seed schema and its status values`
+  - [x] COMMIT: `<hash>` -- `feat(ideation-skill): The ideation guidance carries the seed schema and its status values`
 
 ### prose-consolidation
 

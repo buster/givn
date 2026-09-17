@@ -157,15 +157,54 @@ The last phase produces the readable record:
 - Propose term merges for crystallized terms into the durable term
   list; the user decides each one.
 - Offer persona promotion; the user decides per persona file.
-- Write one change seed per use case with a suggested start order.
-- Each change seed records the stable use-case ID, topic source, confirmed
-  Persona IDs, accepted decisions, open questions, and exact handoff status.
-  It is input to `/givn-propose`, not a proposal and not a change.
+- Write one change seed per use case with a suggested start order, using the
+  seed schema below. Each seed is input to `/givn-propose`, not a proposal
+  and not a change.
 - Before publishing, show the use-case-to-permanent mapping, Persona
   promotion choices, and change seeds. Handoff occurs only after the user
   confirms those records; never auto-promote or auto-start.
 - Handoff never starts a change — the user runs the normal proposal flow per
   use case when ready.
+
+Each `changes/<uc-id>.md` seed uses this stable schema:
+
+```markdown
+# Change seed: <use-case-id>
+
+Status: ready
+
+- Use-case ID: <stable use-case-id>
+- Topic: <topic-id>
+- Personas: <persona-id>, or none — <reason>
+- Suggested start: <order position and dependencies>
+- Handoff: <exact handoff status>
+
+## Accepted decisions
+
+### <decision title>
+
+- Context: <what forced the decision>
+- Options:
+  1. **<option name>** — <what it means>
+     In practice: <concrete example of what the user sees or the system does>
+     Gain: <what improves>
+     Cost: <what gets harder or is given up>
+- Chosen: **<option name>** because <reason>. Rejected: <option> because <reason>.
+
+## Open questions
+
+### <short title>
+
+<full standalone question: what it blocks, the context, the options with
+meaning, gain, cost, and a concrete example each>
+```
+
+Every seed's first line after the title is its status: `Status: ready`,
+`Status: proposed by <change-id>`, `Status: implemented in <change-id>`,
+`Status: superseded by <reference>`, or `Status: withdrawn`. Handoff writes
+`ready`; proposal planning stamps `proposed by`; archiving stamps
+`implemented in` or `withdrawn`. A superseding decision edits only the status
+line; the seed's original text stays.
 
 ## One question at a time
 
