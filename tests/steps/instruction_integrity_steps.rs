@@ -365,3 +365,75 @@ fn guidance_keeps_deterministic_toolchain(world: &mut GivnWorld) {
         );
     }
 }
+
+// --- dialog-question-quality: dialog policy steps --------------------------
+
+#[given("a Givn project with an active change for the dialog policy")]
+fn dialog_policy_project(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[when("the author requests the dialog policy through the Givn CLI")]
+fn author_requests_dialog_policy(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the CLI output contains the named-artifact rule")]
+fn cli_contains_named_artifact_rule(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the CLI output contains the option treatment rule")]
+fn cli_contains_option_treatment_rule(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the CLI output contains the standalone-answerability rule")]
+fn cli_contains_answerability_rule(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the CLI output contains the rejected-alternative rule")]
+fn cli_contains_rejected_alternative_rule(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[given("the canonical dialog policy is requested")]
+fn canonical_dialog_policy_requested(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[when("an author reads the option treatment and the record shape")]
+fn author_reads_option_treatment(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the policy requires every option's meaning gain cost and concrete example")]
+fn policy_requires_option_treatment(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the policy requires the rejected alternatives with their reasons")]
+fn policy_requires_rejected_alternatives(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the policy rejects an outcome-only resolution")]
+fn policy_rejects_outcome_only_resolution(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the policy requires a gloss for every cross-reference")]
+fn policy_requires_cross_reference_gloss(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[when("the author requests the dialog policy through the Givn CLI without a change")]
+fn author_requests_dialog_policy_without_change(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[when("the author requests an unknown instruction through the Givn CLI")]
+fn author_requests_unknown_instruction(_world: &mut GivnWorld) {
+    unimplemented!()
+}
