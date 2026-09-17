@@ -129,7 +129,7 @@ Licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE) at y
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 79% (7416/9398)
+Line coverage: 79% (7417/9398)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:
