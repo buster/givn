@@ -50,7 +50,12 @@ Required branches — cover every one (or explicitly record "no issue found"):
   ADR. The verdict must include a completed existing-ADR or duplicate check. A
   non-qualifying choice must name exactly one canonical feature, design,
   Arc42, process, project-documentation, or code destination. A refinement must
-  amend an existing ADR, and a replacement must supersede it. `Must be shared`
+  amend an existing ADR, and a replacement must supersede it. For every
+  proposed `NEW_ADR`, require the explicit cheaper home: name the specific
+  canonical artifact (feature specification, `design.md`, Arc42 chapter,
+  process documentation, project documentation, or code) that would own the
+  rationale instead. A missing cheaper home for a proposed `NEW_ADR` is a
+  finding. `Must be shared`
   is supporting evidence only. This policy is authoring guidance, not runtime
   enforcement, and this artifact must not duplicate the complete procedure or
   verdict schema.

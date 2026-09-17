@@ -177,6 +177,9 @@ as "no issue found" if genuinely clean):
       A non-qualifying choice must instead name exactly one canonical feature,
       design, Arc42, process, project-documentation, or code destination. A
       refinement must amend an existing ADR; a replacement must supersede it.
+      For every proposed `NEW_ADR`, require the explicit cheaper home: name the
+      specific canonical artifact that would own the rationale instead. A
+      missing cheaper home for a proposed `NEW_ADR` is a finding.
       `Must be shared` is supporting evidence only. A missing MADR is a finding
       only when a qualified candidate has no corresponding entry.
    5. A chapter file still containing only its scaffolded placeholder text,
