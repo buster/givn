@@ -713,3 +713,23 @@ declared visual interface's `PERSONAS:` line. The reasoned
 without a user-visible surface. User confirmation before use, the review
 duty, the cap (at most three segments per stakeholder type, about ten total),
 advisory findings with user arbitration, and no auto-promotion are unchanged.
+
+## 8.23 Guarantee Qualifiers and the Decision Ledger
+
+A use-case rule or guarantee that depends on an unresolved question carries
+`(open: Q<N>)` after the statement, naming the question in `questions.md`.
+The qualifier stays until the question closes, and closing the question
+removes it in the same edit; an unqualified guarantee whose prerequisite is
+open is a review inconsistency finding. The canonical wording lives in the
+ideation skill and is referenced from the review instruction.
+
+Proposal questions carry stable `D<n>` IDs with the dialog policy's option
+treatment and a disposition: **answered** with its source, **carried** with
+an owner and the deciding artifact, or **out of scope** with a reason. For a
+change sourced from an ideation seed, every intersecting seed question must
+be dispositioned before specs; the rule is advisory for other changes, and a
+bare "resolved in `design.md`" is not a disposition. The design records
+`Decides D<n>: <decision> — <where it is realized>` for every question, and
+design-review verifies that each `D<n>` resolves or is carried with a named
+owner; an unresolved, unrecorded item is a finding. The qualifier and the
+ledger are authoring contracts, not runtime checks.
