@@ -181,6 +181,7 @@ The last phase produces the readable record:
 - Write one change seed per use case with a suggested start order, using the
   seed schema below. Each seed is input to `/givn-propose`, not a proposal
   and not a change.
+- Map each elaborated `!` use case to its own permanent leaf document — never to a capability inside another goal.
 - Before publishing, show the use-case-to-permanent mapping, Persona
   promotion choices, and change seeds. Handoff occurs only after the user
   confirms those records; never auto-promote or auto-start.
@@ -328,6 +329,20 @@ Elaborate one defined use case at a time.
   and success guarantees.
 - Only now shape scenario skeletons: preconditions become Given, trigger and
   actor action become When, guarantees become Then.
+
+Authoring requirements for the contract:
+
+- Actors: the first actor is the primary actor; mark additional actors
+  `Supporting:`. Goal and Trigger name the primary actor.
+- Main flow: numbered steps, each pairing actor intention with system
+  responsibility (`N. Actor <intent>; System <responsibility>`); numbers let
+  extensions reference them.
+- Extensions: `- <step>: <condition> → <handling>; protects <guarantee>`. An
+  extension that adds a new outcome is never an extension.
+- Guarantees: Minimal is true even on failure; Success is the goal's
+  observable outcome and nothing else.
+- Out of scope: names excluded actor goals (with owning use-case IDs when they
+  exist), not excluded mechanisms.
 
 ## Quality reviews
 
