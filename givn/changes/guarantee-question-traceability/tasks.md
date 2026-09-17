@@ -1,0 +1,115 @@
+# Tasks: guarantee-question-traceability
+
+Runner: `./run-tests.sh` (regular) / `./run-tests.sh --e2e` (e2e). Strict mode:
+`tests/features_runner.rs` uses `.fail_on_skipped()` (cucumber-rs) — undefined
+steps fail. Not-implemented stub: `unimplemented!()`.
+
+Single-scenario run command (all scenarios):
+
+```
+GIVN_FEATURES=givn/changes/guarantee-question-traceability/specs cargo test --test features_runner -- --name "<scenario title>"
+```
+
+Use-case constraints carried into every scenario task:
+
+- The qualifier literal is pinned as `(open: Q<N>)` in every surface.
+- The disposition rule is blocking only for ideation-sourced changes;
+  otherwise advisory.
+- The ledger links back to the seed question ID (`Decides D2 (seed Q5)`).
+- Confirmed Personas: `agent--technical-role` and `givn-maintainer--owner`.
+
+Capabilities and step files:
+
+- `ideation-skill` — reused generic steps in `tests/steps/prose_consolidation_steps.rs`
+- `instruction-integrity` — `tests/steps/instruction_integrity_steps.rs`: new Givens (instruction plus command) and assertion steps; the template scenario reuses `givn eject` and the generic file-contains step
+
+## Setup
+
+- [ ] Confirm strict mode and the runner. No new runner is needed.
+- [ ] Proof-of-strictness: temporary probe feature, non-zero exit, delete.
+- [ ] Create the step skeletons with `unimplemented!()` bodies; `cargo check
+      --locked --tests` succeeds.
+- [ ] COMMIT: `<hash>` -- `test(guarantee-question-traceability): strict-mode proof and step skeletons`
+
+## Scenarios
+
+### ideation-skill
+
+- [ ] Scenario: `The ideation guidance carries the open-question qualifier rule`
+  - [ ] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
+        ```
+        ```
+  - [ ] GREEN: added the `(open: Q<N>)` qualifier rule to `assets/skills/givn-ideation/SKILL.md.tmpl`. Files: that asset. `cargo clean -p givn` where assets changed, then the targeted run → zero. Evidence:
+        ```
+        ```
+  - [ ] REFACTOR: re-ran → zero. Evidence:
+        ```
+        ```
+  - [ ] COMMIT: `<hash>` -- `feat(ideation-skill): The ideation guidance carries the open-question qualifier rule`
+
+### instruction-integrity
+
+- [ ] Scenario: `The proposal instruction carries the question disposition rule`
+  - [ ] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
+        ```
+        ```
+  - [ ] GREEN: added the disposition rule to `assets/instructions/proposal.md`, `assets/commands/givn-propose.md`, and `assets/templates/proposal.md`. Files: those three assets. `cargo clean -p givn` where assets changed, then the targeted run → zero. Evidence:
+        ```
+        ```
+  - [ ] REFACTOR: re-ran → zero. Evidence:
+        ```
+        ```
+  - [ ] COMMIT: `<hash>` -- `feat(instruction-integrity): The proposal instruction carries the question disposition rule`
+
+### instruction-integrity
+
+- [ ] Scenario: `The design and design-review guidance carry the decision ledger`
+  - [ ] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
+        ```
+        ```
+  - [ ] GREEN: added the ledger contract to `assets/instructions/design.md`, `assets/templates/design.md`, `assets/instructions/design-review.md`, `assets/commands/givn-design-review.md`, and `assets/templates/design-review.md`. Files: those five assets. `cargo clean -p givn` where assets changed, then the targeted run → zero. Evidence:
+        ```
+        ```
+  - [ ] REFACTOR: re-ran → zero. Evidence:
+        ```
+        ```
+  - [ ] COMMIT: `<hash>` -- `feat(instruction-integrity): The design and design-review guidance carry the decision ledger`
+
+### instruction-integrity
+
+- [ ] Scenario: `The review instruction rejects an unqualified guarantee with an open prerequisite`
+  - [ ] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
+        ```
+        ```
+  - [ ] GREEN: added the open-prerequisite line to `assets/instructions/review.md`. Files: that asset. `cargo clean -p givn` where assets changed, then the targeted run → zero. Evidence:
+        ```
+        ```
+  - [ ] REFACTOR: re-ran → zero. Evidence:
+        ```
+        ```
+  - [ ] COMMIT: `<hash>` -- `feat(instruction-integrity): The review instruction rejects an unqualified guarantee with an open prerequisite`
+
+### instruction-integrity
+
+- [ ] Scenario: `The proposal design and design-review templates carry the ledger shapes`
+  - [ ] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
+        ```
+        ```
+  - [ ] GREEN: covered by the template edits in the earlier scenarios; this scenario ejects and asserts them. Files: none. `cargo clean -p givn` where assets changed, then the targeted run → zero. Evidence:
+        ```
+        ```
+  - [ ] REFACTOR: re-ran → zero. Evidence:
+        ```
+        ```
+  - [ ] COMMIT: `<hash>` -- `feat(instruction-integrity): The proposal design and design-review templates carry the ledger shapes`
+
+## Final checks
+
+- [ ] Run the full suite (`./run-tests.sh`) → zero exit.
+- [ ] Run the e2e suite (`./run-tests.sh --e2e`) → zero exit.
+- [ ] Run the change delta suite → zero exit.
+- [ ] Grep every touched step-definition file for empty/no-op bodies → 0.
+- [ ] Confirm commit count matches scenario task count and every task has a
+      recorded hash.
+- [ ] Confirm `givn lint --change guarantee-question-traceability` has no
+      parse errors.
