@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "migration-retrofit-plan",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "152dfc69495c4edb7a5207e6a2701fe5dc6e4e1e",
+  "tested_revision": "152dfc69495c4edb7a5207e6a2701fe5dc6e4e1e",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 10.258572244
+    },
+    "regular": {
+      "status": "passed",
+      "total": 553,
+      "passed": 553,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 40.653329627
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 7655,
+    "line_valid": 9684,
+    "line_percent": 79
+  },
   "started_at_unix": 1789673945,
-  "finished_at_unix": null
+  "finished_at_unix": 1789674034
 }
