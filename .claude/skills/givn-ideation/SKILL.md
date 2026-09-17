@@ -117,6 +117,25 @@ Every `questions.md` entry uses this stable schema:
 A closed question keeps its full text, options, gains, costs, examples, and
 rejected alternatives. An outcome-only resolution is not a valid record.
 
+Every `domain-terms.md` entry uses this stable schema:
+
+```markdown
+| Term | Status | Definition | Contrast | First use | Collision check |
+|---|---|---|---|---|---|
+| <Term> | candidate | <one sentence> | <X, not Y> | <file:line> | <commands run, result> |
+```
+
+Status is `candidate`, `confirmed`, or `rejected`:
+
+- `candidate` — the definition and first use are sufficient.
+- `confirmed` — requires a genus-and-differentia definition, a contrast pair,
+  and one concrete domain sentence plus a recorded collision check.
+  The full term introduction test lives in `givn-domain-modeling`.
+- `rejected` — keeps the definition and the rejection reason; never deleted.
+
+Escape `|` as `\|` inside the Collision check cell and prefer hit-count
+commands without pipelines, so the recorded command stays inside its column.
+
 Use-case drafts use the same identity and contract vocabulary as permanent
 specifications. Each `use-cases/<uc-id>.md` uses this stable schema:
 
@@ -154,8 +173,8 @@ The last phase produces the readable record:
 
 - Publish the topic document to `docs/ideation/<topic-id>.md` — written for
   humans, readable start to finish.
-- Propose term merges for crystallized terms into the durable term
-  list; the user decides each one.
+- Propose only `confirmed` terms for the durable term list; report
+  `rejected` terms with their reason. The user decides each one.
 - Offer persona promotion; the user decides per persona file.
 - Write one change seed per use case with a suggested start order, using the
   seed schema below. Each seed is input to `/givn-propose`, not a proposal
@@ -226,7 +245,14 @@ Model the domain as a chain of past-tense domain events.
   possible?" — walk backwards until the chain starts at the domain's
   beginning.
 - Term collisions (same word, different meaning; different words, same
-  meaning) go to the domain terms file.
+  meaning) go to the domain terms file. Before a term reaches `confirmed`,
+  run and record the search-before-coin procedure:
+  1. Grep the durable glossary (`docs/arc42/12-glossary.md`) for the term and
+     its synonyms.
+  2. Grep every sibling topic's `domain-terms.md` and the repository for the
+     term.
+  3. Record the commands run and the hit counts in the `Collision check`
+     column. "No collision" without recorded commands is not a record.
 - Unknowns go to the questions log; do not debate opinions.
 
 ## Use Case Definition
@@ -258,8 +284,8 @@ A fresh-context subagent runs a quality review at each phase boundary; one
 reviewer per boundary, findings advisory, the user arbitrates:
 
 - Frame: research protocol completeness, stakeholder list with interests.
-- Event Storming: symmetry of cause and effect, missing event partners, term
-  collisions.
+- Event Storming: symmetry of cause and effect, missing event partners, and a
+  recorded collision check for every `confirmed` term entry.
 - Use Case Definition: sizing, boundaries, value criterion.
 - Use Case Elaboration: rules complete, examples concrete, contract
   unambiguous.
