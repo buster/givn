@@ -612,37 +612,73 @@ fn reference_points_at_model(_world: &mut GivnWorld) {
     );
 }
 
+fn template_text(world: &GivnWorld) -> &str {
+    world
+        .additional_output
+        .as_deref()
+        .expect("use-case document template was not loaded")
+}
+
 #[given("the canonical use-case document template is inspected")]
-fn canonical_usecase_template_inspected(_world: &mut GivnWorld) {
-    unimplemented!()
+fn canonical_usecase_template_inspected(world: &mut GivnWorld) {
+    world.additional_output = Some(givn::gherkin::usecase_md::usecase_md_template());
 }
 
 #[when("a maintainer reads the template guidance")]
-fn maintainer_reads_template_guidance(_world: &mut GivnWorld) {
-    unimplemented!()
+fn maintainer_reads_template_guidance(world: &mut GivnWorld) {
+    assert!(
+        !template_text(world).is_empty(),
+        "use-case document template must not be empty"
+    );
 }
 
 #[then("the template names the primary-actor convention")]
-fn template_names_primary_actor_convention(_world: &mut GivnWorld) {
-    unimplemented!()
+fn template_names_primary_actor_convention(world: &mut GivnWorld) {
+    assert!(
+        template_text(world).contains("the first actor is the primary actor"),
+        "template does not name the primary-actor convention"
+    );
 }
 
 #[then("the template shows the extension format")]
-fn template_shows_extension_format(_world: &mut GivnWorld) {
-    unimplemented!()
+fn template_shows_extension_format(world: &mut GivnWorld) {
+    assert!(
+        template_text(world).contains("protects <guarantee>"),
+        "template does not show the extension format"
+    );
 }
 
 #[then("the template numbers the main-flow example")]
-fn template_numbers_main_flow(_world: &mut GivnWorld) {
-    unimplemented!()
+fn template_numbers_main_flow(world: &mut GivnWorld) {
+    let content = template_text(world);
+    assert!(
+        content.contains("1. ") && content.contains("System responsibility"),
+        "template does not number the main-flow example"
+    );
 }
 
 #[then("the template carries the promotion note")]
-fn template_carries_promotion_note(_world: &mut GivnWorld) {
-    unimplemented!()
+fn template_carries_promotion_note(world: &mut GivnWorld) {
+    assert!(
+        template_text(world).contains("promoted to `+`"),
+        "template does not carry the promotion note"
+    );
 }
 
 #[then("the template preserves the fixture placeholders")]
-fn template_preserves_placeholders(_world: &mut GivnWorld) {
-    unimplemented!()
+fn template_preserves_placeholders(world: &mut GivnWorld) {
+    let content = template_text(world);
+    for placeholder in [
+        "<usecase-id>",
+        "<capability-id>",
+        "<actor role>",
+        "<the domain goal>",
+        "<consumer action>",
+        "<scenario title>",
+    ] {
+        assert!(
+            content.contains(placeholder),
+            "template dropped the fixture placeholder {placeholder:?}"
+        );
+    }
 }

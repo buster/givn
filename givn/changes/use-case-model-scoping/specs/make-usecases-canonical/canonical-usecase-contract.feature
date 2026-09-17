@@ -17,7 +17,7 @@ Feature: Canonical use-case contract
     And the workflow document points at the use-case model
     And the reference document points at the use-case model
 
-  @givn.added @wip
+  @givn.added
   Scenario: The generated use-case document template carries the authoring guidance
     Given the canonical use-case document template is inspected
     When a maintainer reads the template guidance
