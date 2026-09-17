@@ -34,7 +34,7 @@ Feature: lint-command
     Then the command exits 0
     And stderr contains "[SHAPE] advisory"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The JSON output exposes the finding severity
     Given a project root with givn/ initialised
     And a .feature file at "givn/specs/foo/foo.feature" with:
