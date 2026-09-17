@@ -50,11 +50,12 @@ Versions are selected manually and use annotated `vX.Y.Z` Git tags.
   identifier", "candidate/tested revision").
 - The archive/upgrade scenarios and documentation no longer assume Git.
 - Release 0.8.0 ships the `migrate-0-7-0-to-0-8-0` migration bundle for
-  projects created with 0.7.0: it walks the project LLM through bringing
-  existing use-case documents, personas, and ADRs under the hardened model,
-  adopting the dialog policy, seed statuses, term records, and the decision
-  ledger, and re-synchronizing ejected overrides. The managed refresh and
-  `givn_config_version` bump remain with `givn upgrade`.
+  projects created with 0.7.0: it inventories existing use-case documents,
+  personas, and ADRs against the hardened model, records every deviation with
+  the follow-up change that repairs it, adopts the dialog policy, seed
+  statuses, term records, and the decision ledger, and re-synchronizes
+  ejected overrides. The managed refresh and `givn_config_version` bump remain
+  with `givn upgrade`.
 
 ## [0.7.0] - 2026-09-10
 
