@@ -84,3 +84,5 @@ flowchart LR
   Agent((Agent)) --> Search[[Search corpus]]
   Search --> Evidence[[Report deterministic evidence]]
 ```
+
+<!-- givn:base-sha256:b7e7e2534bc1267474b62fa276368a7b8b09769d6213729c958063a32830e886 -->
