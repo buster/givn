@@ -45,6 +45,20 @@ from the chapter-09 register. Record the result once in the change assessment:
 ```text
 ADR action: NONE | NEW_ADR | AMEND_ADR | SUPERSEDE_ADR | CANONICAL_ARTIFACT
 ADR target: none | <one ADR or canonical artifact>
+
+Record the structured verdict here, in the change assessment, before creating or editing any MADR file:
+
+qualification: <blank until recorded>
+alternatives: <blank until recorded>
+architectural_impact: <blank until recorded>
+durable_consequence: <blank until recorded>
+lower_level_artifact: <blank until recorded>
+existing_adr_check: <blank until recorded>
+must_be_shared: <blank until recorded>
+routing: <blank until recorded>
+canonical_artifact: <blank until recorded>
+target_adr: <blank until recorded>
+replacement_adr: <blank until recorded>
 ```
 
 Do not copy the complete qualification procedure or MADR body into this
