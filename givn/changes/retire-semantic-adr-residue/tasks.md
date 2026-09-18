@@ -8,9 +8,9 @@ Documentation and register repair with one modified scenario.
 
 ## Implementation
 
-- [ ] `git mv` ADR-044, ADR-045, and ADR-054 to `docs/arc42/adr/archive/`
+- [x] `git mv` ADR-044, ADR-045, and ADR-054 to `docs/arc42/adr/archive/`
       and set `status: superseded by ADR-069` in each.
-- [ ] Append the three records to ADR-069's supersession list.
+- [x] Append the three records to ADR-069's supersession list.
 - [x] Update the register README: count 28 → 25, rows moved, relationship
       line extended.
 - [x] Delta the register-history scenario to 25 accepted decisions
