@@ -32,21 +32,23 @@ informed: {list everyone kept up-to-date}
 
 ## Qualification
 
-ADR-QUALIFICATION: PASS
+ADR-QUALIFICATION: <PASS | FAIL>
 
 ### Qualification verdict
 
-qualification: QUALIFIED
-alternatives: PASS
-architectural_impact: PASS
-durable_consequence: PASS
-lower_level_artifact: PASS
-existing_adr_check: PASS
-must_be_shared: SUPPORTING
-routing: NEW_ADR
-canonical_artifact: null
-target_adr: null
-replacement_adr: null
+Fill every value from the structured verdict recorded in the change's `arc42.md` before creating this file.
+
+qualification: <blank until recorded>
+alternatives: <blank until recorded>
+architectural_impact: <blank until recorded>
+durable_consequence: <blank until recorded>
+lower_level_artifact: <blank until recorded>
+existing_adr_check: <blank until recorded>
+must_be_shared: <blank until recorded>
+routing: <blank until recorded>
+canonical_artifact: <blank until recorded>
+target_adr: <blank until recorded>
+replacement_adr: <blank until recorded>
 
 This records the decision classification and exactly one canonical target or
 ADR relationship. Replace every value with the decision-specific verdict
