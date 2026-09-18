@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "reshape-author-change",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "c84fa20491c2b5085698dbdf28fa2a9138553161",
+  "tested_revision": "c84fa20491c2b5085698dbdf28fa2a9138553161",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 9.585095411
+    },
+    "regular": {
+      "status": "passed",
+      "total": 553,
+      "passed": 553,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 41.63809501
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 7655,
+    "line_valid": 9684,
+    "line_percent": 79
+  },
   "started_at_unix": 1789715462,
-  "finished_at_unix": null
+  "finished_at_unix": 1789715549
 }
