@@ -85,7 +85,7 @@ tasks record the project work and its evidence.
       ```
       Summary [   5.455s] 88 tests run: 88 passed, 451 skipped
       ```
-- [x] COMMIT: `<review-hash>` -- `docs(migrate-0-7-0-to-0-8-0): complete the migration review`
+- [x] COMMIT: `f3198915` -- `docs(migrate-0-7-0-to-0-8-0): complete the migration review`
 - [x] Archive the maintenance change; the migration is complete when every
       follow-up has archived.
 
