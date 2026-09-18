@@ -1,4 +1,4 @@
-Feature: new-command
+Feature: create-a-change
 
   Scenario: Valid multi-word kebab-case id creates the change scaffold
     Given a project root with givn/ initialised

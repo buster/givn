@@ -1,4 +1,4 @@
-Feature: init-agent-target-selection
+Feature: initialize-a-project
 
   Scenario: Non-interactive init installs skills to opencode only
     Given a project root without a givn/ directory
