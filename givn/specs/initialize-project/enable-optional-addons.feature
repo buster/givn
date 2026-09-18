@@ -1,4 +1,4 @@
-Feature: install-extras
+Feature: enable-optional-addons
 
   Scenario: givn init defaults to all addons enabled and generates their files
     Given a project root without a givn/ directory
