@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "reshape-operate-product",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "185f111ec8eab1d7263411177e7a051e3837f0ff",
+  "tested_revision": "185f111ec8eab1d7263411177e7a051e3837f0ff",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 11.996028672
+    },
+    "regular": {
+      "status": "passed",
+      "total": 553,
+      "passed": 553,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 48.33577193
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 7655,
+    "line_valid": 9684,
+    "line_percent": 79
+  },
   "started_at_unix": 1789717622,
-  "finished_at_unix": null
+  "finished_at_unix": 1789717727
 }
