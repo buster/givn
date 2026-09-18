@@ -10,8 +10,7 @@
 
 ## Goal
 
-Represent active specifications and their relationships with explicit use-case
-contracts.
+Represent active specifications and their relationships with explicit use-case contracts.
 
 ## Trigger
 
@@ -24,11 +23,11 @@ The maintainer inspects or validates the permanent specification corpus.
 ## Main flow
 
 1. The maintainer inspects use-case ownership.
-2. Givn reports capabilities and interaction evidence under the owning use case.
+2. The system reports capabilities and interaction evidence under the owning use case.
 
 ## Extensions
 
-- Invalid narratives are reported with their source path.
+- 1: a narrative is invalid → the report names its source path; protects the minimal guarantee.
 
 ## Rules
 
@@ -81,4 +80,4 @@ flowchart LR
   Tree --> Ownership[[See explicit ownership]]
 ```
 
-<!-- givn:base-sha256:6e5299c1a6f8b570536ea54d2b27113239d73c00f7444c5ad5041fdbb27af601 -->
+<!-- givn:base-sha256:ce1021860215819b44b50b5b25862bc908dc3e340ceb107a7ca175ec71927b76 -->
