@@ -9,7 +9,7 @@ Documentation repair; `specs` is skipped.
 ## Implementation
 
 - [x] `givn eject arc42-docs:template --force`. Evidence: `ejected givn/artifacts/arc42-docs/impact-assessment-template.md`.
-- [ ] COMMIT: `<hash>` -- `fix(adr-qualification-gate): re-eject the impact assessment template from 0.8.0`
+- [x] COMMIT: `46183b21` -- `fix(adr-qualification-gate): re-eject the impact assessment template from 0.8.0`
 
 ## Verification
 
