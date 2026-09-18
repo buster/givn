@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "reshape-make-usecases-canonical",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "71da239d7b7a39ae1be82d96db4a276ea181ee0c",
+  "tested_revision": "71da239d7b7a39ae1be82d96db4a276ea181ee0c",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 10.300522923
+    },
+    "regular": {
+      "status": "passed",
+      "total": 553,
+      "passed": 553,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 41.934999185
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 7655,
+    "line_valid": 9684,
+    "line_percent": 79
+  },
   "started_at_unix": 1789718280,
-  "finished_at_unix": null
+  "finished_at_unix": 1789718371
 }
