@@ -51,7 +51,7 @@ The operator can observe readiness and receives the product exit outcome.
 
 ## Personas
 
-- none
+- developer--primary-user
 
 ## Capabilities
 
@@ -95,4 +95,4 @@ flowchart LR
   Product --> Ready[[Observe readiness]]
 ```
 
-<!-- givn:base-sha256:aae78ef63640fc3cbb0c23449f9d8d3988f3376b1437cb4d2a541ea29a57455d -->
+<!-- givn:base-sha256:b32bb42a81509cb9bcd3a75a5febf926c9e4dc1d68d0ce40efd54a7ddbdf1de9 -->

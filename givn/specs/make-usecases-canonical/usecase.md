@@ -49,7 +49,7 @@ Use-case identity is visible in discovery output.
 
 ## Personas
 
-- none
+- givn-maintainer--owner
 
 ## Capabilities
 
@@ -80,3 +80,5 @@ flowchart LR
   Maintainer((Maintainer)) --> Tree[[Inspect use-case tree]]
   Tree --> Ownership[[See explicit ownership]]
 ```
+
+<!-- givn:base-sha256:6e5299c1a6f8b570536ea54d2b27113239d73c00f7444c5ad5041fdbb27af601 -->
