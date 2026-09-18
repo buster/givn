@@ -12,7 +12,7 @@ Documentation repair; `specs` is skipped.
       confirmed (glossary definitions, contrasts, first uses, recorded
       evidence), two rejected (Repository root, Index / staging area), two
       candidates (Hook, Check-in).
-- [ ] COMMIT: `<hash>` -- `docs(term-introduction-discipline): migrate the multi-scm-support term records`
+- [x] COMMIT: `71f59658` -- `docs(term-introduction-discipline): migrate the multi-scm-support term records`
 
 ## Verification
 
