@@ -21,5 +21,5 @@ Documentation repair; `specs` is skipped.
       Summary [30.630s] 539 tests run: 539 passed, 0 skipped
       Summary [5.436s] 88 tests run: 88 passed, 451 skipped
       ```
-- [ ] COMMIT: `<hash>` -- `docs(convert-topic-persona-copies): complete the review`
-- [ ] Archive the change.
+- [x] COMMIT: `576ab907` -- `docs(convert-topic-persona-copies): complete the review`
+- [x] Archive the change.
