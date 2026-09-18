@@ -1,4 +1,4 @@
-Feature: Progress output during long-running spec retrieval commands
+Feature: keep-audit-output-clean
 
   @e2e
   Scenario: The JSON duplicate audit is valid JSON without progress wording
