@@ -348,3 +348,152 @@ The tests classify by kind, not count; there is no numeric cap.
 ## Completion boundary
 
 This generated design does not contain `DESIGN-REVIEW: PASS`, `REVIEW: PASS`, or implementation evidence. The project LLM must derive tasks and complete the normal Givn gates after the ordered bundle phases are understood, including any follow-up changes a bundle names.
+
+---
+
+# Project inventory
+
+Recorded 2026-09-18. Every row names one deviation family and one follow-up
+change. No follow-up is in-flight; all are named. No archived change is named
+as a pending follow-up.
+
+## Phase 1 — Use-case model
+
+| Artifact | Deviation (criterion or test) | Disposition | Follow-up change id |
+|---|---|---|---|
+| givn/specs/author-change/usecase.md | Goal and level: R1 Success guarantee names two outcomes; R9 Main flow names three actor goals | promote to `+`, split into `initialize-project` and `create-change`, re-home capabilities | reshape-author-change |
+| givn/specs/author-change/usecase.md | R7 mechanism vocabulary ("backend", "attribution plumbing") in Main flow and Success guarantee | restate as observable, implementation-independent outcomes | reshape-author-change |
+| givn/specs/author-change/usecase.md | R5 all three extensions omit their main-flow step and protected guarantee | rewrite to `<step>: <condition> → <handling>; protects <guarantee>` | reshape-author-change |
+| givn/specs/author-change/usecase.md | R8 `new-command`, `init-agent-target-selection`, `install-extras` name a channel/mechanism | rename to goal-shaped names; move `.feature` files; update references | reshape-author-change |
+| givn/specs/archive-change/usecase.md | Goal and level: R1 Goal joins "Publish … and prove …"; Success guarantee names two outcomes | split publish from prove, or promote and split | reshape-archive-change |
+| givn/specs/archive-change/usecase.md | R7 mechanism vocabulary ("active backend", "revision", "revision binding") in Main flow and Success guarantee | restate | reshape-archive-change |
+| givn/specs/archive-change/usecase.md | R5 all eight extensions omit their main-flow step | rewrite | reshape-archive-change |
+| givn/specs/archive-change/usecase.md | R10 leaf Includes `usecase: verify-change`; Includes is summary→child or leaf→fragment only | re-home the verification behavior as a fragment or a capability | reshape-archive-change |
+| givn/specs/archive-change/usecase.md | R8 `preserve-docstrings-on-archive` names a code mechanism | rename | reshape-archive-change |
+| givn/specs/maintain-project/usecase.md | Goal and level: R1 Success guarantee names two outcomes; R9 Main flow names three actor goals | promote and split | reshape-maintain-project |
+| givn/specs/maintain-project/usecase.md | R7 mechanism vocabulary ("active backend") in Main flow and Success guarantee | restate | reshape-maintain-project |
+| givn/specs/maintain-project/usecase.md | R5 all three extensions omit their main-flow step | rewrite | reshape-maintain-project |
+| givn/specs/maintain-project/usecase.md | R3/R8 `release-0-3-0` is a release container, fails the placement test, names no goal | split its live behaviors under goal-shaped capabilities; re-home the retired-command interaction | reshape-maintain-project |
+| givn/specs/verify-change/usecase.md | R7 mechanism vocabulary ("Givn check" in Trigger, "machine-readable" in Success guarantee) | restate | reshape-verify-change |
+| givn/specs/verify-change/usecase.md | R5 both extensions omit their main-flow step | rewrite | reshape-verify-change |
+| givn/specs/verify-change/usecase.md | R8 `lint-command`, `deduplicate-change-dir-detection`, `validate-artifact-id-input` name a channel/mechanism | rename | reshape-verify-change |
+| givn/specs/operate-product/usecase.md | Goal and level: R1 Goal joins "Start … and observe …"; Success guarantee names two outcomes | split the changing start from the observing outcome | reshape-operate-product |
+| givn/specs/operate-product/usecase.md | R7 mechanism vocabulary ("run command" in Trigger, "readiness signal" in Main flow) | restate | reshape-operate-product |
+| givn/specs/operate-product/usecase.md | R5 the extension omits its main-flow step | rewrite | reshape-operate-product |
+| givn/specs/operate-product/usecase.md | R8 `run-command`, `run-execution` name a channel/mechanism | rename | reshape-operate-product |
+| givn/specs/inspect-change-state/usecase.md | R5 the extension omits its main-flow step | rewrite | reshape-inspect-change-state |
+| givn/specs/inspect-change-state/usecase.md | R8 `givn-status-command`, `validate-change-id-input`, `remove-dead-skip-list-code`, `fix-uppercase-checkbox-parsing` name a channel or a one-off fix | rename | reshape-inspect-change-state |
+| givn/specs/discover-specifications/usecase.md | R5 the extension omits its main-flow step | rewrite | reshape-discover-specifications |
+| givn/specs/discover-specifications/usecase.md | R8 `spec-progress-output` names an output mechanism | rename | reshape-discover-specifications |
+| givn/specs/make-usecases-canonical/usecase.md | R5 the extension omits its main-flow step | rewrite | reshape-make-usecases-canonical |
+| givn/specs/fragments/spec-explore-change.feature | R8 names the removed `spec explore` command; content is change routing | rename to `route-a-change`, move the file | rename-support-fragments |
+| givn/specs/fragments/spec-explore-permanent.feature | R8 names the removed command | rename to `find-existing-scenarios` | rename-support-fragments |
+| givn/specs/fragments/repository-ownership-fixtures.feature | R8 names a test mechanism | rename to `verify-repository-ownership` | rename-support-fragments |
+| givn/specs/fragments/llm-attribution.feature | R8 names a technology mechanism | rename to `attribute-commits` | rename-support-fragments |
+| givn/specs/fragments/llm-attribution-installation.feature | R8 names a technology mechanism | rename to `enable-commit-attribution` | rename-support-fragments |
+| givn/specs/fragments/scm-backend-selection.feature | R8 names the backend | rename (naming design in the follow-up; `SCM backend` is a confirmed term) | rename-support-fragments |
+| givn/specs/fragments/config-overlay.feature | R8 names a mechanism; orphaned (absent from `fragment.md`, unowned) | rename to `customize-the-lifecycle-graph`; restore ownership | rename-support-fragments |
+| givn/specs/fragments/template-conditional-rendering.feature | R8 names a rendering mechanism | rename to `match-guidance-to-enabled-addons` | rename-support-fragments |
+| givn/specs/fragments/domain-skill-trigger.feature | R8 names a trigger mechanism | rename to `guide-domain-modeling` | rename-support-fragments |
+| givn/specs/fragments/ideation-skill.feature | R8 names the skill artifact | rename to `generate-ideation-guidance` | rename-support-fragments |
+| givn/specs/fragments/coverage-script-workflow.feature | R8 names a script mechanism | rename to `measure-coverage-per-project` | rename-support-fragments |
+| givn/specs/fragments/readme-coverage-badge.feature | R8 names a document element | rename to `show-coverage-in-the-readme` | rename-support-fragments |
+| givn/specs/fragments/skill-rewrites.feature | R8 change-shaped name, not a behavior | rename to `refresh-generated-guidance` | rename-support-fragments |
+| givn/specs/fragments/arc42-review-alignment.feature | R8 names the documentation framework | rename to `review-architecture-documentation` | rename-support-fragments |
+
+## Phase 2 — Personas
+
+| Artifact | Deviation (criterion or test) | Disposition | Follow-up change id |
+|---|---|---|---|
+| givn/personas/agent--technical-role.md | Identity criteria not stated for the merged segments; schema gap (no Authority boundary, Evaluation capability, Own vocabulary; pre-0.8.0 sections; undated log) | convert to stable core + running record + topic stances; state the shared criterion or split | migrate-personas-to-stable-core |
+| givn/personas/developer--primary-user.md | Identity criteria not stated for the merged segments; schema gap | same | migrate-personas-to-stable-core |
+| givn/personas/givn-maintainer--owner.md | Identity criteria not stated for the merged segments; schema gap | same | migrate-personas-to-stable-core |
+| givn/ideation/multi-scm-support/personas/agent--technical-role.md | Biography copy (byte-identical to the permanent file) | replace with a `Reuse:` header and topic record entries only | convert-topic-persona-copies |
+| givn/ideation/multi-scm-support/personas/developer--primary-user.md | Biography copy (byte-identical to the permanent file) | same | convert-topic-persona-copies |
+| givn/ideation/multi-scm-support/personas/givn-maintainer--owner.md | Biography copy (byte-identical to the permanent file) | same | convert-topic-persona-copies |
+| givn/specs/verify-change/usecase.md | `## Personas: none` on a user-visible surface | confirm the relevant Persona with the user or record the reason | confirm-persona-coverage |
+| givn/specs/operate-product/usecase.md | `## Personas: none` on a user-visible surface | same | confirm-persona-coverage |
+| givn/specs/inspect-change-state/usecase.md | `## Personas: none` on a user-visible surface | same | confirm-persona-coverage |
+| givn/specs/discover-specifications/usecase.md | `## Personas: none` on a user-visible surface | same | confirm-persona-coverage |
+| givn/specs/make-usecases-canonical/usecase.md | `## Personas: none` on a user-visible surface | same | confirm-persona-coverage |
+
+## Phase 3 — ADRs
+
+Re-qualification: 24 of the 28 accepted records pass the five mandatory
+dimensions, the three falsification tests, and the cheaper-home challenge;
+their verdicts and audit notes are recorded in `arc42.md`. No `proposed`
+record exists. Deviations:
+
+| Artifact | Deviation (criterion or test) | Disposition | Follow-up change id |
+|---|---|---|---|
+| docs/arc42/adr/ADR-027-lint-command-name.md | NOT_QUALIFIED: single-change reversible; no multi-change constraint; product behavior ownable by use case + Gherkin | rationale moves to `givn/specs/verify-change/usecase.md` Rules and the lint capability spec; leave the register and README; audit note stays here | retire-lint-command-adr |
+| docs/arc42/adr/ADR-044-current-change-explore.md | Obsolete: describes the removed `spec explore --change` surface | mark superseded by ADR-069 and move to `docs/arc42/adr/archive/` | retire-semantic-adr-residue |
+| docs/arc42/adr/ADR-045-project-relative-identity.md | Obsolete: retrieval identity mechanism removed with the engine | same | retire-semantic-adr-residue |
+| docs/arc42/adr/ADR-054-versioned-evidence-output.md | Obsolete: E5/BGE/NLI evidence output removed with the engine | same | retire-semantic-adr-residue |
+| docs/arc42/adr/adr-template.md | Carries the old gate's pre-passed verdict (`ADR-QUALIFICATION: PASS`, `qualification: QUALIFIED`) | delete; run `givn addons enable arc42`; confirm the file is blank | resync-adr-template |
+
+## Phase 4 — Smaller adoptions
+
+| Artifact | Deviation (criterion or test) | Disposition | Follow-up change id |
+|---|---|---|---|
+| givn/ideation/multi-scm-support/changes/*.md (7 seeds) | No status line (`[SEED ]`); accepted decisions lack option treatment; no suggested start | stamp `implemented in <change-id>` (all consumed); add the content schema | stamp-change-seeds |
+| givn/ideation/multi-scm-support/domain-terms.md | 12 candidates are not term records (no status, contrast, first use, collision check); 9 merged terms are confirmed without recorded collision evidence | migrate to the term-record schema; carry the evidence below; status the per-SCM terms | migrate-term-records |
+
+Term evidence recorded in the file's collision-check cells on 2026-09-18
+(the one direct edit this change makes):
+
+| Term | Glossary hits | Live-corpus files / hits |
+|---|---|---|
+| SCM backend | 3 | 21 / 33 |
+| Revision | 19 | 55 / 336 |
+| Checkout | 3 | 53 / 143 |
+| Clean state | 1 | 7 / 7 |
+| Candidate revision | 2 | 18 / 49 |
+| Tested revision | 4 | 10 / 23 |
+| Revision binding | 1 | 7 / 8 |
+| Upgrade revision | 2 | 14 / 30 |
+| Plan revision | 1 | 12 / 23 |
+
+The `Hook` candidate collides with the glossary's `Hook (post)` entry; the
+follow-up records it as a candidate with the collision note, never as a
+confirmed term.
+
+## Phase 5 — Ejected overrides
+
+| Artifact | Deviation (criterion or test) | Disposition | Follow-up change id |
+|---|---|---|---|
+| givn/artifacts/arc42-docs/impact-assessment-template.md | Ejected override carries the pre-0.8.0 template (missing the structured verdict block) | re-eject from the 0.8.0 binary and re-apply only genuine project edits | re-eject-impact-assessment-template |
+
+`givn/config.yaml` carries only settings (version marker, addon switches,
+skill targets); no stale rule text. `givn/skills/` holds no overrides.
+
+## Readings recorded (no rows)
+
+- `givn instructions dialog` read and followed for every interactive step.
+- `givn lint` severity output re-read: advisory findings only, exit 0.
+- `givn spec route` confidence output re-read: `signal`/`no signal`.
+- No use-case rule or guarantee carries an unresolved prerequisite, and no
+  permanent proposal question lacks a `D<n>` ledger entry.
+
+## Follow-up register
+
+| Follow-up change id | Scope |
+|---|---|
+| reshape-author-change | Split the use case; re-home capabilities; rewrite extensions; restate mechanism vocabulary; rename `new-command`, `init-agent-target-selection`, `install-extras` |
+| reshape-archive-change | Split publish from prove; fix the Includes misuse; rewrite extensions; restate mechanism vocabulary; rename `preserve-docstrings-on-archive` |
+| reshape-maintain-project | Split the goals; split `release-0-3-0` under goal-shaped capabilities; rewrite extensions; restate mechanism vocabulary |
+| reshape-verify-change | Rewrite extensions; restate mechanism vocabulary; rename `lint-command`, `deduplicate-change-dir-detection`, `validate-artifact-id-input` |
+| reshape-operate-product | Split the changing start from the observing outcome; rewrite the extension; restate mechanism vocabulary; rename `run-command`, `run-execution` |
+| reshape-inspect-change-state | Rewrite the extension; rename `givn-status-command`, `validate-change-id-input`, `remove-dead-skip-list-code`, `fix-uppercase-checkbox-parsing` |
+| reshape-discover-specifications | Rewrite the extension; rename `spec-progress-output` |
+| reshape-make-usecases-canonical | Rewrite the extension |
+| rename-support-fragments | Rename the 14 flagged support-fragment capabilities; move their files; restore `config-overlay` ownership |
+| migrate-personas-to-stable-core | Convert the 3 permanent personas to stable core + running record + topic stances; state or repair the merge criteria |
+| convert-topic-persona-copies | Replace the 3 topic biography copies with `Reuse:` headers and record entries |
+| confirm-persona-coverage | Add confirmed Personas to the 5 use cases declaring `none` on a user-visible surface, or record the reason |
+| retire-lint-command-adr | Move the ADR-027 rationale to its canonical home and remove the record from the register and README |
+| retire-semantic-adr-residue | Mark ADR-044, ADR-045, and ADR-054 superseded by ADR-069 and move them to the ADR archive |
+| resync-adr-template | Delete the stale project-local ADR template and re-scaffold the blank 0.8.0 one |
+| stamp-change-seeds | Stamp the 7 consumed seeds `implemented in <change-id>` and complete their content schema |
+| migrate-term-records | Convert `domain-terms.md` to term records carrying the recorded collision evidence |
+| re-eject-impact-assessment-template | Re-eject the impact assessment template from 0.8.0 and re-apply only genuine edits |
