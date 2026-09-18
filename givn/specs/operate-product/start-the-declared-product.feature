@@ -1,4 +1,4 @@
-Feature: Run execution
+Feature: Start the declared product
 
   @e2e
   Scenario: The started server reports readiness and forwards a clean exit
