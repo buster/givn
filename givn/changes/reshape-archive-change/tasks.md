@@ -13,7 +13,7 @@ Specification reorganization; `specs` is skipped.
       rewrite the eight extensions; remove the `usecase: verify-change`
       include; rename the capability.
 - [x] `git mv` the feature file and update its title.
-- [ ] COMMIT: `<hash>` -- `feat(use-case-model-scoping): reshape archive-change to the 0.8.0 model`
+- [x] COMMIT: `456040ec` -- `feat(use-case-model-scoping): reshape archive-change to the 0.8.0 model`
 
 ## Verification
 
@@ -24,5 +24,5 @@ Specification reorganization; `specs` is skipped.
       Summary [30.648s] 539 tests run: 539 passed, 0 skipped
       Summary [5.497s] 88 tests run: 88 passed, 451 skipped
       ```
-- [ ] COMMIT: `<hash>` -- `docs(reshape-archive-change): complete the review`
-- [ ] Archive the change.
+- [x] COMMIT: `8c58846e` -- `docs(reshape-archive-change): complete the review`
+- [x] Archive the change.
