@@ -1,4 +1,4 @@
-Feature: Remove Dead Skip List Code
+Feature: Show skipped artifacts
 
   Scenario: givn status still reports skipped artifacts with the skip marker after dead code removal
     Given a project root with givn/ initialised

@@ -1,4 +1,4 @@
-Feature: givn-status-command
+Feature: report-change-status
 
   Scenario: No changes at all — text mode
     Given a project root with givn/ initialised
