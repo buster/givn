@@ -594,12 +594,12 @@ fn aggregate_migration_proposal(
     let mut output = format!(
         "# Proposal: {change_id}\n\n\
 ## Aggregate migration\n\n\
-This maintenance change migrates a project from Givn {source_version} to the\
-installed Givn {target_version} contract. Managed preparation was recorded in\
-Commit A `{commit_a}`. The migration phases below are one ordered plan; work\
+This maintenance change migrates a project from Givn {source_version} to the \
+installed Givn {target_version} contract. Managed preparation was recorded in \
+Commit A `{commit_a}`. The migration phases below are one ordered plan; work \
 each phase in order and follow the completion rules in its bundle.\n\n\
 ## Scope\n\n\
-The LLM must inspect project evidence and derive project-specific tasks. It must\
+The LLM must inspect project evidence and derive project-specific tasks. It must \
 preserve project-owned overrides and must not invent domain behavior, tests,\
 architecture decisions, or provenance.\n\n\
 ## Bundle proposals\n\n"
@@ -777,6 +777,27 @@ mod tests {
                 .collect::<Vec<_>>(),
             ["migrate-0-7-0-to-0-8-0"]
         );
+    }
+
+    #[test]
+    fn aggregate_proposal_preserves_word_spacing() {
+        let bundles = vec![bundle("migrate-0-2-0-to-0-3-0", "0.2.0", "0.3.0", 10)];
+        let proposal = aggregate_migration_proposal(
+            "migrate-0-2-0-to-0-3-0",
+            "0.2.0",
+            "0.3.0",
+            "abc123",
+            &bundles,
+        )
+        .unwrap();
+        assert!(proposal.contains("to the installed Givn 0.3.0 contract"));
+        assert!(proposal.contains("recorded in Commit A `abc123`"));
+        assert!(proposal.contains("plan; work each phase in order"));
+        assert!(proposal.contains("It must preserve project-owned overrides"));
+        assert!(!proposal.contains("theinstalled"));
+        assert!(!proposal.contains("inCommit"));
+        assert!(!proposal.contains("workeach"));
+        assert!(!proposal.contains("mustpreserve"));
     }
 
     #[test]
