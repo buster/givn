@@ -11,7 +11,7 @@ Specification reorganization; `specs` is skipped.
 - [x] Rewrite the Trigger; anchor the extension; rename the four
       capabilities.
 - [x] `git mv` the four feature files and update their titles.
-- [ ] COMMIT: `<hash>` -- `feat(use-case-model-scoping): reshape inspect-change-state to the 0.8.0 model`
+- [x] COMMIT: `cadde37d` -- `feat(use-case-model-scoping): reshape inspect-change-state to the 0.8.0 model`
 
 ## Verification
 
@@ -21,5 +21,5 @@ Specification reorganization; `specs` is skipped.
       Summary [38.514s] 539 tests run: 539 passed, 0 skipped
       Summary [6.702s] 88 tests run: 88 passed, 451 skipped
       ```
-- [ ] COMMIT: `<hash>` -- `docs(reshape-inspect-change-state): complete the review`
-- [ ] Archive the change.
+- [x] COMMIT: `4ba41f69` -- `docs(reshape-inspect-change-state): complete the review`
+- [x] Archive the change.
