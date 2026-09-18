@@ -40,6 +40,7 @@ The developer or reviewer runs a Givn check.
 - Parse failures outrank other lint findings.
 - Every blocking overlap has an explicit disposition.
 - Migration coverage cannot regress without an explicit retirement record.
+- The static check is `givn lint`; `verify.command` names the test runner, and lint never runs tests.
 
 ## Examples
 
@@ -103,4 +104,4 @@ flowchart LR
   Check --> Findings[[Resolve findings]]
 ```
 
-<!-- givn:base-sha256:ccd51a0e27bc2595d95b626576e3b653450ed76b9933b73feece814e5073372e -->
+<!-- givn:base-sha256:beec7612309622a7c18d03602497d9da8eceac705769c50e700606c6fb53eaec -->
