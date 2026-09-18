@@ -16,7 +16,7 @@ Documentation and register repair with one modified scenario.
 - [x] Delta the register-history scenario to 25 accepted decisions
       (`specs/fragments/adr-qualification-gate.feature`); the existing
       25-count step is reused, so no Rust change is needed.
-- [ ] COMMIT: `<hash>` -- `docs(adr-qualification-gate): retire the semantic-engine ADR residue`
+- [x] COMMIT: `f30931c3` -- `fix(adr-qualification-gate): retire the semantic-engine ADR residue`
 
 ## Verification
 
@@ -28,5 +28,5 @@ Documentation and register repair with one modified scenario.
       Summary [30.459s] 539 tests run: 539 passed, 0 skipped
       Summary [5.343s] 88 tests run: 88 passed, 451 skipped
       ```
-- [ ] COMMIT: `<hash>` -- `docs(retire-semantic-adr-residue): complete the review`
-- [ ] Archive the change.
+- [x] COMMIT: `a5cd29d2` -- `docs(retire-semantic-adr-residue): complete the review`
+- [x] Archive the change.
