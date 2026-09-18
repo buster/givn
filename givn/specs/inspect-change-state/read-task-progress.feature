@@ -1,4 +1,4 @@
-Feature: Uppercase Checkbox Parsing
+Feature: Read task progress
 
   Scenario: Lowercase [x] checkboxes are counted as done in text mode
     Given a project root with givn/ initialised
