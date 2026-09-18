@@ -1,4 +1,4 @@
-Feature: Validate Artifact ID Input
+Feature: Validate artifact ids
 
   Scenario: givn check with unknown artifact validates against manifest and provides helpful error
     Given a project root with givn/ initialised

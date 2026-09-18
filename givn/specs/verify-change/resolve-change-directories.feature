@@ -1,4 +1,4 @@
-Feature: Deduplicate Change Directory Detection
+Feature: Resolve change directories
 
   Scenario: Integrity hook resolves the change directory from a relative features path inside givn/changes
     Given  a project root with givn/ initialised

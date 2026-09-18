@@ -1,4 +1,3 @@
-
 # Use case: verify-change
 
 ## Level
@@ -8,16 +7,15 @@
 ## Actors
 
 - Developer
-- Reviewer
+- Supporting: Reviewer
 
 ## Goal
 
-Check that a change is structurally valid, complete, and free of unresolved
-overlap before implementation or archive.
+Check a change for structural validity, completeness, and unresolved overlap before implementation or archive.
 
 ## Trigger
 
-The developer or reviewer runs a Givn check.
+The developer requests verification of a change.
 
 ## Preconditions
 
@@ -25,22 +23,21 @@ The developer or reviewer runs a Givn check.
 
 ## Main flow
 
-1. Parse the active features and workflow artifacts.
-2. Detect duplicates, overlap, and invalid references.
-3. Compare migration evidence when a migration check is requested.
-4. Report blocking and advisory findings.
+1. The developer requests verification; the system reads the active specifications and workflow artifacts.
+2. The system detects duplicate behavior, structural overlap, and invalid references.
+3. The system compares migration evidence when a migration is checked.
+4. The system reports blocking and advisory findings.
 
 ## Extensions
 
-- A missing review disposition blocks completion.
-- A migration with missing behavior, lost E2E evidence, lower interaction coverage, or lower source coverage blocks completion.
+- 4: a review disposition is missing → completion is blocked; protects the success guarantee.
+- 3: a migration shows missing behavior, lost E2E evidence, lower interaction coverage, or lower source coverage → completion is blocked; protects the success guarantee.
 
 ## Rules
 
-- Parse failures outrank other lint findings.
+- Structural failures outrank other findings.
 - Every blocking overlap has an explicit disposition.
 - Migration coverage cannot regress without an explicit retirement record.
-- The static check is `givn lint`; `verify.command` names the test runner, and lint never runs tests.
 
 ## Examples
 
@@ -53,7 +50,7 @@ An invalid change cannot pass the verification gate.
 
 ## Success guarantee
 
-The reviewer receives complete, machine-readable verification evidence.
+The developer receives a complete verification result.
 
 ## Personas
 
@@ -61,26 +58,26 @@ The reviewer receives complete, machine-readable verification evidence.
 
 ## Capabilities
 
-- validate-artifact-id-input
+- validate-artifact-ids
 - spec-overlap-gates
 - review-disposition-gates
-- deduplicate-change-dir-detection
+- resolve-change-directories
 - givn-workflow-enforcement
-- lint-command
+- check-specification-health
 - visual-review-gate
 
 ## Interactions
 
 | Capability | Consumer action | E2E scenario |
 |---|---|---|
-| validate-artifact-id-input | check an unknown artifact | Consumer invokes givn check with an unknown artifact and gets a helpful error |
+| validate-artifact-ids | check an unknown artifact | Consumer invokes givn check with an unknown artifact and gets a helpful error |
 | visual-review-gate | run the review check on a visual change | A visual change with complete evidence passes review |
 | visual-review-gate | read the visual review guidance | Review guidance requires the visual verdict and persona lenses |
 | spec-overlap-gates | detect a duplicate title | A duplicate title across two permanent spec files is a hard error |
 | spec-overlap-gates | inspect duplicate JSON | The json output reports duplicate-title findings machine-readably |
 | review-disposition-gates | pass a disposed review | Review passes when every shape match is disposed and reports the net-delta receipt |
-| deduplicate-change-dir-detection | run integrity in a change | Consumer runs the integrity check on a change inside givn/changes and the correct directory is detected |
-| deduplicate-change-dir-detection | reject placeholder commit evidence | Integrity check detects a placeholder COMMIT hash in tasks.md and fails |
+| resolve-change-directories | run integrity in a change | Consumer runs the integrity check on a change inside givn/changes and the correct directory is detected |
+| resolve-change-directories | reject placeholder commit evidence | Integrity check detects a placeholder COMMIT hash in tasks.md and fails |
 | givn-workflow-enforcement | run migration coverage check | Consumer runs migration coverage check and sees passed evidence |
 
 ## Includes
@@ -104,4 +101,4 @@ flowchart LR
   Check --> Findings[[Resolve findings]]
 ```
 
-<!-- givn:base-sha256:beec7612309622a7c18d03602497d9da8eceac705769c50e700606c6fb53eaec -->
+<!-- givn:base-sha256:69907d77630f1030796ab71af08ae9ad7ba68365201fa442e20488f7c8909876 -->

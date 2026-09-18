@@ -1,4 +1,4 @@
-Feature: lint-command
+Feature: check-specification-health
 
   Scenario: No .feature files under givn/ reports clean and exits 0
     Given a project root with givn/ initialised
