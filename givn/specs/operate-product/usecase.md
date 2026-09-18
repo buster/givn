@@ -10,12 +10,11 @@
 
 ## Goal
 
-Start the declared product through its real boundary and observe readiness,
-exit, and termination behavior.
+Run the declared product to a reported outcome.
 
 ## Trigger
 
-The operator invokes the run command.
+The operator starts the declared product.
 
 ## Preconditions
 
@@ -23,14 +22,14 @@ The operator invokes the run command.
 
 ## Main flow
 
-1. Resolve the start plan.
-2. Start the product.
-3. Wait for the declared readiness signal.
-4. Forward the product outcome.
+1. The operator starts the declared product; the system resolves the declared start plan.
+2. The system starts the product.
+3. The system waits for the declared readiness.
+4. The system reports the product outcome.
 
 ## Extensions
 
-- Invalid declarations are rejected before the product starts.
+- 1: the declaration is invalid → the product is not started and the declaration is named; protects the minimal guarantee.
 
 ## Rules
 
@@ -43,11 +42,11 @@ The operator invokes the run command.
 
 ## Minimal guarantee
 
-The product is not reported ready when its declaration or probe fails.
+The product is not reported ready when its declaration is invalid or it fails to start.
 
 ## Success guarantee
 
-The operator can observe readiness and receives the product exit outcome.
+The operator observes the product's lifecycle outcome.
 
 ## Personas
 
@@ -55,23 +54,23 @@ The operator can observe readiness and receives the product exit outcome.
 
 ## Capabilities
 
-- run-execution
-- run-command
+- declare-the-product-start
+- start-the-declared-product
 
 ## Interactions
 
 | Capability | Consumer action | E2E scenario |
 |---|---|---|
-| run-execution | start a server | The started server reports readiness and forwards a clean exit |
-| run-execution | hand over a caller port | A caller-provided port is handed to the product |
-| run-execution | print the start plan | Print mode emits the start plan without starting |
-| run-execution | interrupt a started product | An interrupt stops the started product |
-| run-command | scaffold a run declaration | Scaffolding ships an unconfigured run declaration |
-| run-command | check an unconfigured declaration | The review check reports an unconfigured run declaration |
-| run-command | archive a configured project | Archive passes once the run declaration is complete |
-| run-command | upgrade a project declaration | Upgrade backfills the run declaration into an existing project |
-| run-command | inspect a damaged README block | The check names a damaged run managed block |
-| run-command | invoke the sentinel command | The sentinel start command prints setup guidance |
+| start-the-declared-product | start a server | The started server reports readiness and forwards a clean exit |
+| start-the-declared-product | hand over a caller port | A caller-provided port is handed to the product |
+| start-the-declared-product | print the start plan | Print mode emits the start plan without starting |
+| start-the-declared-product | interrupt a started product | An interrupt stops the started product |
+| declare-the-product-start | scaffold a run declaration | Scaffolding ships an unconfigured run declaration |
+| declare-the-product-start | check an unconfigured declaration | The review check reports an unconfigured run declaration |
+| declare-the-product-start | archive a configured project | Archive passes once the run declaration is complete |
+| declare-the-product-start | upgrade a project declaration | Upgrade backfills the run declaration into an existing project |
+| declare-the-product-start | inspect a damaged README block | The check names a damaged run managed block |
+| declare-the-product-start | invoke the sentinel command | The sentinel start command prints setup guidance |
 
 ## Includes
 
@@ -83,8 +82,7 @@ The operator can observe readiness and receives the product exit outcome.
 
 ## Out of scope
 
-Choosing a product architecture or inventing a start command from repository
-content.
+Choosing a product architecture or inventing a start command from repository content.
 
 ## Diagram
 
@@ -95,4 +93,4 @@ flowchart LR
   Product --> Ready[[Observe readiness]]
 ```
 
-<!-- givn:base-sha256:b32bb42a81509cb9bcd3a75a5febf926c9e4dc1d68d0ce40efd54a7ddbdf1de9 -->
+<!-- givn:base-sha256:be5fb2589446c883a1b236e8adf9e24075084dc83ac9ddd779c62167f1ec9056 -->
