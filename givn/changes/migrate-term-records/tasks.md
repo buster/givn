@@ -23,5 +23,5 @@ Documentation repair; `specs` is skipped.
       Summary [31.021s] 539 tests run: 539 passed, 0 skipped
       Summary [5.4s] 88 tests run: 88 passed, 451 skipped
       ```
-- [ ] COMMIT: `<hash>` -- `docs(migrate-term-records): complete the review`
-- [ ] Archive the change.
+- [x] COMMIT: `3042aace` -- `docs(migrate-term-records): complete the review`
+- [x] Archive the change.
