@@ -14,7 +14,7 @@ Specification reorganization; `specs` is skipped.
       Guarantees.
 - [x] `git mv` the five feature files into their new homes; rename the three
       capabilities in the Feature lines.
-- [ ] COMMIT: `<hash>` -- `feat(use-case-model-scoping): split author-change into a summary and two leaves`
+- [x] COMMIT: `0b7d40c8` -- `feat(use-case-model-scoping): split author-change into a summary and two leaves`
 
 ## Verification
 
@@ -26,5 +26,5 @@ Specification reorganization; `specs` is skipped.
       Summary [31.099s] 539 tests run: 539 passed, 0 skipped
       Summary [5.796s] 88 tests run: 88 passed, 451 skipped
       ```
-- [ ] COMMIT: `<hash>` -- `docs(reshape-author-change): complete the review`
-- [ ] Archive the change.
+- [x] COMMIT: `78b5c867` -- `docs(reshape-author-change): complete the review`
+- [x] Archive the change.
