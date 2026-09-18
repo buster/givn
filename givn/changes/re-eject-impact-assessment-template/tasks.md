@@ -20,5 +20,5 @@ Documentation repair; `specs` is skipped.
       Summary [30.717s] 539 tests run: 539 passed, 0 skipped
       Summary [5.437s] 88 tests run: 88 passed, 451 skipped
       ```
-- [ ] COMMIT: `<hash>` -- `docs(re-eject-impact-assessment-template): complete the review`
-- [ ] Archive the change.
+- [x] COMMIT: `e1487992` -- `docs(re-eject-impact-assessment-template): complete the review`
+- [x] Archive the change.
