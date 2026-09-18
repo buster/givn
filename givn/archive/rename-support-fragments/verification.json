@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "rename-support-fragments",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "cb7336d607381b847fab5aedf2db8374429877d6",
+  "tested_revision": "cb7336d607381b847fab5aedf2db8374429877d6",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 9.821222071
+    },
+    "regular": {
+      "status": "passed",
+      "total": 553,
+      "passed": 553,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 41.75803162
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 7655,
+    "line_valid": 9684,
+    "line_percent": 79
+  },
   "started_at_unix": 1789718509,
-  "finished_at_unix": null
+  "finished_at_unix": 1789718600
 }
