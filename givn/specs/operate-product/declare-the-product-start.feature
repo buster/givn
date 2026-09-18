@@ -1,4 +1,4 @@
-Feature: Run command declaration
+Feature: Declare the product start
 
   @e2e
   Scenario: Scaffolding ships an unconfigured run declaration
