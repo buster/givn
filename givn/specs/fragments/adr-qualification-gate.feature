@@ -139,6 +139,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And  superseded architectural records `ADR-019`, `ADR-042`, and `ADR-053` remain archived with replacement links
     And  `ADR-043` and `ADR-049` are absent because their behavior is owned by permanent specifications
     And  the superseded semantic-engine records remain archived with replacement links to their replacement record
+
   Scenario: The guidance carries the three falsification tests
     Given  the ADR qualification guidance is available
     When  an author reads the falsification tests
