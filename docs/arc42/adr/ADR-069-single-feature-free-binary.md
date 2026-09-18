@@ -139,7 +139,10 @@ Supersedes [ADR-039](archive/ADR-039-local-retrieval.md),
 [ADR-063](archive/ADR-063-reranker-pair-budget.md),
 [ADR-064](archive/ADR-064-shared-model-thread-budget.md),
 [ADR-066](archive/ADR-066-unified-semantic-rulebook.md), and
-[ADR-068](archive/ADR-068-remediation-log.md).
+[ADR-068](archive/ADR-068-remediation-log.md),
+[ADR-044](archive/ADR-044-current-change-explore.md),
+[ADR-045](archive/ADR-045-project-relative-identity.md), and
+[ADR-054](archive/ADR-054-versioned-evidence-output.md).
 
 Executed by the `drop-embedding-features` change, following the
 `retire-semantic-capabilities` tombstone.
