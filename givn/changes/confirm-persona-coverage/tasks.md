@@ -23,5 +23,5 @@ Narrative spec change; no scenario delta and no new steps.
       Summary [30.329s] 539 tests run: 539 passed, 0 skipped
       Summary [5.4s] 88 tests run: 88 passed, 451 skipped
       ```
-- [ ] COMMIT: `<hash>` -- `docs(confirm-persona-coverage): complete the review`
-- [ ] Archive the change.
+- [x] COMMIT: `cb7eb55a` -- `docs(confirm-persona-coverage): complete the review`
+- [x] Archive the change.
