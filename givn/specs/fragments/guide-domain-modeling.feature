@@ -1,4 +1,4 @@
-Feature: Domain-modeling skill is triggered and routed
+Feature: Guide domain modeling
 
   Scenario: The skill trigger names conversation states
     Given the domain-modeling skill template is inspected

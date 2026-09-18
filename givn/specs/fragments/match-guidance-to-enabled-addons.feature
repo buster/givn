@@ -1,4 +1,4 @@
-Feature: Generated guidance matches the enabled addon configuration
+Feature: Match guidance to enabled addons
 
   Scenario: Review guidance omits the Arc42 section when the Arc42 addon is disabled
     Given a Givn project with the arc42 addon disabled and the skills synchronized

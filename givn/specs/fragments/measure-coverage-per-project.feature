@@ -1,4 +1,4 @@
-Feature: Project-owned coverage workflow
+Feature: Measure coverage per project
 
   @e2e
   Scenario: An initialized project documents reusable test and coverage scripts

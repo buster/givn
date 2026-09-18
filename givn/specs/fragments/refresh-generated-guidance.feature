@@ -1,4 +1,4 @@
-Feature: skill-rewrites
+Feature: Refresh generated guidance
 
   @e2e
   Scenario: Synchronized guidance explains how to resolve the deterministic gates

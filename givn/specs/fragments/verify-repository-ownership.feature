@@ -1,4 +1,4 @@
-Feature: Repository-wide ownership fixtures
+Feature: Verify repository ownership
 
   @e2e
   Scenario: Repository-wide review accepts explicit overlap dispositions

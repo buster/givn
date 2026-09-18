@@ -1,4 +1,4 @@
-Feature: Arc42 completion conformance review
+Feature: Review architecture documentation
 
   @e2e
   Scenario: Arc42-enabled review instructions require conformance evidence

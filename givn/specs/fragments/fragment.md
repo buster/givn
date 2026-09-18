@@ -2,23 +2,24 @@
 
 ## Capabilities
 
-- ideation-skill
-- template-conditional-rendering
-- domain-skill-trigger
-- spec-explore-permanent
-- coverage-script-workflow
-- repository-ownership-fixtures
+- generate-ideation-guidance
+- match-guidance-to-enabled-addons
+- guide-domain-modeling
+- find-existing-scenarios
+- measure-coverage-per-project
+- verify-repository-ownership
 - coverage-readme-example
-- spec-explore-change
-- readme-coverage-badge
-- skill-rewrites
-- arc42-review-alignment
+- route-a-change
+- show-coverage-in-the-readme
+- refresh-generated-guidance
+- review-architecture-documentation
 - instruction-integrity
 - choose-project-license
 - adr-qualification-gate
-- llm-attribution
-- llm-attribution-installation
-- scm-backend-selection
+- attribute-commits
+- enable-commit-attribution
+- detect-the-project-repository
+- customize-the-lifecycle-graph
 
 ## Interactions
 

@@ -1,4 +1,4 @@
-Feature: Commit attribution installation
+Feature: Enable commit attribution
 
   @e2e
   Scenario: Consumer sees the commit attribution installation report
