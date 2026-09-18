@@ -27,7 +27,7 @@ owning documents.
 ## Active Register
 
 The active register contains only independent durable architecture decisions:
-28 accepted records. The fifteen semantic-engine records were
+25 accepted records. The fifteen semantic-engine records were
 superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 [`archive/`](archive/) by the `drop-embedding-features` change.
 
@@ -52,10 +52,7 @@ superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 | [ADR-027](ADR-027-lint-command-name.md) | accepted | Name the static check `givn lint` | public CLI contract |
 | [ADR-028](ADR-028-hooks-and-mandatory-checks.md) | accepted | Separate post hooks from mandatory checks | non-deactivatable gate boundary |
 | [ADR-037](ADR-037-deterministic-overlap-fingerprint.md) | accepted | Use deterministic fingerprints for structural overlap | review evidence boundary |
-| [ADR-044](ADR-044-current-change-explore.md) | accepted | Add active changes request-locally to Explore | persistence boundary |
-| [ADR-045](ADR-045-project-relative-identity.md) | accepted | Use one project-relative scenario identity | identity and filtering contract |
 | [ADR-048](ADR-048-instruction-json-contract.md) | accepted | Keep effective policy and instruction metadata explicit | agent interface contract |
-| [ADR-054](ADR-054-versioned-evidence-output.md) | accepted | Version opt-in second-stage evidence output | machine-readable compatibility boundary |
 | [ADR-067](ADR-067-givn-declares-and-executes-the-product-start.md) | accepted | Declare and execute the product start in the same tool | start-command contract boundary |
 | [ADR-069](ADR-069-single-feature-free-binary.md) | accepted | Ship one feature-free binary without the semantic retrieval engine | build-contract and dependency boundary |
 | [ADR-070](ADR-070-forward-only-archive-proof.md) | accepted | Publish archives forward-only and bind proof to a committed candidate | publication boundary and durable receipt contract |
@@ -67,7 +64,7 @@ superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 | Relationship | Meaning |
 |---|---|
 | ADR-019 -> ADR-027 | ADR-027 supersedes the old `givn verify` naming and carries the final lint contract. |
-| ADR-039, 041, 046, 047, 052, 055-061, 063, 064, 066, 068 -> ADR-069 | ADR-069 supersedes the semantic-engine records; the deterministic overlap boundary of ADR-037 remains current. |
+| ADR-039, 041, 044, 045, 046, 047, 052, 054, 055-061, 063, 064, 066, 068 -> ADR-069 | ADR-069 supersedes the semantic-engine records; the deterministic overlap boundary of ADR-037 remains current. |
 | ADR-070 -> ADR-072 | ADR-072 generalizes ADR-070's Git-specific publication consequence onto the backend seam; ADR-070 keeps the forward-only proof decision. |
 | ADR-071 (amended by maintain-project) | The seam decision now also governs the managed upgrade and migration bundles on Fossil: allowlist staging, pending-change detection, and commit run on both backends. |
 | ADR-023 (amended by 0.3.0) | The versioned-config decision now also governs managed-only commits, catalog-selected migrations, aggregate plans, and their clean-worktree boundary. |
@@ -95,6 +92,9 @@ superseded by an explicit replacement. Non-ADR records are not retained there.
 | [ADR-042](archive/ADR-042-bge-experiment.md) | superseded by ADR-052 | Experimental BGE gate interpretation. |
 | [ADR-053](archive/ADR-053-bge-pair-cap.md) | superseded by ADR-063 | Fixed pair-cap refusal. |
 | [ADR-039](archive/ADR-039-local-retrieval.md) | superseded by ADR-069 | Local E5 retrieval engine. |
+| [ADR-044](archive/ADR-044-current-change-explore.md) | superseded by ADR-069 | Request-local Explore corpus for the removed command. |
+| [ADR-045](archive/ADR-045-project-relative-identity.md) | superseded by ADR-069 | Retrieval identity for the removed index. |
+| [ADR-054](archive/ADR-054-versioned-evidence-output.md) | superseded by ADR-069 | E5/BGE/NLI output schemas for the removed engine. |
 | [ADR-041](archive/ADR-041-e5-uniqueness-gate.md) | superseded by ADR-069 | E5 uniqueness gate. |
 | [ADR-046](archive/ADR-046-semantic-review-report.md) | superseded by ADR-069 | Blocking semantic worklist report. |
 | [ADR-047](archive/ADR-047-projected-remediation.md) | superseded by ADR-069 | Semantic remediation against the projected tree. |
