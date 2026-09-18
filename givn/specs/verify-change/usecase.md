@@ -56,7 +56,7 @@ The reviewer receives complete, machine-readable verification evidence.
 
 ## Personas
 
-- none
+- developer--primary-user
 
 ## Capabilities
 
@@ -103,4 +103,4 @@ flowchart LR
   Check --> Findings[[Resolve findings]]
 ```
 
-<!-- givn:base-sha256:634310afb3ea4205aaf02bf35416963306989833259ca942e70986625c970a24 -->
+<!-- givn:base-sha256:ccd51a0e27bc2595d95b626576e3b653450ed76b9933b73feece814e5073372e -->
