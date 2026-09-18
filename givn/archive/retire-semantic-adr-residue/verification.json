@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "retire-semantic-adr-residue",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "e1b3136ac166f54b8dfb64d15525ee9023660e86",
+  "tested_revision": "e1b3136ac166f54b8dfb64d15525ee9023660e86",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 9.549306016
+    },
+    "regular": {
+      "status": "passed",
+      "total": 553,
+      "passed": 553,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 41.351118253
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 7655,
+    "line_valid": 9684,
+    "line_percent": 79
+  },
   "started_at_unix": 1789709547,
-  "finished_at_unix": null
+  "finished_at_unix": 1789709631
 }
