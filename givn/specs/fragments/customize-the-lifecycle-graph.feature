@@ -1,4 +1,4 @@
-Feature: config-overlay
+Feature: Customize the lifecycle graph
 
   Scenario: Empty overlay returns the base manifest unchanged
     When the overlay "{}" is applied to the default manifest

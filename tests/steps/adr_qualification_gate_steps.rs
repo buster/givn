@@ -664,7 +664,7 @@ fn explore_and_audit_adrs_are_spec_owned(world: &mut GivnWorld) {
     assert!(!file_exists(&active_adr_path("ADR-043")));
     assert!(!file_exists(&active_adr_path("ADR-049")));
     assert!(file_exists(
-        "givn/specs/fragments/spec-explore-permanent.feature"
+        "givn/specs/fragments/find-existing-scenarios.feature"
     ));
     assert!(file_exists(
         "givn/specs/discover-specifications/spec-duplicates.feature"

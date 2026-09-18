@@ -1,4 +1,4 @@
-Feature: Explore permanent scenarios before creation
+Feature: Find existing scenarios
 
   @e2e
   Scenario: Lexical search locates a permanent scenario by a step text token

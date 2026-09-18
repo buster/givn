@@ -1,4 +1,4 @@
-Feature: SCM backend selection
+Feature: Detect the project repository
 
   @e2e
   Scenario: A Git worktree at the project root selects the Git backend

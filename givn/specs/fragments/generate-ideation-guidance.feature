@@ -1,4 +1,4 @@
-Feature: ideation-skill
+Feature: Generate ideation guidance
 
   Scenario: The ideation skill ships without any addon enabled
     Given  a project root with givn/ initialised without addons
