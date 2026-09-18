@@ -23,4 +23,4 @@ Documentation repair; `specs` is skipped. The design's procedure is the plan.
       Summary [5.410s] 88 tests run: 88 passed, 451 skipped
       ```
 - [x] COMMIT: `ecdf182d` -- `docs(resync-adr-template): complete the review`
-- [ ] Archive the change.
+- [x] Archive the change.
