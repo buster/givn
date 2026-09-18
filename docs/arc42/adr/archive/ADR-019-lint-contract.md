@@ -11,7 +11,7 @@ informed:
 
 # Historical record: initial static-check contract
 
-> This record is superseded by [ADR-027](../ADR-027-lint-command-name.md). The exit-code intent is retained there with the final command name.
+> This record was superseded by ADR-027, which was later retired as non-qualifying; the exit-code intent and the final command name are retained in `givn/specs/verify-change/usecase.md` and the lint capability specification.
 
 ## Qualification
 
@@ -38,16 +38,16 @@ The prototype needed a static Gherkin check that did not execute tests.
 
 ## Decision Outcome
 
-The historical contract defined clean, parse-error, and WIP outcomes. The command-name portion was superseded by **ADR-027**, which calls the command `givn lint` and adds duplicate-title precedence.
+The historical contract defined clean, parse-error, and WIP outcomes. The command-name portion was superseded by **ADR-027** (retired as non-qualifying), which called the command `givn lint` and added duplicate-title precedence; the current contract lives in the verify-change specification.
 
 ### Consequences
 
 - Existing `givn verify` references required migration.
-- The current contract is maintained in ADR-027.
+- The current contract is maintained in `givn/specs/verify-change/`.
 
 ### Confirmation
 
-Current lint tests assert the ADR-027 command and exit-code behavior.
+Current lint tests assert the `givn lint` command and exit-code behavior specified in `givn/specs/verify-change/lint-command.feature`.
 
 ## Pros and Cons of the Options
 
@@ -68,4 +68,4 @@ Current lint tests assert the ADR-027 command and exit-code behavior.
 
 ## More Information
 
-See [ADR-027](../ADR-027-lint-command-name.md) and [chapter 8.8](../../08-crosscutting-concepts.md#88-error-handling-and-exit-codes).
+See `givn/specs/verify-change/usecase.md` and [chapter 8.8](../../08-crosscutting-concepts.md#88-error-handling-and-exit-codes).
