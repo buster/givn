@@ -10,12 +10,11 @@
 
 ## Goal
 
-Find existing behavior deterministically before authoring or reviewing a
-specification.
+Find existing behavior deterministically before authoring or reviewing a specification.
 
 ## Trigger
 
-The agent investigates a proposed behavior or permanent corpus.
+The agent investigates a proposed behavior or the permanent corpus.
 
 ## Preconditions
 
@@ -23,13 +22,13 @@ The agent investigates a proposed behavior or permanent corpus.
 
 ## Main flow
 
-1. Search or inspect the corpus.
-2. Report exact and structural overlap.
-3. Preserve deterministic evidence for review.
+1. The agent searches or inspects the corpus.
+2. The system reports exact and structural overlap.
+3. The system preserves deterministic evidence for review.
 
 ## Extensions
 
-- Model evidence may be unavailable while deterministic checks remain useful.
+- 1: model evidence is unavailable → the deterministic checks remain useful; protects the minimal guarantee.
 
 ## Rules
 
@@ -54,14 +53,14 @@ The agent receives stable, actionable candidates and findings.
 
 ## Capabilities
 
-- spec-progress-output
+- keep-audit-output-clean
 - spec-duplicates
 
 ## Interactions
 
 | Capability | Consumer action | E2E scenario |
 |---|---|---|
-| spec-progress-output | request JSON duplicate audit | The JSON duplicate audit is valid JSON without progress wording |
+| keep-audit-output-clean | request JSON duplicate audit | The JSON duplicate audit is valid JSON without progress wording |
 | spec-duplicates | audit duplicates in one feature | Exact duplicates in one feature are reported together |
 | spec-duplicates | audit duplicates across features | Exact duplicates across features are reported together |
 
@@ -85,4 +84,4 @@ flowchart LR
   Search --> Evidence[[Report deterministic evidence]]
 ```
 
-<!-- givn:base-sha256:b7e7e2534bc1267474b62fa276368a7b8b09769d6213729c958063a32830e886 -->
+<!-- givn:base-sha256:c03449eed80b6f3143a0b5b1a5d352009680da200f1c0bf5ad71737b9b22a118 -->
