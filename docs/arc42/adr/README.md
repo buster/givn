@@ -27,7 +27,7 @@ owning documents.
 ## Active Register
 
 The active register contains only independent durable architecture decisions:
-25 accepted records. The fifteen semantic-engine records were
+24 accepted records. The fifteen semantic-engine records were
 superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 [`archive/`](archive/) by the `drop-embedding-features` change.
 
@@ -49,7 +49,6 @@ superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 | [ADR-023](ADR-023-versioned-config-upgrade.md) | accepted | Preserve overrides during versioned upgrade | upgrade safety boundary |
 | [ADR-024](ADR-024-configurable-artifact-graph.md) | accepted | Represent workflow as a configurable artifact graph | lifecycle topology |
 | [ADR-026](ADR-026-arc42-addon.md) | accepted | Provide durable Arc42 documentation as an addon | addon and documentation lifecycle boundary |
-| [ADR-027](ADR-027-lint-command-name.md) | accepted | Name the static check `givn lint` | public CLI contract |
 | [ADR-028](ADR-028-hooks-and-mandatory-checks.md) | accepted | Separate post hooks from mandatory checks | non-deactivatable gate boundary |
 | [ADR-037](ADR-037-deterministic-overlap-fingerprint.md) | accepted | Use deterministic fingerprints for structural overlap | review evidence boundary |
 | [ADR-048](ADR-048-instruction-json-contract.md) | accepted | Keep effective policy and instruction metadata explicit | agent interface contract |
@@ -63,7 +62,7 @@ superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 
 | Relationship | Meaning |
 |---|---|
-| ADR-019 -> ADR-027 | ADR-027 supersedes the old `givn verify` naming and carries the final lint contract. |
+| ADR-019 -> retired ADR-027 | ADR-027 superseded the old `givn verify` naming and was later retired as non-qualifying; the lint naming contract lives in `givn/specs/verify-change/`. |
 | ADR-039, 041, 044, 045, 046, 047, 052, 054, 055-061, 063, 064, 066, 068 -> ADR-069 | ADR-069 supersedes the semantic-engine records; the deterministic overlap boundary of ADR-037 remains current. |
 | ADR-070 -> ADR-072 | ADR-072 generalizes ADR-070's Git-specific publication consequence onto the backend seam; ADR-070 keeps the forward-only proof decision. |
 | ADR-071 (amended by maintain-project) | The seam decision now also governs the managed upgrade and migration bundles on Fossil: allowlist staging, pending-change detection, and commit run on both backends. |
@@ -88,7 +87,7 @@ superseded by an explicit replacement. Non-ADR records are not retained there.
 
 | ID | Status | Reason for archive |
 |---|---|---|
-| [ADR-019](archive/ADR-019-lint-contract.md) | superseded by ADR-027 | Original static-check record. |
+| [ADR-019](archive/ADR-019-lint-contract.md) | superseded; successor retired as non-qualifying | Original static-check record. |
 | [ADR-042](archive/ADR-042-bge-experiment.md) | superseded by ADR-052 | Experimental BGE gate interpretation. |
 | [ADR-053](archive/ADR-053-bge-pair-cap.md) | superseded by ADR-063 | Fixed pair-cap refusal. |
 | [ADR-039](archive/ADR-039-local-retrieval.md) | superseded by ADR-069 | Local E5 retrieval engine. |
