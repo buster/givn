@@ -10,12 +10,11 @@
 
 ## Goal
 
-Understand the current change and artifact state without reading workflow files
-by hand.
+Understand the current change and artifact state without reading workflow files by hand.
 
 ## Trigger
 
-The developer requests change status.
+The developer requests the current change state.
 
 ## Preconditions
 
@@ -23,13 +22,13 @@ The developer requests change status.
 
 ## Main flow
 
-1. Discover active and archived changes.
-2. Read artifact completion and task progress.
-3. Report the next required workflow action.
+1. The developer requests the state; the system discovers active and archived changes.
+2. The system reads artifact completion and task progress.
+3. The system reports the next required workflow action.
 
 ## Extensions
 
-- Invalid change identities are rejected.
+- 1: the requested identity is invalid → the request is rejected before any file is read; protects the minimal guarantee.
 
 ## Rules
 
@@ -54,18 +53,18 @@ The developer can identify the current stage and next action.
 
 ## Capabilities
 
-- validate-change-id-input
-- remove-dead-skip-list-code
-- fix-uppercase-checkbox-parsing
-- givn-status-command
+- validate-change-ids
+- show-skipped-artifacts
+- read-task-progress
+- report-change-status
 
 ## Interactions
 
 | Capability | Consumer action | E2E scenario |
 |---|---|---|
-| validate-change-id-input | reject unsafe status identity | Consumer invokes givn status with a path traversal change id and gets a clear error |
-| remove-dead-skip-list-code | inspect skipped status | Consumer runs givn status on a change with skipped artifacts and sees them correctly |
-| fix-uppercase-checkbox-parsing | inspect uppercase task status | Consumer runs givn status on a change with uppercase checkboxes |
+| validate-change-ids | reject unsafe status identity | Consumer invokes givn status with a path traversal change id and gets a clear error |
+| show-skipped-artifacts | inspect skipped status | Consumer runs givn status on a change with skipped artifacts and sees them correctly |
+| read-task-progress | inspect uppercase task status | Consumer runs givn status on a change with uppercase checkboxes |
 
 ## Includes
 
@@ -77,8 +76,7 @@ The developer can identify the current stage and next action.
 
 ## Out of scope
 
-Mutating change artifacts or completing workflow tasks on the developer's
-behalf.
+Mutating change artifacts or completing workflow tasks on the developer's behalf.
 
 ## Diagram
 
@@ -88,4 +86,4 @@ flowchart LR
   Status --> Next[[Show next action]]
 ```
 
-<!-- givn:base-sha256:897894303db86ea221ae9a0d9385bbeb371b59e1492585a23c940ea6f465ca98 -->
+<!-- givn:base-sha256:27af744e5987beb3a4719b32c402184a95b5e7c01ede0117db4885c31b160a99 -->

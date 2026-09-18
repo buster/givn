@@ -1,4 +1,4 @@
-Feature: Validate Change ID Input
+Feature: Validate change ids
 
   Scenario: Valid kebab-case change id is accepted by every command that accepts --change
     Given a project root with givn/ initialised
