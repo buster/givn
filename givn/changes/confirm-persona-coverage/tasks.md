@@ -11,13 +11,13 @@ Narrative spec change; no scenario delta and no new steps.
 
 - [x] Write the five delta narratives with the `## Personas` correction and
       the current base hashes.
-- [ ] COMMIT: `<hash>` -- `feat(persona-identity-reuse): confirm persona coverage on five use cases`
+- [x] COMMIT: `1202e008` -- `feat(persona-identity-reuse): confirm persona coverage on five use cases`
 
 ## Verification
 
-- [ ] The archive merge accepts every narrative (base hash matches).
-- [ ] After archive, each permanent use case names its Persona.
-- [ ] `givn lint` reports no `[PERS ]` finding.
+- [x] The archive merge accepts every narrative (base hash matches).
+- [x] After archive, each permanent use case names its Persona.
+- [x] `givn lint` reports no `[PERS ]` finding.
 - [x] `./run-tests.sh` and `./run-tests.sh --e2e` pass. Evidence:
       ```
       Summary [30.329s] 539 tests run: 539 passed, 0 skipped
