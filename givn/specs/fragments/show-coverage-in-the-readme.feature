@@ -1,4 +1,4 @@
-Feature: Coverage badge at the top of the README
+Feature: Show coverage in the README
 
   @e2e
   Scenario: Coverage-enabled project is guided to place the coverage badge directly after the README title

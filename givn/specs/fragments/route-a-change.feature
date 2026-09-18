@@ -1,4 +1,4 @@
-Feature: Explore scenarios in the current change
+Feature: Route a change to existing behavior
 
   @e2e
   Scenario: Routing a proposal prints ranked candidates with evidence

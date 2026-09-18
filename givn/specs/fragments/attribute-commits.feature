@@ -1,4 +1,4 @@
-Feature: Commit attribution
+Feature: Attribute commits
 
   @e2e
   Scenario: Consumer initializes a project and receives shared attribution plumbing
