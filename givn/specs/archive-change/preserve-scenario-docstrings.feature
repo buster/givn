@@ -1,4 +1,4 @@
-Feature: Preserve Docstrings on Archive
+Feature: Preserve scenario docstrings on archive
 
   Scenario: A modified scenario keeps its step docstring after archiving
     Given a project root with givn/ initialised
