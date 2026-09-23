@@ -44,6 +44,65 @@ impl Worktree {
         Ok(output.status.success())
     }
 
+    /// Remove exactly `paths` from the index while keeping the working-tree
+    /// files. Paths that are not tracked are ignored.
+    pub fn remove_from_index(&self, paths: &[PathBuf]) -> Result<()> {
+        if paths.is_empty() {
+            return Ok(());
+        }
+        let mut args = vec![
+            "rm".to_string(),
+            "--cached".to_string(),
+            "--ignore-unmatch".to_string(),
+            "--".to_string(),
+        ];
+        args.extend(paths.iter().map(|path| path.to_string_lossy().into_owned()));
+        let refs: Vec<&str> = args.iter().map(String::as_str).collect();
+        let output = run_git(&self.root, &refs)?;
+        if !output.status.success() {
+            bail!(
+                "failed to remove paths from the revision index: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
+        }
+        Ok(())
+    }
+
+    /// Reset the index to the current revision without touching the working
+    /// tree. Used to undo staged transitions after a failed managed upgrade.
+    pub fn restore_index(&self) -> Result<()> {
+        let output = run_git(&self.root, &["reset", "--mixed", "-q", "HEAD"])?;
+        if !output.status.success() {
+            bail!(
+                "failed to restore the revision index: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
+        }
+        Ok(())
+    }
+
+    /// Count the reachable revisions that touched each path.
+    pub fn history_occurrences(&self, paths: &[String]) -> Result<Vec<(String, usize)>> {
+        let mut out = Vec::new();
+        for path in paths {
+            let output = run_git(&self.root, &["log", "--all", "--format=%H", "--", path])?;
+            if !output.status.success() {
+                bail!(
+                    "failed to scan history for '{path}': {}",
+                    String::from_utf8_lossy(&output.stderr).trim()
+                );
+            }
+            let count = String::from_utf8_lossy(&output.stdout)
+                .lines()
+                .filter(|line| !line.trim().is_empty())
+                .count();
+            if count > 0 {
+                out.push((path.clone(), count));
+            }
+        }
+        Ok(out)
+    }
+
     /// Modified tracked files plus untracked non-ignored files, as paths
     /// relative to the repository root.
     pub fn dirty_entries(&self) -> Result<Vec<PathBuf>> {
@@ -55,18 +114,6 @@ impl Worktree {
             );
         }
         Ok(parse_porcelain_z(&output.stdout))
-    }
-
-    /// Stage every pending change (tracked and untracked).
-    pub fn stage_all(&self) -> Result<()> {
-        let output = run_git(&self.root, &["add", "-A"])?;
-        if !output.status.success() {
-            bail!(
-                "cannot stage the pending changes: {}",
-                String::from_utf8_lossy(&output.stderr).trim()
-            );
-        }
-        Ok(())
     }
 
     /// Stage exactly `paths` relative to the repository root. `force` is

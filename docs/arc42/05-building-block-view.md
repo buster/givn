@@ -51,11 +51,11 @@ flowchart TD
 | `cli::new` | Validate change id, create a change directory, scaffold proposal unless skipped, and write `.givn-skip` when requested. |
 | `cli::instructions` | Resolve effective artifact instructions and non-artifact policy instructions with optional JSON metadata; provide context-aware generic guidance without an artifact id. |
 | `cli::lint` | Parse features, report WIP/PENDING, run the default tree-wide overlap scan with exit precedence 1, 3, 2, 0, report advisory change-seed status findings and dangling persona references, and classify every finding as `advisory`, `finding`, or `blocking` in the rendered and JSON output. |
-| `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks; named review also runs the overlap gate. Review executes `integrity` and the run-declaration check; scenario execution belongs to the archive verification. |
+| `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks; named review also runs the overlap gate. Review executes `integrity` and the run-declaration check; scenario execution belongs to the archive verification. `givn check rules` reports tracked and reachable-history rules and exits non-zero on a violation. |
 | `cli::archive` | Check archive prerequisites, run the run-declaration gate before the README completeness gate (independent of the readme addon), run the README completeness gate when the readme addon is enabled, select permanent verification for no-product-delta maintenance changes, run configured hooks, merge deltas, publish the archive candidate revision through the selected backend, run the regular and E2E verification scopes once against the candidate, run the optional coverage gate, refresh managed blocks, record the verification receipt, and publish the evidence-only finalization revision. |
 | `cli::status` and `cli::graph` | Render manifest-aware filesystem state, dependencies, optional flags, gates, and hooks; status and instructions surface unproven archive candidates with their resume command. |
 | `cli::eject` | Materialize an embedded facet, skill, or manifest into project-owned `givn/` content. |
-| `cli::commit` | Create one attributed revision through the selected backend: stage the named paths (or every pending change), stamp the managed attribution trailer when context is active, and commit; refuse a project without a backend by name. |
+| `cli::commit` | Create one attributed revision through the selected backend: stage the named paths (or, under the `local-only` policy, every pending project path except `AGENTS.md` and the strict rules), stamp the managed attribution trailer when context is active, and commit; refuse a project without a backend by name. |
 | `cli::readme` | Scaffold the README from the marked template with the development and run managed blocks, run the deterministic completeness check behind `givn readme check`, and refresh the development and run managed blocks from the effective command file at archive time. |
 | `cli::addons` | Toggle addon flags; Arc42 enable scaffolds fixed `docs/arc42/` files without overwriting existing files. |
 | `cli::skills` | Synchronize selected skill targets and opencode commands. |
@@ -68,6 +68,7 @@ flowchart TD
 | `config::manifest` | Define artifact, apply, verify, coverage, addon, hook, and run-declaration data structures. |
 | `config::overlay` | Apply `givn/config.yaml` and then `givn/commands.yaml`, expand Arc42, and validate graph references/cycles. |
 | `config::cascade` | Resolve project override assets before embedded core or addon assets. |
+| `skills::rules` | Resolve the generated-rules policy, write the file-precise ignore entries in both destinations, transition tracked rules to local-only without deleting files, and report tracked and reachable-history occurrences. |
 | `gherkin::parse` | Parse feature files, collect WIP and E2E tags, and recursively collect `.feature` paths. |
 | `gherkin::usecase_md` | Parse strict `usecase.md` and `fragment.md` documents, identities, goal levels, interactions, Personas, and typed relationships. |
 | `gherkin::delta` | Interpret delta tags, operation defaults, and capability identity. |

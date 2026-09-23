@@ -101,7 +101,10 @@ enforced by the runtime.
 The automatic 0.2.0-to-0.3.0 route may write and commit only the config
 scaffold, generated agent integrations, Givn-owned fenced blocks, and its own
 migration plan. It may force-stage an ignored managed path only after the path
-has been calculated explicitly. It must refuse a dirty or non-version-controlled
+has been calculated explicitly, and only under the `versioned` rules policy;
+under the default `local-only` policy the managed revision carries the scaffold,
+the ignore-block changes, and the removals of tracked rules, and never stages
+`AGENTS.md` or a generated rule. It must refuse a dirty or non-version-controlled
 project before writing and must never force-stage a directory or the complete
 worktree.
 Domain specs, source code, ejected facets, durable Arc42 content, and

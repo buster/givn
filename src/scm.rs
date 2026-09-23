@@ -45,6 +45,34 @@ impl Backend {
         }
     }
 
+    /// Remove exactly `paths` from the current revision while keeping their
+    /// working-tree files (the local-only transition).
+    pub fn remove_from_index(&self, paths: &[PathBuf]) -> Result<()> {
+        match self {
+            Self::Git(worktree) => worktree.remove_from_index(paths),
+            Self::Fossil(checkout) => checkout.remove_from_index(paths),
+        }
+    }
+
+    /// Restore the current revision's index state. Used after a failed
+    /// managed upgrade rolled the working tree back, so staged transitions
+    /// do not survive. Fossil has no index and is a no-op.
+    pub fn restore_index(&self) -> Result<()> {
+        match self {
+            Self::Git(worktree) => worktree.restore_index(),
+            Self::Fossil(_) => Ok(()),
+        }
+    }
+
+    /// Count the reachable revisions that touched each path. Paths with no
+    /// recorded occurrence are omitted.
+    pub fn history_occurrences(&self, paths: &[String]) -> Result<Vec<(String, usize)>> {
+        match self {
+            Self::Git(worktree) => worktree.history_occurrences(paths),
+            Self::Fossil(checkout) => checkout.history_occurrences(paths),
+        }
+    }
+
     /// Whether the backend holds staged changes. Fossil has no index, so the
     /// pending checkout changes stand in for the staged set.
     pub fn has_staged_changes(&self) -> Result<bool> {
@@ -78,7 +106,6 @@ impl Backend {
         }
     }
 }
-
 /// Select the backend that owns `project_root`, or refuse by name.
 pub fn select(project_root: &Path) -> Result<Backend> {
     let git = git_worktree(project_root)?;

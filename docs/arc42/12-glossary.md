@@ -39,7 +39,7 @@
 | **Generated skill** | A skill file written from a skill template into an agent target directory when `givn skills sync` runs. |
 | **Givn rule** | A file Givn generates into a project: a skill, slash command, plugin, hook, or attribution plumbing. Preferred noun for what earlier text called generated Givn integrations. |
 | **Rules policy** | The `rules:` scalar in `givn/config.yaml`: `local-only` (default; rules stay out of the repository) or `versioned` (rules are repository content). An absent key resolves to `local-only` for new and existing projects; an unrecognized value warns and continues as `local-only`. |
-| **Strict rule** | Every Givn rule except the `AGENTS.md` fence: the set covered by the local-only policy, both ignore destinations, and the clean-history guarantee. |
+| **Strict rule** | Every Givn rule except the `AGENTS.md` fence: the set covered by the local-only policy, both ignore destinations, and the clean-history guarantee. The shared `.claude/settings.json` is user-owned and stays untouched; the Claude hook entry lives in `.claude/settings.local.json`, which is a strict rule. |
 | **Local-only rule** | A Givn rule that exists only on the developer's machine: never tracked, never staged. |
 | **Versioned rule** | A Givn rule that is repository content, staged and committed like source. |
 | **Local-only transition** | Making a tracked strict rule local-only: the file stays on disk and the path leaves the current revision (Git `git rm --cached`; Fossil `fossil rm --soft` or `forget`). |
