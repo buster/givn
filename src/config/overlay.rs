@@ -132,6 +132,56 @@ pub fn load_effective() -> Result<Manifest> {
 /// The known agent target names (canonical, no leading dot).
 pub const KNOWN_AGENT_TARGETS: [&str; 3] = ["opencode", "agents", "claude"];
 
+/// The resolved generated-rules policy.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RulesPolicy {
+    /// Givn rules stay on the developer's machine, out of the repository.
+    LocalOnly,
+    /// Givn rules are repository content, staged and committed like source.
+    Versioned,
+}
+
+impl RulesPolicy {
+    /// The scalar label used in config and reports.
+    pub fn label(self) -> &'static str {
+        match self {
+            RulesPolicy::LocalOnly => "local-only",
+            RulesPolicy::Versioned => "versioned",
+        }
+    }
+
+    pub fn is_local_only(self) -> bool {
+        matches!(self, RulesPolicy::LocalOnly)
+    }
+}
+
+/// Load the generated-rules policy from the `rules:` scalar of
+/// `givn/config.yaml`.
+///
+/// An absent or empty value resolves to `local-only` (the default for new
+/// and existing projects). An unrecognized value warns on stderr, names the
+/// valid values, and continues as `local-only`.
+pub fn load_rules_policy(project_root: &std::path::Path) -> Result<RulesPolicy> {
+    let config_path = project_root.join("givn/config.yaml");
+    if !config_path.exists() {
+        return Ok(RulesPolicy::LocalOnly);
+    }
+    let yaml = std::fs::read_to_string(&config_path)?;
+    let doc: OverlayDoc = serde_yaml_ng::from_str(&yaml)
+        .map_err(|e| anyhow::anyhow!("failed to parse givn/config.yaml: {e}"))?;
+    let value = doc.rules.as_deref().map(str::trim).unwrap_or("");
+    match value {
+        "" | "local-only" => Ok(RulesPolicy::LocalOnly),
+        "versioned" => Ok(RulesPolicy::Versioned),
+        other => {
+            eprintln!(
+                "warning: unrecognized rules policy '{other}'; valid values: local-only, versioned — continuing with local-only"
+            );
+            Ok(RulesPolicy::LocalOnly)
+        }
+    }
+}
+
 /// Load the agent targets from the `skills:` block of `givn/config.yaml`.
 ///
 /// Canonical names (no leading dot), deduplicated, unknown names dropped.
@@ -327,6 +377,9 @@ struct OverlayDoc {
     /// Agent targets for skill/command generation (`skills.targets`).
     /// Ignored by the manifest itself; consumed by `load_skills_targets`.
     skills: Option<Skills>,
+    /// Generated-rules policy scalar (`rules:`). Consumed by
+    /// `load_rules_policy`; ignored by the manifest itself.
+    rules: Option<String>,
     /// Ignored during overlay processing (used for version tracking).
     #[allow(dead_code)]
     givn_config_version: Option<String>,

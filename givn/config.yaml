@@ -198,4 +198,5 @@ addons:
   grill_with_docs: true
 skills:
   targets: [opencode, agents, claude]
+rules: versioned
 # ---

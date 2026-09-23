@@ -20,6 +20,9 @@
 - enable-commit-attribution
 - detect-the-project-repository
 - customize-the-lifecycle-graph
+- rules-policy
+- local-only-transition
+- publication-cleanliness
 
 ## Interactions
 
