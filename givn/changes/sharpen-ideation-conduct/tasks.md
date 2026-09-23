@@ -110,13 +110,17 @@ artifacts stay in sync.
       Evidence: `1 scenario (1 passed)` / `4 steps (4 passed)`.
 - [x] REFACTOR: confirm no duplicated paragraph between Stance and
       Guardrails; targeted run still exits 0.
-- [ ] COMMIT: <hash> -- `docs(generate-ideation-guidance): The ideation command guardrails carry the same conduct rules`
+- [x] COMMIT: `02ddd9ca` -- `docs(generate-ideation-guidance): The ideation command guardrails carry the same conduct rules`
 
 ## Verification
 
-- [ ] `givn lint --change sharpen-ideation-conduct` — clean (advisory overlap
+- [x] `givn lint --change sharpen-ideation-conduct` — clean (advisory overlap
       findings only).
-- [ ] `./run-tests.sh` — green. Paste the summary.
-- [ ] `./run-tests.sh --e2e` — green. Paste the summary.
+- [x] Change delta suite — `GIVN_FEATURES=givn/changes/sharpen-ideation-conduct/specs ./run-tests.sh`
+      — green. Evidence: `Summary [0.511s] 5 tests run: 5 passed, 0 skipped`.
+- [x] `./run-tests.sh` — green. Evidence: `Summary [34.609s] 539 tests run:
+      539 passed, 0 skipped`.
+- [x] `./run-tests.sh --e2e` — green. Evidence: `Summary [5.597s] 88 tests
+      run: 88 passed, 451 skipped`.
 - [ ] Review artifact complete and signed off.
 - [ ] Archive the change.
