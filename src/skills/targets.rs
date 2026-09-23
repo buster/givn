@@ -259,6 +259,23 @@ pub fn sync(project_root: &Path) -> Result<()> {
         crate::cli::absolute_mode::remove(project_root)?;
     }
 
+    // Generated-rules policy: keep the ignore destinations current and make
+    // tracked rules local-only. `AGENTS.md` is never staged by Givn.
+    let policy = crate::config::overlay::load_rules_policy(project_root)?;
+    crate::skills::rules::write_ignores(project_root, policy)?;
+    let removed = crate::skills::rules::reconcile_tracked_rules(project_root, policy)?;
+    if !removed.is_empty() {
+        println!(
+            "  rules policy: {} tracked rule(s) removed from the current revision (files kept)",
+            removed.len()
+        );
+        for path in &removed {
+            println!("    - {path}");
+        }
+    }
+    let report = crate::skills::rules::cleanliness(project_root)?;
+    crate::skills::rules::print_report("sync", &report)?;
+
     Ok(())
 }
 
@@ -370,7 +387,7 @@ pub fn managed_generated_paths(project_root: &Path) -> Result<Vec<std::path::Pat
     }
 
     if targets.contains(&AgentTarget::Claude) {
-        paths.push(project_root.join(".claude/settings.json"));
+        paths.push(project_root.join(".claude/settings.local.json"));
         paths.push(project_root.join(".claude/hooks/givn-attribution.sh"));
     }
 
@@ -399,7 +416,7 @@ fn sync_agent_integrations(project_root: &Path, targets: &[AgentTarget]) -> Resu
         )?;
         merge_claude_settings(project_root)?;
         println!(
-            "  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.json"
+            "  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json"
         );
     }
 
@@ -432,7 +449,7 @@ fn write_embedded_file(
 }
 
 fn merge_claude_settings(project_root: &Path) -> Result<()> {
-    let path = project_root.join(".claude/settings.json");
+    let path = project_root.join(".claude/settings.local.json");
     let mut settings = if path.exists() {
         let content = std::fs::read_to_string(&path)?;
         serde_json::from_str::<serde_json::Value>(&content)

@@ -207,7 +207,22 @@ selects opencode on empty input or EOF and allows the three known targets.
 create or replace the `givn-project` block and, when enabled, the
 `absolute-mode` block. It does not rewrite surrounding user content. The
 Absolute Mode addon is the only reason the current code intentionally manages a
-policy block there.
+policy block there. Givn never stages `AGENTS.md` under either rules policy;
+committing it is the developer's explicit act.
+
+The generated-rules policy is a flat scalar in `givn/config.yaml`:
+`rules: local-only` (the default when absent) or `rules: versioned`. An
+unrecognized value warns and continues as `local-only`. Under `local-only` the
+strict rules — every generated rule except the `AGENTS.md` fence — are kept out
+of the repository through a fenced block in the tracked ignore file
+(`.gitignore`, `.fossil-settings/ignore-glob`) and a local exclude
+(`.git/info/exclude`, the Fossil `ignore-glob` setting). A tracked strict rule
+becomes local-only through `git rm --cached` or `fossil rm --soft`; the file
+stays on disk, and the staged removals join the upgrade's managed revision or
+wait for the developer after `givn init`. Under `versioned` the fenced blocks
+are removed and the rules are repository content. Every command that touches
+rules reports tracked and reachable-history occurrences; `givn check rules`
+exits non-zero on a violation, while init, sync, and upgrade never block.
 
 ## 8.8 Error Handling and Exit Codes
 

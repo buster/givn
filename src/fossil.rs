@@ -118,10 +118,38 @@ impl FossilCheckout {
         Ok(())
     }
 
-    /// Record every pending change (new, edited, and removed files) for the
-    /// next commit.
-    pub fn record_all_changes(&self) -> Result<()> {
-        self.run_checked(&["addremove"])
+    /// Remove exactly `paths` from the current revision while keeping the
+    /// working-tree files. `--soft` is pinned so the user's `mv-rm-files`
+    /// setting cannot delete them.
+    pub fn remove_from_index(&self, paths: &[PathBuf]) -> Result<()> {
+        for path in paths {
+            if !self.root.join(path).exists() {
+                continue;
+            }
+            let path = path.to_string_lossy();
+            self.run_checked(&["rm", "--soft", "--", &path])?;
+        }
+        Ok(())
+    }
+
+    /// Count the reachable revisions that touched each path.
+    pub fn history_occurrences(&self, paths: &[String]) -> Result<Vec<(String, usize)>> {
+        let mut out = Vec::new();
+        for path in paths {
+            let output = self.run(&["finfo", "-b", path])?;
+            // A path that never existed in history is not a violation.
+            if !output.status.success() {
+                continue;
+            }
+            let count = String::from_utf8_lossy(&output.stdout)
+                .lines()
+                .filter(|line| !line.trim().is_empty())
+                .count();
+            if count > 0 {
+                out.push((path.clone(), count));
+            }
+        }
+        Ok(out)
     }
 
     /// Whether the checkout holds pending changes. Fossil has no index; the
