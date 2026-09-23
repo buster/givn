@@ -1,6 +1,6 @@
 # Change seed: local-only-rules
 
-Status: proposed by local-only-rules
+Status: implemented in local-only-rules
 
 - Use-case IDs: fragment `rules-policy` (new), `initialize-project`
   (modified), `upgrade-a-project` (modified), fragment
