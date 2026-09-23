@@ -63,9 +63,9 @@ Observable outcomes for an ideation session:
 `givn spec route --change sharpen-ideation-conduct` reports no signal (the
 top candidates tie).
 
-| Proposed capability | Decision | Rationale |
-|---|---|---|
-| `generate-ideation-guidance` | `EXTEND generate-ideation-guidance` | The capability already owns the generated ideation guidance and its command guardrails; the change alters their content, not the lifecycle model. |
+| Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
+|---|---|---|---|
+| `generate-ideation-guidance` | no signal | `NEW in fragments` | The capability is declared in `givn/specs/fragments/fragment.md` (support fragment); the delta lives under `specs/fragments/` per the fragment convention. |
 
 ## Out of Scope
 

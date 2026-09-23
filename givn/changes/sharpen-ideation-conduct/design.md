@@ -131,3 +131,9 @@ Chapter 8.19 and the glossary row "Change seed" are amended as listed above;
 no ADR is required (the change applies existing decisions about generated
 guidance and the seed lifecycle). The `arc42.md` change artifact records
 this assessment.
+
+## Internal Primitives
+
+None — the change introduces no data structure, abstraction, or helper in
+production code. It rewrites embedded text assets and durable documentation.
+
