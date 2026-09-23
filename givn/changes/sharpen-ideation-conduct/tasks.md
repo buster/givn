@@ -93,22 +93,22 @@ identity; arc42 8.19 and the glossary row describe the durable meaning.
 - [x] REFACTOR: re-read 8.19 and the glossary row for consistent wording
       ("per-change, cut by deliverable guarantee"); targeted run still exits
       0.
-- [ ] COMMIT: <hash> -- `docs(generate-ideation-guidance): Handoff cuts change seeds by deliverable guarantee`
+- [x] COMMIT: `a1140501` -- `docs(generate-ideation-guidance): Handoff cuts change seeds by deliverable guarantee`
 
 ### Scenario 5 — The ideation command guardrails carry the same conduct rules
 
 Domain constraints: the command repeats the rules in one line each; both
 artifacts stay in sync.
 
-- [ ] RED: targeted run of
+- [x] RED: targeted run of
       "The ideation command guardrails carry the same conduct rules" exits
-      non-zero. Paste the output.
-- [ ] GREEN: update `assets/commands/givn-ideation.md`: the question line
+      non-zero. Evidence: `1 scenario (1 failed)` / exit 101.
+- [x] GREEN: update `assets/commands/givn-ideation.md`: the question line
       gains the full-treatment and no-re-asking rules; the final batch line
       becomes the seed-cut guardrail; one line records the Frame-once rule.
-      Files: `assets/commands/givn-ideation.md`. Targeted run exits 0. Paste
-      the output.
-- [ ] REFACTOR: confirm no duplicated paragraph between Stance and
+      Files: `assets/commands/givn-ideation.md`. Targeted run exits 0.
+      Evidence: `1 scenario (1 passed)` / `4 steps (4 passed)`.
+- [x] REFACTOR: confirm no duplicated paragraph between Stance and
       Guardrails; targeted run still exits 0.
 - [ ] COMMIT: <hash> -- `docs(generate-ideation-guidance): The ideation command guardrails carry the same conduct rules`
 
