@@ -72,7 +72,7 @@ confirmed once; later boundaries report and proceed.
       0. Evidence: `1 scenario (1 passed)` / `4 steps (4 passed)`.
 - [x] REFACTOR: verify the Personas section's "confirms every persona" rule is
       untouched; targeted run still exits 0.
-- [ ] COMMIT: <hash> -- `docs(generate-ideation-guidance): The frame is confirmed once and later phase boundaries report`
+- [x] COMMIT: `e28b7574` -- `docs(generate-ideation-guidance): The frame is confirmed once and later phase boundaries report`
 
 ### Scenario 4 — Handoff cuts change seeds by deliverable guarantee
 
@@ -80,17 +80,17 @@ Domain constraints: a seed is one change that can ship alone; no intermediate
 state may make a confirmed rule untrue; the seed file is named by change
 identity; arc42 8.19 and the glossary row describe the durable meaning.
 
-- [ ] RED: targeted run of
+- [x] RED: targeted run of
       "Handoff cuts change seeds by deliverable guarantee" exits non-zero.
-      Paste the output.
-- [ ] GREEN: replace the Handoff seed bullet with the deliverable cut; rename
+      Evidence: `1 scenario (1 failed)` / exit 101.
+- [x] GREEN: replace the Handoff seed bullet with the deliverable cut; rename
       the topic-state entry to `changes/<change-id>.md`; generalize the seed
       schema heading and use-case IDs to a change identity with plural IDs.
       Files: `assets/skills/givn-ideation/SKILL.md.tmpl`,
       `docs/arc42/08-crosscutting-concepts.md` (8.19, prepared during
       design), `docs/arc42/12-glossary.md` ("Change seed"). Targeted run
-      exits 0. Paste the output.
-- [ ] REFACTOR: re-read 8.19 and the glossary row for consistent wording
+      exits 0. Evidence: `1 scenario (1 passed)` / `10 steps (10 passed)`.
+- [x] REFACTOR: re-read 8.19 and the glossary row for consistent wording
       ("per-change, cut by deliverable guarantee"); targeted run still exits
       0.
 - [ ] COMMIT: <hash> -- `docs(generate-ideation-guidance): Handoff cuts change seeds by deliverable guarantee`

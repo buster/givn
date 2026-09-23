@@ -611,11 +611,16 @@ resolved publication paths before anything is recorded.
 
 ## 8.19 The Change Seed Lifecycle
 
-A change seed (`givn/ideation/<topic-id>/changes/<uc-id>.md`) is the handoff
-record between ideation and proposal planning. It carries a fixed schema
-(use-case ID, topic source, Persona IDs, accepted decisions with their option
-treatment, full open questions, and the suggested start order) and a status
-line as the first line after its title:
+A change seed (`givn/ideation/<topic-id>/changes/<change-id>.md`) is the handoff
+record between ideation and proposal planning. Seeds are cut by deliverable
+guarantee, not by artifact mapping: one seed is one change whose guarantee is
+true end to end and can ship alone; a seed may cover several use cases or
+fragments, and one use case may yield several seeds. No seed may create an
+intermediate state that makes a confirmed rule untrue — a setting no command
+honors, a decision no artifact applies. It carries a fixed schema (use-case
+IDs, topic source, Persona IDs, accepted decisions with their option
+treatment, full open questions, dependencies, and the suggested start order)
+and a status line as the first line after its title:
 
 ```text
 Status: ready
