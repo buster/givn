@@ -23,33 +23,60 @@ pub fn strict_rules(project_root: &Path) -> Result<Vec<String>> {
         .into_iter()
         .filter_map(|path| path.strip_prefix(project_root).ok().map(Path::to_path_buf))
         .map(|path| path.to_string_lossy().replace('\\', "/"))
-        .filter(|path| path != "AGENTS.md" && path != ".claude/settings.json")
+        .filter(|path| path != "AGENTS.md")
         .collect();
     entries.sort();
     entries.dedup();
     Ok(entries)
 }
 
+/// The fenced ignore entries. They are prefix patterns, not per-file paths,
+/// so the tracked block never enumerates individual skill or command names.
+pub fn ignore_entries() -> Vec<String> {
+    vec![
+        ".opencode/skills/givn-*/".to_string(),
+        ".agents/skills/givn-*/".to_string(),
+        ".claude/skills/givn-*/".to_string(),
+        ".opencode/commands/givn-*.md".to_string(),
+        ".opencode/commands/grill-*.md".to_string(),
+        ".opencode/plugins/givn-attribution.js".to_string(),
+        ".claude/hooks/givn-attribution.sh".to_string(),
+        ".claude/settings.local.json".to_string(),
+        ".githooks/commit-msg".to_string(),
+    ]
+}
+
 /// Apply the ignore entries for `policy` to the active backend's
 /// destinations and return the entries written (empty under `versioned`).
 pub fn write_ignores(project_root: &Path, policy: RulesPolicy) -> Result<Vec<String>> {
     let entries = if policy.is_local_only() {
-        strict_rules(project_root)?
+        ignore_entries()
     } else {
         Vec::new()
     };
-    match crate::scm::select(project_root) {
+    let written = match crate::scm::select(project_root) {
         Ok(crate::scm::Backend::Git(_)) => {
             upsert_block(&project_root.join(".gitignore"), &entries)?;
             upsert_local_exclude(project_root, &entries)?;
+            entries.clone()
         }
         Ok(crate::scm::Backend::Fossil(_)) => {
-            upsert_block(&project_root.join(".fossil-settings/ignore-glob"), &entries)?;
-            upsert_fossil_local_ignore(project_root, &entries);
+            // Fossil's `*` crosses `/`, so the trailing slash is cosmetic;
+            // the stripped form is kept for `.fossil-settings` readability.
+            let fossil_entries: Vec<String> = entries
+                .iter()
+                .map(|entry| entry.trim_end_matches('/').to_string())
+                .collect();
+            upsert_block(
+                &project_root.join(".fossil-settings/ignore-glob"),
+                &fossil_entries,
+            )?;
+            upsert_fossil_local_ignore(project_root, &fossil_entries);
+            fossil_entries
         }
-        Err(_) => {}
-    }
-    Ok(entries)
+        Err(_) => Vec::new(),
+    };
+    Ok(written)
 }
 
 /// Whether a project-relative path is a Givn rule, independent of the
@@ -342,4 +369,56 @@ fn fossil(project_root: &Path, args: &[&str]) -> Result<String> {
         );
     }
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn matches_entry(path: &str, entry: &str) -> bool {
+        if let Some(prefix) = entry.strip_suffix("*/") {
+            return path.starts_with(prefix)
+                && path.len() > prefix.len()
+                && path[prefix.len()..].contains('/');
+        }
+        if let Some((prefix, suffix)) = entry.split_once('*') {
+            return path.starts_with(prefix) && path.ends_with(suffix);
+        }
+        path == entry
+    }
+
+    #[test]
+    fn ignore_entries_cover_every_rule_shape() {
+        let rules = [
+            ".opencode/skills/givn-propose/SKILL.md",
+            ".agents/skills/givn-spec/SKILL.md",
+            ".claude/skills/givn-review/SKILL.md",
+            ".opencode/commands/givn-design.md",
+            ".opencode/commands/grill-me.md",
+            ".opencode/plugins/givn-attribution.js",
+            ".claude/hooks/givn-attribution.sh",
+            ".claude/settings.local.json",
+            ".githooks/commit-msg",
+        ];
+        for path in rules {
+            assert!(
+                ignore_entries()
+                    .iter()
+                    .any(|entry| matches_entry(path, entry)),
+                "no ignore entry covers {path}"
+            );
+        }
+    }
+
+    #[test]
+    fn ignore_entries_never_match_user_content() {
+        for path in ["AGENTS.md", ".agents/skills/gh-stack/SKILL.md"] {
+            assert!(
+                !ignore_entries()
+                    .iter()
+                    .any(|entry| matches_entry(path, entry)),
+                "an ignore entry unexpectedly covers {path}"
+            );
+        }
+    }
 }

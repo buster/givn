@@ -216,7 +216,11 @@ unrecognized value warns and continues as `local-only`. Under `local-only` the
 strict rules — every generated rule except the `AGENTS.md` fence — are kept out
 of the repository through a fenced block in the tracked ignore file
 (`.gitignore`, `.fossil-settings/ignore-glob`) and a local exclude
-(`.git/info/exclude`, the Fossil `ignore-glob` setting). A tracked strict rule
+(`.git/info/exclude`, the Fossil `ignore-glob` setting). The block carries
+prefix patterns for the reserved namespaces (`.opencode/skills/givn-*/`,
+`.opencode/commands/givn-*.md`, `.opencode/commands/grill-*.md`, and the fixed
+integration files), never individual rule names; tracked rules are discovered
+by a path predicate instead. A tracked strict rule
 becomes local-only through `git rm --cached` or `fossil rm --soft`; the file
 stays on disk, and the staged removals join the upgrade's managed revision or
 wait for the developer after `givn init`. Under `versioned` the fenced blocks
