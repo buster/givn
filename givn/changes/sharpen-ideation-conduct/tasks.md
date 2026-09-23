@@ -15,9 +15,9 @@ runtime behavior changes.
       marker complete.
 - [x] Prior ideation handoff committed first so this change's commits stay
       scoped. COMMIT: `6b4541dd` -- `docs(ideation): hand off local-only-integrations`
-- [ ] Runner strictness: `tests/features_runner.rs` carries
-      `.fail_on_skipped()`; the first scenario's targeted RED run exits
-      non-zero before implementation (evidence in that task).
+- [x] Runner strictness: `tests/features_runner.rs` carries
+      `.fail_on_skipped()` (lines 55, 129); each scenario's targeted RED run
+      exits non-zero (evidence in that task).
 - [x] Planning artifacts committed. COMMIT: `fd7c1669` -- `docs(sharpen-ideation-conduct): plan the change`
 
 ## Implementation
@@ -123,4 +123,4 @@ artifacts stay in sync.
 - [x] `./run-tests.sh --e2e` — green. Evidence: `Summary [5.597s] 88 tests
       run: 88 passed, 451 skipped`.
 - [x] Review artifact complete and signed off.
-- [ ] Archive the change.
+- [x] Archive the change.
