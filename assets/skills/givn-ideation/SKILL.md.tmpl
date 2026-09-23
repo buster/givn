@@ -118,7 +118,7 @@ All ideation work lives under `givn/ideation/<topic-id>/`:
 - `questions.md` — the open question log: every parked unknown. Never debate
   an unknown in place of a missing answer.
 - `domain-terms.md` — domain terms as they crystallize.
-- `changes/<uc-id>.md` — one change seed per use case, written at handoff.
+- `changes/<change-id>.md` — one change seed per deliverable, written at handoff.
 
 Every `questions.md` entry uses this stable schema:
 
@@ -203,24 +203,24 @@ The last phase produces the readable record:
 - Propose only `confirmed` terms for the durable term list; report
   `rejected` terms with their reason. The user decides each one.
 - Offer persona promotion; the user decides per persona file.
-- Write one change seed per use case with a suggested start order, using the
-  seed schema below. Each seed is input to `/givn-propose`, not a proposal
-  and not a change.
+- Cut change seeds by deliverable guarantee, using the seed schema below. A
+  seed is one change whose guarantee is true end to end and can ship alone;
+  it may cover several use cases or fragments, and one use case may yield several seeds. Never cut a seed whose intermediate state would make a confirmed rule untrue — a setting no command honors, a decision no artifact applies. Record each seed's dependencies and a suggested start order. Each seed is input to `/givn-propose`, not a proposal or a change.
 - Map each elaborated `!` use case to its own permanent leaf document — never to a capability inside another goal.
 - Before publishing, show the use-case-to-permanent mapping, Persona
   promotion choices, and change seeds. Handoff occurs only after the user
   confirms those records; never auto-promote or auto-start.
 - Handoff never starts a change — the user runs the normal proposal flow per
-  use case when ready.
+  seed when ready.
 
-Each `changes/<uc-id>.md` seed uses this stable schema:
+Each `changes/<change-id>.md` seed uses this stable schema:
 
 ```markdown
-# Change seed: <use-case-id>
+# Change seed: <change-id>
 
 Status: ready
 
-- Use-case ID: <stable use-case-id>
+- Use-case IDs: <stable use-case-id>, ...
 - Topic: <topic-id>
 - Personas: <persona-id>, or none — <reason>
 - Suggested start: <order position and dependencies>
