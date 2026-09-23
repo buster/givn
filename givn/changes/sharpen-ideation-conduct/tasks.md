@@ -56,21 +56,21 @@ findings are applied; later phase boundaries report.
       exits 0. Evidence: `1 scenario (1 passed)` / `7 steps (7 passed)`.
 - [x] REFACTOR: keep the paragraph under the template's wrap width; targeted
       run still exits 0.
-- [ ] COMMIT: <hash> -- `docs(generate-ideation-guidance): The ideation guidance stops questions at decided directions`
+- [x] COMMIT: `25e11a7a` -- `docs(generate-ideation-guidance): The ideation guidance stops questions at decided directions`
 
 ### Scenario 3 — The frame is confirmed once and later phase boundaries report
 
 Domain constraints: the Frame defines goal, scope, and stakeholders and is
 confirmed once; later boundaries report and proceed.
 
-- [ ] RED: targeted run of
+- [x] RED: targeted run of
       "The frame is confirmed once and later phase boundaries report" exits
-      non-zero. Paste the output.
-- [ ] GREEN: replace the Frame paragraph ("Report it to the user and let them
+      non-zero. Evidence: `1 scenario (1 failed)` / exit 101.
+- [x] GREEN: replace the Frame paragraph ("Report it to the user and let them
       confirm it before any phase starts.") with the confirmed-once wording.
       Files: `assets/skills/givn-ideation/SKILL.md.tmpl`. Targeted run exits
-      0. Paste the output.
-- [ ] REFACTOR: verify the Personas section's "confirms every persona" rule is
+      0. Evidence: `1 scenario (1 passed)` / `4 steps (4 passed)`.
+- [x] REFACTOR: verify the Personas section's "confirms every persona" rule is
       untouched; targeted run still exits 0.
 - [ ] COMMIT: <hash> -- `docs(generate-ideation-guidance): The frame is confirmed once and later phase boundaries report`
 
