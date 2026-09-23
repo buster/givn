@@ -1,6 +1,6 @@
 # Change seed: rewrite-history
 
-Status: proposed by rewrite-history
+Status: implemented in rewrite-history
 
 - Use-case ID: `rewrite-history` (new)
 - Topic: `local-only-integrations`
