@@ -36,6 +36,7 @@ pub mod llm_attribution_e2e_steps;
 pub mod llm_attribution_installation_e2e_steps;
 pub mod llm_attribution_installation_steps;
 pub mod llm_attribution_steps;
+pub mod local_only_rules_steps;
 pub mod preserve_docstrings_on_archive_steps;
 pub mod prose_consolidation_steps;
 pub mod readme_coverage_badge_steps;

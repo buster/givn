@@ -65,6 +65,7 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
             target_print.push(t.display().to_string());
         }
         write_skills_block(&project_root, &targets)?;
+        write_rules_policy(&project_root)?;
         println!("  skills will be installed to: {}", target_print.join(", "));
     }
 
@@ -137,7 +138,7 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
                     println!("  attribution integration: .opencode/plugins/givn-attribution.js")
                 }
                 "claude" => println!(
-                    "  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.json"
+                    "  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json"
                 ),
                 _ => {}
             }
@@ -249,6 +250,19 @@ fn write_skills_block(project_root: &Path, targets: &[AgentTarget]) -> Result<()
     }
     let list: Vec<&str> = targets.iter().map(|t| t.name()).collect();
     content.push_str(&format!("skills:\n  targets: [{}]\n", list.join(", ")));
+    std::fs::write(&config_path, content)?;
+    Ok(())
+}
+
+/// Record the active default rules policy in a fresh config. A later edit is
+/// a user-owned line that `givn upgrade` preserves.
+fn write_rules_policy(project_root: &Path) -> Result<()> {
+    let config_path = project_root.join("givn/config.yaml");
+    let mut content = std::fs::read_to_string(&config_path)?;
+    if !content.ends_with('\n') {
+        content.push('\n');
+    }
+    content.push_str("rules: local-only\n");
     std::fs::write(&config_path, content)?;
     Ok(())
 }
