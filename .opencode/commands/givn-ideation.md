@@ -15,7 +15,7 @@ description and confirm it with the user.
 
 ## Stance
 
-- One question at a time — wait for each answer before the next.
+- Every question carries the full option treatment; a direction already decided is never asked again.
 - Follow the canonical dialog policy (`givn instructions dialog`): every
   question answerable standalone, every option with its meaning, gain, cost,
   and a concrete example.
@@ -65,4 +65,5 @@ Frame → Event Storming → Use Case Definition → Use Case Elaboration → Ha
   silently promotes a Persona or performs Handoff as a side effect.
 - Handoff writes every change seed with `Status: ready` and the seed schema
   from the `givn-ideation` skill.
-- One question at a time; never batch.
+- Cut seeds by deliverable guarantee; a confirmed rule must stay true.
+- The Frame is confirmed once; later phase boundaries report and proceed.
