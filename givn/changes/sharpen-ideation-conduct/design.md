@@ -36,9 +36,9 @@ Skill template, question section:
 ## One question at a time
 
 Follow the canonical dialog policy (`givn instructions dialog`) for every
-live question. A bare option list is a defect, not a style choice: name the
-decision it blocks, the context that forces it, and every option's meaning,
-concrete example, gain, and cost.
+live question. A bare option list is a defect, not a style choice: name
+the decision it blocks, the context that forces it, and every option's
+meaning, concrete example, gain, and cost.
 
 Ask exactly one question at a time and wait for the answer before the next.
 Ask only what the current step cannot answer from confirmed decisions; a
