@@ -103,6 +103,16 @@ enum Commands {
         #[arg(long)]
         change: Option<String>,
     },
+    /// Remove generated rules from the project's reachable history.
+    ///
+    /// Explicit and destructive: requires the local-only policy, a clean
+    /// checkout, and confirmation (`--yes` or an interactive prompt). Git
+    /// only, through git-filter-repo; the Fossil backend refuses by name.
+    RewriteHistory {
+        /// Skip the interactive confirmation.
+        #[arg(long)]
+        yes: bool,
+    },
     /// Show lifecycle state: artifact checklist, current stage, next required and optional steps.
     Status {
         /// Change identifier (default: all active changes).
@@ -354,6 +364,7 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Check { artifact, change } => {
             cli::check::run(artifact.as_deref(), change.as_deref())
         }
+        Commands::RewriteHistory { yes } => cli::rewrite_history::run(yes),
         Commands::Status { change, json } => cli::status::run(change.as_deref(), json),
         Commands::Graph { change, json } => cli::graph::run(change.as_deref(), json),
         Commands::Archive { change, verbose } => cli::archive::run(&change, verbose),

@@ -223,6 +223,11 @@ wait for the developer after `givn init`. Under `versioned` the fenced blocks
 are removed and the rules are repository content. Every command that touches
 rules reports tracked and reachable-history occurrences; `givn check rules`
 exits non-zero on a violation, while init, sync, and upgrade never block.
+`givn rewrite-history` is the only remediation for historical occurrences: an
+explicit command that purges them from reachable history through
+`git-filter-repo` after a clean-state preflight and an explicit confirmation,
+keeps every file on disk, refuses on Fossil and under `versioned`, and never
+pushes.
 
 ## 8.8 Error Handling and Exit Codes
 
