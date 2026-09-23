@@ -377,6 +377,9 @@ pub fn prepare_managed_upgrade(
         Ok(hash) => Ok(hash),
         Err(error) => {
             snapshot.restore().ok();
+            // The transition may have staged index removals before the
+            // failure; reset the index to the restored revision state.
+            backend.restore_index().ok();
             let source = source_version.unwrap_or("unknown");
             Err(error.context(format!(
                 "managed upgrade from {source} to {target_version} was not committed"
@@ -409,6 +412,9 @@ fn apply_managed_upgrade(config_path: &Path, upgraded: &str, project_root: &Path
         }
     }
 
+    let report = crate::skills::rules::cleanliness(project_root)?;
+    crate::skills::rules::print_report("upgrade", &report)?;
+
     Ok(())
 }
 
@@ -419,14 +425,30 @@ fn commit_managed_upgrade(
     managed_paths: &[PathBuf],
     commit_message: &str,
 ) -> Result<Option<String>> {
+    let policy = crate::config::overlay::load_rules_policy(project_root)?;
     let mut paths = vec![
         config_path.to_path_buf(),
         project_root.join("givn/commands.yaml"),
     ];
-    paths.extend(managed_paths.iter().cloned());
+    for extra in [".gitignore", ".fossil-settings/ignore-glob"] {
+        let path = project_root.join(extra);
+        if path.exists() {
+            paths.push(path);
+        }
+    }
+    if !policy.is_local_only() {
+        // The versioned policy stages the generated rules through the
+        // calculated allowlist; `AGENTS.md` is never staged (Q3).
+        paths.extend(
+            managed_paths
+                .iter()
+                .filter(|path| path.strip_prefix(project_root).ok() != Some(Path::new("AGENTS.md")))
+                .cloned(),
+        );
+    }
     let relative = relative_managed_paths(project_root, paths)?;
     backend
-        .stage_paths(&relative, true)
+        .stage_paths(&relative, !policy.is_local_only())
         .context("the selected backend could not stage the managed upgrade files")?;
 
     if !backend.has_staged_changes()? {

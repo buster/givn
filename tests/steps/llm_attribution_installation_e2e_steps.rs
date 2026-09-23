@@ -44,6 +44,17 @@ fn given_upgrade_project(world: &mut GivnWorld) {
     );
     let init = common::run_givn(&env, &["init", "--agents", "opencode,claude"]);
     assert!(init.status.success());
+    // The scenario exercises the versioned rules policy: the plumbing is
+    // repository content that the managed upgrade refreshes.
+    let config = std::fs::read_to_string(root.join("givn/config.yaml")).expect("read config");
+    let config = config.replace("rules: local-only", "rules: versioned");
+    std::fs::write(root.join("givn/config.yaml"), config).expect("write config");
+    let sync = common::run_givn(&env, &["skills", "sync"]);
+    assert!(
+        sync.status.success(),
+        "fixture sync failed: {}",
+        String::from_utf8_lossy(&sync.stderr)
+    );
     assert!(git(&root, &["add", "."]).status.success());
     assert!(
         git(&root, &["commit", "-m", "initial Givn project"])
@@ -55,7 +66,7 @@ fn given_upgrade_project(world: &mut GivnWorld) {
         ".githooks/commit-msg",
         ".opencode/plugins/givn-attribution.js",
         ".claude/hooks/givn-attribution.sh",
-        ".claude/settings.json",
+        ".claude/settings.local.json",
     ] {
         let _ = std::fs::remove_file(root.join(path));
     }
@@ -92,7 +103,7 @@ fn then_managed_commit_contains_attribution(world: &mut GivnWorld) {
         ".githooks/commit-msg",
         ".opencode/plugins/givn-attribution.js",
         ".claude/hooks/givn-attribution.sh",
-        ".claude/settings.json",
+        ".claude/settings.local.json",
     ] {
         assert!(changed.contains(path), "managed upgrade omitted {path}");
     }
