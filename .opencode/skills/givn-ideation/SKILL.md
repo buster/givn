@@ -51,8 +51,10 @@ New domain:
 3. Establish stakeholders with their interests; every later artifact is
    checked against this list.
 
-Write the frame protocol to the topic state. Report it to the user and let
-them confirm it before any phase starts.
+Write the frame protocol to the topic state. Confirm the Frame with the
+user: it defines the goal, scope, and stakeholders everything else derives
+from. Later phase boundaries report what was recorded and proceed; they ask
+only when a new fork is unresolved.
 
 ## Personas
 
@@ -116,7 +118,7 @@ All ideation work lives under `givn/ideation/<topic-id>/`:
 - `questions.md` — the open question log: every parked unknown. Never debate
   an unknown in place of a missing answer.
 - `domain-terms.md` — domain terms as they crystallize.
-- `changes/<uc-id>.md` — one change seed per use case, written at handoff.
+- `changes/<change-id>.md` — one change seed per deliverable, written at handoff.
 
 Every `questions.md` entry uses this stable schema:
 
@@ -199,24 +201,24 @@ The last phase produces the readable record:
 - Propose only `confirmed` terms for the durable term list; report
   `rejected` terms with their reason. The user decides each one.
 - Offer persona promotion; the user decides per persona file.
-- Write one change seed per use case with a suggested start order, using the
-  seed schema below. Each seed is input to `/givn-propose`, not a proposal
-  and not a change.
+- Cut change seeds by deliverable guarantee, using the seed schema below. A
+  seed is one change whose guarantee is true end to end and can ship alone;
+  it may cover several use cases or fragments, and one use case may yield several seeds. Never cut a seed whose intermediate state would make a confirmed rule untrue — a setting no command honors, a decision no artifact applies. Record each seed's dependencies and a suggested start order. Each seed is input to `/givn-propose`, not a proposal or a change.
 - Map each elaborated `!` use case to its own permanent leaf document — never to a capability inside another goal.
 - Before publishing, show the use-case-to-permanent mapping, Persona
   promotion choices, and change seeds. Handoff occurs only after the user
   confirms those records; never auto-promote or auto-start.
 - Handoff never starts a change — the user runs the normal proposal flow per
-  use case when ready.
+  seed when ready.
 
-Each `changes/<uc-id>.md` seed uses this stable schema:
+Each `changes/<change-id>.md` seed uses this stable schema:
 
 ```markdown
-# Change seed: <use-case-id>
+# Change seed: <change-id>
 
 Status: ready
 
-- Use-case ID: <stable use-case-id>
+- Use-case IDs: <stable use-case-id>, ...
 - Topic: <topic-id>
 - Personas: <persona-id>, or none — <reason>
 - Suggested start: <order position and dependencies>
@@ -251,12 +253,18 @@ line; the seed's original text stays.
 
 ## One question at a time
 
-Follow the canonical dialog policy (`givn instructions dialog`): one question
-at a time, every option with its meaning, gain, cost, and a concrete example,
-and every question answerable standalone. Ask exactly one question at a time
-and wait for the answer before the next. If the outcome of a step is unclear,
-you do not have an example — you have a question. Record it in the questions
-log and move on; never debate opinions in place of a missing answer.
+Follow the canonical dialog policy (`givn instructions dialog`) for every
+live question. A bare option list is a defect, not a style choice: name
+the decision it blocks, the context that forces it, and every option's
+meaning, concrete example, gain, and cost. Ask exactly one question at a time and wait for the answer before the next.
+Ask only what the current step cannot answer from confirmed decisions; a
+direction already decided is never asked again. A review finding that follows
+mechanically from a confirmed decision is applied and reported; only a
+finding that changes a confirmed direction returns to the human. A phase report states what was recorded and invites correction; it is a question only when a new fork is unresolved. Decisions that share one direction are one question; independent decisions stay separate.
+
+If the outcome of a step is unclear, you do not have an example — you have a
+question. Record it in the questions log and move on; never debate opinions
+in place of a missing answer.
 
 ## Event Storming
 
