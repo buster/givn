@@ -37,6 +37,16 @@
 | **Disposition** | A review entry for a deterministic overlap finding involving a change delta. |
 | **Fingerprint** | A deterministic masked assertion sequence plus best-effort facts: exit code, `contains` polarity, table values, `[DONE]`, and TTY mention. |
 | **Generated skill** | A skill file written from a skill template into an agent target directory when `givn skills sync` runs. |
+| **Givn rule** | A file Givn generates into a project: a skill, slash command, plugin, hook, or attribution plumbing. Preferred noun for what earlier text called generated Givn integrations. |
+| **Rules policy** | The `rules:` scalar in `givn/config.yaml`: `local-only` (default; rules stay out of the repository) or `versioned` (rules are repository content). An absent key resolves to `local-only` for new and existing projects; an unrecognized value warns and continues as `local-only`. |
+| **Strict rule** | Every Givn rule except the `AGENTS.md` fence: the set covered by the local-only policy, both ignore destinations, and the clean-history guarantee. |
+| **Local-only rule** | A Givn rule that exists only on the developer's machine: never tracked, never staged. |
+| **Versioned rule** | A Givn rule that is repository content, staged and committed like source. |
+| **Local-only transition** | Making a tracked strict rule local-only: the file stays on disk and the path leaves the current revision (Git `git rm --cached`; Fossil `fossil rm --soft` or `forget`). |
+| **Ignore block** | Givn's fenced entry region inside the tracked ignore file (`.gitignore`, `.fossil-settings/ignore-glob`); the entries are project content and surrounding user content is never touched. |
+| **Publishable project** | A project whose repository and reachable history carry no strict rule, and whose build, run, and test paths work with no Givn installed. |
+| **Clean history** | No reachable revision contains a strict rule. Occurrences are reported and never block; the only remediation is the explicit history rewrite. Unreachable objects, remotes, and forks are outside the guarantee. |
+| **History rewrite** | The explicit, opt-in removal of strict rules from reachable history: Git through `git-filter-repo` (or a named refusal when absent), Fossil a named refusal. Never automatic; files stay on disk; the boundary and force-push need are reported. |
 | **Net-delta receipt** | The count of Added, Modified, and Removed scenarios printed by the overlap review gate. |
 | **Eject** | Materialization of an embedded default into a project-owned `givn/` override. |
 | **Facet** | An independently resolvable asset unit such as a template or instruction. |

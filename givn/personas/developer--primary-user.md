@@ -37,3 +37,11 @@
   difference is handled inside givn, not pushed onto the user.
 - 2026-09-14 — kiekste hosting: out of scope; the hosting and work-item
   features are kiekste's domain and never a givn specification obligation.
+- 2026-09-23 — local-only-integrations: publishes projects created with Givn
+  as open source while Givn stays closed during development; keeps every
+  Givn rule local; owns the `AGENTS.md` tracking decision and merges its
+  fence by hand; owns their own non-Givn rule files.
+- 2026-09-23 — local-only-integrations: expects one Givn command on a fresh
+  clone or second machine to restore the local workflow.
+- 2026-09-23 — local-only-integrations (reviewer interest): untracking and
+  ignoring must be explicit and reviewable, never a silent mutation.
