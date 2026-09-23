@@ -200,12 +200,40 @@ fn tracked_ignore_block_contains(world: &mut GivnWorld, path: String) {
     );
 }
 
+#[then("the tracked ignore block masks the rule names")]
+fn tracked_ignore_block_masks_rule_names(world: &mut GivnWorld) {
+    let env = env(world);
+    let content = std::fs::read_to_string(env.path(".gitignore")).expect("read .gitignore");
+    let mut in_block = false;
+    let mut block: Vec<&str> = Vec::new();
+    for line in content.lines() {
+        if line.trim() == "# givn:begin:rules" {
+            in_block = true;
+            continue;
+        }
+        if line.trim() == "# givn:end:rules" {
+            in_block = false;
+            continue;
+        }
+        if in_block {
+            block.push(line.trim());
+        }
+    }
+    assert!(!block.is_empty(), "the rules block is missing:\n{content}");
+    for name in ["givn-propose", "givn-spec", "givn-archive", "grill-me"] {
+        assert!(
+            !block.iter().any(|line| line.contains(name)),
+            "the rules block leaks the rule name {name}: {block:?}"
+        );
+    }
+}
+
 #[then(regex = r#"^the tracked ignore block does not contain "([^"]+)"$"#)]
 fn tracked_ignore_block_does_not_contain(world: &mut GivnWorld, path: String) {
     let env = env(world);
     let content = std::fs::read_to_string(env.path(".gitignore")).unwrap_or_default();
     assert!(
-        !content.lines().any(|line| line.trim() == path),
+        !content.lines().any(|line| line.contains(&path)),
         ".gitignore block unexpectedly contains {path}:\n{content}"
     );
 }
