@@ -253,9 +253,10 @@ line; the seed's original text stays.
 
 ## One question at a time
 
-Follow the canonical dialog policy (`givn instructions dialog`): one question
-at a time, every option with its meaning, gain, cost, and a concrete example,
-and every question answerable standalone. Ask exactly one question at a time
+Follow the canonical dialog policy (`givn instructions dialog`) for every
+live question. A bare option list is a defect, not a style choice: name
+the decision it blocks, the context that forces it, and every option's
+meaning, concrete example, gain, and cost. Ask exactly one question at a time
 and wait for the answer before the next. If the outcome of a step is unclear,
 you do not have an example — you have a question. Record it in the questions
 log and move on; never debate opinions in place of a missing answer.

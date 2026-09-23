@@ -18,7 +18,7 @@ runtime behavior changes.
 - [ ] Runner strictness: `tests/features_runner.rs` carries
       `.fail_on_skipped()`; the first scenario's targeted RED run exits
       non-zero before implementation (evidence in that task).
-- [ ] Planning artifacts committed. COMMIT: <hash> -- `docs(sharpen-ideation-conduct): plan the change`
+- [x] Planning artifacts committed. COMMIT: `fd7c1669` -- `docs(sharpen-ideation-conduct): plan the change`
 
 ## Implementation
 
@@ -28,16 +28,17 @@ Domain constraints: the guidance is generated from
 `assets/skills/givn-ideation/SKILL.md.tmpl` for every agent target; the
 capability is owned by fragment `support`.
 
-- [ ] RED: run
-      `cargo test --test features_runner -- --name "The ideation guidance carries the live-question standard"`;
-      exits non-zero (missing phrases). Paste the output.
-- [ ] GREEN: rewrite the first paragraph of the "One question at a time"
+- [x] RED: run
+      `GIVN_FEATURES=givn/changes/sharpen-ideation-conduct/specs cargo test --test features_runner -- --exact "support/generate-ideation-guidance.feature::The ideation guidance carries the live-question standard"`;
+      exits non-zero (missing phrases). Evidence:
+      `1 scenario (1 failed)` / `3 steps (2 passed, 1 failed)` / exit 101.
+- [x] GREEN: rewrite the first paragraph of the "One question at a time"
       section in `assets/skills/givn-ideation/SKILL.md.tmpl` to the design's
       wording (dialog-policy pointer; bare option list is a defect; decision
       it blocks; context that forces it). Files:
       `assets/skills/givn-ideation/SKILL.md.tmpl`. Targeted run exits 0.
-      Paste the output.
-- [ ] REFACTOR: re-read the section for wording consistency; targeted run
+      Evidence: `1 scenario (1 passed)` / `5 steps (5 passed)`.
+- [x] REFACTOR: re-read the section for wording consistency; targeted run
       still exits 0.
 - [ ] COMMIT: <hash> -- `docs(generate-ideation-guidance): The ideation guidance carries the live-question standard`
 
