@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "sharpen-ideation-conduct",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "f4edcc4bede3a4cdf693804616b7ccd6590af8d0",
+  "tested_revision": "f4edcc4bede3a4cdf693804616b7ccd6590af8d0",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 10.420639862
+    },
+    "regular": {
+      "status": "passed",
+      "total": 558,
+      "passed": 558,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 41.377723925
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 7655,
+    "line_valid": 9684,
+    "line_percent": 79
+  },
   "started_at_unix": 1790169716,
-  "finished_at_unix": null
+  "finished_at_unix": 1790169802
 }
