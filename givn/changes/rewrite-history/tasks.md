@@ -9,7 +9,7 @@ Confirmed Personas: `developer--primary-user`, `givn-maintainer--owner`.
       design-review, arc42 complete.
 - [x] Runner strict mode: `.fail_on_skipped()` (existing); the delta suite
       failed RED before the command existed.
-- [x] Planning artifacts committed. COMMIT: `<plan-hash>` -- `docs(rewrite-history): plan the change`
+- [x] Planning artifacts committed. COMMIT: `60dc488f` -- `docs(rewrite-history): plan the change`
 
 ## Implementation
 
@@ -20,7 +20,7 @@ Confirmed Personas: `developer--primary-user`, `givn-maintainer--owner`.
       `src/cli/rewrite_history.rs`, `src/cli/mod.rs`, `src/main.rs`,
       `tests/steps/local_only_rules_steps.rs`, arc42 5/8.
       Targeted runs: 5 scenarios pass.
-- [x] COMMIT: `<impl-hash>` -- `feat(history-rewrite): purge generated rules from reachable history`
+- [x] COMMIT: `0637adcd` -- `feat(history-rewrite): purge generated rules from reachable history`
 
 ## Verification
 
