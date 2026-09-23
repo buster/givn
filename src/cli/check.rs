@@ -13,6 +13,20 @@ pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
         })?;
         return crate::spec::coverage::check_migration(&project_root, migration_id);
     }
+    if artifact == Some("rules") {
+        let report = crate::skills::rules::cleanliness(&project_root)?;
+        crate::skills::rules::print_report("check rules", &report)?;
+        if report.policy == Some(crate::config::overlay::RulesPolicy::Versioned) {
+            println!("  check rules: the rules are versioned by policy; nothing to purge");
+            return Ok(());
+        }
+        if !report.is_clean() {
+            bail!(
+                "rules check failed: tracked or reachable-history rules exist; clean them before publishing"
+            );
+        }
+        return Ok(());
+    }
     let manifest = load_effective()?;
 
     // Determine features_path: active change's features, or default specs.
