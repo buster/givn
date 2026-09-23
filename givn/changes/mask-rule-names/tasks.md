@@ -10,7 +10,7 @@ Confirmed Personas: `developer--primary-user`,
       complete.
 - [x] Runner strict mode: `.fail_on_skipped()` (existing); the modified
       scenario fails RED against the per-path block.
-- [x] Planning artifacts committed. COMMIT: `<plan-hash>` -- `docs(mask-rule-names): plan the change`
+- [x] Planning artifacts committed. COMMIT: `4fee0270` -- `docs(mask-rule-names): plan the change`
 
 ## Implementation
 
@@ -22,7 +22,7 @@ Confirmed Personas: `developer--primary-user`,
       `specs/initialize-project/initialize-a-project.feature`,
       `docs/arc42/08-crosscutting-concepts.md`.
       Targeted run: 1 scenario passes; lib tests 268 pass.
-- [x] COMMIT: `<impl-hash>` -- `feat(initialize-a-project): mask generated rule names in the ignore block`
+- [x] COMMIT: `156875ea` -- `feat(initialize-a-project): mask generated rule names in the ignore block`
 
 ## Verification
 
