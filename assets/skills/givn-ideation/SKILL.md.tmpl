@@ -256,10 +256,15 @@ line; the seed's original text stays.
 Follow the canonical dialog policy (`givn instructions dialog`) for every
 live question. A bare option list is a defect, not a style choice: name
 the decision it blocks, the context that forces it, and every option's
-meaning, concrete example, gain, and cost. Ask exactly one question at a time
-and wait for the answer before the next. If the outcome of a step is unclear,
-you do not have an example — you have a question. Record it in the questions
-log and move on; never debate opinions in place of a missing answer.
+meaning, concrete example, gain, and cost. Ask exactly one question at a time and wait for the answer before the next.
+Ask only what the current step cannot answer from confirmed decisions; a
+direction already decided is never asked again. A review finding that follows
+mechanically from a confirmed decision is applied and reported; only a
+finding that changes a confirmed direction returns to the human. A phase report states what was recorded and invites correction; it is a question only when a new fork is unresolved. Decisions that share one direction are one question; independent decisions stay separate.
+
+If the outcome of a step is unclear, you do not have an example — you have a
+question. Record it in the questions log and move on; never debate opinions
+in place of a missing answer.
 
 ## Event Storming
 
