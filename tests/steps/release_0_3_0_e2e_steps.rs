@@ -229,7 +229,7 @@ fn first_commit_has_managed_paths(world: &mut GivnWorld) {
                 &[
                     "diff-tree",
                     "--no-commit-id",
-                    "--name-only",
+                    "--name-status",
                     "-r",
                     hashes[1],
                 ],
@@ -242,23 +242,57 @@ fn first_commit_has_managed_paths(world: &mut GivnWorld) {
                 "expected Fossil's initial check-in, the fixture, the managed, and the plan check-ins"
             );
             let managed = fossil_first_child_checkin(env);
-            fossil_revision_paths(env, &managed).join("\n")
+            fossil_revision_paths(env, &managed)
+                .into_iter()
+                .map(|path| format!("M\t{path}"))
+                .collect::<Vec<_>>()
+                .join("\n")
         }
     };
     assert!(!changed.is_empty(), "Commit A has no changed paths");
-    for path in changed.lines() {
+    let mut saw_scaffold = false;
+    for line in changed.lines() {
+        let mut parts = line.split_whitespace();
+        let status = parts.next().unwrap_or_default();
+        let path = parts.next().unwrap_or_default();
+        if path == "givn/config.yaml"
+            || path == "givn/commands.yaml"
+            || path == ".gitignore"
+            || path == ".fossil-settings/ignore-glob"
+        {
+            assert!(
+                status.starts_with('A') || status.starts_with('M'),
+                "scaffold path must be added or modified: {status} {path}"
+            );
+            saw_scaffold = true;
+            continue;
+        }
         assert!(
-            path == "givn/config.yaml"
-                || path == "AGENTS.md"
-                || path.starts_with(".agents/skills/")
-                || path.starts_with(".claude/skills/")
-                || path.starts_with(".opencode/skills/")
-                || path.starts_with(".opencode/commands/")
-                || path.starts_with(".opencode/plugins/")
-                || path == ".githooks/commit-msg",
-            "Commit A staged an unmanaged path: {path}"
+            path != "AGENTS.md",
+            "Commit A staged AGENTS.md, which is never staged by Givn"
         );
+        // Under the local-only default the managed revision carries the
+        // scaffold plus the removals of tracked rules; a rule must never be
+        // added as content.
+        let is_rule_path = path.starts_with(".agents/skills/")
+            || path.starts_with(".claude/skills/")
+            || path.starts_with(".claude/hooks/")
+            || path.starts_with(".opencode/skills/")
+            || path.starts_with(".opencode/commands/")
+            || path.starts_with(".opencode/plugins/")
+            || path == ".githooks/commit-msg";
+        assert!(is_rule_path, "Commit A staged an unmanaged path: {path}");
+        if env.backend() == crate::common::BackendKind::Git {
+            assert!(
+                status.starts_with('D'),
+                "rule path must be a removal in Commit A: {status} {path}"
+            );
+        }
     }
+    assert!(
+        saw_scaffold,
+        "Commit A must carry the managed scaffold refresh"
+    );
 }
 
 #[then("a migration change for the current version exists")]

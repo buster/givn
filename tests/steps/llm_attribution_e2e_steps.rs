@@ -385,7 +385,7 @@ fn then_opencode_integration_exists(world: &mut GivnWorld) {
 fn then_claude_integration_exists(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("project root");
     assert!(env.path(".claude/hooks/givn-attribution.sh").is_file());
-    assert!(env.path(".claude/settings.json").is_file());
+    assert!(env.path(".claude/settings.local.json").is_file());
 }
 
 #[given("a Git project with complete commit attribution context")]
