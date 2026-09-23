@@ -22,8 +22,7 @@ historical occurrences.
 ## Preconditions
 
 - The rules policy resolves to `local-only` (`rules-policy`).
-- The active version-control system is Git, with `git-filter-repo`
-  available.
+- The active version-control system is Git, with `git-filter-repo` available.
 - The checkout is clean.
 
 ## Main flow
@@ -43,31 +42,26 @@ historical occurrences.
 
 ## Extensions
 
-- `git-filter-repo` is missing: refuse by name with install guidance; nothing
-  changes.
+- `git-filter-repo` is missing: refuse by name with install guidance; nothing changes.
 - Nothing to rewrite: report no rule in reachable history; change nothing.
 - Confirmation withheld: nothing changes.
 
 ## Rules
 
 - Never automatic; no other command invokes the rewrite.
-- The strict set only: file-precise paths; never `AGENTS.md`; never a
-  user-owned file.
+- The strict set only: file-precise paths; never `AGENTS.md`; never a user-owned file.
 - Files are preserved; the rewrite changes history, not the working tree.
 - The command never pushes and never contacts a remote.
 - The result is verified by a re-scan before success is reported.
 
 ## Examples
 
-- `givn rewrite-history --yes` on a project with a rule in history:
-  reports the path and revision count, rewrites, reports the new revision,
-  and states that a force-push is required.
+- `givn rewrite-history --yes` on a project with a rule in history: reports the path and revision count, rewrites, reports the new revision, and states that a force-push is required.
 - Versioned project: "the rules are versioned by policy; nothing to purge".
 - Dirty checkout: "history rewriting requires a clean checkout".
 - Fossil: "history rewriting is not available on the Fossil backend".
 - Piped input without `--yes`: "confirmation required: re-run with --yes".
-- No occurrence: "no generated rule in reachable history; nothing to
-  rewrite".
+- No occurrence: "no generated rule in reachable history; nothing to rewrite".
 
 ## Minimal guarantee
 
@@ -87,7 +81,7 @@ force-push need and the boundary are named.
 
 ## Capabilities
 
-- `history-rewrite` — new
+- history-rewrite
 
 ## Interactions
 
@@ -99,7 +93,7 @@ force-push need and the boundary are named.
 
 ## Includes
 
-- `rules-policy` (fragment)
+- fragment: rules-policy
 
 ## Extends
 
