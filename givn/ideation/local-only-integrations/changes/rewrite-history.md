@@ -1,6 +1,6 @@
 # Change seed: rewrite-history
 
-Status: ready for `/givn-propose`
+Status: proposed by rewrite-history
 
 - Use-case ID: `rewrite-history` (new)
 - Topic: `local-only-integrations`
