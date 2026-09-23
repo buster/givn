@@ -45,8 +45,9 @@ Observable outcomes:
    either policy; if the developer commits it, that is accepted and merging
    it is their responsibility.
 4. A tracked rule becomes local-only without deleting the file: `givn init`
-   leaves the removals staged for the developer; `givn upgrade` folds them
-   into its managed revision.
+   leaves the removals staged for the developer to commit; `givn upgrade`,
+   run on a clean checkout, performs the same transition and folds the
+   removals into its managed revision.
 5. Under `local-only`, the managed upgrade revision contains the config
    scaffold, commands scaffold, ignore-block changes, and the removals only;
    under `versioned` it stages the rules per today's allowlist. `AGENTS.md`
