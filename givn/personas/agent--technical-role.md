@@ -34,3 +34,9 @@
 
 - 2026-09-14 — multi-scm-support: the machine contract must not change shape
   with the SCM; SCM-specific mechanics stay inside givn.
+- 2026-09-23 — local-only-integrations: on the developer's machine it reads
+  the committed `AGENTS.md` fence when present and discovers the local
+  skills; on a published clone it receives no Givn workflow and must work
+  without one.
+- 2026-09-23 — local-only-integrations: a managed revision never carries a
+  Givn rule or `AGENTS.md`; the stage-all path excludes both.
