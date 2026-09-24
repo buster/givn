@@ -1,3 +1,4 @@
+<!-- givn:base-sha256:a5ea95b03614da79b0c3dceac7a0ff65877ea043f6488c6b2f0eb9541037efd6 -->
 # Use case: create-change
 
 ## Level
@@ -37,6 +38,7 @@ The developer starts a new change.
 - Change identities are stable kebab-case values.
 - Generated guidance is synchronized from canonical source assets.
 - One canonical policy exists per topic; derived guidance points at it.
+- A change's proposal carries one release note; every revision the change records shares it as the message subject, with the scenario title in the message body.
 
 ## Examples
 
@@ -59,6 +61,7 @@ executable specification.
 
 ## Capabilities
 
+- change-release-note
 - create-a-change
 - prose-consolidation
 - visual-design-contract
@@ -71,6 +74,9 @@ executable specification.
 | prose-consolidation | inspect generated E2E guidance | Generated guidance points to the canonical E2E policy |
 | visual-design-contract | request the design guidance for a visual interface | Author requests the visual design contract guidance |
 | visual-design-contract | read the synchronized design and step guidance | Synchronized guidance defines the contract approval and capture mechanics |
+| change-release-note | create a change | A new change's proposal carries the release-note field |
+| change-release-note | read the proposal guidance | The proposal guidance requires a release note |
+| change-release-note | read the generated implementation guidance | The generated implementation guidance shares the release note |
 
 ## Includes
 
