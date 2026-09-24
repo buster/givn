@@ -203,6 +203,12 @@ The target selection is stored in `skills.targets` in `givn/config.yaml`; absent
 empty, or unknown-only values fall back to opencode. The default `init` prompt
 selects opencode on empty input or EOF and allows the three known targets.
 
+The generated implementation guidance states the revision-message rule: every
+revision a change records carries the change's release note (authored in its
+proposal) as its message subject, with the scenario title in the message body.
+The rule is guidance only — `givn commit` neither composes nor validates the
+subject.
+
 `AGENTS.md` is user-owned outside givn-managed fenced blocks. The sync path may
 create or replace the `givn-project` block and, when enabled, the
 `absolute-mode` block. It does not rewrite surrounding user content. The
