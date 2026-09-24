@@ -38,9 +38,7 @@ The developer starts a new change.
 - Change identities are stable kebab-case values.
 - Generated guidance is synchronized from canonical source assets.
 - One canonical policy exists per topic; derived guidance points at it.
-- A change's proposal carries one release note; every revision the change
-  records shares it as the message subject, with the scenario title in the
-  message body.
+- A change's proposal carries one release note; every revision the change records shares it as the message subject, with the scenario title in the message body.
 
 ## Examples
 

@@ -3,7 +3,7 @@
 RED→GREEN→REFACTOR→COMMIT per scenario. All three scenarios are `@e2e`
 (the delta has no non-@e2e scenario), so the loop runs the E2E runner.
 
-Legend: `[ ]` pending · `[x]` done only when evidence + commit hash are filled in. Check boxes immediately after each scenario — tasks.md must always reflect true state.
+Legend: an unchecked box is pending; a checked box is done only when evidence + commit hash are filled in. Check boxes immediately after each scenario — tasks.md must always reflect true state.
 
 ## Domain Constraints
 
@@ -198,15 +198,25 @@ executable authority.
 
 ## Task 3 — Scenario: The generated implementation guidance shares the release note
 
-- [ ] RED: remove `@wip` from THIS scenario only. Run the single-scenario
+- [x] RED: remove `@wip` from THIS scenario only. Run the single-scenario
       command. Must fail on the missing generated-guidance wording.
       ```
       GIVN_FEATURES=givn/changes/change-release-note/specs cargo test --test features_runner -- --exact "create-change/change-release-note.feature::The generated implementation guidance shares the release note"
       ```
       ```
-      <!-- paste RED evidence -->
+        ✔  Given a givn project with all agent skill targets enabled
+        ✔  When the user runs `givn skills sync`
+        ✔  Then the command exits 0
+        ✘  And the generated givn-steps guidance contains "carries the release note as its message subject"
+           Matched: tests/steps/prose_consolidation_steps.rs:97:1
+           Step panicked. Captured output: givn-steps guidance missing "carries the release note as its message subject"
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        4 steps (3 passed, 1 failed)
+        exit=101
       ```
-- [ ] GREEN: edit the generated-guidance sources and align the durable docs:
+- [x] GREEN: edit the generated-guidance sources and align the durable docs:
       - Skills: `givn-propose`, `givn-steps`, `givn-implement`, `givn-tasks`.
       - Commands: `givn-propose`, `givn-steps`, `givn-implement`, `givn-tasks`,
         `givn-characterize`, `givn-reverse-engineer`.
@@ -219,17 +229,42 @@ executable authority.
       the tracked generated rules and the `AGENTS.md` block; `AGENTS.md` is
       staged by an explicit `git add AGENTS.md`, the developer's act).
       Run the same targeted command. Must pass.
-      Files created/modified: `<!-- list them -->`
+      Files created/modified: 13 assets (`assets/templates/proposal.md` in
+      Task 1, `assets/instructions/proposal.md` in Task 2, the nine guidance
+      assets above, plus the 4 regenerated skill mirrors and 6 regenerated
+      command mirrors, `AGENTS.md`, `README.md`, `docs/workflow.md`).
       ```
-      <!-- paste GREEN evidence -->
+        ✔  Given a givn project with all agent skill targets enabled
+        ✔  When the user runs `givn skills sync`
+        ✔  Then the command exits 0
+        ✔  And the generated givn-steps guidance contains "carries the release note as its message subject"
+        ✔  And the generated givn-implement guidance contains "carries the release note as its message subject"
+        ✔  And the generated givn-tasks guidance contains "carries the release note as its message subject"
+        ✔  And the generated givn-implement guidance contains "the scenario title goes in the message body"
+        ✔  And the generated givn-steps command contains "carries the release note as its message subject"
+        ✔  And the generated givn-implement command contains "carries the release note as its message subject"
+        ✔  And the generated givn-tasks command contains "carries the release note as its message subject"
+        ✔  And generated guidance does not contain "message references the scenario title"
+        ✔  And the file "AGENTS.md" contains "carries the release note as its message subject"
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      12 steps (12 passed)
+      exit=0
       ```
-- [ ] REFACTOR: grep every changed surface for the superseded phrase
+- [x] REFACTOR: grep every changed surface for the superseded phrase
       `message references the scenario title`; confirm zero hits. Re-run
       targeted. Must still pass.
       ```
-      <!-- paste REFACTOR evidence -->
+      $ grep -rn "message references the scenario title" assets/ README.md docs/workflow.md givn/specs/ .opencode/ .agents/ .claude/ AGENTS.md | wc -l
+      0
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      12 steps (12 passed)
+      exit=0
       ```
-- [ ] COMMIT: `<!-- hash -->` —
+- [x] COMMIT: `60e0b73e117faf04993f2d24f4da13d6f1614f4a` —
       ```
       test(e2e): Give every change one release note, shared as the subject of all its revisions
 
@@ -240,8 +275,22 @@ executable authority.
 
 ## Done
 
-- [ ] Full regular suite: `./run-tests.sh` exits 0.
-- [ ] Full E2E suite: `./run-tests.sh --e2e` exits 0.
-- [ ] Both counts pasted in the E2E setup task; every scenario has a commit.
-- [ ] `givn status --change change-release-note` shows implementation complete
+- [x] Full regular suite: `./run-tests.sh` exits 0.
+      ```
+      Summary [37.643s] 563 tests run: 563 passed, 0 skipped
+      exit=0
+      ```
+- [x] Full E2E suite: `./run-tests.sh --e2e` exits 0.
+      ```
+      Summary [6.987s] 88 tests run: 88 passed, 475 skipped
+      exit=0
+      ```
+- [x] Delta scope, both loops: `GIVN_FEATURES=givn/changes/change-release-note/specs ./run-tests.sh`
+      ```
+      Summary [0.420s] 3 tests run: 3 passed, 0 skipped
+      exit=0
+      ```
+- [x] Both counts pasted in the E2E setup task; every scenario has a commit
+      (`7b253d7d`, `ef90fa37`, `60e0b73e`).
+- [x] `givn status --change change-release-note` shows implementation complete
       and next required `review`.
