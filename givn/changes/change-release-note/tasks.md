@@ -91,27 +91,50 @@ executable authority.
 
 ## Task 1 — Scenario: A new change's proposal carries the release-note field
 
-- [ ] RED: remove `@wip` from THIS scenario only. Run the single-scenario
+- [x] RED: remove `@wip` from THIS scenario only. Run the single-scenario
       command. Must fail on the missing scaffold wording.
       ```
       GIVN_FEATURES=givn/changes/change-release-note/specs cargo test --test features_runner -- --exact "create-change/change-release-note.feature::A new change's proposal carries the release-note field"
       ```
       ```
-      <!-- paste RED evidence -->
+        Scenario: A new change's proposal carries the release-note field
+         ✔  Given a project root with givn/ initialised
+         ✔  When the user runs `givn new shared-note`
+         ✔  Then the command exits 0
+         ✘  And the file "givn/changes/shared-note/proposal.md" contains "release note"
+            Step failed:
+          ...
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        4 steps (3 passed, 1 failed)
+        exit=101
       ```
-- [ ] GREEN: edit `assets/templates/proposal.md` — add the `## Release note`
+- [x] GREEN: edit `assets/templates/proposal.md` — add the `## Release note`
       section (heading only; guidance quote carries the lowercase phrase).
       Files created/modified:
       `assets/templates/proposal.md`.
       Run the same targeted command. Must pass.
       ```
-      <!-- paste GREEN evidence -->
+        ✔  Given a project root with givn/ initialised
+        ✔  When the user runs `givn new shared-note`
+        ✔  Then the command exits 0
+        ✔  And the file "givn/changes/shared-note/proposal.md" contains "release note"
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      4 steps (4 passed)
+      exit=0
       ```
-- [ ] REFACTOR: no behaviour change; re-run targeted. Must still pass.
+- [x] REFACTOR: no behaviour change; re-run targeted. Must still pass.
       ```
-      <!-- paste REFACTOR evidence -->
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      4 steps (4 passed)
+      exit=0
       ```
-- [ ] COMMIT: `<!-- hash -->` —
+- [x] COMMIT: `7b253d7d7977dc86f048f875652a69d5031cc8fa` —
       ```
       test(e2e): Give every change one release note, shared as the subject of all its revisions
 
