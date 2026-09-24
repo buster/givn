@@ -49,9 +49,9 @@ existing shell command without executing it".
 `givn spec route` reports no signal; the decision is recorded with its
 rationale.
 
-| Proposed capability | Decision | Rationale |
-|---|---|---|
-| change-release-note | NEW in create-change | The release note and the shared-subject rule are generated guidance about a change's artifacts; create-change owns the canonical guidance set. This is a new behavior, not another pointer in prose-consolidation. A project's changelog generator stays project-owned and out of scope. |
+| Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
+|---|---|---|---|
+| `change-release-note` | no signal | `NEW in create-change` | The release note and the shared-subject rule are generated guidance about a change's artifacts; create-change owns the canonical guidance set. This is a new behavior, not another pointer in prose-consolidation. A project's changelog generator stays project-owned and out of scope. |
 
 ## Out of Scope
 
