@@ -2,7 +2,7 @@
 
 Feature: Change release note
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: A new change's proposal carries the release-note field
     Given a project root with givn/ initialised
     When the user runs `givn new shared-note`

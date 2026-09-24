@@ -1,5 +1,12 @@
 # Proposal: {{CHANGE_ID}}
 
+## Release note
+
+> Required. One complete, user-facing sentence naming what this change does.
+> Every revision this change records carries the release note as its message subject, with the scenario title in the message body.
+
+<one complete, user-facing sentence>
+
 ## Use-Case Context
 
 > Optional. When this change comes from ideation or an existing permanent
