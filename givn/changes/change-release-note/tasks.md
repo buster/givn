@@ -145,26 +145,49 @@ executable authority.
 
 ## Task 2 — Scenario: The proposal guidance requires a release note
 
-- [ ] RED: remove `@wip` from THIS scenario only. Run the single-scenario
+- [x] RED: remove `@wip` from THIS scenario only. Run the single-scenario
       command. Must fail on the missing instruction wording.
       ```
       GIVN_FEATURES=givn/changes/change-release-note/specs cargo test --test features_runner -- --exact "create-change/change-release-note.feature::The proposal guidance requires a release note"
       ```
       ```
-      <!-- paste RED evidence -->
+        ✔  Given a project root with givn/ initialised
+        ✔  And a change "shared-note" exists with artifact "proposal"
+        ✔  When the user runs `givn instructions proposal --change shared-note`
+        ✔  Then the command exits 0
+        ✘  And stdout contains "release note"
+           Matched: tests/steps/mod.rs:620:1
+           Step panicked. Captured output: stdout missing "release note": # Instruction: proposal
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        5 steps (4 passed, 1 failed)
+        exit=101
       ```
-- [ ] GREEN: edit `assets/instructions/proposal.md` — required release-note
+- [x] GREEN: edit `assets/instructions/proposal.md` — required release-note
       rule plus the shared-subject sentence; structure list gains the release
       note. Files created/modified: `assets/instructions/proposal.md`.
       Run the same targeted command. Must pass.
       ```
-      <!-- paste GREEN evidence -->
+        ✔  When the user runs `givn instructions proposal --change shared-note`
+        ✔  Then the command exits 0
+        ✔  And stdout contains "release note"
+        ✔  And stdout contains "carries the release note as its message subject"
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      6 steps (6 passed)
+      exit=0
       ```
-- [ ] REFACTOR: no behaviour change; re-run targeted. Must still pass.
+- [x] REFACTOR: no behaviour change; re-run targeted. Must still pass.
       ```
-      <!-- paste REFACTOR evidence -->
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      6 steps (6 passed)
+      exit=0
       ```
-- [ ] COMMIT: `<!-- hash -->` —
+- [x] COMMIT: `ef90fa37a32d7039b6af06ef083bcfa6fc4b4739` —
       ```
       test(e2e): Give every change one release note, shared as the subject of all its revisions
 

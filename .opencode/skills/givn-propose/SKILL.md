@@ -35,10 +35,14 @@ A change with a user-visible surface (a browser interface, a terminal interface,
 ## Structure
 
 Fill in the proposal template sections:
-1. **Problem / Opportunity** — what is wrong or missing?
-2. **Proposed Solution** — what should the system do?
-3. **Out of Scope** — what is not changing?
-4. **Open Questions** — unresolved decisions before writing specs.
+1. **Release note** — one complete, user-facing sentence naming what the
+   change does. Every revision the change records
+   carries the release note as its message subject, and
+   the scenario title goes in the message body.
+2. **Problem / Opportunity** — what is wrong or missing?
+3. **Proposed Solution** — what should the system do?
+4. **Out of Scope** — what is not changing?
+5. **Open Questions** — unresolved decisions before writing specs.
 
 ## Verify command
 

@@ -102,9 +102,11 @@ GREEN    Replace stubs with real assertions, write minimum production code,
          list every production file touched. MUST exit zero.
 REFACTOR Clean up with no behaviour change. Re-run this scenario. MUST stay zero.
 COMMIT   One revision for RED+GREEN+REFACTOR via
-         `givn commit -m "feat(<capability>): <title>"` (works on Git and
-         Fossil; raw Git commits are stamped by the hook, raw Fossil
-         check-ins are not). Record the identifier in tasks.md immediately.
+         `givn commit -m "feat(<capability>): <release note>"` — the revision
+         message carries the release note as its message subject, with the
+         scenario title in the message body (works on Git and Fossil; raw Git
+         commits are stamped by the hook, raw Fossil check-ins are not).
+         Record the identifier in tasks.md immediately.
 ```
 
 - Setup task comes first: proof that the runner is strict (an empty step must

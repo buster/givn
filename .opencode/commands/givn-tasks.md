@@ -87,8 +87,10 @@ design.md, so everything needed must be in the task.
                 Paste output.
       REFACTOR: Clean up. Re-run targeting this scenario → still PASSES.
                 Paste output.
-      COMMIT:   One commit for RED+GREEN+REFACTOR, message references the
-                scenario title, e.g. "feat(<capability>): <title>". Record
+      COMMIT:   One commit for RED+GREEN+REFACTOR, e.g.
+                "feat(<capability>): <release note>". The message
+                carries the release note as its message subject, and
+                the scenario title goes in the message body. Record
                 the hash.
 ```
 
@@ -124,7 +126,9 @@ not a second E2E policy.
                 assertions driving the actual interface. List files
                 touched. Run targeting this scenario → PASSES. Paste evidence.
       REFACTOR: Clean up. Re-run → still PASSES. Paste evidence.
-      COMMIT:   One commit, message references the scenario title. Record
+      COMMIT:   One commit, e.g. "test(e2e): <release note>". The message
+                carries the release note as its message subject, and
+                the scenario title goes in the message body. Record
                 the hash.
 ```
 

@@ -116,6 +116,10 @@ For each artifact:
 **proposal** (proposal.md):
 - WHAT and WHY in domain language — no implementation detail.
 - Observable behaviour only. No class names, routes, DB schemas, step mechanics.
+- **Release note (required)**: the proposal carries one complete, user-facing
+  sentence naming what the change does. Every revision the change records
+  carries the release note as its message subject, and the scenario title
+  goes in the message body.
 - Think about: who benefits, what changes from the user's perspective, what
   constraints or risks exist.
 - **Capability Routing (mandatory, before specs)**: after drafting the
