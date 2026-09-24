@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "change-release-note",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "11cf7bac509850cca273d0b8ec6106d10cf77b36",
+  "tested_revision": "11cf7bac509850cca273d0b8ec6106d10cf77b36",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 94,
+      "passed": 94,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 13.662085062
+    },
+    "regular": {
+      "status": "passed",
+      "total": 580,
+      "passed": 580,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 58.446512785
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 8111,
+    "line_valid": 10172,
+    "line_percent": 79
+  },
   "started_at_unix": 1790262692,
-  "finished_at_unix": null
+  "finished_at_unix": 1790262836
 }
