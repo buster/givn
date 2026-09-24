@@ -23,43 +23,68 @@ executable authority.
 
 ## Setup — runner and strict-mode proof
 
-- [ ] **Runner check.** `verify.command` is `./run-tests.sh`; it executes the
+- [x] **Runner check.** `verify.command` is `./run-tests.sh`; it executes the
       change's `.feature` files through the cucumber-rs runner
       (`tests/features_runner.rs`) against
       `GIVN_FEATURES=givn/changes/change-release-note/specs`. No runner
-      configuration change is needed.
-- [ ] **No new step skeleton.** Design's Step Definitions table: all three
+      configuration change is needed. `givn/commands.yaml`:
+      `verify.command: ./run-tests.sh`, `verify.e2e_command: ./run-tests.sh --e2e`.
+- [x] **No new step skeleton.** Design's Step Definitions table: all three
       scenarios reuse existing bindings; no file is added (one-file-per-
       capability creates a file only when a capability adds a binding).
-- [ ] **Proof-of-strictness.** Run `./run-tests.sh` against a temporary
+- [x] **Proof-of-strictness.** Run `./run-tests.sh` against a temporary
       feature whose only step is undefined; the runner must exit non-zero via
       `.fail_on_skipped()` (`tests/features_runner.rs`).
       ```
-      <!-- paste command + output -->
+      $ printf 'Feature: strict proof\n\n  Scenario: An undefined step must fail\n    Given a step that no definition binds\n' > /tmp/opencode/strict-proof/strict-proof.feature
+      $ GIVN_TEST_RUNNER=cargo GIVN_FEATURES=/tmp/opencode/strict-proof ./run-tests.sh --non-e2e
+      Feature: strict proof
+        Scenario: An undefined step must fail
+         ✘  Given a step that no definition binds
+            Step failed:
+            Defined: tmp/opencode/strict-proof/strict-proof.feature:4:5
+            Step doesn't match any function
+      [Summary]
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      error: test failed, to rerun pass `--test features_runner`
+      exit=1
       ```
-      If exit 0, fix the strict-mode config before proceeding.
-- [ ] **Plan commit.** Commit the planning artifacts before implementation so
+      Exit non-zero: strict mode rejects an undefined step.
+- [x] **Plan commit.** Commit the planning artifacts before implementation so
       each scenario commit stays atomic:
       `givn commit -m "docs(change-release-note): Give every change one release note, shared as the subject of all its revisions"`.
-      Hash: `<!-- hash -->`
+      Hash: `a62ec8b51a01b3bb69076461c54c9da1edf34c69`
 
 ---
 
 ## E2E setup — runner, filter proof, environment
 
-- [ ] **Environment.** None required: the real interface is the `givn` CLI and
+- [x] **Environment.** None required: the real interface is the `givn` CLI and
       there is no browser, server, database, queue, or digital twin
       (design's Local Runnability section). Confirm clean startup by running
       the suite.
-- [ ] **E2E command.** `verify.e2e_command` is `./run-tests.sh --e2e`,
+- [x] **E2E command.** `verify.e2e_command` is `./run-tests.sh --e2e`,
       tag-filtered to `@e2e` (`GIVN_CUCUMBER_TAGS=@e2e`), distinct from
       `verify.command`.
-- [ ] **Filter proof.** Run the delta scope with `./run-tests.sh` and with
-      `./run-tests.sh --e2e`; paste both scenario counts. All three delta
-      scenarios are `@e2e`, so the counts are equal in this scope and the
-      filter is proven against the permanent scope instead.
+- [x] **Filter proof.** Delta scope, both commands, before implementation
+      (RED expected — 3 scenarios, 0 passed, 3 failed):
       ```
-      <!-- paste both counts -->
+      $ GIVN_FEATURES=givn/changes/change-release-note/specs ./run-tests.sh
+      Summary [0.414s] 3 tests run: 0 passed, 3 failed, 0 skipped
+      $ GIVN_FEATURES=givn/changes/change-release-note/specs ./run-tests.sh --e2e
+      Summary [0.420s] 3 tests run: 0 passed, 3 failed, 0 skipped
+      ```
+      All three delta scenarios are tagged `@e2e`, so both scopes run the same
+      three in this change. The filter is proven against the permanent scope:
+      `all=563 e2e=88 non-e2e=475` (nextest list with and without
+      `GIVN_CUCUMBER_TAGS`), so the `@e2e` subset is strictly smaller and
+      `verify.e2e_command` is not a re-run of the full suite.
+      ```
+      $ ALL=$(cargo nextest list --test features_runner | grep -c '\.feature::')
+      $ E2E=$(GIVN_CUCUMBER_TAGS='@e2e' cargo nextest list --test features_runner | grep -c '\.feature::')
+      all=563 e2e=88
       ```
 
 ---
