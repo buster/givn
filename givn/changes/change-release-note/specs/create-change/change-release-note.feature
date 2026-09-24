@@ -1,0 +1,34 @@
+@givn.delta @change-release-note
+
+Feature: Change release note
+
+  @givn.added @e2e @wip
+  Scenario: A new change's proposal carries the release-note field
+    Given a project root with givn/ initialised
+    When the user runs `givn new shared-note`
+    Then the command exits 0
+    And the file "givn/changes/shared-note/proposal.md" contains "release note"
+
+  @givn.added @e2e @wip
+  Scenario: The proposal guidance requires a release note
+    Given a project root with givn/ initialised
+    And a change "shared-note" exists with artifact "proposal"
+    When the user runs `givn instructions proposal --change shared-note`
+    Then the command exits 0
+    And stdout contains "release note"
+    And stdout contains "carries the release note as its message subject"
+
+  @givn.added @e2e @wip
+  Scenario: The generated implementation guidance shares the release note
+    Given a givn project with all agent skill targets enabled
+    When the user runs `givn skills sync`
+    Then the command exits 0
+    And the generated givn-steps guidance contains "carries the release note as its message subject"
+    And the generated givn-implement guidance contains "carries the release note as its message subject"
+    And the generated givn-tasks guidance contains "carries the release note as its message subject"
+    And the generated givn-implement guidance contains "the scenario title goes in the message body"
+    And the generated givn-steps command contains "carries the release note as its message subject"
+    And the generated givn-implement command contains "carries the release note as its message subject"
+    And the generated givn-tasks command contains "carries the release note as its message subject"
+    And generated guidance does not contain "message references the scenario title"
+    And the file "AGENTS.md" contains "carries the release note as its message subject"

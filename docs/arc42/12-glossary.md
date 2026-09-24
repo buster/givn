@@ -34,6 +34,7 @@
 | **Runner result** | The machine-readable scenario counts a verification scope's runner writes for Givn; a missing or non-reconciling result blocks proof. Anti-term: test summary. |
 | **Forward repair** | Repairing a failed archive in place and rerunning the archive against the new published state; the failed candidate is kept, never silently discarded. Anti-terms: rollback, restore. |
 | **Delta** | An active Gherkin feature marked `@givn.delta` that describes Added, Modified, or Removed scenarios. |
+| **Release note** | The one complete, user-facing sentence a change's proposal carries naming what the change does; every revision the change records shares it as the message subject, with the scenario title in the message body. A changelog line derived from revision subjects is a consequence, not the release note. Anti-terms: change summary, changelog entry. |
 | **Disposition** | A review entry for a deterministic overlap finding involving a change delta. |
 | **Fingerprint** | A deterministic masked assertion sequence plus best-effort facts: exit code, `contains` polarity, table values, `[DONE]`, and TTY mention. |
 | **Generated skill** | A skill file written from a skill template into an agent target directory when `givn skills sync` runs. |
