@@ -4,6 +4,11 @@ Write a proposal that describes the WHAT and WHY of this change, in domain
 language that a non-technical stakeholder can read and validate.
 
 **Rules (enforced by default):**
+- **Release note (required).** The proposal carries one complete, user-facing
+  sentence naming what the change does; every revision the change records
+  carries the release note as its message subject, with the scenario title in
+  the message body. A one-scenario change may reuse its scenario sentence as
+  the release note.
 - Describe observable behaviour, not implementation. No class names, function
   signatures, HTTP routes, DB schemas, step-definition mechanics, or framework
   references.
@@ -46,7 +51,8 @@ language that a non-technical stakeholder can read and validate.
 - **Persona confirmation.** A change with a user-visible surface (a browser interface, a terminal interface, or CLI text output) names at least one confirmed Persona, or records `none` with the reason and the operator confirmation.
 
 **Structure:**
-1. Problem / Opportunity — what is wrong or missing?
-2. Proposed Solution — what should the system do, observably?
-3. Out of Scope — what is not changing?
-4. Open Questions — unresolved decisions before moving to specs.
+1. Release note — one complete, user-facing sentence naming what the change does.
+2. Problem / Opportunity — what is wrong or missing?
+3. Proposed Solution — what should the system do, observably?
+4. Out of Scope — what is not changing?
+5. Open Questions — unresolved decisions before moving to specs.

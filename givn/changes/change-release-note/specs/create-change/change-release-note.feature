@@ -9,7 +9,7 @@ Feature: Change release note
     Then the command exits 0
     And the file "givn/changes/shared-note/proposal.md" contains "release note"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: The proposal guidance requires a release note
     Given a project root with givn/ initialised
     And a change "shared-note" exists with artifact "proposal"
