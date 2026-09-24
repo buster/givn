@@ -55,8 +55,10 @@ For each scenario:
               revert the refactor — behaviour changed, the test was correct.
               No seam needed → skip.
   COMMIT:   One commit for RED+GREEN+REFACTOR. Message: "characterize
-              (<capability>): <title>". Record the hash. No commit = task
-              not done.
+              (<capability>): <release note>". The message
+              carries the release note as its message subject, and
+              the scenario title goes in the message body.
+              Record the hash. No commit = task not done.
   Then move to the next scenario.
 ```
 

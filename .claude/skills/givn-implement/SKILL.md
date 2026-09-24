@@ -84,8 +84,10 @@ at this scenario only** and captures output as evidence.
 7. Re-run targeting this scenario → still zero exit. Capture output.
 
 #### COMMIT
-8. One commit for RED+GREEN+REFACTOR, message references the scenario title
-   (`feat(<capability>): <title>`). Record the hash.
+8. One commit for RED+GREEN+REFACTOR. The revision message
+   carries the release note as its message subject, and
+   the scenario title goes in the message body
+   (`feat(<capability>): <release note>`). Record the hash.
 
 #### Done
 9. Paste evidence, files touched, and commit hash into the task in
@@ -124,7 +126,9 @@ The canonical specs policy owns primary assertions and real-interface fidelity.
 If an interface obstacle appears, apply the concrete fix named in design.md;
 do not substitute a repository-only or alternate-interface shortcut.
 
-Commit message: `test(e2e): <title>`.
+Commit message: `test(e2e): <release note>` — the revision message
+carries the release note as its message subject, and
+the scenario title goes in the message body.
 
 ## When all tasks are checked
 
@@ -160,9 +164,12 @@ verify.e2e_command (configured in givn/config.yaml)
 Commit each finished scenario atomically:
 
 ```sh
-givn commit -m "feat(<capability>): <scenario title>"
+givn commit -m "feat(<capability>): <release note>"
 ```
 
+The revision message
+carries the release note as its message subject, and
+the scenario title goes in the message body.
 `givn commit` works on every backend and stamps the managed attribution
 trailer when the harness provides context. Raw commits are stamped by the
 Git `commit-msg` hook; a raw `fossil commit` carries no attribution, so use

@@ -88,9 +88,12 @@ never infer from whole-suite output) and captures output verbatim as evidence.
 
 ### COMMIT
 
-8. One commit for RED+GREEN+REFACTOR, message references the scenario title
-   (`feat(<capability>): <title>`, `characterize(<capability>): <title>`,
-   or `test(e2e): <title>`). Record the hash. No commit, or a commit
+8. One commit for RED+GREEN+REFACTOR. The revision message
+   carries the release note as its message subject, and
+   the scenario title goes in the message body
+   (`feat(<capability>): <release note>`,
+   `characterize(<capability>): <release note>`, or
+   `test(e2e): <release note>`). Record the hash. No commit, or a commit
    touching only the spec, means the work is not done.
 
 ### Done

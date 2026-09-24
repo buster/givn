@@ -128,8 +128,10 @@ Do not substitute a simpler approach that happens to pass the test.
   silently substitute a weaker interface
 
 ## Done
-9. One commit for RED+GREEN+REFACTOR: "feat(<capability>): <title>" (or
-   "test(e2e): <title>"). Record the hash.
+9. One commit for RED+GREEN+REFACTOR: "feat(<capability>): <release note>"
+   (or "test(e2e): <release note>"). The revision message
+   carries the release note as its message subject, and
+   the scenario title goes in the message body. Record the hash.
 10. Paste RED/GREEN/REFACTOR evidence, files touched, and commit hash into
     the task in tasks.md. Only then check it: `- [ ]` → `- [x]`. Do this
     **immediately** — the box must be checked before the subagent reports

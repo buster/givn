@@ -78,9 +78,11 @@ givn init                             # scaffold givn/ + generate skills + AGENT
 /givn-archive
 ```
 
-Commit each scenario with `givn commit -m "feat(<capability>): <title>"`: it
-works on Git and Fossil, records the named paths or every pending change, and
-stamps the managed attribution trailer when the harness provides context.
+Commit each scenario with `givn commit -m "feat(<capability>): <release note>"`:
+the revision message carries the release note as its message subject, with the
+scenario title in the message body. It works on Git and Fossil, records the
+named paths or every pending change, and stamps the managed attribution
+trailer when the harness provides context.
 
 `givn init` checks in shared Git commit-attribution plumbing and activates it
 locally when the project is a Git worktree; a Fossil checkout receives no hook

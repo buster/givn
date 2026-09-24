@@ -74,8 +74,10 @@ For each scenario:
               PASTE the output. MUST exit zero.
   REFACTOR: Clean up, no behaviour change. Re-run targeting this scenario.
               PASTE the output. MUST still exit zero.
-  COMMIT:   One commit for RED+GREEN+REFACTOR. Message references the
-              scenario title verbatim, e.g. "feat(<capability>): <title>".
+  COMMIT:   One commit for RED+GREEN+REFACTOR, e.g.
+              "feat(<capability>): <release note>". The message
+              carries the release note as its message subject, and
+              the scenario title goes in the message body.
               Record the hash. No commit, or a commit touching only the
               spec/stub = task not done.
 ```
@@ -96,7 +98,9 @@ infrastructure setup from design.md in GREEN. Before writing or reviewing E2E
 steps, read the canonical policy with `givn instructions specs --change <id>`.
 It owns action normalization, real-interface assertions, and driver fidelity;
 tasks owns only the phase mechanics and evidence capture. Commit message:
-`test(e2e): <title>`.
+`test(e2e): <release note>` — the message
+carries the release note as its message subject, and
+the scenario title goes in the message body.
 
 ## E2e setup task
 

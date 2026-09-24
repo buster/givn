@@ -18,7 +18,7 @@ Feature: Change release note
     And stdout contains "release note"
     And stdout contains "carries the release note as its message subject"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: The generated implementation guidance shares the release note
     Given a givn project with all agent skill targets enabled
     When the user runs `givn skills sync`
