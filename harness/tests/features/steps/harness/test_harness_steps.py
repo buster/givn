@@ -1106,7 +1106,7 @@ def step_e2e_task_file(context):
     context.e2e_task_file = str(task_path)
 
 
-@when('the user runs `givn-harness run --task tasks/shopping-list.md --output reports/ --profile shopping-list`')
+@when('the user runs `givn-harness run --task tasks/shopping-list.md --output reports/` end-to-end')
 def step_e2e_run_harness(context):
     output_dir = tempfile.mkdtemp()
     context._cleanup_paths.append(output_dir)
@@ -1116,7 +1116,6 @@ def step_e2e_run_harness(context):
         "uv", "run", "givn-harness", "run",
         "--task", context.e2e_task_file,
         "--output", os.path.join(output_dir, "reports"),
-        "--profile", "shopping-list",
     ]
     result = subprocess.run(
         cmd,
