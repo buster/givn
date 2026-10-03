@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:96acc3cb38b6960cdd5a884efe1b1b158f3b31ec46e71016adb3cadc89ac93d8 -->
+<!-- givn:base-sha256:fdbebb1aed6d60ab527616b49db139a895dcf3cdf56cecfb4521e29193e528fa -->
 # Use case: initialize-project
 
 ## Level
@@ -25,9 +25,10 @@ The developer initializes a project.
 
 ## Main flow
 
-1. The developer selects at least one agent target; the system writes
-   generated guidance only to the selected targets and reports what was
-   skipped and why.
+1. The developer selects at least one agent target — the interactive list
+   opens with `.opencode` marked and re-asks when nothing is marked; the
+   system writes generated guidance only to the selected targets and reports
+   what was skipped and why.
 2. The developer enables optional addons; the system records the choice.
 3. The system reports the detected version-control system and installs the
    attribution plumbing only where it works, naming what was skipped.
@@ -35,7 +36,8 @@ The developer initializes a project.
 ## Extensions
 
 - 1: no version-control system exists → the system scaffolds the corpus, generates guidance, exits 0, and warns that archive and managed upgrade are unavailable; protects the success guarantee.
-- 1: the selected target set is empty or unknown-only → the system refuses with an error naming the valid agent targets, exits non-zero, and writes nothing; protects the minimal guarantee.
+- 1: the interactive confirmation marks no target → the system states that at least one agent target must be marked, shows the selection again, and proceeds only after a target is marked; protects the success guarantee.
+- 1: a non-interactive answer or an `--agents` value resolves to no known target → the system refuses with an error naming the valid agent targets, exits non-zero, and writes nothing; protects the minimal guarantee.
 - 3: the active version-control system lacks a capability (for example transparent attribution hooks) → the report and the generated guidance state the limitation instead of naming a command that would fail; protects the success guarantee.
 
 ## Rules
@@ -51,7 +53,7 @@ The developer initializes a project.
 - Git: `givn init` writes `.githooks/commit-msg`, chains an existing hook, generates skills, and reports `commit attribution: .githooks/commit-msg`. The agent then commits with `givn commit -m "feat: parser"` or raw `git commit`; both carry attribution.
 - Fossil: `givn init` scaffolds `givn/`, writes no hook, and reports `commit attribution: givn commit path only`. `givn commit -m "feat: parser"` stamps the check-in comment; raw `fossil commit` does not, and the generated skill states that.
 - No SCM: `givn init` exits 0 with a warning that archive and managed upgrade are unavailable; skills are generated; a later `givn archive` refuses by name.
-- No agent target: `givn init` with no marked target and no `--agents` value exits non-zero, names `.opencode`, `.agents`, `.claude`, and leaves the project unchanged.
+- No agent target: the interactive prompt opens with `.opencode` marked; a confirmation that marks nothing prints an error naming the requirement and shows the list again. A scripted `givn init` without `--agents`, an empty answer, or an unknown-only value exits non-zero, names `.opencode`, `.agents`, `.claude`, and leaves the project unchanged.
 
 ## Minimal guarantee
 
