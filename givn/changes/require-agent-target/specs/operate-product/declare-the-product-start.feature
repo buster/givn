@@ -2,7 +2,7 @@
 
 Feature: Declare the product start
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Scaffolding ships an unconfigured run declaration
     Given a project root without a givn/ directory
     When the user runs `givn init --agents opencode`
