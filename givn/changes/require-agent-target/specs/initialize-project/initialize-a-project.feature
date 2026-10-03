@@ -49,7 +49,7 @@ Feature: initialize-a-project
     And stderr contains "no agent target selected"
     And the directory "givn" does not exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: An answer without any known agent refuses initialization
     Given a project root without a givn/ directory
     When the user runs `givn init` and answers the agent prompt with "nope"
