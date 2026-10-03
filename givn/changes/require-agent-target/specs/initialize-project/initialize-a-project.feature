@@ -74,7 +74,7 @@ Feature: initialize-a-project
     Then the command exits 0
     And givn skills targets in givn/config.yaml equal "opencode"
 
-  @givn.added @wip
+  @givn.added
   Scenario: givn init --force without a selection keeps the persisted selection
     Given a project root with givn/ initialised
     And givn skills targets in givn/config.yaml equal "opencode, claude"

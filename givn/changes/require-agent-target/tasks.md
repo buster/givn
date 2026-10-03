@@ -118,19 +118,20 @@ E2E scope: `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.s
       guard, no distinguishable RED state.
 - [x] GREEN: re-run after the code changes → passes (same output).
 - [x] REFACTOR: re-run → passes (same output).
-- [x] COMMIT: `25e0e0f` — `feat(initialize-a-project): <release note>`; body
+- [x] COMMIT: `12916901` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
 ## Scenario 7: givn init --force without a selection keeps the persisted selection
 
-- [ ] RED: Remove `@wip`, run targeting this scenario → must fail (`--force`
-      with EOF currently overwrites the config with `.opencode`). Evidence: <paste>
-- [ ] GREEN: resolution precedes the config overwrite (Scenario 1 ordering);
-      verify no additional production change is needed. Run targeting this
-      scenario → passes. Evidence: <paste>
-- [ ] REFACTOR: re-run → passes. Evidence: <paste>
-- [ ] COMMIT: `<hash>` — `feat(initialize-a-project): <release note>`; body
-      carries the scenario title.
+- [x] RED: Remove `@wip`, run targeting this scenario → observed side-effect
+      GREEN (`1 scenario (1 passed), 6 steps (6 passed)`): the resolution-before-
+      write ordering from Scenario 1 already refuses the EOF before `--force`
+      can overwrite the config. Recorded as side-effect GREEN.
+- [x] GREEN: re-run → passes (same output); the persisted `opencode, claude`
+      selection survives the refused `--force`.
+- [x] REFACTOR: re-run → passes (same output).
+- [x] COMMIT: `<recorded after the commit>` — `feat(initialize-a-project): <release note>`;
+      body carries the scenario title.
 
 ## Scenario 8: givn init defaults to all addons enabled and generates their files (modified) **[regression]**
 
