@@ -88,33 +88,37 @@ E2E scope: `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.s
 
 ## Scenario 4: An answer without any known agent refuses initialization
 
-- [ ] RED: Remove `@wip`, run targeting this scenario → side-effect GREEN
-      expected (Scenario 3's resolution path covers the unknown-only answer).
-      Evidence: <pending>
-- [ ] GREEN: re-run → passes. Evidence: <pending>
-- [ ] REFACTOR: re-run → passes. Evidence: <pending>
-- [ ] COMMIT: `<hash>` — `feat(initialize-a-project): <release note>`; body
+- [x] RED: Remove `@wip`, run targeting this scenario → observed side-effect
+      GREEN: `1 scenario (1 passed), 6 steps (6 passed)` — Scenario 3's
+      resolution path already refuses an unknown-only answer. Recorded as
+      side-effect GREEN, not a failing RED.
+- [x] GREEN: same run → passes (no production change beyond Scenario 3).
+- [x] REFACTOR: re-run → `1 scenario (1 passed), 6 steps (6 passed)`.
+- [x] COMMIT: `46618bdd` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
 ## Scenario 5: An unknown-only --agents value refuses initialization
 
-- [ ] RED: Remove `@wip`, run targeting this scenario → must fail (`--agents
-      nope` falls back to `.opencode`). Evidence: <paste>
-- [ ] GREEN: `resolve_agents_flag()` returns `Result` and routes through
-      `require_agent_target`. Run targeting this scenario → passes.
-      Evidence: <paste>
-- [ ] REFACTOR: re-run → passes. Evidence: <paste>
-- [ ] COMMIT: `<hash>` — `feat(initialize-a-project): <release note>`; body
+- [x] RED: Remove `@wip`, run targeting this scenario → failed as expected
+      (exit 1; the flag path fell through to a write with an empty target list
+      because the fallback constant was already gone).
+- [x] GREEN: `resolve_agents_flag()` returns `Result` and routes through
+      `require_agent_target`. Run → `1 scenario (1 passed), 5 steps (5 passed)`,
+      exit 0.
+- [x] REFACTOR: `cargo fmt` + clippy clean; scenario re-run → `1 scenario
+      (1 passed), 5 steps (5 passed)`.
+- [x] COMMIT: `a9522198` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
 ## Scenario 6: givn init --force re-applies the explicitly given selection **[regression]**
 
-- [ ] RED: Remove `@wip`, run targeting this scenario → observed side-effect
-      GREEN (the current code honours `--agents opencode` under `--force`).
-      Evidence: <paste>
-- [ ] GREEN: re-run after the code changes → passes. Evidence: <paste>
-- [ ] REFACTOR: re-run → passes. Evidence: <paste>
-- [ ] COMMIT: `<hash>` — `feat(initialize-a-project): <release note>`; body
+- [x] RED: Remove `@wip`, run targeting this scenario → observed side-effect
+      GREEN (`1 scenario (1 passed), 5 steps (5 passed)`): the current code
+      already honours `--agents opencode` under `--force`. Kept as a regression
+      guard, no distinguishable RED state.
+- [x] GREEN: re-run after the code changes → passes (same output).
+- [x] REFACTOR: re-run → passes (same output).
+- [x] COMMIT: `25e0e0f` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
 ## Scenario 7: givn init --force without a selection keeps the persisted selection
