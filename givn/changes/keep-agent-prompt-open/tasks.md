@@ -30,27 +30,28 @@ Delta scope: `GIVN_FEATURES=givn/changes/keep-agent-prompt-open/specs/ ./run-tes
 
 ## Setup
 
-- [ ] Runner and strict mode confirmed: `verify.command` is `./run-tests.sh`
+- [x] Runner and strict mode confirmed: `verify.command` is `./run-tests.sh`
       (unchanged), `.fail_on_skipped()` at `tests/features_runner.rs:55,129`;
       the proof-of-strictness run from the previous change still holds
       (`… --name "An undefined step must fail the runner"` → exit 1).
-- [ ] `script` (util-linux) present on PATH (the PTY steps) — documented in
+- [x] `script` (util-linux) present on PATH (the PTY steps) — documented in
       `AGENTS.md`.
-- [ ] Both `@wip` tags are removed in their own scenario task before the
+- [x] Both `@wip` tags are removed in their own scenario task before the
       tasks/review/archive gates run.
 
 ## Scenario 1: The interactive prompt accepts the pre-marked OpenCode default
 
-- [ ] RED: Remove `@wip`, run targeting this scenario → must fail (today the
-      unmarked list plus `require_agent_target` exits non-zero on a bare
-      confirmation). Evidence: <paste>
-- [ ] GREEN: pre-mark the default. Production: `src/cli/init.rs` —
-      `DEFAULT_PROMPT_TARGET: AgentTarget = AgentTarget::Opencode`, build the
-      `defaults` vector from it, pass `.defaults(&defaults)` to the
-      `MultiSelect`; adjust the doc comment's "nothing marked" phrase. Run
-      targeting this scenario → passes. Evidence: <paste>
-- [ ] REFACTOR: re-run → passes. Evidence: <paste>
-- [ ] COMMIT: `<hash>` — `feat(initialize-a-project): <release note>`; body
+- [x] RED: Remove `@wip`, run targeting this scenario → failed as expected
+      (exit 1; transcript showed the unmarked list and the scripted refusal
+      `no agent target selected; pass --agents …`).
+- [x] GREEN: pre-mark the default. Production: `src/cli/init.rs` —
+      `DEFAULT_PROMPT_TARGET`, the `defaults` vector, `.defaults(&defaults)`;
+      doc comment adjusted. Test side: the PTY helper now takes the key
+      sequence (`tests/steps/init_agent_target_selection_steps.rs`). Run →
+      `1 scenario (1 passed), 6 steps (6 passed)`, exit 0.
+- [x] REFACTOR: `cargo fmt` + clippy clean; scenario re-run → `1 scenario
+      (1 passed), 6 steps (6 passed)`.
+- [x] COMMIT: `f0a1c804` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
 ## Scenario 2: The interactive prompt keeps asking until a target is marked

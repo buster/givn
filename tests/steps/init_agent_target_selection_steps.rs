@@ -165,8 +165,14 @@ fn consumer_init_silent(world: &mut GivnWorld) {
     world.last_output = Some(out);
 }
 
-#[when("the user runs `givn init` in a terminal and confirms without marking a target")]
-fn init_in_terminal_empty_confirmation(world: &mut GivnWorld) {
+/// Drive `givn init`'s interactive prompt through a real PTY.
+///
+/// `keys` is the raw byte sequence sent to the terminal. `script` gives the
+/// child a terminal on stdin, so `dialoguer`'s checkbox list runs; the
+/// transcript becomes the command output for the exit-code and stderr
+/// assertions. `AgentTarget::ALL[0]` is `.opencode` and the only pre-marked
+/// entry, so one space (`\x20`) toggles exactly that default off.
+fn run_init_in_terminal(world: &mut GivnWorld, keys: &[u8]) {
     use std::io::Write;
     use std::process::{Command, Output, Stdio};
     use std::time::{Duration, Instant};
@@ -177,9 +183,6 @@ fn init_in_terminal_empty_confirmation(world: &mut GivnWorld) {
         .expect("a project root is required first");
     let transcript = env.path(".terminal-transcript.txt");
     let bin = env!("CARGO_BIN_EXE_givn");
-    // A real PTY: `script` (util-linux) gives the child a terminal on stdin, so
-    // the dialoguer checkbox prompt runs; the piped newline confirms the list
-    // without marking any entry.
     let mut child = Command::new("script")
         .args([
             "-qec",
@@ -197,8 +200,8 @@ fn init_in_terminal_empty_confirmation(world: &mut GivnWorld) {
         .stdin
         .take()
         .expect("piped stdin for the PTY session")
-        .write_all(b"\n")
-        .expect("write the confirmation key");
+        .write_all(keys)
+        .expect("write the terminal keys");
     let deadline = Instant::now() + Duration::from_secs(60);
     let status = loop {
         match child.try_wait().expect("poll the PTY session") {
@@ -211,13 +214,23 @@ fn init_in_terminal_empty_confirmation(world: &mut GivnWorld) {
         }
     };
     let bytes = std::fs::read(&transcript).expect("read the terminal transcript");
-    // The terminal transcript is the command's observable output: the prompt,
-    // the banner, and the refusal all write to the same PTY.
+    // The terminal transcript is the command's observable output: prompt,
+    // banner, and messages all write to the same PTY.
     world.last_output = Some(Output {
         status,
         stdout: bytes.clone(),
         stderr: bytes,
     });
+}
+
+#[when("the user runs `givn init` in a terminal and confirms the prompt")]
+fn init_in_terminal_default_confirmation(world: &mut GivnWorld) {
+    run_init_in_terminal(world, b"\n");
+}
+
+#[when("the user runs `givn init` in a terminal, unmarks every target, and confirms twice")]
+fn init_in_terminal_empty_confirmation(world: &mut GivnWorld) {
+    run_init_in_terminal(world, b"\x20\n\n");
 }
 
 #[when(regex = r#"^the consumer runs `([^`]+)`$"#)]

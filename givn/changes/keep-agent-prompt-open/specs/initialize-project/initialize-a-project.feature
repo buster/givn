@@ -6,7 +6,7 @@ Feature: initialize-a-project
   Scenario: The interactive prompt refuses a confirmation without a marked target
     Given a placeholder step
 
-  @givn.added @wip
+  @givn.added
   Scenario: The interactive prompt accepts the pre-marked OpenCode default
     Given a project root without a givn/ directory
     When the user runs `givn init` in a terminal and confirms the prompt
