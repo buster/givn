@@ -39,7 +39,7 @@ graph TD
 | Q-2 | Configurability | A project adds or removes an artifact through overlay. | The effective graph changes only after validation; cycles and dangling references fail. |
 | Q-3 | Upgradeability | A project upgrades with uncommented overrides. | `givn upgrade` refreshes managed scaffold content and preserves user-owned values. |
 | Q-4 | Agent ergonomics | A project contains unrelated `AGENTS.md` content. | Init/sync changes only givn-owned fenced blocks and preserves all other content. |
-| Q-5 | Agent ergonomics | A project selects one or more agent targets. | Sync writes skills only to selected `.opencode`, `.agents`, and `.claude` targets; opencode commands require the opencode target. |
+| Q-5 | Agent ergonomics | A project selects one or more agent targets during initialization. | Initialization refuses an empty selection before the first write; sync writes skills only to selected `.opencode`, `.agents`, and `.claude` targets, with opencode commands requiring the opencode target. |
 | Q-6 | Correctness | Archive receives a modified scenario with no permanent title match. | Merge aborts before writing the permanent file. |
 | Q-7 | Correctness | Archive applies several delta operations. | Added/modified/removed scenarios are merged and all `@givn.*` tags are stripped. |
 | Q-8 | Correctness | Lint sees parse errors, duplicate titles, and WIP. | Exit precedence is parse `1`, duplicate title `3`, WIP `2`, clean `0`; lint runs no tests. |

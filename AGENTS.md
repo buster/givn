@@ -39,9 +39,11 @@ binary.
 ## Testing
 
 - Rust suite: `cargo nextest run` (default), `GIVN_TEST_RUNNER=cargo ./run-tests.sh` for the libtest fallback.
-- The acceptance suite requires `git`, `fossil`, and `git-filter-repo` on PATH
-  (the archive scenarios exercise a real Fossil checkout, and the
-  rewrite-history scenario exercises a real history rewrite).
+- The acceptance suite requires `git`, `fossil`, `git-filter-repo`, and
+  `script` (util-linux) on PATH (the archive scenarios exercise a real Fossil
+  checkout, the rewrite-history scenario exercises a real history rewrite, and
+  the terminal-prompt scenario drives the interactive `givn init` prompt
+  through a real PTY).
 - Run `cargo clippy --workspace --all-targets -- -D warnings` for lint coverage.
 
 ## Performance & simplicity

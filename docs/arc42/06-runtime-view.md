@@ -8,12 +8,16 @@ distinguishes manifest-driven hooks from binary mandatory checks.
 The sequence is:
 
 1. Resolve the current working directory as the project root.
-2. Create `givn/specs`, `givn/changes`, and `givn/archive`.
-3. Write `givn/config.yaml` from the embedded, versioned scaffold unless the
-   file already exists and `--force` is absent.
-4. For a newly written config, read the agent-target selection. Empty input or
-   EOF selects `.opencode`; recognized selections are `.opencode`, `.agents`,
-   and `.claude`. The selection is appended as `skills.targets`.
+2. Decide whether a fresh `givn/config.yaml` will be written (absent, or
+   `--force`). If so, resolve the agent-target selection before the first
+   write: `--agents`, else one piped answer line, else the interactive
+   checkbox prompt, which starts with nothing marked. Recognized selections
+   are `.opencode`, `.agents`, and `.claude`. An empty selection refuses with
+   a non-zero exit and leaves the checkout unchanged.
+3. Create `givn/specs`, `givn/changes`, and `givn/archive`.
+4. Write `givn/config.yaml` from the embedded, versioned scaffold unless the
+   file already exists and `--force` is absent; append the resolved selection
+   as `skills.targets`.
 5. Write `givn/commands.yaml` from the embedded project command template unless
    it already exists and `--force` is absent. The current template contains
    `./run-tests.sh`, `./run-tests.sh --e2e`, and coverage script/path entries.

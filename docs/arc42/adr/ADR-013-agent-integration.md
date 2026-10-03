@@ -54,15 +54,26 @@ Agents need on-demand workflow guidance, but a root `AGENTS.md` is project conte
 
 ## Decision Outcome
 
-Chosen option: **Emit skills and commands to configured agent directories; manage only givn-owned fenced blocks in `AGENTS.md`**. Content outside `<!-- givn:begin:<name> -->` and matching end markers is user-owned and is not changed. Initialization records the selected targets, defaults to `opencode` for empty input, and synchronization writes only to those targets.
+Chosen option: **Emit skills and commands to configured agent directories; manage only givn-owned fenced blocks in `AGENTS.md`**. Content outside `<!-- givn:begin:<name> -->` and matching end markers is user-owned and is not changed. Initialization records an explicitly selected target set, and synchronization writes only to those targets.
+
+The `require-agent-target` change amended this decision: initialization
+requires at least one selected target. The interactive prompt starts with
+nothing marked, and an empty confirmation, an empty or unknown-only answer,
+and EOF without the `--agents` flag all refuse with a non-zero exit before the
+first write instead of falling back to `opencode`. Synchronization keeps the
+`opencode` fallback for a configuration without a `skills:` block, so
+projects initialized by older versions stay runnable.
 
 ### Consequences
 
 - Skills are written under selected `.opencode/`, `.agents/`, and `.claude/` locations; opencode commands use `.opencode/commands/`.
 - The always-on `givn-project` block and the `absolute-mode` block are separately managed when applicable.
 - Generated files are snapshots and are refreshed by `givn skills sync`.
-- Target selection is explicit project configuration; an unknown-only or empty
-  selection falls back to `opencode` rather than writing every target.
+- Target selection is explicit project configuration; initialization refuses an
+  empty or unknown-only selection rather than writing every target, and a
+  scripted `givn init` must state its selection with `--agents`.
+- Synchronization still falls back to `opencode` for a configuration without a
+  `skills:` block.
 
 ### Confirmation
 
