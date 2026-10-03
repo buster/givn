@@ -282,6 +282,20 @@ Model the domain as a chain of past-tense domain events.
   distinguishable (per-node kind markers or a legend). A command sits between
   the actor that issues it and the aggregate it changes; the aggregate emits
   its events.
+- Aggregates are given, not minted. An aggregate is a consistency boundary:
+  a domain-noun root that receives commands and emits events under one
+  invariant. Reuse the aggregates the project already declares
+{{#if addons.arc42}}
+  (the arc42 glossary's "Aggregates / boundaries"); a new aggregate is
+{{else}}
+  (the project's durable documentation); a new aggregate is
+{{/if}}
+  introduced as a domain term — its root noun, invariant, commands, and
+  events — and confirmed before the canvas relies on it.
+- A contract, a declaration, a configuration, a cursor position, a grant, a
+  report, a request record, or a hosted service is a record, a specification,
+  a configuration, or an external system — never an aggregate. Name the kind
+  where the canvas shows it.
 - A text chain without a canvas is an incomplete event storming: the picture
   and the lines must cover the same elements, and the canvas must render.
 - Reverse narrative: "which events must have happened to make this one

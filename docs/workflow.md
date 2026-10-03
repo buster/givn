@@ -57,7 +57,7 @@ cases.
 | Phase | Storm role | Produces |
 |---|---|---|
 | Frame | storm scoping — problem, stakeholders, research of the existing project | `frame.md`; personas (`personas/<type>--<segment>.md`) as domain experts |
-| event storming | domain events in past tense, reverse narrative ("which events must happen for this?"), commands/actors/policies, hotspots parked | `eventstorming.md`, `domain-terms.md`, `questions.md` |
+| event storming | domain events in past tense, reverse narrative ("which events must happen for this?"), commands/actors/aggregates/policies, a rendered mermaid canvas showing every event, command, aggregate, and actor with legal aggregates (declared boundaries, never records or specifications), hotspots parked | `eventstorming.md`, `domain-terms.md`, `questions.md` |
 | use case definition | slice event sequences that culminate in value; goal levels, bounded contexts; personas rank value | `use-case-definitions.md` with affected stakeholder types |
 | use case elaboration | per use case: rules, concrete examples, contract — Gherkin-ready | `use-cases/<uc-id>.md`, persona reviews |
 | handoff | publish and promote | `docs/ideation/<topic-id>.md`, change seeds under `changes/` (each with `Status: ready`), term merges, persona promotion into `givn/personas/` |

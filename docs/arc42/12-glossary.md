@@ -129,7 +129,7 @@
 | **Ideation** | The facilitation skill that works a vague idea into change-ready use cases through phases, stakeholder personas, and rubric reviews. Anti-terms: brainstorm, discovery, workshop. |
 | **Ideation topic** | One ideation effort whose state persists under `givn/ideation/<topic-id>/` across sessions until handoff. Anti-term: ideation session (a topic spans sessions). |
 | **Frame** | The ideation phase that inventories existing project knowledge or establishes problem, vision, and stakeholders for a new domain. |
-| **Event Storming** | The ideation phase that models the domain as a chain of past-tense domain events with actors, commands, and policies. Anti-term: Storm (rejected as ambiguous). |
+| **Event Storming** | The ideation phase that models the domain as a chain of past-tense domain events with actors, commands, aggregates, policies, and read models, drawn as a rendered mermaid canvas whose aggregates are declared consistency boundaries (never records, specifications, configurations, or services). Anti-term: Storm (rejected as ambiguous). |
 | **Use Case Definition** | The ideation phase that defines the use cases from the event storming protocol: name, goal level, boundary, and affected stakeholder types. Anti-terms: slicing, cutting. |
 | **Use Case Elaboration** | The ideation phase that elaborates each defined use case into acceptance rules, concrete examples, and the use-case contract. Anti-terms: mapping, specification (reserved for the feature file). |
 | **Persona** | A documented embodiment of one persona segment, kept as a living record of decisions, needs, and open demands, that reviews every artifact affecting it. Anti-terms: user profile, role, actor. |
