@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "keep-agent-prompt-open",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "d107b0099e1d0088bcab8228082f77caf9ab91c5",
+  "tested_revision": "d107b0099e1d0088bcab8228082f77caf9ab91c5",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 94,
+      "passed": 94,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 14.144401468
+    },
+    "regular": {
+      "status": "passed",
+      "total": 583,
+      "passed": 583,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 57.986216189
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 8131,
+    "line_valid": 10178,
+    "line_percent": 79
+  },
   "started_at_unix": 1791012312,
-  "finished_at_unix": null
+  "finished_at_unix": 1791012432
 }
