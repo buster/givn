@@ -25,10 +25,10 @@ Feature: test-harness
     And the workspace contains givn/config.yaml
 
   @givn.added
-  Scenario: verify.command is at the sentinel default after initialization
+  Scenario: verify.command is scaffolded into givn/commands.yaml after initialization
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     When the user runs `givn-harness run --task task.md --output reports/`
-    Then the workspace's givn/config.yaml contains the verify.command sentinel "givn missing-testrunner"
+    Then the workspace's givn/commands.yaml scaffolds verify.command as "./run-tests.sh"
 
   @givn.added
   Scenario: The task prompt is delivered to the workspace as a file

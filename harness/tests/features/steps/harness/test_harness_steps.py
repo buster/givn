@@ -267,13 +267,13 @@ def step_workspace_contains_task_file(context, path):
     )
 
 
-@then('the workspace\'s givn/config.yaml contains the verify.command sentinel "givn missing-testrunner"')
-def step_config_yaml_contains_sentinel(context):
-    config_path = os.path.join(context.workspace_path, "givn", "config.yaml")
+@then('the workspace\'s givn/commands.yaml scaffolds verify.command as "./run-tests.sh"')
+def step_commands_yaml_scaffolds_verify_command(context):
+    config_path = os.path.join(context.workspace_path, "givn", "commands.yaml")
     with open(config_path) as f:
         content = f.read()
-    assert '"givn missing-testrunner"' in content, (
-        f'config.yaml does not contain the verify.command sentinel "givn missing-testrunner"'
+    assert 'command: "./run-tests.sh"' in content, (
+        'commands.yaml does not scaffold verify.command as "./run-tests.sh"'
     )
 
 
@@ -402,19 +402,29 @@ def step_harness_evaluates_workspace(context):
         stdout = '{"score": 3, "explanation": "Good work."}'
         mock_proc.communicate.side_effect = lambda input=None, timeout=None: (stdout, "")
 
-        if isinstance(command_list, list) and "run" in command_list:
+        # The judge passes the prompt through a file (`opencode --prompt-file`),
+        # so the artifact type is read from that file, not from stdin.
+        prompt_text = ""
+        if isinstance(command_list, list) and "--prompt-file" in command_list:
+            prompt_path = command_list[command_list.index("--prompt-file") + 1]
+            try:
+                with open(prompt_path) as handle:
+                    prompt_text = handle.read()
+            except OSError:
+                prompt_text = ""
+
+        if prompt_text:
+            artifact_type = None
+            for at in ["proposal", "specs", "design", "tasks", "review"]:
+                if f"Artifact type: {at}" in prompt_text:
+                    artifact_type = at
+                    break
+
             def _capture_stdin(input=None, timeout=None):
-                nonlocal stdout
-                if input is not None:
-                    prompt_text = input if isinstance(input, str) else input.decode()
-                    artifact_type = None
-                    for at in ["proposal", "specs", "design", "tasks", "review"]:
-                        if f"Artifact type: {at}" in prompt_text:
-                            artifact_type = at
-                            break
-                    if artifact_type and artifact_type in invalid_artifacts:
-                        return ("not valid json {{{", "")
+                if artifact_type and artifact_type in invalid_artifacts:
+                    return ("not valid json {{{", "")
                 return (stdout, "")
+
             mock_proc.communicate.side_effect = _capture_stdin
 
         return mock_proc
