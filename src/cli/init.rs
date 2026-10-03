@@ -169,34 +169,26 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
 
 /// Ask the user which agents to install skills/commands to.
 ///
-/// On a real terminal, shows an arrow-key/space/enter checkbox list
-/// (defaulting to `.opencode` checked). `dialoguer` needs a controlling
-/// terminal, so with piped/closed stdin (automation, tests) this instead
-/// reads one line of comma-separated names, same as before. EOF without an
-/// `--agents` flag is refused. Unknown names are dropped with a warning
-/// listing the valid agents.
+/// On a real terminal, shows an arrow-key/space/enter checkbox list with
+/// nothing marked; confirming nothing is refused. `dialoguer` needs a
+/// controlling terminal, so with piped/closed stdin (automation, tests) this
+/// instead reads one line of comma-separated names, same as before. EOF
+/// without an `--agents` flag is refused. Unknown names are dropped with a
+/// warning listing the valid agents.
 fn prompt_for_targets() -> Result<Vec<AgentTarget>> {
     let stdin = std::io::stdin();
 
     if stdin.is_terminal() {
         let items: Vec<&str> = AgentTarget::ALL.iter().map(|t| t.display()).collect();
-        let defaults: Vec<bool> = AgentTarget::ALL
-            .iter()
-            .map(|t| DEFAULT_TARGETS.contains(t))
-            .collect();
 
         let selected = dialoguer::MultiSelect::new()
             .with_prompt(
                 "Which agents should givn install skills to? (space to toggle, enter to confirm)",
             )
             .items(&items)
-            .defaults(&defaults)
             .interact()?;
 
-        if selected.is_empty() {
-            return Ok(DEFAULT_TARGETS.to_vec());
-        }
-        return Ok(selected.into_iter().map(|i| AgentTarget::ALL[i]).collect());
+        return require_agent_target(selected.into_iter().map(|i| AgentTarget::ALL[i]).collect());
     }
 
     let mut line = String::new();
