@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "adr-qualification-hardening",
   "status": "proven",
-  "candidate_revision": "1712ff072d7f4f91cddb369fcd11fc14efa7ef27",
-  "tested_revision": "1712ff072d7f4f91cddb369fcd11fc14efa7ef27",
+  "candidate_revision": "0df5d6df4fc91be096845f75c4fbbc316d3c3431",
+  "tested_revision": "0df5d6df4fc91be096845f75c4fbbc316d3c3431",
   "scopes": {
     "e2e": {
       "status": "passed",

@@ -48,7 +48,7 @@ givn skills sync
       after `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `8 steps (8 passed)`.
 - [x] COMMIT: `feat(semantic-review): Removed delta scenarios produce a clean semantic report`
-      Hash: `9ee7b81`
+      Hash: `68312a7`
 
 ### The report distinguishes permanent and current-change candidate scopes
 
@@ -63,7 +63,7 @@ givn skills sync
       `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `9 steps (9 passed)`.
 - [x] COMMIT: `feat(semantic-review): The report distinguishes permanent and current-change candidate scopes`
-      Hash: `b3ee6c0`
+      Hash: `c0eb0ed`
 
 ### Active deltas below the E5 boundary produce no candidates
 
@@ -78,7 +78,7 @@ givn skills sync
       Evidence: after `cargo fmt --all`, targeted run passed with `1 scenario
       (1 passed)`, `7 steps (7 passed)`.
 - [x] COMMIT: `feat(semantic-review): Active deltas below the E5 boundary produce no candidates`
-      Hash: `2e982f6`
+      Hash: `f1dc594`
 
 ### A candidate at the exact E5 boundary is included
 
@@ -93,7 +93,7 @@ givn skills sync
       `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `7 steps (7 passed)`.
 - [x] COMMIT: `feat(semantic-review): A candidate at the exact E5 boundary is included`
-      Hash: `c0d842a`
+      Hash: `a56a8e6`
 
 ### Rule-nested active deltas enter the semantic candidate universe
 
@@ -107,7 +107,7 @@ givn skills sync
       after `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `6 steps (6 passed)`.
 - [x] COMMIT: `feat(semantic-review): Rule-nested active deltas enter the semantic candidate universe`
-      Hash: `e93db06`
+      Hash: `c11c016`
 
 ### Endpoint evidence preserves complete Gherkin source order
 
@@ -123,7 +123,7 @@ givn skills sync
       rerun. Evidence: after `cargo fmt --all`, targeted run passed with `1
       scenario (1 passed)`, `7 steps (7 passed)`.
 - [x] COMMIT: `feat(semantic-review): Endpoint evidence preserves complete Gherkin source order`
-      Hash: `6e36553`
+      Hash: `02a0aaf`
 
 ### A modified delta excludes only its own projected target
 
@@ -138,7 +138,7 @@ givn skills sync
       Evidence: after `cargo fmt --all`, targeted run passed with `1 scenario
       (1 passed)`, `6 steps (6 passed)`.
 - [x] COMMIT: `feat(semantic-review): A modified delta excludes only its own projected target`
-      Hash: `3843dd1`
+      Hash: `70ee63d`
 
 ### An uncertain semantic candidate blocks change review without editing specs
 
@@ -154,7 +154,7 @@ givn skills sync
       after `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `11 steps (11 passed)`.
 - [x] COMMIT: `feat(semantic-review): An uncertain semantic candidate blocks change review without editing specs`
-      Hash: `fa7bfe9`
+      Hash: `242f473`
 
 ### A complete classification allows change review and survives regeneration
 
@@ -169,7 +169,7 @@ givn skills sync
       --all`, targeted run passed with `1 scenario (1 passed)`, `8 steps (8
       passed)`.
 - [x] COMMIT: `feat(semantic-review): A complete classification allows change review and survives regeneration`
-      Hash: `1d5e9fd`
+      Hash: `958c8b2`
 
 ### Every resolved semantic classification requires a rationale
 
@@ -184,7 +184,7 @@ givn skills sync
       `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `7 steps (7 passed)`.
 - [x] COMMIT: `feat(semantic-review): Every resolved semantic classification requires a rationale`
-      Hash: `ea6f198`
+      Hash: `1a97d11`
 
 ### A regenerated classified report is byte-for-byte deterministic
 
@@ -199,7 +199,7 @@ givn skills sync
       fmt --all`, targeted run passed with `1 scenario (1 passed)`, `13 steps
       (13 passed)`.
 - [x] COMMIT: `feat(semantic-review): A regenerated classified report is byte-for-byte deterministic`
-      Hash: `d899d9e`
+      Hash: `057df94`
 
 ### The semantic report obeys its strict wire grammar
 
@@ -214,7 +214,7 @@ givn skills sync
       after `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `11 steps (11 passed)`.
 - [x] COMMIT: `feat(semantic-review): The semantic report obeys its strict wire grammar`
-      Hash: `067d9fb`
+      Hash: `3f1331e`
 
 ### Equal-score candidates use deterministic tie ordering
 
@@ -228,7 +228,7 @@ givn skills sync
       Evidence: after `cargo fmt --all`, targeted run passed with `1 scenario
       (1 passed)`, `5 steps (5 passed)`.
 - [x] COMMIT: `feat(semantic-review): Equal-score candidates use deterministic tie ordering`
-      Hash: `c8673a7`
+      Hash: `185fead`
 
 ### Changing a candidate scenario invalidates its previous classification
 
@@ -243,7 +243,7 @@ givn skills sync
       `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `11 steps (11 passed)`.
 - [x] COMMIT: `feat(semantic-review): Changing a candidate scenario invalidates its previous classification`
-      Hash: `7c846a2`
+      Hash: `5a3a320`
 
 ### Changing a permanent endpoint invalidates its prior classification
 
@@ -257,7 +257,7 @@ givn skills sync
       `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `11 steps (11 passed)`.
 - [x] COMMIT: `feat(semantic-review): Changing a permanent endpoint invalidates its prior classification`
-      Hash: `b5456ae`
+      Hash: `c220aec`
 
 ### Any changed endpoint evidence or prior-report metadata invalidates carry-forward
 
@@ -272,7 +272,7 @@ givn skills sync
       after `cargo fmt --all`, targeted run passed with `14 scenarios (14
       passed)`, `154 steps (154 passed)`.
 - [x] COMMIT: `feat(semantic-review): Any changed endpoint evidence or prior-report metadata invalidates carry-forward`
-      Hash: `d77a625`
+      Hash: `b9fa3c7`
 
 ### Removed candidates disappear after classification
 
@@ -286,7 +286,7 @@ givn skills sync
       `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `12 steps (12 passed)`.
 - [x] COMMIT: `feat(semantic-review): Removed candidates disappear after classification`
-      Hash: `9cc1057`
+      Hash: `2e352be`
 
 ### Invalid prior report entries never carry a classification
 
@@ -301,7 +301,7 @@ givn skills sync
       Evidence: after `cargo fmt --all`, targeted run passed with `6 scenarios
       (6 passed)`, `78 steps (78 passed)`.
 - [x] COMMIT: `feat(semantic-review): Invalid prior report entries never carry a classification`
-      Hash: `3ddb541`
+      Hash: `2846095`
 
 ### A blocked report is atomically complete before failure
 
@@ -316,7 +316,7 @@ givn skills sync
       `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `11 steps (11 passed)`.
 - [x] COMMIT: `feat(semantic-review): A blocked report is atomically complete before failure`
-      Hash: `121c330`
+      Hash: `636fef4`
 
 ### Malformed delta input cannot produce a semantic pass
 
@@ -329,7 +329,7 @@ givn skills sync
 - [x] REFACTOR: preserve parser context and rerun. Evidence: after `cargo fmt
       --all`, targeted run passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [x] COMMIT: `feat(semantic-review): Malformed delta input cannot produce a semantic pass`
-      Hash: `ab82f23`
+      Hash: `351b7cf`
 
 ### A malformed permanent index is rebuilt before semantic review continues
 
@@ -344,7 +344,7 @@ givn skills sync
       after `cargo fmt --all` and `cargo check --features spec-retrieval`, targeted
       run passed with `1 scenario (1 passed)`, `10 steps (10 passed)`.
 - [x] COMMIT: `feat(semantic-review): A malformed permanent index is rebuilt before semantic review continues`
-      Hash: `951a31d`
+      Hash: `4891a18`
 
 ### A generated semantic report survives the existing archive move
 
@@ -360,7 +360,7 @@ givn skills sync
       after `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `7 steps (7 passed)`.
 - [x] COMMIT: `feat(semantic-review): A generated semantic report survives the existing archive move`
-      Hash: `2e4ab0e`
+      Hash: `0d7d411`
 
 ### An unavailable retrieval model cannot produce a semantic pass
 
@@ -374,7 +374,7 @@ givn skills sync
 - [x] REFACTOR: preserve error context and rerun. Evidence: after `cargo fmt
       --all`, targeted run passed with `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [x] COMMIT: `feat(semantic-review): An unavailable retrieval model cannot produce a semantic pass`
-      Hash: `f9e8b5d`
+      Hash: `4565d23`
 
 ### Blocking review reports retrieval unavailability without its feature
 
@@ -390,7 +390,7 @@ givn skills sync
       and `cargo check --features spec-retrieval`, targeted run passed with `1
       scenario (1 passed)`, `5 steps (5 passed)`.
 - [x] COMMIT: `feat(semantic-review): Blocking review reports retrieval unavailability without its feature`
-      Hash: `1e1e2ee`
+      Hash: `b46d072`
 
 ### Advisory spec review does not create the semantic report
 
@@ -407,7 +407,7 @@ givn skills sync
       steps (5 passed)`; blocking path is covered by the no-feature and blocked
       semantic-review scenarios.
 - [x] COMMIT: `feat(semantic-review): Advisory spec review does not create the semantic report`
-      Hash: `1cb640f`
+      Hash: `befc954`
 
 ## E2E setup
 
@@ -437,7 +437,7 @@ givn skills sync
       after `cargo fmt --all`, E2E run passed with `1 scenario (1 passed)`,
       `12 steps (12 passed)`.
 - [x] COMMIT: `test(e2e): Change review generates a complete report for a semantic candidate`
-      Hash: `4fe0259`
+      Hash: `27c6292`
 
 ## Completion Evidence
 

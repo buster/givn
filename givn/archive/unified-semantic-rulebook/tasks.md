@@ -45,7 +45,7 @@ files. Rulebook mechanics first (non-@e2e), then the @e2e consumer flows.
       RED: undefined range step -> exit 101. GREEN: exit 0. Files:
       tests/steps/semantic_rulebook_steps.rs (fixtures + coverage commands),
       tests/steps/semantic_review_e2e_steps.rs (parameterized range binding),
-      specs/semantic-review/semantic-review.feature. Commit 55fbbc9.
+      specs/semantic-review/semantic-review.feature. Commit c0d36f6.
 - [x] S2 `The report distinguishes permanent and current-change candidate
       scopes` (modified): score-boundary binding uses its parameter (0.9000);
       two-similar rulebook fixture gains deterministic BGE/NLI recommended
@@ -53,14 +53,14 @@ files. Rulebook mechanics first (non-@e2e), then the @e2e consumer flows.
       RED: scope line missing under stub-filtered pairs -> exit 101.
       GREEN: exit 0. Files: tests/steps/semantic_review_steps.rs (boundary
       binding), tests/steps/semantic_rulebook_steps.rs (overrides).
-      Commit 54e50e9.
+      Commit 8cf411f.
 - [x] S3 `A candidate at the exact E5 boundary is included` (modified):
       boundary fixture to 0.9000, threshold constants unified to
       `E5_ADMISSION_THRESHOLD = 0.90` (delete `SEMANTIC_SIMILARITY_THRESHOLD`
       and `SIMILARITY_THRESHOLD`).
       RED: exit 0 instead of blocking under old 0.95. GREEN: exit 0 with
       score 0.9000 admitted. Files: src/spec/retrieval.rs (constants),
-      tests/steps/semantic_review_steps.rs (boundary fixture). Commit 07472c9.
+      tests/steps/semantic_review_steps.rs (boundary fixture). Commit 1271ba5.
 
 ## Rulebook core (S4–S7: selection + cache)
 
@@ -71,44 +71,44 @@ files. Rulebook mechanics first (non-@e2e), then the @e2e consumer flows.
       Files: src/spec/retrieval.rs (NEIGHBOURS_PER_SCENARIO, PAIR_CAP,
       apply_hybrid_selection), tests/steps/semantic_rulebook_steps.rs
       (disjoint-corpus fixtures with structural shape-match dispositions).
-      Commit 8f2f6ad.
+      Commit 4160df0.
 - [x] S5 `Consumer review caps the judged pairs at the pair cap` (@e2e):
       25 admitted stub pairs → exactly 20 judged, no `*_UNSCORED`.
       RED: overlap dispositions missing (fixture families) + report reads.
       GREEN: exit 0. Files: tests/steps/semantic_rulebook_steps.rs,
       tests/steps/semantic_rulebook_e2e_steps.rs, feature file.
-      Commit 8f2f6ad.
+      Commit 4160df0.
 - [x] S6 `The pair cap fills deterministically when scores tie`: two runs,
       identical candidate ids and order. GREEN-first over S4's deterministic
-      selection (reused steps only). Commit 2d67b66.
+      selection (reused steps only). Commit 6aa4c4f.
 - [x] S7 Pair-score cache: `givn/.spec-pair-cache.json`, key
       (stage, model_id, endpoint files/titles/hashes), stub model-id
       pinning, per-pair accounting (reused iff every stage hit), stdout
       line + report counters.
       Files: src/spec/retrieval.rs (PairScoreCache, pair_cache_key,
       PairCacheAccounting, apply_semantic_bge/nli integration,
-      render_semantic_report). Commit fb41ff9.
+      render_semantic_report). Commit d96a09e.
 - [x] S8 `Consumer rerun reuses recorded pair judgements` (@e2e): 0/1 → 1/0.
       GREEN: exit 0. Files: src/spec/retrieval.rs, feature file.
-      Commit fb41ff9.
+      Commit d96a09e.
 - [x] S9 `A changed endpoint re-judges its recorded pair`: delta-side edit.
       RED: accounting mismatch (3-pair fixture) → fixed to single pair;
       then GREEN. Files: tests/steps/semantic_rulebook_steps.rs
-      (rulebook change steps), feature file. Commit fb41ff9.
+      (rulebook change steps), feature file. Commit d96a09e.
 - [x] S10 `A changed permanent endpoint re-judges its recorded pair`:
-      permanent-side edit. GREEN: exit 0. Commit fb41ff9.
+      permanent-side edit. GREEN: exit 0. Commit d96a09e.
 - [x] S11 `A change without candidates reports empty cache accounting`:
-      0/0, no stage runs. GREEN: exit 0. Commit fb41ff9.
+      0/0, no stage runs. GREEN: exit 0. Commit d96a09e.
 - [x] S12 `Emergency budget truncation keeps outside candidates unscored
       and blocking`: budget below selected count → `*_UNSCORED`, blocking.
       RED: shared binding expected count 1. GREEN: dedicated binding asserts
       Status BLOCKED, count 20, UNSCORED markers. Files:
-      tests/steps/semantic_rulebook_steps.rs, feature file. Commit 2ab3918.
+      tests/steps/semantic_rulebook_steps.rs, feature file. Commit 135046c.
 - [x] S13 `Consumer review judges the selected pairs with both evidence
       models` (@e2e): advisory run, both stages enabled, per-stage counts.
       RED: singular/plural step text mismatch. GREEN: exit 0.
       Files: tests/steps/semantic_rulebook_e2e_steps.rs, feature file.
-      Commit 2ab3918.
+      Commit 135046c.
 
 ## Gate absorption + bindings (S14–S16)
 
@@ -117,16 +117,16 @@ files. Rulebook mechanics first (non-@e2e), then the @e2e consumer flows.
       their semantics under the absorbed gate. Files:
       specs/bge-reranking-evidence/bge-reranking-evidence.feature (removed
       entry), src/spec/retrieval.rs (single E5_ADMISSION_THRESHOLD, audit
-      keeps SEMANTIC_AUDIT_THRESHOLD 0.95). Commit 6154f7d.
+      keeps SEMANTIC_AUDIT_THRESHOLD 0.95). Commit 8ea67ac.
 - [x] S15 Remediation step bindings: 0.9400 → 0.8900, 0.9500 → 0.9000
       (below/at boundary); advisory output bindings 0.95 → 0.90 (text line
       and JSON threshold). Files: tests/steps/semantic_remediation_steps.rs,
-      tests/steps/semantic_review_output_steps.rs. Commit 6154f7d.
+      tests/steps/semantic_review_output_steps.rs. Commit 8ea67ac.
 - [x] S16 `Consumer review keeps a duplicate pair born inside the delta`
       (@e2e): delta↔delta scope candidate on the unrelated-corpus fixture.
       RED: missing commands.yaml (verify hook) → fixed fixture; GREEN.
       Files: tests/steps/semantic_rulebook_steps.rs, feature file.
-      Commit 6154f7d.
+      Commit 8ea67ac.
 
 ## Consumers (S17–S18)
 
@@ -158,15 +158,15 @@ files. Rulebook mechanics first (non-@e2e), then the @e2e consumer flows.
 
 One atomic commit per scenario batch, hashes unique:
 
-- [x] COMMIT: 55fbbc9 -- S1 (semantic report, single-candidate fixture)
-- [x] COMMIT: 54e50e9 -- S2 (scopes, boundary binding parameterized)
-- [x] COMMIT: 07472c9 -- S3 (E5 boundary 0.9000, constants unified)
-- [x] COMMIT: 8f2f6ad -- S4+S5 (hybrid selection + pair cap e2e)
-- [x] COMMIT: 2d67b66 -- S6 (deterministic tie order)
-- [x] COMMIT: fb41ff9 -- S7+S8+S9+S10+S11 (pair-score cache + reuse/invalidation/zero scenarios)
-- [x] COMMIT: 2ab3918 -- S12+S13 (budget truncation + advisory two-stage)
-- [x] COMMIT: 6154f7d -- S14+S15+S16 (gate absorption, remediation bindings, delta-to-delta e2e)
-- [x] COMMIT: 0c9f106 -- S17+S18 (one rulebook run in check review, archive gate rulebook)
+- [x] COMMIT: c0d36f6 -- S1 (semantic report, single-candidate fixture)
+- [x] COMMIT: 8cf411f -- S2 (scopes, boundary binding parameterized)
+- [x] COMMIT: 1271ba5 -- S3 (E5 boundary 0.9000, constants unified)
+- [x] COMMIT: 4160df0 -- S4+S5 (hybrid selection + pair cap e2e)
+- [x] COMMIT: 6aa4c4f -- S6 (deterministic tie order)
+- [x] COMMIT: d96a09e -- S7+S8+S9+S10+S11 (pair-score cache + reuse/invalidation/zero scenarios)
+- [x] COMMIT: 135046c -- S12+S13 (budget truncation + advisory two-stage)
+- [x] COMMIT: 8ea67ac -- S14+S15+S16 (gate absorption, remediation bindings, delta-to-delta e2e)
+- [x] COMMIT: 44b7130 -- S17+S18 (one rulebook run in check review, archive gate rulebook)
 
 ## Review
 

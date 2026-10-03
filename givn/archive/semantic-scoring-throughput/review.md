@@ -14,10 +14,10 @@ the real-model paths.
   header documents the zero-scenario decision explicitly.
 - **Empty step bodies**: 0 step definition files added by this change;
   `0 empty step bodies found across 0 new step files`.
-- **Checked tasks have production commits**: task `b3969c9` is the
+- **Checked tasks have production commits**: task `4d7f74f` is the
   implementation commit touching `src/spec/retrieval.rs` (production
   source) plus `run-tests.sh`, the delta spec, and the design/arc42
-  records. `40c6c7e` updates the permanent ADR-register corpus
+  records. `ae065df` updates the permanent ADR-register corpus
   (`givn/specs` + `tests/steps`) closed by this change's ADR-064. No
   spec-only or stub-only diff is recorded as a completed task.
 - **Promised components exist**: `resolve_thread_budget()`
@@ -73,7 +73,7 @@ Split-or-keep: not applicable – no scenarios.
 | By-name rejection; eager review-path validation | ADR-064; 08 8.5i | row 8 | Thread budget section | implementation tasks | gate at top of `review_enabled`; `max_rerank_pairs` error vocabulary | YES |
 | Applied at E5/BGE/NLI real-model sites only | ADR-064; 08 8.5i | row 8 | Thread budget section | implementation tasks | three `with_intra_threads` sites | YES |
 | NLI batched inference deferred | 11 D-15; ADR-064 | row 11 | Decisions section | implementation tasks | no batched tensor code; session thread count only | YES |
-| ADR-064 proposed; register row; corpus count 1→2 | adr/README.md; ADR-064 | row 9 | Decisions section | implementation tasks | ADR-064 file, README row/relationship, permanent spec `35 accepted/2 proposed` (40c6c7e) | YES |
+| ADR-064 proposed; register row; corpus count 1→2 | adr/README.md; ADR-064 | row 9 | Decisions section | implementation tasks | ADR-064 file, README row/relationship, permanent spec `35 accepted/2 proposed` (ae065df) | YES |
 | FR-40 user-facing requirement | 01-introduction-and-goals | row 1 | design | implementation tasks | FR-40 row present | YES |
 | Sequential stages ⇒ budget never contended; split-on-overlap rule | ADR-064; 08 8.5i | row 8 | resolver doc comment | implementation tasks | resolver doc comment retrieval.rs:122-126 | YES |
 
@@ -115,7 +115,7 @@ suite (`measure-coverage.sh` + `merge-coverages.sh`, both exit 0):
 ## Sign-off checklist
 
 - [x] Fabrication audit: clean (all items vacuous for a zero-scenario change or verified above).
-- [x] Every checked task has a verified commit touching production code (`b3969c9`).
+- [x] Every checked task has a verified commit touching production code (`4d7f74f`).
 - [x] Every promised component exists (`resolve_thread_budget`, gate, three sites, runner guard).
 - [x] Strict-mode proof: strict mode pre-existing and the full suite passes; no RED runs exist by zero-scenario decision.
 - [x] `verify.command` and `verify.e2e_command` both exit 0 (full suite and `--e2e`).

@@ -4,7 +4,7 @@
 
 - source_version: `0.7.0`
 - target_version: `0.8.0`
-- upgrade_commit: `2bc63c1045a6597e361aa25ec08af8568c52bbe4`
+- upgrade_commit: `ea739125194dea0b03c9b30c07f8ca4c0bfef0cc`
 - migration_type: aggregate maintenance change without a product specification
 
 ## Execution order
@@ -18,7 +18,7 @@ Work the following phases strictly in sequence. Follow each bundle's own complet
 Self-contained procedure for the project LLM. You have no access to the Givn
 source repository; everything required is in this document. The managed
 refresh and the `givn_config_version` bump are already done by `givn upgrade`
-(Commit 2bc63c1045a6597e361aa25ec08af8568c52bbe4). This maintenance change carries the
+(Commit ea739125194dea0b03c9b30c07f8ca4c0bfef0cc). This maintenance change carries the
 project-specific work.
 
 ## Execution model

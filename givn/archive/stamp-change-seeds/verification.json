@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "stamp-change-seeds",
   "status": "proven",
-  "candidate_revision": "ddbb1d812cef5357432b56a07b983f3f63b67bbf",
-  "tested_revision": "ddbb1d812cef5357432b56a07b983f3f63b67bbf",
+  "candidate_revision": "161f239027f5f21d61471d4e152959520c740faf",
+  "tested_revision": "161f239027f5f21d61471d4e152959520c740faf",
   "scopes": {
     "e2e": {
       "status": "passed",

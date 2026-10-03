@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "term-introduction-discipline",
   "status": "proven",
-  "candidate_revision": "10f1dd34cb37041c56651c39c4c8ea12c89437ce",
-  "tested_revision": "10f1dd34cb37041c56651c39c4c8ea12c89437ce",
+  "candidate_revision": "c66fb1ed2705ef99d6f7b4fdb5aa3794f588751c",
+  "tested_revision": "c66fb1ed2705ef99d6f7b4fdb5aa3794f588751c",
   "scopes": {
     "e2e": {
       "status": "passed",

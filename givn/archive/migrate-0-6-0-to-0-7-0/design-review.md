@@ -36,7 +36,7 @@ hardening below.
   evidence exemptions, review-no-suite, legacy archives, e2e
   `not_applicable`, pre-candidate e2e-config block).
 - `## Step Definitions` N/A is accepted by the integrity hook.
-- The archive finalization fixes (`e7ea3f17`, `046d4611`) are ancestors of HEAD
+- The archive finalization fixes (`982a75d6`, `54f484e0`) are ancestors of HEAD
   and present in source.
 
 All questions are resolved and the hardening is applied.

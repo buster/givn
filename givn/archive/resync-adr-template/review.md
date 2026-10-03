@@ -11,7 +11,7 @@ artifact:
 
 | Scope | Commit hash | Touches the repaired artifact? |
 |---|---|---|
-| Template restoration | `bf3f66ea` | yes (`docs/arc42/adr/adr-template.md`, change artifacts) |
+| Template restoration | `794e6a87` | yes (`docs/arc42/adr/adr-template.md`, change artifacts) |
 
 **Promised-architecture cross-check** — the change promises a restored
 generated file, not a component: the file matches the managed asset byte for

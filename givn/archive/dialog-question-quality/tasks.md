@@ -62,7 +62,7 @@ for those actions remain the real-interface evidence.
       cargo check --locked --tests
       Finished `dev` profile [unoptimized + debuginfo] target(s) in 11.14s
       ```
-- [x] COMMIT: `b24db59a` -- `test(dialog-question-quality): strict-mode proof and step skeletons`
+- [x] COMMIT: `cdfae0fe` -- `test(dialog-question-quality): strict-mode proof and step skeletons`
 
 ## Scenarios
 
@@ -102,7 +102,7 @@ for those actions remain the real-interface evidence.
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `f6c1db11` -- `feat(instruction-integrity): The canonical dialog policy is retrievable through the Givn CLI`
+  - [x] COMMIT: `bf4d45e2` -- `feat(instruction-integrity): The canonical dialog policy is retrievable through the Givn CLI`
 
 - [x] Scenario: `The canonical dialog policy demonstrates the full question record`
   - [x] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
@@ -137,7 +137,7 @@ for those actions remain the real-interface evidence.
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `17acb19e` -- `feat(instruction-integrity): The canonical dialog policy demonstrates the full question record`
+  - [x] COMMIT: `a72ff6a9` -- `feat(instruction-integrity): The canonical dialog policy demonstrates the full question record`
 
 - [x] Scenario: `The dialog policy is retrievable without an active change`
   - [x] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
@@ -167,7 +167,7 @@ for those actions remain the real-interface evidence.
         1 scenario (1 passed)
         4 steps (4 passed)
         ```
-  - [x] COMMIT: `2001fb6b` -- `feat(instruction-integrity): The dialog policy is retrievable without an active change`
+  - [x] COMMIT: `8f7e9b2f` -- `feat(instruction-integrity): The dialog policy is retrievable without an active change`
 
 - [x] Scenario: `An unresolvable instruction id keeps the known-artifact error`
   - [x] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
@@ -196,7 +196,7 @@ for those actions remain the real-interface evidence.
         1 scenario (1 passed)
         4 steps (4 passed)
         ```
-  - [x] COMMIT: `60e8cdc5` -- `feat(instruction-integrity): An unresolvable instruction id keeps the known-artifact error`
+  - [x] COMMIT: `d2a22a23` -- `feat(instruction-integrity): An unresolvable instruction id keeps the known-artifact error`
 
 - [x] Scenario: `The design-review template carries the per-question record shape`
   - [x] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
@@ -230,7 +230,7 @@ for those actions remain the real-interface evidence.
         1 scenario (1 passed)
         7 steps (7 passed)
         ```
-  - [x] COMMIT: `d2749d63` -- `feat(instruction-integrity): The design-review template carries the per-question record shape`
+  - [x] COMMIT: `785c2f51` -- `feat(instruction-integrity): The design-review template carries the per-question record shape`
 
 ### ideation-skill
 
@@ -269,7 +269,7 @@ for those actions remain the real-interface evidence.
         1 scenario (1 passed)
         11 steps (11 passed)
         ```
-  - [x] COMMIT: `da258888` -- `feat(ideation-skill): The ideation guidance carries the phase ladder and the one-question rule`
+  - [x] COMMIT: `520f85f2` -- `feat(ideation-skill): The ideation guidance carries the phase ladder and the one-question rule`
 
 ### prose-consolidation
 
@@ -317,7 +317,7 @@ for those actions remain the real-interface evidence.
         1 scenario (1 passed)
         11 steps (11 passed)
         ```
-  - [x] COMMIT: `22a81c6c` -- `feat(prose-consolidation): Generated interactive guidance points to the canonical dialog policy`
+  - [x] COMMIT: `b84ddf67` -- `feat(prose-consolidation): Generated interactive guidance points to the canonical dialog policy`
 
 ### install-extras
 
@@ -353,7 +353,7 @@ for those actions remain the real-interface evidence.
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `fb13bf15` -- `feat(install-extras): The absolute-mode policy block carries the dialog context rule`
+  - [x] COMMIT: `876561ab` -- `feat(install-extras): The absolute-mode policy block carries the dialog context rule`
 
 ## Final checks
 
@@ -380,9 +380,9 @@ for those actions remain the real-interface evidence.
       (no matches)
       ```
 - [x] Confirm commit count matches scenario task count and every task has a
-      recorded hash: one setup commit (`b24db59a`) plus eight scenario
-      commits (`f6c1db11`, `17acb19e`, `2001fb6b`, `60e8cdc5`, `d2749d63`,
-      `da258888`, `22a81c6c`, `fb13bf15`).
+      recorded hash: one setup commit (`cdfae0fe`) plus eight scenario
+      commits (`bf4d45e2`, `a72ff6a9`, `8f7e9b2f`, `d2a22a23`, `785c2f51`,
+      `520f85f2`, `b84ddf67`, `876561ab`).
 - [x] Confirm `givn lint --change dialog-question-quality` has no parse errors
       (exit 0). Evidence:
       ```

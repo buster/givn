@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "visual-ui-review",
   "status": "proven",
-  "candidate_commit": "43741c4d7e24193d712ee7ecde1bb9b99fdfd0b6",
-  "tested_commit": "43741c4d7e24193d712ee7ecde1bb9b99fdfd0b6",
+  "candidate_commit": "3e488342fdd259954a7097abb9bf29c755f05596",
+  "tested_commit": "3e488342fdd259954a7097abb9bf29c755f05596",
   "scopes": {
     "e2e": {
       "status": "passed",

@@ -18,7 +18,7 @@
     unimplemented `local NLI evidence is enabled` Given panicked
     `not implemented`; the process exited non-zero (`exit status: 101`).
     This proves `.fail_on_skipped()` rejects the unimplemented step.
-- [x] COMMIT: register the two step modules + the strict-mode proof. Hash: `824940f`
+- [x] COMMIT: register the two step modules + the strict-mode proof. Hash: `9e5dbab`
 
 ## Scenario: Search without the evidence flag prints no evidence lines
 
@@ -30,7 +30,7 @@
   change needed — this guard keeps the flag-off path byte-identical.
   Evidence: `1 scenario (1 passed)`, `11 steps (11 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: `1 scenario (1 passed)`, `11 steps (11 passed)`.
-- [x] COMMIT: search-without-evidence keeps the plain ranking. Hash: `2377f08`
+- [x] COMMIT: search-without-evidence keeps the plain ranking. Hash: `529c6cf`
 
 ## Scenario: Evidence search reports a BGE verdict for every listed candidate
 
@@ -54,7 +54,7 @@
   `tests/steps/spec_retrieval_steps.rs`, `tests/steps/mod.rs`.
   Evidence: `1 scenario (1 passed)`, `9 steps (9 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: `1 scenario (1 passed)`, `9 steps (9 passed)`.
-- [x] COMMIT: evidence search reports a BGE verdict per candidate. Hash: `8f7b961`
+- [x] COMMIT: evidence search reports a BGE verdict per candidate. Hash: `454e532`
 
 ## Scenario: Evidence search reports an NLI verdict for every candidate
 
@@ -72,7 +72,7 @@
   `tests/steps/search_evidence_steps.rs`.
   Evidence: `1 scenario (1 passed)`, `10 steps (10 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: `1 scenario (1 passed)`, `10 steps (10 passed)`.
-- [x] COMMIT: evidence search reports an NLI verdict per candidate. Hash: `51cd570`
+- [x] COMMIT: evidence search reports an NLI verdict per candidate. Hash: `a54f4d1`
 
 ## Scenario: Absent BGE evidence is reported but never presented as a verdict
 
@@ -86,7 +86,7 @@
   Production files: `src/spec/retrieval.rs`.
   Evidence: `1 scenario (1 passed)`, `10 steps (10 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: `1 scenario (1 passed)`, `10 steps (10 passed)`.
-- [x] COMMIT: absent BGE evidence is reported without a verdict. Hash: `73c39eb`
+- [x] COMMIT: absent BGE evidence is reported without a verdict. Hash: `c49c049`
 
 ## Scenario: Evidence search without any cross-encoder answers with the plain ranking
 
@@ -99,7 +99,7 @@
   byte-identical). Production files: `src/spec/retrieval.rs`.
   Evidence: `1 scenario (1 passed)`, `11 steps (11 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: `1 scenario (1 passed)`, `11 steps (11 passed)`.
-- [x] COMMIT: search without cross-encoders reports unavailable evidence. Hash: `a4e5057`
+- [x] COMMIT: search without cross-encoders reports unavailable evidence. Hash: `e6562d1`
 
 ## Scenario: Candidates beyond the evidence pair budget stay unscored
 
@@ -112,7 +112,7 @@
   `BGE_FILTERED` for them. Production files: `src/spec/retrieval.rs`.
   Evidence: `1 scenario (1 passed)`, `10 steps (10 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: `1 scenario (1 passed)`, `10 steps (10 passed)`.
-- [x] COMMIT: candidates beyond the pair budget stay unscored. Hash: `e0324d8`
+- [x] COMMIT: candidates beyond the pair budget stay unscored. Hash: `e56d1ba`
 
 ## Scenario: An over-limit search pair receives BGE token-cap evidence
 
@@ -126,7 +126,7 @@
   `tests/steps/search_evidence_steps.rs`.
   Evidence: `1 scenario (1 passed)`, `9 steps (9 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: `1 scenario (1 passed)`, `9 steps (9 passed)`.
-- [x] COMMIT: over-limit search pairs receive BGE token-cap evidence. Hash: `35cb301`
+- [x] COMMIT: over-limit search pairs receive BGE token-cap evidence. Hash: `97514a7`
 
 ## Scenario: An over-limit search pair receives NLI token-cap evidence
 
@@ -139,7 +139,7 @@
   `tests/steps/search_evidence_steps.rs`.
   Evidence: `1 scenario (1 passed)`, `9 steps (9 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: `1 scenario (1 passed)`, `9 steps (9 passed)`.
-- [x] COMMIT: over-limit search pairs receive NLI token-cap evidence. Hash: `2c27603`
+- [x] COMMIT: over-limit search pairs receive NLI token-cap evidence. Hash: `04a3cef`
 
 ## Scenario: Search reports BGE and NLI evidence through the givn CLI (@e2e)
 
@@ -164,7 +164,7 @@ strictly smaller — established by the runner tag filters).
   `./run-tests.sh` and `./run-tests.sh --e2e` (see Final evidence).
   Evidence: e2e targeted rerun `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] COMMIT: end-to-end evidence search through the real CLI (also carries
-  the arc42/ADR durable updates). Hash: `853341b`
+  the arc42/ADR durable updates). Hash: `10cd8c5`
 
 ## Final evidence
 
@@ -177,9 +177,9 @@ strictly smaller — established by the runner tag filters).
 - `givn lint --change search-evidence`: clean, exit 0.
 - `cargo clippy --workspace --all-targets -- -D warnings`: clean.
 - `cargo fmt --all` applied; formatting committed as
-  `46b737e refactor(retrieval): cargo fmt search-evidence`; the evidence
+  `df0ec6f refactor(retrieval): cargo fmt search-evidence`; the evidence
   candidates binding was later scoped to the opt-in branch
-  (`233f633 refactor(retrieval): scope evidence candidates to the opt-in branch`)
+  (`9ea94ee refactor(retrieval): scope evidence candidates to the opt-in branch`)
   so e5-only builds emit no warnings.
 - `givn check tasks --change search-evidence`: exit 0 (verify hook green),
   and `givn status` reports all `38/38` task boxes checked.

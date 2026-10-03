@@ -23,10 +23,10 @@ CLI):
 
 | Scenario | Commit hash | Touches production code? |
 |---|---|---|
-| An attributed commit exposes the current LLM and harness (modified) | `95f4b3e9` | Yes — `src/cli/attribution.rs`, `src/cli/init.rs`, `assets/agent-integrations/opencode/givn-attribution.js`, `.opencode/plugins/givn-attribution.js` |
-| OpenCode prepares attribution using its selected model (added) | `25de68da` | Yes — `assets/agent-integrations/opencode/givn-attribution.js` + checked-in copy |
-| Claude attributes a commit using its current model (added) | `55cc9b05` | Yes — `src/cli/attribution.rs` |
-| Evidence commits | `a50b4c33`, `bba32edc` | Docs only (tasks.md evidence) — not counted as scenario commits |
+| An attributed commit exposes the current LLM and harness (modified) | `0ba36a96` | Yes — `src/cli/attribution.rs`, `src/cli/init.rs`, `assets/agent-integrations/opencode/givn-attribution.js`, `.opencode/plugins/givn-attribution.js` |
+| OpenCode prepares attribution using its selected model (added) | `7098705b` | Yes — `assets/agent-integrations/opencode/givn-attribution.js` + checked-in copy |
+| Claude attributes a commit using its current model (added) | `3a04dec2` | Yes — `src/cli/attribution.rs` |
+| Evidence commits | `71ed4cf2`, `042b129f` | Docs only (tasks.md evidence) — not counted as scenario commits |
 
 **Promised-architecture cross-check** — every component design.md named exists:
 

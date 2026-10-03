@@ -56,7 +56,7 @@ phrases).
       cargo check --locked --tests
       Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.07s
       ```
-- [x] COMMIT: `d49e205c` -- `test(seed-artifact-lifecycle): strict-mode proof and step skeletons`
+- [x] COMMIT: `84caf6c4` -- `test(seed-artifact-lifecycle): strict-mode proof and step skeletons`
 
 ## Scenarios
 
@@ -96,7 +96,7 @@ phrases).
         1 scenario (1 passed)
         10 steps (10 passed)
         ```
-  - [x] COMMIT: `9b2a9a77` -- `feat(ideation-skill): The ideation guidance carries the seed schema and its status values`
+  - [x] COMMIT: `e26375c0` -- `feat(ideation-skill): The ideation guidance carries the seed schema and its status values`
 
 ### prose-consolidation
 
@@ -128,7 +128,7 @@ phrases).
         1 scenario (1 passed)
         4 steps (4 passed)
         ```
-  - [x] COMMIT: `b5ed5fab` -- `feat(prose-consolidation): The propose and archive commands carry the seed stamping instructions`
+  - [x] COMMIT: `24018eb0` -- `feat(prose-consolidation): The propose and archive commands carry the seed stamping instructions`
 
 ### lint-command
 
@@ -164,11 +164,11 @@ phrases).
         1 scenario (1 passed)
         8 steps (8 passed)
         ```
-  - [x] COMMIT: `3496d62a` -- `feat(lint-command): A change seed without a status line is reported as an advisory`
+  - [x] COMMIT: `c49707d7` -- `feat(lint-command): A change seed without a status line is reported as an advisory`
 
 - [x] Scenario: `A change seed proposed by a missing change is reported as an advisory`
   - [x] RED: removed `@wip` from this scenario only; `src/cli/lint.rs` was
-        restored to the pre-check revision (`b5ed5fab`), and the targeted run →
+        restored to the pre-check revision (`24018eb0`), and the targeted run →
         non-zero. The scenario also carries the active-change guard (a seed
         proposed by an existing change must not be reported); the guard was
         folded in from the standalone scenario during implementation because
@@ -192,11 +192,11 @@ phrases).
         1 scenario (1 passed)
         10 steps (10 passed)
         ```
-  - [x] COMMIT: `0ede1371` -- `feat(lint-command): A change seed proposed by a missing change is reported as an advisory`
+  - [x] COMMIT: `5f7175c9` -- `feat(lint-command): A change seed proposed by a missing change is reported as an advisory`
 
 - [x] Scenario: `A change seed proposed by an archived change is reported as stale`
   - [x] RED: removed `@wip` from this scenario only; `src/cli/lint.rs` restored
-        to `b5ed5fab`, run → non-zero. Evidence:
+        to `24018eb0`, run → non-zero. Evidence:
         ```
         GIVN_FEATURES=givn/changes/seed-artifact-lifecycle/specs cargo test --locked --test features_runner -- --name "A change seed proposed by an archived change is reported as stale"
         Step panicked. Captured output: stderr missing "[SEED ]":
@@ -216,11 +216,11 @@ phrases).
         1 scenario (1 passed)
         7 steps (7 passed)
         ```
-  - [x] COMMIT: `49b14d8f` -- `feat(lint-command): A change seed proposed by an archived change is reported as stale`
+  - [x] COMMIT: `0961f712` -- `feat(lint-command): A change seed proposed by an archived change is reported as stale`
 
 - [x] Scenario: `An unrecognised seed status is reported and a status after prose is honoured`
   - [x] RED: removed `@wip` from this scenario only; `src/cli/lint.rs` restored
-        to `b5ed5fab`, run → non-zero. Evidence:
+        to `24018eb0`, run → non-zero. Evidence:
         ```
         GIVN_FEATURES=givn/changes/seed-artifact-lifecycle/specs cargo test --locked --test features_runner -- --name "An unrecognised seed status is reported and a status after prose is honoured"
         Step panicked. Captured output: stderr missing "[SEED ]":
@@ -240,11 +240,11 @@ phrases).
         1 scenario (1 passed)
         9 steps (9 passed)
         ```
-  - [x] COMMIT: `80307b57` -- `feat(lint-command): An unrecognised seed status is reported and a status after prose is honoured`
+  - [x] COMMIT: `ed1e9b21` -- `feat(lint-command): An unrecognised seed status is reported and a status after prose is honoured`
 
 - [x] Scenario: `An advisory seed finding is counted in the summary and still exits 0`
   - [x] RED: removed `@wip` from this scenario only; `src/cli/lint.rs` restored
-        to `b5ed5fab`, run → non-zero. Evidence:
+        to `24018eb0`, run → non-zero. Evidence:
         ```
         GIVN_FEATURES=givn/changes/seed-artifact-lifecycle/specs cargo test --locked --test features_runner -- --name "An advisory seed finding is counted in the summary and still exits 0"
         Step panicked. Captured output: stderr missing "[SEED ]":
@@ -264,7 +264,7 @@ phrases).
         1 scenario (1 passed)
         7 steps (7 passed)
         ```
-  - [x] COMMIT: `2d83f846` -- `feat(lint-command): An advisory seed finding is counted in the summary and still exits 0`
+  - [x] COMMIT: `a06d68b5` -- `feat(lint-command): An advisory seed finding is counted in the summary and still exits 0`
 
 ## Final checks
 
@@ -291,9 +291,9 @@ phrases).
       (no matches)
       ```
 - [x] Confirm commit count matches scenario task count and every task has a
-      recorded hash: one setup commit (`d49e205c`) plus seven scenario commits
-      (`9b2a9a77`, `b5ed5fab`, `3496d62a`, `0ede1371`, `49b14d8f`, `80307b57`,
-      `2d83f846`).
+      recorded hash: one setup commit (`84caf6c4`) plus seven scenario commits
+      (`e26375c0`, `24018eb0`, `c49707d7`, `5f7175c9`, `0961f712`, `ed1e9b21`,
+      `a06d68b5`).
 - [x] Confirm `givn lint --change seed-artifact-lifecycle` has no parse errors
       (exit 0). Evidence:
       ```

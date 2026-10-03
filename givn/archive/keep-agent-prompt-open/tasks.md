@@ -51,7 +51,7 @@ Delta scope: `GIVN_FEATURES=givn/changes/keep-agent-prompt-open/specs/ ./run-tes
       `1 scenario (1 passed), 6 steps (6 passed)`, exit 0.
 - [x] REFACTOR: `cargo fmt` + clippy clean; scenario re-run → `1 scenario
       (1 passed), 6 steps (6 passed)`.
-- [x] COMMIT: `76e1866b` — `feat(initialize-a-project): <release note>`; body
+- [x] COMMIT: `5e1702b5` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
 ## Scenario 2: The interactive prompt keeps asking until a target is marked
@@ -67,7 +67,7 @@ Delta scope: `GIVN_FEATURES=givn/changes/keep-agent-prompt-open/specs/ ./run-tes
       (1 passed), 6 steps (6 passed)`, exit 0.
 - [x] REFACTOR: `cargo fmt` + clippy clean; name-filtered re-run → `3
       scenarios (3 passed)` (the two new plus the removed placeholder).
-- [x] COMMIT: `45de8183` — `feat(initialize-a-project): <release note>`; body
+- [x] COMMIT: `ee00e05d` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
 ## Final verification

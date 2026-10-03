@@ -188,7 +188,7 @@ Feature: Audit duplicate and related permanent scenarios
 1 scenario (1 passed)
 8 steps (8 passed)
       ```
-  - [x] COMMIT: aef0ecac7fcbb1c77bf351bae916c0f5653b1cb5
+  - [x] COMMIT: f37f30f21c90e2162f2d1e7ba8d1aba143411717
     - Create one atomic commit containing this scenario's RED, GREEN, and
       REFACTOR work. It must not be spec-only or stub-only.
     - Required commit message: `feat(spec-duplicates): Exact duplicates in one feature are reported together`
@@ -198,7 +198,7 @@ Feature: Audit duplicate and related permanent scenarios
       - `src/cli/spec.rs`
       - `src/spec/retrieval.rs`
       - `tests/steps/spec_duplicates_steps.rs`
-    - Commit hash: `aef0ecac7fcbb1c77bf351bae916c0f5653b1cb5`
+    - Commit hash: `f37f30f21c90e2162f2d1e7ba8d1aba143411717`
 
 ## Scenario 2: `Exact duplicates across features are reported together`
 
@@ -289,7 +289,7 @@ Feature: Audit duplicate and related permanent scenarios
 1 scenario (1 passed)
 8 steps (8 passed)
       ```
-  - [x] COMMIT: 952e3c9c52dfe1ad24cd7c528afa86aa4d52f12e
+  - [x] COMMIT: 59927f2464c026f10b412a604cc965f83cc805f1
     - One atomic RED+GREEN+REFACTOR commit; it must include real production or
       step-glue work and reference the title verbatim.
     - Required commit message: `feat(spec-duplicates): Exact duplicates across features are reported together`
@@ -315,7 +315,7 @@ Feature: Audit duplicate and related permanent scenarios
       - `tests/steps/spec_duplicates_e2e_steps.rs`
       - `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature`
       - `tests/steps/spec_duplicates_steps.rs`
-    - Commit hash: `952e3c9c52dfe1ad24cd7c528afa86aa4d52f12e`
+    - Commit hash: `59927f2464c026f10b412a604cc965f83cc805f1`
 
 ## Scenario 3: `Structurally overlapping scenarios retain their distinguishing facts`
 
@@ -413,7 +413,7 @@ Feature: Audit duplicate and related permanent scenarios
 1 scenario (1 passed)
 9 steps (9 passed)
       ```
-  - [x] COMMIT: 8b9e11dca472c5c2b0b70ef5758ba0ff1712196d
+  - [x] COMMIT: 52685151c7b0031fc67a629471bd0e4996641539
     - One atomic RED+GREEN+REFACTOR commit with a title-verbatim message.
     - Required commit message: `feat(spec-duplicates): Structurally overlapping scenarios retain their distinguishing facts`
     - Files touched:
@@ -421,7 +421,7 @@ Feature: Audit duplicate and related permanent scenarios
       - `src/spec/retrieval.rs`
       - `tests/steps/spec_duplicates_steps.rs`
       - `givn/changes/spec-duplicates/tasks.md` (the pending Scenario 2 task hash line was preserved)
-    - Commit hash: `8b9e11dca472c5c2b0b70ef5758ba0ff1712196d`
+    - Commit hash: `52685151c7b0031fc67a629471bd0e4996641539`
 
 ## Scenario 4: `A structural subset is reported as an overlap`
 
@@ -515,7 +515,7 @@ Feature: Audit duplicate and related permanent scenarios
       ```
     - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
     - Grep of `tests/steps/spec_duplicates_steps.rs` found no `unimplemented!()`, `todo!()`, or empty step bodies.
-  - [x] COMMIT: eb126c95fcdfb84d507bbb34d47d3426d683eedd
+  - [x] COMMIT: 9783d80f5c6770dd1476b0134e0c5d7292f4a572
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A structural subset is reported as an overlap`
     - Files touched:
@@ -523,7 +523,7 @@ Feature: Audit duplicate and related permanent scenarios
       - `src/spec/retrieval.rs`
       - `tests/steps/spec_duplicates_steps.rs`
       - `givn/changes/spec-duplicates/tasks.md` (includes the prior Scenario 3 post-commit evidence and hash)
-    - Commit hash: `eb126c95fcdfb84d507bbb34d47d3426d683eedd`
+    - Commit hash: `9783d80f5c6770dd1476b0134e0c5d7292f4a572`
 
 ## Scenario 5: `Semantically related scenarios are reported as candidates`
 
@@ -646,10 +646,10 @@ Feature: Audit duplicate and related permanent scenarios
     - `tests/steps/spec_duplicates_steps.rs`
     - `tests/steps/mod.rs`
     - `givn/changes/spec-duplicates/tasks.md` (includes the pending Scenario 4 post-commit hash)
-  - [x] COMMIT: 02e0429708d19c2403afa4265ca0ce6c938fa540
+  - [x] COMMIT: 3a69cfe4c229d8d5d903a0a8d3bcb904df68cc72
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Semantically related scenarios are reported as candidates`
-    - Commit hash: `02e0429708d19c2403afa4265ca0ce6c938fa540`
+    - Commit hash: `3a69cfe4c229d8d5d903a0a8d3bcb904df68cc72`
 
 ## Scenario 6: `The audit reports candidates beyond the interactive top five`
 
@@ -752,10 +752,10 @@ Feature: Audit duplicate and related permanent scenarios
       `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 5
       post-commit hash). No production source file was modified because the
       existing duplicate audit already reports the complete candidate vector.
-  - [x] COMMIT: 1a741b9ae025d37e93e94300b1f2eddddfaa1678
+  - [x] COMMIT: 6906edd82606d16c0c549e1fb5daa3720b0be351
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): The audit reports candidates beyond the interactive top five`
-    - Commit hash: `1a741b9ae025d37e93e94300b1f2eddddfaa1678`
+    - Commit hash: `6906edd82606d16c0c549e1fb5daa3720b0be351`
 
 ## Scenario 7: `Repeating an unchanged audit produces the same report`
 
@@ -855,10 +855,10 @@ Feature: Audit duplicate and related permanent scenarios
       post-commit hash). No production source file was modified because the
       existing duplicate collection, sorting, and renderer already satisfy the
       determinism contract.
-  - [x] COMMIT: b6e2a040cf732b67255b673378f33e5466b943cb
+  - [x] COMMIT: deb54a2a1eb98cd098310202938a3712c1195a66
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Repeating an unchanged audit produces the same report`
-    - Commit hash: `b6e2a040cf732b67255b673378f33e5466b943cb`
+    - Commit hash: `deb54a2a1eb98cd098310202938a3712c1195a66`
 
 ## Scenario 8: `JSON output identifies every audit candidate`
 
@@ -974,10 +974,10 @@ Feature: Audit duplicate and related permanent scenarios
       `src/spec/retrieval.rs`, `tests/steps/spec_duplicates_steps.rs`, and
       `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 7
       post-commit hash update).
-  - [x] COMMIT: a98eed298acece8cf2375e3560251accc6ae22b3
+  - [x] COMMIT: a6760975b7f7994681ab69aae8adfa8e1d988c3a
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): JSON output identifies every audit candidate`
-    - Commit hash: `a98eed298acece8cf2375e3560251accc6ae22b3`
+    - Commit hash: `a6760975b7f7994681ab69aae8adfa8e1d988c3a`
 
 ## Scenario 9: `Auditing leaves permanent specifications unchanged`
 
@@ -1066,7 +1066,7 @@ Feature: Audit duplicate and related permanent scenarios
 1 scenario (1 passed)
 4 steps (4 passed)
       ```
-  - [x] COMMIT: c465d8ab1b029bdc9f08320d5841d3d691bfa1ed
+  - [x] COMMIT: a766b1fc580768a127fa58ae1074e732bb6313f4
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Auditing leaves permanent specifications unchanged`
     - Actual production files modified: none; the existing read-only audit path
@@ -1075,7 +1075,7 @@ Feature: Audit duplicate and related permanent scenarios
       - `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 9 tag only)
       - `tests/steps/spec_duplicates_steps.rs`
       - `givn/changes/spec-duplicates/tasks.md`
-    - Commit hash: `c465d8ab1b029bdc9f08320d5841d3d691bfa1ed`
+    - Commit hash: `a766b1fc580768a127fa58ae1074e732bb6313f4`
 
 ## Scenario 10: `Auditing leaves the persistent retrieval index unchanged`
 
@@ -1175,10 +1175,10 @@ Feature: Audit duplicate and related permanent scenarios
       hash update). No production source file was modified because the existing
       `src/spec/retrieval.rs` duplicate path already uses current permanent
       records and transient embeddings without refreshing or reading the index.
-  - [x] COMMIT: f1e50ac6208b067044b0a2ac1e3e2e82e20ca632
+  - [x] COMMIT: 43a167f16afe0aa5e384e579d2690dde87601aa4
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Auditing leaves the persistent retrieval index unchanged`
-    - Commit hash: `f1e50ac6208b067044b0a2ac1e3e2e82e20ca632`
+    - Commit hash: `43a167f16afe0aa5e384e579d2690dde87601aa4`
 
 ## Scenario 11: `Active change scenarios are not part of the permanent audit`
 
@@ -1280,10 +1280,10 @@ Feature: Audit duplicate and related permanent scenarios
       `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 10
       hash update). No production source file was modified because the existing
       `src/spec/retrieval.rs` collection boundary is already permanent-only.
-  - [x] COMMIT: 0b4f50ece41ec3e192680bc80215120e133a01ff
+  - [x] COMMIT: 9930df7ed51d433fe74998d1b360ecd1979e1a5e
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Active change scenarios are not part of the permanent audit`
-    - Commit hash: `0b4f50ece41ec3e192680bc80215120e133a01ff`
+    - Commit hash: `9930df7ed51d433fe74998d1b360ecd1979e1a5e`
 
 ## Scenario 12: `An audit with no candidates reports an empty result`
 
@@ -1383,10 +1383,10 @@ Feature: Audit duplicate and related permanent scenarios
       `tests/steps/spec_duplicates_steps.rs`, and
       `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 11
       hash update). No design artifact or later `@wip` tag was changed.
-  - [x] COMMIT: 5afcf5da58f71cb2c2bbc5e9b1a83cdab65c1f51
+  - [x] COMMIT: 7f36ee18bb527f1d0c473920118588818d12bde8
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): An audit with no candidates reports an empty result`
-    - Commit hash: `5afcf5da58f71cb2c2bbc5e9b1a83cdab65c1f51`
+    - Commit hash: `7f36ee18bb527f1d0c473920118588818d12bde8`
 
 ## Scenario 13: `The audit reports retrieval unavailable without the retrieval feature`
 
@@ -1496,10 +1496,10 @@ Feature: Audit duplicate and related permanent scenarios
       (Scenario 13 tag only), `tests/steps/spec_duplicates_steps.rs`, and
       `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 12
       hash update). No design artifact or later `@wip` tag was changed.
-  - [x] COMMIT: cfb16092296a20a298f875ca63a540fa88b596da
+  - [x] COMMIT: a0eec6b12678d5e0a73c304061bb61a4b5068971
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): The audit reports retrieval unavailable without the retrieval feature`
-    - Commit hash: `cfb16092296a20a298f875ca63a540fa88b596da`
+    - Commit hash: `a0eec6b12678d5e0a73c304061bb61a4b5068971`
 
 ## Scenario 14: `The audit reports an unavailable retrieval model`
 
@@ -1621,10 +1621,10 @@ Feature: Audit duplicate and related permanent scenarios
 5 steps (5 passed)
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 14 tag only), `src/spec/retrieval.rs`, and `givn/changes/spec-duplicates/tasks.md`. Existing regular bindings in `tests/steps/spec_duplicates_steps.rs`, `tests/steps/spec_retrieval_steps.rs`, and `tests/steps/mod.rs` were reused without a final diff. No design artifact or later `@wip` tag was changed.
-  - [x] COMMIT: 4a35cc10e58dc59826ff471f043f10e14a92d803
+  - [x] COMMIT: c4725968e4054a0ae87177d9c890c632e893fac6
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): The audit reports an unavailable retrieval model`
-    - Commit hash: `4a35cc10e58dc59826ff471f043f10e14a92d803`
+    - Commit hash: `c4725968e4054a0ae87177d9c890c632e893fac6`
 
 ## Scenario 15: `A malformed permanent feature reports its path`
 
@@ -1717,10 +1717,10 @@ Feature: Audit duplicate and related permanent scenarios
 5 steps (5 passed)
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 15 tag only), `src/spec/retrieval.rs`, `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 14 hash update). No design artifact or later `@wip` tag was changed.
-  - [x] COMMIT: 28730695f430a657930231cc0875ae4cc75d9ab1
+  - [x] COMMIT: f6fef138411aca2203225f0c132ccf0145d9c411
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A malformed permanent feature reports its path`
-    - Commit hash: `28730695f430a657930231cc0875ae4cc75d9ab1`
+    - Commit hash: `f6fef138411aca2203225f0c132ccf0145d9c411`
 
 ## Scenario 16: `An unreadable permanent feature reports its path`
 
@@ -1825,10 +1825,10 @@ Feature: Audit duplicate and related permanent scenarios
 5 steps (5 passed)
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 16 tag only), `tests/steps/spec_duplicates_steps.rs`, `tests/steps/mod.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 15 hash update). No production source file or design artifact changed, and all later `@wip` tags remain intact.
-  - [x] COMMIT: 673e5c9457a6e443e121744284169e6aca36cd54
+  - [x] COMMIT: 54c7ad385e91ec7191093b674f1cb8a414746b2b
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): An unreadable permanent feature reports its path`
-    - Commit hash: `673e5c9457a6e443e121744284169e6aca36cd54`
+    - Commit hash: `54c7ad385e91ec7191093b674f1cb8a414746b2b`
 
 ## Scenario 17: `A missing permanent specifications directory is an empty corpus`
 
@@ -1920,10 +1920,10 @@ Feature: Audit duplicate and related permanent scenarios
 5 steps (5 passed)
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 17 tag only), `src/spec/retrieval.rs`, `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 16 hash update). No design artifact or later `@wip` tag was changed.
-  - [x] COMMIT: 5df4f7cede8dc86b71b453a82fb5c4b8a8c882ad
+  - [x] COMMIT: be867e3fb0fb07db2b033a35e61d29d7e7bcd8d1
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A missing permanent specifications directory is an empty corpus`
-    - Commit hash: `5df4f7cede8dc86b71b453a82fb5c4b8a8c882ad`
+    - Commit hash: `be867e3fb0fb07db2b033a35e61d29d7e7bcd8d1`
 
 ## Scenario 18: `Archived scenarios are excluded from the audit`
 
@@ -2026,10 +2026,10 @@ Feature: Audit duplicate and related permanent scenarios
 
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 18 tag only), `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 17 hash update). No `src/spec/retrieval.rs`, `design.md`, or later `@wip` tag changed.
-  - [x] COMMIT: 1703be414af7945ffd011a1d9dbfc922f239901a
+  - [x] COMMIT: 123ab4a64828eb6a112dad1f39bf769f8ec2fcb9
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Archived scenarios are excluded from the audit`
-    - Commit hash: `1703be414af7945ffd011a1d9dbfc922f239901a`
+    - Commit hash: `123ab4a64828eb6a112dad1f39bf769f8ec2fcb9`
 
 ## Scenario 19: `Auditing leaves active changes and archive contents unchanged`
 
@@ -2132,10 +2132,10 @@ Feature: Audit duplicate and related permanent scenarios
 5 steps (5 passed)
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 19 tag only), `tests/steps/mod.rs`, `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 18 hash update). No `src/spec/retrieval.rs`, `design.md`, or later `@wip` tag changed.
-  - [x] COMMIT: be0a0895c005656d011140d1c6a4a958d2f4c443
+  - [x] COMMIT: 8dd42d6c5d7a223a7e0a8b3ff4d4437fd68af6c7
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Auditing leaves active changes and archive contents unchanged`
-    - Commit hash: `be0a0895c005656d011140d1c6a4a958d2f4c443`
+    - Commit hash: `8dd42d6c5d7a223a7e0a8b3ff4d4437fd68af6c7`
 
 ## Scenario 20: `An absent persistent index is ignored and remains absent`
 
@@ -2242,10 +2242,10 @@ Feature: Audit duplicate and related permanent scenarios
 6 steps (6 passed)
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 20 tag only), `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 19 hash update). No `src/spec/retrieval.rs`, `design.md`, or later `@wip` tag changed.
-  - [x] COMMIT: fbdc70554a0e2f20214da9c2dba9cf81bfdd09e8
+  - [x] COMMIT: ef026bccfb7674510309586bb7ba4bf6e3f78dc9
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): An absent persistent index is ignored and remains absent`
-    - Commit hash: `fbdc70554a0e2f20214da9c2dba9cf81bfdd09e8`
+    - Commit hash: `ef026bccfb7674510309586bb7ba4bf6e3f78dc9`
 
 ## Scenario 21: `A malformed persistent index is ignored and unchanged`
 
@@ -2350,10 +2350,10 @@ Feature: Audit duplicate and related permanent scenarios
 6 steps (6 passed)
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 21 tag only), `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 20 hash update). No `src/spec/retrieval.rs`, `design.md`, or later `@wip` tag changed.
-  - [x] COMMIT: 65dcc06a81fad6369f292ab81042732fd9c02ae7
+  - [x] COMMIT: 0a35e8aa7738e38426c10cdfe17f812f7323468e
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A malformed persistent index is ignored and unchanged`
-    - Commit hash: `65dcc06a81fad6369f292ab81042732fd9c02ae7`
+    - Commit hash: `0a35e8aa7738e38426c10cdfe17f812f7323468e`
 
 ## Scenario 22: `A semantic candidate at the inclusive threshold is reported`
 
@@ -2462,10 +2462,10 @@ Feature: Audit duplicate and related permanent scenarios
 7 steps (7 passed)
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 22 tag only), `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 21 hash update). No `design.md`, later `@wip` tag, or production source file changed.
-  - [x] COMMIT: bc4e3c1d7fb6d6af46fb9bf5ac52f8c8c2984213
+  - [x] COMMIT: 1e2769155803f06b7f04aa8b69d33c4bca77661e
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A semantic candidate at the inclusive threshold is reported`
-    - Commit hash: `bc4e3c1d7fb6d6af46fb9bf5ac52f8c8c2984213`
+    - Commit hash: `1e2769155803f06b7f04aa8b69d33c4bca77661e`
 
 ## Scenario 23: `A semantic pair below the threshold is not reported`
 
@@ -2567,10 +2567,10 @@ Feature: Audit duplicate and related permanent scenarios
 6 steps (6 passed)
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 23 tag only), `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 22 hash update). No `src/spec/retrieval.rs`, `design.md`, or later `@wip` tag changed.
-  - [x] COMMIT: 8ca9a69844f95dd16d8307c9187dad4ea1ac3d06
+  - [x] COMMIT: e71f00ca80037bee36ce9ec74a4bccfd8ed71ec6
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A semantic pair below the threshold is not reported`
-    - Commit hash: `8ca9a69844f95dd16d8307c9187dad4ea1ac3d06`
+    - Commit hash: `e71f00ca80037bee36ce9ec74a4bccfd8ed71ec6`
 
 ## Scenario 24: `Candidate classes take precedence and equal semantic scores use endpoint order`
 
@@ -2764,10 +2764,10 @@ Feature: Audit duplicate and related permanent scenarios
 1 scenario (1 passed)
 8 steps (8 passed)
       ```
-  - [x] COMMIT: 2913653068ba966c7e60b3d4c00606039d57ade6
+  - [x] COMMIT: 77b1a3af2f4806e8d7040de01a8c9078514de9ae
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Candidate classes take precedence and equal semantic scores use endpoint order`
-    - Commit hash: `2913653068ba966c7e60b3d4c00606039d57ade6`
+    - Commit hash: `77b1a3af2f4806e8d7040de01a8c9078514de9ae`
 
 ## E2E setup task
 
@@ -2838,7 +2838,7 @@ error: test failed, to rerun `cargo test --test features_runner`
       scoped suite `25` scenarios and filtered E2E suite `1` scenario, both
       failing only at the pre-implementation E2E step, with `1 < 25`.
     - The preceding Scenario 24 commit hash was recorded in this task-file
-      commit as `2913653068ba966c7e60b3d4c00606039d57ade6`.
+      commit as `77b1a3af2f4806e8d7040de01a8c9078514de9ae`.
     - Run the exact standalone E2E command required by the design for the
       strict-subset proof:
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs ./run-tests.sh --e2e`
@@ -3013,12 +3013,12 @@ Feature: Audit duplicate and related permanent scenarios
      - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 25 tag only), `tests/steps/spec_duplicates_e2e_steps.rs`, and this `tasks.md` entry. No regular step file, `design.md`, module-registration file, or production source file changed.
      - Coverage remains unmeasured because the targeted and E2E runner outputs
        contain no coverage summary.
-  - [x] COMMIT: 4915c2b780023c3eb49fdb9eda7519838d141c9b
+  - [x] COMMIT: a0dd5d62199015b14f379aeb39b127811a1200cb
     - Create one atomic E2E RED+GREEN+REFACTOR commit after all non-E2E
       commits. It must contain real E2E step glue and/or production integration
       work, not only a tag or stub change.
     - Required commit message: `test(e2e): Maintainer inspects the complete permanent scenario audit`
-    - Commit hash: `4915c2b780023c3eb49fdb9eda7519838d141c9b`
+    - Commit hash: `a0dd5d62199015b14f379aeb39b127811a1200cb`
 
 ## Scenario 26: `Rule-nested permanent scenarios are included in the audit`
 
@@ -3042,11 +3042,11 @@ Feature: Audit duplicate and related permanent scenarios
       steps (5 passed)`.
     - Targeted runner output has no coverage summary; production coverage is
       recorded by the later repository measurement command.
-  - [x] COMMIT: be4e41e38bc7f5305041ab8de14a2b9236e49a61
+  - [x] COMMIT: 6652019f92945160d534b322073ae4f4a704ba68
     - Atomic RED+GREEN+REFACTOR commit:
       `feat(spec-duplicates): Rule-nested permanent scenarios are included in the audit`
     - Files: active feature and `tests/steps/spec_duplicates_steps.rs`.
-    - Commit hash: `be4e41e38bc7f5305041ab8de14a2b9236e49a61`
+    - Commit hash: `6652019f92945160d534b322073ae4f4a704ba68`
 
 ## Scenario 27: `A blocked permanent specifications path reports its I/O error`
 
@@ -3067,7 +3067,7 @@ Feature: Audit duplicate and related permanent scenarios
     - `cargo fmt -- --check` exited 0; the targeted command was rerun and
       exited 0 with `5 steps (5 passed)`. Targeted output has no coverage
       summary; repository coverage is measured in the review pass.
-  - [x] COMMIT: 51426e1f5bbea076df2e62d6fea0fc374f67be48
+  - [x] COMMIT: da305cf6056f3ced3a49047dccdff87709821860
     - Atomic RED+GREEN+REFACTOR commit:
       `feat(spec-duplicates): A blocked permanent specifications path reports its I/O error`.
     - Files: active feature and `tests/steps/spec_duplicates_steps.rs`.
@@ -3090,7 +3090,7 @@ Feature: Audit duplicate and related permanent scenarios
     - `cargo fmt -- --check` exited 0 and the targeted command was rerun with
       exit 0 and `5 steps (5 passed)`. Targeted output has no coverage summary;
       merged repository coverage supplies the line evidence.
-  - [x] COMMIT: 9dcd6ecc8e07e9d89a20fcf25ae4123930079c83
+  - [x] COMMIT: 1e8458f1a80a38b089ea706e10b0cb3bc95afe49
     - Atomic RED+GREEN+REFACTOR commit:
       `feat(spec-duplicates): Removed permanent scenarios are excluded from the audit`.
     - Files: active feature and `tests/steps/spec_duplicates_steps.rs`.
@@ -3114,7 +3114,7 @@ Feature: Audit duplicate and related permanent scenarios
       ordering behavior, and kept the semantic score comparator on its
       guaranteed `Some` values. `cargo fmt -- --check` and the targeted runner
       both exited 0.
-  - [x] COMMIT: aeee71d42e211d932c3979830c94c519547dd1b6
+  - [x] COMMIT: 084dd0ceed9ed8874dba2c94f3231b78a043ca23
     - Atomic RED+GREEN+REFACTOR commit:
       `feat(spec-duplicates): Structural relations are ordered by relation class`.
     - Files: active feature, regular steps, and `src/spec/retrieval.rs`.
@@ -3136,7 +3136,7 @@ Feature: Audit duplicate and related permanent scenarios
   - [x] REFACTOR:
     - `cargo fmt -- --check` exited 0 after formatting the fixture array, and
       the targeted command was rerun with exit 0 and `5 steps (5 passed)`.
-  - [x] COMMIT: bd2871c6bbf42ca482847181d7548a860f95ed80
+  - [x] COMMIT: df0f03f36b7166face4697a21c9d636b11313f3e
     - Atomic RED+GREEN+REFACTOR commit:
       `feat(spec-duplicates): Equal semantic scores use right endpoint order`.
     - Files: active feature and `tests/steps/spec_duplicates_steps.rs`.
@@ -3162,7 +3162,7 @@ Feature: Audit duplicate and related permanent scenarios
       OS-string value for the invalid UTF-8 row and escaped Gherkin table pipes
       for endpoint keys. `cargo fmt -- --check` exited 0 after formatting, and
       the targeted command was rerun with exit 0 and `4 steps (4 passed)`.
-  - [x] COMMIT: bb0c2c4e0c35f93ab5a0075a3f872a6253c33d50
+  - [x] COMMIT: 59bcdfea68ab28006389b70ffd8798fdf46e93dd
     - Atomic RED+GREEN+REFACTOR commit:
       `feat(spec-duplicates): Invalid duplicate score overrides are rejected`.
     - Files: active feature and `tests/steps/spec_duplicates_steps.rs`.
@@ -3185,7 +3185,7 @@ Feature: Audit duplicate and related permanent scenarios
       callers already provide canonically sorted scenario endpoints, while the
       score-override parser retains and exercises reverse normalization.
       `cargo fmt -- --check` and the targeted command exited 0.
-  - [x] COMMIT: 73bcbc1873e4f24d80f98fde28c563fb29455d51
+  - [x] COMMIT: fae0b846e453c3cf4664c9e1815bf58002a4655b
     - Atomic RED+GREEN+REFACTOR commit:
       `feat(spec-duplicates): Reversed score override endpoint pairs normalize canonically`.
     - Files: active feature, regular steps, and `src/spec/retrieval.rs`.
@@ -3208,7 +3208,7 @@ Feature: Audit duplicate and related permanent scenarios
   - [x] REFACTOR:
     - `cargo fmt -- --check` exited 0 after compacting the fixture literals, and
       the targeted command was rerun with exit 0 and `5 steps (5 passed)`.
-  - [x] COMMIT: 116f4234b10cc5da93d57f6502a9f1d1fbca204e
+  - [x] COMMIT: fef99f0328ca03ebd8ad28ad09b6a16b7789c2da
     - Atomic RED+GREEN+REFACTOR commit:
       `feat(spec-duplicates): Empty assertions and reverse subsets retain their distinct relations`.
     - Files: active feature and `tests/steps/spec_duplicates_steps.rs`.
@@ -3234,7 +3234,7 @@ Feature: Audit duplicate and related permanent scenarios
       ignored; the metric step asserts the two emitted candidates remain
       semantic-only and advisory. `cargo fmt -- --check` exited 0 and the
       targeted command was rerun with exit 0 and the same measured counts.
-  - [x] COMMIT: fc10bbe74a467588f41d46ec4b838bbdc5d4483c
+  - [x] COMMIT: 723c6a11e2dde02230f876d51932286bbb84cb30
     - Atomic RED+GREEN+REFACTOR commit:
       `feat(spec-duplicates): Semantic quality evidence is measured from labeled stub scores`.
     - Files: active feature and `tests/steps/spec_duplicates_steps.rs`.

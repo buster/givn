@@ -40,7 +40,7 @@ Capabilities and step files:
       cargo check --locked --tests
       Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.90s
       ```
-- [x] COMMIT: `e29e9d3e` -- `test(finding-severity-routing-signal): strict-mode proof and step skeletons`
+- [x] COMMIT: `980a3519` -- `test(finding-severity-routing-signal): strict-mode proof and step skeletons`
 
 ## Scenarios
 
@@ -66,14 +66,14 @@ Capabilities and step files:
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `55c0987c` -- `feat(lint-command): A blocking finding renders its severity`
+  - [x] COMMIT: `95efef05` -- `feat(lint-command): A blocking finding renders its severity`
 
 ### lint-command
 
 - [x] Scenario: `An advisory finding renders its severity and keeps the exit code`
   - [x] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
         ```
-        restored `src/cli/lint.rs` to the setup revision (e29e9d3e):
+        restored `src/cli/lint.rs` to the setup revision (980a3519):
         Step panicked. Captured output: stderr missing "[SHAPE] advisory"
         1 scenario (1 failed)
         6 steps (5 passed, 1 failed)
@@ -90,14 +90,14 @@ Capabilities and step files:
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `0ef3d685` -- `feat(lint-command): An advisory finding renders its severity and keeps the exit code`
+  - [x] COMMIT: `625dff37` -- `feat(lint-command): An advisory finding renders its severity and keeps the exit code`
 
 ### lint-command
 
 - [x] Scenario: `The JSON output exposes the finding severity`
   - [x] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
         ```
-        restored `src/cli/lint.rs` to e29e9d3e:
+        restored `src/cli/lint.rs` to 980a3519:
         Step panicked. Captured output: stdout missing "severity"
         1 scenario (1 failed)
         5 steps (4 passed, 1 failed)
@@ -114,14 +114,14 @@ Capabilities and step files:
         1 scenario (1 passed)
         8 steps (8 passed)
         ```
-  - [x] COMMIT: `39016c10` -- `feat(lint-command): The JSON output exposes the finding severity`
+  - [x] COMMIT: `0f043bbc` -- `feat(lint-command): The JSON output exposes the finding severity`
 
 ### spec-explore-change
 
 - [x] Scenario: `A tied route reports no signal`
   - [x] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
         ```
-        restored `src/spec/route.rs` to e29e9d3e:
+        restored `src/spec/route.rs` to 980a3519:
         Step panicked. Captured output: stdout missing "no signal": recommendation: EXTEND lint-check (use case 'gates', score 4.00)
         1 scenario (1 failed)
         5 steps (4 passed, 1 failed)
@@ -138,14 +138,14 @@ Capabilities and step files:
         1 scenario (1 passed)
         7 steps (7 passed)
         ```
-  - [x] COMMIT: `6f62406b` -- `feat(spec-explore-change): A tied route reports no signal`
+  - [x] COMMIT: `fc48e2aa` -- `feat(spec-explore-change): A tied route reports no signal`
 
 ### spec-explore-change
 
 - [x] Scenario: `A goal-aligned capability ranks above a lexically similar candidate`
   - [x] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
         ```
-        restored `src/spec/route.rs` to the lint revision (39016c10):
+        restored `src/spec/route.rs` to the lint revision (0f043bbc):
         Step panicked. Captured output: stdout missing "recommendation: EXTEND coverage-tool": recommendation: NEW in alignment
         1 scenario (1 failed)
         5 steps (4 passed, 1 failed)
@@ -162,14 +162,14 @@ Capabilities and step files:
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `a99b1a6a` -- `feat(spec-explore-change): A goal-aligned capability ranks above a lexically similar candidate`
+  - [x] COMMIT: `95c77f6b` -- `feat(spec-explore-change): A goal-aligned capability ranks above a lexically similar candidate`
 
 ### spec-explore-change
 
 - [x] Scenario: `A proposal with no matching surface reports no signal`
   - [x] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
         ```
-        restored `src/spec/route.rs` to 39016c10:
+        restored `src/spec/route.rs` to 0f043bbc:
         Step panicked. Captured output: stdout missing "recommendation: no signal": recommendation: NEW (no use-case affinity signal)
         1 scenario (1 failed)
         5 steps (4 passed, 1 failed)
@@ -186,7 +186,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `cf4cd844` -- `feat(spec-explore-change): A proposal with no matching surface reports no signal`
+  - [x] COMMIT: `99986185` -- `feat(spec-explore-change): A proposal with no matching surface reports no signal`
 
 ### instruction-integrity
 
@@ -210,7 +210,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         7 steps (7 passed)
         ```
-  - [x] COMMIT: `8baba4fc` -- `feat(instruction-integrity): The propose guidance carries the no-signal routing rule`
+  - [x] COMMIT: `e2475fb2` -- `feat(instruction-integrity): The propose guidance carries the no-signal routing rule`
 
 ## Final checks
 
@@ -235,8 +235,8 @@ Capabilities and step files:
       0
       ```
 - [x] Confirm commit count matches scenario task count and every task has a
-      recorded hash: setup `e29e9d3e`; scenarios `55c0987c`, `0ef3d685`,
-      `39016c10`, `6f62406b`, `a99b1a6a`, `cf4cd844`, `8baba4fc`.
+      recorded hash: setup `980a3519`; scenarios `95efef05`, `625dff37`,
+      `0f043bbc`, `fc48e2aa`, `95c77f6b`, `99986185`, `e2475fb2`.
 - [x] Confirm `givn lint --change finding-severity-routing-signal` has no
       parse errors (exit 0). Evidence:
       ```

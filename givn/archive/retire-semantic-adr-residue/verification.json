@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "retire-semantic-adr-residue",
   "status": "proven",
-  "candidate_revision": "e1b3136ac166f54b8dfb64d15525ee9023660e86",
-  "tested_revision": "e1b3136ac166f54b8dfb64d15525ee9023660e86",
+  "candidate_revision": "5006b2f13c9f992474b1a30babad994d1ce9c4e2",
+  "tested_revision": "5006b2f13c9f992474b1a30babad994d1ce9c4e2",
   "scopes": {
     "e2e": {
       "status": "passed",

@@ -52,7 +52,7 @@ variants.
       cargo check --locked --tests
       Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.53s
       ```
-- [x] COMMIT: `97e419f0` -- `test(adr-qualification-hardening): strict-mode proof and step skeletons`
+- [x] COMMIT: `61aca78b` -- `test(adr-qualification-hardening): strict-mode proof and step skeletons`
 
 ## Scenarios
 
@@ -92,7 +92,7 @@ Step panicked. Captured output: not implemented
         1 scenario (1 passed)
         9 steps (9 passed)
         ```
-  - [x] COMMIT: `4203f326` -- `feat(adr-qualification-gate): The guidance carries the three falsification tests`
+  - [x] COMMIT: `f882c945` -- `feat(adr-qualification-gate): The guidance carries the three falsification tests`
 
 - [x] Scenario: `The design template keeps decision justification in the design`
   - [x] RED: removed `@wip` from this scenario only; ran the single-scenario
@@ -126,7 +126,7 @@ Step panicked. Captured output: not implemented
         1 scenario (1 passed)
         4 steps (4 passed)
         ```
-  - [x] COMMIT: `bd73138d` -- `feat(adr-qualification-gate): The design template keeps decision justification in the design`
+  - [x] COMMIT: `64f7fef9` -- `feat(adr-qualification-gate): The design template keeps decision justification in the design`
 
 - [x] Scenario: `The impact assessment records the verdict before drafting`
   - [x] RED: removed `@wip` from this scenario only; ran the single-scenario
@@ -158,7 +158,7 @@ Step panicked. Captured output: not implemented
         1 scenario (1 passed)
         3 steps (3 passed)
         ```
-  - [x] COMMIT: `aa5a0e91` -- `feat(adr-qualification-gate): The impact assessment records the verdict before drafting`
+  - [x] COMMIT: `79f634ca` -- `feat(adr-qualification-gate): The impact assessment records the verdict before drafting`
 
 - [x] Scenario: `The ADR template ships with no pre-passed qualification values`
   - [x] RED: removed `@wip` from this scenario only; ran the single-scenario
@@ -193,7 +193,7 @@ Step panicked. Captured output: not implemented
         1 scenario (1 passed)
         4 steps (4 passed)
         ```
-  - [x] COMMIT: `418f7c18` -- `feat(adr-qualification-gate): The ADR template ships with no pre-passed qualification values`
+  - [x] COMMIT: `11e369a2` -- `feat(adr-qualification-gate): The ADR template ships with no pre-passed qualification values`
 
 - [x] Scenario: `Design-review requires the cheaper-home challenge for a new ADR`
   - [x] RED: removed `@wip` from this scenario only; ran the single-scenario
@@ -230,7 +230,7 @@ Step panicked. Captured output: not implemented
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `086d1ed6` -- `feat(adr-qualification-gate): Design-review requires the cheaper-home challenge for a new ADR`
+  - [x] COMMIT: `93dad8b5` -- `feat(adr-qualification-gate): Design-review requires the cheaper-home challenge for a new ADR`
 
 - [x] Scenario: `The chapter-selection guidance does not normalize row 9`
   - [x] RED: removed `@wip` from this scenario only; ran the single-scenario
@@ -265,7 +265,7 @@ Step panicked. Captured output: not implemented
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `2cf72220` -- `feat(adr-qualification-gate): The chapter-selection guidance does not normalize row 9`
+  - [x] COMMIT: `00332ba9` -- `feat(adr-qualification-gate): The chapter-selection guidance does not normalize row 9`
 
 ## Final checks
 
@@ -292,8 +292,8 @@ Step panicked. Captured output: not implemented
       0
       ```
 - [x] Confirm commit count matches scenario task count and every task has a
-      recorded hash: one setup commit (`97e419f0`) plus six scenario commits
-      (`4203f326`, `bd73138d`, `aa5a0e91`, `418f7c18`, `086d1ed6`, `2cf72220`).
+      recorded hash: one setup commit (`61aca78b`) plus six scenario commits
+      (`f882c945`, `64f7fef9`, `79f634ca`, `11e369a2`, `93dad8b5`, `00332ba9`).
 - [x] Confirm `givn lint --change adr-qualification-hardening` has no parse
       errors (exit 0). Evidence:
       ```

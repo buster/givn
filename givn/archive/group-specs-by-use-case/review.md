@@ -10,7 +10,7 @@ change.
 
 | Scenario | Commit hash | Touches production code? |
 |---|---|---|
-| Migration (38 git-mv renames + 7 group.md + 1 step path fix) | `3c2512b` | yes (test step path) |
+| Migration (38 git-mv renames + 7 group.md + 1 step path fix) | `c9d6945` | yes (test step path) |
 | Post-archive verification | (archive commit) | archive move |
 
 **Promised-architecture cross-check** — layout is the deliverable; see

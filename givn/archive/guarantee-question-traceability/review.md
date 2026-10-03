@@ -6,7 +6,7 @@
 |---|---|
 | @e2e tag integrity | Clean — the delta has no `@e2e` scenario and none was removed. |
 | Empty/no-op step bodies | 0 found in `tests/steps/instruction_integrity_steps.rs`. |
-| Checked tasks have commits touching production | Clean — setup `4ef5e023` plus five scenario commits (`7590e8fd`, `c35ec246`, `76c3e4e6`, `d5beffee`, `6b5672bf`). |
+| Checked tasks have commits touching production | Clean — setup `dc0e7c82` plus five scenario commits (`748c9243`, `f8af7398`, `67ceaee0`, `b32494bc`, `c5e3dc8c`). |
 | Promised components exist | Clean — the qualifier rule, the disposition rule, the ledger contract, the review criterion, and all four template shapes exist. |
 | Strict-mode proof | Present in `tasks.md` Setup with non-zero-exit evidence. |
 | Downgraded `@e2e` scenarios | None — the delta has no `@e2e` scenario. |

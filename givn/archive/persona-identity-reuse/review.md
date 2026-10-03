@@ -6,12 +6,12 @@
 |---|---|
 | @e2e tag integrity | Clean — the delta has no `@e2e` scenario and none was removed; existing `@e2e` scenarios are untouched. |
 | Empty/no-op step bodies | 0 found in both touched step files. |
-| Checked tasks have commits touching production | Clean — setup `b3bb6293` plus eight scenario commits (`8572ef2d`, `b0dd1e43`, `f9cc68a2`, `891caa07` + fold `ea0e4eb4`, `46af6176`, `1d5f898f`, `256df102`, `80db1723`). |
+| Checked tasks have commits touching production | Clean — setup `a992f90f` plus eight scenario commits (`b119a89f`, `8e570f1d`, `95601fe6`, `90aec644` + fold `883bee06`, `ea2a6e4e`, `18185e92`, `38edbb52`, `5468db24`). |
 | Promised components exist | Clean — the persona template, the criteria and protocol, the advisory lint scan, the review-time resolution, the glossary rows, and the ADR-028 amendment all exist. |
 | Strict-mode proof | Present in `tasks.md` Setup with non-zero-exit evidence. |
 | Downgraded `@e2e` scenarios | None — the delta has no `@e2e` scenario. |
 | `verify.e2e_command` isolation | `./run-tests.sh` vs `./run-tests.sh --e2e`; counts 520 vs 88 — strictly fewer. |
-| Implementation vs design.md | Matches, with one recorded refinement: the project- and topic-resolution guards were folded into the dangling scenario during implementation because a pure negative guard cannot fail RED; the fold is recorded in `design.md`'s spec coverage and committed as `ea0e4eb4`. |
+| Implementation vs design.md | Matches, with one recorded refinement: the project- and topic-resolution guards were folded into the dangling scenario during implementation because a pure negative guard cannot fail RED; the fold is recorded in `design.md`'s spec coverage and committed as `883bee06`. |
 | Parallel e2e implementations | None found in the tree (tracked or untracked). |
 
 Two scenarios are legitimate immediate-GREEN guards (the exempt-path reasoned

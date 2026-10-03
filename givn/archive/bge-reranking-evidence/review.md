@@ -29,7 +29,7 @@ The setup proof is recorded in `tasks.md` and was independently rerun. The targe
 - 48 checked scenario commit hashes are present and resolve to 48 unique Git commits.
 - Every scenario has RED, GREEN, REFACTOR evidence and a recorded hash.
 - Production-bearing implementation commits include `src/spec/retrieval.rs`, `src/main.rs`, `src/cli/spec.rs`, `Cargo.toml`, `assets/instructions/specs.md`, `tools/approach-comparison/`, `run-tests.sh`, and `measure-coverage.sh` changes.
-- Pure black-box contract scenarios reuse those production paths and add executable CLI assertions and fixture seams; none is a spec-only or stub-only implementation. The NLI scenario's final hash is `3a508ec`, which contains the production `nli-evidence` capability boundary.
+- Pure black-box contract scenarios reuse those production paths and add executable CLI assertions and fixture seams; none is a spec-only or stub-only implementation. The NLI scenario's final hash is `868f1b8`, which contains the production `nli-evidence` capability boundary.
 - No component promised by `design.md` is absent: the BGE selector, bounded pool, evidence renderers, parity command, approval writer, local artifact preflight, regular step module, E2E step module, and cucumber runner all exist.
 
 ### E2E fidelity

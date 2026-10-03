@@ -3,7 +3,7 @@
 README-IMPACT: updated - Usage (the consumer-observable surface — `givn run`, the
 `run:` declaration, the upgrade backfill, the archive run gate — is documented in
 `docs/reference.md`, the README's referenced full CLI reference; its CLI-commands
-and configuration-keys tables were updated this change, commit `ac9c52b`).
+and configuration-keys tables were updated this change, commit `3e23f6a`).
 
 ## Fabrication audit
 
@@ -94,7 +94,7 @@ chapters, the change-level `arc42.md`, design.md, tasks.md, and the tree:
 | ch. 05 building blocks: executor module | ch. 05 run block description | design §7; T5–T7 | `src/cli/run.rs` (execute/resolve/probe/start), `src/main.rs` dispatch |
 | ch. 06 runtime: check review / archive gates order | ch. 06 gate pipeline order | design §6.3–6.4; T3/T14 | `check.rs` review arm; `archive.rs` gate before README gate |
 | ch. 08 § coverage/reporting: unchanged | not affected | — | no drift |
-| ch. 09 + adr/: ADR-067 accepted, register count 36+3 | 09 updated, README register table+prose, qualification-gate scenario bumped | T16 | commits `51a6c42`; permanent scenario green |
+| ch. 09 + adr/: ADR-067 accepted, register count 36+3 | 09 updated, README register table+prose, qualification-gate scenario bumped | T16 | commits `2ad0415`; permanent scenario green |
 | ch. 11 R-41/R-42/R-44/R-45, TC-25 | updated during T0 | design §7; tasks T6/T7 | risks carry the contract/process-group/compat facts |
 | ch. 12 glossary: run terms | recorded (12-glossary.md) | domain-modeling during change | terms below |
 
@@ -175,8 +175,8 @@ Gaps in the change's new production code (delta-scope measurement):
 
 | Gap | Classification | Resolution/Reason |
 |---|---|---|
-| `resolve_start_plan` re-check of `check_run` | dead code (bucket 1) | deleted — `execute` always preflights immediately before resolving, so the branch is unreachable (commit `19079ed`) |
-| `backfill_commands` empty-base branch | dead code (bucket 1) | deleted — `givn/commands.yaml` always carries the init template; the branch cannot occur (commit `19079ed`) |
+| `resolve_start_plan` re-check of `check_run` | dead code (bucket 1) | deleted — `execute` always preflights immediately before resolving, so the branch is unreachable (commit `cc3c4d1`) |
+| `backfill_commands` empty-base branch | dead code (bucket 1) | deleted — `givn/commands.yaml` always carries the init template; the branch cannot occur (commit `cc3c4d1`) |
 | `pre_exec`/`setpgid` lines (run.rs) | legitimately hard to test (bucket 3) | the closure runs in the forked child between fork and exec; coverage counters cannot survive exec. The behavior is proven by the process-group scenarios (timeout kill and group forward both depend on the group existing) |
 | probe_once mid-request TCP failure branches (write err / read err / unparsable status) | legitimately hard to test (bucket 3) | loopback mid-request failure injection is racy by nature; all three branches fail-safe to `false`, which feeds the retry loop — and the retry behavior itself is fully covered (404/204/no-listener/timeout scenarios) |
 | `givn run: failed to start` spawn-error branch | legitimately hard to test (bucket 3) | `sh -c` spawns fine on any host that runs givn at all; `sh` failing to spawn is an environment catastrophe outside the machine contract. The realistic failure (nonexistent command → sh exits 127) is forwarded through the same child-exit path covered by the exit-3/exit-7 scenarios |

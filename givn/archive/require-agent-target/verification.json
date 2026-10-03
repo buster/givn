@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "require-agent-target",
   "status": "proven",
-  "candidate_revision": "c7cee47b53b593a8dae573a319ae5925d04b292c",
-  "tested_revision": "c7cee47b53b593a8dae573a319ae5925d04b292c",
+  "candidate_revision": "2bd911c86d28c838c448b14aa96cb32ec6eb4cfc",
+  "tested_revision": "2bd911c86d28c838c448b14aa96cb32ec6eb4cfc",
   "scopes": {
     "e2e": {
       "status": "passed",

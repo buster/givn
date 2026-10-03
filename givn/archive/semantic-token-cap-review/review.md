@@ -17,11 +17,11 @@ the real CLI test boundary.
 
 | Scenario/task | Commit hash | Touches production code? |
 |---|---|---|
-| Strict runner and step skeleton setup | `a783bc3` | Infrastructure commit; runner/config/test files, not product source |
-| Permanent duplicate audit preserves BGE evidence when NLI reaches the cap | `b233079` | Yes, `src/spec/retrieval.rs` |
-| Exactly 512 tokens keeps normal second-stage behavior | `87baf9f` | Yes, `src/spec/retrieval.rs` |
-| Permanent duplicate audit keeps partial BGE token-cap evidence per candidate | `e3a48c5` | Reuses production behavior from `b233079`; real compiled-CLI E2E glue |
-| Blocking change review keeps an all-over-cap candidate unresolved | `44a2c94` | Yes, `src/spec/retrieval.rs` |
+| Strict runner and step skeleton setup | `de09b28` | Infrastructure commit; runner/config/test files, not product source |
+| Permanent duplicate audit preserves BGE evidence when NLI reaches the cap | `99532a9` | Yes, `src/spec/retrieval.rs` |
+| Exactly 512 tokens keeps normal second-stage behavior | `c037971` | Yes, `src/spec/retrieval.rs` |
+| Permanent duplicate audit keeps partial BGE token-cap evidence per candidate | `7860c37` | Reuses production behavior from `99532a9`; real compiled-CLI E2E glue |
+| Blocking change review keeps an all-over-cap candidate unresolved | `cc5b79d` | Yes, `src/spec/retrieval.rs` |
 
 **Promised-architecture cross-check**
 

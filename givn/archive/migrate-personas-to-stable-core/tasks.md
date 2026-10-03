@@ -11,7 +11,7 @@ Documentation repair; `specs` is skipped.
 - [x] Convert the three persona files to stable core + running record + topic
       stances; state the shared identity criterion in each Role line; fold
       interests, goals, and pain points into the core fields.
-- [x] COMMIT: `b4f4fc89` -- `docs(persona-identity-reuse): migrate the permanent personas to the stable core`
+- [x] COMMIT: `d906c8a7` -- `docs(persona-identity-reuse): migrate the permanent personas to the stable core`
 
 ## Verification
 
@@ -23,5 +23,5 @@ Documentation repair; `specs` is skipped.
       Summary [30.040s] 539 tests run: 539 passed, 0 skipped
       Summary [5.4s] 88 tests run: 88 passed, 451 skipped
       ```
-- [x] COMMIT: `d58f4dc4` -- `docs(migrate-personas-to-stable-core): complete the review`
+- [x] COMMIT: `edf07e84` -- `docs(migrate-personas-to-stable-core): complete the review`
 - [x] Archive the change.

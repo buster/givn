@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "maintain-project",
   "status": "proven",
-  "candidate_revision": "b8eace4eb7a6561c0ca9541f5b73a6ddeb5c749f",
-  "tested_revision": "b8eace4eb7a6561c0ca9541f5b73a6ddeb5c749f",
+  "candidate_revision": "2b4fdfdd45569574dbf61cb5891e09321e6c822b",
+  "tested_revision": "2b4fdfdd45569574dbf61cb5891e09321e6c822b",
   "scopes": {
     "e2e": {
       "status": "passed",

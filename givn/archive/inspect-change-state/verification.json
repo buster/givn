@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "inspect-change-state",
   "status": "proven",
-  "candidate_revision": "b668ebae9d90dc2ada5b48025b1602fa8a1f4f84",
-  "tested_revision": "b668ebae9d90dc2ada5b48025b1602fa8a1f4f84",
+  "candidate_revision": "6a6cd9cfbdc0d122ac30f8a2e7bc903e9aacbe03",
+  "tested_revision": "6a6cd9cfbdc0d122ac30f8a2e7bc903e9aacbe03",
   "scopes": {
     "e2e": {
       "status": "passed",

@@ -37,7 +37,7 @@ and commit hash are recorded.
       contract; rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `8 steps (8 passed)` after
       `cargo fmt --all`.
-- [x] COMMIT: `c5ad76e` — `docs(arc42): The guidance defines strict qualification as an all-gates contract`
+- [x] COMMIT: `ca6a15a` — `docs(arc42): The guidance defines strict qualification as an all-gates contract`
 
 ## Scenario: Shared guidance alone does not qualify an ADR
 
@@ -56,7 +56,7 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario after cleanup. Output:
       `1 feature`, `1 scenario (1 passed)`, `5 steps (5 passed)` after
       `cargo fmt --all`.
-- [x] COMMIT: `a3685be` — `docs(arc42): Shared guidance alone does not qualify an ADR`
+- [x] COMMIT: `7b2ce3c` — `docs(arc42): Shared guidance alone does not qualify an ADR`
 
 ## Scenario: The guidance routes normal design decisions to one canonical artifact
 
@@ -72,7 +72,7 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `6 steps (6 passed)` after
       `cargo fmt --all`.
-- [x] COMMIT: `0a0ab32` — `docs(arc42): The guidance routes normal design decisions to one canonical artifact`
+- [x] COMMIT: `daa8580` — `docs(arc42): The guidance routes normal design decisions to one canonical artifact`
 
 ## Scenario: The guidance requires an existing-ADR check before drafting
 
@@ -87,7 +87,7 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `5 steps (5 passed)` after
       `cargo fmt --all`.
-- [x] COMMIT: `ee6b7a5` — `docs(arc42): The guidance requires an existing-ADR check before drafting`
+- [x] COMMIT: `9ed460b` — `docs(arc42): The guidance requires an existing-ADR check before drafting`
 
 ## Scenario: The structured verdict has fixed gate and route fields
 
@@ -103,7 +103,7 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `7 steps (7 passed)` after
       `cargo fmt --all`.
-- [x] COMMIT: `12be1ca` — `docs(arc42): The structured verdict has fixed gate and route fields`
+- [x] COMMIT: `52f684a` — `docs(arc42): The structured verdict has fixed gate and route fields`
 
 ## Scenario: Route targets are conditional and unused targets stay empty
 
@@ -118,7 +118,7 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `6 steps (6 passed)` after
       `cargo fmt --all`.
-- [x] COMMIT: `2dccc77` — `docs(arc42): Route targets are conditional and unused targets stay empty`
+- [x] COMMIT: `35b1d33` — `docs(arc42): Route targets are conditional and unused targets stay empty`
 
 ## Scenario: The guidance forbids invented ADR evidence
 
@@ -134,7 +134,7 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `5 steps (5 passed)` after
       `cargo fmt --all`.
-- [x] COMMIT: `ab2ce53` — `docs(arc42): The guidance forbids invented ADR evidence`
+- [x] COMMIT: `fc404cf` — `docs(arc42): The guidance forbids invented ADR evidence`
 
 ## Scenario: An ADR refinement is routed to amendment without duplication
 
@@ -149,7 +149,7 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `5 steps (5 passed)` after
       `cargo fmt --all`.
-- [x] COMMIT: `fab193e` — `docs(arc42): An ADR refinement is routed to amendment without duplication`
+- [x] COMMIT: `5419d56` — `docs(arc42): An ADR refinement is routed to amendment without duplication`
 
 ## Scenario: An architectural replacement preserves supersession history
 
@@ -165,7 +165,7 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `5 steps (5 passed)` after
       `cargo fmt --all`.
-- [x] COMMIT: `2898b5f` — `docs(arc42): An architectural replacement preserves supersession history`
+- [x] COMMIT: `556d2d1` — `docs(arc42): An architectural replacement preserves supersession history`
 
 ## Scenario: Arc42 impact does not by itself require an ADR
 
@@ -181,7 +181,7 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `5 steps (5 passed)` after
       `cargo fmt --all`.
-- [x] COMMIT: `bc50d2c` — `docs(arc42): Arc42 impact does not by itself require an ADR`
+- [x] COMMIT: `1cf033b` — `docs(arc42): Arc42 impact does not by itself require an ADR`
 
 ## Scenario: The change assessment records ADR disposition separately from chapter impact
 
@@ -197,7 +197,7 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `5 steps (5 passed)` after
       `cargo fmt --all`.
-- [x] COMMIT: `7a74df9` — `docs(arc42): The change assessment records ADR disposition separately from chapter impact`
+- [x] COMMIT: `a66c58a` — `docs(arc42): The change assessment records ADR disposition separately from chapter impact`
 
 ## Scenario: The ADR register has one canonical ownership contract
 
@@ -213,7 +213,7 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `6 steps (6 passed)` after
       `cargo fmt --all`.
-- [x] COMMIT: `1d6a768` — `docs(arc42): The ADR register has one canonical ownership contract`
+- [x] COMMIT: `d9aa0aa` — `docs(arc42): The ADR register has one canonical ownership contract`
 
 ## Scenario: The migration removes non-ADRs and preserves independent architecture history
 
@@ -231,7 +231,7 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `11 steps (11 passed)` after
       `cargo fmt --all`.
-- [x] COMMIT: `62f83f7` — `docs(arc42): The migration removes non-ADRs and preserves independent architecture history`
+- [x] COMMIT: `c38c8e5` — `docs(arc42): The migration removes non-ADRs and preserves independent architecture history`
 
 ## Scenario: All effective guidance sources use the same ADR policy
 
@@ -247,7 +247,7 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `8 steps (8 passed)` after
       `cargo fmt --all`.
-- [x] COMMIT: `876511a` — `docs(arc42): All effective guidance sources use the same ADR policy`
+- [x] COMMIT: `89c63ff` — `docs(arc42): All effective guidance sources use the same ADR policy`
 
 ## Scenario: The ADR guidance requires an adversarial qualification record
 
@@ -263,7 +263,7 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `6 steps (6 passed)` after
       `cargo fmt --all`.
-- [x] COMMIT: `7a923d3` — `docs(arc42): The ADR guidance requires an adversarial qualification record`
+- [x] COMMIT: `c4ffe4a` — `docs(arc42): The ADR guidance requires an adversarial qualification record`
 
 ## E2E Smoke Tests
 
@@ -299,7 +299,7 @@ and commit hash are recorded.
       rerun the anchored command. Output:
       `1 feature`, `1 scenario (1 passed)`, `6 steps (6 passed)` after
       `cargo fmt --all`.
-- [x] COMMIT: `be8e626` — `test(e2e): An author requests the strict ADR guidance through the Givn CLI`
+- [x] COMMIT: `a3776ed` — `test(e2e): An author requests the strict ADR guidance through the Givn CLI`
 
 ## Scenario: A reviewer requests design-review guidance through the Givn CLI
 
@@ -321,7 +321,7 @@ and commit hash are recorded.
       rerun the anchored command. Output:
       `1 feature`, `1 scenario (1 passed)`, `6 steps (6 passed)` after
       `cargo fmt --all`.
-- [x] COMMIT: `ba48285` — `test(e2e): A reviewer requests design-review guidance through the Givn CLI`
+- [x] COMMIT: `aa44a51` — `test(e2e): A reviewer requests design-review guidance through the Givn CLI`
 
 ## Final Verification
 

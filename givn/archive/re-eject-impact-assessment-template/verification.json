@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "re-eject-impact-assessment-template",
   "status": "proven",
-  "candidate_revision": "b8a6c1833308b721dd6ea45207a01af2d10ed215",
-  "tested_revision": "b8a6c1833308b721dd6ea45207a01af2d10ed215",
+  "candidate_revision": "c3d7071db7ae0359d0a25268cef32fd4e19688ed",
+  "tested_revision": "c3d7071db7ae0359d0a25268cef32fd4e19688ed",
   "scopes": {
     "e2e": {
       "status": "passed",

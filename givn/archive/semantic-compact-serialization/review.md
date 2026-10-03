@@ -22,18 +22,18 @@ E2E tag was removed.
 
 | Scenario/task | Commit | Production evidence |
 |---|---|---|
-| Setup and strict runner proof | `125b916` | `src/spec/retrieval.rs`, runner registration, and both capability step modules |
-| Empty optional sections do not add retrieval content | `125b916` | Conditional serializer emission, exact empty-marker test, and index hash assertion |
-| Non-empty optional sections remain complete retrieval content | `773e445` | Reuses the serializer from `125b916`; adds rich-content acceptance assertions and vector evidence |
-| Compact boundary fixture consolidation | `286027d` | Consolidates minimal and rich regular fixture assertions into one scenario |
-| CLI reports successful catalogue construction | `facf069` | Reuses production behavior from `125b916`; adds the real CLI E2E driver and stdout assertion |
-| Shorten duplicate score validation fixture | `35e93d1` | Reduces the permanent invalid-score scenario while preserving all 12 diagnostics |
-| Non-empty text-format preservation refactor | `d91cbe4` | Keeps existing non-empty step text, outline name, and Examples keyword formatting while omitting only empty optional content |
-| Empty context-section edge handling | `5f4202a` | Omits wholly empty Background and Examples sections instead of retaining structural keyword markers |
-| Verification evidence | `22dc727` | Records full, E2E, lint, format, clippy, and coverage results |
+| Setup and strict runner proof | `46d2889` | `src/spec/retrieval.rs`, runner registration, and both capability step modules |
+| Empty optional sections do not add retrieval content | `46d2889` | Conditional serializer emission, exact empty-marker test, and index hash assertion |
+| Non-empty optional sections remain complete retrieval content | `678cb98` | Reuses the serializer from `46d2889`; adds rich-content acceptance assertions and vector evidence |
+| Compact boundary fixture consolidation | `1d57567` | Consolidates minimal and rich regular fixture assertions into one scenario |
+| CLI reports successful catalogue construction | `59513fc` | Reuses production behavior from `46d2889`; adds the real CLI E2E driver and stdout assertion |
+| Shorten duplicate score validation fixture | `2cfe2f8` | Reduces the permanent invalid-score scenario while preserving all 12 diagnostics |
+| Non-empty text-format preservation refactor | `f697728` | Keeps existing non-empty step text, outline name, and Examples keyword formatting while omitting only empty optional content |
+| Empty context-section edge handling | `1f8966e` | Omits wholly empty Background and Examples sections instead of retaining structural keyword markers |
+| Verification evidence | `1f737f8` | Records full, E2E, lint, format, clippy, and coverage results |
 
 The second and E2E scenarios are deliberate production-reuse cases. The shared
-production implementation is present in `125b916`; their commits add the
+production implementation is present in `46d2889`; their commits add the
 consumer-boundary evidence that exercises the already implemented serializer.
 
 **Promised components:**
@@ -88,7 +88,7 @@ were independently checked against the completed implementation.
 | Retrieval building block | Chapter 5.3h | One canonical serializer | `src/spec/retrieval.rs` | Direct serializer tests | Single serializer feeds index/explore/review paths | Yes |
 | Runtime index flow | Chapter 6.8a | Omit empty fields before hashing/tokenization | Existing index flow retained | CLI index scenarios | `givn spec index` passed with minimal and rich fixtures | Yes |
 | Cross-cutting semantic input | Chapter 8.5g | Empty markers omitted, non-empty content preserved | Normalized `Option` emission | Exact string and hash assertions | Direct tests cover empty and rich fixtures | Yes |
-| Architecture decision | Chapter 9 ADR-059/ADR-062 | Hash boundary plus empty-field omission | No serializer-version field | Commit `125b916` | Hash invalidation and compact text implementation | Yes |
+| Architecture decision | Chapter 9 ADR-059/ADR-062 | Hash boundary plus empty-field omission | No serializer-version field | Commit `46d2889` | Hash invalidation and compact text implementation | Yes |
 | Quality requirement | Chapter 10 Q-94/Q-108 | No synthetic boilerplate similarity contribution | Exact omission/preservation assertions | Two regular scenarios | Exact minimal string has no empty markers; rich content assertions pass | Yes |
 | Risk mitigation | Chapter 11 R-73 | Empty boilerplate similarity risk mitigated | Rebuild by content hash | Index hash evidence | Changed serialized content invalidates old entries | Yes |
 | Glossary | Chapter 12 complete semantic serialization | Compact omission semantics defined | Semantic boundary explicitly stated | Design/review mapping | Implementation follows parsed-content boundary | Yes |

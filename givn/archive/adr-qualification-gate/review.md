@@ -27,23 +27,23 @@ output.
 
 | Scenario | Commit hash | Authoritative source or real binding touched? |
 |---|---|---|
-| The guidance defines strict qualification as an all-gates contract | `c5ad76e` | Yes — canonical guidance, durable docs, migration, and real bindings |
-| Shared guidance alone does not qualify an ADR | `a3685be` | Yes — canonical guidance and real bindings |
-| The guidance routes normal design decisions to one canonical artifact | `0a0ab32` | Yes — canonical guidance and real bindings |
-| The guidance requires an existing-ADR check before drafting | `ee6b7a5` | Yes — canonical guidance and real bindings |
-| The structured verdict has fixed gate and route fields | `12be1ca` | Yes — real source assertions against the canonical verdict contract; source contract was already established in `c5ad76e` |
-| Route targets are conditional and unused targets stay empty | `2dccc77` | Yes — real source assertions against the canonical route contract |
-| The guidance forbids invented ADR evidence | `ab2ce53` | Yes — real source assertions against the canonical evidence contract |
-| An ADR refinement is routed to amendment without duplication | `fab193e` | Yes — canonical guidance and real bindings |
-| An architectural replacement preserves supersession history | `2898b5f` | Yes — canonical guidance and real bindings |
-| Arc42 impact does not by itself require an ADR | `bc50d2c` | Yes — canonical guidance and real bindings |
-| The change assessment records ADR disposition separately from chapter impact | `7a74df9` | Yes — Arc42 impact template and real bindings |
-| The ADR register has one canonical ownership contract | `1d6a768` | Yes — durable register/chapter and real bindings |
-| The migration removes non-ADRs and preserves independent architecture history | `62f83f7` | Yes — real migration assertions; durable migration was established in `c5ad76e` |
-| All effective guidance sources use the same ADR policy | `876511a` | Yes — real source-parity bindings against generated snapshots |
-| The ADR guidance requires an adversarial qualification record | `7a923d3` | Yes — canonical guidance and real bindings |
-| An author requests the strict ADR guidance through the Givn CLI | `be8e626` | Yes — compiled-CLI E2E binding |
-| A reviewer requests design-review guidance through the Givn CLI | `ba48285` | Yes — compiled-CLI E2E binding |
+| The guidance defines strict qualification as an all-gates contract | `ca6a15a` | Yes — canonical guidance, durable docs, migration, and real bindings |
+| Shared guidance alone does not qualify an ADR | `7b2ce3c` | Yes — canonical guidance and real bindings |
+| The guidance routes normal design decisions to one canonical artifact | `daa8580` | Yes — canonical guidance and real bindings |
+| The guidance requires an existing-ADR check before drafting | `9ed460b` | Yes — canonical guidance and real bindings |
+| The structured verdict has fixed gate and route fields | `52f684a` | Yes — real source assertions against the canonical verdict contract; source contract was already established in `ca6a15a` |
+| Route targets are conditional and unused targets stay empty | `35b1d33` | Yes — real source assertions against the canonical route contract |
+| The guidance forbids invented ADR evidence | `fc404cf` | Yes — real source assertions against the canonical evidence contract |
+| An ADR refinement is routed to amendment without duplication | `5419d56` | Yes — canonical guidance and real bindings |
+| An architectural replacement preserves supersession history | `556d2d1` | Yes — canonical guidance and real bindings |
+| Arc42 impact does not by itself require an ADR | `1cf033b` | Yes — canonical guidance and real bindings |
+| The change assessment records ADR disposition separately from chapter impact | `a66c58a` | Yes — Arc42 impact template and real bindings |
+| The ADR register has one canonical ownership contract | `d9aa0aa` | Yes — durable register/chapter and real bindings |
+| The migration removes non-ADRs and preserves independent architecture history | `c38c8e5` | Yes — real migration assertions; durable migration was established in `ca6a15a` |
+| All effective guidance sources use the same ADR policy | `89c63ff` | Yes — real source-parity bindings against generated snapshots |
+| The ADR guidance requires an adversarial qualification record | `c4ffe4a` | Yes — canonical guidance and real bindings |
+| An author requests the strict ADR guidance through the Givn CLI | `a3776ed` | Yes — compiled-CLI E2E binding |
+| A reviewer requests design-review guidance through the Givn CLI | `aa44a51` | Yes — compiled-CLI E2E binding |
 |
 | **No new executable production code** | — | Intentional; the behavior under test is authoritative documentation/source assets. |
 

@@ -6,7 +6,7 @@
 |---|---|---|
 | 0 | `@e2e` tag integrity in the delta | Clean: `scm-backend-selection.feature` has exactly one `@e2e` scenario, tagged from the start; no tag was removed. |
 | 1 | Empty or no-op step bodies | Clean: no `unimplemented!()`, `todo!()`, or empty body remains in `tests/steps/scm_backend_selection_steps.rs` or `tests/steps/scm_backend_selection_e2e_steps.rs`. |
-| 2 | Every checked task has a commit touching production source | Clean: `d6c1b4e5`, `51f26300`, `a63f1354`, `a8a8f572`, `7f11727c`, `be6738f7`, `2ad7d0e8`, `001d919f`; each touches `src/scm.rs`, `src/git.rs`, `src/cli/migration.rs`, or the bound steps. |
+| 2 | Every checked task has a commit touching production source | Clean: `b61e58f5`, `823f9dbf`, `070612d0`, `e72119d4`, `b1d1a857`, `037fdaf5`, `9d3770f2`, `d96ffff4`; each touches `src/scm.rs`, `src/git.rs`, `src/cli/migration.rs`, or the bound steps. |
 | 3 | Components promised by design exist | Clean: `src/scm.rs` (`Backend`, `select`, probes, refusals), `Worktree::at/stage_paths/has_staged_changes/commit_staged` in `src/git.rs`, migration routed through the seam. |
 | 4 | Strict-mode proof present | Clean: tasks.md Setup shows the first targeted run exiting 1 with `Step panicked. Captured output: not implemented`; `.fail_on_skipped()` is configured in `tests/features_runner.rs`. |
 | 5 | `@e2e` Then steps assert through the real interface | Clean: the E2E Then asserts CLI exit 0, stdout reporting `Refreshed` and the new revision, and the changed revision plus restored managed file. |

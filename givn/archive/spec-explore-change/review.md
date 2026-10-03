@@ -48,22 +48,22 @@ The scenario commits are:
 
 | Scenario group | Commit |
 |---|---|
-| Removed delta filtering | `0d36bd7` |
-| Modified source identity | `eb3831b` |
-| Permanent-index persistence boundary | `df1b43f` |
-| Added source identity | `af62538` |
-| Modified projected-target identity | `5de7ff0` |
-| Relative/absolute identity normalization | `2fd7acf` |
-| Change-aware stdin parity | `58043f3` |
-| Permanent text metadata | `7386892` |
-| Permanent JSON metadata | `ec9c082` |
-| Unsafe change id | `58a56c2` |
-| Missing change | `bcff09f` |
-| Missing specs directory | `fa4e4a5` |
-| Malformed delta | `7e007bd` |
-| File exploration E2E | `2cc2d73` |
-| JSON exploration E2E | `b70e495` |
-| Rule-nested delta collection | `df91758` |
+| Removed delta filtering | `21cc9d2` |
+| Modified source identity | `0b708e9` |
+| Permanent-index persistence boundary | `001ffc6` |
+| Added source identity | `40e5cea` |
+| Modified projected-target identity | `5e0e6fd` |
+| Relative/absolute identity normalization | `fb34c43` |
+| Change-aware stdin parity | `77abf78` |
+| Permanent text metadata | `c48643b` |
+| Permanent JSON metadata | `6904e07` |
+| Unsafe change id | `3e44fdc` |
+| Missing change | `19bec33` |
+| Missing specs directory | `331e115` |
+| Malformed delta | `76e92e4` |
+| File exploration E2E | `75b2bed` |
+| JSON exploration E2E | `34a40ce` |
+| Rule-nested delta collection | `b2ec8d7` |
 
 The production implementation is present in `src/main.rs`, `src/cli/spec.rs`,
 and `src/spec/retrieval.rs`. The first capability commit introduced the

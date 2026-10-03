@@ -11,7 +11,7 @@
   - Strictness proof command: `GIVN_FEATURES=givn/changes/semantic-compact-serialization/specs cargo test --features spec-retrieval --test features_runner -- --name "Empty optional sections do not add retrieval content"` while the scenario is still `@wip` or has an unimplemented step.
   - Strictness proof output and non-zero exit: `GIVN_FEATURES=givn/changes/semantic-compact-serialization/specs cargo test --features spec-retrieval --test features_runner -- --name "Empty optional sections do not add retrieval content"` exited non-zero. The runner compiled with `.fail_on_skipped()` and failed on the undefined Given step: `Step doesn't match any function`; summary: `1 feature, 1 scenario (1 failed), 1 step (1 failed)`.
   - Setup files: `tests/steps/semantic_compact_serialization_steps.rs`, `tests/steps/semantic_compact_serialization_e2e_steps.rs`, and `tests/steps/mod.rs`.
-  - Setup commit: `125b916` (included in the first implementation commit).
+  - Setup commit: `46d2889` (included in the first implementation commit).
 
 ## Scenario: Compact serialization preserves empty and non-empty retrieval boundaries
 
@@ -29,7 +29,7 @@
 - [x] REFACTOR
   - Keep one regular fixture scenario for both empty and rich boundaries while retaining the separate real CLI E2E smoke test.
   - Re-run the targeted command; output remained `1 feature, 1 scenario (1 passed), 4 steps (4 passed)`.
-- [x] COMMIT: `286027d` — commit RED, GREEN, and REFACTOR together with a message referencing `Compact serialization preserves empty and non-empty retrieval boundaries`.
+- [x] COMMIT: `1d57567` — commit RED, GREEN, and REFACTOR together with a message referencing `Compact serialization preserves empty and non-empty retrieval boundaries`.
 
 ## E2E Setup
 
@@ -60,7 +60,7 @@
   - Keep E2E setup isolated and avoid duplicating regular serializer assertions.
   - Re-run `./run-tests.sh --e2e`; expected result is zero.
   - Captured output: after `cargo fmt --all`, `GIVN_FEATURES=... ./run-tests.sh --e2e` remained green with `1 feature, 1 scenario (1 passed), 5 steps (5 passed)` for the E5 subset and `0 features, 0 scenarios, 0 steps` for the empty BGE/NLI subsets.
-- [x] COMMIT: `facf069` — commit RED, GREEN, and REFACTOR together with a message referencing the compact catalogue refresh E2E implementation.
+- [x] COMMIT: `59513fc` — commit RED, GREEN, and REFACTOR together with a message referencing the compact catalogue refresh E2E implementation.
 
 ## Final Verification
 

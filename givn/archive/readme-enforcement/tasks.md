@@ -72,8 +72,8 @@ non-@e2e first, @e2e last).
 - [x] COMMIT — `feat(readme-enforcement): README check reports every open placeholder and its expectation`
 
   ```
-  commit hash: c9f0971
-  - [x] COMMIT: c9f0971 -- S1 checker + readme check dispatch; RED+GREEN+REFACTOR evidence above.
+  commit hash: 58bb2bf
+  - [x] COMMIT: 58bb2bf -- S1 checker + readme check dispatch; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 2: README check reports a legacy scaffold README as needing migration
@@ -102,8 +102,8 @@ non-@e2e first, @e2e last).
 - [x] COMMIT — `feat(readme-enforcement): README check reports a legacy scaffold README as needing migration`
 
   ```
-  commit hash: 5f670f9
-  - [x] COMMIT: 5f670f9 -- S2 legacy scaffold detection; RED+GREEN+REFACTOR evidence above.
+  commit hash: 949121f
+  - [x] COMMIT: 949121f -- S2 legacy scaffold detection; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 3: README check reports a damaged managed block
@@ -133,8 +133,8 @@ non-@e2e first, @e2e last).
 - [x] COMMIT — `feat(readme-enforcement): README check reports a damaged managed block`
 
   ```
-  commit hash: f900edd
-  - [x] COMMIT: f900edd -- S3 damaged managed block; RED+GREEN+REFACTOR evidence above.
+  commit hash: 7707886
+  - [x] COMMIT: 7707886 -- S3 damaged managed block; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 4: README check reports a missing README
@@ -163,8 +163,8 @@ non-@e2e first, @e2e last).
 - [x] COMMIT — `feat(readme-enforcement): README check reports a missing README`
 
   ```
-  commit hash: 84f7849
-  - [x] COMMIT: 84f7849 -- S4 missing README finding; RED+GREEN+REFACTOR evidence above.
+  commit hash: a479d7e
+  - [x] COMMIT: a479d7e -- S4 missing README finding; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 5: README check reports a hand-written README without givn markers as unmanaged
@@ -194,8 +194,8 @@ non-@e2e first, @e2e last).
 - [x] COMMIT — `feat(readme-enforcement): README check reports a hand-written README without givn markers as unmanaged`
 
   ```
-  commit hash: 070e2a4
-  - [x] COMMIT: 070e2a4 -- S5 unmanaged README finding; RED+GREEN+REFACTOR evidence above.
+  commit hash: 59907f6
+  - [x] COMMIT: 59907f6 -- S5 unmanaged README finding; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 6: Review refuses sign-off without a recorded README impact decision
@@ -232,8 +232,8 @@ non-@e2e first, @e2e last).
 - [x] COMMIT — `feat(readme-enforcement): Review refuses sign-off without a recorded README impact decision`
 
   ```
-  commit hash: 4789df2
-  - [x] COMMIT: 4789df2 -- S6 README-IMPACT enforcement in integrity hook; RED+GREEN+REFACTOR evidence above.
+  commit hash: ad20c10
+  - [x] COMMIT: ad20c10 -- S6 README-IMPACT enforcement in integrity hook; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 7: Review accepts an updated README impact decision naming the sections
@@ -265,8 +265,8 @@ non-@e2e first, @e2e last).
 - [x] COMMIT — `feat(readme-enforcement): Review accepts an updated README impact decision naming the sections`
 
   ```
-  commit hash: a0d2ffd
-  - [x] COMMIT: a0d2ffd -- S7 updated-impact acceptance; RED+GREEN+REFACTOR evidence above.
+  commit hash: 96bb459
+  - [x] COMMIT: 96bb459 -- S7 updated-impact acceptance; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 8: A project without the readme addon needs no README impact decision
@@ -297,8 +297,8 @@ non-@e2e first, @e2e last).
 - [x] COMMIT — `feat(readme-enforcement): A project without the readme addon needs no README impact decision`
 
   ```
-  commit hash: 31bdb12
-  - [x] COMMIT: 31bdb12 -- S8 addon gating; RED+GREEN+REFACTOR evidence above.
+  commit hash: fbc28a4
+  - [x] COMMIT: fbc28a4 -- S8 addon gating; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 9: An unknown README impact value is refused
@@ -328,8 +328,8 @@ non-@e2e first, @e2e last).
 - [x] COMMIT — `feat(readme-enforcement): An unknown README impact value is refused`
 
   ```
-  commit hash: c8533d5
-  - [x] COMMIT: c8533d5 -- S9 unknown impact value refusal; RED+GREEN+REFACTOR evidence above.
+  commit hash: 44f4499
+  - [x] COMMIT: 44f4499 -- S9 unknown impact value refusal; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 10: Archive blocks while the README has open placeholders
@@ -368,8 +368,8 @@ non-@e2e first, @e2e last).
 - [x] COMMIT — `feat(readme-enforcement): Archive blocks while the README has open placeholders`
 
   ```
-  commit hash: 421ea6f
-  - [x] COMMIT: 421ea6f -- S10 archive completeness gate; RED+GREEN+REFACTOR evidence above.
+  commit hash: 267fd65
+  - [x] COMMIT: 267fd65 -- S10 archive completeness gate; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 11: Archive blocks when the README is missing
@@ -401,8 +401,8 @@ non-@e2e first, @e2e last).
 - [x] COMMIT — `feat(readme-enforcement): Archive blocks when the README is missing`
 
   ```
-  commit hash: f4c8bc5
-  - [x] COMMIT: f4c8bc5 -- S11 archive missing-README block; RED+GREEN+REFACTOR evidence above.
+  commit hash: 1aeb285
+  - [x] COMMIT: 1aeb285 -- S11 archive missing-README block; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 12: Archive blocks for a hand-written README without givn markers
@@ -433,8 +433,8 @@ non-@e2e first, @e2e last).
 - [x] COMMIT — `feat(readme-enforcement): Archive blocks for a hand-written README without givn markers`
 
   ```
-  commit hash: 89aa21d
-  - [x] COMMIT: 89aa21d -- S12 archive unmanaged block; RED+GREEN+REFACTOR evidence above.
+  commit hash: b60f71c
+  - [x] COMMIT: b60f71c -- S12 archive unmanaged block; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 13: Archive does not re-insert a deleted development managed block while the README stays managed
@@ -466,8 +466,8 @@ non-@e2e first, @e2e last).
 - [x] COMMIT — `feat(readme-enforcement): Archive does not re-insert a deleted development managed block while the README stays managed`
 
   ```
-  commit hash: d4b0fb7
-  - [x] COMMIT: d4b0fb7 -- S13 refresh-if-present pinning; RED+GREEN+REFACTOR evidence above.
+  commit hash: d9b4317
+  - [x] COMMIT: d9b4317 -- S13 refresh-if-present pinning; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 14: Instructions stay silent about the README when it is complete
@@ -498,8 +498,8 @@ non-@e2e first, @e2e last).
 - [x] COMMIT — `feat(readme-enforcement): Instructions stay silent about the README when it is complete`
 
   ```
-  commit hash: 5ae1b34
-  - [x] COMMIT: 5ae1b34 -- S14 instructions silence guard; RED+GREEN+REFACTOR evidence above.
+  commit hash: 6c6813b
+  - [x] COMMIT: 6c6813b -- S14 instructions silence guard; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## E2E setup: prove the e2e filter and fixture conventions
@@ -544,8 +544,8 @@ non-@e2e first, @e2e last).
 - [x] COMMIT — `test(e2e): Consumer scaffolds a project and the README marks its unfilled sections`
 
   ```
-  commit hash: a5eb61f
-  - [x] COMMIT: a5eb61f -- S15 marked template + scaffold dev block; RED+GREEN+REFACTOR evidence above.
+  commit hash: e20437d
+  - [x] COMMIT: e20437d -- S15 marked template + scaffold dev block; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 16: Consumer runs the README check on a complete README and it passes
@@ -560,8 +560,8 @@ non-@e2e first, @e2e last).
 - [x] COMMIT — `test(e2e): Consumer runs the README check on a complete README and it passes`
 
   ```
-  commit hash: 1846936
-  - [x] COMMIT: 1846936 -- S16 check happy path; RED+GREEN+REFACTOR evidence above.
+  commit hash: 92675b9
+  - [x] COMMIT: 92675b9 -- S16 check happy path; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 17: Consumer checks a review with a recorded README impact decision and it passes
@@ -576,8 +576,8 @@ non-@e2e first, @e2e last).
 - [x] COMMIT — `test(e2e): Consumer checks a review with a recorded README impact decision and it passes`
 
   ```
-  commit hash: 92ba8af
-  - [x] COMMIT: 92ba8af -- S17 review happy path; RED+GREEN+REFACTOR evidence above.
+  commit hash: 5523078
+  - [x] COMMIT: 5523078 -- S17 review happy path; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 18: Consumer archives a change and the development managed block refreshes
@@ -613,8 +613,8 @@ non-@e2e first, @e2e last).
 - [x] COMMIT — `test(e2e): Consumer archives a change and the development managed block refreshes`
 
   ```
-  commit hash: 675fe58
-  - [x] COMMIT: 675fe58 -- S18 archive dev-block refresh; RED+GREEN+REFACTOR evidence above.
+  commit hash: a33e017
+  - [x] COMMIT: a33e017 -- S18 archive dev-block refresh; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 19: Consumer asks for instructions and the unfinished README is surfaced
@@ -644,8 +644,8 @@ non-@e2e first, @e2e last).
 - [x] COMMIT — `test(e2e): Consumer asks for instructions and the unfinished README is surfaced`
 
   ```
-  commit hash: 4ec0040
-  - [x] COMMIT: 4ec0040 -- S19 instructions nudge; RED+GREEN+REFACTOR evidence above.
+  commit hash: 791729e
+  - [x] COMMIT: 791729e -- S19 instructions nudge; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Final verification
@@ -667,12 +667,12 @@ non-@e2e first, @e2e last).
 
 - [x] Delta runs (both groups, `--no-default-features --features
       spec-retrieval`, stub embedder): 14/14 non-e2e + 5/5 e2e passed.
-  - [x] COMMIT: fbc048d -- standing-suite fixture adaptation (67 failing
+  - [x] COMMIT: 3a71b31 -- standing-suite fixture adaptation (67 failing
         scenarios after the gates landed; all adapted, suite green).
-  - [x] COMMIT: a806c6e -- archive/review skill guidance for the README gate
+  - [x] COMMIT: ee80cac -- archive/review skill guidance for the README gate
         and impact decision.
-  - [x] COMMIT: 5fedabc -- agent integrations regenerated (dogfood).
-  - [x] COMMIT: 8cb7058 -- development block renders coverage commands from
+  - [x] COMMIT: 04c1326 -- agent integrations regenerated (dogfood).
+  - [x] COMMIT: b70279b -- development block renders coverage commands from
         the command file regardless of addon enable order (found by the
         standing coverage-script-workflow scenario).
       Empty/no-op step bodies in both step files: 0 (grep for

@@ -14,13 +14,13 @@ records):
 
 | Scenario | Commit hash | Touches production code? |
 |---|---|---|
-| Planning | `fd7c1669` | Yes — proposal/spec/design/design-review/arc42/tasks |
-| live-question standard | `d42117ad` | Yes — `assets/skills/givn-ideation/SKILL.md.tmpl` |
-| stops questions at decided directions | `25e11a7a` | Yes — same template |
-| frame confirmed once | `e28b7574` | Yes — same template |
-| Handoff cuts seeds by deliverable guarantee | `a1140501` | Yes — template, arc42 8.19, glossary |
-| command guardrails | `02ddd9ca` | Yes — `assets/commands/givn-ideation.md` |
-| Verification | `62b2be5b` | Yes — tasks evidence record |
+| Planning | `76192275` | Yes — proposal/spec/design/design-review/arc42/tasks |
+| live-question standard | `255ec0c6` | Yes — `assets/skills/givn-ideation/SKILL.md.tmpl` |
+| stops questions at decided directions | `496a02c9` | Yes — same template |
+| frame confirmed once | `95cef964` | Yes — same template |
+| Handoff cuts seeds by deliverable guarantee | `27e7eefc` | Yes — template, arc42 8.19, glossary |
+| command guardrails | `cc767cf1` | Yes — `assets/commands/givn-ideation.md` |
+| Verification | `a9c01f3f` | Yes — tasks evidence record |
 
 **Promised-architecture cross-check** — every component design.md named exists:
 

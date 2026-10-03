@@ -10,7 +10,7 @@ test:
 
 | Scope | Commit hash | Touches production code? |
 |---|---|---|
-| Wrapper spacing and test | `7dcac69a` | yes (`src/cli/migration.rs`) |
+| Wrapper spacing and test | `08826fcc` | yes (`src/cli/migration.rs`) |
 
 **Promised-architecture cross-check** — the change promises a string fix and
 a unit test: the test exists and no module was introduced.

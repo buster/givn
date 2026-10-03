@@ -22,7 +22,7 @@ Stub for unimplemented steps: `unimplemented!()` (Rust/cucumber-rs).
     error: test failed, to rerun pass `--test features_runner`
     ```
     exit code **101** (non-zero) — `.fail_on_skipped()` rejects undefined steps.
-- [x] Commit: `chore(run-command): step skeletons and strict-mode proof` — hash `43ef246`
+- [x] Commit: `chore(run-command): step skeletons and strict-mode proof` — hash `c028a15`
 
 ## T1 — Data model + load rejection
 
@@ -32,14 +32,14 @@ Production: `src/config/manifest.rs` (`Run`, `ProductType`, `Default`, `Manifest
 - [x] RED: `GIVN_FEATURES=... cargo test --test features_runner -- --name "An unknown product type is rejected when the commands file loads"` — `1 step (1 failed)`, `Step panicked ... unimplemented` — exit **101**
 - [x] GREEN: files touched: `src/config/manifest.rs` (`Run`, `ProductType`, `Default`, `Manifest.run`), `src/config/overlay.rs` (`OverlayDoc.run`, replace-whole merge), `tests/steps/run_command_steps.rs` (3 steps). — `1 scenario (1 passed)`, `3 steps (3 passed)` — exit **0**
 - [x] REFACTOR: none needed (minimal implementation, existing patterns) — re-run exit **0**
-- [x] COMMIT: `feat(run-command): An unknown product type is rejected when the commands file loads` — hash `edb92f2`; lint follow-up `fix(run-command): wire Run into manifest fixtures; defer is_unconfigured to first use` — hash `9c28932`
+- [x] COMMIT: `feat(run-command): An unknown product type is rejected when the commands file loads` — hash `5df6b9a`; lint follow-up `fix(run-command): wire Run into manifest fixtures; defer is_unconfigured to first use` — hash `d2c9176`
 
 ## T2 — Shared scaffold asset
 
 Production: `assets/run.yaml.tmpl` (new), embed verbatim in `assets/commands.yaml.tmpl`, unit test `assets/run_scaffold_is_embedded_verbatim`.
 
 - [x] Asset + containment test written; `cargo test --lib run_scaffold_is_embedded_verbatim` → `test result: ok. 1 passed` — exit **0**
-- [x] COMMIT: `feat(run-command): shared run scaffold asset embedded verbatim in the commands template` — hash `c7edf9d`
+- [x] COMMIT: `feat(run-command): shared run scaffold asset embedded verbatim in the commands template` — hash `a9c25e3`
 
 ## T3 — Validation rules R1–R10 (`src/cli/run_block.rs`)
 
@@ -62,7 +62,7 @@ Production: `assets/run.yaml.tmpl` (new), embed verbatim in `assets/commands.yam
 ### Scenario: An unconfigured declaration reports only unset findings
 - [x] RED/GREEN: R1+R2+skip logic; RED: unimplemented stub panicked, exit 101; GREEN files: src/cli/run_block.rs, tests/steps/run_command_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
 - [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
-- [x] COMMIT: combined unit `feat(run-command): run-declaration validation, review gate, shared fixtures, permanent-suite migration, dogfood declaration` — hash `b0ba35a` -- one atomic commit covering all R1–R10 scenario boxes of this section (deviation recorded above); suite-green atomicity required it
+- [x] COMMIT: combined unit `feat(run-command): run-declaration validation, review gate, shared fixtures, permanent-suite migration, dogfood declaration` — hash `f95aad0` -- one atomic commit covering all R1–R10 scenario boxes of this section (deviation recorded above); suite-green atomicity required it
 
 ### Scenario: A server without a readiness path is incomplete
 - [x] RED/GREEN: R3; RED: no finding mentions requires run.ready_path, exit 101; GREEN files: src/cli/run_block.rs, tests/steps/run_command_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
@@ -116,7 +116,7 @@ Production: `src/cli/missing_run_command.rs` (pattern `missing_testrunner.rs`), 
 - [x] RED: targeted `--name` under e2e scope — `stderr missing "run.command is unset": error: unrecognized subcommand 'missing-run-command'` — exit 101
 - [x] GREEN: files: `src/cli/missing_run_command.rs` (new), `src/cli/mod.rs`, `src/main.rs` (hidden subcommand + dispatch), `tests/steps/run_execution_steps.rs` (`stderr mentions` step per design §16) — `1 scenario (1 passed)`, exit 0
 - [x] REFACTOR: fmt + clippy clean, exit 0
-- [x] COMMIT: `test(e2e): The sentinel start command prints setup guidance` — hash `ef41f34`
+- [x] COMMIT: `test(e2e): The sentinel start command prints setup guidance` — hash `ca1b9e1`
 
 ## T5 — Executor plan resolution + preflight
 
@@ -126,7 +126,7 @@ Production: `src/cli/run.rs` (`resolve_start_plan`, preflight, `--print`), `src/
 - [x] RED: RED: unrecognized subcommand 'run', exit 101
 - [x] GREEN: files: src/cli/run.rs, src/main.rs (Run subcommand), tests/steps/run_execution_support.rs, tests/steps/run_execution_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
 - [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
-- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `b8246bf` -- one atomic commit covering all six T5 plan-resolution scenarios
+- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `4f38aaa` -- one atomic commit covering all six T5 plan-resolution scenarios
 
 ### Scenario: An unconfigured declaration refuses to start
 - [x] RED: RED: stderr missing run.command is unset / no stderr-mentions step, exit 101
@@ -170,7 +170,7 @@ group `SIGKILL`, design §7.4 updated).
 - [x] RED: first run hung — fixed-port product never exited; fixture command lacked `--exit-after 1` (fixture defect, then `exits 0`+ready-line passed only after fix)
 - [x] GREEN: files: src/cli/run.rs (start_product), tests/ready_fixture.rs, tests/steps/run_execution_steps.rs (fixed-port given reserves the port), tests/steps/run_execution_support.rs — targeted run `1 scenario (1 passed)`, exit 0
 - [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
-- [x] COMMIT: `feat(run-command): product start loop, readiness probe, exit-code forwarding` — hash `918a59d` -- one atomic commit covering all nine T6 spawn/probe/exit-code scenarios (deviation recorded above)
+- [x] COMMIT: `feat(run-command): product start loop, readiness probe, exit-code forwarding` — hash `bbb185e` -- one atomic commit covering all nine T6 spawn/probe/exit-code scenarios (deviation recorded above)
 
 ### Scenario: A readiness timeout abandons the start
 - [x] RED/GREEN defect capture: test harness hung — givn killed only `sh`, the never-ready fixture grandchild survived holding the inherited pipes; root fix in product (process-group kill), manual reproduction confirmed exit 2 in ~1s before the fix
@@ -219,13 +219,13 @@ Production: libc sigaction handlers, `AtomicI32` flag, forward+wait, library sea
 - [x] RED: no handler installed — SIGTERM default-killed the test runner itself (`process didn't exit successfully ... signal: 15, SIGTERM`), exit 101
 - [x] GREEN: files: src/cli/run.rs (sigaction handler, AtomicI32 flag, group-forward, bounded 2s reap grace, return 128+sig), tests/steps/run_execution_steps.rs, tests/steps/run_execution_support.rs (InProcStart), tests/steps/mod.rs — targeted run `1 scenario (1 passed)`, exit 0. Deviation recorded: first GREEN attempt forwarded to the direct child only; `sh` forked instead of exec'ing the fixture, the signal never reached the product (trap marker missing). Root fix: forward to the process group. All waiting loops bounded (10s ready poll, 2s marker poll, 2s reap grace) per reviewer directive — design §7.4 updated, R-44 residual resolved.
 - [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
-- [x] COMMIT: `feat(run-command): forward SIGTERM to the started product and exit 143` — hash `03dcbf0`
+- [x] COMMIT: `feat(run-command): forward SIGTERM to the started product and exit 143` — hash `18e8295`
 
 ### @e2e Scenario: An interrupt stops the started product
 - [x] RED: SIGINT not yet in the handler set — givn subprocess died by default disposition, `the command exits 130` failed (`status.code()` None), exit 101; stray fixture left behind (expected in RED: no teardown path ran)
 - [x] GREEN: files: src/cli/run.rs (SIGINT added to sigaction set), tests/steps/run_execution_e2e_steps.rs (stays-ready given, interrupt when with 30s watchdog, exits-130 then, trap-marker then with 2s poll), tests/steps/mod.rs (run_trap_marker field) — targeted run `1 scenario (1 passed)`, exit 0. Deviation recorded: first GREEN attempt passed `--trap-marker=<path>` (equals syntax); the fixture only parses `--trap-marker <path>` (space-separated), marker never written — fixed in the step, not the fixture.
 - [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
-- [x] COMMIT: `feat(run-command): forward SIGINT to the started product and exit 130` — hash `bf935fc`
+- [x] COMMIT: `feat(run-command): forward SIGINT to the started product and exit 130` — hash `84c6892`
 
 ## T8 — Caller-provided port + print mode @e2e
 
@@ -233,11 +233,11 @@ Production: libc sigaction handlers, `AtomicI32` flag, forward+wait, library sea
 - [x] RED: ready-line step for the caller port went missing in the T6 step rewrite (change-scope run: `And the ready line names the caller-provided port — step doesn't match`, exit 101)
 - [x] GREEN: files: tests/steps/run_execution_steps.rs (`the ready line names the caller-provided port` asserting `:{port}/` from `run_caller_port`) — targeted run `1 scenario (1 passed)`, exit 0
 - [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
-- [x] COMMIT: `test(e2e): caller-provided port hand-off and print-mode contract steps` — hash `1fbf3c5` -- one atomic commit covering both T8 scenarios
+- [x] COMMIT: `test(e2e): caller-provided port hand-off and print-mode contract steps` — hash `b443e96` -- one atomic commit covering both T8 scenarios
 
 ### @e2e Scenario: Print mode emits the start plan without starting
 - [x] RED: print-contract steps went missing in the T6 step rewrite (change-scope run: `stdout is one line that exports the port hand-off and names the start command — step doesn't match`, exit 101)
-- [x] GREEN: files: tests/steps/run_execution_steps.rs (both print-mode steps restored from b8246bf) — targeted run `1 scenario (1 passed)`, exit 0; fixed-port/library print variants re-verified green
+- [x] GREEN: files: tests/steps/run_execution_steps.rs (both print-mode steps restored from 4f38aaa) — targeted run `1 scenario (1 passed)`, exit 0; fixed-port/library print variants re-verified green
 - [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
 
 ## T9 — README run block
@@ -250,7 +250,7 @@ RED evidence shared by the five render scenarios: steps undefined until this tas
 - [x] RED: undefined steps, exit 101 (change-scope run)
 - [x] GREEN: files: src/cli/readme.rs (render_run_block/render_run_block_for/run_block_body), tests/steps/run_readme_steps.rs (new), tests/steps/mod.rs — targeted run `1 scenario (1 passed)`, exit 0
 - [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
-- [x] COMMIT: `feat(run-command): README run managed block render, check, scaffold, refresh` — hash `45cd9c5` -- one atomic commit covering all six T9 render scenarios plus the two T9 @e2e scenarios (deviation recorded above)
+- [x] COMMIT: `feat(run-command): README run managed block render, check, scaffold, refresh` — hash `32cdd03` -- one atomic commit covering all six T9 render scenarios plus the two T9 @e2e scenarios (deviation recorded above)
 
 ### Scenario: The README renders a complete server declaration
 - [x] RED: undefined steps, exit 101 (change-scope run)
@@ -318,7 +318,7 @@ Production: `src/cli/archive.rs` (gate before README gate, §6.4) + `refresh_run
 - [x] RED: archive proceeded past the missing gate — `stdout mentions "run declaration"` never appeared and the change directory moved away, exit 101
 - [x] GREEN: files: src/cli/archive.rs (run-declaration gate after the similarity gate, before the README gate, labeled findings + bail), tests/steps/run_execution_e2e_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
 - [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
-- [x] COMMIT: `feat(run-command): archive run-declaration gate before the README gate` — hash `a45c606` -- one atomic commit covering both T14 archive-gate scenarios
+- [x] COMMIT: `feat(run-command): archive run-declaration gate before the README gate` — hash `26520ab` -- one atomic commit covering both T14 archive-gate scenarios
 
 ### @e2e Scenario: Archive passes once the run declaration is complete
 - [x] RED: `verify commands are no-ops with a complete server run declaration` Given and the named archived-directory Then missing, `Step doesn't match any function`, exit 101
@@ -332,7 +332,7 @@ Production: `src/cli/upgrade.rs` (`backfill_commands`, `RUN_SCAFFOLD`), `src/cli
 ### Scenario: The backfill appends the run scaffold to an existing commands file
 - [x] RED/GREEN: steps and production landed in one working pass — first targeted run passed, no separate RED possible; GREEN files: src/cli/upgrade.rs (backfill_commands + RUN_SCAFFOLD include_str), tests/steps/run_upgrade_steps.rs (new), tests/steps/mod.rs — targeted run `1 scenario (1 passed)`, exit 0
 - [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
-- [x] COMMIT: `feat(run-command): run-scaffold backfill in the managed upgrade` — hash `0c035af` -- one atomic commit covering all five T15 backfill/upgrade scenarios (deviation recorded above)
+- [x] COMMIT: `feat(run-command): run-scaffold backfill in the managed upgrade` — hash `9c6dee6` -- one atomic commit covering all five T15 backfill/upgrade scenarios (deviation recorded above)
 
 ### Scenario: The backfill is idempotent
 - [x] RED/GREEN: as above (first targeted run passed); GREEN files: as above — targeted run `1 scenario (1 passed)`, exit 0
@@ -356,7 +356,7 @@ Production: `src/cli/upgrade.rs` (`backfill_commands`, `RUN_SCAFFOLD`), `src/cli
 ## T16 — ADR + arc42 finalization
 
 - [x] ADR-067 status `accepted` after the confirmation evidence held: full suite 548 scenarios exit 0 (T15 suite gate) and `./run-tests.sh --e2e` 106 scenarios exit 0 (this task); register README (prose + table row), chapter 9, and the ADR's Confirmation section record the transition; `arc42.md` STATUS: DONE re-verified (chapter-9 row updated to describe the completed flip). Permanent adr-qualification-gate scenario bumped to "36 accepted decisions and three proposed decisions" per the established single-transition pattern; its step updated to match (targeted run passed, exit 0).
-- [x] COMMIT: `feat(run-command): accept ADR-067 and finalize the arc42 register` — hash `51a6c42`
+- [x] COMMIT: `feat(run-command): accept ADR-067 and finalize the arc42 register` — hash `2ad0415`
 
 ## Final gate
 

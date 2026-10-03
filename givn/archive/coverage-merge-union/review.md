@@ -5,7 +5,7 @@
 | Check | Result |
 |---|---|
 | Delta scenarios + step definitions | 2 scenarios in `givn/changes/coverage-merge-union/specs/archival/extract-coverage-gate.feature`; new steps in `tests/steps/extract_coverage_gate_steps.rs` fully implemented (fixture report builder, legacy commands.yaml writer, two givens, regex then-step asserting the merged root counters) — no empty bodies |
-| Checked tasks have production commits | `23bf23e` (src/cobertura.rs + step file, both scenarios), `f197526` (merge-coverages.sh + unit tests), `4f38936` (docs/arc42/08) |
+| Checked tasks have production commits | `5bda3e7` (src/cobertura.rs + step file, both scenarios), `4efd35c` (merge-coverages.sh + unit tests), `3117b4c` (docs/arc42/08) |
 | design.md components exist | `line_hits` field, `@number` deserialization, `line_hits()` aggregation, union merge with aggregate fallback, legacy fixture givens, merged-counter then-step, script recount — all present |
 | Strict-mode proof | Pre-existing: `cucumber-rs` `.fail_on_skipped()` (tests/features_runner.rs); RED evidence recorded per scenario in tasks.md (exit 1 against the sum denominator, then exit 0) |
 | @e2e integrity | No `@e2e` tags in the delta; none removed (git history clean) |
@@ -18,7 +18,7 @@
 
 | Chapter | arc42.md claim | Implementation evidence | Match |
 |---|---|---|---|
-| 08 crosscutting-concepts | Yes — merge contract updated | docs/arc42/08-crosscutting-concepts.md states the union rule, the aggregate-only fallback, and the branch-summation limitation (`4f38936`) | Yes |
+| 08 crosscutting-concepts | Yes — merge contract updated | docs/arc42/08-crosscutting-concepts.md states the union rule, the aggregate-only fallback, and the branch-summation limitation (`3117b4c`) | Yes |
 | 01–07, 09–12 | No | No goal/scope/building-block/runtime/deployment/ADR/quality/glossary change; `crate::cobertura` gains a field and corrected logic within its existing responsibility | Yes |
 
 **ARC42 CONFORMANCE: CLEAN**

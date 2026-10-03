@@ -41,7 +41,7 @@ Capabilities and step files:
       cargo check --locked --tests
       Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.92s
       ```
-- [x] COMMIT: `4ef5e023` -- `test(guarantee-question-traceability): strict-mode proof and step skeletons`
+- [x] COMMIT: `dc0e7c82` -- `test(guarantee-question-traceability): strict-mode proof and step skeletons`
 
 ## Scenarios
 
@@ -66,7 +66,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `7590e8fd` -- `feat(ideation-skill): The ideation guidance carries the open-question qualifier rule`
+  - [x] COMMIT: `748c9243` -- `feat(ideation-skill): The ideation guidance carries the open-question qualifier rule`
 
 ### instruction-integrity
 
@@ -89,7 +89,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         7 steps (7 passed)
         ```
-  - [x] COMMIT: `c35ec246` -- `feat(instruction-integrity): The proposal instruction carries the question disposition rule`
+  - [x] COMMIT: `f8af7398` -- `feat(instruction-integrity): The proposal instruction carries the question disposition rule`
 
 ### instruction-integrity
 
@@ -112,7 +112,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `76c3e4e6` -- `feat(instruction-integrity): The design and design-review guidance carry the decision ledger`
+  - [x] COMMIT: `67ceaee0` -- `feat(instruction-integrity): The design and design-review guidance carry the decision ledger`
 
 ### instruction-integrity
 
@@ -136,14 +136,14 @@ Capabilities and step files:
         1 scenario (1 passed)
         3 steps (3 passed)
         ```
-  - [x] COMMIT: `d5beffee` -- `feat(instruction-integrity): The review instruction rejects an unqualified guarantee with an open prerequisite`
+  - [x] COMMIT: `b32494bc` -- `feat(instruction-integrity): The review instruction rejects an unqualified guarantee with an open prerequisite`
 
 ### instruction-integrity
 
 - [x] Scenario: `The proposal design and design-review templates carry the ledger shapes`
   - [x] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
         ```
-        restored the three templates from the setup revision (4ef5e023):
+        restored the three templates from the setup revision (dc0e7c82):
         Step panicked. Captured output: givn/artifacts/proposal/proposal.md lacks "Disposition"
         1 scenario (1 failed)
         5 steps (4 passed, 1 failed)
@@ -160,7 +160,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         8 steps (8 passed)
         ```
-  - [x] COMMIT: `6b5672bf` -- `feat(instruction-integrity): The proposal design and design-review templates carry the ledger shapes`
+  - [x] COMMIT: `c5e3dc8c` -- `feat(instruction-integrity): The proposal design and design-review templates carry the ledger shapes`
 
 ## Final checks
 
@@ -184,8 +184,8 @@ Capabilities and step files:
       0
       ```
 - [x] Confirm commit count matches scenario task count and every task has a
-      recorded hash: setup `4ef5e023`, scenarios `7590e8fd`, `c35ec246`,
-      `76c3e4e6`, `d5beffee`, `6b5672bf`.
+      recorded hash: setup `dc0e7c82`, scenarios `748c9243`, `f8af7398`,
+      `67ceaee0`, `b32494bc`, `c5e3dc8c`.
 - [x] Confirm `givn lint --change guarantee-question-traceability` has no
       parse errors (exit 0). Evidence:
       ```

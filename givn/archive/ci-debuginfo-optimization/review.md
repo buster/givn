@@ -11,7 +11,7 @@ scenarios.
 |---|---|---|
 | 0 | `@e2e` tag integrity in delta | Clean — delta has no scenarios and never had `@e2e` tags (`rg "@e2e"` → none; feature file is a rationale comment + heading). |
 | 1 | Empty/no-op step bodies | n/a — no step files exist (no scenarios). |
-| 2 | Checked `[x]` tasks have commits touching production source | Clean — commit `621f698` modifies `Cargo.toml` and `.github/workflows/ci.yml` (production build/CI surface), not spec-only. No task is checked off without a real commit. |
+| 2 | Checked `[x]` tasks have commits touching production source | Clean — commit `be4811f` modifies `Cargo.toml` and `.github/workflows/ci.yml` (production build/CI surface), not spec-only. No task is checked off without a real commit. |
 | 3 | Components design promised exist | Clean — design promises only: `Cargo.toml [profile.dev]`, `ci.yml` job env + cache key. All three present in the diff. |
 | 4 | Strict-mode proof-of-strictness | n/a — zero scenarios; no cucumber step-definition surface to prove. The runner (`./run-tests.sh`) is already strict (`.fail_on_skipped()`, `features_runner.rs`). |
 | 5 | Downgraded `@e2e` (repo-only Then) | n/a — no `@e2e` scenarios. |
@@ -70,6 +70,6 @@ permanent suite (exit 0, both runners) and the archive-time
 - [x] Arc42 conformance clean.
 - [x] Ubiquitous language clean.
 - [x] No overlap dispositions required (zero scenarios).
-- [x] Commit evidence recorded in tasks.md (`621f698`).
+- [x] Commit evidence recorded in tasks.md (`be4811f`).
 
 REVIEW: PASS

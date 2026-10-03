@@ -15,7 +15,7 @@ evidence and its atomic commit hash.
   1 feature, 1 scenario, 1 failed step; process exited 101 because the first
   step was undefined. The runner also panicked after reporting the failed step.
   ```
-  Commit: `6c5fbf0` — `chore(nli-evidence): scaffold bounded NLI change`.
+  Commit: `d96c0ed` — `chore(nli-evidence): scaffold bounded NLI change`.
 
 ## Non-E2E Scenarios
 
@@ -28,7 +28,7 @@ evidence and its atomic commit hash.
   Targeted run passed 6/6 steps.
 - [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 6 steps
   passed.
-- [x] COMMIT: `a0cbb6a` — `feat(nli-evidence): NLI reports a symmetric probability summary from both directions`.
+- [x] COMMIT: `1b98db8` — `feat(nli-evidence): NLI reports a symmetric probability summary from both directions`.
 
 ### BGE and NLI jointly reduce the recommended candidate set
 
@@ -40,7 +40,7 @@ evidence and its atomic commit hash.
   passed 5/5 steps.
 - [x] REFACTOR: reran the unchanged combined targeted command; 1 scenario and
   5 steps passed.
-- [x] COMMIT: `e42afc6` — `feat(nli-evidence): BGE and NLI jointly reduce the recommended candidate set`.
+- [x] COMMIT: `719b4a5` — `feat(nli-evidence): BGE and NLI jointly reduce the recommended candidate set`.
 
 ### An unavailable NLI layer keeps a combined candidate blocking
 
@@ -52,7 +52,7 @@ evidence and its atomic commit hash.
   steps.
 - [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 5 steps
   passed.
-- [x] COMMIT: `6d4dd95` — `feat(nli-evidence): keep combined candidates blocking when NLI is unavailable`.
+- [x] COMMIT: `96d9577` — `feat(nli-evidence): keep combined candidates blocking when NLI is unavailable`.
 
 ### NLI refuses an overflowing bounded pair pool before model loading
 
@@ -63,7 +63,7 @@ evidence and its atomic commit hash.
   fallback in `src/spec/retrieval.rs` and tests. Targeted run passed 6/6 steps.
 - [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 6 steps
   passed.
-- [x] COMMIT: `3f7bf6e` — `feat(nli-evidence): refuse overflowing NLI candidate pools`.
+- [x] COMMIT: `fa5dd2b` — `feat(nli-evidence): refuse overflowing NLI candidate pools`.
 
 ### NLI keeps candidates outside a partial bounded pool blocking
 
@@ -74,7 +74,7 @@ evidence and its atomic commit hash.
   5/5 steps.
 - [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 5 steps
   passed.
-- [x] COMMIT: `77fceea` — `feat(nli-evidence): preserve partial NLI candidates as unscored`.
+- [x] COMMIT: `e7caec8` — `feat(nli-evidence): preserve partial NLI candidates as unscored`.
 
 ### NLI JSON preserves the raw E5 contract and uses the NLI schema extension
 
@@ -85,7 +85,7 @@ evidence and its atomic commit hash.
   Targeted run passed 5/5 steps.
 - [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 5 steps
   passed.
-- [x] COMMIT: `b5f1c20` — `feat(nli-evidence): add NLI Explore JSON evidence`.
+- [x] COMMIT: `b75d7c7` — `feat(nli-evidence): add NLI Explore JSON evidence`.
 
 ### Disabling NLI preserves the E5-only contract in an NLI-capable build
 
@@ -96,7 +96,7 @@ evidence and its atomic commit hash.
   passed 6/6 steps.
 - [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 6 steps
   passed.
-- [x] COMMIT: `5c2fb58` — `feat(nli-evidence): preserve E5 output when NLI is disabled`.
+- [x] COMMIT: `aca849d` — `feat(nli-evidence): preserve E5 output when NLI is disabled`.
 
 ### Missing NLI artifacts preserve the explicit E5 fallback
 
@@ -108,7 +108,7 @@ evidence and its atomic commit hash.
   raw candidates. Targeted run passed 7/7 steps.
 - [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 7 steps
   passed.
-- [x] COMMIT: `2760564` — `feat(nli-evidence): expose explicit unavailable NLI fallback`.
+- [x] COMMIT: `e69522f` — `feat(nli-evidence): expose explicit unavailable NLI fallback`.
 
 ### The NLI admission boundary includes a symmetric entailment probability of 0.5000
 
@@ -119,7 +119,7 @@ evidence and its atomic commit hash.
   run passed 4/4 steps.
 - [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 4 steps
   passed.
-- [x] COMMIT: `71ecbfb` — `feat(nli-evidence): include the symmetric NLI admission boundary`.
+- [x] COMMIT: `b78dbe8` — `feat(nli-evidence): include the symmetric NLI admission boundary`.
 
 ### An NLI-recommended candidate still blocks unresolved semantic review
 
@@ -130,7 +130,7 @@ evidence and its atomic commit hash.
   Targeted run passed 5/5 steps.
 - [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 5 steps
   passed.
-- [x] COMMIT: `4360171` — `feat(nli-evidence): keep recommended NLI candidates blocking`; follow-up compile fix `a4ee76c` — `feat(nli-evidence): report NLI-only blocking worklists`.
+- [x] COMMIT: `cd50f78` — `feat(nli-evidence): keep recommended NLI candidates blocking`; follow-up compile fix `effa9a4` — `feat(nli-evidence): report NLI-only blocking worklists`.
 
 ### The independent NLI capability owns the legacy diagnostic selector
 
@@ -140,7 +140,7 @@ evidence and its atomic commit hash.
   exposing NLI admission counts; targeted run passed 8/8 steps.
 - [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 8 steps
   passed.
-- [x] COMMIT: `b6b7aac` — `feat(nli-evidence): activate legacy NLI selector as admission evidence`; follow-up production selector cleanup `2d14cea`.
+- [x] COMMIT: `59b874f` — `feat(nli-evidence): activate legacy NLI selector as admission evidence`; follow-up production selector cleanup `aaaaca6`.
 
 ## E2E Scenarios
 
@@ -154,7 +154,7 @@ evidence and its atomic commit hash.
   contains 5 scenarios. `cucumber-rs` strict mode is `.fail_on_skipped()`.
   Evidence: targeted first E2E RED exited 101 at the unimplemented E2E Given
   step; the first GREEN run passed 9/9 steps.
-  Setup commit: `6c5fbf0`; E2E implementation continues per scenario.
+  Setup commit: `d96c0ed`; E2E implementation continues per scenario.
 
 ### NLI reduces permanent exploration candidates without changing E5 raw results
 
@@ -165,7 +165,7 @@ evidence and its atomic commit hash.
   run passed 9/9 steps.
 - [x] REFACTOR: reran the unchanged targeted E2E command; 1 scenario and 9
   steps passed.
-- [x] COMMIT: `444ef0e` — `test(e2e): NLI reduces permanent exploration candidates without changing E5 raw results`.
+- [x] COMMIT: `d1bb603` — `test(e2e): NLI reduces permanent exploration candidates without changing E5 raw results`.
 
 ### NLI reduces change-aware exploration candidates without changing E5 raw results
 
@@ -176,7 +176,7 @@ evidence and its atomic commit hash.
   passed 8/8 steps.
 - [x] REFACTOR: reran the unchanged targeted E2E command; 1 scenario and 8
   steps passed.
-- [x] COMMIT: `d1dc253` — `test(e2e): NLI reduces change-aware exploration candidates without changing E5 raw results`.
+- [x] COMMIT: `8654aa9` — `test(e2e): NLI reduces change-aware exploration candidates without changing E5 raw results`.
 
 ### NLI reduces advisory review candidates without assigning a Givn class
 
@@ -187,7 +187,7 @@ evidence and its atomic commit hash.
   passed 8/8 steps.
 - [x] REFACTOR: reran the unchanged targeted E2E command; 1 scenario and 8
   steps passed.
-- [x] COMMIT: `39b18ee` — `test(e2e): NLI reduces advisory review candidates without assigning a Givn class`.
+- [x] COMMIT: `96a44cc` — `test(e2e): NLI reduces advisory review candidates without assigning a Givn class`.
 
 ### NLI filtered evidence does not block the blocking review
 
@@ -198,7 +198,7 @@ evidence and its atomic commit hash.
   passed 6/6 steps.
 - [x] REFACTOR: reran the unchanged targeted E2E command; 1 scenario and 6
   steps passed.
-- [x] COMMIT: `002887d` — `test(e2e): NLI filtered evidence does not block the blocking review`.
+- [x] COMMIT: `f8d6287` — `test(e2e): NLI filtered evidence does not block the blocking review`.
 
 ### NLI uses the bounded E5 neighbour union for the permanent duplicate audit
 
@@ -209,7 +209,7 @@ evidence and its atomic commit hash.
   Targeted run passed 6/6 steps.
 - [x] REFACTOR: reran the unchanged targeted E2E command; 1 scenario and 6
   steps passed.
-- [x] COMMIT: `bcef01a` — `test(e2e): NLI uses the bounded E5 neighbour union for the permanent duplicate audit`; follow-up BGE status compatibility fix `ac144ca`.
+- [x] COMMIT: `3da16fe` — `test(e2e): NLI uses the bounded E5 neighbour union for the permanent duplicate audit`; follow-up BGE status compatibility fix `e037fb0`.
 
 ## Full Verification
 

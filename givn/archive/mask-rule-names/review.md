@@ -10,8 +10,8 @@ cover pattern coverage and user-content safety. No empty bodies.
 
 | Scenario | Commit hash | Touches production code? |
 |---|---|---|
-| Plan | `4fee0270` | Planning artifacts |
-| masked ignore entries | `156875ea` | `src/skills/rules.rs`, steps, arc42 8.7 |
+| Plan | `9d1c719b` | Planning artifacts |
+| masked ignore entries | `c8b7d4f5` | `src/skills/rules.rs`, steps, arc42 8.7 |
 
 **Promised-architecture cross-check** — `ignore_entries`, the masking step,
 and the modified scenario exist.

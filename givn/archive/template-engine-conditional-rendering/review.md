@@ -20,12 +20,12 @@ matching commit that touches production source (not just spec/stub files):
 
 | Scenario | Commit hash | Touches production code? |
 |---|---|---|
-| Template engine + addon-aware sync (RenderTask; fail-closed errors; coupling) | 4e6e7b0 | Yes (src/skills/render.rs, src/skills/targets.rs, src/cli/addons.rs, src/cli/init.rs) |
-| Gate addon-owned guidance sections + step bindings; arc42/UBL/design-review arcs | 8def071 | Yes (assets templates/commands, tests/steps, generated agent skills) |
-| Plan artifacts incl. the 5 arc42 glossary rows | c719579 | Yes (docs/arc42/12-glossary.md + change artifacts) |
-| Review-phase consolidation: fold 8 overlapped scenarios into the @e2e proofs + honest install-extras contract | 643be36 | Yes (delta feature, steps, install-extras @givn.modified) |
-| E5 0.9 second-stage admission floor (real embedder) | a51fb85 | Yes (src/spec/retrieval.rs) |
-| Finalisation: review sign-off, coverage, task ticks | aa8f150 | No (chore) |
+| Template engine + addon-aware sync (RenderTask; fail-closed errors; coupling) | 817295a | Yes (src/skills/render.rs, src/skills/targets.rs, src/cli/addons.rs, src/cli/init.rs) |
+| Gate addon-owned guidance sections + step bindings; arc42/UBL/design-review arcs | 97270f6 | Yes (assets templates/commands, tests/steps, generated agent skills) |
+| Plan artifacts incl. the 5 arc42 glossary rows | 44cd905 | Yes (docs/arc42/12-glossary.md + change artifacts) |
+| Review-phase consolidation: fold 8 overlapped scenarios into the @e2e proofs + honest install-extras contract | 9a5ec0f | Yes (delta feature, steps, install-extras @givn.modified) |
+| E5 0.9 second-stage admission floor (real embedder) | 28048c7 | Yes (src/spec/retrieval.rs) |
+| Finalisation: review sign-off, coverage, task ticks | 64ba996 | No (chore) |
 
 **Strict-mode proof** — confirmed present in tests/features_runner.rs:
 
@@ -154,12 +154,12 @@ candidates 0; max scenario length is 7 steps — no split-or-keep row required.
 (crosscutting-concepts) and 12 (glossary) are marked `Affected? = Yes` —
 five glossary rows added (Addon-aware generation, Conditional section,
 Generated skill, Slash command, Template) to `docs/arc42/12-glossary.md`,
-committed with the plan artifacts (c719579). No other durable chapter is
+committed with the plan artifacts (44cd905). No other durable chapter is
 edited by this change.
 
 | arc42 claim | Design treatment | Implementation evidence | Match? |
 |---|---|---|---|
-| Chapters 8 + 12 affected (glossary rows) | Five glossary rows | docs/arc42/12-glossary.md lines 6/13/18/28/96 in c719579 | Yes |
+| Chapters 8 + 12 affected (glossary rows) | Five glossary rows | docs/arc42/12-glossary.md lines 6/13/18/28/96 in 44cd905 | Yes |
 | No other chapter edited | No durable chapter edits outside the glossary | git diff shows no other docs/arc42 change | Yes |
 
 **ARC42 CONFORMANCE:** CLEAN

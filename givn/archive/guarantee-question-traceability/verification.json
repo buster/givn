@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "guarantee-question-traceability",
   "status": "proven",
-  "candidate_revision": "cb36b1f54414fe8159fd68e5a2a1f0bda815f73c",
-  "tested_revision": "cb36b1f54414fe8159fd68e5a2a1f0bda815f73c",
+  "candidate_revision": "416d8457e27e57e7f532816a7673f53040da36aa",
+  "tested_revision": "416d8457e27e57e7f532816a7673f53040da36aa",
   "scopes": {
     "e2e": {
       "status": "passed",

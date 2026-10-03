@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "mask-rule-names",
   "status": "proven",
-  "candidate_revision": "fb50513aa50332d7d16780d881f349ffef6e4a8c",
-  "tested_revision": "fb50513aa50332d7d16780d881f349ffef6e4a8c",
+  "candidate_revision": "d9d70b350da254dd09358d703509dd4f9f9de966",
+  "tested_revision": "d9d70b350da254dd09358d703509dd4f9f9de966",
   "scopes": {
     "e2e": {
       "status": "passed",

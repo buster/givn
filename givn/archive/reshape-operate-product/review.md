@@ -9,7 +9,7 @@
 
 | Scope | Commit hash | Touches the release artifacts? |
 |---|---|---|
-| Reshape and renames | `9fe21853` | yes (operate-product narrative, two renamed features) |
+| Reshape and renames | `e5b1f7fe` | yes (operate-product narrative, two renamed features) |
 
 **Promised-architecture cross-check** — the change promises narrative and
 naming repairs, not a component: no production module changed.

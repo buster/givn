@@ -20,16 +20,16 @@ scenario-by-scenario. Each atomic commit below touches production source and
 the scenarios it delivers are listed. Every scenario task below is checked off
 with its single-scenario GREEN run recorded as evidence.
 
-- [x] COMMIT: 4e6e7b0 -- template engine + addon-aware sync (render.rs, targets.rs,
+- [x] COMMIT: 817295a -- template engine + addon-aware sync (render.rs, targets.rs,
   addons.rs, init.rs). Delivers: Task 0; Scenarios 7, 8, 10, 11, 12, 13, 14, 15.
-- [x] COMMIT: 8def071 -- gate addon-owned guidance sections + spec step bindings
+- [x] COMMIT: 97270f6 -- gate addon-owned guidance sections + spec step bindings
   (assets templates/commands, tests/steps, generated .opencode/.agents/.claude).
   Delivers: Scenarios 1, 2, 3, 4, 5, 6, 9, 16.
-- [x] COMMIT: a51fb85 -- E5 0.9 second-stage admission floor (src/spec/retrieval.rs):
+- [x] COMMIT: 28048c7 -- E5 0.9 second-stage admission floor (src/spec/retrieval.rs):
   the review gate no longer hands the nearest-E5 neighbours without an E5
   floor to BGE/NLI; only pairs at E5 >= 0.9 are scored (real embedder; stub
   backends are canned scores and stay deterministic).
-- [x] COMMIT: 643be36 -- review-phase consolidation (delta feature, steps,
+- [x] COMMIT: 9a5ec0f -- review-phase consolidation (delta feature, steps,
   install-extras @givn.modified): fold the 8 gate-flagged scenarios into the
   @e2e proofs, add the honest install-extras enable contract.
 
@@ -66,7 +66,7 @@ VARIANT -> Scenario Outline), the delta was consolidated:
   521/512) resolved by dropping the design-review command presence assertion;
   gate now reports E5 token-cap candidates 0.
 - Subtending source fix: the two ~0.07 false-positive NLI flags exposed that
-  the second-stage pool had no E5 admission floor; fixed in a51fb85.
+  the second-stage pool had no E5 admission floor; fixed in 28048c7.
 
 Final delta gate (real models, no stubs): `givn check review` EXIT 0,
 combined recommended 0 of 13 E5 candidates (BGE 0, NLI 0).
@@ -100,7 +100,7 @@ combined recommended 0 of 13 E5 candidates (BGE 0, NLI 0).
 
 Evidence:
 
-- Commit: `4e6e7b0` — `src/skills/render.rs`, `src/skills/targets.rs`,
+- Commit: `817295a` — `src/skills/render.rs`, `src/skills/targets.rs`,
   `src/cli/addons.rs`, `src/cli/init.rs` (330 insertions, 17 deletions).
 - `cargo test --lib` → `176 passed; 0 failed`.
 - `cargo clippy --workspace --all-targets -- -D warnings` → clean.

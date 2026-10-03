@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "web-ui-verification-hardening",
   "status": "proven",
-  "candidate_commit": "9f378222512f87305ebfb2108889cc7abe24e0f8",
-  "tested_commit": "9f378222512f87305ebfb2108889cc7abe24e0f8",
+  "candidate_commit": "47f0435e37f19abe95da5d675d4c87f39ec44ee6",
+  "tested_commit": "47f0435e37f19abe95da5d675d4c87f39ec44ee6",
   "scopes": {
     "e2e": {
       "status": "passed",

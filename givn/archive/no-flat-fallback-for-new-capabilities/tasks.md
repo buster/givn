@@ -33,7 +33,7 @@ mode unchanged and previously proven.
         replaced with the blocking error. Targeted rerun: 8/8 steps passed.
   - [x] REFACTOR: none needed.
   - [x] COMMIT: `test(e2e): Archive is blocked when a new capability has no declared routing decision`
-        Hash: `eb498ed`
+        Hash: `f425541`
 
 - [x] Scenario: `Nothing is merged when one delta file of a change has no routing decision`
   - [x] RED: exit 101 — the routed delta had already merged
@@ -46,7 +46,7 @@ mode unchanged and previously proven.
         extracted into `resolve_permanent_dir` + `delta_capability`; two
         stale flat-fallback comments reworded. Rerun passed.
   - [x] COMMIT: `test(e2e): Nothing is merged when one delta file of a change has no routing decision`
-        Hash: `e4836d3`
+        Hash: `89422e9`
 
 ## Final verification
 

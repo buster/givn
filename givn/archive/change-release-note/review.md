@@ -23,11 +23,11 @@ git history shows each scenario commit removes only `@wip` and keeps `@e2e`:
 
 ```
 $ git log --format='%h %s' -- givn/changes/change-release-note/specs/create-change/change-release-note.feature
-60e0b73e test(e2e): Give every change one release note, shared as the subject of all its revisions
-ef90fa37 test(e2e): Give every change one release note, shared as the subject of all its revisions
-7b253d7d test(e2e): Give every change one release note, shared as the subject of all its revisions
-a62ec8b5 docs(change-release-note): Give every change one release note, shared as the subject of all its revisions
-$ git show 7b253d7d -- <feature>   # same shape in ef90fa37, 60e0b73e
+cc61c194 test(e2e): Give every change one release note, shared as the subject of all its revisions
+a3489596 test(e2e): Give every change one release note, shared as the subject of all its revisions
+b81d1e52 test(e2e): Give every change one release note, shared as the subject of all its revisions
+07100b09 docs(change-release-note): Give every change one release note, shared as the subject of all its revisions
+$ git show b81d1e52 -- <feature>   # same shape in a3489596, cc61c194
 -  @givn.added @e2e @wip
 +  @givn.added @e2e
 ```
@@ -37,10 +37,10 @@ matching commit that touches production source (not just spec/stub files):
 
 | Scenario | Commit hash | Touches production code? |
 |---|---|---|
-| A new change's proposal carries the release-note field | `7b253d7d7977dc86f048f875652a69d5031cc8fa` | Yes — `assets/templates/proposal.md` (embedded scaffold content) |
-| The proposal guidance requires a release note | `ef90fa37a32d7039b6af06ef083bcfa6fc4b4739` | Yes — `assets/instructions/proposal.md` (embedded instruction content) |
-| The generated implementation guidance shares the release note | `60e0b73e117faf04993f2d24f4da13d6f1614f4a` | Yes — 13 guidance assets, 4 regenerated skill mirrors, 6 regenerated command mirrors, `AGENTS.md`, `README.md`, `docs/workflow.md` |
-| Setup task (not a scenario) | `a62ec8b51a01b3bb69076461c54c9da1edf34c69` | Planning artifacts + arc42 chapter edits (process content) |
+| A new change's proposal carries the release-note field | `b81d1e5272aeb6483d0d6ba342d22786f830ccf1` | Yes — `assets/templates/proposal.md` (embedded scaffold content) |
+| The proposal guidance requires a release note | `a3489596a714a8a104ca18879e5bf7427081ed01` | Yes — `assets/instructions/proposal.md` (embedded instruction content) |
+| The generated implementation guidance shares the release note | `cc61c19436eb40505cf4b6e44e8d328cf3a74583` | Yes — 13 guidance assets, 4 regenerated skill mirrors, 6 regenerated command mirrors, `AGENTS.md`, `README.md`, `docs/workflow.md` |
+| Setup task (not a scenario) | `07100b09eb786c637ee5cf20943a0419f375ce61` | Planning artifacts + arc42 chapter edits (process content) |
 
 No Rust source file changed; the product content of this change is the embedded Markdown/`.tmpl` assets, which is what the specs assert.
 

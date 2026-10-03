@@ -12,19 +12,19 @@ compiled CLI subprocess and assert its exit status and generated report.
 
 **Commit cross-check** — all 114 task boxes have evidence and every scenario
 has a recorded commit. The production implementation is present in
-`9ee7b81`, `b3ee6c0`, `c0d842a`, `6e36553`, `3843dd1`, `1d5e9fd`, `d77a625`,
-`3ddb541`, `951a31d`, and `1e1e2ee`; the remaining scenario commits add the
+`68312a7`, `c0eb0ed`, `a56a8e6`, `02a0aaf`, `70ee63d`, `958c8b2`, `b9fa3c7`,
+`2846095`, `4891a18`, and `b46d072`; the remaining scenario commits add the
 black-box executable coverage and task evidence for those production paths.
 No checked task is backed only by a feature-file edit or an empty step stub.
 
 | Scenario group | Evidence commits | Production/acceptance evidence |
 |---|---|---|
-| Report entrypoint, scopes, boundary, Rule nesting | `9ee7b81`, `b3ee6c0`, `2e982f6`, `c0d842a`, `e93db06` | `src/cli/check.rs`, `src/spec/retrieval.rs`, executable feature runner |
-| Endpoint evidence, target filtering, blocking, carry-forward | `6e36553`, `3843dd1`, `fa7bfe9`, `1d5e9fd`, `ea6f198` | `src/spec/retrieval.rs`, non-mutation and rationale assertions |
-| Determinism, grammar, invalidation, prior state | `d899d9e`, `067d9fb`, `c8673a7`, `7c846a2`, `b5456ae`, `d77a625`, `9cc1057`, `3ddb541` | deterministic report and strict prior-state feature scenarios |
-| Atomic output, malformed inputs, index recovery | `121c330`, `ab82f23`, `951a31d` | atomic report writer, delta parser context, `validate_index` |
-| Archive, unavailable model/feature, advisory separation | `2e4ab0e`, `f9e8b5d`, `1e1e2ee`, `1cb640f` | archive retention, explicit error paths, unchanged advisory entrypoint |
-| CLI E2E interaction | `4fe0259` | separate `tests/steps/semantic_review_e2e_steps.rs`, real compiled subprocess |
+| Report entrypoint, scopes, boundary, Rule nesting | `68312a7`, `c0eb0ed`, `f1dc594`, `a56a8e6`, `c11c016` | `src/cli/check.rs`, `src/spec/retrieval.rs`, executable feature runner |
+| Endpoint evidence, target filtering, blocking, carry-forward | `02a0aaf`, `70ee63d`, `242f473`, `958c8b2`, `1a97d11` | `src/spec/retrieval.rs`, non-mutation and rationale assertions |
+| Determinism, grammar, invalidation, prior state | `057df94`, `3f1331e`, `185fead`, `5a3a320`, `c220aec`, `b9fa3c7`, `2e352be`, `2846095` | deterministic report and strict prior-state feature scenarios |
+| Atomic output, malformed inputs, index recovery | `636fef4`, `351b7cf`, `4891a18` | atomic report writer, delta parser context, `validate_index` |
+| Archive, unavailable model/feature, advisory separation | `0d7d411`, `4565d23`, `b46d072`, `befc954` | archive retention, explicit error paths, unchanged advisory entrypoint |
+| CLI E2E interaction | `27c6292` | separate `tests/steps/semantic_review_e2e_steps.rs`, real compiled subprocess |
 
 **Promised-architecture cross-check**
 

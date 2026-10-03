@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "local-only-rules",
   "status": "proven",
-  "candidate_revision": "bf1c6184aab9df216bd4a00a8c7d0899180bc849",
-  "tested_revision": "bf1c6184aab9df216bd4a00a8c7d0899180bc849",
+  "candidate_revision": "5f90bd0f80256fce7b24a429c90f37e2f77f082a",
+  "tested_revision": "5f90bd0f80256fce7b24a429c90f37e2f77f082a",
   "scopes": {
     "e2e": {
       "status": "passed",

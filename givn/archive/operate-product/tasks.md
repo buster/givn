@@ -12,13 +12,13 @@ Domain constraints: backend-neutral wording (Q10) for the upgrade-revision conte
       (undefined step, non-zero).
 - [x] GREEN: the binding is renamed with identical assertions; targeted run
       green.
-- [x] COMMIT: ba4bdd4a (the wording implementation slice).
+- [x] COMMIT: cdaee2c0 (the wording implementation slice).
 
 ## Scenario: A repeated upgrade creates no additional commit
 
 - [x] RED: shared with the rename.
 - [x] GREEN: renamed binding; targeted run green.
-- [x] COMMIT: ba4bdd4a with the repeated-upgrade scope named here (the same
+- [x] COMMIT: cdaee2c0 with the repeated-upgrade scope named here (the same
       wording slice).
 
 ## Finalize

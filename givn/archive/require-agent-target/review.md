@@ -26,16 +26,16 @@ delta change (the scenario body/tag and the task record):
 
 | Scenario | Commit | Touches production code? |
 |---|---|---|
-| 1 Non-interactive init without an agent target refuses initialization | `34360457` | yes — `src/cli/init.rs` + fixture call sites |
-| 2 The interactive prompt refuses a confirmation without a marked target | `a11ae096` | yes — `src/cli/init.rs` dialog branch + PTY step |
-| 3 An empty answer refuses initialization | `9d1072e7` | yes — `src/cli/init.rs` piped path |
-| 4 An answer without any known agent refuses initialization | `46618bdd` | side-effect of `9d1072e7` |
-| 5 An unknown-only --agents value refuses initialization | `a9522198` | yes — `resolve_agents_flag` returns `Result` |
-| 6 givn init --force re-applies the explicitly given selection | `12916901` | side-effect of `34360457`/`a9522198` |
-| 7 givn init --force without a selection keeps the persisted selection | `78d758bd` | side-effect of `34360457` (resolve-before-write) |
-| 8–9 enable-optional-addons migrations | `b477f7e2`, `15272625` | side-effect of the above |
-| 10 A fresh project resolves the rules policy to local-only | `a6c360af` | side-effect of the above |
-| 11–14 e2e migrations | `0723aefa`, `f2d69c4e`, `d6340e8d`, `2a88b6fc` | side-effect of the above |
+| 1 Non-interactive init without an agent target refuses initialization | `4c1a96ce` | yes — `src/cli/init.rs` + fixture call sites |
+| 2 The interactive prompt refuses a confirmation without a marked target | `92be3e2c` | yes — `src/cli/init.rs` dialog branch + PTY step |
+| 3 An empty answer refuses initialization | `ff4073a2` | yes — `src/cli/init.rs` piped path |
+| 4 An answer without any known agent refuses initialization | `214e77e9` | side-effect of `ff4073a2` |
+| 5 An unknown-only --agents value refuses initialization | `baa69b27` | yes — `resolve_agents_flag` returns `Result` |
+| 6 givn init --force re-applies the explicitly given selection | `cee2ba82` | side-effect of `4c1a96ce`/`baa69b27` |
+| 7 givn init --force without a selection keeps the persisted selection | `69f6e0ed` | side-effect of `4c1a96ce` (resolve-before-write) |
+| 8–9 enable-optional-addons migrations | `96205583`, `4f805360` | side-effect of the above |
+| 10 A fresh project resolves the rules policy to local-only | `07027cf5` | side-effect of the above |
+| 11–14 e2e migrations | `fa56ce37`, `51727e5f`, `e32e1e30`, `37b4e019` | side-effect of the above |
 
 **Promised-architecture cross-check** — every component design.md said would
 be created actually exists:
@@ -196,8 +196,8 @@ classifies from static inspection of the delta and the touched code.
 | Location | Lines | Classification | Action taken |
 |---|---|---|---|
 | `src/cli/init.rs` refusal path and both branches | `require_agent_target`, EOF branch, dialog branch, piped branch, flag branch | no gap — every branch is exercised by a delta scenario (EOF, PTY empty confirmation, empty line, unknown-only answer, unknown-only flag, valid flag, `--force` with and without a value) | — |
-| `DEFAULT_TARGETS` | deleted | dead code (YAGNI) — no fallback target set exists | deleted in `9d1072e7` |
-| Removed step `consumer_init_silent` | deleted | dead code | deleted in `46618bdd` |
+| `DEFAULT_TARGETS` | deleted | dead code (YAGNI) — no fallback target set exists | deleted in `ff4073a2` |
+| Removed step `consumer_init_silent` | deleted | dead code | deleted in `214e77e9` |
 | No other uncovered regions identified | — | — | — |
 
 ## Scenario execution evidence

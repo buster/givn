@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "change-release-note",
   "status": "proven",
-  "candidate_revision": "11cf7bac509850cca273d0b8ec6106d10cf77b36",
-  "tested_revision": "11cf7bac509850cca273d0b8ec6106d10cf77b36",
+  "candidate_revision": "f325261a376c187f55cdae7313e5fa4f5f0fc84a",
+  "tested_revision": "f325261a376c187f55cdae7313e5fa4f5f0fc84a",
   "scopes": {
     "e2e": {
       "status": "passed",

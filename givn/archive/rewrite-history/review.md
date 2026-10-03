@@ -10,8 +10,8 @@ bodies.
 
 | Scenario | Commit hash | Touches production code? |
 |---|---|---|
-| Plan | `60dc488f` | Planning artifacts |
-| history rewrite | `0637adcd` | `src/cli/rewrite_history.rs`, `src/main.rs`, arc42 5/8, steps |
+| Plan | `7946838b` | Planning artifacts |
+| history rewrite | `60814310` | `src/cli/rewrite_history.rs`, `src/main.rs`, arc42 5/8, steps |
 
 **Promised-architecture cross-check** — `cli::rewrite_history`, the
 `rewrite-history` subcommand, the use-case document, and the delta spec all

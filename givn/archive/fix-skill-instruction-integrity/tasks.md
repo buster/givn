@@ -49,7 +49,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 6 steps (6 passed)
   ```
-- [x] COMMIT: `d20b164` - `feat(instruction-integrity): enforce canonical E2E policy`
+- [x] COMMIT: `0c764e3` - `feat(instruction-integrity): enforce canonical E2E policy`
 
 ### Design guidance requires the complete E2E setup record
 
@@ -72,7 +72,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 6 steps (6 passed)
   ```
-- [x] COMMIT: `bef6724` - `feat(instruction-integrity): restore design E2E requirements`
+- [x] COMMIT: `7a5e7e7` - `feat(instruction-integrity): restore design E2E requirements`
 
 ### Review guidance verifies semantic remediation
 
@@ -95,7 +95,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 5 steps (5 passed)
   ```
-- [x] COMMIT: `68df916` - `feat(instruction-integrity): document semantic remediation review`
+- [x] COMMIT: `5dfab14` - `feat(instruction-integrity): document semantic remediation review`
 
 ### Machine-readable instructions describe the effective artifact
 
@@ -120,7 +120,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 5 steps (5 passed)
   ```
-- [x] COMMIT: `d4d2a16` - `feat(instruction-integrity): expose instruction metadata`
+- [x] COMMIT: `20e7782` - `feat(instruction-integrity): expose instruction metadata`
 
 ### Artifact instructions reject an unsafe change context
 
@@ -142,7 +142,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 3 steps (3 passed)
   ```
-- [x] COMMIT: `fefa780` - `fix(instruction-integrity): preserve global instruction contexts`
+- [x] COMMIT: `a7d05c4` - `fix(instruction-integrity): preserve global instruction contexts`
 
 ### Project instruction overrides survive skill synchronization
 
@@ -164,7 +164,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 4 steps (4 passed)
   ```
-- [x] COMMIT: `ac8f487` - `test(instruction-integrity): preserve policy overrides`
+- [x] COMMIT: `fd1d3ec` - `test(instruction-integrity): preserve policy overrides`
 
 ### Retrieval guidance distinguishes build capabilities
 
@@ -187,7 +187,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 5 steps (5 passed)
   ```
-- [x] COMMIT: `0e89485` - `fix(instruction-integrity): align retrieval guidance`
+- [x] COMMIT: `8597d5e` - `fix(instruction-integrity): align retrieval guidance`
 
 ## E2E Scenarios
 
@@ -210,7 +210,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 4 steps (4 passed)
   ```
-- [x] COMMIT: `dae070d` - `test(e2e): verify canonical instruction guidance`
+- [x] COMMIT: `6da5348` - `test(e2e): verify canonical instruction guidance`
 
 ### An author requests the technical E2E design guidance
 
@@ -231,7 +231,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 3 steps (3 passed)
   ```
-- [x] COMMIT: `23703e7` - `test(e2e): verify design instruction guidance`
+- [x] COMMIT: `71f4056` - `test(e2e): verify design instruction guidance`
 
 ### A reviewer requests remediation-aware review guidance
 
@@ -252,7 +252,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 3 steps (3 passed)
   ```
-- [x] COMMIT: `c0fd86d` - `test(e2e): verify remediation review guidance`
+- [x] COMMIT: `47d7f89` - `test(e2e): verify remediation review guidance`
 
 ### An agent requests machine-readable artifact guidance
 
@@ -273,7 +273,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 3 steps (3 passed)
   ```
-- [x] COMMIT: `582eff5` - `test(e2e): verify instruction JSON contract`
+- [x] COMMIT: `cf91807` - `test(e2e): verify instruction JSON contract`
 
 ## Completion
 

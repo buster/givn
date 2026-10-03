@@ -37,7 +37,7 @@ strict mode `.fail_on_skipped()` at `tests/features_runner.rs:20`.
       inventory bullet, this tasks.md). Never stage unrelated working-tree
       files (`PLAN.md`, `TASKS.md`).
       Commit: `docs(add-ideation-skill): planning layer through design-review`
-      Hash: `5139777`
+      Hash: `b93f2c5`
 
 ## Non-E2E Scenarios
 
@@ -75,7 +75,7 @@ strict mode `.fail_on_skipped()` at `tests/features_runner.rs:20`.
         3 steps (3 passed)
         ```
   - [x] COMMIT: `feat(ideation-skill): The ideation skill ships without any addon enabled`
-        Hash: `34ba5ba`
+        Hash: `06b1113`
 
 - [x] Scenario: `The ideation guidance carries the phase ladder and the one-question rule`
   - [x] RED: remove `@wip`. Targeted run — must fail (phrases absent; paste
@@ -103,7 +103,7 @@ strict mode `.fail_on_skipped()` at `tests/features_runner.rs:20`.
         8 steps (8 passed)
         ```
   - [x] COMMIT: `feat(ideation-skill): The ideation guidance carries the phase ladder and the one-question rule`
-        Hash: `ae168f8`
+        Hash: `02e8817`
 
 - [x] Scenario: `The ideation guidance binds personas to the artifacts that affect them`
   - [x] RED: remove `@wip`. Targeted run — must fail (paste output)
@@ -119,7 +119,7 @@ strict mode `.fail_on_skipped()` at `tests/features_runner.rs:20`.
         ranking at Use Case Definition, critique at Use Case Elaboration,
         `persona promotion` at Handoff, user-confirmation authority.
         Production files: the template only.
-        Note: the first GREEN attempt (commit `d8db969`) embedded "Persona
+        Note: the first GREEN attempt (commit `f773046`) embedded "Persona
         promotion" with a capital P — the case-sensitive assertion failed
         (4/6 steps). Fixed the sentence to the lowercase phrase.
         Targeted rerun:
@@ -130,7 +130,7 @@ strict mode `.fail_on_skipped()` at `tests/features_runner.rs:20`.
         ```
   - [x] REFACTOR: completed by the fix commit; rerun already shown green.
   - [x] COMMIT: `feat(ideation-skill): The ideation guidance binds personas to the artifacts that affect them`
-        Hash: `d8db969` + fix `3286667` (completing commit for this scenario)
+        Hash: `f773046` + fix `cd37f6f` (completing commit for this scenario)
 
 - [x] Scenario: `The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes`
   - [x] RED: remove `@wip`. Targeted run — must fail (paste output)
@@ -155,7 +155,7 @@ strict mode `.fail_on_skipped()` at `tests/features_runner.rs:20`.
   - [x] REFACTOR: no cleanup needed; state-layout and handoff wording checked
         against the glossary terms. Rerun already green.
   - [x] COMMIT: `feat(ideation-skill): The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes`
-        Hash: `c5a8a91`
+        Hash: `4b6b79c`
 
 - [x] Scenario: `The explore guidance points to ideation for structured domain work`
   - [x] RED: remove `@wip`. Targeted run — must fail (paste output)
@@ -179,7 +179,7 @@ strict mode `.fail_on_skipped()` at `tests/features_runner.rs:20`.
   - [x] REFACTOR: wording checked against the explore template's existing
         table style; no behaviour change. Rerun already green.
   - [x] COMMIT: `feat(ideation-skill): The explore guidance points to ideation for structured domain work`
-        Hash: `e8115d1`
+        Hash: `3d9c53b`
 
 ## E2E Scenarios
 
@@ -214,7 +214,7 @@ strict mode `.fail_on_skipped()` at `tests/features_runner.rs:20`.
   - [x] REFACTOR: wording checked against the generated guidance; no test
         touches a missing source. Rerun already green.
   - [x] COMMIT: `test(e2e): A consumer synchronizes skills and every agent target receives the ideation facilitation skill`
-        Hash: `09fb2a6`
+        Hash: `b81244e`
 
 ## Final verification
 

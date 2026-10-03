@@ -102,7 +102,7 @@ version-controlled project.
       exit 0
       ```
 
-- [x] COMMIT: `d6c1b4e5` -- `feat(scm-backend-selection): A project without version control is refused by name`
+- [x] COMMIT: `b61e58f5` -- `feat(scm-backend-selection): A project without version control is refused by name`
 
 ## Scenario: A Fossil checkout is refused by name until the Fossil backend is available
 
@@ -142,7 +142,7 @@ project and refused by name; nothing is changed.
       exit 0
       ```
 
-- [x] COMMIT: `51f26300` -- `feat(scm-backend-selection): A Fossil checkout is refused by name until the Fossil backend is available`
+- [x] COMMIT: `823f9dbf` -- `feat(scm-backend-selection): A Fossil checkout is refused by name until the Fossil backend is available`
 
 ## Scenario: A project root with both markers is refused as ambiguous
 
@@ -180,7 +180,7 @@ markers and nothing is changed.
       exit 0
       ```
 
-- [x] COMMIT: `a63f1354` -- `feat(scm-backend-selection): A project root with both markers is refused as ambiguous`
+- [x] COMMIT: `070612d0` -- `feat(scm-backend-selection): A project root with both markers is refused as ambiguous`
 
 ## Scenario: A project root nested inside a larger Git worktree is refused by name
 
@@ -221,7 +221,7 @@ refusal names the project root and the worktree top level.
       exit 0
       ```
 
-- [x] COMMIT: `a8a8f572` -- `feat(scm-backend-selection): A project root nested inside a larger Git worktree is refused by name`
+- [x] COMMIT: `e72119d4` -- `feat(scm-backend-selection): A project root nested inside a larger Git worktree is refused by name`
 
 ## Scenario: A Git worktree without the Git executable is refused by name
 
@@ -259,7 +259,7 @@ by name before anything is changed.
       exit 0
       ```
 
-- [x] COMMIT: `7f11727c` -- `feat(scm-backend-selection): A Git worktree without the Git executable is refused by name`
+- [x] COMMIT: `b1d1a857` -- `feat(scm-backend-selection): A Git worktree without the Git executable is refused by name`
 
 ## Scenario: A project outside Git is protected from a partial automatic migration
 
@@ -302,7 +302,7 @@ version-controlled project is required.
       exit 0
       ```
 
-- [x] COMMIT: `be6738f7` -- `feat(release-0-3-0): A project outside Git is protected from a partial automatic migration`
+- [x] COMMIT: `037fdaf5` -- `feat(release-0-3-0): A project outside Git is protected from a partial automatic migration`
 
 ## Scenario: The migration preserves independent architecture history across three proposed decisions
 
@@ -342,7 +342,7 @@ adding ADR-071 moves the accepted count from 26 to 27.
       exit 0
       ```
 
-- [x] COMMIT: `2ad7d0e8` -- `feat(adr-qualification-gate): The migration preserves independent architecture history across three proposed decisions`
+- [x] COMMIT: `9d3770f2` -- `feat(adr-qualification-gate): The migration preserves independent architecture history across three proposed decisions`
 
 ## E2E Scenario: A Git worktree at the project root selects the Git backend
 
@@ -382,7 +382,7 @@ publishes a revision through the selection seam.
       7 tests run: 7 passed, 0 skipped
       ```
 
-- [x] COMMIT: `001d919f` -- `test(e2e): A Git worktree at the project root selects the Git backend`
+- [x] COMMIT: `d96ffff4` -- `test(e2e): A Git worktree at the project root selects the Git backend`
 
 ## Verification
 
@@ -401,4 +401,4 @@ publishes a revision through the selection seam.
 - [x] Discovered during the full-suite run: adding ADR-071 changes the
       consolidated-register count, so the `adr-qualification-gate` scenario was
       modified (26 → 27) and the permanent spec aligned in
-      `chore(scm-backend): align permanent specs with the delta` (`a0e384eb`).
+      `chore(scm-backend): align permanent specs with the delta` (`c3cfa1de`).

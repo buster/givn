@@ -6,7 +6,7 @@
 |---|---|
 | @e2e tag integrity | Clean — the delta has no `@e2e` scenario and none was removed. |
 | Empty/no-op step bodies | 0 found in both touched step files. |
-| Checked tasks have commits touching production | Clean — setup `e29e9d3e` plus seven scenario commits. |
+| Checked tasks have commits touching production | Clean — setup `980a3519` plus seven scenario commits. |
 | Promised components exist | Clean — the severity registry and rendering, the route confidence and ownership weighting, the two new route unit tests, the fixture Givens, and the three guidance edits. |
 | Strict-mode proof | Present in `tasks.md` Setup with non-zero-exit evidence. |
 | Downgraded `@e2e` scenarios | None — the delta has no `@e2e` scenario. |

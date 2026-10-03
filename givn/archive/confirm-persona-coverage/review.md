@@ -9,7 +9,7 @@ delta carries five narrative documents only.
 
 | Scope | Commit hash | Touches the repaired artifacts? |
 |---|---|---|
-| Persona coverage | `1202e008` | yes (five delta narratives, change artifacts) |
+| Persona coverage | `c6c3787b` | yes (five delta narratives, change artifacts) |
 
 **Promised-architecture cross-check** — the change promises narrative
 corrections, not a component: no production module changed.

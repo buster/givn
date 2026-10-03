@@ -55,7 +55,7 @@ executable authority.
 - [x] **Plan commit.** Commit the planning artifacts before implementation so
       each scenario commit stays atomic:
       `givn commit -m "docs(change-release-note): Give every change one release note, shared as the subject of all its revisions"`.
-      Hash: `a62ec8b51a01b3bb69076461c54c9da1edf34c69`
+      Hash: `07100b09eb786c637ee5cf20943a0419f375ce61`
 
 ---
 
@@ -134,7 +134,7 @@ executable authority.
       4 steps (4 passed)
       exit=0
       ```
-- [x] COMMIT: `7b253d7d7977dc86f048f875652a69d5031cc8fa` —
+- [x] COMMIT: `b81d1e5272aeb6483d0d6ba342d22786f830ccf1` —
       ```
       test(e2e): Give every change one release note, shared as the subject of all its revisions
 
@@ -187,7 +187,7 @@ executable authority.
       6 steps (6 passed)
       exit=0
       ```
-- [x] COMMIT: `ef90fa37a32d7039b6af06ef083bcfa6fc4b4739` —
+- [x] COMMIT: `a3489596a714a8a104ca18879e5bf7427081ed01` —
       ```
       test(e2e): Give every change one release note, shared as the subject of all its revisions
 
@@ -264,7 +264,7 @@ executable authority.
       12 steps (12 passed)
       exit=0
       ```
-- [x] COMMIT: `60e0b73e117faf04993f2d24f4da13d6f1614f4a` —
+- [x] COMMIT: `cc61c19436eb40505cf4b6e44e8d328cf3a74583` —
       ```
       test(e2e): Give every change one release note, shared as the subject of all its revisions
 
@@ -291,6 +291,6 @@ executable authority.
       exit=0
       ```
 - [x] Both counts pasted in the E2E setup task; every scenario has a commit
-      (`7b253d7d`, `ef90fa37`, `60e0b73e`).
+      (`b81d1e52`, `a3489596`, `cc61c194`).
 - [x] `givn status --change change-release-note` shows implementation complete
       and next required `review`.

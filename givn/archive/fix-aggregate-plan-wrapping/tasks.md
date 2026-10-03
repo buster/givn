@@ -10,7 +10,7 @@ Product fix with a unit test; `specs` is skipped.
 
 - [x] Add the four missing spaces in `aggregate_migration_proposal`.
 - [x] Add `aggregate_proposal_preserves_word_spacing`.
-- [x] COMMIT: `7dcac69a` -- `fix(migration): preserve word spacing in the aggregate proposal wrapper`
+- [x] COMMIT: `08826fcc` -- `fix(migration): preserve word spacing in the aggregate proposal wrapper`
 
 ## Verification
 
@@ -21,5 +21,5 @@ Product fix with a unit test; `specs` is skipped.
       Summary [30.056s] 539 tests run: 539 passed, 0 skipped
       Summary [5.350s] 88 tests run: 88 passed, 451 skipped
       ```
-- [x] COMMIT: `c1764946` -- `docs(fix-aggregate-plan-wrapping): complete the review`
+- [x] COMMIT: `685bb16c` -- `docs(fix-aggregate-plan-wrapping): complete the review`
 - [x] Archive the change.

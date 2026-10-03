@@ -1,7 +1,7 @@
 # Review: spec-duplicates
 
 Review performed against the remediation worktree after the original
-`4915c2b780023c3eb49fdb9eda7519838d141c9b` history, nine atomic remediation
+`a0dd5d62199015b14f379aeb39b127811a1200cb` history, nine atomic remediation
 scenario commits, and behavior-preserving clippy cleanup. Review/task metadata
 and that cleanup are included in the final remediation commit; existing history
 and the reviewed design were not amended.
@@ -10,10 +10,10 @@ and the reviewed design were not amended.
 
 ### @e2e tag integrity
 
-The base tree at `b07bbce` already contained the inventory scenario tagged
+The base tree at `0545742` already contained the inventory scenario tagged
 `@givn.added @e2e @wip` at feature lines 8-9. The complete feature history was
 audited with `git log --reverse -p -G '@e2e'` and only commit
-`4915c2b780023c3eb49fdb9eda7519838d141c9b` changed that scenario's tag, from
+`a0dd5d62199015b14f379aeb39b127811a1200cb` changed that scenario's tag, from
 `@givn.added @e2e @wip` to `@givn.added @e2e`. No commit removes `@e2e`.
 
 Current state in
@@ -56,40 +56,40 @@ scenario.
 
 | # | Scenario | Recorded commit | Commit/diff result |
 |---:|---|---|---|
-| 1 | Exact duplicates in one feature are reported together | `aef0ecac7fcbb1c77bf351bae916c0f5653b1cb5` | Valid; `src/main.rs`, `src/cli/spec.rs`, `src/spec/retrieval.rs` plus step glue. `production=yes`. |
-| 2 | Exact duplicates across features are reported together | `952e3c9c52dfe1ad24cd7c528afa86aa4d52f12e` | Valid; design/Arc42/docs/spec/step glue only. Pure step/spec reuse; `production=no`. |
-| 3 | Structurally overlapping scenarios retain their distinguishing facts | `8b9e11dca472c5c2b0b70ef5758ba0ff1712196d` | Valid; `src/spec/retrieval.rs` plus regular steps. `production=yes`. |
-| 4 | A structural subset is reported as an overlap | `eb126c95fcdfb84d507bbb34d47d3426d683eedd` | Valid; `src/spec/retrieval.rs` plus regular steps. `production=yes`. |
-| 5 | Semantically related scenarios are reported as candidates | `02e0429708d19c2403afa4265ca0ce6c938fa540` | Valid; `src/spec/retrieval.rs` plus step registration/glue. `production=yes`. |
-| 6 | The audit reports candidates beyond the interactive top five | `1a741b9ae025d37e93e94300b1f2eddddfaa1678` | Valid; feature and regular step assertions only. Pure reuse; `production=no`. |
-| 7 | Repeating an unchanged audit produces the same report | `b6e2a040cf732b67255b673378f33e5466b943cb` | Valid; feature and regular step assertions only. Pure reuse; `production=no`. |
-| 8 | JSON output identifies every audit candidate | `a98eed298acece8cf2375e3560251accc6ae22b3` | Valid; `src/main.rs`, `src/cli/spec.rs`, `src/spec/retrieval.rs` plus steps. `production=yes`. |
-| 9 | Auditing leaves permanent specifications unchanged | `c465d8ab1b029bdc9f08320d5841d3d691bfa1ed` | Valid subject-matched commit; feature/step/tasks-only pure reuse. The existing audit path is exercised without inventing a production edit. `production=no`. |
-| 10 | Auditing leaves the persistent retrieval index unchanged | `f1e50ac6208b067044b0a2ac1e3e2e82e20ca632` | Valid; feature and regular step assertions only. Pure reuse; `production=no`. |
-| 11 | Active change scenarios are not part of the permanent audit | `0b4f50ece41ec3e192680bc80215120e133a01ff` | Valid; feature and regular step assertions only. Pure reuse; `production=no`. |
-| 12 | An audit with no candidates reports an empty result | `5afcf5da58f71cb2c2bbc5e9b1a83cdab65c1f51` | Valid; `src/spec/retrieval.rs` plus regular steps. `production=yes`. |
-| 13 | The audit reports retrieval unavailable without the retrieval feature | `cfb16092296a20a298f875ca63a540fa88b596da` | Valid; feature and regular step assertions only. Pure reuse; `production=no`. |
-| 14 | The audit reports an unavailable retrieval model | `4a35cc10e58dc59826ff471f043f10e14a92d803` | Valid; `src/spec/retrieval.rs` plus reused steps. `production=yes`. |
-| 15 | A malformed permanent feature reports its path | `28730695f430a657930231cc0875ae4cc75d9ab1` | Valid; `src/spec/retrieval.rs` plus regular steps. `production=yes`. |
-| 16 | An unreadable permanent feature reports its path | `673e5c9457a6e443e121744284169e6aca36cd54` | Valid; feature/steps/module registration only. Pure reuse; `production=no`. |
-| 17 | A missing permanent specifications directory is an empty corpus | `5df4f7cede8dc86b71b453a82fb5c4b8a8c882ad` | Valid; `src/spec/retrieval.rs` plus regular steps. `production=yes`. |
-| 18 | Archived scenarios are excluded from the audit | `1703be414af7945ffd011a1d9dbfc922f239901a` | Valid subject-matched commit; feature/step/tasks-only pure reuse. The permanent-only collection path is exercised without inventing a production edit. `production=no`. |
-| 19 | Auditing leaves active changes and archive contents unchanged | `be0a0895c005656d011140d1c6a4a958d2f4c443` | Valid; feature/steps/module registration only. Pure reuse; `production=no`. |
-| 20 | An absent persistent index is ignored and remains absent | `fbdc70554a0e2f20214da9c2dba9cf81bfdd09e8` | Valid; feature and regular step assertions only. Pure reuse; `production=no`. |
-| 21 | A malformed persistent index is ignored and unchanged | `65dcc06a81fad6369f292ab81042732fd9c02ae7` | Valid; feature and regular step assertions only. Pure reuse; `production=no`. |
-| 22 | A semantic candidate at the inclusive threshold is reported | `bc4e3c1d7fb6d6af46fb9bf5ac52f8c8c2984213` | Valid; feature and regular step assertions only. Pure reuse; `production=no`. |
-| 23 | A semantic pair below the threshold is not reported | `8ca9a69844f95dd16d8307c9187dad4ea1ac3d06` | Valid; feature and regular step assertions only. Pure reuse; `production=no`. |
-| 24 | Candidate classes take precedence and equal semantic scores use endpoint order | `2913653068ba966c7e60b3d4c00606039d57ade6` | Valid; `src/spec/retrieval.rs` plus regular steps. `production=yes`. |
-| 25 | Maintainer inspects the complete permanent scenario audit | `4915c2b780023c3eb49fdb9eda7519838d141c9b` | Valid E2E glue/spec commit; no production source by design. Pure E2E step reuse; `production=no`. |
-| 26 | Rule-nested permanent scenarios are included in the audit | `be4e41e38bc7f5305041ab8de14a2b9236e49a61` | Valid; regular Rule fixture and concrete JSON assertions. Existing Rule traversal is exercised; `production=no` by design. |
-| 27 | A blocked permanent specifications path reports its I/O error | `51426e1f5bbea076df2e62d6fea0fc374f67be48` | Valid; regular fixture creates a real non-directory `ENOTDIR` boundary and asserts the path-specific error; `production=no` because the existing branch is now covered. |
-| 28 | Removed permanent scenarios are excluded from the audit | `9dcd6ecc8e07e9d89a20fcf25ae4123930079c83` | Valid; regular fixture and concrete scanned/candidate/identity assertions exercise the existing removed filter; `production=no`. |
-| 29 | Structural relations are ordered by relation class | `aeee71d42e211d932c3979830c94c519547dd1b6` | Valid; regular fixture covers all three structural relation orders and `src/spec/retrieval.rs` removes the unreachable kind/relation fallbacks. `production=yes`. |
-| 30 | Equal semantic scores use right endpoint order | `bd2871c6bbf42ca482847181d7548a860f95ed80` | Valid; regular fixture shares one left endpoint and asserts right endpoint ordering; `production=no` because the existing comparator branch is covered. |
-| 31 | Invalid duplicate score overrides are rejected | `bb0c2c4e0c35f93ab5a0075a3f872a6253c33d50` | Valid; regular table runs all 12 labeled invalid inputs, including invalid UTF-8 and empty input; `production=no` because the existing validator is covered. |
-| 32 | Reversed score override endpoint pairs normalize canonically | `73bcbc1873e4f24d80f98fde28c563fb29455d51` | Valid; regular fixture covers parser reverse normalization and `src/spec/retrieval.rs` removes the unreachable CLI reverse-key branch. `production=yes`. |
-| 33 | Empty assertions and reverse subsets retain their distinct relations | `116f4234b10cc5da93d57f6502a9f1d1fbca204e` | Valid; regular fixture covers empty assertion handling and right-subset relation; `production=no`. |
-| 34 | Semantic quality evidence is measured from labeled stub scores | `fc10bbe74a467588f41d46ec4b838bbdc5d4483c` | Valid; regular labeled fixture computes actual TP/FP/FN, precision, and recall at `0.9500`; `production=no` because this is advisory measurement evidence. |
+| 1 | Exact duplicates in one feature are reported together | `f37f30f21c90e2162f2d1e7ba8d1aba143411717` | Valid; `src/main.rs`, `src/cli/spec.rs`, `src/spec/retrieval.rs` plus step glue. `production=yes`. |
+| 2 | Exact duplicates across features are reported together | `59927f2464c026f10b412a604cc965f83cc805f1` | Valid; design/Arc42/docs/spec/step glue only. Pure step/spec reuse; `production=no`. |
+| 3 | Structurally overlapping scenarios retain their distinguishing facts | `52685151c7b0031fc67a629471bd0e4996641539` | Valid; `src/spec/retrieval.rs` plus regular steps. `production=yes`. |
+| 4 | A structural subset is reported as an overlap | `9783d80f5c6770dd1476b0134e0c5d7292f4a572` | Valid; `src/spec/retrieval.rs` plus regular steps. `production=yes`. |
+| 5 | Semantically related scenarios are reported as candidates | `3a69cfe4c229d8d5d903a0a8d3bcb904df68cc72` | Valid; `src/spec/retrieval.rs` plus step registration/glue. `production=yes`. |
+| 6 | The audit reports candidates beyond the interactive top five | `6906edd82606d16c0c549e1fb5daa3720b0be351` | Valid; feature and regular step assertions only. Pure reuse; `production=no`. |
+| 7 | Repeating an unchanged audit produces the same report | `deb54a2a1eb98cd098310202938a3712c1195a66` | Valid; feature and regular step assertions only. Pure reuse; `production=no`. |
+| 8 | JSON output identifies every audit candidate | `a6760975b7f7994681ab69aae8adfa8e1d988c3a` | Valid; `src/main.rs`, `src/cli/spec.rs`, `src/spec/retrieval.rs` plus steps. `production=yes`. |
+| 9 | Auditing leaves permanent specifications unchanged | `a766b1fc580768a127fa58ae1074e732bb6313f4` | Valid subject-matched commit; feature/step/tasks-only pure reuse. The existing audit path is exercised without inventing a production edit. `production=no`. |
+| 10 | Auditing leaves the persistent retrieval index unchanged | `43a167f16afe0aa5e384e579d2690dde87601aa4` | Valid; feature and regular step assertions only. Pure reuse; `production=no`. |
+| 11 | Active change scenarios are not part of the permanent audit | `9930df7ed51d433fe74998d1b360ecd1979e1a5e` | Valid; feature and regular step assertions only. Pure reuse; `production=no`. |
+| 12 | An audit with no candidates reports an empty result | `7f36ee18bb527f1d0c473920118588818d12bde8` | Valid; `src/spec/retrieval.rs` plus regular steps. `production=yes`. |
+| 13 | The audit reports retrieval unavailable without the retrieval feature | `a0eec6b12678d5e0a73c304061bb61a4b5068971` | Valid; feature and regular step assertions only. Pure reuse; `production=no`. |
+| 14 | The audit reports an unavailable retrieval model | `c4725968e4054a0ae87177d9c890c632e893fac6` | Valid; `src/spec/retrieval.rs` plus reused steps. `production=yes`. |
+| 15 | A malformed permanent feature reports its path | `f6fef138411aca2203225f0c132ccf0145d9c411` | Valid; `src/spec/retrieval.rs` plus regular steps. `production=yes`. |
+| 16 | An unreadable permanent feature reports its path | `54c7ad385e91ec7191093b674f1cb8a414746b2b` | Valid; feature/steps/module registration only. Pure reuse; `production=no`. |
+| 17 | A missing permanent specifications directory is an empty corpus | `be867e3fb0fb07db2b033a35e61d29d7e7bcd8d1` | Valid; `src/spec/retrieval.rs` plus regular steps. `production=yes`. |
+| 18 | Archived scenarios are excluded from the audit | `123ab4a64828eb6a112dad1f39bf769f8ec2fcb9` | Valid subject-matched commit; feature/step/tasks-only pure reuse. The permanent-only collection path is exercised without inventing a production edit. `production=no`. |
+| 19 | Auditing leaves active changes and archive contents unchanged | `8dd42d6c5d7a223a7e0a8b3ff4d4437fd68af6c7` | Valid; feature/steps/module registration only. Pure reuse; `production=no`. |
+| 20 | An absent persistent index is ignored and remains absent | `ef026bccfb7674510309586bb7ba4bf6e3f78dc9` | Valid; feature and regular step assertions only. Pure reuse; `production=no`. |
+| 21 | A malformed persistent index is ignored and unchanged | `0a35e8aa7738e38426c10cdfe17f812f7323468e` | Valid; feature and regular step assertions only. Pure reuse; `production=no`. |
+| 22 | A semantic candidate at the inclusive threshold is reported | `1e2769155803f06b7f04aa8b69d33c4bca77661e` | Valid; feature and regular step assertions only. Pure reuse; `production=no`. |
+| 23 | A semantic pair below the threshold is not reported | `e71f00ca80037bee36ce9ec74a4bccfd8ed71ec6` | Valid; feature and regular step assertions only. Pure reuse; `production=no`. |
+| 24 | Candidate classes take precedence and equal semantic scores use endpoint order | `77b1a3af2f4806e8d7040de01a8c9078514de9ae` | Valid; `src/spec/retrieval.rs` plus regular steps. `production=yes`. |
+| 25 | Maintainer inspects the complete permanent scenario audit | `a0dd5d62199015b14f379aeb39b127811a1200cb` | Valid E2E glue/spec commit; no production source by design. Pure E2E step reuse; `production=no`. |
+| 26 | Rule-nested permanent scenarios are included in the audit | `6652019f92945160d534b322073ae4f4a704ba68` | Valid; regular Rule fixture and concrete JSON assertions. Existing Rule traversal is exercised; `production=no` by design. |
+| 27 | A blocked permanent specifications path reports its I/O error | `da305cf6056f3ced3a49047dccdff87709821860` | Valid; regular fixture creates a real non-directory `ENOTDIR` boundary and asserts the path-specific error; `production=no` because the existing branch is now covered. |
+| 28 | Removed permanent scenarios are excluded from the audit | `1e8458f1a80a38b089ea706e10b0cb3bc95afe49` | Valid; regular fixture and concrete scanned/candidate/identity assertions exercise the existing removed filter; `production=no`. |
+| 29 | Structural relations are ordered by relation class | `084dd0ceed9ed8874dba2c94f3231b78a043ca23` | Valid; regular fixture covers all three structural relation orders and `src/spec/retrieval.rs` removes the unreachable kind/relation fallbacks. `production=yes`. |
+| 30 | Equal semantic scores use right endpoint order | `df0f03f36b7166face4697a21c9d636b11313f3e` | Valid; regular fixture shares one left endpoint and asserts right endpoint ordering; `production=no` because the existing comparator branch is covered. |
+| 31 | Invalid duplicate score overrides are rejected | `59bcdfea68ab28006389b70ffd8798fdf46e93dd` | Valid; regular table runs all 12 labeled invalid inputs, including invalid UTF-8 and empty input; `production=no` because the existing validator is covered. |
+| 32 | Reversed score override endpoint pairs normalize canonically | `fae0b846e453c3cf4664c9e1815bf58002a4655b` | Valid; regular fixture covers parser reverse normalization and `src/spec/retrieval.rs` removes the unreachable CLI reverse-key branch. `production=yes`. |
+| 33 | Empty assertions and reverse subsets retain their distinct relations | `fef99f0328ca03ebd8ad28ad09b6a16b7789c2da` | Valid; regular fixture covers empty assertion handling and right-subset relation; `production=no`. |
+| 34 | Semantic quality evidence is measured from labeled stub scores | `723c6a11e2dde02230f876d51932286bbb84cb30` | Valid; regular labeled fixture computes actual TP/FP/FN, precision, and recall at `0.9500`; `production=no` because this is advisory measurement evidence. |
 
 Result: 34 checked scenario commits are recorded and all 34 hashes resolve.
 The original 25 commits contain 10 production-touching commits and 15 truthful
@@ -249,7 +249,7 @@ percentage.
 
 The merged `src/spec/retrieval.rs` class contains 2251 lines, including
 pre-existing index/search/explore/review functionality. Only the changed audit
-regions from `git diff b07bbce..HEAD -- src/main.rs src/cli/spec.rs
+regions from `git diff 0545742..HEAD -- src/main.rs src/cli/spec.rs
 src/spec/retrieval.rs` were considered here. The duplicate-audit region is
 `src/spec/retrieval.rs:1687-2110`; the merged XML has no zero-hit lines in that
 region. The final behavior-preserving clippy cleanup also touched existing

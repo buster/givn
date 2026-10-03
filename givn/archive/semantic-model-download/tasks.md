@@ -32,7 +32,7 @@
   (1 passed)`, `5 steps (5 passed)`.
 - [x] REFACTOR: ran `cargo fmt --all -- --check` and reran the named scenario;
   output: `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `dd3079e`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `172e1bc`.
 
 ## Scenario: A failed model download explains how to provide the missing artifacts
 
@@ -47,7 +47,7 @@
 - [x] REFACTOR: formatted the changed Rust files with `cargo fmt --all`, checked
   formatting, and reran the named scenario; output: `1 scenario (1 passed)`,
   `6 steps (6 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `c41b655`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `e7d8213`.
 
 ## Scenario: A failed model download leaves an existing permanent index unchanged
 
@@ -61,7 +61,7 @@
   (1 passed)`, `5 steps (5 passed)`.
 - [x] REFACTOR: ran `cargo fmt --all -- --check` and reran the named scenario;
   output: `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `f98bbd2`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `ff3487b`.
 
 ## Scenario: Malformed or incompatible indexes are not reported as absent
 
@@ -75,7 +75,7 @@
   `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   scenario; output: `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `94fde14`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `74ed77b`.
 
 ## Scenario: Duplicate audit identifies an absent persistent index without changing its fallback contract
 
@@ -91,7 +91,7 @@
 - [x] REFACTOR: formatted and checked the changed Rust files, verified the
   diagnostic is emitted once, and reran the named scenario; output: `1 scenario
   (1 passed)`, `6 steps (6 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `b686cd6`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `3fbe55f`.
 
 ## Scenario: Failed second-stage downloads remain unavailable and actionable
 
@@ -106,7 +106,7 @@
   passed. Targeted output: `1 scenario (1 passed)`, `7 steps (7 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   scenario; output: `1 scenario (1 passed)`, `7 steps (7 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `f8541ff`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `1d078d0`.
 
 ## Scenario: A corrupt second-stage cache is repaired before evidence scoring
 
@@ -122,7 +122,7 @@
 - [x] REFACTOR: formatted and checked the changed Rust files, asserted fixture
   request evidence for both repositories, and reran the named scenario; output:
   `1 scenario (1 passed)`, `7 steps (7 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `7c87c6d`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `9451b91`.
 
 ## Scenario: Explicitly disabled evidence layers do not download models
 
@@ -136,7 +136,7 @@
   `1 scenario (1 passed)`, `7 steps (7 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   scenario; output: `1 scenario (1 passed)`, `7 steps (7 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `02b61b0`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `1557a98`.
 
 ## Scenario: Archive maintenance does not download models implicitly
 
@@ -151,7 +151,7 @@
   (1 passed)`, `5 steps (5 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   scenario; output: `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `0a4c4f9`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `0a05c89`.
 
 ## Scenario: NLI uses the bounded E5 neighbour union for the permanent duplicate audit
 
@@ -166,7 +166,7 @@
   `1 scenario (1 passed)`, `4 steps (4 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   scenario; output: `1 scenario (1 passed)`, `4 steps (4 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `532d569`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `512c089`.
 
 ## Scenario: A feature-free build keeps retrieval explicitly unavailable
 
@@ -181,7 +181,7 @@
 - [x] REFACTOR: ran `cargo fmt --all -- --check` and reran the named scenario;
   output: `1 scenario (1 passed)`, `4 steps (4 passed)`.
 - [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
-  `78bd375`.
+  `001645e`.
 
 ## E2E Scenario: First semantic indexing downloads E5 artifacts before applying the token guard
 
@@ -205,7 +205,7 @@
   (7 passed)`.
 - [x] REFACTOR: ran `cargo fmt --all -- --check` and reran the named E2E
   scenario; output: `1 scenario (1 passed)`, `7 steps (7 passed)`.
-- [x] COMMIT: commit the E2E scenario with its title. Hash: `e16fe88`.
+- [x] COMMIT: commit the E2E scenario with its title. Hash: `8df463f`.
 
 ## E2E Scenario: Search identifies the missing-index repair command
 
@@ -220,7 +220,7 @@
   (1 passed)`, `3 steps (3 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   E2E scenario; output: `1 scenario (1 passed)`, `3 steps (3 passed)`.
-- [x] COMMIT: commit the E2E scenario with its title. Hash: `8e875f7`.
+- [x] COMMIT: commit the E2E scenario with its title. Hash: `67d0930`.
 
 ## E2E Scenario: Explore identifies the missing-index repair command
 
@@ -235,7 +235,7 @@
   (1 passed)`, `4 steps (4 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   E2E scenario; output: `1 scenario (1 passed)`, `4 steps (4 passed)`.
-- [x] COMMIT: commit the E2E scenario with its title. Hash: `a2f14ce`.
+- [x] COMMIT: commit the E2E scenario with its title. Hash: `2b5ec75`.
 
 ## E2E Scenario: Advisory review identifies the missing-index repair command
 
@@ -250,7 +250,7 @@
   (1 passed)`, `4 steps (4 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   E2E scenario; output: `1 scenario (1 passed)`, `4 steps (4 passed)`.
-- [x] COMMIT: commit the E2E scenario with its title. Hash: `f7df3f3`.
+- [x] COMMIT: commit the E2E scenario with its title. Hash: `158d79b`.
 
 ## E2E Scenario: Blocking review identifies the missing-index repair command
 
@@ -265,7 +265,7 @@
   (1 passed)`, `4 steps (4 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   E2E scenario; output: `1 scenario (1 passed)`, `4 steps (4 passed)`.
-- [x] COMMIT: commit the E2E scenario with its title. Hash: `f15ed15`.
+- [x] COMMIT: commit the E2E scenario with its title. Hash: `c5620fd`.
 
 ## E2E Scenario: Duplicate audit identifies the second-stage model caches
 
@@ -281,7 +281,7 @@
   passed. Targeted output: `1 scenario (1 passed)`, `9 steps (9 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   combined E2E scenario; output: `1 scenario (1 passed)`, `9 steps (9 passed)`.
-- [x] COMMIT: commit the E2E scenario with its title. Hash: `30ae663`.
+- [x] COMMIT: commit the E2E scenario with its title. Hash: `d3d2a9d`.
 
 ## Final Verification
 

@@ -67,23 +67,23 @@ filesystem checks are secondary evidence.
 
 | Scenario | Commit | Production/runtime evidence |
 |---|---|---|
-| A successful E5 setup is reused on the next indexing run | `dd3079e` | XDG E5 resolver and CLI cache-reuse output |
-| A failed model download explains how to provide the missing artifacts | `c41b655` | E5 failure diagnostic with cache and override guidance |
-| A failed model download leaves an existing permanent index unchanged | `f98bbd2` | Failure transaction preserves index bytes |
-| Malformed or incompatible indexes are not reported as absent | `94fde14` | Search distinguishes absent from parse failure |
-| Duplicate audit identifies an absent persistent index without changing its fallback contract | `b686cd6` | Duplicate fallback retains read-only transient behavior and emits hint |
-| Failed second-stage downloads remain unavailable and actionable | `f8541ff` | BGE/NLI unavailable statuses and diagnostics |
-| A corrupt second-stage cache is repaired before evidence scoring | `7c87c6d` | HF Hub resolver, validation, cache repair, manifest, and local fixture server |
-| Explicitly disabled evidence layers do not download models | `02b61b0` | Regression scenario reuses the production disabled-selector path; no downloader is invoked |
-| Archive maintenance does not download models implicitly | `0a4c4f9` | Explicit no-download archive retrieval APIs and archive path |
-| NLI uses the bounded E5 neighbour union for the permanent duplicate audit | `532d569` | Regression scenario locks the existing independent full-E5 NLI pool contract |
-| A feature-free build keeps retrieval explicitly unavailable | `78bd375` | Regression scenario locks the production feature-free error path |
-| First semantic indexing downloads E5 artifacts before applying the token guard | `e16fe88` | E5 resolver, event ordering, XDG cache, and compiled CLI fixture |
-| Search identifies the missing-index repair command | `8e875f7` | Compiled CLI search and shared diagnostic |
-| Explore identifies the missing-index repair command | `a2f14ce` | Compiled CLI Explore and shared diagnostic |
-| Advisory review identifies the missing-index repair command | `f7df3f3` | Compiled CLI advisory review and shared diagnostic |
-| Blocking review identifies the missing-index repair command | `f15ed15` | Compiled CLI blocking review and shared diagnostic |
-| Duplicate audit identifies the second-stage model caches | `30ae663` | Combined BGE/NLI compiled CLI, HF fixture, and XDG caches |
+| A successful E5 setup is reused on the next indexing run | `172e1bc` | XDG E5 resolver and CLI cache-reuse output |
+| A failed model download explains how to provide the missing artifacts | `e7d8213` | E5 failure diagnostic with cache and override guidance |
+| A failed model download leaves an existing permanent index unchanged | `ff3487b` | Failure transaction preserves index bytes |
+| Malformed or incompatible indexes are not reported as absent | `74ed77b` | Search distinguishes absent from parse failure |
+| Duplicate audit identifies an absent persistent index without changing its fallback contract | `3fbe55f` | Duplicate fallback retains read-only transient behavior and emits hint |
+| Failed second-stage downloads remain unavailable and actionable | `1d078d0` | BGE/NLI unavailable statuses and diagnostics |
+| A corrupt second-stage cache is repaired before evidence scoring | `9451b91` | HF Hub resolver, validation, cache repair, manifest, and local fixture server |
+| Explicitly disabled evidence layers do not download models | `1557a98` | Regression scenario reuses the production disabled-selector path; no downloader is invoked |
+| Archive maintenance does not download models implicitly | `0a05c89` | Explicit no-download archive retrieval APIs and archive path |
+| NLI uses the bounded E5 neighbour union for the permanent duplicate audit | `512c089` | Regression scenario locks the existing independent full-E5 NLI pool contract |
+| A feature-free build keeps retrieval explicitly unavailable | `001645e` | Regression scenario locks the production feature-free error path |
+| First semantic indexing downloads E5 artifacts before applying the token guard | `8df463f` | E5 resolver, event ordering, XDG cache, and compiled CLI fixture |
+| Search identifies the missing-index repair command | `67d0930` | Compiled CLI search and shared diagnostic |
+| Explore identifies the missing-index repair command | `2b5ec75` | Compiled CLI Explore and shared diagnostic |
+| Advisory review identifies the missing-index repair command | `158d79b` | Compiled CLI advisory review and shared diagnostic |
+| Blocking review identifies the missing-index repair command | `c5620fd` | Compiled CLI blocking review and shared diagnostic |
+| Duplicate audit identifies the second-stage model caches | `d3d2a9d` | Combined BGE/NLI compiled CLI, HF fixture, and XDG caches |
 
 The three explicit regression scenarios marked as reuses (`disabled` evidence,
 NLI pool wording, and feature-free fallback) intentionally protect existing

@@ -7,8 +7,8 @@ grep, no `@e2e` tags to audit, and no interaction inventory to cross-reference.
 
 | Check | Result |
 |---|---|
-| Task 1 commit touches production harness source | `ae59ad5` — run-tests.sh gains the prebuild after the zero-scenario guard |
-| Task 2 commit touches production harness source | `d4dfa5f` — measure-coverage.sh gains the instrumented prebuild before the profraw clean |
+| Task 1 commit touches production harness source | `e7f07e8` — run-tests.sh gains the prebuild after the zero-scenario guard |
+| Task 2 commit touches production harness source | `993daa7` — measure-coverage.sh gains the instrumented prebuild before the profraw clean |
 | Task 3 verification evidence | tasks.md records the cold-tree removal, two full suite runs, and the warm re-run, all exit 0 |
 | design.md components exist in the tree | run-tests.sh prebuild present; measure-coverage.sh prebuild present; no other components promised |
 | Strict-mode proof | Pre-existing and unchanged: `cucumber-rs` `.fail_on_skipped()` (tests/features_runner.rs); no setup task in this change, no new steps to skip |
@@ -22,7 +22,7 @@ grep, no `@e2e` tags to audit, and no interaction inventory to cross-reference.
 
 | Chapter | arc42.md claim | Implementation evidence | Match |
 |---|---|---|---|
-| 01–08, 10–11 | Not affected | No `src/` changes in `ae59ad5`/`d4dfa5f`; repo-owned scripts only; no product runtime, deployment, quality, or risk change | Yes |
+| 01–08, 10–11 | Not affected | No `src/` changes in `e7f07e8`/`993daa7`; repo-owned scripts only; no product runtime, deployment, quality, or risk change | Yes |
 | 09 architecture-decisions | No ADR (canonical destination: design.md Alternatives section) | Rationale recorded in design.md "Alternatives considered and rejected"; no ADR file created | Yes |
 | 12 glossary | Not extended | No product domain term introduced; "ready-fixture process" is harness-internal vocabulary, defined in design.md | Yes |
 

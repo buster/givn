@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "resync-adr-template",
   "status": "proven",
-  "candidate_revision": "830ceebe1e8c7370ead099ba9b520a32ac79a087",
-  "tested_revision": "830ceebe1e8c7370ead099ba9b520a32ac79a087",
+  "candidate_revision": "5b5104976d75cbcd317bb3cec8dac12c53c1afb8",
+  "tested_revision": "5b5104976d75cbcd317bb3cec8dac12c53c1afb8",
   "scopes": {
     "e2e": {
       "status": "passed",

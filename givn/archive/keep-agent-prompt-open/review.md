@@ -20,8 +20,8 @@ transcript; the two steps (lines 227, 232) are thin key-sequence wrappers.
 
 | Scenario | Commit | Touches production code? |
 |---|---|---|
-| 1 The interactive prompt accepts the pre-marked OpenCode default | `76e1866b` | yes — `src/cli/init.rs` (`DEFAULT_PROMPT_TARGET`, `defaults`) + PTY step |
-| 2 The interactive prompt keeps asking until a target is marked | `45de8183` | yes — `src/cli/init.rs` (re-ask loop + stderr message) |
+| 1 The interactive prompt accepts the pre-marked OpenCode default | `5e1702b5` | yes — `src/cli/init.rs` (`DEFAULT_PROMPT_TARGET`, `defaults`) + PTY step |
+| 2 The interactive prompt keeps asking until a target is marked | `ee00e05d` | yes — `src/cli/init.rs` (re-ask loop + stderr message) |
 
 **Promised-architecture cross-check** — every component design.md said would
 be created exists:

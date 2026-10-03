@@ -53,7 +53,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.s
 - [x] REFACTOR: `cargo fmt` + `cargo clippy --workspace --all-targets -- -D warnings`
       clean (exit 0); scenario re-run → `1 scenario (1 passed), 8 steps (8 passed)`,
       exit 0.
-- [x] COMMIT: `34360457` — `feat(initialize-a-project): <release note>`; body
+- [x] COMMIT: `4c1a96ce` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
 ## Scenario 2: The interactive prompt refuses a confirmation without a marked target
@@ -69,7 +69,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.s
       a `script` PTY.
 - [x] REFACTOR: `cargo fmt` + `cargo clippy --workspace --all-targets -- -D warnings`
       clean; scenario re-run → `1 scenario (1 passed), 5 steps (5 passed)`.
-- [x] COMMIT: `a11ae096` — `feat(initialize-a-project): <release note>`; body
+- [x] COMMIT: `92be3e2c` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
 ## Scenario 3: An empty answer refuses initialization
@@ -83,7 +83,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.s
       constant. Run → `1 scenario (1 passed), 5 steps (5 passed)`, exit 0.
 - [x] REFACTOR: `cargo fmt` + clippy clean; scenario re-run → `1 scenario
       (1 passed), 5 steps (5 passed)`.
-- [x] COMMIT: `9d1072e7` — `feat(initialize-a-project): <release note>`; body
+- [x] COMMIT: `ff4073a2` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
 ## Scenario 4: An answer without any known agent refuses initialization
@@ -94,7 +94,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.s
       side-effect GREEN, not a failing RED.
 - [x] GREEN: same run → passes (no production change beyond Scenario 3).
 - [x] REFACTOR: re-run → `1 scenario (1 passed), 6 steps (6 passed)`.
-- [x] COMMIT: `46618bdd` — `feat(initialize-a-project): <release note>`; body
+- [x] COMMIT: `214e77e9` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
 ## Scenario 5: An unknown-only --agents value refuses initialization
@@ -107,7 +107,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.s
       exit 0.
 - [x] REFACTOR: `cargo fmt` + clippy clean; scenario re-run → `1 scenario
       (1 passed), 5 steps (5 passed)`.
-- [x] COMMIT: `a9522198` — `feat(initialize-a-project): <release note>`; body
+- [x] COMMIT: `baa69b27` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
 ## Scenario 6: givn init --force re-applies the explicitly given selection **[regression]**
@@ -118,7 +118,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.s
       guard, no distinguishable RED state.
 - [x] GREEN: re-run after the code changes → passes (same output).
 - [x] REFACTOR: re-run → passes (same output).
-- [x] COMMIT: `12916901` — `feat(initialize-a-project): <release note>`; body
+- [x] COMMIT: `cee2ba82` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
 ## Scenario 7: givn init --force without a selection keeps the persisted selection
@@ -130,7 +130,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.s
 - [x] GREEN: re-run → passes (same output); the persisted `opencode, claude`
       selection survives the refused `--force`.
 - [x] REFACTOR: re-run → passes (same output).
-- [x] COMMIT: `78d758bd` — `feat(initialize-a-project): <release note>`;
+- [x] COMMIT: `69f6e0ed` — `feat(initialize-a-project): <release note>`;
       body carries the scenario title.
 
 ## Scenario 8: givn init defaults to all addons enabled and generates their files (modified) **[regression]**
@@ -140,7 +140,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.s
       names `--agents opencode`. Migration + regression guard.
 - [x] GREEN: re-run → passes (same output).
 - [x] REFACTOR: re-run → passes (same output).
-- [x] COMMIT: `b477f7e2` — `feat(enable-optional-addons): <release note>`; body
+- [x] COMMIT: `96205583` — `feat(enable-optional-addons): <release note>`; body
       carries the scenario title.
 
 ## Scenario 9: givn init --no-addons produces no skill or command addon files (modified) **[regression]**
@@ -150,7 +150,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.s
       regression guard.
 - [x] GREEN: re-run → passes (same output).
 - [x] REFACTOR: re-run → passes (same output).
-- [x] COMMIT: `15272625` — `feat(enable-optional-addons): <release note>`; body
+- [x] COMMIT: `4f805360` — `feat(enable-optional-addons): <release note>`; body
       carries the scenario title.
 
 ## Scenario 10: A fresh project resolves the rules policy to local-only (modified) **[regression]**
@@ -160,7 +160,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.s
       regression guard.
 - [x] GREEN: re-run → passes (same output).
 - [x] REFACTOR: re-run → passes (same output).
-- [x] COMMIT: `a6c360af` — `feat(rules-policy): <release note>`; body carries
+- [x] COMMIT: `07027cf5` — `feat(rules-policy): <release note>`; body carries
       the scenario title.
 
 ## E2E setup
@@ -179,7 +179,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.s
       regression guard.
 - [x] GREEN: re-run → passes (same output).
 - [x] REFACTOR: re-run → passes (same output).
-- [x] COMMIT: `0723aefa` — `test(e2e): <release note>`; body carries the
+- [x] COMMIT: `fa56ce37` — `test(e2e): <release note>`; body carries the
       scenario title.
 
 ## Scenario 12: An initialized project documents reusable test and coverage scripts (modified, @e2e) **[regression]**
@@ -189,7 +189,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.s
       regression guard.
 - [x] GREEN: re-run → passes (same output).
 - [x] REFACTOR: re-run → passes (same output).
-- [x] COMMIT: `f2d69c4e` — `test(e2e): <release note>`; body carries the
+- [x] COMMIT: `51727e5f` — `test(e2e): <release note>`; body carries the
       scenario title. (First landed bundled with Scenario 13; `git reset
       --soft` + separate commits produced this scenario's own revision.)
 
@@ -200,7 +200,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.s
       regression guard.
 - [x] GREEN: re-run → passes (same output).
 - [x] REFACTOR: re-run → passes (same output).
-- [x] COMMIT: `d6340e8d` — `test(e2e): <release note>`; body carries the
+- [x] COMMIT: `e32e1e30` — `test(e2e): <release note>`; body carries the
       scenario title.
 
 ## Scenario 14: Consumer runs init non-interactively and gets opencode skills (modified, @e2e) **[regression]**
@@ -210,7 +210,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.s
       already worked. Kept as the non-interactive e2e guard.
 - [x] GREEN: re-run → passes (same output).
 - [x] REFACTOR: re-run → passes (same output).
-- [x] COMMIT: `2a88b6fc` — `test(e2e): <release note>`; body carries the
+- [x] COMMIT: `37b4e019` — `test(e2e): <release note>`; body carries the
       scenario title.
 
 ## Final verification

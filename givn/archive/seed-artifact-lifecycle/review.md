@@ -6,12 +6,12 @@
 |---|---|
 | @e2e tag integrity | Clean — the delta has no `@e2e` scenario and none was removed. Running the static lint check is already driven end-to-end by the sibling `spec-overlap-gates` scenarios, recorded in the design matrix. |
 | Empty/no-op step bodies | 0 found. `grep -n "unimplemented!\|todo!()" tests/steps/mod.rs` returns no matches. |
-| Checked tasks have commits touching production | Clean — setup commit `d49e205c` plus seven scenario commits (`9b2a9a77`, `b5ed5fab`, `3496d62a`, `0ede1371`, `49b14d8f`, `80307b57`, `2d83f846`), each touching `src/cli/lint.rs`, assets, or real step assertions. |
+| Checked tasks have commits touching production | Clean — setup commit `84caf6c4` plus seven scenario commits (`e26375c0`, `24018eb0`, `c49707d7`, `5f7175c9`, `0961f712`, `ed1e9b21`, `a06d68b5`), each touching `src/cli/lint.rs`, assets, or real step assertions. |
 | Promised components exist | Clean — `check_seed_status`, `parse_seed_status`, the `[SEED ]` render arm, the seed schema, the propose/archive stamping instructions, and the two new fixture steps all exist. |
 | Strict-mode proof | Present in `tasks.md` Setup with non-zero-exit evidence. |
 | Downgraded `@e2e` scenarios | None — the delta has no `@e2e` scenario; existing `@e2e` scenarios are untouched. |
 | `verify.e2e_command` isolation | `verify.command` is `./run-tests.sh`; `verify.e2e_command` is `./run-tests.sh --e2e`. Counts: 498 regular vs 88 e2e — strictly fewer. |
-| Implementation vs design.md | Matches, with one recorded refinement: the standalone active-change scenario was folded into the dangling scenario during implementation (it could only pass vacuously against pre-change code); `design.md` and `design-review.md` were updated in the same commit (`0ede1371`). |
+| Implementation vs design.md | Matches, with one recorded refinement: the standalone active-change scenario was folded into the dangling scenario during implementation (it could only pass vacuously against pre-change code); `design.md` and `design-review.md` were updated in the same commit (`5f7175c9`). |
 | Parallel e2e implementations | None found in the tree (tracked or untracked). |
 
 ## Interaction coverage

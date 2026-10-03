@@ -10,7 +10,7 @@ artifact:
 
 | Scope | Commit hash | Touches the repaired artifact? |
 |---|---|---|
-| Template re-eject | `46183b21` | yes (`givn/artifacts/arc42-docs/impact-assessment-template.md`, change artifacts) |
+| Template re-eject | `3b4a56a2` | yes (`givn/artifacts/arc42-docs/impact-assessment-template.md`, change artifacts) |
 
 **Promised-architecture cross-check** — the change promises a restored
 ejected file, not a component: no production module changed.

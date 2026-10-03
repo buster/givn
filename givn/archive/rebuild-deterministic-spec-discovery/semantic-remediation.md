@@ -4,7 +4,7 @@ Change: "rebuild-deterministic-spec-discovery"
 
 ## Run 1
 - kind: before
-- commit: eedfb09bba35b968f60a9917091601d444b5fb95
+- commit: 37d59a7adfd8d6492f00ad571fd55570ae5dc3d2
 - e5_runtime_ms: 14299
 - bge_runtime_ms: 20347
 - nli_runtime_ms: 12235

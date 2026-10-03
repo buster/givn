@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "rewrite-history",
   "status": "proven",
-  "candidate_revision": "e3ac95c6bcc1553d428e778cb5718f59778e2c4a",
-  "tested_revision": "e3ac95c6bcc1553d428e778cb5718f59778e2c4a",
+  "candidate_revision": "cbb1e240296ccc0d15d05d345f918b527003e673",
+  "tested_revision": "cbb1e240296ccc0d15d05d345f918b527003e673",
   "scopes": {
     "e2e": {
       "status": "passed",

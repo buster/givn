@@ -11,7 +11,7 @@
 - [x] Confirm the full and E2E runner commands and record their scenario counts.
   - Full command/output: `./run-tests.sh` -> 8 Cucumber invocations, 388 scenarios total (328 + 36 + 1 + 1 + 9 + 8 + 4 + 1), all passed.
   - E2E command/output: `./run-tests.sh --e2e` -> 4 Cucumber invocations, 55 scenarios total (42 + 7 + 5 + 1), all passed; strict subset of full.
-  - Commit: setup evidence landed with first scenario commit `06d2238`.
+  - Commit: setup evidence landed with first scenario commit `b46ef70`.
 
 ## Scenario: Indexing keeps fitting scenarios when another passage exceeds E5 capacity
 
@@ -28,7 +28,7 @@
 - [x] REFACTOR: rerun the targeted scenario after cleanup.
    - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Indexing keeps fitting scenarios when another passage exceeds E5 capacity"`
    - Output: `1 feature`, `1 scenario (1 passed)`, `9 steps (9 passed)` after `cargo fmt`.
-- [x] COMMIT: `06d2238` — record the scenario commit.
+- [x] COMMIT: `b46ef70` — record the scenario commit.
 
 ## Scenario: Duplicate audit preserves deterministic findings and reports an E5 token-cap candidate
 
@@ -44,7 +44,7 @@
 - [x] REFACTOR: rerun the targeted scenario after cleanup.
    - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Duplicate audit preserves deterministic findings and reports an E5 token-cap candidate"`
    - Output: `1 feature`, `1 scenario (1 passed)`, `12 steps (12 passed)` after `cargo fmt`.
-- [x] COMMIT: `700e1b6` — record the scenario commit.
+- [x] COMMIT: `8f0d056` — record the scenario commit.
 
 ## Scenario: Explore keeps an E5 token-cap finding visible while fitting results remain usable
 
@@ -60,7 +60,7 @@
 - [x] REFACTOR: rerun the targeted scenario after cleanup.
    - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Explore keeps an E5 token-cap finding visible while fitting results remain usable"`
    - Output: `1 feature`, `1 scenario (1 passed)`, `11 steps (11 passed)` after `cargo fmt`.
-- [x] COMMIT: `de4a25a` — record the scenario commit.
+- [x] COMMIT: `831a005` — record the scenario commit.
 
 ## Scenario: Advisory review exposes an E5 token-cap finding without blocking
 
@@ -76,7 +76,7 @@
 - [x] REFACTOR: rerun the targeted scenario after cleanup.
    - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Advisory review exposes an E5 token-cap finding without blocking"`
    - Output: `1 feature`, `1 scenario (1 passed)`, `8 steps (8 passed)` after `cargo fmt`.
-- [x] COMMIT: `61a726f` — record the scenario commit.
+- [x] COMMIT: `0373a69` — record the scenario commit.
 
 ## Scenario: Blocking review keeps an over-cap active scenario unresolved
 
@@ -92,7 +92,7 @@
 - [x] REFACTOR: rerun the targeted scenario after cleanup.
    - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Blocking review keeps an over-cap active scenario unresolved"`
    - Output: `1 feature`, `1 scenario (1 passed)`, `9 steps (9 passed)` after `cargo fmt`.
-- [x] COMMIT: `26063a3` — record the scenario commit.
+- [x] COMMIT: `dff5e97` — record the scenario commit.
 
 ## Scenario: Exactly 512 E5 passage tokens retain normal embedding behaviour
 
@@ -107,7 +107,7 @@
 - [x] REFACTOR: rerun the targeted scenario after cleanup.
    - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Exactly 512 E5 passage tokens retain normal embedding behaviour"`
    - Output: `1 feature`, `1 scenario (1 passed)`, `7 steps (7 passed)` after `cargo fmt`.
-- [x] COMMIT: `bf2c117` — record the scenario commit.
+- [x] COMMIT: `55bb649` — record the scenario commit.
 
 ## Final Verification
 

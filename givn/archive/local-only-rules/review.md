@@ -13,12 +13,12 @@ production source:
 
 | Scenario | Commit hash | Touches production code? |
 |---|---|---|
-| Plan | `bc9d0161` | Planning artifacts |
-| rule policy | `cc089b85` | `src/config/overlay.rs`, `src/cli/init.rs`, assets, config, steps |
-| transition + setup | `04427cfb` | `src/skills/rules.rs`, targets, SCM seam, arc42 chapters, specs |
-| commit stage set | `3647d32b` | `src/cli/commit.rs`, delta spec |
-| upgrade | `fedf40b4` | `src/cli/migration.rs`, e2e step updates, delta spec |
-| dedicated check | `7487ebb2` | `src/cli/check.rs`, delta spec |
+| Plan | `55b3dcb1` | Planning artifacts |
+| rule policy | `73b5d226` | `src/config/overlay.rs`, `src/cli/init.rs`, assets, config, steps |
+| transition + setup | `357c97b6` | `src/skills/rules.rs`, targets, SCM seam, arc42 chapters, specs |
+| commit stage set | `f94c26b8` | `src/cli/commit.rs`, delta spec |
+| upgrade | `0644838b` | `src/cli/migration.rs`, e2e step updates, delta spec |
+| dedicated check | `ff7fb5cd` | `src/cli/check.rs`, delta spec |
 
 **Promised-architecture cross-check** — every component design.md named
 exists: `src/skills/rules.rs`, `RulesPolicy` in `src/config/overlay.rs`,

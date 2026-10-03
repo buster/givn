@@ -54,7 +54,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 5 steps (5 passed)
   ```
-- [x] COMMIT: `5f286e1` - `feat(domain-skill-trigger): The skill trigger names conversation states`
+- [x] COMMIT: `e29a490` - `feat(domain-skill-trigger): The skill trigger names conversation states`
 
 ### The skill body is an active discipline
 
@@ -73,7 +73,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 5 steps (5 passed)
   ```
-- [x] COMMIT: `409728c` - `feat(domain-skill-trigger): The skill body is an active discipline`
+- [x] COMMIT: `b74c928` - `feat(domain-skill-trigger): The skill body is an active discipline`
 
 ### Lifecycle guidance describes the domain, not the givn change
 
@@ -92,7 +92,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 4 steps (4 passed)
   ```
-- [x] COMMIT: `18fce48` - `feat(domain-skill-trigger): Lifecycle guidance describes the domain, not the givn change`
+- [x] COMMIT: `dce6273` - `feat(domain-skill-trigger): Lifecycle guidance describes the domain, not the givn change`
 
 ### The skill documents a per-change ubiquitous-language table
 
@@ -111,7 +111,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 4 steps (4 passed)
   ```
-- [x] COMMIT: `046e382` - `feat(domain-skill-trigger): The skill documents a per-change ubiquitous-language table`
+- [x] COMMIT: `6b7294f` - `feat(domain-skill-trigger): The skill documents a per-change ubiquitous-language table`
 
 ### An agent requests next-step guidance as JSON and the skill route is machine-readable
 
@@ -132,7 +132,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 3 steps (3 passed)
   ```
-- [x] COMMIT: `20f22d5` - `feat(domain-skill-trigger): An agent requests next-step guidance as JSON and the skill route is machine-readable`
+- [x] COMMIT: `dff0bf1` - `feat(domain-skill-trigger): An agent requests next-step guidance as JSON and the skill route is machine-readable`
 
 ### A project without the addon is not routed to the domain skill
 
@@ -158,8 +158,8 @@
   ```text
   1 feature, 1 scenario (1 passed), 3 steps (3 passed)
   ```
-- [x] COMMIT: `c83042b` - `fix(domain-skill-trigger): Disable the addon in the addon-off fixture`
-  (constraint-commit; the original `8758532` pass was issued before `run_artifact`
+- [x] COMMIT: `3fd5832` - `fix(domain-skill-trigger): Disable the addon in the addon-off fixture`
+  (constraint-commit; the original `2b9bf67` pass was issued before `run_artifact`
   routed on the addon flag)
 
 ## E2E Scenarios
@@ -181,7 +181,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 5 steps (5 passed)
   ```
-- [x] COMMIT: `1f5b082` - `feat(domain-skill-trigger): An agent synchronizes skills and the domain skill is routed`
+- [x] COMMIT: `d6d93b5` - `feat(domain-skill-trigger): An agent synchronizes skills and the domain skill is routed`
 
 ### An agent requests next-step guidance and is routed to the domain skill
 
@@ -203,7 +203,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 3 steps (3 passed)
   ```
-- [x] COMMIT: `a3d3fed` - `feat(domain-skill-trigger): An agent requests next-step guidance and is routed to the domain skill`
+- [x] COMMIT: `128c2bf` - `feat(domain-skill-trigger): An agent requests next-step guidance and is routed to the domain skill`
 
 ### An agent requests the specs guidance and is routed to the domain skill
 
@@ -223,7 +223,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 3 steps (3 passed)
   ```
-- [x] COMMIT: `b00c741` - `feat(domain-skill-trigger): An agent requests the specs guidance and is routed to the domain skill`
+- [x] COMMIT: `ea1e964` - `feat(domain-skill-trigger): An agent requests the specs guidance and is routed to the domain skill`
 
 ### An agent requests the design guidance and is routed to the domain skill
 
@@ -244,7 +244,7 @@
   ```text
   1 feature, 1 scenario (1 passed), 3 steps (3 passed)
   ```
-- [x] COMMIT: `e2e511a` - `feat(domain-skill-trigger): An agent requests the design guidance and is routed to the domain skill`
+- [x] COMMIT: `3e9a905` - `feat(domain-skill-trigger): An agent requests the design guidance and is routed to the domain skill`
 
 ## Done
 

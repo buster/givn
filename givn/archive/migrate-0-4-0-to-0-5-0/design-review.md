@@ -2,10 +2,10 @@
 
 ## Managed upgrade verification (Prompt 2)
 
-- Commit A `e9938d66772adc8722fb1e5cfb0d6d19cbdf8f89` contains exactly one
+- Commit A `04d10652c98ef5d715a8338fa63e102b3efd38ff` contains exactly one
   managed path: `givn/config.yaml` (marker `0.4.0` → `0.5.0`). Verified via
   `git show --stat`.
-- Commit B `817e9481c63377137507b59c2dcb10d1136c2443` contains only this
+- Commit B `a5674439104ef61e172174731616a3e5411cd77c` contains only this
   migration change (proposal, design, migration.yaml, `.givn-skip: specs`).
   `migration.yaml` records Commit A under `upgrade_commit`.
 - No product feature file was invented; no `DESIGN-REVIEW: PASS`,
@@ -14,7 +14,7 @@
 ## Prompt 3 evidence: guidance reconciliation
 
 - `givn skills sync` + `givn instructions` ran on the 0.5.0 binary
-  (commit `3b55389`); all generated skills/commands carry the 0.5.0
+  (commit `0dcf4df`); all generated skills/commands carry the 0.5.0
   contract.
 - The single project-owned override (`givn/artifacts/arc42-docs/impact-assessment-template.md`)
   is an impact-assessment template with no retired semantic sections and
@@ -30,13 +30,13 @@
 | Decision | State | Evidence |
 |---|---|---|
 | Semantic features | feature-free default accepted; opt-in documented | `Cargo.toml` `default = []`; README `--no-default-features` path asserted by `release-strict-model-overrides` |
-| Corpus layout | grouped (7 use-case groups, one `group.md` each) | commit `3c2512b`; `givn spec tree` lists all groups with Actor/Goal |
+| Corpus layout | grouped (7 use-case groups, one `group.md` each) | commit `c9d6945`; `givn spec tree` lists all groups with Actor/Goal |
 | Capability retirement | 15 semantic capabilities retired via `@givn.retired` | `givn/specs/.retired.yaml`, change `retire-semantic-capabilities` |
 | Interaction inventories | live in `group.md`, reconciled to `@e2e` counts | lint reports zero interaction over/under-coverage |
 | Disposition vocabulary | deterministic decisions shipped and tested | `overlap::disposition` tests; template ships exact headings |
 | Protected review artifact | no `remove: true` overlay present; `review` in effective manifest | `givn/config.yaml` has no active artifact-removal patch |
 | Capability Routing | no active changes; template + gate shipped | `assets/templates/proposal.md`, `spec::routing_table` |
-| Dead code | semantic duplicate-audit cluster and 37 orphaned step files deleted | commit `aef4959` |
+| Dead code | semantic duplicate-audit cluster and 37 orphaned step files deleted | commit `a97d3a6` |
 
 ## Stress-test
 

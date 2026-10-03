@@ -11,7 +11,7 @@ Specification reorganization; `specs` is skipped.
 - [x] Rewrite the Goal, Trigger, Main flow, and Success guarantee; anchor
       the extension; rename the two capabilities.
 - [x] `git mv` the two feature files and update their titles.
-- [x] COMMIT: `9fe21853` -- `feat(use-case-model-scoping): reshape operate-product to the 0.8.0 model`
+- [x] COMMIT: `e5b1f7fe` -- `feat(use-case-model-scoping): reshape operate-product to the 0.8.0 model`
 
 ## Verification
 
@@ -22,5 +22,5 @@ Specification reorganization; `specs` is skipped.
       Summary [37.844s] 539 tests run: 539 passed, 0 skipped
       Summary [6.8s] 88 tests run: 88 passed, 451 skipped
       ```
-- [x] COMMIT: `e19b7674` -- `docs(reshape-operate-product): complete the review`
+- [x] COMMIT: `58f831fc` -- `docs(reshape-operate-product): complete the review`
 - [x] Archive the change.

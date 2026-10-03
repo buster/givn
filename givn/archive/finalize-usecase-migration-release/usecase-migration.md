@@ -1,6 +1,6 @@
 # Givn Use-Case Migration Ledger
 
-The pre-migration snapshot was generated from the parent of commit `92975e3`,
+The pre-migration snapshot was generated from the parent of commit `158438a`,
 the commit that introduced the canonical use-case corpus. The after snapshot is
 the current permanent corpus. Unchanged behavior remains accounted for by the
 behavior-hash comparison; the rows below record the intentional semantic

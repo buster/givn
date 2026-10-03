@@ -11,7 +11,7 @@ Narrative spec change; no scenario delta and no new steps.
 
 - [x] Write the five delta narratives with the `## Personas` correction and
       the current base hashes.
-- [x] COMMIT: `1202e008` -- `feat(persona-identity-reuse): confirm persona coverage on five use cases`
+- [x] COMMIT: `c6c3787b` -- `feat(persona-identity-reuse): confirm persona coverage on five use cases`
 
 ## Verification
 
@@ -23,5 +23,5 @@ Narrative spec change; no scenario delta and no new steps.
       Summary [30.329s] 539 tests run: 539 passed, 0 skipped
       Summary [5.4s] 88 tests run: 88 passed, 451 skipped
       ```
-- [x] COMMIT: `cb7eb55a` -- `docs(confirm-persona-coverage): complete the review`
+- [x] COMMIT: `d1a27fb7` -- `docs(confirm-persona-coverage): complete the review`
 - [x] Archive the change.

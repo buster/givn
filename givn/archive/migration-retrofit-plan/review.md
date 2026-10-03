@@ -10,9 +10,9 @@ and documentation.
 
 | Scope | Commit hash | Touches production/release artifacts? |
 |---|---|---|
-| Plan, chapters, and arc42 | `a29b196a` | yes (chapter sentences) |
-| Amended bundle and guide | `77c92103` | yes (embedded assets, guide) |
-| Wrapper and contract docs | `cd4e82f3` | yes (`src/cli/migration.rs`, README, changelog) |
+| Plan, chapters, and arc42 | `68e5621d` | yes (chapter sentences) |
+| Amended bundle and guide | `d4f8374e` | yes (embedded assets, guide) |
+| Wrapper and contract docs | `afc72e4b` | yes (`src/cli/migration.rs`, README, changelog) |
 
 **Promised-architecture cross-check** — the change promises amended assets and
 one wrapper string, not components: the bundle sections and guide prompts

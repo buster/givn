@@ -6,7 +6,7 @@
 |---|---|
 | @e2e tag integrity | Clean — the delta has no `@e2e` scenario and none was removed; the two existing `@e2e` CLI scenarios are untouched. |
 | Empty/no-op step bodies | 0 found. `grep -c "unimplemented!\\|todo!()" tests/steps/adr_qualification_gate_steps.rs` returns 0. |
-| Checked tasks have commits touching production | Clean — setup `97e419f0` plus six scenario commits (`4203f326`, `bd73138d`, `aa5a0e91`, `418f7c18`, `086d1ed6`, `2cf72220`), each touching assets or real step assertions. |
+| Checked tasks have commits touching production | Clean — setup `61aca78b` plus six scenario commits (`f882c945`, `64f7fef9`, `79f634ca`, `11e369a2`, `93dad8b5`, `00332ba9`), each touching assets or real step assertions. |
 | Promised components exist | Clean — the falsification block, the design prompt, the verdict placement rule, the blank template, the cheaper-home challenge in all three surfaces, and the row-9 reword all exist. |
 | Strict-mode proof | Present in `tasks.md` Setup with non-zero-exit evidence. |
 | Downgraded `@e2e` scenarios | None — the delta has no `@e2e` scenario. |

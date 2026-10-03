@@ -47,7 +47,7 @@ in its commit.
       the targeted command. Evidence: after `cargo fmt --all`, targeted run
       passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [x] COMMIT: `feat(spec-explore-change): Removed change scenarios are absent from exploration results`
-      Hash: `0d36bd7`
+      Hash: `21cc9d2`
 
 ### Rule-nested active change scenarios are searchable
 
@@ -64,7 +64,7 @@ in its commit.
       command after `cargo fmt --all`. Evidence: targeted run passed with `1
       scenario (1 passed)`, `6 steps (6 passed)`.
 - [x] COMMIT: `feat(spec-explore-change): Rule-nested active change scenarios are searchable`
-      Hash: `df91758`
+      Hash: `b2ec8d7`
 
 ### A modified change scenario is not reported against itself from its delta source
 
@@ -80,7 +80,7 @@ in its commit.
       targeted command. Evidence: after `cargo fmt --all`, targeted run
       passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [x] COMMIT: `feat(spec-explore-change): A modified change scenario is not reported against itself from its delta source`
-      Hash: `eb3831b`
+      Hash: `0b708e9`
 
 ### Change exploration does not persist delta scenarios in the permanent index
 
@@ -96,7 +96,7 @@ in its commit.
       command. Evidence: after `cargo fmt --all`, targeted run passed with `1
       scenario (1 passed)`, `7 steps (7 passed)`.
 - [x] COMMIT: `feat(spec-explore-change): Change exploration does not persist delta scenarios in the permanent index`
-      Hash: `df1b43f`
+      Hash: `001ffc6`
 
 ### An added change scenario is not reported against itself from its delta source
 
@@ -114,7 +114,7 @@ in its commit.
       --all`, targeted run passed with `1 scenario (1 passed)`, `5 steps (5
       passed)`.
 - [x] COMMIT: `feat(spec-explore-change): An added change scenario is not reported against itself from its delta source`
-      Hash: `af62538`
+      Hash: `40e5cea`
 
 ### A modified change scenario is not reported against itself through its projected permanent target
 
@@ -131,7 +131,7 @@ in its commit.
       `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`, `5
       steps (5 passed)`.
 - [x] COMMIT: `feat(spec-explore-change): A modified change scenario is not reported against itself through its projected permanent target`
-      Hash: `5de7ff0`
+      Hash: `5e0e6fd`
 
 ### Change-aware exploration normalizes relative and absolute scenario identities
 
@@ -147,7 +147,7 @@ in its commit.
       assertions. Evidence: after `cargo fmt --all`, targeted run passed with
       `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [x] COMMIT: `feat(spec-explore-change): Change-aware exploration normalizes relative and absolute scenario identities`
-      Hash: `2fd7acf`
+      Hash: `fb34c43`
 
 ### Change-aware standard input returns the same ranked candidates as file input
 
@@ -164,7 +164,7 @@ in its commit.
       rerun the targeted command. Evidence: after `cargo fmt --all`, targeted
       run passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [x] COMMIT: `feat(spec-explore-change): Change-aware standard input returns the same ranked candidates as file input`
-      Hash: `58043f3`
+      Hash: `77abf78`
 
 ### Permanent exploration text identifies permanent candidate sources
 
@@ -180,7 +180,7 @@ in its commit.
       command. Evidence: after `cargo fmt --all`, targeted run passed with `1
       scenario (1 passed)`, `7 steps (7 passed)`.
 - [x] COMMIT: `feat(spec-explore-change): Permanent exploration text identifies permanent candidate sources`
-      Hash: `7386892`
+      Hash: `c48643b`
 
 ### Permanent exploration JSON adds source metadata while retaining legacy result fields
 
@@ -197,7 +197,7 @@ in its commit.
       command. Evidence: after `cargo fmt --all`, targeted run passed with `1
       scenario (1 passed)`, `7 steps (7 passed)`.
 - [x] COMMIT: `feat(spec-explore-change): Permanent exploration JSON adds source metadata while retaining legacy result fields`
-      Hash: `ec9c082`
+      Hash: `6904e07`
 
 ### Unsafe change identifiers are rejected without changing the permanent index
 
@@ -214,7 +214,7 @@ in its commit.
       command. Evidence: after `cargo fmt --all`, targeted run passed with `1
       scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] COMMIT: `feat(spec-explore-change): Unsafe change identifiers are rejected without changing the permanent index`
-      Hash: `58a56c2`
+      Hash: `3e44fdc`
 
 ### A missing change is rejected without changing the permanent index
 
@@ -229,7 +229,7 @@ in its commit.
       rerun the targeted command. Evidence: after `cargo fmt --all`, targeted
       run passed with `1 scenario (1 passed)`, `9 steps (9 passed)`.
 - [x] COMMIT: `feat(spec-explore-change): A missing change is rejected without changing the permanent index`
-      Hash: `bcff09f`
+      Hash: `19bec33`
 
 ### A change without a specs directory is rejected without changing the permanent index
 
@@ -245,7 +245,7 @@ in its commit.
       Evidence: after `cargo fmt --all`, targeted run passed with `1 scenario
       (1 passed)`, `8 steps (8 passed)`.
 - [x] COMMIT: `feat(spec-explore-change): A change without a specs directory is rejected without changing the permanent index`
-      Hash: `fa4e4a5`
+      Hash: `331e115`
 
 ### A malformed delta feature is rejected without changing the permanent index
 
@@ -261,7 +261,7 @@ in its commit.
       Evidence: after `cargo fmt --all`, targeted run passed with `1 scenario
       (1 passed)`, `8 steps (8 passed)`.
 - [x] COMMIT: `feat(spec-explore-change): A malformed delta feature is rejected without changing the permanent index`
-      Hash: `7e007bd`
+      Hash: `76e92e4`
 
 ## E2E setup
 
@@ -297,7 +297,7 @@ in its commit.
       command. Evidence: after `cargo fmt --all`, targeted e2e run passed with
       `1 scenario (1 passed)`, `10 steps (10 passed)`.
 - [x] COMMIT: `test(e2e): Change-aware file exploration finds permanent and active change candidates`
-      Hash: `2cc2d73`
+      Hash: `75b2bed`
 
 ### Change-aware JSON exploration labels candidate sources
 
@@ -315,7 +315,7 @@ in its commit.
       targeted e2e command. Evidence: after `cargo fmt --all`, targeted e2e
       run passed with `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [x] COMMIT: `test(e2e): Change-aware JSON exploration labels candidate sources`
-      Hash: `b70e495`
+      Hash: `34a40ce`
 
 ## Completion Evidence
 

@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "finding-severity-routing-signal",
   "status": "proven",
-  "candidate_revision": "dd52696f27c6c835ceff2e5d45f3307b282b93c1",
-  "tested_revision": "dd52696f27c6c835ceff2e5d45f3307b282b93c1",
+  "candidate_revision": "28dd1411b1dcc6b276cb2b9095c4ec3a0f065855",
+  "tested_revision": "28dd1411b1dcc6b276cb2b9095c4ec3a0f065855",
   "scopes": {
     "e2e": {
       "status": "passed",

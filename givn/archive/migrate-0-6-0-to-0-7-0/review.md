@@ -13,8 +13,8 @@ artifacts:
 
 | Scope | Commit hash | Touches production/release code? |
 |---|---|---|
-| 0.7.0 version bump, catalog entry, consumer bundle, changelog | `53454c9e` | yes (`Cargo.toml`, `Cargo.lock`, `givn/config.yaml`, assets) |
-| Bundle hardening, aggregate-title fix + regression test, docs | `31719f87` | yes (`src/cli/migration.rs`, assets, docs) |
+| 0.7.0 version bump, catalog entry, consumer bundle, changelog | `c6ac505c` | yes (`Cargo.toml`, `Cargo.lock`, `givn/config.yaml`, assets) |
+| Bundle hardening, aggregate-title fix + regression test, docs | `e614781b` | yes (`src/cli/migration.rs`, assets, docs) |
 
 **Promised-architecture cross-check** — the change promises versioned data,
 not components: `assets/migrations/0.6.0-to-0.7.0/proposal.md` and `design.md`

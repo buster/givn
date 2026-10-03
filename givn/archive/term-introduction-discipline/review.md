@@ -6,12 +6,12 @@
 |---|---|
 | @e2e tag integrity | Clean — the delta has no `@e2e` scenario and none was removed; the existing `@e2e` scenarios for both capabilities are untouched. |
 | Empty/no-op step bodies | 0 found. `grep -n "unimplemented!\\|todo!()" tests/steps/fix_domain_modeling_skill_trigger_steps.rs` returns no matches. |
-| Checked tasks have commits touching production | Clean — setup `7055b201`, scenarios `ee29e914` and `7feefd86`, and the full-suite fix `0cdc09f3`, each touching assets, docs, or real step assertions. |
+| Checked tasks have commits touching production | Clean — setup `dd0c4f0d`, scenarios `79c3fa87` and `0ecf09ad`, and the full-suite fix `7ec71223`, each touching assets, docs, or real step assertions. |
 | Promised components exist | Clean — the term schema, the collision procedure, the review branch, the Handoff rule, the term introduction test, and the five new steps all exist. |
 | Strict-mode proof | Present in `tasks.md` Setup with non-zero-exit evidence. |
 | Downgraded `@e2e` scenarios | None — the delta has no `@e2e` scenario. |
 | `verify.e2e_command` isolation | `verify.command` is `./run-tests.sh`; `verify.e2e_command` is `./run-tests.sh --e2e`. Counts: 505 regular vs 88 e2e — strictly fewer. |
-| Implementation vs design.md | Matches, with one recorded refinement: the glossary step and the term-test reference are wrapped in their addon conditionals after the full suite caught the template-conditional-rendering contract; `design.md` was updated in the same fix commit (`0cdc09f3`). |
+| Implementation vs design.md | Matches, with one recorded refinement: the glossary step and the term-test reference are wrapped in their addon conditionals after the full suite caught the template-conditional-rendering contract; `design.md` was updated in the same fix commit (`7ec71223`). |
 | Parallel e2e implementations | None found in the tree (tracked or untracked). |
 
 The full-suite run caught a real contract conflict the design missed: the

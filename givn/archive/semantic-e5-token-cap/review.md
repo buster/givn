@@ -16,19 +16,19 @@ execution, and assertions. Empty step bodies found: 0.
 
 | Scenario/task | Commit | Production evidence |
 |---|---|---|
-| Setup and strict runner proof | `06d2238` | `src/spec/retrieval.rs` plus runner and E2E files |
-| Indexing keeps fitting scenarios when another passage exceeds E5 capacity | `06d2238` | Partial E5 batch, tokenizer preflight, index metadata |
-| Duplicate audit preserves deterministic findings and reports an E5 token-cap candidate | `700e1b6` | Duplicate cap collection and JSON/text rendering |
-| Explore keeps an E5 token-cap finding visible while fitting results remain usable | `de4a25a` | Explore cap aggregation and query-vector handling |
-| Advisory review exposes an E5 token-cap finding without blocking | `61a726f` | Advisory cap output and deterministic seam |
-| Blocking review keeps an over-cap active scenario unresolved | `26063a3` | Blocking semantic report and unresolved gate |
-| Exactly 512 E5 passage tokens retain normal embedding behaviour | `bf2c117` | Reused production boundary with real JSON assertions |
-| Fitting-contract and second-stage hardening | `ee3ea4c` | Empty additive-field compatibility, cap propagation, index validation |
+| Setup and strict runner proof | `b46ef70` | `src/spec/retrieval.rs` plus runner and E2E files |
+| Indexing keeps fitting scenarios when another passage exceeds E5 capacity | `b46ef70` | Partial E5 batch, tokenizer preflight, index metadata |
+| Duplicate audit preserves deterministic findings and reports an E5 token-cap candidate | `8f0d056` | Duplicate cap collection and JSON/text rendering |
+| Explore keeps an E5 token-cap finding visible while fitting results remain usable | `831a005` | Explore cap aggregation and query-vector handling |
+| Advisory review exposes an E5 token-cap finding without blocking | `0373a69` | Advisory cap output and deterministic seam |
+| Blocking review keeps an over-cap active scenario unresolved | `dff5e97` | Blocking semantic report and unresolved gate |
+| Exactly 512 E5 passage tokens retain normal embedding behaviour | `55bb649` | Reused production boundary with real JSON assertions |
+| Fitting-contract and second-stage hardening | `feded6b` | Empty additive-field compatibility, cap propagation, index validation |
 
 The exact-512 scenario is a deliberate production-behavior reuse case. Its
 commit adds the boundary assertion through the real CLI; the production
-partition it exercises is implemented and covered by `06d2238` and
-`ee3ea4c`.
+partition it exercises is implemented and covered by `b46ef70` and
+`feded6b`.
 
 **Promised components:**
 

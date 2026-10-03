@@ -15,7 +15,7 @@
       and `run-tests.sh` retain the exact `--tags @e2e` filter; the change E2E
       path is separate from the non-E2E path and will be count-checked before
       the E2E scenario.
-- [x] Commit setup changes with implementation evidence. Hash: `b1233fd`
+- [x] Commit setup changes with implementation evidence. Hash: `3d36f91`
 
 ## Non-E2E Scenarios
 
@@ -30,7 +30,7 @@
 - [x] REFACTOR: rerun the named scenario after formatting. Evidence: after
       `cargo fmt --all` and `cargo check --features spec-retrieval`, targeted run
       passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [x] COMMIT: `feat(semantic-remediation): A DUPLIKAT classification without removal remains blocked` Hash: `7d44849`
+- [x] COMMIT: `feat(semantic-remediation): A DUPLIKAT classification without removal remains blocked` Hash: `1159f7b`
 
 ### Removing a DUPLIKAT candidate verifies the projected remediation
 
@@ -44,7 +44,7 @@
 - [x] REFACTOR: rerun the named scenario and non-mutation assertions. Evidence:
       after `cargo fmt --all` and `cargo check --features spec-retrieval`,
       targeted run passed with `1 scenario (1 passed)`, `11 steps (11 passed)`.
-- [x] COMMIT: `feat(semantic-remediation): Removing a DUPLIKAT candidate verifies the projected remediation` Hash: `4790a70`
+- [x] COMMIT: `feat(semantic-remediation): Removing a DUPLIKAT candidate verifies the projected remediation` Hash: `48a4fb8`
 
 ### A VARIANTE classification without consolidation remains blocked
 
@@ -56,7 +56,7 @@
       steps (8 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
       run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [x] COMMIT: `feat(semantic-remediation): A VARIANTE classification without consolidation remains blocked` Hash: `3ebd24c`
+- [x] COMMIT: `feat(semantic-remediation): A VARIANTE classification without consolidation remains blocked` Hash: `0b8fa81`
 
 ### Consolidating a VARIANTE candidate verifies the projected remediation
 
@@ -68,7 +68,7 @@
       (9 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
       run passed with `1 scenario (1 passed)`, `9 steps (9 passed)`.
-- [x] COMMIT: `feat(semantic-remediation): Consolidating a VARIANTE candidate verifies the projected remediation` Hash: `36e978f`
+- [x] COMMIT: `feat(semantic-remediation): Consolidating a VARIANTE candidate verifies the projected remediation` Hash: `b85cc5f`
 
 ### A VARIANTE score below the boundary without consolidation remains blocked
 
@@ -80,7 +80,7 @@
       targeted run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
       run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [x] COMMIT: `feat(semantic-remediation): A VARIANTE score below the boundary without consolidation remains blocked` Hash: `989c6d1`
+- [x] COMMIT: `feat(semantic-remediation): A VARIANTE score below the boundary without consolidation remains blocked` Hash: `ccf3905`
 
 ### A VALID-BOUNDARY classification above the boundary remains blocked
 
@@ -91,7 +91,7 @@
       run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
       run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [x] COMMIT: `feat(semantic-remediation): A VALID-BOUNDARY classification above the boundary remains blocked` Hash: `66b6e16`
+- [x] COMMIT: `feat(semantic-remediation): A VALID-BOUNDARY classification above the boundary remains blocked` Hash: `58718aa`
 
 ### Rewriting a VALID-BOUNDARY candidate below the boundary verifies the projected remediation
 
@@ -103,7 +103,7 @@
       steps (9 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
       run passed with `1 scenario (1 passed)`, `9 steps (9 passed)`.
-- [x] COMMIT: `feat(semantic-remediation): Rewriting a VALID-BOUNDARY candidate below the boundary verifies the projected remediation` Hash: `a491084`
+- [x] COMMIT: `feat(semantic-remediation): Rewriting a VALID-BOUNDARY candidate below the boundary verifies the projected remediation` Hash: `f08b184`
 
 ### A VALID-BOUNDARY score below the boundary without distinction remains blocked
 
@@ -115,7 +115,7 @@
       targeted run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
       run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [x] COMMIT: `feat(semantic-remediation): A VALID-BOUNDARY score below the boundary without distinction remains blocked` Hash: `043968d`
+- [x] COMMIT: `feat(semantic-remediation): A VALID-BOUNDARY score below the boundary without distinction remains blocked` Hash: `5bf4bef`
 
 ### A VALID-BOUNDARY score exactly at the boundary remains blocked
 
@@ -127,7 +127,7 @@
       scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
       run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [x] COMMIT: `feat(semantic-remediation): A VALID-BOUNDARY score exactly at the boundary remains blocked` Hash: `09c199e`
+- [x] COMMIT: `feat(semantic-remediation): A VALID-BOUNDARY score exactly at the boundary remains blocked` Hash: `4ac8cdc`
 
 ### Changing a classified endpoint before remediation makes the decision stale
 
@@ -139,7 +139,7 @@
       run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
       run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [x] COMMIT: `feat(semantic-remediation): Changing a classified endpoint before remediation makes the decision stale` Hash: `6e6303f`
+- [x] COMMIT: `feat(semantic-remediation): Changing a classified endpoint before remediation makes the decision stale` Hash: `6ac10ea`
 
 ### Failed remediation verification does not mutate project evidence
 
@@ -152,7 +152,7 @@
       with `1 scenario (1 passed)`, `13 steps (13 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
       run passed with `1 scenario (1 passed)`, `13 steps (13 passed)`.
-- [x] COMMIT: `feat(semantic-remediation): Failed remediation verification does not mutate project evidence` Hash: `e7ed60a`
+- [x] COMMIT: `feat(semantic-remediation): Failed remediation verification does not mutate project evidence` Hash: `952293b`
 
 ### A complete classification allows change review and survives regeneration
 
@@ -166,7 +166,7 @@
 - [x] REFACTOR: rerun the named scenario and the existing semantic-review
       regression. Evidence: after formatting, targeted run passed with `1
       scenario (1 passed)`, `9 steps (9 passed)`.
-- [x] COMMIT: `feat(semantic-remediation): A complete classification allows change review and survives regeneration` Hash: `687b20e`
+- [x] COMMIT: `feat(semantic-remediation): A complete classification allows change review and survives regeneration` Hash: `f02f95d`
 
 ### A regenerated classified report is byte-for-byte deterministic
 
@@ -179,7 +179,7 @@
       scenario (1 passed)`, `9 steps (9 passed)`.
 - [x] REFACTOR: rerun the modified scenario. Evidence: after formatting, targeted
       scenario passed with `1 scenario (1 passed)`, `9 steps (9 passed)`.
-- [x] COMMIT: `feat(semantic-remediation): A regenerated classified report is byte-for-byte deterministic` Hash: `0b04b3f`
+- [x] COMMIT: `feat(semantic-remediation): A regenerated classified report is byte-for-byte deterministic` Hash: `e3712d3`
 
 ### Changing a candidate scenario invalidates its previous classification
 
@@ -191,7 +191,7 @@
       passed)`, `8 steps (8 passed)`.
 - [x] REFACTOR: rerun the modified scenario. Evidence: after formatting, targeted
       scenario passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [x] COMMIT: `feat(semantic-remediation): Changing a candidate scenario invalidates its previous classification` Hash: `ca3f6d1`
+- [x] COMMIT: `feat(semantic-remediation): Changing a candidate scenario invalidates its previous classification` Hash: `ddfd0ff`
 
 ### Changing a permanent endpoint invalidates its previous classification
 
@@ -203,7 +203,7 @@
       (8 passed)`.
 - [x] REFACTOR: rerun the modified scenario. Evidence: after formatting, targeted
       scenario passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [x] COMMIT: `feat(semantic-remediation): Changing a permanent endpoint invalidates its previous classification` Hash: `8c9482b`
+- [x] COMMIT: `feat(semantic-remediation): Changing a permanent endpoint invalidates its previous classification` Hash: `9a931bc`
 
 ### Any changed endpoint evidence or prior-report metadata invalidates carry-forward
 
@@ -215,7 +215,7 @@
       passed)`, `8 steps (8 passed)`.
 - [x] REFACTOR: rerun the modified scenario. Evidence: after formatting, targeted
       scenario passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [x] COMMIT: `feat(semantic-remediation): Any changed endpoint evidence or prior-report metadata invalidates carry-forward` Hash: `89568bb`
+- [x] COMMIT: `feat(semantic-remediation): Any changed endpoint evidence or prior-report metadata invalidates carry-forward` Hash: `9791f9b`
 
 ### Removed candidates disappear after classification
 
@@ -227,7 +227,7 @@
       (9 passed)`.
 - [x] REFACTOR: rerun the modified scenario. Evidence: after formatting, targeted
       scenario passed with `1 scenario (1 passed)`, `9 steps (9 passed)`.
-- [x] COMMIT: `feat(semantic-remediation): Removed candidates disappear after classification` Hash: `da5a83b`
+- [x] COMMIT: `feat(semantic-remediation): Removed candidates disappear after classification` Hash: `18a76f0`
 
 ## E2E Setup
 
@@ -251,7 +251,7 @@
       passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [x] REFACTOR: rerun the filtered E2E command. Evidence: after formatting, E2E
       run passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [x] COMMIT: `test(e2e): Real CLI review reports successful duplicate remediation` Hash: `aef6f0a`
+- [x] COMMIT: `test(e2e): Real CLI review reports successful duplicate remediation` Hash: `650987e`
 
 ## Completion Evidence
 
