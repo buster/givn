@@ -110,8 +110,9 @@ All ideation work lives under `givn/ideation/<topic-id>/`:
 - `session.md` — resume state: current phase, progress, the next question.
   Read it first in every session; update it after every turn.
 - `frame.md` — the Frame protocol.
-- `eventstorming.md` — the event chain with actors, commands, policies, read
-  models.
+- `eventstorming.md` — the event chain with actors, commands, aggregates,
+  policies, read models, drawn as a rendered mermaid canvas whose kinds are
+  distinguishable.
 - `use-case-definitions.md` — the sized, bounded use case list.
 - `use-cases/<uc-id>.md` — one elaborated use case per file.
 - `personas/<type>--<segment>.md` — one persona per file.
@@ -273,8 +274,16 @@ in place of a missing answer.
 Model the domain as a chain of past-tense domain events.
 
 - One event per line, past tense, in the domain's own language.
-- For each event: who triggers it (actor), with which command, which policy
+- For each event: who triggers it (actor), with which command, on which
+  aggregate (the consistency boundary the command changes), which policy
   reacts, what the actor reads (read model).
+- Draw the canvas: one or more mermaid diagrams in `eventstorming.md` that
+  show every event, command, aggregate, and actor, with the kinds
+  distinguishable (per-node kind markers or a legend). A command sits between
+  the actor that issues it and the aggregate it changes; the aggregate emits
+  its events.
+- A text chain without a canvas is an incomplete event storming: the picture
+  and the lines must cover the same elements, and the canvas must render.
 - Reverse narrative: "which events must have happened to make this one
   possible?" — walk backwards until the chain starts at the domain's
   beginning.
