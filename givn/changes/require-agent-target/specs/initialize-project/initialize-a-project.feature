@@ -66,7 +66,7 @@ Feature: initialize-a-project
     And stderr contains "no agent target selected"
     And the directory "givn" does not exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: givn init --force re-applies the explicitly given selection
     Given a project root with givn/ initialised
     And givn skills targets in givn/config.yaml equal "opencode, claude"
