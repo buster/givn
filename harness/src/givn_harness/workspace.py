@@ -18,8 +18,10 @@ def init_workspace(workspace_path: str) -> None:
         check=True,
     )
     givn_binary = os.environ.get("GIVN_BINARY", "givn")
+    # `givn init` requires an explicit agent-target selection without a
+    # terminal; the harness scaffolds for the opencode-based agent runs.
     subprocess.run(
-        [givn_binary, "init"],
+        [givn_binary, "init", "--agents", "opencode"],
         cwd=workspace_path,
         capture_output=True,
         check=True,

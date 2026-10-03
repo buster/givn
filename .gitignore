@@ -5,6 +5,9 @@
 __pycache__/
 *.py[cod]
 
+# uv-managed virtual environments (local, recreated by `uv sync`)
+.venv/
+
 # Test / coverage output
 .coverage
 .coverage.*
