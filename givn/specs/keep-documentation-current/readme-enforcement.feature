@@ -2,12 +2,12 @@ Feature: README enforcement
 
   @e2e
   Scenario: Scaffolding marks the unfilled sections
-    Given a project root without a givn/ directory
-    When the user runs `givn init`
-    Then the file "README.md" exists
-    And the README has the description open placeholder
-    And the README has the license open placeholder
-    And the README has the development managed block
+    Given  a project root without a givn/ directory
+    When  the user runs `givn init --agents opencode`
+    Then  the file "README.md" exists
+    And  the README has the description open placeholder
+    And  the README has the license open placeholder
+    And  the README has the development managed block
 
   Scenario: The check names every open placeholder
     Given a project root with givn/ initialised

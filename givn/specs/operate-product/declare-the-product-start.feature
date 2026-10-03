@@ -2,12 +2,12 @@ Feature: Declare the product start
 
   @e2e
   Scenario: Scaffolding ships an unconfigured run declaration
-    Given a project root without a givn/ directory
-    When the user runs `givn init`
-    Then the file "givn/commands.yaml" exists
-    And the commands file has run.command set to the sentinel
-    And the README has the run managed block
-    And the README has the run open placeholder
+    Given  a project root without a givn/ directory
+    When  the user runs `givn init --agents opencode`
+    Then  the file "givn/commands.yaml" exists
+    And  the commands file has run.command set to the sentinel
+    And  the README has the run managed block
+    And  the README has the run open placeholder
 
   @e2e
   Scenario: The review check reports an unconfigured run declaration
