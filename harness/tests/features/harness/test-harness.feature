@@ -152,7 +152,7 @@ Feature: test-harness
   Scenario: User runs the harness end-to-end and observes a complete autoresearch loop
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     And a task file "tasks/shopping-list.md" describing a shopping list website
-    When the user runs `givn-harness run --task tasks/shopping-list.md --output reports/ --profile shopping-list`
+    When the user runs `givn-harness run --task tasks/shopping-list.md --output reports/` end-to-end
     Then the harness creates an isolated workspace
     And initializes the workspace with git and givn
     And invokes ralph to drive the agent through the full givn workflow
