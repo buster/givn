@@ -15,7 +15,7 @@ Feature: initialize-a-project
     And the directory ".agents/skills/givn-propose" does not exist
     And the directory ".claude/skills/givn-propose" does not exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: The interactive prompt keeps asking until a target is marked
     Given a project root without a givn/ directory
     When the user runs `givn init` in a terminal, unmarks every target, and confirms twice
