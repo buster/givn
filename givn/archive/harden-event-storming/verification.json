@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "harden-event-storming",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "9374686a1790d882fad93b872e8903dc3795dc55",
+  "tested_revision": "9374686a1790d882fad93b872e8903dc3795dc55",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 94,
+      "passed": 94,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 13.59386106
+    },
+    "regular": {
+      "status": "passed",
+      "total": 587,
+      "passed": 587,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 59.484412418
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 8131,
+    "line_valid": 10178,
+    "line_percent": 79
+  },
   "started_at_unix": 1791053894,
-  "finished_at_unix": null
+  "finished_at_unix": 1791054009
 }
