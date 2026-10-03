@@ -2,7 +2,7 @@
 
 Feature: Rules policy
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: A fresh project resolves the rules policy to local-only
     Given  a project root without a givn/ directory
     When  the user runs `givn init --agents opencode`
