@@ -31,7 +31,11 @@ fn fossil_dirty_project(world: &mut GivnWorld) {
 
 pub(crate) fn legacy_git_project() -> crate::common::TestEnv {
     let env = crate::common::make_bare_root();
-    let init = crate::common::run_givn_with_stdin(&env, &["init", "--no-addons"], "");
+    let init = crate::common::run_givn_with_stdin(
+        &env,
+        &["init", "--no-addons", "--agents", "opencode"],
+        "",
+    );
     assert!(
         init.status.success(),
         "fixture init failed: {}",
@@ -80,7 +84,11 @@ pub(crate) fn legacy_git_project() -> crate::common::TestEnv {
 
 fn current_git_project_with_stale_integration() -> crate::common::TestEnv {
     let env = crate::common::make_bare_root();
-    let init = crate::common::run_givn_with_stdin(&env, &["init", "--no-addons"], "");
+    let init = crate::common::run_givn_with_stdin(
+        &env,
+        &["init", "--no-addons", "--agents", "opencode"],
+        "",
+    );
     assert!(
         init.status.success(),
         "fixture init failed: {}",
@@ -635,7 +643,11 @@ fn already_prepared_report(world: &mut GivnWorld) {
 #[given("a Givn 0.2.0 project that is not a Git repository")]
 fn non_git_legacy_project(world: &mut GivnWorld) {
     let env = crate::common::make_bare_root();
-    let init = crate::common::run_givn_with_stdin(&env, &["init", "--no-addons"], "");
+    let init = crate::common::run_givn_with_stdin(
+        &env,
+        &["init", "--no-addons", "--agents", "opencode"],
+        "",
+    );
     assert!(init.status.success(), "fixture init failed");
     let config_path = env.path("givn/config.yaml");
     let config = std::fs::read_to_string(&config_path).expect("read fixture config");

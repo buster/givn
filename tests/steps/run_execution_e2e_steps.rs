@@ -172,7 +172,7 @@ fn archived_change_dir_named_exists(world: &mut GivnWorld, id: String) {
 #[given("a git-managed project with givn initialised")]
 fn git_managed_project(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    let init = common::run_givn(&env, &["init"]);
+    let init = common::run_givn(&env, &["init", "--agents", "opencode"]);
     assert!(
         init.status.success(),
         "fixture init failed: {}",

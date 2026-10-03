@@ -232,7 +232,7 @@ fn init_root(world: &mut GivnWorld) {
 #[given("a project root with givn/ initialised without addons")]
 fn init_root_no_addons(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    let out = common::run_givn(&env, &["init", "--no-addons"]);
+    let out = common::run_givn(&env, &["init", "--no-addons", "--agents", "opencode"]);
     assert!(
         out.status.success(),
         "givn init --no-addons failed: {}",
