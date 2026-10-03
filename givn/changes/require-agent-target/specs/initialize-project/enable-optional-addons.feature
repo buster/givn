@@ -13,7 +13,7 @@ Feature: enable-optional-addons
     And the file ".opencode/commands/grill-with-docs.md" exists
     And the directory ".agents/skills/givn-domain-modeling" does not exist
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: givn init --no-addons produces no skill or command addon files
     Given a project root without a givn/ directory
     When the user runs `givn init --no-addons --agents opencode`
