@@ -78,6 +78,13 @@ givn init                             # scaffold givn/ + generate skills + AGENT
 /givn-archive
 ```
 
+`givn init` asks which agent targets receive the generated skills and commands;
+at least one must be selected — an empty selection is refused before anything
+is written. Scripted runs state the selection explicitly:
+`givn init --agents opencode,claude`. `givn skills sync` keeps writing to the
+persisted selection and falls back to `opencode` only for a config without a
+skills block.
+
 Commit each scenario with `givn commit -m "feat(<capability>): <release note>"`:
 the revision message carries the release note as its message subject, with the
 scenario title in the message body. It works on Git and Fossil, records the

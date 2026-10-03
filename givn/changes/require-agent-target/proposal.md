@@ -50,6 +50,11 @@ the workflow lives in generated harness guidance — yet the command claims one.
 | Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
 |---|---|---|---|
 | initialize-a-project | no signal — the top candidates tie at 16.00 | `EXTEND initialize-a-project` | The change alters initialization behaviour inside the existing capability; no new capability is introduced. |
+| enable-optional-addons | EXTEND initialize-a-project (16.50) | `EXTEND enable-optional-addons` | Route matches on the shared `givn init` invocation; the delta modifies two scenarios owned by this capability's feature, so it is the merge target. |
+| declare-the-product-start | EXTEND initialize-a-project (15.40) | `EXTEND declare-the-product-start` | Same route heuristic; the delta modifies this capability's scaffolding scenario, which stays its own contract. |
+| measure-coverage-per-project | EXTEND initialize-a-project (15.60) | `NEW in fragments` | The capability lives under the support fragment; the routing check resolves only use-case-owned capabilities, so fragment deltas record `NEW in fragments` (same rule as `archive-change` and `author-change`). |
+| rules-policy | EXTEND initialize-a-project (16.00) | `NEW in fragments` | Same fragment rule; the delta modifies the existing fragment scenario, and its permanent feature already exists. |
+| readme-enforcement | EXTEND readme-enforcement (15.00) | `EXTEND readme-enforcement` | Route and decision agree; the delta modifies this capability's scaffolding scenario. |
 
 ## Out of Scope
 

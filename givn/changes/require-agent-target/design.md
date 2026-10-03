@@ -64,12 +64,21 @@ A refused run prints one error naming the valid targets and exits non-zero
 
 ## Step Definitions
 
-One file per capability is already respected; this change adds no new step
-text, because every step it needs exists:
+One file per capability is already respected; this change adds one step text
+(the PTY confirmation step), and every other step it needs exists:
 
 | Capability | Step definition file |
 |---|---|
-| initialize-a-project (and the modified scenarios of declare-the-product-start, measure-coverage-per-project, rules-policy, enable-optional-addons, readme-enforcement) | `tests/steps/init_agent_target_selection_steps.rs` for the init-specific steps; `tests/steps/mod.rs` for the generic `the user runs`, exit-code, `stderr contains`, and file/directory-existence steps |
+| initialize-a-project | `tests/steps/init_agent_target_selection_steps.rs` |
+| declare-the-product-start | `tests/steps/mod.rs` |
+| measure-coverage-per-project | `tests/steps/mod.rs` |
+| rules-policy | `tests/steps/mod.rs` |
+| enable-optional-addons | `tests/steps/init_agent_target_selection_steps.rs` |
+| readme-enforcement | `tests/steps/mod.rs` |
+
+`tests/steps/mod.rs` carries the generic steps (`the user runs`, exit codes,
+`stderr contains`, file/directory existence); the init-specific scenarios bind
+their capability steps in `tests/steps/init_agent_target_selection_steps.rs`.
 
 Reused steps (kept as-is): `the user runs \`givn init\``,
 `the user runs \`givn init\` and answers the agent prompt with "<answer>"`,
