@@ -85,7 +85,7 @@ pub fn make_fossil_root() -> TestEnv {
 /// that need a non-Git project or a repository one level above the project.
 pub fn make_init_root_without_git() -> TestEnv {
     let env = make_bare_root();
-    let out = run_givn(&env, &["init"]);
+    let out = run_givn(&env, &["init", "--agents", "opencode"]);
     assert!(
         out.status.success(),
         "givn init failed in temp dir: stdout={}\nstderr={}",

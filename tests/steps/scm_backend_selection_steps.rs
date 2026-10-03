@@ -71,7 +71,7 @@ fn given_nested_project(world: &mut GivnWorld) {
     common::git_init(&env);
     let nested = env.path("nested");
     std::fs::create_dir_all(&nested).expect("create nested project dir");
-    let out = common::run_givn_with_envs_in(&env, &nested, &["init"], &[]);
+    let out = common::run_givn_with_envs_in(&env, &nested, &["init", "--agents", "opencode"], &[]);
     assert!(
         out.status.success(),
         "givn init in nested project failed: {}",

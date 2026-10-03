@@ -1,5 +1,5 @@
 use crate::skills::targets::AgentTarget;
-use anyhow::Result;
+use anyhow::{Result, bail};
 use std::io::IsTerminal;
 use std::path::Path;
 
@@ -30,6 +30,25 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
     println!("  version {}\n", env!("CARGO_PKG_VERSION"));
     println!("{}", "─".repeat(52));
 
+    // A fresh config is written unless one already exists and `--force` is
+    // absent. Resolve the agent-target selection before the first write, so a
+    // refused initialization leaves the project unchanged. `--agents` skips
+    // the prompt; otherwise the prompt (terminal) or one answer line (piped
+    // stdin) decides, and an empty set is refused.
+    let config_path = project_root.join("givn/config.yaml");
+    let config_created = !(config_path.exists() && !force);
+    let (targets, target_print) = if config_created {
+        let targets = if agents.is_empty() {
+            prompt_for_targets()?
+        } else {
+            resolve_agents_flag(agents)
+        };
+        let target_print = targets.iter().map(|t| t.display().to_string()).collect();
+        (targets, target_print)
+    } else {
+        (Vec::new(), Vec::new())
+    };
+
     // Create directory scaffolding.
     let dirs = ["givn/specs", "givn/changes", "givn/archive"];
     println!("\nScaffolding project...\n");
@@ -40,30 +59,15 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
     }
 
     // Write givn/config.yaml (documented + versioned).
-    let config_path = project_root.join("givn/config.yaml");
-    let config_created = if config_path.exists() && !force {
-        println!("  exists   givn/config.yaml  (use --force to overwrite)");
-        false
-    } else {
+    if config_created {
         let content = crate::config::render::config_yaml(env!("CARGO_PKG_VERSION"))?;
         std::fs::write(&config_path, content)?;
         println!("  wrote    givn/config.yaml");
-        true
-    };
+    } else {
+        println!("  exists   givn/config.yaml  (use --force to overwrite)");
+    }
 
-    // Ask which agents to install skills/commands to (fresh config only).
-    // `--agents` skips the prompt; otherwise non-interactive stdin (EOF)
-    // falls back to the default: opencode.
-    let mut target_print = Vec::new();
     if config_created {
-        let targets = if agents.is_empty() {
-            prompt_for_targets()?
-        } else {
-            resolve_agents_flag(agents)
-        };
-        for t in &targets {
-            target_print.push(t.display().to_string());
-        }
         write_skills_block(&project_root, &targets)?;
         write_rules_policy(&project_root)?;
         println!("  skills will be installed to: {}", target_print.join(", "));
@@ -168,10 +172,9 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
 /// On a real terminal, shows an arrow-key/space/enter checkbox list
 /// (defaulting to `.opencode` checked). `dialoguer` needs a controlling
 /// terminal, so with piped/closed stdin (automation, tests) this instead
-/// reads one line of comma-separated names, same as before. An empty
-/// answer, EOF, or an answer with no known agent name falls back to the
-/// default (`opencode`). Unknown names are dropped with a warning listing
-/// the valid agents.
+/// reads one line of comma-separated names, same as before. EOF without an
+/// `--agents` flag is refused. Unknown names are dropped with a warning
+/// listing the valid agents.
 fn prompt_for_targets() -> Result<Vec<AgentTarget>> {
     let stdin = std::io::stdin();
 
@@ -199,10 +202,26 @@ fn prompt_for_targets() -> Result<Vec<AgentTarget>> {
     let mut line = String::new();
     let n = stdin.read_line(&mut line)?;
     if n == 0 {
-        return Ok(DEFAULT_TARGETS.to_vec());
+        return require_agent_target(Vec::new());
     }
 
     Ok(resolve_target_names(line.split(',')))
+}
+
+/// Refuse an initialization that selected no agent target.
+///
+/// Givn's workflow runs from the generated skills, so a project initialized
+/// without an agent target is unusable; the caller resolves this before the
+/// first write, leaving the project unchanged.
+fn require_agent_target(targets: Vec<AgentTarget>) -> Result<Vec<AgentTarget>> {
+    if targets.is_empty() {
+        bail!(
+            "no agent target selected; pass --agents <opencode|agents|claude|all> \
+             or select one in the prompt (valid targets: {})",
+            crate::skills::targets::valid_names().join(", ")
+        );
+    }
+    Ok(targets)
 }
 
 /// Resolve the `--agents` flag values into targets, skipping the prompt.

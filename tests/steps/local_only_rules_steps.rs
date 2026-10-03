@@ -51,7 +51,7 @@ fn config_with_rules(world: &mut GivnWorld, value: String) {
 #[given("a committed project root with givn/ initialised")]
 fn committed_project_root(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    let out = common::run_givn(&env, &["init"]);
+    let out = common::run_givn(&env, &["init", "--agents", "opencode"]);
     assert!(
         out.status.success(),
         "fixture givn init failed: {}",

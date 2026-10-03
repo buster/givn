@@ -22,7 +22,7 @@ Feature: initialize-a-project
   Scenario: givn init --force re-applies the default selection
     Given a placeholder step
 
-  @givn.added @wip
+  @givn.added
   Scenario: Non-interactive init without an agent target refuses initialization
     Given a project root without a givn/ directory
     When the user runs `givn init`

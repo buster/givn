@@ -8,7 +8,7 @@ use crate::steps::GivnWorld;
 
 pub(crate) fn setup_fixture(world: &mut GivnWorld, failing: bool) {
     let env = common::make_bare_root();
-    let init = common::run_givn(&env, &["init", "--no-addons"]);
+    let init = common::run_givn(&env, &["init", "--no-addons", "--agents", "opencode"]);
     assert!(
         init.status.success(),
         "givn init failed: {}",
