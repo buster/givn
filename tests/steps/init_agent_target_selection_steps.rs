@@ -143,7 +143,10 @@ fn init_with_answer(world: &mut GivnWorld, answer: String) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    let out = crate::common::run_givn_with_stdin(env, &["init"], &answer);
+    // One newline-terminated answer line, then stdin closes. An empty answer
+    // is the empty line, distinct from the EOF path of `the user runs
+    // \`givn init\`` (null stdin).
+    let out = crate::common::run_givn_with_stdin(env, &["init"], &format!("{answer}\n"));
     world.last_output = Some(out);
 }
 

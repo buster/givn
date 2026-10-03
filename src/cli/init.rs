@@ -14,9 +14,6 @@ const BANNER: &str = r#"
   from Given to done.
 "#;
 
-/// Default agent target when the user gives no selection.
-const DEFAULT_TARGETS: [AgentTarget; 1] = [AgentTarget::Opencode];
-
 /// Scaffold `givn/{specs,changes,archive}` and write the documented,
 /// versioned `givn/config.yaml`. Enables all addons by default (opt-out via
 /// `--no-addons`). Generates skills. Idempotent. `AGENTS.md` is otherwise
@@ -197,7 +194,7 @@ fn prompt_for_targets() -> Result<Vec<AgentTarget>> {
         return require_agent_target(Vec::new());
     }
 
-    Ok(resolve_target_names(line.split(',')))
+    require_agent_target(resolve_target_names(line.split(',')))
 }
 
 /// Refuse an initialization that selected no agent target.
@@ -228,7 +225,8 @@ fn resolve_agents_flag(agents: &[String]) -> Vec<AgentTarget> {
 
 /// Resolve comma-split or flag-provided names into targets, deduplicated,
 /// in first-seen order. Unknown names are dropped with a warning listing
-/// the valid agents. Falls back to `DEFAULT_TARGETS` if nothing resolved.
+/// the valid agents. An empty result is the caller's refusal case
+/// (`require_agent_target`).
 fn resolve_target_names<'a>(parts: impl Iterator<Item = &'a str>) -> Vec<AgentTarget> {
     let (targets, unknown) = crate::skills::targets::parse_target_names(parts);
 
@@ -239,10 +237,6 @@ fn resolve_target_names<'a>(parts: impl Iterator<Item = &'a str>) -> Vec<AgentTa
             unknown.join(", "),
             valid.join(", ")
         );
-    }
-
-    if targets.is_empty() {
-        return DEFAULT_TARGETS.to_vec();
     }
 
     targets
