@@ -199,13 +199,6 @@ Feature: initialize-a-project
     And  stderr contains "--agents"
     And  the directory "givn" does not exist
 
-  Scenario: The interactive prompt refuses a confirmation without a marked target
-    Given  a project root without a givn/ directory
-    When  the user runs `givn init` in a terminal and confirms without marking a target
-    Then  the command exits non-zero
-    And  stderr contains "no agent target selected"
-    And  the directory "givn" does not exist
-
   Scenario: An empty answer refuses initialization
     Given  a project root without a givn/ directory
     When  the user runs `givn init` and answers the agent prompt with ""
@@ -242,3 +235,18 @@ Feature: initialize-a-project
     Then  the command exits non-zero
     And  stderr contains "no agent target selected"
     And  givn skills targets in givn/config.yaml equal "opencode, claude"
+  Scenario: The interactive prompt accepts the pre-marked OpenCode default
+    Given  a project root without a givn/ directory
+    When  the user runs `givn init` in a terminal and confirms the prompt
+    Then  the command exits 0
+    And  the file ".opencode/skills/givn-propose/SKILL.md" exists
+    And  the directory ".agents/skills/givn-propose" does not exist
+    And  the directory ".claude/skills/givn-propose" does not exist
+
+  Scenario: The interactive prompt keeps asking until a target is marked
+    Given  a project root without a givn/ directory
+    When  the user runs `givn init` in a terminal, unmarks every target, and confirms twice
+    Then  the command exits 0
+    And  stderr contains "mark at least one agent target"
+    And  the file ".opencode/skills/givn-propose/SKILL.md" exists
+    And  the directory ".agents/skills/givn-propose" does not exist
