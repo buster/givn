@@ -2,7 +2,7 @@
 
 Feature: Measure coverage per project
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: An initialized project documents reusable test and coverage scripts
     Given a fresh givn project
     When the user runs `givn init --agents opencode`
