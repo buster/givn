@@ -14,7 +14,7 @@
    scenario (checker, CLI dispatch, integrity hook, archive gate, refresh,
    instructions nudge, template). Commit count: 19 scenario commits plus
    fixture adaptation, skill guidance, integration regen, and one
-   dev-block fix (`8cb7058`).
+   dev-block fix (`b70279b`).
 3. Design components present: completeness checker + `givn readme check`
    (`src/cli/readme.rs`, `src/main.rs`), archive gate + refresh
    (`src/cli/archive.rs`), README-IMPACT in the integrity hook

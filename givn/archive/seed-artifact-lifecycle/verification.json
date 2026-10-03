@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "seed-artifact-lifecycle",
   "status": "proven",
-  "candidate_revision": "9aff86e8239b010e7b830ecbe51cae35fb49c20a",
-  "tested_revision": "9aff86e8239b010e7b830ecbe51cae35fb49c20a",
+  "candidate_revision": "f78c830ec3b22f4a63d1a7dd8ad0d553a7391e92",
+  "tested_revision": "f78c830ec3b22f4a63d1a7dd8ad0d553a7391e92",
   "scopes": {
     "e2e": {
       "status": "passed",

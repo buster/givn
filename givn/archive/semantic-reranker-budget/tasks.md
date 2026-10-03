@@ -25,7 +25,7 @@
 - [x] REFACTOR: ran `cargo fmt --all` and reran the targeted scenario; output:
   `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [x] COMMIT: feat(retrieval): The default second-stage budget scores every
-  candidate below 2048. Hash: `37b27d3`
+  candidate below 2048. Hash: `4330caa`
 
 ## Scenario: BGE receives the highest E5 candidates within the configured budget
 
@@ -43,7 +43,7 @@
 - [x] REFACTOR: simplify without behavior change and rerun the named scenario.
   Evidence: `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] COMMIT: feat(retrieval): BGE receives the highest E5 candidates within
-  the configured budget. Hash: `37b27d3`
+  the configured budget. Hash: `4330caa`
 
 ## Scenario: NLI receives the highest E5 candidates within the configured budget
 
@@ -61,7 +61,7 @@
 - [x] REFACTOR: simplify without behavior change and rerun the named scenario.
   Evidence: `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] COMMIT: feat(retrieval): NLI receives the highest E5 candidates within
-  the configured budget. Hash: `37b27d3`
+  the configured budget. Hash: `4330caa`
 
 ## Scenario: An invalid second-stage pair budget is rejected
 
@@ -77,7 +77,7 @@
 - [x] REFACTOR: simplify without behavior change and rerun the named scenario.
   Evidence: `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [x] COMMIT: feat(retrieval): An invalid second-stage pair budget is rejected.
-  Hash: `37b27d3`
+  Hash: `4330caa`
 
 ## Scenario: A zero second-stage pair budget is rejected
 
@@ -92,7 +92,7 @@
 - [x] REFACTOR: simplify without behavior change and rerun the named scenario.
   Evidence: `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [x] COMMIT: feat(retrieval): A zero second-stage pair budget is rejected.
-  Hash: `37b27d3`
+  Hash: `4330caa`
 
 ## Scenario: BGE and NLI select the same highest E5 candidates independently
 
@@ -108,7 +108,7 @@
 - [x] REFACTOR: simplify without behavior change and rerun the named scenario.
   Evidence: `1 scenario (1 passed)`, `7 steps (7 passed)`.
 - [x] COMMIT: feat(retrieval): BGE and NLI select the same highest E5
-  candidates independently. Hash: `37b27d3`
+  candidates independently. Hash: `4330caa`
 
 ## Scenario: The CLI reports the configured second-stage pair budget
 
@@ -130,7 +130,7 @@
 - [x] REFACTOR: simplify E2E bindings without changing assertions and rerun the
   named scenario. Evidence: `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [x] COMMIT: test(e2e): The CLI reports the configured second-stage pair
-  budget. Hash: `37b27d3`
+  budget. Hash: `4330caa`
 
 ## Final Verification
 

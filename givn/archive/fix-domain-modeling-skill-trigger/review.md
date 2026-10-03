@@ -16,23 +16,23 @@ matching commit that touches production source (not just spec/stub files):
 
 | Scenario | Commit hash | Touches production code? |
 |---|---|---|
-| The skill trigger names conversation states | 5f286e1 | Yes (assets/skills/givn-domain-modeling/SKILL.md.tmpl) |
-| The skill body is an active discipline | 409728c | Yes (SKILL.md.tmpl) |
-| Lifecycle guidance describes the domain, not the givn change | 18fce48 | Yes (SKILL.md.tmpl) |
-| The skill documents a per-change ubiquitous-language table | 046e382 | Yes (SKILL.md.tmpl) |
-| An agent requests next-step guidance as JSON and the skill route is machine-readable | 20f22d5 | Yes (src/cli/instructions.rs) |
-| A project without the addon is not routed to the domain skill | c83042b | Yes (test fixture; addon-off contract, constraint commit) |
-| An agent synchronizes skills and the domain skill is routed | 1f5b082 | Yes (tests/steps/*_e2e_steps.rs) |
-| An agent requests next-step guidance and is routed to the domain skill | a3d3fed | Yes (src/cli/instructions.rs generic path) |
-| An agent requests the specs guidance and is routed to the domain skill | b00c741 | Yes (src/cli/instructions.rs run_artifact) |
-| An agent requests the design guidance and is routed to the domain skill | e2e511a | Yes (artifcat path for design) |
+| The skill trigger names conversation states | e29a490 | Yes (assets/skills/givn-domain-modeling/SKILL.md.tmpl) |
+| The skill body is an active discipline | b74c928 | Yes (SKILL.md.tmpl) |
+| Lifecycle guidance describes the domain, not the givn change | dce6273 | Yes (SKILL.md.tmpl) |
+| The skill documents a per-change ubiquitous-language table | 6b7294f | Yes (SKILL.md.tmpl) |
+| An agent requests next-step guidance as JSON and the skill route is machine-readable | dff0bf1 | Yes (src/cli/instructions.rs) |
+| A project without the addon is not routed to the domain skill | 3fd5832 | Yes (test fixture; addon-off contract, constraint commit) |
+| An agent synchronizes skills and the domain skill is routed | d6d93b5 | Yes (tests/steps/*_e2e_steps.rs) |
+| An agent requests next-step guidance and is routed to the domain skill | 128c2bf | Yes (src/cli/instructions.rs generic path) |
+| An agent requests the specs guidance and is routed to the domain skill | ea1e964 | Yes (src/cli/instructions.rs run_artifact) |
+| An agent requests the design guidance and is routed to the domain skill | 3e9a905 | Yes (artifcat path for design) |
 
 10 distinct hashes, one per scenario; the archive gate's hash-presence and
-duplicate checks pass. Note: scenario 10 was initially recorded with `8758532`
+duplicate checks pass. Note: scenario 10 was initially recorded with `2b9bf67`
 as a green when `run_artifact` still routed nothing; the guard then caught that
 the addon-off fixture inherited `domain_modeling: true` from `make_init_root`
 (`givn init` enables every addon). Fixed with `givn addons disable
-domain_modeling` in the fixture (`c83042b`).
+domain_modeling` in the fixture (`3fd5832`).
 
 **Promised-architecture cross-check** — every component design.md said would
 be created actually exists:

@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "rename-support-fragments",
   "status": "proven",
-  "candidate_revision": "cb7336d607381b847fab5aedf2db8374429877d6",
-  "tested_revision": "cb7336d607381b847fab5aedf2db8374429877d6",
+  "candidate_revision": "f21f58699d5124e11466a9f224e445af29ed099d",
+  "tested_revision": "f21f58699d5124e11466a9f224e445af29ed099d",
   "scopes": {
     "e2e": {
       "status": "passed",

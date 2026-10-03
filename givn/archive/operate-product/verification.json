@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "operate-product",
   "status": "proven",
-  "candidate_revision": "9ad81d354b250b12599718cc33a428aa2979c8df",
-  "tested_revision": "9ad81d354b250b12599718cc33a428aa2979c8df",
+  "candidate_revision": "c99442c454a60311f61a22f4e523afc8119ddb2f",
+  "tested_revision": "c99442c454a60311f61a22f4e523afc8119ddb2f",
   "scopes": {
     "e2e": {
       "status": "passed",

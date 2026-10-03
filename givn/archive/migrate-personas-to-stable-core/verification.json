@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "migrate-personas-to-stable-core",
   "status": "proven",
-  "candidate_revision": "f00dcd6455bb7bb68684bf78ee0efc727509a329",
-  "tested_revision": "f00dcd6455bb7bb68684bf78ee0efc727509a329",
+  "candidate_revision": "5f6c1b1fbd3955dd778c5577808b8c07fad2985c",
+  "tested_revision": "5f6c1b1fbd3955dd778c5577808b8c07fad2985c",
   "scopes": {
     "e2e": {
       "status": "passed",

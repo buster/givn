@@ -13,7 +13,7 @@ the scenario:
 
 | Scope | Commit hash | Touches the repaired artifacts? |
 |---|---|---|
-| Register retirement and scenario alignment | `f30931c3` | yes (three record moves, ADR-069, README, permanent and delta specs) |
+| Register retirement and scenario alignment | `74e90cb1` | yes (three record moves, ADR-069, README, permanent and delta specs) |
 
 **Promised-architecture cross-check** — the change promises a register move
 and a scenario update, not a component: no production module changed.

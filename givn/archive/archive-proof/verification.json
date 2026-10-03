@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "archive-proof",
   "status": "proven",
-  "candidate_commit": "cdd7f7a616cf643769e3f07e1f0bc32fbe85c59f",
-  "tested_commit": "cdd7f7a616cf643769e3f07e1f0bc32fbe85c59f",
+  "candidate_commit": "a8c5ab4431b76d83db85e0e732676219d795bc8b",
+  "tested_commit": "a8c5ab4431b76d83db85e0e732676219d795bc8b",
   "scopes": {
     "e2e": {
       "status": "passed",

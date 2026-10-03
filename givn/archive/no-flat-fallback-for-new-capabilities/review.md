@@ -15,9 +15,9 @@ bindings listed in design.md.
 
 | Task | Commit | Production code? |
 |---|---|---|
-| Planning layer | `8687a04` | Planning artifacts (pre-implementation by design) |
-| Blocked archive (`@e2e`) | `eb498ed` | Yes — `src/cli/archive.rs` fail-closed arm + fixture routing decisions |
-| Nothing merged on mixed routing (`@e2e`) | `e4836d3` | Yes — prevalidation pass, `resolve_permanent_dir`/`delta_capability` extraction |
+| Planning layer | `719d92a` | Planning artifacts (pre-implementation by design) |
+| Blocked archive (`@e2e`) | `f425541` | Yes — `src/cli/archive.rs` fail-closed arm + fixture routing decisions |
+| Nothing merged on mixed routing (`@e2e`) | `89422e9` | Yes — prevalidation pass, `resolve_permanent_dir`/`delta_capability` extraction |
 
 **Promised components**: the blocking error, the prevalidation pass, and the
 fixture helper `fixture_routing_proposal` — all in the tree.

@@ -34,7 +34,7 @@ Targeted command template:
   scenarios, 480 passed`; e2e subset `6 scenarios` — strictly smaller.
   Final verification: `./run-tests.sh` exit 0 (480 passed) and
   `./run-tests.sh --e2e` exit 0 after the download-start dedupe
-  resolution (`bf2dd52` and the chatter-refinement commit).
+  resolution (`f2b5ccc` and the chatter-refinement commit).
 - [x] Named permanent-pin migration task (executed within the flipping
   commits): permanent scenarios and bindings at
   `givn/specs/bge-reranking-evidence/bge-reranking-evidence.feature`
@@ -57,7 +57,7 @@ Targeted command template:
   `src/spec/retrieval.rs`, `run-tests.sh`, `tests/steps/mod.rs`,
   `tests/steps/*_steps.rs` (see commit). Targeted output: `7 steps (7 passed)`.
 - [x] REFACTOR: fmt + clippy clean; reran targeted: `7 steps (7 passed)`.
-- [x] COMMIT: hash: `1d756bc`
+- [x] COMMIT: hash: `7a63b7e`
 
 ## Scenario: The raw E5 list is verbose-only detail
 
@@ -68,7 +68,7 @@ Targeted command template:
   `tests/steps/semantic_review_output_steps.rs`.
   Targeted output: `7 steps (7 passed)`.
 - [x] REFACTOR: clean; reran targeted: `7 steps (7 passed)`.
-- [x] COMMIT: hash: `8996271`
+- [x] COMMIT: hash: `dea4b7e`
 
 ## Scenario: E5-only hits without a recommendation are not problems
 
@@ -79,7 +79,7 @@ Targeted command template:
   Test files: `semantic_review_output_steps.rs`.
   Targeted output: `4 steps (4 passed)`.
 - [x] REFACTOR: clean; reran targeted: `4 steps (4 passed)`.
-- [x] COMMIT: hash: `5811c99`
+- [x] COMMIT: hash: `c8fe1eb`
 
 ## Scenario: A recommended pair from either stage is the problem signal
 
@@ -89,7 +89,7 @@ Targeted command template:
   Production files: none beyond S1. Test files: regular steps file.
   Targeted output: `6 steps (6 passed)`.
 - [x] REFACTOR: clean; reran targeted: `6 steps (6 passed)`.
-- [x] COMMIT: hash: `9107e14`
+- [x] COMMIT: hash: `4e7c520`
 
 ## Scenario: Without participating second-stage layers the E5 threshold stays binding
 
@@ -99,7 +99,7 @@ Targeted command template:
   candidates. Production files: `src/spec/retrieval.rs`. Test files:
   regular steps file. Targeted output: `5 steps (5 passed)`.
 - [x] REFACTOR: clean; reran targeted: `5 steps (5 passed)`.
-- [x] COMMIT: hash: `c0c95bc`
+- [x] COMMIT: hash: `6b515fb`
 
 ## Scenario: Recommended pairs are ordered by model confidence before embedding score
 
@@ -108,8 +108,8 @@ Targeted command template:
   BGE symmetric-raw-desc ordering, not embedding order.
   Production files: `src/spec/retrieval.rs` (recommended-row sorting).
   Test files: regular steps file. Targeted output: `6 steps (6 passed)`.
-- [x] REFACTOR: clippy fix commit `b52301e`; reran targeted: `6 steps (6 passed)`.
-- [x] COMMIT: hash: `b792dd7`
+- [x] REFACTOR: clippy fix commit `f9b356a`; reran targeted: `6 steps (6 passed)`.
+- [x] COMMIT: hash: `52f50e9`
 
 ## Scenario: Retained text lines keep their established wording
 
@@ -117,9 +117,9 @@ Targeted command template:
 - [x] GREEN: byte-exact prefixes for NLI/BGE status, accounting,
   distribution, and pair-detail lines incl. advisory disclaimers.
   Production files: none. Test files: regular steps file.
-  Targeted output: `7 steps (7 passed)` (fragment fix in `ae4e16f`).
+  Targeted output: `7 steps (7 passed)` (fragment fix in `ea28a97`).
 - [x] REFACTOR: clean; reran targeted: `7 steps (7 passed)`.
-- [x] COMMIT: hash: `89d6c5a`
+- [x] COMMIT: hash: `b715b4c`
 
 ## Scenario: Verbose output lists every scored second-stage pair
 
@@ -127,9 +127,9 @@ Targeted command template:
 - [x] GREEN: verbose lists recommended first (confidence order), then
   remaining rows embedding-order; caps visible; details+unscored=raw.
   Production files: `src/spec/retrieval.rs`. Test files: regular steps.
-  Targeted output: `6 steps (6 passed)` (assertion tighten-up `34ffc9e`).
+  Targeted output: `6 steps (6 passed)` (assertion tighten-up `4659245`).
 - [x] REFACTOR: clean; reran targeted: `6 steps (6 passed)`.
-- [x] COMMIT: hash: `480b6ab`
+- [x] COMMIT: hash: `c3a84e1`
 
 ## Scenario: Default output collapses artifact resolution chatter to one line per stage
 
@@ -139,7 +139,7 @@ Targeted command template:
   `src/spec/retrieval.rs` (seam + gating helpers). Test files: regular
   steps. Targeted output: `5 steps (5 passed)`.
 - [x] REFACTOR: clean; reran targeted: `5 steps (5 passed)`.
-- [x] COMMIT: hash: `9daee93`
+- [x] COMMIT: hash: `784fa84`
 
 ## Scenario: Verbose output restores full artifact resolution detail
 
@@ -148,7 +148,7 @@ Targeted command template:
   the same gated helpers. Production files: none. Test files: regular
   steps. Targeted output: `4 steps (4 passed)`.
 - [x] REFACTOR: clean; reran targeted: `4 steps (4 passed)`.
-- [x] COMMIT: hash: `3f33c02`
+- [x] COMMIT: hash: `4f35197`
 
 ## Scenario: The truncation disclaimer appears only for a truncated listing
 
@@ -157,7 +157,7 @@ Targeted command template:
   Production files: none (disclaimer made conditional in S1 commit).
   Test files: regular steps. Targeted output: `6 steps (6 passed)`.
 - [x] REFACTOR: clean; reran targeted: `6 steps (6 passed)`.
-- [x] COMMIT: hash: `0028ad2`
+- [x] COMMIT: hash: `047ac1b`
 
 ## Scenario: A deprecated report-limit setting is accepted silently without effect
 
@@ -165,9 +165,9 @@ Targeted command template:
 - [x] GREEN: variable parsed but ignored; runtime/cache-normalized
   outputs identical; nothing names the variable. Production files: none.
   Test files: regular steps. Targeted output: `7 steps (7 passed)`
-  (normalization fix `2b3fa64`).
+  (normalization fix `8bf2f43`).
 - [x] REFACTOR: clean; reran targeted: `7 steps (7 passed)`.
-- [x] COMMIT: hash: `0dbbb7c`
+- [x] COMMIT: hash: `1ec2577`
 
 ## Scenario: Structured JSON output is one complete review document
 
@@ -178,7 +178,7 @@ Targeted command template:
   rendered from the second-stage pool for identity consistency).
   Test files: regular steps. Targeted output: `11 steps (11 passed)`.
 - [x] REFACTOR: clean; reran targeted: `11 steps (11 passed)`.
-- [x] COMMIT: hash: `c9bf0e3`
+- [x] COMMIT: hash: `f3f5161`
 
 ## Scenario: JSON counters match the text counters of the same run
 
@@ -188,16 +188,16 @@ Targeted command template:
   Production files: none. Test files: regular steps.
   Targeted output: `5 steps (5 passed)`.
 - [x] REFACTOR: clean; reran targeted: `5 steps (5 passed)`.
-- [x] COMMIT: hash: `aeec6ee`
+- [x] COMMIT: hash: `75a7d09`
 
 ## Scenario: Structured JSON preserves exit codes and failure messages
 
 - [x] RED: stub steps failed. Exit 101.
 - [x] GREEN: identical non-zero exits and error-line equality across
   formats. Production files: none. Test files: regular steps.
-  Targeted output: `5 steps (5 passed)` (error-line fix `3bfae29`).
+  Targeted output: `5 steps (5 passed)` (error-line fix `9764daa`).
 - [x] REFACTOR: clean; reran targeted: `5 steps (5 passed)`.
-- [x] COMMIT: hash: `8393086`
+- [x] COMMIT: hash: `940b7f7`
 
 ## Scenario: Flagged recommendations persist their findings beside the change
 
@@ -206,16 +206,16 @@ Targeted command template:
   document sections, stale sentinel replaced. Production files: none.
   Test files: regular steps. Targeted output: `7 steps (7 passed)`.
 - [x] REFACTOR: clean; reran targeted: `7 steps (7 passed)`.
-- [x] COMMIT: hash: `f7e9140`
+- [x] COMMIT: hash: `3a06372`
 
 ## Scenario: Successful reviews write no findings document
 
 - [x] RED: stub Given/Then failed. Exit 101.
 - [x] GREEN: clean review leaves no findings artifact.
   Production files: none. Test files: regular steps (alias Given added
-  in `c2fd37f`). Targeted output: `4 steps (4 passed)`.
+  in `3d7920a`). Targeted output: `4 steps (4 passed)`.
 - [x] REFACTOR: clean; reran targeted: `4 steps (4 passed)`.
-- [x] COMMIT: hash: `f2fecea`
+- [x] COMMIT: hash: `651d138`
 
 ## Scenario: An unwritable findings location warns without masking the flagged failure
 
@@ -224,7 +224,7 @@ Targeted command template:
   path; flagged failure unchanged. Production files: none. Test files:
   regular steps. Targeted output: `5 steps (5 passed)`.
 - [x] REFACTOR: clean; reran targeted: `5 steps (5 passed)`.
-- [x] COMMIT: hash: `ecaa864`
+- [x] COMMIT: hash: `0e750ff`
 
 ## E2E setup
 
@@ -240,9 +240,9 @@ Targeted command template:
 - [x] RED: stub Then failed. Exit 101.
 - [x] GREEN: compiled binary run; recommended detail present, FILTERED
   absent. Files touched: e2e steps file. Output: `5 steps (5 passed)`
-  (stub-silencing fixes `7199876`,`6982fb3`).
+  (stub-silencing fixes `4f66f79`,`538b6d1`).
 - [x] REFACTOR: clean; reran targeted: `5 steps (5 passed)`.
-- [x] COMMIT: hash: `27d796c`
+- [x] COMMIT: hash: `17fa9ca`
 
 ## Scenario: Real CLI verbose review lists all second-stage evidence
 
@@ -250,7 +250,7 @@ Targeted command template:
 - [x] GREEN: FILTERED rows present under verbose; no disclaimer.
   Files touched: e2e steps file. Output: `5 steps (5 passed)`.
 - [x] REFACTOR: clean; reran targeted: `5 steps (5 passed)`.
-- [x] COMMIT: hash: `7b89fdc`
+- [x] COMMIT: hash: `27a5183`
 
 ## Scenario: Real CLI JSON review emits one structured document
 
@@ -259,16 +259,16 @@ Targeted command template:
   an equivalent text run. Files touched: e2e steps file.
   Output: `5 steps (5 passed)`.
 - [x] REFACTOR: clean; reran targeted: `5 steps (5 passed)`.
-- [x] COMMIT: hash: `1467fb5`
+- [x] COMMIT: hash: `e38a2ee`
 
 ## Scenario: Real CLI persists findings beside the change after flagged recommendations
 
 - [x] RED: stub Thens failed. Exit 101.
 - [x] GREEN: findings file exists beside the change and matches the
   emitted document sections. Files touched: e2e steps file (borrow fix
-  `2dc7297`). Output: `5 steps (5 passed)`.
+  `7a96974`). Output: `5 steps (5 passed)`.
 - [x] REFACTOR: clean; reran targeted: `5 steps (5 passed)`.
-- [x] COMMIT: hash: `c473f76`
+- [x] COMMIT: hash: `5a6bf60`
 
 ## Scenario: Real CLI blocking review flags recommendations through the workflow gate
 
@@ -278,6 +278,6 @@ Targeted command template:
   this surface. Required projected+source endpoint overrides for both
   surfaces and a distinct delta body so report candidates exist.
   Files touched: e2e steps file. Output: `6 steps (6 passed)`
-  (debug-instrumentation removal `c7f178e`).
+  (debug-instrumentation removal `8aee752`).
 - [x] REFACTOR: clean; reran targeted: `6 steps (6 passed)`.
-- [x] COMMIT: hash: `a2d94fe`
+- [x] COMMIT: hash: `e351cbd`

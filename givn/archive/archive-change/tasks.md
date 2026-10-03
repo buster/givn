@@ -97,7 +97,7 @@ unproven.
 
 - [x] REFACTOR: neutralized the archive doc comment and formatted the touched
       files; targeted run still exited zero (2 scenarios, 18 steps passed).
-- [x] COMMIT: `5a9eceb7 feat(archive-proof): Archive publishes the merged candidate before running the full suite` (planning and architecture artifacts in `7e755cfa`).
+- [x] COMMIT: `c31270ed feat(archive-proof): Archive publishes the merged candidate before running the full suite` (planning and architecture artifacts in `ee1a509e`).
 
 ## Scenario: Repairing a failed candidate forward proves it without repeating the merge
 
@@ -128,7 +128,7 @@ revision; the rerun proves without re-merging.
 
 - [x] REFACTOR: formatted the touched step files; targeted run still exited
       zero (2 scenarios, 16 steps passed).
-- [x] COMMIT: `aaffbd71 feat(archive-proof): Repairing a failed candidate forward proves it without repeating the merge`.
+- [x] COMMIT: `701c3115 feat(archive-proof): Repairing a failed candidate forward proves it without repeating the merge`.
 
 ## Scenario: A proven archive records a verification receipt binding the tested revision
 
@@ -160,7 +160,7 @@ revision contains only the resolved evidence paths.
       backend-neutral messages so the pre-archive corpus stays green; the
       permanent archive-change feature passes 44 scenarios. Targeted run still
       exited zero.
-- [x] COMMIT: `f76e4f0a feat(archive-proof): A proven archive records a verification receipt binding the tested revision`.
+- [x] COMMIT: `6f79a523 feat(archive-proof): A proven archive records a verification receipt binding the tested revision`.
 
 ## Scenario: A rejected candidate revision leaves the archive unproven and repairable
 
@@ -192,7 +192,7 @@ repairable; the rerun publishes the on-disk candidate again and proves it.
 - [x] REFACTOR: formatted; the permanent archive-change feature passes 44
       scenarios (the witness move does not disturb the fresh path). Targeted
       run still exited zero.
-- [x] COMMIT: `15fe4422 feat(archive-proof): A rejected candidate revision leaves the archive unproven and repairable`.
+- [x] COMMIT: `c43cea1b feat(archive-proof): A rejected candidate revision leaves the archive unproven and repairable`.
 
 ## Scenario: A rejected candidate revision on Git leaves the merge staged
 
@@ -212,7 +212,7 @@ archive is unproven.
 
 - [x] REFACTOR: no change needed; permanent archive-change feature stays green
       (44 scenarios).
-- [x] COMMIT: `2065204d` (shared with the Fossil intermediate-state scenario).
+- [x] COMMIT: `05282387` (shared with the Fossil intermediate-state scenario).
 
 ## Scenario: A rejected candidate revision on Fossil leaves the merged state uncommitted
 
@@ -240,7 +240,7 @@ uncommitted; the archive is unproven.
 
 - [x] REFACTOR: formatted; both backend intermediate-state scenarios pass
       together (2 scenarios, 12 steps).
-- [x] COMMIT: `2065204d feat(archive-proof): A rejected candidate revision on Git leaves the merge staged and on Fossil leaves the merged state uncommitted`.
+- [x] COMMIT: `05282387 feat(archive-proof): A rejected candidate revision on Git leaves the merge staged and on Fossil leaves the merged state uncommitted`.
 
 ## Scenario: A Fossil EXTRA file blocks the archive
 
@@ -261,7 +261,7 @@ untracked files, and the refusal mutates nothing.
       bookkeeping (`.git`, `.fslckout`, `_FOSSIL_`) because Fossil rewrites
       `.fslckout` while merely reporting changes; the assertion reports only
       the differing paths. Targeted run still exited zero.
-- [x] COMMIT: `fbe73828` (shared with the Fossil edited-file scenario).
+- [x] COMMIT: `90b96845` (shared with the Fossil edited-file scenario).
 
 ## Scenario: A Fossil edited file blocks the archive
 
@@ -279,7 +279,7 @@ Domain constraint: the Fossil witness covers `EDITED` entries, not only
 
 - [x] REFACTOR: shared with the EXTRA scenario's snapshot fix. Targeted run
       still exited zero.
-- [x] COMMIT: `fbe73828 feat(archive-proof): A Fossil EXTRA file and a Fossil edited file block the archive`.
+- [x] COMMIT: `90b96845 feat(archive-proof): A Fossil EXTRA file and a Fossil edited file block the archive`.
 
 ## Scenario: Archive requires a version-controlled project
 
@@ -297,7 +297,7 @@ Domain constraint: no usable backend is refused by name before any mutation.
 
 - [x] REFACTOR: bound `Given placeholder` for the delta's `@givn.removed`
       tombstones so the whole change scope runs; formatted.
-- [x] COMMIT: `50938b01` (shared with the checkout-root and missing-fossil
+- [x] COMMIT: `55e164b3` (shared with the checkout-root and missing-fossil
       refusals).
 
 ## Scenario: Archive requires the project root to be the checkout root
@@ -311,7 +311,7 @@ mutation.
       scenario 3), so this is an immediate GREEN with no new production code.
       Targeted run: 4 scenarios (4 passed), 17 steps (17 passed).
 - [x] REFACTOR: none needed.
-- [x] COMMIT: `50938b01`.
+- [x] COMMIT: `55e164b3`.
 
 ## Scenario: A Fossil checkout without the fossil executable is refused by name
 
@@ -332,7 +332,7 @@ any mutation.
 
 - [x] REFACTOR: formatted; the permanent fragments suite stays green
       (117 scenarios).
-- [x] COMMIT: `50938b01 feat(archive-proof): Archive requires a version-controlled project, the checkout root, and a Fossil executable`.
+- [x] COMMIT: `55e164b3 feat(archive-proof): Archive requires a version-controlled project, the checkout root, and a Fossil executable`.
 
 ## Scenario: The migration preserves independent architecture history across three proposed decisions
 
@@ -351,7 +351,7 @@ with ADR-072.
       ```
 
 - [x] REFACTOR: removed the stale `@wip`; formatted.
-- [x] COMMIT: `3cc1dbc2 feat(adr-qualification-gate): The migration preserves independent architecture history across three proposed decisions`.
+- [x] COMMIT: `06808f33 feat(adr-qualification-gate): The migration preserves independent architecture history across three proposed decisions`.
 
 ## Scenario: Consumer archives a completed change and receives a proven archive
 
@@ -375,7 +375,7 @@ interface; the receipt is proven.
       `cargo fmt --all -- --check` is clean; re-bound the release-0-3-0
       unclean-upgrade step to the neutral "clean checkout" message. Full suite
       473/473 and e2e 84/84 green.
-- [x] COMMIT: `1eb9fbf6 test(e2e): Consumer archives a completed change and receives a proven archive`.
+- [x] COMMIT: `560bcd66 test(e2e): Consumer archives a completed change and receives a proven archive`.
 
 ## Finalize
 

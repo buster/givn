@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "retire-lint-command-adr",
   "status": "proven",
-  "candidate_revision": "409e22be18e8ef12640c712de753cc7a155c5d72",
-  "tested_revision": "409e22be18e8ef12640c712de753cc7a155c5d72",
+  "candidate_revision": "f7c07e137dfc73a44eb9450915d85c2e2c7519e1",
+  "tested_revision": "f7c07e137dfc73a44eb9450915d85c2e2c7519e1",
   "scopes": {
     "e2e": {
       "status": "passed",

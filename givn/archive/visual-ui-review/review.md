@@ -22,30 +22,30 @@ matching commit that touches production source:
 
 | Scenario | Commit hash | Touches production code? |
 |---|---|---|
-| Setup: strict-mode proof and skeletons | `d9e57752` | Test runner sources (`tests/steps/`) |
-| Canonical policy requires the visual baseline | `c9d3c4f1` | `assets/instructions/specs.md` |
-| Canonical policy uses transcripts | `2de63e96` | `assets/instructions/specs.md` |
-| Design guidance names the default viewports | `420fe734` | `assets/instructions/design.md` |
-| Design guidance keeps improvements inside the style | `415e8047` | `assets/instructions/design.md` |
-| Design-review guidance requires an approved contract | `57cfd9b7` | `assets/instructions/design-review.md` |
-| The design template carries the visual contract section | `7b0649e9` | `assets/templates/design.md` + step |
-| A visual change without a visual verdict fails review | `abb09415` | `src/integrity_hook.rs` + steps |
-| A change without a visual contract is exempt | `cd4e4f92` | Step implementation; exemption path in `abb09415` |
-| A change that declares no visual interface is exempt | `b14b58c3` | Step implementation; `none` path in `abb09415` |
-| A web contract without viewports fails review | `fc313b95` | `src/integrity_hook.rs` + steps |
-| A visual change with incomplete evidence fails review | `139b13f0` | `src/integrity_hook.rs` + steps |
-| An empty evidence file fails review | `b98c012f` | `src/integrity_hook.rs` + step |
-| An unverified visual verdict cannot pass review | `c9eeba7e` | `src/integrity_hook.rs` |
-| A terminal change passes review with a transcript | `4d371c9a` | Steps; terminal branch in `139b13f0` |
-| Review guidance treats style improvements as contract updates | `b538f410` | `assets/instructions/review.md` |
-| Review guidance records an unverified verdict | `39178cf1` | `assets/instructions/review.md` |
-| The review template carries the visual review section | `41ff9dcb` | `assets/templates/review.md` |
-| Synchronized review guidance carries the visual block | `a4e4ef0d` | `assets/skills/givn-review/SKILL.md.tmpl` |
-| Canonical E2E policy is emitted by specs instructions | `5eec9463` | `assets/instructions/specs.md` |
-| Author requests the visual design contract guidance | `eb1d5f22` | `assets/instructions/design.md` |
-| Synchronized guidance defines the contract approval | `4b893406` | `assets/skills/givn-design-review/`, `givn-steps/` |
-| A visual change with complete evidence passes review | `8ffd36ef` | `src/integrity_hook.rs` (verdict-state refactor; activation `58a2ac0e`) |
-| Review guidance requires the visual verdict and persona lenses | `5f231882` | `assets/instructions/review.md` |
+| Setup: strict-mode proof and skeletons | `33b5174d` | Test runner sources (`tests/steps/`) |
+| Canonical policy requires the visual baseline | `1906f05c` | `assets/instructions/specs.md` |
+| Canonical policy uses transcripts | `6287d8f4` | `assets/instructions/specs.md` |
+| Design guidance names the default viewports | `99c4eeab` | `assets/instructions/design.md` |
+| Design guidance keeps improvements inside the style | `05a63a24` | `assets/instructions/design.md` |
+| Design-review guidance requires an approved contract | `9b13a7e4` | `assets/instructions/design-review.md` |
+| The design template carries the visual contract section | `3df5b660` | `assets/templates/design.md` + step |
+| A visual change without a visual verdict fails review | `90d19b9e` | `src/integrity_hook.rs` + steps |
+| A change without a visual contract is exempt | `03fe25ca` | Step implementation; exemption path in `90d19b9e` |
+| A change that declares no visual interface is exempt | `be04ae99` | Step implementation; `none` path in `90d19b9e` |
+| A web contract without viewports fails review | `14522f52` | `src/integrity_hook.rs` + steps |
+| A visual change with incomplete evidence fails review | `7a263654` | `src/integrity_hook.rs` + steps |
+| An empty evidence file fails review | `6b0137bb` | `src/integrity_hook.rs` + step |
+| An unverified visual verdict cannot pass review | `1e91a0b9` | `src/integrity_hook.rs` |
+| A terminal change passes review with a transcript | `a7a8d06b` | Steps; terminal branch in `7a263654` |
+| Review guidance treats style improvements as contract updates | `80d79f1a` | `assets/instructions/review.md` |
+| Review guidance records an unverified verdict | `686c0c82` | `assets/instructions/review.md` |
+| The review template carries the visual review section | `fe8d6958` | `assets/templates/review.md` |
+| Synchronized review guidance carries the visual block | `3b6965c3` | `assets/skills/givn-review/SKILL.md.tmpl` |
+| Canonical E2E policy is emitted by specs instructions | `64f4ad30` | `assets/instructions/specs.md` |
+| Author requests the visual design contract guidance | `f305eefc` | `assets/instructions/design.md` |
+| Synchronized guidance defines the contract approval | `458acb68` | `assets/skills/givn-design-review/`, `givn-steps/` |
+| A visual change with complete evidence passes review | `0f6ded04` | `src/integrity_hook.rs` (verdict-state refactor; activation `03630cda`) |
+| Review guidance requires the visual verdict and persona lenses | `a6c9d0f9` | `assets/instructions/review.md` |
 
 **Promised-architecture cross-check** — every component design.md named
 exists:

@@ -19,17 +19,17 @@ matching commit that touches production source (not just spec/stub files):
 
 | Scenario | Commit hash | Touches production code? |
 |---|---|---|
-| The skill trigger names conversation states (modified) | 0fc7edd | Yes (assets/skills/givn-domain-modeling/SKILL.md.tmpl + step) |
-| The ubiquitous language is recorded in the project's arc42 glossary | a732d01 | Yes (SKILL.md.tmpl + shared step grep) |
-| The skill requires the arc42 glossary for domain modeling | 3ff1afd | Yes (SKILL.md.tmpl + step) |
-| The next-step guidance names the domain skill during later change phases | e551484 | Yes (src/cli/instructions.rs predicate + report_change + run_artifact + unit tests) |
-| A project without the arc42 glossary is not pointed at the domain skill | c58781b | Yes (coupling fixture; disable-arc42 contract) |
-| The design-review skill checks that the ubiquitous language is followed | eab4d44 | Yes (assets/skills/givn-design-review/SKILL.md.tmpl) |
-| The review skill checks that the ubiquitous language is followed | 162d200 | Yes (assets/skills/givn-review/SKILL.md.tmpl) |
-| An agent synchronizes skills and the domain skill is routed (modified e2e) | 173e27c | Yes (tests/steps/*_e2e_steps.rs) |
+| The skill trigger names conversation states (modified) | a4dde5c | Yes (assets/skills/givn-domain-modeling/SKILL.md.tmpl + step) |
+| The ubiquitous language is recorded in the project's arc42 glossary | 0abf991 | Yes (SKILL.md.tmpl + shared step grep) |
+| The skill requires the arc42 glossary for domain modeling | 2f4e77f | Yes (SKILL.md.tmpl + step) |
+| The next-step guidance names the domain skill during later change phases | cecdb3f | Yes (src/cli/instructions.rs predicate + report_change + run_artifact + unit tests) |
+| A project without the arc42 glossary is not pointed at the domain skill | 87eb54b | Yes (coupling fixture; disable-arc42 contract) |
+| The design-review skill checks that the ubiquitous language is followed | 6b65c44 | Yes (assets/skills/givn-design-review/SKILL.md.tmpl) |
+| The review skill checks that the ubiquitous language is followed | db65a88 | Yes (assets/skills/givn-review/SKILL.md.tmpl) |
+| An agent synchronizes skills and the domain skill is routed (modified e2e) | a0c2905 | Yes (tests/steps/*_e2e_steps.rs) |
 
-8 distinct hashes, one per scenario, plus the plan-artifact commit (861a4c1)
-and the finalisation chore (de53aae: ticks + regenerated agent skills). The
+8 distinct hashes, one per scenario, plus the plan-artifact commit (88db099)
+and the finalisation chore (ce10b1f: ticks + regenerated agent skills). The
 archive gate's hash-presence and duplicate checks pass. No task was ticked
 without a production-touching commit.
 

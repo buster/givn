@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "dialog-question-quality",
   "status": "proven",
-  "candidate_revision": "72ab5967ff7aa46a933ea45c178a7cf39b135d39",
-  "tested_revision": "72ab5967ff7aa46a933ea45c178a7cf39b135d39",
+  "candidate_revision": "7db795c6a109d14d1b488fb6ff3943c3bbd6be9b",
+  "tested_revision": "7db795c6a109d14d1b488fb6ff3943c3bbd6be9b",
   "scopes": {
     "e2e": {
       "status": "passed",

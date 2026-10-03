@@ -74,7 +74,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         Command: cargo fmt --all && targeted rerun as above
         Output: exit 0 — "1 scenario (1 passed)", "12 steps (12 passed)".
         ```
-  - [x] COMMIT: `df68d46` — `feat(semantic-remediation-log): The first blocked review creates the remediation log with before evidence`
+  - [x] COMMIT: `03decd8` — `feat(semantic-remediation-log): The first blocked review creates the remediation log with before evidence`
 
 - [x] Scenario: `Rerunning review with unchanged endpoints does not grow the remediation log`
   - [x] RED: run only this scenario. Must fail.
@@ -93,7 +93,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `702c93f` — `feat(semantic-remediation-log): Rerunning review with unchanged endpoints does not grow the remediation log`
+  - [x] COMMIT: `354cba1` — `feat(semantic-remediation-log): Rerunning review with unchanged endpoints does not grow the remediation log`
 
 - [x] Scenario: `A changed endpoint appends a new candidate entry and retains the prior entry`
   - [x] RED: run only this scenario. Must fail.
@@ -113,7 +113,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `2e1a186` — `feat(semantic-remediation-log): A changed endpoint appends a new candidate entry and retains the prior entry`
+  - [x] COMMIT: `e1553c2` — `feat(semantic-remediation-log): A changed endpoint appends a new candidate entry and retains the prior entry`
 
 - [x] Scenario: `The passing rerun completes the after state and the after run record`
   - [x] RED: run only this scenario. Must fail.
@@ -133,7 +133,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `504f291` — `feat(semantic-remediation-log): The passing rerun completes the after state and the after run record`
+  - [x] COMMIT: `74f58b6` — `feat(semantic-remediation-log): The passing rerun completes the after state and the after run record`
 
 - [x] Scenario: `A surviving pair records its recomputed embedding score after remediation`
   - [x] RED: run only this scenario. Must fail.
@@ -156,7 +156,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: cargo fmt --all && targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `c68ef47` — `feat(semantic-remediation-log): A surviving pair records its recomputed embedding score after remediation`
+  - [x] COMMIT: `a81dbb5` — `feat(semantic-remediation-log): A surviving pair records its recomputed embedding score after remediation`
 
 - [x] Scenario: `A resolved candidate without a complete log entry blocks review`
   - [x] RED: run only this scenario. Must fail.
@@ -176,7 +176,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `40c87a8` — `feat(semantic-remediation-log): A resolved candidate without a complete log entry blocks review`
+  - [x] COMMIT: `efd971b` — `feat(semantic-remediation-log): A resolved candidate without a complete log entry blocks review`
 
 - [x] Scenario: `A remediation commit without the semantic-remediation stamp blocks review`
   - [x] RED: run only this scenario (Git fixture steps land here). Must fail.
@@ -194,7 +194,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `8ddef26` — `feat(semantic-remediation-log): A remediation commit without the semantic-remediation stamp blocks review`
+  - [x] COMMIT: `ccbfefb` — `feat(semantic-remediation-log): A remediation commit without the semantic-remediation stamp blocks review`
 
 - [x] Scenario: `A stamp naming a different candidate blocks review`
   - [x] RED: run only this scenario. Must fail.
@@ -214,7 +214,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `5745c53` — `feat(semantic-remediation-log): A stamp naming a different candidate blocks review`
+  - [x] COMMIT: `2feeda3` — `feat(semantic-remediation-log): A stamp naming a different candidate blocks review`
 
 - [x] Scenario: `A stamped remediation commit verifies the log and passes review`
   - [x] RED: run only this scenario. Must fail.
@@ -233,7 +233,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `7ebdde8` — `feat(semantic-remediation-log): A stamped remediation commit verifies the log and passes review`
+  - [x] COMMIT: `08f54b2` — `feat(semantic-remediation-log): A stamped remediation commit verifies the log and passes review`
 
 - [x] Scenario: `A project without Git history records null run anchors and reviews without stamp checks`
   - [x] RED: run only this scenario. Must fail.
@@ -253,7 +253,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `0ead41b` — `feat(semantic-remediation-log): A project without Git history records null run anchors and reviews without stamp checks`
+  - [x] COMMIT: `d7e3f11` — `feat(semantic-remediation-log): A project without Git history records null run anchors and reviews without stamp checks`
 
 - [x] Scenario: `A verified remediation from before the log existed still passes review`
   - [x] RED: run only this scenario. Must fail.
@@ -274,7 +274,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `7ea6da4` — `feat(semantic-remediation-log): A verified remediation from before the log existed still passes review`
+  - [x] COMMIT: `a2c2c0c` — `feat(semantic-remediation-log): A verified remediation from before the log existed still passes review`
 
 - [x] Scenario: `A repeated passing rerun does not grow the remediation log`
   - [x] RED: run only this scenario. Must fail.
@@ -295,7 +295,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `d525f04` — `feat(semantic-remediation-log): A repeated passing rerun does not grow the remediation log`
+  - [x] COMMIT: `bf8b925` — `feat(semantic-remediation-log): A repeated passing rerun does not grow the remediation log`
 
 - [x] Scenario: `An unreachable remediation commit blocks review`
   - [x] RED: run only this scenario. Must fail.
@@ -315,7 +315,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `662bd9f` — `feat(semantic-remediation-log): An unreachable remediation commit blocks review`
+  - [x] COMMIT: `6ec34b9` — `feat(semantic-remediation-log): An unreachable remediation commit blocks review`
 
 - [x] Scenario: `A Git repository without commits behaves like no Git history`
   - [x] RED: run only this scenario. Must fail.
@@ -336,7 +336,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `27b4fe1` — `feat(semantic-remediation-log): A Git repository without commits behaves like no Git history`
+  - [x] COMMIT: `7220aba` — `feat(semantic-remediation-log): A Git repository without commits behaves like no Git history`
 
 - [x] Scenario: `The after state lands on the entry matching the verified evidence hashes`
   - [x] RED: run only this scenario. Must fail.
@@ -359,7 +359,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `a07309c` — `feat(semantic-remediation-log): The after state lands on the entry matching the verified evidence hashes`
+  - [x] COMMIT: `3c46392` — `feat(semantic-remediation-log): The after state lands on the entry matching the verified evidence hashes`
 
 - [x] Scenario: `A logged pair scored by BGE and NLI records their evidence states` (@rulebook)
   - [x] RED: rulebook command, run only this scenario. Must fail.
@@ -381,7 +381,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `852cefb` — `feat(semantic-remediation-log): A logged pair scored by BGE and NLI records their evidence states`
+  - [x] COMMIT: `1c430ca` — `feat(semantic-remediation-log): A logged pair scored by BGE and NLI records their evidence states`
 
 - [x] Scenario: `A commit fixing two candidates carries one stamp line per candidate`
   - [x] RED: run only this scenario. Must fail.
@@ -403,7 +403,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `675c3b8` — `feat(semantic-remediation-log): A commit fixing two candidates carries one stamp line per candidate`
+  - [x] COMMIT: `e85714a` — `feat(semantic-remediation-log): A commit fixing two candidates carries one stamp line per candidate`
 
 - [x] Scenario: `The remediation log obeys its strict wire grammar`
   - [x] RED: run only this scenario. Must fail.
@@ -424,7 +424,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `0a1dc7f` — `feat(semantic-remediation-log): The remediation log obeys its strict wire grammar`
+  - [x] COMMIT: `8774be8` — `feat(semantic-remediation-log): The remediation log obeys its strict wire grammar`
 
 - [x] Scenario: `Failed review before the semantic stage does not create the remediation log`
   - [x] RED: run only this scenario. Must fail.
@@ -444,7 +444,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `ff716a6` — `feat(semantic-remediation-log): Failed review before the semantic stage does not create the remediation log`
+  - [x] COMMIT: `5c3677c` — `feat(semantic-remediation-log): Failed review before the semantic stage does not create the remediation log`
 
 - [x] Scenario: `The remediation log survives the archive move`
   - [x] RED: run only this scenario. Must fail.
@@ -467,7 +467,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `b682457` — `feat(semantic-remediation-log): The remediation log survives the archive move`
+  - [x] COMMIT: `7062477` — `feat(semantic-remediation-log): The remediation log survives the archive move`
 
 - [x] Scenario: `Advisory spec review does not create the remediation log`
   - [x] RED: run only this scenario. Must fail.
@@ -486,7 +486,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `1375422` — `feat(semantic-remediation-log): Advisory spec review does not create the remediation log`
+  - [x] COMMIT: `3ced7ac` — `feat(semantic-remediation-log): Advisory spec review does not create the remediation log`
 
 - [x] Scenario: `Blocking review without its retrieval feature does not create the remediation log`
   - [x] RED: run only this scenario. Must fail.
@@ -506,7 +506,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `3418bd2` — `feat(semantic-remediation-log): Blocking review without its retrieval feature does not create the remediation log`
+  - [x] COMMIT: `5c25947` — `feat(semantic-remediation-log): Blocking review without its retrieval feature does not create the remediation log`
 
 ---
 
@@ -557,7 +557,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: cargo fmt --all && full delta run — exit 0, "24 scenarios (24 passed)".
         ```
-  - [x] COMMIT: `0e9e254` — `test(e2e): Real CLI review completes the remediation log for a stamped duplicate remediation`
+  - [x] COMMIT: `6b618c2` — `test(e2e): Real CLI review completes the remediation log for a stamped duplicate remediation`
 
 - [x] @e2e Scenario: `Real CLI archive retains the remediation log`
   - [x] RED: e2e command targeting this scenario only. Must fail.
@@ -579,7 +579,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: full delta run — exit 0, "24 scenarios (24 passed)".
         ```
-  - [x] COMMIT: `ecca25c` — `test(e2e): Real CLI archive retains the remediation log`
+  - [x] COMMIT: `3664467` — `test(e2e): Real CLI archive retains the remediation log`
 
 ---
 
@@ -608,4 +608,4 @@ universe.
         exit 0, "8 steps (8 passed)"; full change-scoped run — 34/34.
   - [x] REFACTOR: clippy -D warnings clean; the per-item Modified skip is
         subsumed by the superseded-target set.
-  - [x] COMMIT: `8695130` — `feat(semantic-remediation-log): superseded permanent endpoints leave the pair universe`
+  - [x] COMMIT: `34d54bc` — `feat(semantic-remediation-log): superseded permanent endpoints leave the pair universe`

@@ -30,10 +30,10 @@ decisions.
       givn --version
       givn 0.8.0
       ```
-- [x] COMMIT: `9c8694bf` -- `feat(migrate-0-7-0-to-0-8-0): release 0.8.0 with the model-hardening migration bundle`
+- [x] COMMIT: `5548eeda` -- `feat(migrate-0-7-0-to-0-8-0): release 0.8.0 with the model-hardening migration bundle`
 - [x] Formatting and lint on the 0.8.0 rule changes: `cargo fmt` and
       `cargo clippy --workspace --all-targets --locked -- -D warnings` clean.
-      COMMIT: `4b7373f5` -- `style: apply rustfmt and clippy to the 0.8.0 rule changes`
+      COMMIT: `a3a97ce9` -- `style: apply rustfmt and clippy to the 0.8.0 rule changes`
 
 ### Catalog entry and route test
 
@@ -46,7 +46,7 @@ decisions.
       cargo test --locked --lib migration
       test result: ok. 11 passed; 0 failed
       ```
-- [x] COMMIT: `ee39051f` -- `feat(migrate-0-7-0-to-0-8-0): catalog the 0.7.0 to 0.8.0 route and ship the bundle`
+- [x] COMMIT: `1bfecdc4` -- `feat(migrate-0-7-0-to-0-8-0): catalog the 0.7.0 to 0.8.0 route and ship the bundle`
 
 ### Consumer bundle
 
@@ -58,7 +58,7 @@ decisions.
       placeholder use (`{{SOURCE_VERSION}}`, `{{TARGET_VERSION}}`,
       `{{UPGRADE_COMMIT}}`), and the per-phase validation steps. No
       `{{MIGRATION_GUIDE}}`.
-- [x] COMMIT: `ee39051f` -- `feat(migrate-0-7-0-to-0-8-0): catalog the 0.7.0 to 0.8.0 route and ship the bundle`
+- [x] COMMIT: `1bfecdc4` -- `feat(migrate-0-7-0-to-0-8-0): catalog the 0.7.0 to 0.8.0 route and ship the bundle`
 
 ### Documentation
 
@@ -68,7 +68,7 @@ decisions.
       prompt pack.
 - [x] `docs/migrations/README.md` names the current bundle instead of the
       stale 0.3.0-to-0.4.0 claim.
-- [x] COMMIT: `7b227a3a` -- `docs(migrate-0-7-0-to-0-8-0): publish the 0.7.0 to 0.8.0 migration guide`
+- [x] COMMIT: `3c0fbfe7` -- `docs(migrate-0-7-0-to-0-8-0): publish the 0.7.0 to 0.8.0 migration guide`
 
 ## Verification
 

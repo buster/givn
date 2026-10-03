@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "author-change",
   "status": "proven",
-  "candidate_revision": "069d8bba620f8ee88f3d906cddc76b57b5dd947d",
-  "tested_revision": "069d8bba620f8ee88f3d906cddc76b57b5dd947d",
+  "candidate_revision": "cfa0a6c3a11185c27356ceca1108e4beecaeac7a",
+  "tested_revision": "cfa0a6c3a11185c27356ceca1108e4beecaeac7a",
   "scopes": {
     "e2e": {
       "status": "passed",

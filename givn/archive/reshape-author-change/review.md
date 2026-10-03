@@ -9,7 +9,7 @@ moved scenarios keep their existing steps, and `specs` is skipped.
 
 | Scope | Commit hash | Touches the release artifacts? |
 |---|---|---|
-| Split and renames | `0b7d40c8` | yes (three use-case narratives, five feature files moved) |
+| Split and renames | `6af09a22` | yes (three use-case narratives, five feature files moved) |
 
 **Promised-architecture cross-check** — the change promises a
 reorganization, not a component: no production module changed; the five

@@ -6,7 +6,7 @@
 |---|---|
 | @e2e tag integrity | Clean — the delta has no `@e2e` scenario and none was removed; the existing `@e2e` scenarios are untouched. |
 | Empty/no-op step bodies | 0 found. `grep -n "unimplemented!\\|todo!()"` over both touched step files returns no matches. |
-| Checked tasks have commits touching production | Clean — setup `9839d373` plus seven scenario commits (`6a9ab493`, `5d7a362d`, `0a27df00`, `b77d193a`, `e4d10039`, `9a9ae567`, `77db712c`), each touching documents, assets, the template, or real step assertions. |
+| Checked tasks have commits touching production | Clean — setup `fab75c6e` plus seven scenario commits (`f5f0abc1`, `31b6ceb8`, `9e67275e`, `208f8e43`, `a8486146`, `2f3e731c`, `d67d88d6`), each touching documents, assets, the template, or real step assertions. |
 | Promised components exist | Clean — `docs/use-case-model.md`, the template guidance, the eight rules, the ten criteria, the design-review pointer, and the specs placement test all exist. |
 | Strict-mode proof | Present in `tasks.md` Setup with non-zero-exit evidence. |
 | Downgraded `@e2e` scenarios | None — the delta has no `@e2e` scenario. |

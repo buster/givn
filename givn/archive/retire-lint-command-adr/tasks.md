@@ -12,7 +12,7 @@ Narrative spec change; no scenario delta and no new steps.
       the base hash.
 - [x] Delete `docs/arc42/adr/ADR-027-lint-command-name.md`.
 - [x] Repair ADR-019's references and the register README (count 24); align the register-history scenario (25 → 24) with a new step definition.
-- [x] COMMIT: `4f8c4a0f` -- `docs(adr-qualification-gate): retire the lint command naming ADR`
+- [x] COMMIT: `f062c23f` -- `docs(adr-qualification-gate): retire the lint command naming ADR`
 
 ## Verification
 
@@ -24,5 +24,5 @@ Narrative spec change; no scenario delta and no new steps.
       Summary [31.990s] 539 tests run: 539 passed, 0 skipped
       Summary [5.467s] 88 tests run: 88 passed, 451 skipped
       ```
-- [x] COMMIT: `2df1f0fa` -- `docs(retire-lint-command-adr): complete the review`
+- [x] COMMIT: `66b91c8a` -- `docs(retire-lint-command-adr): complete the review`
 - [x] Archive the change.

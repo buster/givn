@@ -13,7 +13,7 @@ Documentation repair; `specs` is skipped.
 - [x] Convert the accepted decisions to `###` sections with Context,
       Options, and Chosen/Rejected; carry the open questions with their
       resolutions; keep the scope notes.
-- [x] COMMIT: `de82daeb` -- `docs(ideation-skill): stamp the multi-scm-support seeds implemented`
+- [x] COMMIT: `9a242dee` -- `docs(ideation-skill): stamp the multi-scm-support seeds implemented`
 
 ## Verification
 
@@ -23,5 +23,5 @@ Documentation repair; `specs` is skipped.
       Summary [30.255s] 539 tests run: 539 passed, 0 skipped
       Summary [5.470s] 88 tests run: 88 passed, 451 skipped
       ```
-- [x] COMMIT: `628b527c` -- `docs(stamp-change-seeds): complete the review`
+- [x] COMMIT: `ce17b0e5` -- `docs(stamp-change-seeds): complete the review`
 - [x] Archive the change.

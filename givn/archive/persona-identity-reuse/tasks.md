@@ -70,7 +70,7 @@ Step panicked. Captured output: givn-ideation guidance missing "authority bounda
         1 scenario (1 passed)
         12 steps (12 passed)
         ```
-  - [x] COMMIT: `8572ef2d` -- `feat(ideation-skill): The ideation guidance carries the persona identity criteria and the reuse protocol`
+  - [x] COMMIT: `b119a89f` -- `feat(ideation-skill): The ideation guidance carries the persona identity criteria and the reuse protocol`
 
 ### ideation-skill
 
@@ -91,7 +91,7 @@ Step panicked. Captured output: givn-ideation guidance missing "authority bounda
         1 scenario (1 passed)
         13 steps (13 passed)
         ```
-  - [x] COMMIT: `b0dd1e43` -- `feat(ideation-skill): The ideation guidance keeps the confirmed persona behaviors`
+  - [x] COMMIT: `8e570f1d` -- `feat(ideation-skill): The ideation guidance keeps the confirmed persona behaviors`
 
 ### ideation-skill
 
@@ -114,7 +114,7 @@ Step panicked. Captured output: not implemented
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `f9cc68a2` -- `feat(ideation-skill): The persona template carries the stable core and the running record`
+  - [x] COMMIT: `95601fe6` -- `feat(ideation-skill): The persona template carries the stable core and the running record`
 
 ### lint-command
 
@@ -130,7 +130,7 @@ Step panicked. Captured output: stderr missing "[PERS ]"
 1 scenario (1 failed)
 9 steps (8 passed, 1 failed)
         ```
-  - [x] GREEN: implemented `check_persona_references` in `src/cli/lint.rs`, the `[PERS ]` render arm, and the fixture Givens in `tests/steps/mod.rs`; the project- and topic-resolution guards were folded into this scenario (commit ea0e4eb4). Files: `src/cli/lint.rs`, `tests/steps/mod.rs`. `cargo clean -p givn` where assets changed, then the targeted run → zero. Evidence:
+  - [x] GREEN: implemented `check_persona_references` in `src/cli/lint.rs`, the `[PERS ]` render arm, and the fixture Givens in `tests/steps/mod.rs`; the project- and topic-resolution guards were folded into this scenario (commit 883bee06). Files: `src/cli/lint.rs`, `tests/steps/mod.rs`. `cargo clean -p givn` where assets changed, then the targeted run → zero. Evidence:
         ```
         1 feature
         1 scenario (1 passed)
@@ -142,14 +142,14 @@ Step panicked. Captured output: stderr missing "[PERS ]"
         1 scenario (1 passed)
         12 steps (12 passed)
         ```
-  - [x] COMMIT: `891caa07` -- `feat(lint-command): A dangling persona reference is reported as an advisory`
+  - [x] COMMIT: `90aec644` -- `feat(lint-command): A dangling persona reference is reported as an advisory`
 
 ### lint-command
 
 - [x] Scenario: `The change scope reports a dangling persona reference`
   - [x] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
         ```
-        restored `src/cli/lint.rs` to the pre-check revision (b3bb6293):
+        restored `src/cli/lint.rs` to the pre-check revision (a992f90f):
 Step panicked. Captured output: stderr missing "[PERS ]"
 1 scenario (1 failed)
 5 steps (4 passed, 1 failed)
@@ -166,7 +166,7 @@ Step panicked. Captured output: stderr missing "[PERS ]"
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `46af6176` -- `feat(lint-command): The change scope reports a dangling persona reference`
+  - [x] COMMIT: `ea2a6e4e` -- `feat(lint-command): The change scope reports a dangling persona reference`
 
 ### visual-review-gate
 
@@ -190,14 +190,14 @@ Step panicked. Captured output: expected failure, got exit Some(0)
         1 scenario (1 passed)
         10 steps (10 passed)
         ```
-  - [x] COMMIT: `1d5f898f` -- `feat(visual-review-gate): A visual change with an unknown persona disposition fails review`
+  - [x] COMMIT: `18185e92` -- `feat(visual-review-gate): A visual change with an unknown persona disposition fails review`
 
 ### visual-review-gate
 
 - [x] Scenario: `A visual change with a reasoned none fails review`
   - [x] RED: removed `@wip` from this scenario only; ran the single-scenario command → non-zero. Evidence:
         ```
-        restored `src/integrity_hook.rs` to b3bb6293:
+        restored `src/integrity_hook.rs` to a992f90f:
 Step panicked. Captured output: expected failure, got exit Some(0)
 1 scenario (1 failed)
 9 steps (8 passed, 1 failed)
@@ -214,7 +214,7 @@ Step panicked. Captured output: expected failure, got exit Some(0)
         1 scenario (1 passed)
         10 steps (10 passed)
         ```
-  - [x] COMMIT: `256df102` -- `feat(visual-review-gate): A visual change with a reasoned none fails review`
+  - [x] COMMIT: `38edbb52` -- `feat(visual-review-gate): A visual change with a reasoned none fails review`
 
 ### visual-review-gate
 
@@ -235,7 +235,7 @@ Step panicked. Captured output: expected failure, got exit Some(0)
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `80db1723` -- `feat(visual-review-gate): A change without a visual interface passes review with a reasoned none`
+  - [x] COMMIT: `5468db24` -- `feat(visual-review-gate): A change without a visual interface passes review with a reasoned none`
 
 ## Final checks
 
@@ -260,9 +260,9 @@ Step panicked. Captured output: expected failure, got exit Some(0)
       0
       ```
 - [x] Confirm commit count matches scenario task count and every task has a
-      recorded hash: setup `b3bb6293`, scenarios `8572ef2d`, `b0dd1e43`,
-      `f9cc68a2`, `891caa07` (+ fold `ea0e4eb4`), `46af6176`, `1d5f898f`,
-      `256df102`, `80db1723`.
+      recorded hash: setup `a992f90f`, scenarios `b119a89f`, `8e570f1d`,
+      `95601fe6`, `90aec644` (+ fold `883bee06`), `ea2a6e4e`, `18185e92`,
+      `38edbb52`, `5468db24`.
 - [x] Confirm `givn lint --change persona-identity-reuse` has no parse errors
       (exit 0). Evidence:
       ```

@@ -9,7 +9,7 @@
 
 | Scope | Commit hash | Touches the repaired artifact? |
 |---|---|---|
-| Term-record migration | `71f59658` | yes (`domain-terms.md`, change artifacts) |
+| Term-record migration | `b43c6c49` | yes (`domain-terms.md`, change artifacts) |
 
 **Promised-architecture cross-check** — the change promises a converted term
 file, not a component: no production module changed.

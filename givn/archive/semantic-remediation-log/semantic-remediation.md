@@ -4,21 +4,21 @@ Change: "semantic-remediation-log"
 
 ## Run 1
 - kind: before
-- commit: 33ffa3df00a788888de9eea74aa1d24c2d64e66c
+- commit: fbe1773413b6bb71eadf55d2a36a438fa979b3b0
 - e5_runtime_ms: 20450
 - bge_runtime_ms: 20206
 - nli_runtime_ms: 17264
 
 ## Run 2
 - kind: before
-- commit: 33ffa3df00a788888de9eea74aa1d24c2d64e66c
+- commit: fbe1773413b6bb71eadf55d2a36a438fa979b3b0
 - e5_runtime_ms: 18458
 - bge_runtime_ms: 30051
 - nli_runtime_ms: 23630
 
 ## Run 3
 - kind: before
-- commit: 33ffa3df00a788888de9eea74aa1d24c2d64e66c
+- commit: fbe1773413b6bb71eadf55d2a36a438fa979b3b0
 - e5_runtime_ms: 18177
 - bge_runtime_ms: 24692
 - nli_runtime_ms: 17479

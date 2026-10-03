@@ -9,7 +9,7 @@ split scenarios keep their existing steps, and `specs` is skipped.
 
 | Scope | Commit hash | Touches the release artifacts? |
 |---|---|---|
-| Split and moves | `137cac4f` | yes (four narratives, one move, one feature split) |
+| Split and moves | `c2da5b76` | yes (four narratives, one move, one feature split) |
 
 **Promised-architecture cross-check** — the change promises a
 reorganization, not a component: no production module changed; the two new

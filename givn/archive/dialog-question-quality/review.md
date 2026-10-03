@@ -6,7 +6,7 @@
 |---|---|
 | @e2e tag integrity | Clean — no delta scenario carries or ever carried `@e2e`; no tag was removed. The change adds no `@e2e` scenario because every new scenario is a variant of an action already proven end-to-end. |
 | Empty/no-op step bodies | 0 found. `grep -n "unimplemented!\|todo!()" tests/steps/instruction_integrity_steps.rs tests/steps/prose_consolidation_steps.rs` returns no matches. |
-| Checked tasks have commits touching production | Clean — setup commit `b24db59a` plus eight scenario commits (`f6c1db11`, `17acb19e`, `2001fb6b`, `60e8cdc5`, `d2749d63`, `da258888`, `22a81c6c`, `fb13bf15`), each touching assets, `src/cli/instructions.rs`, or real step assertions. |
+| Checked tasks have commits touching production | Clean — setup commit `cdfae0fe` plus eight scenario commits (`bf4d45e2`, `a72ff6a9`, `8f7e9b2f`, `d2a22a23`, `785c2f51`, `520f85f2`, `b84ddf67`, `876561ab`), each touching assets, `src/cli/instructions.rs`, or real step assertions. |
 | Promised components exist | Clean — `assets/instructions/dialog.md`, the `src/cli/instructions.rs` fallback, the reshaped `assets/templates/design-review.md`, the eight pointer assets, `assets/addons/absolute-mode/policy.md`, the refreshed `AGENTS.md` block, and the new step definitions all exist. |
 | Strict-mode proof | Present in `tasks.md` Setup with non-zero-exit evidence. |
 | Downgraded `@e2e` scenarios | None — the delta has no `@e2e` scenario; existing `@e2e` scenarios are untouched. |

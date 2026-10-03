@@ -13,9 +13,9 @@ change directories; no assertion-less bodies anywhere in the touched files).
 
 | Task | Commit | Production code? |
 |---|---|---|
-| Planning layer | `003a633` | Planning artifacts (pre-implementation by design) |
-| flat-layout invariant | `8f28e44` | Yes — fixture step file `tests/steps/grouped_merge_steps.rs` + delta |
-| grouped merge (`@e2e`) | `75b4d30` | Yes — `src/cli/archive.rs` `process_delta_file` + fixture |
+| Planning layer | `7c9696a` | Planning artifacts (pre-implementation by design) |
+| flat-layout invariant | `7d88774` | Yes — fixture step file `tests/steps/grouped_merge_steps.rs` + delta |
+| grouped merge (`@e2e`) | `c2b0d82` | Yes — `src/cli/archive.rs` `process_delta_file` + fixture |
 
 **Promised components**: the grouped-target branch, the
 `routing_group_for_new_capability` helper, both fixture Givens — all in the

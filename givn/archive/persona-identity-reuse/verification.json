@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "persona-identity-reuse",
   "status": "proven",
-  "candidate_revision": "160f345b975f4669c758bfedc9a2e1c9fad08892",
-  "tested_revision": "160f345b975f4669c758bfedc9a2e1c9fad08892",
+  "candidate_revision": "fc6322a7addd1c697f17b75562053bf63151b205",
+  "tested_revision": "fc6322a7addd1c697f17b75562053bf63151b205",
   "scopes": {
     "e2e": {
       "status": "passed",

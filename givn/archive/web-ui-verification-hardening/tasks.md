@@ -60,7 +60,7 @@ negative counterpart; the negative scenario is the RED driver.
       Checking givn v0.7.0 ($HOME/projects/givn)
       Finished `dev` profile [unoptimized + debuginfo] target(s) in 10.72s
       ```
-- [x] COMMIT: `3c62d3be` -- `test(web-ui-verification-hardening): strict-mode proof and step skeletons`
+- [x] COMMIT: `c3c8671c` -- `test(web-ui-verification-hardening): strict-mode proof and step skeletons`
 
 ## Scenarios
 
@@ -92,7 +92,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `e1d2a2f3` -- `feat(prose-consolidation): Canonical policy classifies a browser-rendered page as a Web UI`
+  - [x] COMMIT: `80b26f4d` -- `feat(prose-consolidation): Canonical policy classifies a browser-rendered page as a Web UI`
 
 - [x] Scenario: `Canonical policy requires a rendered-state assertion`
   - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
@@ -116,7 +116,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `4c944227` -- `feat(prose-consolidation): Canonical policy requires a rendered-state assertion`
+  - [x] COMMIT: `ad8a7a70` -- `feat(prose-consolidation): Canonical policy requires a rendered-state assertion`
 
 - [x] Scenario: `Canonical policy requires evidence for every declared UI state`
   - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
@@ -140,7 +140,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `1331246f` -- `feat(prose-consolidation): Canonical policy requires evidence for every declared UI state`
+  - [x] COMMIT: `f6828d4a` -- `feat(prose-consolidation): Canonical policy requires evidence for every declared UI state`
 
 - [x] Scenario: `Canonical policy refuses a silent deferral of a mandatory check`
   - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
@@ -164,7 +164,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `49286197` -- `feat(prose-consolidation): Canonical policy refuses a silent deferral of a mandatory check`
+  - [x] COMMIT: `643e7f68` -- `feat(prose-consolidation): Canonical policy refuses a silent deferral of a mandatory check`
 
 ### visual-design-contract
 
@@ -190,7 +190,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `b82fe9b5` -- `feat(visual-design-contract): Design guidance classifies a browser-rendered screen as a Web UI`
+  - [x] COMMIT: `1892e856` -- `feat(visual-design-contract): Design guidance classifies a browser-rendered screen as a Web UI`
 
 - [x] Scenario: `Design guidance names the default browser driver`
   - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
@@ -214,7 +214,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `5536e8c0` -- `feat(visual-design-contract): Design guidance names the default browser driver`
+  - [x] COMMIT: `c64276fb` -- `feat(visual-design-contract): Design guidance names the default browser driver`
 
 - [x] Scenario: `Design guidance requires breakpoints and accessibility`
   - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
@@ -238,7 +238,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `a9385537` -- `feat(visual-design-contract): Design guidance requires breakpoints and accessibility`
+  - [x] COMMIT: `2b1e7989` -- `feat(visual-design-contract): Design guidance requires breakpoints and accessibility`
 
 - [x] Scenario: `Design guidance requires a driver for every Web UI matrix row`
   - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
@@ -262,7 +262,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         4 steps (4 passed)
         ```
-  - [x] COMMIT: `0a4360ff` -- `feat(visual-design-contract): Design guidance requires a driver for every Web UI matrix row`
+  - [x] COMMIT: `d4131860` -- `feat(visual-design-contract): Design guidance requires a driver for every Web UI matrix row`
 
 - [x] Scenario: `Design guidance names the user-visible persona boundary`
   - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
@@ -286,7 +286,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `54a2e9a7` -- `feat(visual-design-contract): Design guidance names the user-visible persona boundary`
+  - [x] COMMIT: `73e37e14` -- `feat(visual-design-contract): Design guidance names the user-visible persona boundary`
 
 - [x] Scenario: `Design-review guidance tests the opposite interface classification`
   - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
@@ -310,7 +310,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `d7fa4b6a` -- `feat(visual-design-contract): Design-review guidance tests the opposite interface classification`
+  - [x] COMMIT: `8eae555b` -- `feat(visual-design-contract): Design-review guidance tests the opposite interface classification`
 
 - [x] Scenario: `Design-review guidance records the persona disposition`
   - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
@@ -334,7 +334,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `cc8bc2a4` -- `feat(visual-design-contract): Design-review guidance records the persona disposition`
+  - [x] COMMIT: `4f88fa0c` -- `feat(visual-design-contract): Design-review guidance records the persona disposition`
 
 - [x] Scenario: `Design-review guidance requires an operator question before a deferral`
   - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
@@ -358,7 +358,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `3b3741df` -- `feat(visual-design-contract): Design-review guidance requires an operator question before a deferral`
+  - [x] COMMIT: `bdc394d0` -- `feat(visual-design-contract): Design-review guidance requires an operator question before a deferral`
 
 - [x] Scenario: `Proposal guidance requires confirmed personas or a reasoned none`
   - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
@@ -382,7 +382,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `9d93318f` -- `feat(visual-design-contract): Proposal guidance requires confirmed personas or a reasoned none`
+  - [x] COMMIT: `a2c228ba` -- `feat(visual-design-contract): Proposal guidance requires confirmed personas or a reasoned none`
 
 - [x] Scenario: `The design template carries the state, breakpoint, and accessibility lines`
   - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
@@ -406,7 +406,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `db7678ed` -- `feat(visual-design-contract): The design template carries the state, breakpoint, and accessibility lines`
+  - [x] COMMIT: `dbc6df55` -- `feat(visual-design-contract): The design template carries the state, breakpoint, and accessibility lines`
 
 - [x] Scenario: `The proposal template carries the persona confirmation line`
   - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
@@ -431,7 +431,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `d8471eca` -- `feat(visual-design-contract): The proposal template carries the persona confirmation line`
+  - [x] COMMIT: `88c37a1f` -- `feat(visual-design-contract): The proposal template carries the persona confirmation line`
 
 - [x] Scenario: `The review template carries the persona disposition and deferral markers`
   - [x] RED: removed `@wip` for this scenario only; temporarily restored the
@@ -456,7 +456,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `9591a6e3` -- `feat(visual-design-contract): The review template carries the persona disposition and deferral markers`
+  - [x] COMMIT: `d2d7512f` -- `feat(visual-design-contract): The review template carries the persona disposition and deferral markers`
 
 - [x] Scenario: `The design-review template carries the persona disposition table`
   - [x] RED: removed `@wip` for this scenario only; temporarily restored the
@@ -481,7 +481,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `7f02f539` -- `feat(visual-design-contract): The design-review template carries the persona disposition table`
+  - [x] COMMIT: `07640d33` -- `feat(visual-design-contract): The design-review template carries the persona disposition table`
 
 - [x] Scenario: `Synchronized authoring guidance carries the classification, driver, and persona rules`
   - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
@@ -507,7 +507,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `2b461bbf` -- `feat(visual-design-contract): Synchronized authoring guidance carries the classification, driver, and persona rules`
+  - [x] COMMIT: `5f3f5818` -- `feat(visual-design-contract): Synchronized authoring guidance carries the classification, driver, and persona rules`
 
 ### visual-review-gate
 
@@ -533,7 +533,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `1e137a8e` -- `feat(visual-review-gate): Review guidance tests the opposite interface classification`
+  - [x] COMMIT: `83f36289` -- `feat(visual-review-gate): Review guidance tests the opposite interface classification`
 
 - [x] Scenario: `Review guidance fails a deferral without an operator decision`
   - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
@@ -556,7 +556,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `89370d57` -- `feat(visual-review-gate): Review guidance fails a deferral without an operator decision`
+  - [x] COMMIT: `ab6a9d11` -- `feat(visual-review-gate): Review guidance fails a deferral without an operator decision`
 
 - [x] Scenario: `Review guidance records the persona disposition`
   - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
@@ -580,7 +580,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `059e832a` -- `feat(visual-review-gate): Review guidance records the persona disposition`
+  - [x] COMMIT: `7c0234c9` -- `feat(visual-review-gate): Review guidance records the persona disposition`
 
 - [x] Scenario: `Review guidance names the state screenshots the vision review saw`
   - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
@@ -606,7 +606,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         4 steps (4 passed)
         ```
-  - [x] COMMIT: `148a2a93` -- `feat(visual-review-gate): Review guidance names the state screenshots the vision review saw`
+  - [x] COMMIT: `d47d1ec7` -- `feat(visual-review-gate): Review guidance names the state screenshots the vision review saw`
 
 - [x] Scenario: `A web contract with missing state evidence fails review`
   - [x] RED: removed `@wip` for this scenario only; the declared-UI-states
@@ -634,14 +634,14 @@ negative counterpart; the negative scenario is the RED driver.
         ```
         test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 237 filtered out
         ```
-  - [x] COMMIT: `642e0c33` -- `feat(visual-review-gate): A web contract with missing state evidence fails review`
+  - [x] COMMIT: `af53dd01` -- `feat(visual-review-gate): A web contract with missing state evidence fails review`
 
 - [x] Scenario: `A web contract with complete state evidence passes review`
   - [x] RED: paired with the negative scenario above (A10); the negative
         scenario drove the production check, the positive proves the complete
         artifact passes. Evidence:
         ```
-        paired: 642e0c33 (missing state evidence fails review)
+        paired: af53dd01 (missing state evidence fails review)
         ```
   - [x] GREEN: implemented the both-viewports final-state and state-screenshot
         fixture steps and confirmed exit 0 with the implemented check. Files:
@@ -657,7 +657,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         10 steps (10 passed)
         ```
-  - [x] COMMIT: `8d7f5f94` -- `feat(visual-review-gate): A web contract with complete state evidence passes review`
+  - [x] COMMIT: `084bdb24` -- `feat(visual-review-gate): A web contract with complete state evidence passes review`
 
 - [x] Scenario: `A visual change without a persona disposition fails review`
   - [x] RED: removed `@wip` for this scenario only; the no-persona fixture
@@ -683,12 +683,12 @@ negative counterpart; the negative scenario is the RED driver.
         ```
         test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 237 filtered out
         ```
-  - [x] COMMIT: `5d4e9d3e` -- `feat(visual-review-gate): A visual change without a persona disposition fails review`
+  - [x] COMMIT: `3eb3309c` -- `feat(visual-review-gate): A visual change without a persona disposition fails review`
 
 - [x] Scenario: `A visual change with a confirmed persona disposition passes review`
   - [x] RED: paired with the negative scenario above (A10). Evidence:
         ```
-        paired: 5d4e9d3e (without a persona disposition fails review)
+        paired: 3eb3309c (without a persona disposition fails review)
         ```
   - [x] GREEN: confirmed exit 0 with the fixture's `PERSONAS: fixture-persona`.
         Run → zero. Evidence:
@@ -703,7 +703,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         9 steps (9 passed)
         ```
-  - [x] COMMIT: `cdc99ebd` -- `feat(visual-review-gate): A visual change with a confirmed persona disposition passes review`
+  - [x] COMMIT: `c200d5bb` -- `feat(visual-review-gate): A visual change with a confirmed persona disposition passes review`
 
 - [x] Scenario: `A visual interface with an empty persona disposition fails review`
   - [x] RED: removed `@wip` for this scenario only; the empty-value fixture
@@ -727,7 +727,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         10 steps (10 passed)
         ```
-  - [x] COMMIT: `9dd24f65` -- `feat(visual-review-gate): A visual interface with an empty persona disposition fails review`
+  - [x] COMMIT: `f4bf6157` -- `feat(visual-review-gate): A visual interface with an empty persona disposition fails review`
 
 - [x] Scenario: `An empty state screenshot fails review`
   - [x] RED: removed `@wip` for this scenario only; the single-state and
@@ -753,7 +753,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         12 steps (12 passed)
         ```
-  - [x] COMMIT: `befb6bd1` -- `feat(visual-review-gate): An empty state screenshot fails review`
+  - [x] COMMIT: `47e27e25` -- `feat(visual-review-gate): An empty state screenshot fails review`
 
 - [x] Scenario: `A deferral without an operator decision fails review`
   - [x] RED: removed `@wip` for this scenario only; the run showed the review
@@ -779,12 +779,12 @@ negative counterpart; the negative scenario is the RED driver.
         ```
         test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 237 filtered out
         ```
-  - [x] COMMIT: `dbd68e52` -- `feat(visual-review-gate): A deferral without an operator decision fails review`
+  - [x] COMMIT: `04a91eb7` -- `feat(visual-review-gate): A deferral without an operator decision fails review`
 
 - [x] Scenario: `A deferral with an operator decision passes review`
   - [x] RED: paired with the negative scenario above (A10). Evidence:
         ```
-        paired: dbd68e52 (without an operator decision fails review)
+        paired: 04a91eb7 (without an operator decision fails review)
         ```
   - [x] GREEN: implemented the `also contains` fixture step and confirmed exit
         0 with the paired `OPERATOR-DECISION:` line. Run → zero. Evidence:
@@ -799,7 +799,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         7 steps (7 passed)
         ```
-  - [x] COMMIT: `170c5b4e` -- `feat(visual-review-gate): A deferral with an operator decision passes review`
+  - [x] COMMIT: `a1d2338e` -- `feat(visual-review-gate): A deferral with an operator decision passes review`
 
 ## Finalization
 

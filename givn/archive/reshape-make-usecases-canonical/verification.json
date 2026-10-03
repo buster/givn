@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "reshape-make-usecases-canonical",
   "status": "proven",
-  "candidate_revision": "71da239d7b7a39ae1be82d96db4a276ea181ee0c",
-  "tested_revision": "71da239d7b7a39ae1be82d96db4a276ea181ee0c",
+  "candidate_revision": "1f13be897dfd95b284f9971b2ec7225d7971dfc5",
+  "tested_revision": "1f13be897dfd95b284f9971b2ec7225d7971dfc5",
   "scopes": {
     "e2e": {
       "status": "passed",

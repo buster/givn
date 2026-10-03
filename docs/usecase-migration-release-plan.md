@@ -955,7 +955,7 @@ $HOME/projects/kiekste/.opencode/
 
 The completion definition below was met by the archived release-closure change
 and the Watn/Kiekste consumer migrations. The final Givn archive commit is
-`4d3ed8b`.
+`fcd93fd`.
 
 ## Completion Definition
 

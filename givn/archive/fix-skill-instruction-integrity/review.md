@@ -19,17 +19,17 @@ Result: `0 empty step bodies found across 2 step definition files`.
 
 | Scenario | Commit | Production/source asset touched? |
 |---|---|---|
-| Canonical E2E guidance rejects weaker interface evidence | `d20b164` | Yes: shipped instruction asset and step bindings. |
-| Design guidance requires the complete E2E setup record | `bef6724` | Yes: shipped instruction asset and step bindings. |
-| Review guidance verifies semantic remediation | `68df916` | Yes: shipped instruction and review template assets. |
-| Machine-readable instructions describe the effective artifact | `d4d2a16` | Yes: CLI source, Commands, and step bindings. |
-| Artifact instructions reject an unsafe change context | `fefa780` | Yes: CLI source and step bindings. |
-| Project instruction overrides survive skill synchronization | `ac8f487` | Yes: compiled-CLI acceptance bindings and feature contract. |
-| Retrieval guidance distinguishes build capabilities | `0e89485` | Yes: shipped instruction, skill, and Command assets. |
-| An author requests the canonical interaction and E2E guidance | `dae070d` | Yes: compiled-CLI E2E bindings. |
-| An author requests the technical E2E design guidance | `23703e7` | Yes: compiled-CLI E2E bindings. |
-| A reviewer requests remediation-aware review guidance | `c0fd86d` | Yes: compiled-CLI E2E bindings. |
-| An agent requests machine-readable artifact guidance | `582eff5` | Yes: compiled-CLI E2E bindings. |
+| Canonical E2E guidance rejects weaker interface evidence | `0c764e3` | Yes: shipped instruction asset and step bindings. |
+| Design guidance requires the complete E2E setup record | `7a5e7e7` | Yes: shipped instruction asset and step bindings. |
+| Review guidance verifies semantic remediation | `5dfab14` | Yes: shipped instruction and review template assets. |
+| Machine-readable instructions describe the effective artifact | `20e7782` | Yes: CLI source, Commands, and step bindings. |
+| Artifact instructions reject an unsafe change context | `a7d05c4` | Yes: CLI source and step bindings. |
+| Project instruction overrides survive skill synchronization | `fd1d3ec` | Yes: compiled-CLI acceptance bindings and feature contract. |
+| Retrieval guidance distinguishes build capabilities | `8597d5e` | Yes: shipped instruction, skill, and Command assets. |
+| An author requests the canonical interaction and E2E guidance | `6da5348` | Yes: compiled-CLI E2E bindings. |
+| An author requests the technical E2E design guidance | `71f4056` | Yes: compiled-CLI E2E bindings. |
+| A reviewer requests remediation-aware review guidance | `47d7f89` | Yes: compiled-CLI E2E bindings. |
+| An agent requests machine-readable artifact guidance | `cf91807` | Yes: compiled-CLI E2E bindings. |
 
 All 11 checked scenario tasks have a commit and evidence. Documentation-only
 policy scenarios modify embedded production assets; they are not spec-only
@@ -88,11 +88,11 @@ No inventory entry is unmapped and no E2E scenario is over-produced.
 
 | Arc42 chapter or fact | Durable-doc source | `arc42.md` claim | `design.md` | `tasks.md` | Implementation evidence | Match? |
 |---|---|---|---|---|---|---|
-| Canonical complete E2E policy | ch.01 FR-30, ch.08.3a | Chapter 1 Yes; chapter 8 Yes | Source policy and derived-layer separation | Canonical guidance scenario | `assets/instructions/specs.md`, `d20b164` | Yes |
-| Instruction JSON contract | ch.03 interface, ch.06.3, ch.08.3b | Chapters 3, 5, 6, 10 Yes | `{id, generates, requires, instruction}` | JSON regular/E2E scenarios | `src/cli/instructions.rs`, `d4d2a16`, `582eff5` | Yes |
-| Semantic remediation evidence | ch.08.5e, ch.10 Q-67-Q-70 | Chapters 8, 10, 11 Yes | Class contracts and receipt | Review guidance scenario | `assets/instructions/review.md`, `assets/templates/review.md`, `68df916` | Yes |
-| Retrieval feature modes | ch.03, ch.11 R-47 | Chapters 3, 8, 11 Yes | Feature-aware guidance | Retrieval scenario | `assets/instructions/specs.md`, `0e89485` | Yes |
-| Override and generated snapshot behavior | ch.03, ch.08, ch.09 ADR-048 | Chapters 3, 8, 9, 10 Yes | Cascade and sync behavior | Override scenario | `src/config/cascade.rs`, `ac8f487`, `givn skills sync` | Yes |
+| Canonical complete E2E policy | ch.01 FR-30, ch.08.3a | Chapter 1 Yes; chapter 8 Yes | Source policy and derived-layer separation | Canonical guidance scenario | `assets/instructions/specs.md`, `0c764e3` | Yes |
+| Instruction JSON contract | ch.03 interface, ch.06.3, ch.08.3b | Chapters 3, 5, 6, 10 Yes | `{id, generates, requires, instruction}` | JSON regular/E2E scenarios | `src/cli/instructions.rs`, `20e7782`, `cf91807` | Yes |
+| Semantic remediation evidence | ch.08.5e, ch.10 Q-67-Q-70 | Chapters 8, 10, 11 Yes | Class contracts and receipt | Review guidance scenario | `assets/instructions/review.md`, `assets/templates/review.md`, `5dfab14` | Yes |
+| Retrieval feature modes | ch.03, ch.11 R-47 | Chapters 3, 8, 11 Yes | Feature-aware guidance | Retrieval scenario | `assets/instructions/specs.md`, `8597d5e` | Yes |
+| Override and generated snapshot behavior | ch.03, ch.08, ch.09 ADR-048 | Chapters 3, 8, 9, 10 Yes | Cascade and sync behavior | Override scenario | `src/config/cascade.rs`, `fd1d3ec`, `givn skills sync` | Yes |
 | No deployment change | ch.07 | Chapter 7 No | No deployment decision | No task | No deployment files changed | Yes |
 
 `ARC42 CONFORMANCE: CLEAN`

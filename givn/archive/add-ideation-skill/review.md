@@ -3,7 +3,7 @@
 ## Fabrication Audit
 
 **@e2e tag integrity**: the delivery scenario carries `@givn.added @e2e`;
-git history shows the tag present since creation (commit `09fb2a6`) and never
+git history shows the tag present since creation (commit `b81244e`) and never
 removed. PASS.
 
 **Step body scan**: `0` empty/no-op step bodies found across the touched step
@@ -16,14 +16,14 @@ existing, proven steps.
 
 | Task | Commit(s) | Touches production code? |
 |---|---|---|
-| Planning layer | `5139777` | Docs + spec delta (planning layer, pre-implementation by design) |
-| ships without any addon enabled | `34ba5ba` | Yes — `assets/skills/givn-ideation/SKILL.md.tmpl`, `src/skills/render.rs`, `tests/steps/prose_consolidation_steps.rs` |
-| phase ladder | `ae168f8` | Yes — template |
-| persona binding | `d8db969` + `3286667` | Yes — template |
-| topic state + handoff safety | `c5a8a91` | Yes — template |
-| explore wiring | `e8115d1` | Yes — both explore assets |
-| delivery `@e2e` | `09fb2a6` | Yes — `assets/commands/givn-ideation.md`, `src/skills/targets.rs` |
-| marker-ban fix (final verification) | `a8a92e4` | Yes — template, design/design-review/tasks records |
+| Planning layer | `b93f2c5` | Docs + spec delta (planning layer, pre-implementation by design) |
+| ships without any addon enabled | `06b1113` | Yes — `assets/skills/givn-ideation/SKILL.md.tmpl`, `src/skills/render.rs`, `tests/steps/prose_consolidation_steps.rs` |
+| phase ladder | `02e8817` | Yes — template |
+| persona binding | `f773046` + `cd37f6f` | Yes — template |
+| topic state + handoff safety | `4b6b79c` | Yes — template |
+| explore wiring | `3d9c53b` | Yes — both explore assets |
+| delivery `@e2e` | `b81244e` | Yes — `assets/commands/givn-ideation.md`, `src/skills/targets.rs` |
+| marker-ban fix (final verification) | `e7bf9e8` | Yes — template, design/design-review/tasks records |
 
 **Promised components**: skill template, command template,
 `default_skill_names()` entry, `default_command_names()` entry, explore

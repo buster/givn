@@ -28,16 +28,16 @@ through environment variables.
 
 | Scenario | Commit hash | Authoritative source touched? |
 |---|---|---|
-| Register the two step modules + strict-mode proof | `824940f` | Yes — step modules, `tests/steps/mod.rs` |
-| Search without the evidence flag prints no evidence lines | `2377f08` | Yes — step glue (`local NLI evidence is enabled`) |
-| Evidence search reports a BGE verdict per candidate | `8f7b961` | Yes — `src/main.rs`, `src/cli/spec.rs`, `src/spec/retrieval.rs` |
-| Evidence search reports an NLI verdict per candidate | `51cd570` | Yes — `src/spec/retrieval.rs` |
-| Absent BGE evidence is reported without a verdict | `73c39eb` | Yes — `src/spec/retrieval.rs` |
-| Evidence search without cross-encoders reports unavailable evidence | `a4e5057` | Yes — `src/spec/retrieval.rs` |
-| Candidates beyond the pair budget stay unscored | `e0324d8` | Yes — `src/spec/retrieval.rs` |
-| Over-limit search pair receives BGE token-cap evidence | `35cb301` | Yes — `src/spec/retrieval.rs`, search evidence steps |
-| Over-limit search pair receives NLI token-cap evidence | `2c27603` | Yes — `src/spec/retrieval.rs`, search evidence steps |
-| E2E: end-to-end evidence search through the real CLI | `853341b` | Yes — `tests/steps/search_evidence_e2e_steps.rs`, arc42 durable chapters |
+| Register the two step modules + strict-mode proof | `9e5dbab` | Yes — step modules, `tests/steps/mod.rs` |
+| Search without the evidence flag prints no evidence lines | `529c6cf` | Yes — step glue (`local NLI evidence is enabled`) |
+| Evidence search reports a BGE verdict per candidate | `454e532` | Yes — `src/main.rs`, `src/cli/spec.rs`, `src/spec/retrieval.rs` |
+| Evidence search reports an NLI verdict per candidate | `a54f4d1` | Yes — `src/spec/retrieval.rs` |
+| Absent BGE evidence is reported without a verdict | `c49c049` | Yes — `src/spec/retrieval.rs` |
+| Evidence search without cross-encoders reports unavailable evidence | `e6562d1` | Yes — `src/spec/retrieval.rs` |
+| Candidates beyond the pair budget stay unscored | `e56d1ba` | Yes — `src/spec/retrieval.rs` |
+| Over-limit search pair receives BGE token-cap evidence | `97514a7` | Yes — `src/spec/retrieval.rs`, search evidence steps |
+| Over-limit search pair receives NLI token-cap evidence | `04a3cef` | Yes — `src/spec/retrieval.rs`, search evidence steps |
+| E2E: end-to-end evidence search through the real CLI | `10cd8c5` | Yes — `tests/steps/search_evidence_e2e_steps.rs`, arc42 durable chapters |
 
 Every checked task maps to a real commit whose diff touches production source
 or the executable test glue; no spec-only or stub-only commit was used as a
@@ -112,16 +112,16 @@ fixture root and the CLI runs offline against stub model directories.
 
 The Arc42 addon is enabled. The change-level assessment names chapters 3, 6,
 8, 11, 12 plus README and the ADR-052/ADR-058 surface enumerations. The
-implementation evidence is the updated durable chapters in commit `853341b`:
+implementation evidence is the updated durable chapters in commit `10cd8c5`:
 
 | Arc42 chapter or fact | Durable-doc source | `arc42.md` claim | `design.md` treatment | `tasks.md` treatment | Implementation evidence | Match? |
 |---|---|---|---|---|---|---|
 | Context and Scope | `03-context-and-scope.md` | Extends the search surface | CLI flag and evidence block | E2E search scenario | Flag and rendered evidence block | Yes |
 | Runtime flow | `06-runtime-view.md` | New search → evidence flow | Evidence block after ranking | BGE/NLI scenario runs | `search_enabled` evidence branch | Yes |
 | Crosscutting | `08-crosscutting-concepts.md` | Renders the search surface in the index/second-stage section | Evidence rendering from the same run objects | BGE/NLI scenarios | Evidence output functions | Yes |
-| ADR surface enumeration | ADR-052, ADR-058 | Amend surface enumerations to include `spec search --evidence` | Flag existence in every build | E2E + regular scenarios | ADR files updated in `853341b` | Yes |
+| ADR surface enumeration | ADR-052, ADR-058 | Amend surface enumerations to include `spec search --evidence` | Flag existence in every build | E2E + regular scenarios | ADR files updated in `10cd8c5` | Yes |
 | Risks | `11-risks-and-technical-debt.md` | R-38 per-invocation second-stage model load behind the opt-in flag | XDG caches + unavailable fallback | Unavailable-evidence scenarios | Summary lines `BGE evidence: unavailable` / `NLI evidence: unavailable` | Yes |
-| Glossary | `12-glossary.md` | "Search evidence" term | Evidence block definition | Scenario wording | Glossary updated in `853341b` | Yes |
+| Glossary | `12-glossary.md` | "Search evidence" term | Evidence block definition | Scenario wording | Glossary updated in `10cd8c5` | Yes |
 
 - [x] Every row matches the durable chapter, the design, the task, and the implementation.
 - [x] The ADR-052/ADR-058 surface enumerations were amended and committed.

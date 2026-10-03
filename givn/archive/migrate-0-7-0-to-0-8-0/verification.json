@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "migrate-0-7-0-to-0-8-0",
   "status": "proven",
-  "candidate_revision": "5dc2469823803b5347d204e2daefa0be9384f9c8",
-  "tested_revision": "5dc2469823803b5347d204e2daefa0be9384f9c8",
+  "candidate_revision": "f0c5d3a2b9bdce33447b42edda40b126a558ec58",
+  "tested_revision": "f0c5d3a2b9bdce33447b42edda40b126a558ec58",
   "scopes": {
     "e2e": {
       "status": "passed",

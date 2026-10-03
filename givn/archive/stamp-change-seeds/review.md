@@ -9,7 +9,7 @@
 
 | Scope | Commit hash | Touches the repaired artifacts? |
 |---|---|---|
-| Seed conversion | `de82daeb` | yes (seven seeds, change artifacts) |
+| Seed conversion | `9a242dee` | yes (seven seeds, change artifacts) |
 
 **Promised-architecture cross-check** — the change promises converted
 provenance files, not a component: no production module changed.

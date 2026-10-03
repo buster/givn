@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "reshape-maintain-project",
   "status": "proven",
-  "candidate_revision": "d229d6ba31d5aa7ebe697bf531728189bf6cde47",
-  "tested_revision": "d229d6ba31d5aa7ebe697bf531728189bf6cde47",
+  "candidate_revision": "25c0b43ddfbd596f4f505c1a372a39f4aa3da749",
+  "tested_revision": "25c0b43ddfbd596f4f505c1a372a39f4aa3da749",
   "scopes": {
     "e2e": {
       "status": "passed",

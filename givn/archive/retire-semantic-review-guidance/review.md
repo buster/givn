@@ -10,7 +10,7 @@ bodies added.
 
 | Scenario | Commit hash | Touches production code? |
 |---|---|---|
-| Delta + guidance deletion + new steps | `c4714fe` | yes (assets, steps) |
+| Delta + guidance deletion + new steps | `9f5fcff` | yes (assets, steps) |
 | Post-archive verification | (archive commit) | permanent spec merge |
 
 **Promised-architecture cross-check** — no components promised; none built.

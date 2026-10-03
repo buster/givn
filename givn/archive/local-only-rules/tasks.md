@@ -20,7 +20,7 @@ candidate.
       complete.
 - [x] Runner strict mode: `.fail_on_skipped()` in `tests/features_runner.rs`
       (existing); the first delta run exited non-zero on the new scenarios.
-- [x] Planning artifacts committed. COMMIT: `bc9d0161` -- `docs(local-only-rules): plan the change`
+- [x] Planning artifacts committed. COMMIT: `55b3dcb1` -- `docs(local-only-rules): plan the change`
 
 ## Implementation
 
@@ -34,7 +34,7 @@ candidate.
       `tests/steps/local_only_rules_steps.rs`, `tests/steps/mod.rs`,
       `specs/fragments/fragment.md`, `specs/fragments/rules-policy.feature`.
       Targeted runs: 3 scenarios pass.
-- [x] COMMIT: `cc089b85` -- `feat(rules-policy): resolve the generated-rules policy`
+- [x] COMMIT: `73b5d226` -- `feat(rules-policy): resolve the generated-rules policy`
 
 ### local-only transition and setup (`initialize-project`, fragment `local-only-transition`)
 
@@ -47,7 +47,7 @@ candidate.
       `specs/fragments/local-only-transition.feature`,
       `specs/initialize-project/*`.
       Targeted runs: 5 scenarios pass.
-- [x] COMMIT: `04427cfb` -- `feat(local-only-transition): keep tracked rules out of the repository`
+- [x] COMMIT: `357c97b6` -- `feat(local-only-transition): keep tracked rules out of the repository`
 
 ### commit stage set (capability `attribute-commits`)
 
@@ -55,7 +55,7 @@ candidate.
       rules under local-only and still excludes `AGENTS.md` under versioned.
       Files: `src/cli/commit.rs`, `specs/fragments/attribute-commits.feature`.
       Targeted runs: 3 scenarios pass.
-- [x] COMMIT: `3647d32b` -- `feat(attribute-commits): stage project content only under local-only`
+- [x] COMMIT: `f94c26b8` -- `feat(attribute-commits): stage project content only under local-only`
 
 ### upgrade (`upgrade-a-project`)
 
@@ -69,7 +69,7 @@ candidate.
       `tests/steps/llm_attribution_installation_e2e_steps.rs`,
       `tests/steps/llm_attribution_e2e_steps.rs`.
       Targeted runs: 2 scenarios pass; e2e scope green.
-- [x] COMMIT: `fedf40b4` -- `feat(apply-a-managed-upgrade): publish a policy-aware managed revision`
+- [x] COMMIT: `0644838b` -- `feat(apply-a-managed-upgrade): publish a policy-aware managed revision`
 
 ### dedicated check (fragment `publication-cleanliness`)
 
@@ -78,7 +78,7 @@ candidate.
       occurrences. Files: `src/cli/check.rs`,
       `specs/fragments/publication-cleanliness.feature`.
       Targeted runs: 3 scenarios pass.
-- [x] COMMIT: `7487ebb2` -- `feat(publication-cleanliness): report tracked and historical rules`
+- [x] COMMIT: `ff7fb5cd` -- `feat(publication-cleanliness): report tracked and historical rules`
 
 ## Verification
 

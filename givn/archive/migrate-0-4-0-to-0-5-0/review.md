@@ -12,9 +12,9 @@ referenced per decision in the design-review evidence table).
 
 | Scenario | Commit hash | Touches production code? |
 |---|---|---|
-| Managed upgrade (Commit A) | `e9938d6` | config marker only |
-| Migration change (Commit B) | `817e948` | no |
-| Guidance regeneration | `3b55389` | generated outputs only |
+| Managed upgrade (Commit A) | `04d1065` | config marker only |
+| Migration change (Commit B) | `a567443` | no |
+| Guidance regeneration | `0dcf4df` | generated outputs only |
 | Artifacts completion | (artifacts commit) | no |
 
 **Promised-architecture cross-check** — no components promised; the bundle

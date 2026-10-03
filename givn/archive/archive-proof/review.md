@@ -24,10 +24,10 @@ commits, each touching production code or the executable test surface:
 
 | Scope | Commit hash | Touches production/test code? |
 |---|---|---|
-| Forward-only pipeline, Git wrapper, proof module, runner result, check/coverage/status/instructions | `9f136bc0` | yes (`src/`, `run-tests.sh`, `tests/features_runner.rs`) |
-| Step definitions and fixture migration for Git + result contracts | `56441e67` | yes (`tests/steps/`) |
-| ADR-070 acceptance, scope deltas, design/review guidance | `c3c35455` | docs + specs |
-| Implementation evidence, README/reference/workflow/CHANGELOG | `5b311e51` | docs |
+| Forward-only pipeline, Git wrapper, proof module, runner result, check/coverage/status/instructions | `fc8f9a74` | yes (`src/`, `run-tests.sh`, `tests/features_runner.rs`) |
+| Step definitions and fixture migration for Git + result contracts | `406ef043` | yes (`tests/steps/`) |
+| ADR-070 acceptance, scope deltas, design/review guidance | `e289ce8f` | docs + specs |
+| Implementation evidence, README/reference/workflow/CHANGELOG | `feeb778c` | docs |
 
 Deviation recorded: the planned one-commit-per-scenario rhythm was
 consolidated into capability-level commits because the archive pipeline change

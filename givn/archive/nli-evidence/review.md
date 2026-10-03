@@ -8,7 +8,7 @@ The audit was performed before relying on the checked task list.
 |---|---|---|
 | E2E tag integrity | The delta contains exactly five `@givn.added @nli @e2e` scenarios. The `@e2e` tag was never removed; only `@wip` was removed as each scenario completed. | CLEAN |
 | Empty/no-op step bodies | `tests/steps/nli_evidence_steps.rs` and `tests/steps/nli_evidence_e2e_steps.rs` contain no `unimplemented!`, `todo!`, empty body, bare `return`, or no-op step. The repository step modules were scanned for the same stub patterns. | CLEAN |
-| Checked task commits | Every scenario task names a commit touching `src/spec/retrieval.rs` or the real CLI E2E step module. Setup strict proof is recorded under `6c5fbf0`; the scenario commits are listed below. | CLEAN |
+| Checked task commits | Every scenario task names a commit touching `src/spec/retrieval.rs` or the real CLI E2E step module. Setup strict proof is recorded under `d96c0ed`; the scenario commits are listed below. | CLEAN |
 | Promised components | `src/spec/retrieval.rs`, `run-tests.sh`, `measure-coverage.sh`, `tests/steps/nli_evidence_steps.rs`, `tests/steps/nli_evidence_e2e_steps.rs`, and the delta feature all exist. | CLEAN |
 | Strict-mode proof | The targeted first run exited `101` at an undefined step under `.fail_on_skipped()`. The setup evidence is recorded in `tasks.md`. | CLEAN |
 | E2E primary assertions | All five E2E scenarios invoke the compiled `givn` CLI as a subprocess and assert CLI stdout/exit status. The blocking report is secondary evidence for the CLI action. | CLEAN |
@@ -20,22 +20,22 @@ The audit was performed before relying on the checked task list.
 
 | Scenario | Production/e2e commit |
 |---|---|
-| NLI reports a symmetric probability summary from both directions | `a0cbb6a` |
-| BGE and NLI jointly reduce the recommended candidate set | `e42afc6` |
-| An unavailable NLI layer keeps a combined candidate blocking | `6d4dd95` |
-| NLI refuses an overflowing bounded pair pool before model loading | `3f7bf6e` |
-| NLI keeps candidates outside a partial bounded pool blocking | `77fceea` |
-| NLI JSON preserves the raw E5 contract and uses the NLI schema extension | `b5f1c20` |
-| Disabling NLI preserves the E5-only contract in an NLI-capable build | `5c2fb58` |
-| Missing NLI artifacts preserve the explicit E5 fallback | `2760564` |
-| The NLI admission boundary includes a symmetric entailment probability of 0.5000 | `71ecbfb` |
-| An NLI-recommended candidate still blocks unresolved semantic review | `4360171`, follow-up `a4ee76c` |
-| The independent NLI capability owns the legacy diagnostic selector | `b6b7aac`, follow-up `2d14cea` |
-| NLI reduces permanent exploration candidates without changing E5 raw results | `444ef0e` |
-| NLI reduces change-aware exploration candidates without changing E5 raw results | `d1dc253` |
-| NLI reduces advisory review candidates without assigning a Givn class | `39b18ee` |
-| NLI filtered evidence does not block the blocking review | `002887d` |
-| NLI uses the bounded E5 neighbour union for the permanent duplicate audit | `bcef01a`, follow-up `ac144ca` |
+| NLI reports a symmetric probability summary from both directions | `1b98db8` |
+| BGE and NLI jointly reduce the recommended candidate set | `719b4a5` |
+| An unavailable NLI layer keeps a combined candidate blocking | `96d9577` |
+| NLI refuses an overflowing bounded pair pool before model loading | `fa5dd2b` |
+| NLI keeps candidates outside a partial bounded pool blocking | `e7caec8` |
+| NLI JSON preserves the raw E5 contract and uses the NLI schema extension | `b75d7c7` |
+| Disabling NLI preserves the E5-only contract in an NLI-capable build | `aca849d` |
+| Missing NLI artifacts preserve the explicit E5 fallback | `e69522f` |
+| The NLI admission boundary includes a symmetric entailment probability of 0.5000 | `b78dbe8` |
+| An NLI-recommended candidate still blocks unresolved semantic review | `cd50f78`, follow-up `effa9a4` |
+| The independent NLI capability owns the legacy diagnostic selector | `59b874f`, follow-up `aaaaca6` |
+| NLI reduces permanent exploration candidates without changing E5 raw results | `d1bb603` |
+| NLI reduces change-aware exploration candidates without changing E5 raw results | `8654aa9` |
+| NLI reduces advisory review candidates without assigning a Givn class | `96a44cc` |
+| NLI filtered evidence does not block the blocking review | `f8d6287` |
+| NLI uses the bounded E5 neighbour union for the permanent duplicate audit | `3da16fe`, follow-up `e037fb0` |
 
 ## Interaction Coverage
 

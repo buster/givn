@@ -53,7 +53,7 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The assertion now compares the CLI output with `env!("CARGO_PKG_VERSION")`; the rerun passed with `1 scenario (1 passed)`.
         ```
-- [x] COMMIT: `3f02170` — `chore(release): The release identifies itself as its package version`
+- [x] COMMIT: `ccb9cd3` — `chore(release): The release identifies itself as its package version`
 
 ---
 
@@ -83,9 +83,9 @@ runner rejects an unimplemented step before any scenario work.
         ```
         Targeted scenario rerun passed after cleanup; default-feature clippy passed with no warnings, and the all-feature blocking review reported zero candidates after the permanent-only scope fix.
         ```
-  - [x] COMMIT: `65ece69` — `feat(release): enable all declared features by default`
-  - [x] COMMIT: `426f2a1` — `fix(review): exclude permanent-only semantic pairs`
-  - [x] COMMIT: `082d3db` — `fix(review): keep feature matrix warning-free`
+  - [x] COMMIT: `19d9fd7` — `feat(release): enable all declared features by default`
+  - [x] COMMIT: `163653e` — `fix(review): exclude permanent-only semantic pairs`
+  - [x] COMMIT: `ef618c9` — `fix(review): keep feature matrix warning-free`
 
 ---
 
@@ -108,7 +108,7 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The changelog separates shipped behavior from the incomplete ADR-063/distribution boundary; the rerun passed with `1 scenario (1 passed)`.
         ```
-  - [x] COMMIT: `65d0b62` — `docs(release): The changelog describes the complete 0.3.0 release`
+  - [x] COMMIT: `d234922` — `docs(release): The changelog describes the complete 0.3.0 release`
 
 ---
 
@@ -133,7 +133,7 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The guide has five ordered copyable prompts, explicit evidence checks, and domain/ADR edit prohibitions; the rerun passed with `1 scenario (1 passed)`.
         ```
-  - [x] COMMIT: `2eb8248` — `docs(migration): The migration guide is an executable prompt sequence`
+  - [x] COMMIT: `b4c33bb` — `docs(migration): The migration guide is an executable prompt sequence`
 
 ---
 
@@ -156,7 +156,7 @@ runner rejects an unimplemented step before any scenario work.
         ```
         `cargo test --lib cli::migration::tests` passed: `6 tests passed`; the release scenario rerun passed with `1 scenario (1 passed)`.
         ```
-  - [x] COMMIT: `3989ebe` — `feat(migration): define release-owned migration catalog`
+  - [x] COMMIT: `e49f253` — `feat(migration): define release-owned migration catalog`
 
 ---
 
@@ -185,8 +185,8 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The regression RED run with `.opencode/` and `AGENTS.md` ignored failed at the success assertion because normal `git add` rejected the ignored managed paths. After the fix, the targeted rerun passed with `1 scenario (1 passed)` and `9 steps (9 passed)`; `git add -f --` is still given only explicit relative managed paths.
         ```
-  - [x] COMMIT: `6157355` — `feat(upgrade): A clean 0.2.0 project receives a reviewable 0.3.0 migration plan`
-  - [x] COMMIT: `787db96` — `fix(upgrade): stage ignored managed files`
+  - [x] COMMIT: `2062b46` — `feat(upgrade): A clean 0.2.0 project receives a reviewable 0.3.0 migration plan`
+  - [x] COMMIT: `65c1c71` — `fix(upgrade): stage ignored managed files`
 
 ---
 
@@ -210,7 +210,7 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The rerun passed with `1 scenario (1 passed)`; no migration-specific Rust conditional remains in the upgrade dispatcher, and `managed_upgrade_without_changes_does_not_create_empty_commit` passed without producing a second Git commit.
         ```
-  - [x] COMMIT: `c678344` — `test(migration): cover empty managed upgrade`
+  - [x] COMMIT: `70ec5bb` — `test(migration): cover empty managed upgrade`
 
 ---
 
@@ -233,7 +233,7 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The rerun passed with `1 scenario (1 passed)`; `ensure_clean_git` is shared by both automatic migration guards.
         ```
-  - [x] COMMIT: `86be977` — `fix(upgrade): An unclean project is protected from automatic migration commits`
+  - [x] COMMIT: `33bb7af` — `fix(upgrade): An unclean project is protected from automatic migration commits`
 
 ---
 
@@ -257,7 +257,7 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The rerun passed with `1 scenario (1 passed)`; active plan detection is centralized in `pending_migration_change`, while `migration_exists` covers the deterministic aggregate id.
         ```
-  - [x] COMMIT: `8fa1b29` — `fix(upgrade): Repeating the upgrade does not duplicate the migration`
+  - [x] COMMIT: `a3f7a6c` — `fix(upgrade): Repeating the upgrade does not duplicate the migration`
 
 ---
 
@@ -280,7 +280,7 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The rerun passed with `1 scenario (1 passed)`; the existing shared `ensure_clean_git` preflight distinguishes the two diagnostics and no migration folder is created.
         ```
-  - [x] COMMIT: `56f8b09` — `fix(upgrade): A project outside Git is protected from a partial automatic migration`
+  - [x] COMMIT: `a81d89b` — `fix(upgrade): A project outside Git is protected from a partial automatic migration`
 
 ---
 
@@ -304,7 +304,7 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The rerun passed with `1 scenario (1 passed)`; the production diagnostic now names the preserved proposal and design, and aggregate plan generation is independent of a fixed route constant.
         ```
-  - [x] COMMIT: `24bd7fa` — `fix(upgrade): An existing migration plan is never overwritten`
+  - [x] COMMIT: `52d82e1` — `fix(upgrade): An existing migration plan is never overwritten`
 
 ---
 
@@ -327,7 +327,7 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The rerun passed with `1 scenario (1 passed)`; the generated design embeds the public guide and `givn graph` still exposes design-review, tasks, and review.
         ```
-  - [x] COMMIT: `9193317` — `docs(upgrade): The migration change remains honest until the project review passes`
+  - [x] COMMIT: `8ae91e2` — `docs(upgrade): The migration change remains honest until the project review passes`
 
 ---
 
@@ -352,7 +352,7 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The rerun passed with `1 scenario (1 passed)` using the retrieval-enabled binary; no-product-delta handling is conditioned on `.givn-skip` containing `specs`.
         ```
-  - [x] COMMIT: `062eb7f` — `fix(archive): A completed maintenance migration can be archived without a product specification`
+  - [x] COMMIT: `f03a883` — `fix(archive): A completed maintenance migration can be archived without a product specification`
 
 ---
 

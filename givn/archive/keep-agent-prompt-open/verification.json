@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "keep-agent-prompt-open",
   "status": "proven",
-  "candidate_revision": "d107b0099e1d0088bcab8228082f77caf9ab91c5",
-  "tested_revision": "d107b0099e1d0088bcab8228082f77caf9ab91c5",
+  "candidate_revision": "5dca13694b64691874e5bcabf3f40603ec783778",
+  "tested_revision": "5dca13694b64691874e5bcabf3f40603ec783778",
   "scopes": {
     "e2e": {
       "status": "passed",

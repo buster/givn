@@ -9,7 +9,7 @@
 
 | Scope | Commit hash | Touches the repaired artifacts? |
 |---|---|---|
-| Persona conversion | `b4f4fc89` | yes (three persona files, change artifacts) |
+| Persona conversion | `d906c8a7` | yes (three persona files, change artifacts) |
 
 **Promised-architecture cross-check** — the change promises converted persona
 records, not a component: no production module changed.

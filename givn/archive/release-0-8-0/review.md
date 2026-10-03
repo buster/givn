@@ -13,10 +13,10 @@ code:
 
 | Scope | Commit hash | Touches production/release code? |
 |---|---|---|
-| Formatting and lint on the 0.8.0 rule changes | `4b7373f5` | yes (Rust sources and step files) |
-| 0.8.0 version bump and changelog | `9c8694bf` | yes (`Cargo.toml`, `Cargo.lock`, `givn/config.yaml`, `CHANGELOG.md`) |
-| Catalog entry, route test, consumer bundle | `ee39051f` | yes (`assets/migrations/`, `src/cli/migration.rs`) |
-| Human-facing migration guide and README | `7b227a3a` | yes (docs) |
+| Formatting and lint on the 0.8.0 rule changes | `a3a97ce9` | yes (Rust sources and step files) |
+| 0.8.0 version bump and changelog | `5548eeda` | yes (`Cargo.toml`, `Cargo.lock`, `givn/config.yaml`, `CHANGELOG.md`) |
+| Catalog entry, route test, consumer bundle | `1bfecdc4` | yes (`assets/migrations/`, `src/cli/migration.rs`) |
+| Human-facing migration guide and README | `3c0fbfe7` | yes (docs) |
 | Task evidence | `b0a6ac31`-range chores | tasks only |
 
 **Promised-architecture cross-check** — the change promises versioned data,

@@ -46,7 +46,7 @@ Files scanned: `tests/steps/semantic_review_output_steps.rs`,
 | --- | --- |
 | 0. `@e2e` tag integrity | Clean. All five `@givn.added @e2e` scenarios at feature lines 221/229/237/245/253 retain `@e2e` in tracked state; no tag removal in history. `verify.e2e_command: "./run-tests.sh --e2e"` configured (commands.yaml). |
 | 1. Empty/no-op step bodies | None found. No `{}`-only bodies, bare `pass`, or bare `return` in either step file; Then steps carry assertion libraries (assert macros / helper asserts). |
-| 2. Task commits touch production source | 34 unique commit hashes recorded in tasks.md. Production `src/` is touched (e.g. `1d756bc` touches `src/main.rs`, `src/cli/spec.rs`, `src/spec/retrieval.rs`; plus `480b6ab`, `c0c95bc`, `c9bf0e3`, `a2d94fe`, `c7f178e`); no task commit is spec-only. |
+| 2. Task commits touch production source | 34 unique commit hashes recorded in tasks.md. Production `src/` is touched (e.g. `7a63b7e` touches `src/main.rs`, `src/cli/spec.rs`, `src/spec/retrieval.rs`; plus `c3a84e1`, `6b515fb`, `f3f5161`, `e351cbd`, `8aee752`); no task commit is spec-only. |
 | 3. design.md components exist | The design adds no new build block; the reporting policy folds into the existing `spec::retrieval` responsibility row. No phantom component promised. |
 | 4. Strict-mode proof | Present in tasks.md: mechanism `GivnWorld::cucumber().fail_on_skipped()` (features_runner.rs:20), proof run exits non-zero (`Step panicked. Captured output: not implemented`, exit 101). |
 | 5. `@e2e` assertions | Real-interface: each e2e scenario drives the compiled CLI via `common::run_givn_with_envs` (`env!("CARGO_BIN_EXE_givn")` subprocess) and asserts stdout, stderr, exit code, and filesystem state. No repository-only e2e. |
@@ -96,7 +96,7 @@ cfg alternates; no unreachable write-only code found.
 
 ### Bucket 2 — missing test coverage (resolved)
 
-Three scenarios added during this review (commit `60e995a`), RED/GREEN/
+Three scenarios added during this review (commit `0ac26f3`), RED/GREEN/
 REFACTOR-complete, closing the deterministic gaps:
 
 | Gap (line) | Scenario added |

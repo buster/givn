@@ -5,7 +5,7 @@
 - @e2e tag integrity: the delta adds no e2e scenario (a variant pin, no new
   inventory action); no tags were removed.
 - Empty/no-op step bodies: 0 (no new bindings; all steps reused).
-- Task commits: c872f0b5 (delta + permanent alignment) and 43efbe93 (the
+- Task commits: 02409078 (delta + permanent alignment) and 79c04e50 (the
   message change) both touch production source.
 - design.md components: the renamed integrity check exists; no promised file
   is missing.

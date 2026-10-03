@@ -17,38 +17,38 @@ matching commit that touches production source:
 
 | Scenario | Commit hash | Touches production code? |
 |---|---|---|
-| Setup: strict-mode proof and skeletons | `3c62d3be` | Test runner sources (`tests/steps/`) |
-| Canonical policy classifies a browser-rendered page as a Web UI | `e1d2a2f3` | `assets/instructions/specs.md` |
-| Canonical policy requires a rendered-state assertion | `4c944227` | `assets/instructions/specs.md` |
-| Canonical policy requires evidence for every declared UI state | `1331246f` | `assets/instructions/specs.md` |
-| Canonical policy refuses a silent deferral of a mandatory check | `49286197` | `assets/instructions/specs.md` |
-| Design guidance classifies a browser-rendered screen as a Web UI | `b82fe9b5` | `assets/instructions/design.md` |
-| Design guidance names the default browser driver | `5536e8c0` | `assets/instructions/design.md` |
-| Design guidance requires breakpoints and accessibility | `a9385537` | `assets/instructions/design.md` |
-| Design guidance requires a driver for every Web UI matrix row | `0a4360ff` | `assets/instructions/design.md` |
-| Design guidance names the user-visible persona boundary | `54a2e9a7` | `assets/instructions/design.md` |
-| Design-review guidance tests the opposite interface classification | `d7fa4b6a` | `assets/instructions/design-review.md` |
-| Design-review guidance records the persona disposition | `cc8bc2a4` | `assets/instructions/design-review.md` |
-| Design-review guidance requires an operator question before a deferral | `3b3741df` | `assets/instructions/design-review.md` |
-| Proposal guidance requires confirmed personas or a reasoned none | `9d93318f` | `assets/instructions/proposal.md` |
-| The design template carries the state, breakpoint, and accessibility lines | `db7678ed` | `assets/templates/design.md` |
-| The proposal template carries the persona confirmation line | `d8471eca` | `assets/templates/proposal.md` + step |
-| The review template carries the persona disposition and deferral markers | `9591a6e3` | `assets/templates/review.md` |
-| The design-review template carries the persona disposition table | `7f02f539` | `assets/templates/design-review.md` |
-| Synchronized authoring guidance carries the classification, driver, and persona rules | `2b461bbf` | `assets/skills/{givn-design,givn-design-review,givn-propose}/SKILL.md.tmpl` |
-| Review guidance tests the opposite interface classification | `1e137a8e` | `assets/instructions/review.md` |
-| Review guidance fails a deferral without an operator decision | `89370d57` | `assets/instructions/review.md` |
-| Review guidance records the persona disposition | `059e832a` | `assets/instructions/review.md` |
-| Review guidance names the state screenshots the vision review saw | `148a2a93` | `assets/instructions/review.md` + `assets/skills/givn-steps/SKILL.md.tmpl` |
-| A web contract with missing state evidence fails review | `642e0c33` | `src/integrity_hook.rs` + steps |
-| A web contract with complete state evidence passes review | `8d7f5f94` | Fixture steps (paired with `642e0c33`) |
-| A visual change without a persona disposition fails review | `5d4e9d3e` | `src/integrity_hook.rs` + steps |
-| A visual change with a confirmed persona disposition passes review | `cdc99ebd` | Fixture evidence (paired with `5d4e9d3e`) |
-| A visual interface with an empty persona disposition fails review | `9dd24f65` | Fixture steps |
-| An empty state screenshot fails review | `befb6bd1` | Fixture steps |
-| A deferral without an operator decision fails review | `dbd68e52` | `src/integrity_hook.rs` + steps |
-| A deferral with an operator decision passes review | `170c5b4e` | Fixture evidence (paired with `dbd68e52`) |
-| Finalization: tasks, formatting, agent integrations | `016ea64e` | Regenerated skills, README, tasks |
+| Setup: strict-mode proof and skeletons | `c3c8671c` | Test runner sources (`tests/steps/`) |
+| Canonical policy classifies a browser-rendered page as a Web UI | `80b26f4d` | `assets/instructions/specs.md` |
+| Canonical policy requires a rendered-state assertion | `ad8a7a70` | `assets/instructions/specs.md` |
+| Canonical policy requires evidence for every declared UI state | `f6828d4a` | `assets/instructions/specs.md` |
+| Canonical policy refuses a silent deferral of a mandatory check | `643e7f68` | `assets/instructions/specs.md` |
+| Design guidance classifies a browser-rendered screen as a Web UI | `1892e856` | `assets/instructions/design.md` |
+| Design guidance names the default browser driver | `c64276fb` | `assets/instructions/design.md` |
+| Design guidance requires breakpoints and accessibility | `2b1e7989` | `assets/instructions/design.md` |
+| Design guidance requires a driver for every Web UI matrix row | `d4131860` | `assets/instructions/design.md` |
+| Design guidance names the user-visible persona boundary | `73e37e14` | `assets/instructions/design.md` |
+| Design-review guidance tests the opposite interface classification | `8eae555b` | `assets/instructions/design-review.md` |
+| Design-review guidance records the persona disposition | `4f88fa0c` | `assets/instructions/design-review.md` |
+| Design-review guidance requires an operator question before a deferral | `bdc394d0` | `assets/instructions/design-review.md` |
+| Proposal guidance requires confirmed personas or a reasoned none | `a2c228ba` | `assets/instructions/proposal.md` |
+| The design template carries the state, breakpoint, and accessibility lines | `dbc6df55` | `assets/templates/design.md` |
+| The proposal template carries the persona confirmation line | `88c37a1f` | `assets/templates/proposal.md` + step |
+| The review template carries the persona disposition and deferral markers | `d2d7512f` | `assets/templates/review.md` |
+| The design-review template carries the persona disposition table | `07640d33` | `assets/templates/design-review.md` |
+| Synchronized authoring guidance carries the classification, driver, and persona rules | `5f3f5818` | `assets/skills/{givn-design,givn-design-review,givn-propose}/SKILL.md.tmpl` |
+| Review guidance tests the opposite interface classification | `83f36289` | `assets/instructions/review.md` |
+| Review guidance fails a deferral without an operator decision | `ab6a9d11` | `assets/instructions/review.md` |
+| Review guidance records the persona disposition | `7c0234c9` | `assets/instructions/review.md` |
+| Review guidance names the state screenshots the vision review saw | `d47d1ec7` | `assets/instructions/review.md` + `assets/skills/givn-steps/SKILL.md.tmpl` |
+| A web contract with missing state evidence fails review | `af53dd01` | `src/integrity_hook.rs` + steps |
+| A web contract with complete state evidence passes review | `084bdb24` | Fixture steps (paired with `af53dd01`) |
+| A visual change without a persona disposition fails review | `3eb3309c` | `src/integrity_hook.rs` + steps |
+| A visual change with a confirmed persona disposition passes review | `c200d5bb` | Fixture evidence (paired with `3eb3309c`) |
+| A visual interface with an empty persona disposition fails review | `f4bf6157` | Fixture steps |
+| An empty state screenshot fails review | `47e27e25` | Fixture steps |
+| A deferral without an operator decision fails review | `04a91eb7` | `src/integrity_hook.rs` + steps |
+| A deferral with an operator decision passes review | `a1d2338e` | Fixture evidence (paired with `04a91eb7`) |
+| Finalization: tasks, formatting, agent integrations | `2cb5089a` | Regenerated skills, README, tasks |
 
 **Promised-architecture cross-check** — every component design.md named
 exists:

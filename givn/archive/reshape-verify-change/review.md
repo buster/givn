@@ -9,7 +9,7 @@
 
 | Scope | Commit hash | Touches the release artifacts? |
 |---|---|---|
-| Reshape and renames | `de080707` | yes (verify-change narrative, three renamed features) |
+| Reshape and renames | `a3b5f547` | yes (verify-change narrative, three renamed features) |
 
 **Promised-architecture cross-check** — the change promises narrative and
 naming repairs, not a component: no production module changed.

@@ -30,14 +30,14 @@ the decision is not re-opened.
 
 | # | Change | Source findings | Depends on | Status |
 |---|---|---|---|---|
-| 1 | [dialog-question-quality](01-dialog-question-quality.md) | Terse unanswerable questions (T1 A, T1 B questions, T1 C) | — | archived (proven, `b97669e0`) |
-| 2 | [seed-artifact-lifecycle](02-seed-artifact-lifecycle.md) | T1 B seeds + seed lifecycle (M2 A) | 1 | archived (proven, `3497b37a`) |
-| 3 | [term-introduction-discipline](03-term-introduction-discipline.md) | Term proliferation (T2 options 2 and 4) | 1 | archived (proven, `56e1e588`) |
-| 4 | [use-case-model-scoping](04-use-case-model-scoping.md) | Use-case scoping (T3 option A) | 1 | archived (proven, `fe2a5a10`) |
-| 5 | [adr-qualification-hardening](05-adr-qualification-hardening.md) | ADR overuse (T4 options A and C) | 4 | archived (proven, `fbace10f`) |
-| 6 | [persona-identity-reuse](06-persona-identity-reuse.md) | Persona fragmentation (T5 options 1, 2, 4) | 4 | archived (proven, `dd8ac2fb`) |
-| 7 | [guarantee-question-traceability](07-guarantee-question-traceability.md) | Guarantees over open prerequisites (M5 options A and B) | 2, 4 | archived (proven, b6b05671) |
-| 8 | [finding-severity-routing-signal](08-finding-severity-routing-signal.md) | Ignored advisory output (M6 options A and B) | — | archived (proven, ae245afa) |
+| 1 | [dialog-question-quality](01-dialog-question-quality.md) | Terse unanswerable questions (T1 A, T1 B questions, T1 C) | — | archived (proven, `3638e015`) |
+| 2 | [seed-artifact-lifecycle](02-seed-artifact-lifecycle.md) | T1 B seeds + seed lifecycle (M2 A) | 1 | archived (proven, `34b899ea`) |
+| 3 | [term-introduction-discipline](03-term-introduction-discipline.md) | Term proliferation (T2 options 2 and 4) | 1 | archived (proven, `569addaa`) |
+| 4 | [use-case-model-scoping](04-use-case-model-scoping.md) | Use-case scoping (T3 option A) | 1 | archived (proven, `0a1b2d58`) |
+| 5 | [adr-qualification-hardening](05-adr-qualification-hardening.md) | ADR overuse (T4 options A and C) | 4 | archived (proven, `9946cbba`) |
+| 6 | [persona-identity-reuse](06-persona-identity-reuse.md) | Persona fragmentation (T5 options 1, 2, 4) | 4 | archived (proven, `77d381e1`) |
+| 7 | [guarantee-question-traceability](07-guarantee-question-traceability.md) | Guarantees over open prerequisites (M5 options A and B) | 2, 4 | archived (proven, ab9b323d) |
+| 8 | [finding-severity-routing-signal](08-finding-severity-routing-signal.md) | Ignored advisory output (M6 options A and B) | — | archived (proven, 7b531199) |
 
 Ordering rationale:
 

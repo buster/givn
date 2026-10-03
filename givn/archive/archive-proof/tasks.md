@@ -479,12 +479,12 @@ GIVN_RESULT_FILE=/tmp/result.json GIVN_FEATURES=givn/specs/fragments/llm-attribu
 
 Committed implementation:
 
-- `9f136bc0` -- forward-only archive pipeline, Git wrapper, proof module,
+- `fc8f9a74` -- forward-only archive pipeline, Git wrapper, proof module,
   runner-result support, review check trim, coverage without rollback,
   status/instructions projection.
-- `56441e67` -- archive-proof step definitions plus the git and result-contract
+- `406ef043` -- archive-proof step definitions plus the git and result-contract
   fixture migration.
-- `c3c35455` -- ADR-070 acceptance, the three scope-addition deltas, design and
+- `e289ce8f` -- ADR-070 acceptance, the three scope-addition deltas, design and
   design-review update, and the review guidance update.
 
 ## Commits
@@ -494,7 +494,7 @@ commit in this branch and touches production code or the executable test
 surface. The scenario sections above record the RED/GREEN/REFACTOR
 evidence for every behavior they cover.
 
-- [x] COMMIT: `9f136bc0` -- `feat(archive-proof): forward-only archive with candidate commit and verification receipt`
-- [x] COMMIT: `56441e67` -- `test(archive-proof): add archive proof steps and migrate archive fixtures to git and result contracts`
-- [x] COMMIT: `c3c35455` -- `docs(archive-proof): accept ADR-070, add scope deltas, and update review guidance`
-- [x] COMMIT: `5b311e51` -- `docs(archive-proof): record implementation evidence and user-facing docs`
+- [x] COMMIT: `fc8f9a74` -- `feat(archive-proof): forward-only archive with candidate commit and verification receipt`
+- [x] COMMIT: `406ef043` -- `test(archive-proof): add archive proof steps and migrate archive fixtures to git and result contracts`
+- [x] COMMIT: `e289ce8f` -- `docs(archive-proof): accept ADR-070, add scope deltas, and update review guidance`
+- [x] COMMIT: `feeb778c` -- `docs(archive-proof): record implementation evidence and user-facing docs`

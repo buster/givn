@@ -11,11 +11,11 @@ its evidence:
 
 | Scope | Commit hash | Touches the release artifacts? |
 |---|---|---|
-| Release-record rename frees the canonical ID | `b5cce629` | yes (archive record) |
-| Marker simulation for the real upgrade | `22191b7c` | yes (`givn/config.yaml`) |
-| Commit A: managed refresh | `2bc63c10` | yes (managed files) |
-| Commit B: generated plan | `c70c74e6` | yes (the change) |
-| Inventory, ADR verdicts, term evidence | `448a48a5` | yes (`design.md`, `arc42.md`, `domain-terms.md`) |
+| Release-record rename frees the canonical ID | `0705565a` | yes (archive record) |
+| Marker simulation for the real upgrade | `f1a1336c` | yes (`givn/config.yaml`) |
+| Commit A: managed refresh | `ea739125` | yes (managed files) |
+| Commit B: generated plan | `62ff089b` | yes (the change) |
+| Inventory, ADR verdicts, term evidence | `51a42418` | yes (`design.md`, `arc42.md`, `domain-terms.md`) |
 | Task evidence and review | this commit | tasks and review only |
 
 **Promised-architecture cross-check** — the change promises an inventory and

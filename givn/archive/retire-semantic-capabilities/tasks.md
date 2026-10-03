@@ -10,8 +10,8 @@ and no step definitions to write.
 ## Setup
 
 - [x] Set up: confirm the 15 retirement deltas exist under `specs/<cap>/<cap>.feature` with the original Feature lines, zero scenarios, and `@<cap>` tags matching the directory names exactly. `givn lint --change retire-semantic-capabilities` clean.
-  - [x] COMMIT: `03d8eab`
-  - [x] COMMIT: `d870968`
+  - [x] COMMIT: `cf3257c`
+  - [x] COMMIT: `c587638`
 
 ## Retirement deltas
 

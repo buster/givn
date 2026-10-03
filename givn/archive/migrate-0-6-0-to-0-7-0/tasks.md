@@ -23,7 +23,7 @@ conditionals, and the maintenance LLM owns project-specific decisions.
 - [x] `Cargo.toml` and `Cargo.lock` at 0.7.0; `givn/config.yaml` marker
       0.7.0; `CHANGELOG.md` 0.7.0 section. Evidence: `cargo check --locked`
       passes and `givn --version` reports 0.7.0.
-- [x] COMMIT: `53454c9e` -- `feat(migrate-0-6-0-to-0-7-0): release 0.7.0 with the archive-proof migration bundle`
+- [x] COMMIT: `c6ac505c` -- `feat(migrate-0-6-0-to-0-7-0): release 0.7.0 with the archive-proof migration bundle`
 
 ### Catalog entry
 
@@ -40,14 +40,14 @@ conditionals, and the maintenance LLM owns project-specific decisions.
       sources, command routing, Git publication boundary, validation,
       blocking checks, forward-repair guidance, and the retained evidence
       file. Rules mirror `proof::RunnerResult::read`.
-- [x] COMMIT: `53454c9e` -- `feat(migrate-0-6-0-to-0-7-0): release 0.7.0 with the archive-proof migration bundle`
+- [x] COMMIT: `c6ac505c` -- `feat(migrate-0-6-0-to-0-7-0): release 0.7.0 with the archive-proof migration bundle`
 
 ### Documentation
 
 - [x] `CHANGELOG.md` names the bundle; `docs/migrations/README.md` names the
       current bundle instead of the stale 0.3.0-to-0.4.0 claim; the glossary
       symbol points at `proof::RunnerResult::read`.
-- [x] COMMIT: `31719f87` -- `fix(migrate-0-6-0-to-0-7-0): harden bundle guidance and aggregate titles`
+- [x] COMMIT: `e614781b` -- `fix(migrate-0-6-0-to-0-7-0): harden bundle guidance and aggregate titles`
 
 ### Aggregate renderer fix
 
@@ -55,7 +55,7 @@ conditionals, and the maintenance LLM owns project-specific decisions.
       with the final change id instead of the `.tmp-<pid>` staging name;
       regression test `aggregate_titles_use_the_change_id_not_the_staging_dir`
       passes.
-- [x] COMMIT: `31719f87` -- `fix(migrate-0-6-0-to-0-7-0): harden bundle guidance and aggregate titles`
+- [x] COMMIT: `e614781b` -- `fix(migrate-0-6-0-to-0-7-0): harden bundle guidance and aggregate titles`
 
 ## Verification
 

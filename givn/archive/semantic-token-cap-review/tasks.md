@@ -11,7 +11,7 @@
   - REFACTOR command: `cargo fmt --check`
   - REFACTOR output: Deferred to final verification; setup changes are formatted by the same check.
   - Production files: None; existing strict runner and command wiring were retained.
-  - Commit: `a783bc3`
+  - Commit: `de09b28`
 - [x] Create one regular step-definition file and one E2E step-definition file
       for `semantic-token-cap-review`; register both modules without empty step
       bodies.
@@ -22,7 +22,7 @@
   - REFACTOR command: `cargo fmt --check`
   - REFACTOR output: Deferred to final verification; no empty or no-op step bodies exist.
   - Production files: `tests/steps/semantic_token_cap_review_steps.rs`, `tests/steps/semantic_token_cap_review_e2e_steps.rs`, `tests/steps/mod.rs`, `run-tests.sh`, active feature tags.
-  - Commit: `a783bc3`
+  - Commit: `de09b28`
 
 ## Scenario: Permanent duplicate audit preserves BGE evidence when NLI reaches the cap
 
@@ -38,7 +38,7 @@
 - [x] REFACTOR: simplify without changing behavior; rerun only this scenario.
   - Command: `cargo fmt --all && GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --name "Permanent duplicate audit preserves BGE evidence when NLI reaches the cap"`
   - Output: Zero exit after formatting; `1 feature`, `1 scenario (1 passed)`, `13 steps (13 passed)`.
-- [x] COMMIT: `b233079` — record the atomic scenario commit.
+- [x] COMMIT: `99532a9` — record the atomic scenario commit.
 
 ## Scenario: Exactly 512 tokens keeps normal second-stage behavior
 
@@ -54,7 +54,7 @@
 - [x] REFACTOR: simplify without changing behavior; rerun only this scenario.
   - Command: `cargo fmt --all && GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --name "Exactly 512 tokens keeps normal second-stage behavior"`
   - Output: Zero exit after formatting; `1 feature`, `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [x] COMMIT: `87baf9f` — record the atomic scenario commit.
+- [x] COMMIT: `c037971` — record the atomic scenario commit.
 
 ## E2E Setup
 
@@ -62,7 +62,7 @@
       runner count must be greater than the E2E-only count.
   - Full command/output: `GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --concurrency 1` produced `1 feature`, `4 scenarios (2 passed, 2 failed)`, `23 steps (21 passed, 2 failed)` while the two E2E step files were intentionally still RED stubs.
   - E2E command/output: `GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --tags '@e2e' --concurrency 1` selected exactly `2 scenarios`, both failed on `unimplemented!()` with a non-zero exit. The E2E command is the strict subset `./run-tests.sh --e2e`, whose combined matrix now includes `@nli-combined and @e2e`; full active count 4 is strictly greater than E2E-only count 2.
-  - Commit: `a783bc3`
+  - Commit: `de09b28`
 
 ## Scenario: Permanent duplicate audit keeps partial BGE token-cap evidence per candidate
 
@@ -79,7 +79,7 @@
       this scenario.
   - Command: `cargo fmt --all && GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --name "Permanent duplicate audit keeps partial BGE token-cap evidence per candidate"`
   - Output: Zero exit after formatting; `1 feature`, `1 scenario (1 passed)`, `12 steps (12 passed)`.
-- [x] COMMIT: `e3a48c5` — record the atomic E2E scenario commit.
+- [x] COMMIT: `7860c37` — record the atomic E2E scenario commit.
 
 ## Scenario: Blocking change review keeps an all-over-cap candidate unresolved
 
@@ -96,7 +96,7 @@
       this scenario.
   - Command: `cargo fmt --all && GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --name "Blocking change review keeps an all-over-cap candidate unresolved"`
   - Output: Zero exit after formatting; `1 feature`, `1 scenario (1 passed)`, `11 steps (11 passed)`.
-- [x] COMMIT: `44a2c94` — record the atomic E2E scenario commit.
+- [x] COMMIT: `cc5b79d` — record the atomic E2E scenario commit.
 
 ## Final Verification
 

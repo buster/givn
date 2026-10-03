@@ -84,7 +84,7 @@ fingerprint/attestation change; Python tooling out of scope (user decision).
 
 Code-only change; one atomic implementation commit:
 
-- [x] COMMIT: b3969c9 -- implementation (resolver, three model sites, eager
+- [x] COMMIT: 4d7f74f -- implementation (resolver, three model sites, eager
   review-path validation, run-tests.sh zero-scenario guard, zeroed spec,
   design/arc42/ADR trim). No per-scenario commits exist because the change
   carries zero scenarios by decision.

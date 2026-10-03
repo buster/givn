@@ -54,7 +54,7 @@
   ```text
   1 feature / 1 scenario (1 passed) / 5 steps (5 passed)  (unchanged after edit)
   ```
-- [x] COMMIT: `0fc7edd` - `fix(domain-modeling-glossary): Trigger the domain skill for every workflow step`
+- [x] COMMIT: `a4dde5c` - `fix(domain-modeling-glossary): Trigger the domain skill for every workflow step`
 
 ### The ubiquitous language is recorded in the project's arc42 glossary
 
@@ -78,7 +78,7 @@
   ```text
   1 feature / 1 scenario (1 passed) / 4 steps (4 passed)  (unchanged)
   ```
-- [x] COMMIT: `a732d01` - `feat(domain-modeling-glossary): Record the vocabulary in the project's arc42 glossary`
+- [x] COMMIT: `0abf991` - `feat(domain-modeling-glossary): Record the vocabulary in the project's arc42 glossary`
 
 ### The skill requires the arc42 glossary for domain modeling
 
@@ -98,7 +98,7 @@
   ```text
   1 feature / 1 scenario (1 passed) / 3 steps (3 passed)  (unchanged)
   ```
-- [x] COMMIT: `3ff1afd` - `feat(domain-modeling-glossary): Require the arc42 addon for domain modeling`
+- [x] COMMIT: `2f4e77f` - `feat(domain-modeling-glossary): Require the arc42 addon for domain modeling`
 
 ### The next-step guidance names the domain skill during later change phases
 
@@ -125,7 +125,7 @@
   ```text
   1 feature / 1 scenario (1 passed) / 3 steps (3 passed)  (unchanged)
   ```
-- [x] COMMIT: `e551484` - `feat(domain-modeling-glossary): Route the domain skill through every workflow step when the arc42 addon is enabled`
+- [x] COMMIT: `cecdb3f` - `feat(domain-modeling-glossary): Route the domain skill through every workflow step when the arc42 addon is enabled`
 
 ### A project without the arc42 glossary is not pointed at the domain skill
 
@@ -147,7 +147,7 @@
   ```text
   1 feature / 1 scenario (1 passed) / 3 steps (3 passed)  (unchanged)
   ```
-- [x] COMMIT: `c58781b` - `feat(domain-modeling-glossary): Guard the domain skill behind the arc42 glossary`
+- [x] COMMIT: `87eb54b` - `feat(domain-modeling-glossary): Guard the domain skill behind the arc42 glossary`
 
 ### The design-review skill checks that the ubiquitous language is followed
 
@@ -168,7 +168,7 @@
   ```text
   1 feature / 1 scenario (1 passed) / 3 steps (3 passed)  (unchanged)
   ```
-- [x] COMMIT: `eab4d44` - `feat(domain-modeling-glossary): Design-review checks the ubiquitous language against the arc42 glossary`
+- [x] COMMIT: `6b65c44` - `feat(domain-modeling-glossary): Design-review checks the ubiquitous language against the arc42 glossary`
 
 ### The review skill checks that the ubiquitous language is followed
 
@@ -189,7 +189,7 @@
   ```text
   unchanged
   ```
-- [x] COMMIT: `162d200` - `feat(domain-modeling-glossary): Review checks the ubiquitous language against the arc42 glossary`
+- [x] COMMIT: `db65a88` - `feat(domain-modeling-glossary): Review checks the ubiquitous language against the arc42 glossary`
 
 ## E2E Scenarios
 
@@ -212,7 +212,7 @@
   ```text
   unchanged
   ```
-- [x] COMMIT: `173e27c` - `feat(domain-modeling-glossary): E2E asserts the generated skill covers every step and the glossary`
+- [x] COMMIT: `a0c2905` - `feat(domain-modeling-glossary): E2E asserts the generated skill covers every step and the glossary`
 
 ## Removed Scenarios
 

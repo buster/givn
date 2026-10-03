@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "use-case-model-scoping",
   "status": "proven",
-  "candidate_revision": "474a9bdd3b7c6be904dac9b0c48446dfe93ff3f9",
-  "tested_revision": "474a9bdd3b7c6be904dac9b0c48446dfe93ff3f9",
+  "candidate_revision": "0de6ed56000785c742433be488fd79c34649942f",
+  "tested_revision": "0de6ed56000785c742433be488fd79c34649942f",
   "scopes": {
     "e2e": {
       "status": "passed",

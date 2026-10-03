@@ -152,9 +152,9 @@
   `tests/steps/semantic_remediation_e2e_steps.rs` contain no empty bodies,
   `unimplemented!()`, or silent-pass bodies after GREEN. The initial strict RED
   proof captured `1 scenario (1 failed)`, `1 step (1 failed)`.
-- Checked tasks have scenario commits: `7d44849`, `4790a70`, `3ebd24c`,
-  `36e978f`, `989c6d1`, `66b6e16`, `a491084`, `043968d`, `09c199e`,
-  `6e6303f`, `e7ed60a`, `687b20e`, and E2E `aef6f0a`. Production verification
+- Checked tasks have scenario commits: `1159f7b`, `48a4fb8`, `0b8fa81`,
+  `b85cc5f`, `ccf3905`, `58718aa`, `f08b184`, `5bf4bef`, `4ac8cdc`,
+  `6ac10ea`, `952293b`, `f02f95d`, and E2E `650987e`. Production verification
   is implemented in `src/spec/retrieval.rs`; the later scenario commits record
   executable black-box evidence and tags.
 - Promised files exist: `src/spec/retrieval.rs`,

@@ -57,7 +57,7 @@ introduced, and the new scenarios are guidance-content and document variants.
       cargo check --locked --tests
       Finished `dev` profile [unoptimized + debuginfo] target(s) in 7.04s
       ```
-- [x] COMMIT: `9839d373` -- `test(use-case-model-scoping): strict-mode proof and step skeletons`
+- [x] COMMIT: `fab75c6e` -- `test(use-case-model-scoping): strict-mode proof and step skeletons`
 
 ## Scenarios
 
@@ -97,7 +97,7 @@ introduced, and the new scenarios are guidance-content and document variants.
         1 scenario (1 passed)
         12 steps (12 passed)
         ```
-  - [x] COMMIT: `6a9ab493` -- `feat(canonical-usecase-contract): The durable use-case model publishes the canonical definition and rules`
+  - [x] COMMIT: `f5f0abc1` -- `feat(canonical-usecase-contract): The durable use-case model publishes the canonical definition and rules`
 
 - [x] Scenario: `The generated use-case document template carries the authoring guidance`
   - [x] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
@@ -129,7 +129,7 @@ introduced, and the new scenarios are guidance-content and document variants.
         1 scenario (1 passed)
         7 steps (7 passed)
         ```
-  - [x] COMMIT: `5d7a362d` -- `feat(canonical-usecase-contract): The generated use-case document template carries the authoring guidance`
+  - [x] COMMIT: `31b6ceb8` -- `feat(canonical-usecase-contract): The generated use-case document template carries the authoring guidance`
 
 ### ideation-skill
 
@@ -158,7 +158,7 @@ introduced, and the new scenarios are guidance-content and document variants.
         1 scenario (1 passed)
         14 steps (14 passed)
         ```
-  - [x] COMMIT: `0a27df00` -- `feat(ideation-skill): The ideation guidance carries the canonical definition and the eight scoping rules`
+  - [x] COMMIT: `9e67275e` -- `feat(ideation-skill): The ideation guidance carries the canonical definition and the eight scoping rules`
 
 - [x] Scenario: `The ideation guidance carries the authoring requirements and the handoff mapping`
   - [x] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
@@ -187,7 +187,7 @@ introduced, and the new scenarios are guidance-content and document variants.
         1 scenario (1 passed)
         7 steps (7 passed)
         ```
-  - [x] COMMIT: `b77d193a` -- `feat(ideation-skill): The ideation guidance carries the authoring requirements and the handoff mapping`
+  - [x] COMMIT: `208f8e43` -- `feat(ideation-skill): The ideation guidance carries the authoring requirements and the handoff mapping`
 
 ### instruction-integrity
 
@@ -216,7 +216,7 @@ introduced, and the new scenarios are guidance-content and document variants.
         1 scenario (1 passed)
         12 steps (12 passed)
         ```
-  - [x] COMMIT: `e4d10039` -- `feat(instruction-integrity): The review instruction carries the use-case scope rejection criteria`
+  - [x] COMMIT: `a8486146` -- `feat(instruction-integrity): The review instruction carries the use-case scope rejection criteria`
 
 - [x] Scenario: `The design-review guidance points at the use-case scope criteria`
   - [x] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
@@ -240,7 +240,7 @@ introduced, and the new scenarios are guidance-content and document variants.
         1 scenario (1 passed)
         3 steps (3 passed)
         ```
-  - [x] COMMIT: `9a9ae567` -- `feat(instruction-integrity): The design-review guidance points at the use-case scope criteria`
+  - [x] COMMIT: `2f3e731c` -- `feat(instruction-integrity): The design-review guidance points at the use-case scope criteria`
 
 - [x] Scenario: `The specs guidance carries the capability placement test`
   - [x] RED: removed `@wip` from this scenario only; run → non-zero. Evidence:
@@ -270,7 +270,7 @@ introduced, and the new scenarios are guidance-content and document variants.
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `77db712c` -- `feat(instruction-integrity): The specs guidance carries the capability placement test`
+  - [x] COMMIT: `d67d88d6` -- `feat(instruction-integrity): The specs guidance carries the capability placement test`
 
 ## Final checks
 
@@ -297,9 +297,9 @@ introduced, and the new scenarios are guidance-content and document variants.
       (no matches)
       ```
 - [x] Confirm commit count matches scenario task count and every task has a
-      recorded hash: one setup commit (`9839d373`) plus seven scenario commits
-      (`6a9ab493`, `5d7a362d`, `0a27df00`, `b77d193a`, `e4d10039`, `9a9ae567`,
-      `77db712c`).
+      recorded hash: one setup commit (`fab75c6e`) plus seven scenario commits
+      (`f5f0abc1`, `31b6ceb8`, `9e67275e`, `208f8e43`, `a8486146`, `2f3e731c`,
+      `d67d88d6`).
 - [x] Confirm `givn lint --change use-case-model-scoping` has no parse errors
       (exit 0). Evidence:
       ```

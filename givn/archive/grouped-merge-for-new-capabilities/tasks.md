@@ -15,7 +15,7 @@ existing, proven ones; the setup proof is re-confirmed with the first RED.
       archival`), spec delta, design, arc42 assessment, archival inventory
       bullet, runtime-view chapter 6.7 clarification, this tasks.md.
       Commit: `docs(grouped-merge-for-new-capabilities): planning layer`
-      Hash: `003a633`
+      Hash: `7c9696a`
 
 ## Non-E2E Scenarios
 
@@ -39,7 +39,7 @@ existing, proven ones; the setup proof is re-confirmed with the first RED.
   - [x] REFACTOR: fixture shares the artifact/delta helpers between both
         Givens; rerun green.
   - [x] COMMIT: `feat(grouped-merge-for-new-capabilities): A new capability without a declared group keeps the flat merge layout`
-        Hash: `8f28e44`
+        Hash: `7d88774`
 
 ## E2E Scenarios
 

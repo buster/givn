@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "confirm-persona-coverage",
   "status": "proven",
-  "candidate_revision": "ad27584d3138513e670bc5a21f07ebceda60d12d",
-  "tested_revision": "ad27584d3138513e670bc5a21f07ebceda60d12d",
+  "candidate_revision": "4c736d4c9dd054d8e02650e2198ef55929163447",
+  "tested_revision": "4c736d4c9dd054d8e02650e2198ef55929163447",
   "scopes": {
     "e2e": {
       "status": "passed",

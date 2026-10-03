@@ -43,15 +43,15 @@ release-binary resolver + cache-isolation helper in `tests/common`.
 Each scenario is one atomic commit (RED+GREEN+REFACTOR together, plus record
 its hash here). Setup/infra/docs commits are separate. Recorded:
 
-- [x] Task 0 setup — commit hash `77f7256` (bundled with scenario 4, mirrors
+- [x] Task 0 setup — commit hash `f70676a` (bundled with scenario 4, mirrors
   the archived template-engine precedent where infra + first scenarios share a commit)
-- [x] Scenario 4 dev control — commit hash `77f7256`
-- [x] Task 2 partition — commit hash `142fcfd`
-- [x] Scenario 1 embedded refuse — commit hash `d6a4996`
-- [x] Scenario 2 second-stage ignore — commit hash `7cd305f`
-- [x] Scenario 3 location honour — commit hash `7cd305f` (shared: one value-aware taxonomy change delivers both)
-- [x] Task 6 unit proofs — commit hash `4164b02`
-- [x] Task 7 docs — commit hash `7cd379a`
+- [x] Scenario 4 dev control — commit hash `f70676a`
+- [x] Task 2 partition — commit hash `bdab53d`
+- [x] Scenario 1 embedded refuse — commit hash `70269e9`
+- [x] Scenario 2 second-stage ignore — commit hash `5733bcd`
+- [x] Scenario 3 location honour — commit hash `5733bcd` (shared: one value-aware taxonomy change delivers both)
+- [x] Task 6 unit proofs — commit hash `d7ce937`
+- [x] Task 7 docs — commit hash `c94d7f6`
 
 ## Task 0 — Setup: strict mode proof + step skeletons
 
@@ -72,7 +72,7 @@ its hash here). Setup/infra/docs commits are separate. Recorded:
 - [x] Add the release-binary resolver scaffold in `tests/common` (GIVN_RELEASE_BIN
   override, else lazy `cargo build --release … --bin givn` cached in a
   `OnceLock`, `CARGO_MANIFEST_DIR`-rooted).
-- [x] COMMIT: 77f7256 -- setup scaffolding (steps + release resolver) + development-build control scenario 4 (shared commit, mirrors the archived template-engine precedent)
+- [x] COMMIT: f70676a -- setup scaffolding (steps + release resolver) + development-build control scenario 4 (shared commit, mirrors the archived template-engine precedent)
 
 ## Task 1 — Scenario (dev control, non-@e2e): A development givn build honours a simulated-embedder request without an installed-build announcement
 
@@ -102,7 +102,7 @@ regression (announcement leaking into dev) fails here.
   EXIT=0
   ```
 - [x] REFACTOR: rerun → still passes. (No-op: no code changed post-GREEN.)
-- [x] Scenario 4 shares the single scaffold commit above (hash `77f7256`); no
+- [x] Scenario 4 shares the single scaffold commit above (hash `f70676a`); no
   separate atomic commit needed — dev-control behaviour is pre-existing and the
   announcement regression guard re-verified scenario 4 after every production
   commit anyway.
@@ -132,7 +132,7 @@ wrapper envs.
               # the release group ran clean-env, all-features; scenarios 1+2
               # RED on missing announcements; scenario 3 green-vacuous.
   ```
-- [x] COMMIT: 142fcfd -- partition @release-proof across test groups
+- [x] COMMIT: bdab53d -- partition @release-proof across test groups
 
 ## Task 3 — Scenario (@e2e @release-proof): An installed givn refuses a request for simulated embedder output
 
@@ -162,7 +162,7 @@ wrapper envs.
   ```
 - [x] REFACTOR: rerun → still passes. (No-op; `_value` prefix on release_blocked
   is deliberate until Task 4 makes it value-aware.)
-- [x] COMMIT: d6a4996 -- installed builds refuse simulated-embedder requests
+- [x] COMMIT: 70269e9 -- installed builds refuse simulated-embedder requests
 
 ## Task 4 — Scenario (@release-proof): An installed givn ignores requests to disable or simulate the second-stage models
 
@@ -186,7 +186,7 @@ wrapper envs.
   EXIT=0
   ```
 - [x] REFACTOR: rerun → still passes. (No-op.)
-- [x] COMMIT: 7cd305f -- value-aware second-stage taxonomy (scenarios 2 and 3, one atomic change; recorded once)
+- [x] COMMIT: 5733bcd -- value-aware second-stage taxonomy (scenarios 2 and 3, one atomic change; recorded once)
 
 ## Task 5 — Scenario (@e2e @release-proof): An installed givn honours a model-location request that still uses the real models
 
@@ -215,7 +215,7 @@ wrapper envs.
   ```
 - [x] REFACTOR: rerun → still passes. (No-op.)
 - [x] Scenario 3 shares the single value-aware taxonomy commit above (hash
-  `7cd305f`); both scenarios verify one atomic change.
+  `5733bcd`); both scenarios verify one atomic change.
 
 ## Task 6 — Unit proofs (exhaustive taxonomy, both profiles)
 
@@ -241,8 +241,8 @@ wrapper envs.
   ```
 - [x] REFACTOR: rerun both → still pass. (Collapsed nested ifs, added the
   `assertions_on_constants` allow for the cfg-guard tests; clippy -D warnings clean.)
-- [x] COMMIT: 4164b02 -- exhaustive release block taxonomy + dual-profile unit proofs
-- [x] COMMIT: 86213cb -- fix: scope REQUEST_CHANNELS import to the release test module (repair within Task 6 GREEN)
+- [x] COMMIT: d7ce937 -- exhaustive release block taxonomy + dual-profile unit proofs
+- [x] COMMIT: 0d70dc0 -- fix: scope REQUEST_CHANNELS import to the release test module (repair within Task 6 GREEN)
 
 ## Task 7 — Docs
 
@@ -253,7 +253,7 @@ wrapper envs.
   retrieval knobs → no change needed.
 - [x] `README.md`: verify no behavior wording needs updating. Verified: install
   section and retrieval-models.md pointer already cover it → no change needed.
-- [x] COMMIT: 7cd379a -- installed-build fixture-request behaviour docs
+- [x] COMMIT: c94d7f6 -- installed-build fixture-request behaviour docs
 
 ## Task 8 — Final verification
 

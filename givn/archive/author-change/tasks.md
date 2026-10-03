@@ -30,7 +30,7 @@ Domain constraints (from `givn/changes/author-change/specs/author-change/usecase
       commits the stamped message; the Git revision message carries the
       managed trailer. Targeted run green.
 - [x] REFACTOR: clean up; run still green.
-- [x] COMMIT: 1a756dfc with the Git-wrapper scope; the implementation slice
+- [x] COMMIT: 1c360dc7 with the Git-wrapper scope; the implementation slice
       covers the three wrapper scenarios' RED+GREEN.
 
 ## Scenario: The SCM-neutral commit path attributes a Fossil check-in
@@ -41,7 +41,7 @@ Domain constraints (from `givn/changes/author-change/specs/author-change/usecase
       trailer. Targeted run green.
 - [x] REFACTOR: the Fossil comment read moved to the shared
       `fossil_latest_comment` helper.
-- [x] COMMIT: f208b36a.
+- [x] COMMIT: 555d1254.
 
 ## Scenario: The commit wrapper without attribution context leaves the message unchanged
 
@@ -51,7 +51,7 @@ Domain constraints (from `givn/changes/author-change/specs/author-change/usecase
       explicitly (the outer suite may run inside a harness that exports
       them).
 - [x] REFACTOR: the strip is the scenario's behavioral fix.
-- [x] COMMIT: 78dbb0db.
+- [x] COMMIT: f575a787.
 
 ## Scenario: Consumer initializes a Fossil project and receives the givn commit path without a hook
 
@@ -59,7 +59,7 @@ Domain constraints (from `givn/changes/author-change/specs/author-change/usecase
 - [x] GREEN: `install` asks the seam and prints the givn-commit path on
       Fossil without writing a hook; init exits 0. Targeted run green.
 - [x] REFACTOR: clean up.
-- [x] COMMIT: 1a756dfc (installation scope; shared implementation slice).
+- [x] COMMIT: 1c360dc7 (installation scope; shared implementation slice).
 
 ## Scenario: Consumer initializes a Fossil checkout and receives backend-aware guidance
 
@@ -67,7 +67,7 @@ Domain constraints (from `givn/changes/author-change/specs/author-change/usecase
 - [x] GREEN: the generated givn-implement skill contains the committing
       section (template note rendered at init's skills sync).
 - [x] REFACTOR: clean up.
-- [x] COMMIT: 1a756dfc (guidance scope; shared implementation slice).
+- [x] COMMIT: 1c360dc7 (guidance scope; shared implementation slice).
 
 ## Scenario: Consumer initializes a plain directory and receives a named warning
 
@@ -76,7 +76,7 @@ Domain constraints (from `givn/changes/author-change/specs/author-change/usecase
       `givn archive --change demo` refuses naming the missing
       version-controlled project.
 - [x] REFACTOR: clean up.
-- [x] COMMIT: 1a756dfc (no SCM scope; shared implementation slice).
+- [x] COMMIT: 1c360dc7 (no SCM scope; shared implementation slice).
 
 ## Scenario: Generated guidance names the commit path that works on every backend
 
@@ -84,7 +84,7 @@ Domain constraints (from `givn/changes/author-change/specs/author-change/usecase
 - [x] GREEN: the generated skill names `givn commit` and states the raw
       `fossil commit` limitation.
 - [x] REFACTOR: clean up.
-- [x] COMMIT: 1a756dfc (prose scope; shared implementation slice).
+- [x] COMMIT: 1c360dc7 (prose scope; shared implementation slice).
 
 ## Finalize
 

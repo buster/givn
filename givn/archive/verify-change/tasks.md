@@ -15,7 +15,7 @@ Domain constraints: the recorded revision identifier is opaque (Q11) — non-emp
       1 scenario (1 passed)  /  exit 0
       ```
 
-- [x] COMMIT: c872f0b5 (shared slice; the delta scenario needed no production
+- [x] COMMIT: 02409078 (shared slice; the delta scenario needed no production
       change).
 
 ## Scenario: Integrity hook fails on placeholder commit hash
@@ -28,7 +28,7 @@ Domain constraints: the recorded revision identifier is opaque (Q11) — non-emp
 
 - [x] GREEN: the messages say "revision identifier"; the permanent feature is
       aligned; the fragments suite passes (104 scenarios).
-- [x] COMMIT: 43efbe93.
+- [x] COMMIT: 79c04e50.
 
 ## Finalize
 

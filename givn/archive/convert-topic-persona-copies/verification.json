@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "convert-topic-persona-copies",
   "status": "proven",
-  "candidate_revision": "d63ac436802fd3d61b515d12d2b539f15a7f8c44",
-  "tested_revision": "d63ac436802fd3d61b515d12d2b539f15a7f8c44",
+  "candidate_revision": "65df29b2926f796f8459bb854a2e052d50f3f455",
+  "tested_revision": "65df29b2926f796f8459bb854a2e052d50f3f455",
   "scopes": {
     "e2e": {
       "status": "passed",

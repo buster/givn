@@ -14,11 +14,11 @@ runtime behavior changes.
 - [x] Change scaffolded; proposal, specs, design, design-review, and arc42
       marker complete.
 - [x] Prior ideation handoff committed first so this change's commits stay
-      scoped. COMMIT: `6b4541dd` -- `docs(ideation): hand off local-only-integrations`
+      scoped. COMMIT: `ff2c9961` -- `docs(ideation): hand off local-only-integrations`
 - [x] Runner strictness: `tests/features_runner.rs` carries
       `.fail_on_skipped()` (lines 55, 129); each scenario's targeted RED run
       exits non-zero (evidence in that task).
-- [x] Planning artifacts committed. COMMIT: `fd7c1669` -- `docs(sharpen-ideation-conduct): plan the change`
+- [x] Planning artifacts committed. COMMIT: `76192275` -- `docs(sharpen-ideation-conduct): plan the change`
 
 ## Implementation
 
@@ -40,7 +40,7 @@ capability is owned by fragment `support`.
       Evidence: `1 scenario (1 passed)` / `5 steps (5 passed)`.
 - [x] REFACTOR: re-read the section for wording consistency; targeted run
       still exits 0.
-- [x] COMMIT: `d42117ad` -- `docs(generate-ideation-guidance): The ideation guidance carries the live-question standard`
+- [x] COMMIT: `255ec0c6` -- `docs(generate-ideation-guidance): The ideation guidance carries the live-question standard`
 
 ### Scenario 2 — The ideation guidance stops questions at decided directions
 
@@ -56,7 +56,7 @@ findings are applied; later phase boundaries report.
       exits 0. Evidence: `1 scenario (1 passed)` / `7 steps (7 passed)`.
 - [x] REFACTOR: keep the paragraph under the template's wrap width; targeted
       run still exits 0.
-- [x] COMMIT: `25e11a7a` -- `docs(generate-ideation-guidance): The ideation guidance stops questions at decided directions`
+- [x] COMMIT: `496a02c9` -- `docs(generate-ideation-guidance): The ideation guidance stops questions at decided directions`
 
 ### Scenario 3 — The frame is confirmed once and later phase boundaries report
 
@@ -72,7 +72,7 @@ confirmed once; later boundaries report and proceed.
       0. Evidence: `1 scenario (1 passed)` / `4 steps (4 passed)`.
 - [x] REFACTOR: verify the Personas section's "confirms every persona" rule is
       untouched; targeted run still exits 0.
-- [x] COMMIT: `e28b7574` -- `docs(generate-ideation-guidance): The frame is confirmed once and later phase boundaries report`
+- [x] COMMIT: `95cef964` -- `docs(generate-ideation-guidance): The frame is confirmed once and later phase boundaries report`
 
 ### Scenario 4 — Handoff cuts change seeds by deliverable guarantee
 
@@ -93,7 +93,7 @@ identity; arc42 8.19 and the glossary row describe the durable meaning.
 - [x] REFACTOR: re-read 8.19 and the glossary row for consistent wording
       ("per-change, cut by deliverable guarantee"); targeted run still exits
       0.
-- [x] COMMIT: `a1140501` -- `docs(generate-ideation-guidance): Handoff cuts change seeds by deliverable guarantee`
+- [x] COMMIT: `27e7eefc` -- `docs(generate-ideation-guidance): Handoff cuts change seeds by deliverable guarantee`
 
 ### Scenario 5 — The ideation command guardrails carry the same conduct rules
 
@@ -110,7 +110,7 @@ artifacts stay in sync.
       Evidence: `1 scenario (1 passed)` / `4 steps (4 passed)`.
 - [x] REFACTOR: confirm no duplicated paragraph between Stance and
       Guardrails; targeted run still exits 0.
-- [x] COMMIT: `02ddd9ca` -- `docs(generate-ideation-guidance): The ideation command guardrails carry the same conduct rules`
+- [x] COMMIT: `cc767cf1` -- `docs(generate-ideation-guidance): The ideation command guardrails carry the same conduct rules`
 
 ## Verification
 

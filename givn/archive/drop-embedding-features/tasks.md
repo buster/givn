@@ -14,7 +14,7 @@ tests/features_runner.rs:20) via `./run-tests.sh` / `./run-tests.sh --e2e`
       the `@givn.retired` tombstone delta for `release-strict-model-overrides`,
       the arc42 chapter sweep + ADR-069 supersession + register update, the
       `discover-specifications/usecase.md` interaction-row removals.
-  - [x] COMMIT: `5f3e5c7`
+  - [x] COMMIT: `e93087e`
 - [x] Strictness proof is delivered by task 1's RED (undefined steps must exit
       non-zero); e2e subset proof is delivered by task 4 (e2e run count <
       full delta count).
@@ -72,7 +72,7 @@ tests/features_runner.rs:20) via `./run-tests.sh` / `./run-tests.sh --e2e`
       readme_enforcement_steps.rs,review_disposition_gates_steps.rs,
       run_execution_e2e_steps.rs}, tests/common/mod.rs.
 - [x] REFACTOR: `cargo fmt`; re-run targeted. Paste output.
-  - [x] COMMIT: `8c78642` Cargo installation enables every declared feature by default`
+  - [x] COMMIT: `8296e97` Cargo installation enables every declared feature by default`
 
 ## Scenario: Retrieval guidance distinguishes build capabilities
 (instruction-integrity, @givn.modified, non-e2e)
@@ -91,7 +91,7 @@ tests/features_runner.rs:20) via `./run-tests.sh` / `./run-tests.sh --e2e`
       binding in instruction_integrity_e2e_steps.rs territory verified unused
       by any scenario.
 - [x] REFACTOR: `cargo fmt`; re-run targeted. Paste output (exit 0).
-  - [x] COMMIT: `3b4bf6b`
+  - [x] COMMIT: `6e21610`
 
 ## Scenario: A consumer invoking a retired engine command is told it does not exist
 (release-0-3-0, @givn.added @e2e)
@@ -110,7 +110,7 @@ tests/features_runner.rs:20) via `./run-tests.sh` / `./run-tests.sh --e2e`
       `givn/specs/maintain-project/usecase.md`. Evidence: e2e run exit 0
       (5 steps passed); full delta scope exit 0 (3 scenarios).
 - [x] REFACTOR: `cargo fmt`; re-run targeted (exit 0).
-  - [x] COMMIT: `42e90da`
+  - [x] COMMIT: `8c1a326`
 
 ## Scenario: The migration preserves independent architecture history across three proposed decisions
 (adr-qualification-gate, @givn.modified, non-e2e — discovered when the archive
@@ -125,7 +125,7 @@ gate's post-merge verify failed on the pre-engine ADR register counts)
       absorbed records with the serializer evidence read from the archived
       ADR-059, superseded semantic-engine records checked against
       ADR-069). Targeted run exit 0 (11 steps). Routing recorded as
-      `NEW in fragments`; gate support added in commit `6ee01dc`.
+      `NEW in fragments`; gate support added in commit `72dff8f`.
   - [x] COMMIT: (with archive artifacts)
 
 ## Teardown (before review)

@@ -11,7 +11,7 @@ Documentation repair; `specs` is skipped. The design's procedure is the plan.
 - [x] Delete the stale `docs/arc42/adr/adr-template.md`.
 - [x] Re-scaffold with `givn addons enable arc42`; confirm only the template
       is created. Evidence: `created  docs/arc42/adr/adr-template.md`; all other chapters `exists`.
-- [x] COMMIT: `bf3f66ea` -- `fix(adr-qualification-gate): restore the blank ADR template from the 0.8.0 asset`
+- [x] COMMIT: `794e6a87` -- `fix(adr-qualification-gate): restore the blank ADR template from the 0.8.0 asset`
 
 ## Verification
 
@@ -22,5 +22,5 @@ Documentation repair; `specs` is skipped. The design's procedure is the plan.
       Summary [30.580s] 539 tests run: 539 passed, 0 skipped
       Summary [5.410s] 88 tests run: 88 passed, 451 skipped
       ```
-- [x] COMMIT: `ecdf182d` -- `docs(resync-adr-template): complete the review`
+- [x] COMMIT: `a57d789a` -- `docs(resync-adr-template): complete the review`
 - [x] Archive the change.

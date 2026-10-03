@@ -9,7 +9,7 @@
 
 | Scope | Commit hash | Touches the repaired artifacts? |
 |---|---|---|
-| Topic record conversion | `82ca3119` | yes (three topic persona files, change artifacts) |
+| Topic record conversion | `86f685ba` | yes (three topic persona files, change artifacts) |
 
 **Promised-architecture cross-check** — the change promises converted reuse
 records, not a component: no production module changed.

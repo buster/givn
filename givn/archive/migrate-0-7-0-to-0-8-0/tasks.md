@@ -9,10 +9,10 @@ tasks record the project work and its evidence.
 
 - [x] Canonical ID freed: the archived release-development record renamed
       `release-0-8-0` with its self-references and the one cross-reference
-      updated. Evidence: commit `b5cce629`.
+      updated. Evidence: commit `0705565a`.
 - [x] Consumer upgrade exercised for real: marker set to 0.7.0 (commit
-      `22191b7c`), then `givn upgrade` produced Commit A
-      `2bc63c10` (managed refresh) and Commit B `c70c74e6` (the plan at
+      `f1a1336c`), then `givn upgrade` produced Commit A
+      `ea739125` (managed refresh) and Commit B `62ff089b` (the plan at
       `givn/changes/migrate-0-7-0-to-0-8-0/`).
 - [x] Preflight: `givn_config_version: "0.8.0"`, clean checkout, corpus
       inventoried (`givn spec tree`, use-case directories, personas, ADR
@@ -27,7 +27,7 @@ tasks record the project work and its evidence.
       archive-change; R8 for twenty-nine names.
 - [x] Nineteen support-fragment capabilities checked; fourteen R8 names and
       the orphaned `config-overlay` recorded.
-- [x] COMMIT: `448a48a5` -- `docs(migrate-0-7-0-to-0-8-0): record the project inventory, ADR re-qualification, and term evidence`
+- [x] COMMIT: `51a42418` -- `docs(migrate-0-7-0-to-0-8-0): record the project inventory, ADR re-qualification, and term evidence`
 
 ## Phase 2 — Personas (inventory)
 
@@ -85,7 +85,7 @@ tasks record the project work and its evidence.
       ```
       Summary [   5.455s] 88 tests run: 88 passed, 451 skipped
       ```
-- [x] COMMIT: `f3198915` -- `docs(migrate-0-7-0-to-0-8-0): complete the migration review`
+- [x] COMMIT: `687a124b` -- `docs(migrate-0-7-0-to-0-8-0): complete the migration review`
 - [x] Archive the maintenance change; the migration is complete when every
       follow-up has archived.
 

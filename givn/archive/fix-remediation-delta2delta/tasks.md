@@ -103,16 +103,16 @@ preconditions for VARIANT and VALID-BOUNDARY.
 
 ## Commits
 
-- [x] COMMIT: `f97fe28` — test(semantic-review): stage delta-to-delta fixtures
+- [x] COMMIT: `3747e43` — test(semantic-review): stage delta-to-delta fixtures
       under distinct change ids (cid-aware fixture world, retagging, report-path
       helper).
-- [x] COMMIT: `0a0be5d` — test(semantic-review): rework delta scenarios with
+- [x] COMMIT: `c00cb8c` — test(semantic-review): rework delta scenarios with
       decoupled change ids (semantic-review.feature).
-- [x] COMMIT: `0cc6b70` — docs(change): refresh change artifacts for the
+- [x] COMMIT: `abf283c` — docs(change): refresh change artifacts for the
       reworked delta.
-- [x] COMMIT: `7121604` — docs(change): add fix-remediation-delta2delta change
+- [x] COMMIT: `4924fad` — docs(change): add fix-remediation-delta2delta change
       artifacts (overlap dispositions, design, design review).
-- [x] COMMIT: `3fc1fa0` — test(semantic-review): cover delta-to-delta
+- [x] COMMIT: `0d578bb` — test(semantic-review): cover delta-to-delta
       remediation in the cucumber suite.
-- [x] COMMIT: `a7eee2d` — fix(semantic-review): verify delta-to-delta
+- [x] COMMIT: `86dff86` — fix(semantic-review): verify delta-to-delta
       remediation candidates.

@@ -50,7 +50,7 @@ Capabilities and step files:
       Checking givn v0.7.0
       Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.38s
       ```
-- [x] COMMIT: `d9e57752` -- `test(visual-ui-review): strict-mode proof and step skeletons`
+- [x] COMMIT: `33b5174d` -- `test(visual-ui-review): strict-mode proof and step skeletons`
 
 ## Scenarios
 
@@ -81,7 +81,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         8 steps (8 passed)
         ```
-  - [x] COMMIT: `c9d3c4f1` -- `Canonical policy requires the visual baseline at every assertion`
+  - [x] COMMIT: `1906f05c` -- `Canonical policy requires the visual baseline at every assertion`
 
 - [x] Scenario: `Canonical policy uses transcripts for terminal interfaces`
   - [x] RED: removed `@wip` for this scenario only. Run → non-zero. Evidence:
@@ -104,7 +104,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         4 steps (4 passed)
         ```
-  - [x] COMMIT: `2de63e96` -- `feat(prose-consolidation): Canonical policy uses transcripts for terminal interfaces`
+  - [x] COMMIT: `6287d8f4` -- `feat(prose-consolidation): Canonical policy uses transcripts for terminal interfaces`
 
 ### visual-design-contract
 
@@ -131,7 +131,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `420fe734` -- `feat(visual-design-contract): Design guidance names the default viewports`
+  - [x] COMMIT: `99c4eeab` -- `feat(visual-design-contract): Design guidance names the default viewports`
 
 - [x] Scenario: `Design guidance keeps improvements inside the style`
   - [x] RED: removed `@wip` for this scenario only. Run → non-zero. Evidence:
@@ -155,7 +155,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         4 steps (4 passed)
         ```
-  - [x] COMMIT: `415e8047` -- `feat(visual-design-contract): Design guidance keeps improvements inside the style`
+  - [x] COMMIT: `05a63a24` -- `feat(visual-design-contract): Design guidance keeps improvements inside the style`
 
 - [x] Scenario: `Design-review guidance requires an approved contract`
   - [x] RED: removed `@wip` for this scenario only. Run → non-zero. Evidence:
@@ -179,7 +179,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `57cfd9b7` -- `feat(visual-design-contract): Design-review guidance requires an approved contract`
+  - [x] COMMIT: `9b13a7e4` -- `feat(visual-design-contract): Design-review guidance requires an approved contract`
 
 - [x] Scenario: `The design template carries the visual contract section`
   - [x] RED: removed `@wip` for this scenario only; the ejected-template
@@ -204,7 +204,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `7b0649e9` -- `feat(visual-design-contract): The design template carries the visual contract section`
+  - [x] COMMIT: `3df5b660` -- `feat(visual-design-contract): The design template carries the visual contract section`
 
 ### visual-review-gate
 
@@ -234,7 +234,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         7 steps (7 passed)
         ```
-  - [x] COMMIT: `abb09415` -- `feat(visual-review-gate): A visual change without a visual verdict fails review`
+  - [x] COMMIT: `90d19b9e` -- `feat(visual-review-gate): A visual change without a visual verdict fails review`
 
 - [x] Scenario: `A change without a visual contract is exempt from the visual gate`
   - [x] RED: removed `@wip` for this scenario only; ran with the
@@ -260,7 +260,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `cd4e4f92` -- `test(visual-review-gate): A change without a visual contract is exempt from the visual gate`
+  - [x] COMMIT: `03fe25ca` -- `test(visual-review-gate): A change without a visual contract is exempt from the visual gate`
 
 - [x] Scenario: `A change that declares no visual interface is exempt`
   - [x] RED: removed `@wip` for this scenario only; ran with the
@@ -285,7 +285,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `b14b58c3` -- `test(visual-review-gate): A change that declares no visual interface is exempt`
+  - [x] COMMIT: `be04ae99` -- `test(visual-review-gate): A change that declares no visual interface is exempt`
 
 - [x] Scenario: `A web contract without viewports fails review`
   - [x] RED: removed `@wip` and implemented the fixture steps; the check
@@ -310,7 +310,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         7 steps (7 passed)
         ```
-  - [x] COMMIT: `fc313b95` -- `feat(visual-review-gate): A web contract without viewports fails review`
+  - [x] COMMIT: `14522f52` -- `feat(visual-review-gate): A web contract without viewports fails review`
 
 - [x] Scenario: `A visual change with incomplete evidence fails review`
   - [x] RED: removed `@wip` and implemented the delta-spec and screenshot
@@ -339,7 +339,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         10 steps (10 passed)
         ```
-  - [x] COMMIT: `139b13f0` -- `feat(visual-review-gate): A visual change with incomplete evidence fails review`
+  - [x] COMMIT: `7a263654` -- `feat(visual-review-gate): A visual change with incomplete evidence fails review`
 
 - [x] Scenario: `An empty evidence file fails review`
   - [x] RED: removed `@wip` and implemented the empty-file fixture step; the
@@ -364,7 +364,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         10 steps (10 passed)
         ```
-  - [x] COMMIT: `b98c012f` -- `feat(visual-review-gate): An empty evidence file fails review`
+  - [x] COMMIT: `6b0137bb` -- `feat(visual-review-gate): An empty evidence file fails review`
 
 - [x] Scenario: `An unverified visual verdict cannot pass review`
   - [x] RED: removed `@wip`; the check failed with "missing the visual
@@ -389,7 +389,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         7 steps (7 passed)
         ```
-  - [x] COMMIT: `c9eeba7e` -- `feat(visual-review-gate): An unverified visual verdict cannot pass review`
+  - [x] COMMIT: `1e91a0b9` -- `feat(visual-review-gate): An unverified visual verdict cannot pass review`
 
 - [x] Scenario: `A terminal change passes review with a transcript`
   - [x] RED: removed `@wip` with the terminal-contract and transcript
@@ -414,7 +414,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         8 steps (8 passed)
         ```
-  - [x] COMMIT: `4d371c9a` -- `test(visual-review-gate): A terminal change passes review with a transcript`
+  - [x] COMMIT: `a7a8d06b` -- `test(visual-review-gate): A terminal change passes review with a transcript`
 
 - [x] Scenario: `Review guidance treats style improvements as contract updates`
   - [x] RED: removed `@wip` for this scenario only → non-zero. Evidence:
@@ -437,7 +437,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `b538f410` -- `feat(visual-review-gate): Review guidance treats style improvements as contract updates`
+  - [x] COMMIT: `80d79f1a` -- `feat(visual-review-gate): Review guidance treats style improvements as contract updates`
 
 - [x] Scenario: `Review guidance records an unverified verdict without vision`
   - [x] RED: removed `@wip` for this scenario only → non-zero. Evidence:
@@ -460,7 +460,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         4 steps (4 passed)
         ```
-  - [x] COMMIT: `39178cf1` -- `feat(visual-review-gate): Review guidance records an unverified verdict without vision`
+  - [x] COMMIT: `686c0c82` -- `feat(visual-review-gate): Review guidance records an unverified verdict without vision`
 
 - [x] Scenario: `The review template carries the visual review section`
   - [x] RED: removed `@wip` for this scenario only → non-zero. Evidence:
@@ -484,7 +484,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `41ff9dcb` -- `feat(visual-review-gate): The review template carries the visual review section`
+  - [x] COMMIT: `fe8d6958` -- `feat(visual-review-gate): The review template carries the visual review section`
 
 - [x] Scenario: `Synchronized review guidance carries the visual block`
       (added during implementation to cover the promised
@@ -510,7 +510,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: `a4e4ef0d` -- `test(visual-review-gate): Synchronized review guidance carries the visual block`
+  - [x] COMMIT: `3b6965c3` -- `test(visual-review-gate): Synchronized review guidance carries the visual block`
 
 ## E2E scenarios
 
@@ -537,7 +537,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         7 steps (7 passed)
         ```
-  - [x] COMMIT: `5eec9463` -- `test(e2e): Canonical E2E policy is emitted by specs instructions`
+  - [x] COMMIT: `64f4ad30` -- `test(e2e): Canonical E2E policy is emitted by specs instructions`
 
 - [x] Scenario: `Author requests the visual design contract guidance`
   - [x] RED: removed `@wip` for this scenario only → non-zero. Evidence:
@@ -563,7 +563,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         9 steps (9 passed)
         ```
-  - [x] COMMIT: `eb1d5f22` -- `test(e2e): Author requests the visual design contract guidance`
+  - [x] COMMIT: `f305eefc` -- `test(e2e): Author requests the visual design contract guidance`
 
 - [x] Scenario: `Synchronized guidance defines the contract approval and capture mechanics`
   - [x] RED: removed `@wip` for this scenario only → non-zero. Evidence:
@@ -589,7 +589,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         10 steps (10 passed)
         ```
-  - [x] COMMIT: `4b893406` -- `test(e2e): Synchronized guidance defines the contract approval and capture mechanics`
+  - [x] COMMIT: `458acb68` -- `test(e2e): Synchronized guidance defines the contract approval and capture mechanics`
 
 - [x] Scenario: `A visual change with complete evidence passes review`
   - [x] RED-equivalent: the fixture steps and gate were implemented by the
@@ -614,7 +614,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         9 steps (9 passed)
         ```
-  - [x] COMMIT: `8ffd36ef` -- `refactor(visual-review-gate): extract the visual verdict state` (production refactor carrying this scenario's re-run; the `@wip` activation commit is `58a2ac0e`)
+  - [x] COMMIT: `0f6ded04` -- `refactor(visual-review-gate): extract the visual verdict state` (production refactor carrying this scenario's re-run; the `@wip` activation commit is `03630cda`)
 
 - [x] Scenario: `Review guidance requires the visual verdict and persona lenses`
   - [x] RED: removed `@wip` for this scenario only → non-zero. Evidence:
@@ -638,7 +638,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `5f231882` -- `test(e2e): Review guidance requires the visual verdict and persona lenses`
+  - [x] COMMIT: `a6c9d0f9` -- `test(e2e): Review guidance requires the visual verdict and persona lenses`
 
 ## Verification
 

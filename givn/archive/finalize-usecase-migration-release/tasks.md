@@ -35,7 +35,7 @@
       `tests/steps/workflow_enforcement_steps.rs` and the migration delta.
 - [x] REFACTOR: targeted rerun passed with `1 feature / 1 scenario (1 passed)`
       and 5 steps passed.
-- [x] COMMIT: `4c42731` — feat(givn-workflow-enforcement): consumer sees
+- [x] COMMIT: `bb7b0da` — feat(givn-workflow-enforcement): consumer sees
       migration coverage receipt.
 
 ## Scenario: Missing behavior blocks migration coverage
@@ -50,7 +50,7 @@
       `tests/steps/workflow_enforcement_e2e_steps.rs`.
 - [x] REFACTOR: targeted rerun passed with `1 feature / 1 scenario (1 passed)`
       and 5 steps passed.
-- [x] COMMIT: `a653312` — feat(givn-workflow-enforcement): missing behavior
+- [x] COMMIT: `979a236` — feat(givn-workflow-enforcement): missing behavior
       blocks migration coverage.
 
 ## Scenario: Lost E2E evidence blocks migration coverage
@@ -62,7 +62,7 @@
       Added focused source coverage assertion in `src/spec/coverage.rs`.
 - [x] REFACTOR: `cargo test --lib coverage::tests::lost_e2e_evidence_blocks_without_missing_behavior`
       passed with 1 test passed.
-- [x] COMMIT: `1eaf837` — test(givn-workflow-enforcement): lost E2E evidence
+- [x] COMMIT: `b66ad44` — test(givn-workflow-enforcement): lost E2E evidence
       blocks migration coverage.
 
 ## Scenario: Lower interaction coverage blocks migration coverage
@@ -74,7 +74,7 @@
       Added focused source coverage assertion in `src/spec/coverage.rs`.
 - [x] REFACTOR: `cargo test --lib coverage::tests::lower_interaction_coverage_blocks_when_behavior_remains`
       passed with 1 test passed.
-- [x] COMMIT: `489b383` — test(givn-workflow-enforcement): lower interaction
+- [x] COMMIT: `ef0e9cf` — test(givn-workflow-enforcement): lower interaction
       coverage blocks migration coverage.
 
 ## Scenario: Lower line coverage blocks migration coverage
@@ -86,7 +86,7 @@
       focused source coverage assertion in `src/spec/coverage.rs`.
 - [x] REFACTOR: `cargo test --lib coverage::tests::lower_line_coverage_blocks`
       passed with 1 test passed.
-- [x] COMMIT: `c356682` — test(givn-workflow-enforcement): lower line coverage
+- [x] COMMIT: `301bdca` — test(givn-workflow-enforcement): lower line coverage
       blocks migration coverage.
 
 ## Scenario: Lower branch coverage blocks migration coverage
@@ -98,7 +98,7 @@
       focused source coverage assertion in `src/spec/coverage.rs`.
 - [x] REFACTOR: `cargo test --lib coverage::tests::lower_branch_coverage_blocks`
       passed with 1 test passed.
-- [x] COMMIT: `65dd478` — test(givn-workflow-enforcement): lower branch coverage
+- [x] COMMIT: `b9e5ac0` — test(givn-workflow-enforcement): lower branch coverage
       blocks migration coverage.
 
 ## Scenario: Consumer runs migration coverage check and sees passed evidence
@@ -108,7 +108,7 @@
 - [x] GREEN: the scoped E2E runner passed with `1 feature / 1 scenario (1
       passed)` and 4 steps through the real CLI subprocess.
 - [x] REFACTOR: the corrected scoped E2E rerun passed with the same result.
-- [x] COMMIT: `30cc825` — test(e2e): consumer runs migration coverage check.
+- [x] COMMIT: `7632563` — test(e2e): consumer runs migration coverage check.
 
 ## Scenario: Explicit retirement documents a changed behavior
 
@@ -120,7 +120,7 @@
       the delta feature.
 - [x] REFACTOR: `cargo test --lib coverage::tests::explicit_retirement_allows_missing_behavior`
       passed with 1 test passed.
-- [x] COMMIT: `899607c` — feat(givn-workflow-enforcement): allow explicit
+- [x] COMMIT: `61f52fc` — feat(givn-workflow-enforcement): allow explicit
       migration retirement.
 
 ## Release closure

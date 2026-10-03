@@ -27,15 +27,15 @@ JSON stdout / exit code; the E2E step spawns the compiled binary.
 
 | Scenario | Commit hash | Authoritative source touched? |
 |---|---|---|
-| The default second-stage budget scores every candidate below 2048 | `37b27d3` | Yes — `src/spec/retrieval.rs`, `tests/steps/*` |
-| BGE receives the highest E5 candidates within the configured budget | `37b27d3` | Yes — sort + truncate in `apply_duplicate_bge` |
-| NLI receives the highest E5 candidates within the configured budget | `37b27d3` | Yes — `apply_duplicate_nli` prefix selection |
-| An invalid second-stage pair budget is rejected | `37b27d3` | Yes — `max_rerank_pairs` parsing/validation |
-| A zero second-stage pair budget is rejected | `37b27d3` | Yes — positive-value boundary |
-| BGE and NLI select the same highest E5 candidates independently | `37b27d3` | Yes — independent prefix in both paths |
-| CLI reports the configured second-stage pair budget (@e2e) | `37b27d3` | Yes — `max_unique_pairs` in JSON/text renderers, E2E steps |
+| The default second-stage budget scores every candidate below 2048 | `4330caa` | Yes — `src/spec/retrieval.rs`, `tests/steps/*` |
+| BGE receives the highest E5 candidates within the configured budget | `4330caa` | Yes — sort + truncate in `apply_duplicate_bge` |
+| NLI receives the highest E5 candidates within the configured budget | `4330caa` | Yes — `apply_duplicate_nli` prefix selection |
+| An invalid second-stage pair budget is rejected | `4330caa` | Yes — `max_rerank_pairs` parsing/validation |
+| A zero second-stage pair budget is rejected | `4330caa` | Yes — positive-value boundary |
+| BGE and NLI select the same highest E5 candidates independently | `4330caa` | Yes — independent prefix in both paths |
+| CLI reports the configured second-stage pair budget (@e2e) | `4330caa` | Yes — `max_unique_pairs` in JSON/text renderers, E2E steps |
 
-All seven scenarios were delivered as one atomic real commit (`37b27d3`)
+All seven scenarios were delivered as one atomic real commit (`4330caa`)
 whose diff touches production source (`src/spec/retrieval.rs`), the test
 glue, and the durable Arc42 chapters. The integrity hook accepts distinct
 per-scenario COMMIT lines that all reference this one commit because the
@@ -111,7 +111,7 @@ are only used in the external real-model filter report.
 
 The Arc42 addon is enabled. All 12 chapters affected by the assessment were
 considered; the durable chapters and the change-level assessment are in
-agreement, updated in commit `37b27d3`:
+agreement, updated in commit `4330caa`:
 
 | Arc42 chapter or fact | Durable-doc source | `arc42.md` claim | `design.md` treatment | `tasks.md` treatment | Implementation evidence | Match? |
 |---|---|---|---|---|---|---|
@@ -203,7 +203,7 @@ clean
 
 ## Sign-off
 
-- [x] Fabrication audit clean: no empty step bodies, real commit `37b27d3`
+- [x] Fabrication audit clean: no empty step bodies, real commit `4330caa`
       covers all 7 scenarios with production evidence, ordered prefix built
       as designed, no downgraded/over-produced E2E, no parallel
       implementation, no design deviation.

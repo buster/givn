@@ -9,7 +9,7 @@
 
 | Scope | Commit hash | Touches the release artifacts? |
 |---|---|---|
-| Reshape and rename | `456040ec` | yes (archive-change narrative, renamed feature) |
+| Reshape and rename | `216713d5` | yes (archive-change narrative, renamed feature) |
 
 **Promised-architecture cross-check** — the change promises a narrative
 rewrite and a rename, not a component: no production module changed.

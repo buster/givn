@@ -52,7 +52,7 @@ has no access to this repository.
 Bumping the package version therefore makes new projects write the 0.7.0
 marker and makes 0.6.0 projects resolve the new catalog edge. The repository's
 own `givn/config.yaml` marker is bumped explicitly with the release, matching
-the 0.6.0 release change (`df028683`).
+the 0.6.0 release change (`ca3825e2`).
 
 ## Verification
 

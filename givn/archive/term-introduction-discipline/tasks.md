@@ -51,7 +51,7 @@ are guidance-content variants.
       cargo check --locked --tests
       Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.54s
       ```
-- [x] COMMIT: `7055b201` -- `test(term-introduction-discipline): strict-mode proof and step skeletons`
+- [x] COMMIT: `dd0c4f0d` -- `test(term-introduction-discipline): strict-mode proof and step skeletons`
 
 ## Scenarios
 
@@ -95,7 +95,7 @@ are guidance-content variants.
         1 scenario (1 passed)
         14 steps (14 passed)
         ```
-  - [x] COMMIT: `ee29e914` -- `feat(ideation-skill): The ideation guidance carries the term schema and the collision procedure`
+  - [x] COMMIT: `79c3fa87` -- `feat(ideation-skill): The ideation guidance carries the term schema and the collision procedure`
 
 ### domain-skill-trigger
 
@@ -132,7 +132,7 @@ are guidance-content variants.
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `7feefd86` -- `feat(domain-skill-trigger): The domain-modeling guidance carries the term introduction test`
+  - [x] COMMIT: `0ecf09ad` -- `feat(domain-skill-trigger): The domain-modeling guidance carries the term introduction test`
 
 ## Final checks
 
@@ -140,7 +140,7 @@ are guidance-content variants.
       the permanent template-conditional-rendering `@e2e` contract: the
       ideation skill must not name a disabled addon. Fixed by wrapping the
       glossary step and the term-test reference in their addon conditionals
-      (commit `0cdc09f3`). Evidence:
+      (commit `7ec71223`). Evidence:
       ```
       Summary [27.563s] 505 tests run: 505 passed, 0 skipped
       ```
@@ -163,8 +163,8 @@ are guidance-content variants.
       (no matches)
       ```
 - [x] Confirm commit count matches scenario task count and every task has a
-      recorded hash: one setup commit (`7055b201`), two scenario commits
-      (`ee29e914`, `7feefd86`), and one full-suite fix commit (`0cdc09f3`).
+      recorded hash: one setup commit (`dd0c4f0d`), two scenario commits
+      (`79c3fa87`, `0ecf09ad`), and one full-suite fix commit (`7ec71223`).
 - [x] Confirm `givn lint --change term-introduction-discipline` has no parse
       errors (exit 0). Evidence:
       ```

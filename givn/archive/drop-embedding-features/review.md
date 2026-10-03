@@ -20,9 +20,9 @@ error-output wording. The only trivially-shaped body is
 
 | Scenario | Commit hash | Touches production code? |
 |---|---|---|
-| Cargo installation enables every declared feature by default | `8c78642` | yes — Cargo.toml, src/spec, src/cli, src/main.rs, run-tests.sh, measure-coverage.sh, tests |
-| Retrieval guidance distinguishes build capabilities | `3b4bf6b` | yes — assets/skills/givn-spec/SKILL.md.tmpl, assets/commands/givn-spec.md, tests/steps/instruction_integrity_steps.rs |
-| A consumer invoking a retired engine command is told it does not exist | `42e90da` | yes — tests/steps/release_0_3_0_steps.rs, givn/specs/maintain-project/usecase.md |
+| Cargo installation enables every declared feature by default | `8296e97` | yes — Cargo.toml, src/spec, src/cli, src/main.rs, run-tests.sh, measure-coverage.sh, tests |
+| Retrieval guidance distinguishes build capabilities | `6e21610` | yes — assets/skills/givn-spec/SKILL.md.tmpl, assets/commands/givn-spec.md, tests/steps/instruction_integrity_steps.rs |
+| A consumer invoking a retired engine command is told it does not exist | `8c1a326` | yes — tests/steps/release_0_3_0_steps.rs, givn/specs/maintain-project/usecase.md |
 
 **Promised-architecture cross-check** — design.md promises no new
 components; the removal inventory is verifiably gone: `src/spec/retrieval.rs`

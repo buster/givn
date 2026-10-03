@@ -11,7 +11,7 @@ specs:
 
 | Scope | Commit hash | Touches the repaired artifacts? |
 |---|---|---|
-| ADR retirement | `4f8c4a0f` | yes (deleted record, ADR-019, README, delta narratives, step definition) |
+| ADR retirement | `f062c23f` | yes (deleted record, ADR-019, README, delta narratives, step definition) |
 
 **Promised-architecture cross-check** — the change promises a rationale move
 and a register retirement: the verify-change narrative delta exists, the

@@ -4,7 +4,7 @@
 
 - source_version: `0.4.0`
 - target_version: `0.5.0`
-- upgrade_commit: `e9938d66772adc8722fb1e5cfb0d6d19cbdf8f89`
+- upgrade_commit: `04d10652c98ef5d715a8338fa63e102b3efd38ff`
 - migration_type: aggregate maintenance change without a product specification
 
 ## Execution order
@@ -22,7 +22,7 @@ gains a use-case group layout, deterministic discovery replaces embedding
 search, and several gates tighten. When this bundle is materialized,
 `0.4.0` is the project's current config version,
 `0.5.0` is `0.5.0`, and the managed preparation commit is
-`e9938d66772adc8722fb1e5cfb0d6d19cbdf8f89`.
+`04d10652c98ef5d715a8338fa63e102b3efd38ff`.
 
 ## What changed, in project-visible terms
 
@@ -110,7 +110,7 @@ Record an evidence table: `path`, `owner`, `current state`,
 
 ## Prompt 2: Confirm the machine-safe upgrade
 
-- Confirm Commit A (`e9938d66772adc8722fb1e5cfb0d6d19cbdf8f89`) contains only managed paths
+- Confirm Commit A (`04d10652c98ef5d715a8338fa63e102b3efd38ff`) contains only managed paths
   (config scaffold, commands.yaml, generated skill/command targets,
   Givn-owned fenced blocks).
 - Confirm `givn_config_version` now identifies `0.5.0`.

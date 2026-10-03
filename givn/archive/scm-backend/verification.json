@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "scm-backend",
   "status": "proven",
-  "candidate_commit": "646c057d574b1e4a44a4d39af49f09feb56a7ac2",
-  "tested_commit": "646c057d574b1e4a44a4d39af49f09feb56a7ac2",
+  "candidate_commit": "c8a33ca778ad9311bc2aa60ffaae2e534411ec94",
+  "tested_commit": "c8a33ca778ad9311bc2aa60ffaae2e534411ec94",
   "scopes": {
     "e2e": {
       "status": "passed",

@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "migrate-term-records",
   "status": "proven",
-  "candidate_revision": "cf6d38a09d0b3284d259413e49ffdc21f6f9cf5e",
-  "tested_revision": "cf6d38a09d0b3284d259413e49ffdc21f6f9cf5e",
+  "candidate_revision": "f94d8592aba3ea35133b0b3d25a3fc331dc89969",
+  "tested_revision": "f94d8592aba3ea35133b0b3d25a3fc331dc89969",
   "scopes": {
     "e2e": {
       "status": "passed",

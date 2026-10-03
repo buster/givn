@@ -56,7 +56,7 @@ Domain constraint: the managed revision contains only the allowlisted managed sc
       ```
 
 - [x] REFACTOR: rustfmt on the touched files; run still green.
-- [x] COMMIT: 7f31901e -- the outline scenario's refactor commit; its RED+GREEN landed in a224e40f.
+- [x] COMMIT: 3c7b805e -- the outline scenario's refactor commit; its RED+GREEN landed in 7915dff7.
       fragment retirement.
 
 ## Scenario: A clean Fossil project receives the same managed upgrade revision shape
@@ -75,7 +75,7 @@ Domain constraint: a migration-free upgrade publishes exactly one revision and n
       ```
 
 - [x] REFACTOR: shared.
-- [x] COMMIT: d14dba32 -- the migration-free scenario's refactor commit; RED+GREEN in a224e40f.
+- [x] COMMIT: 110b0ab9 -- the migration-free scenario's refactor commit; RED+GREEN in 7915dff7.
 
 ## Scenario: A Fossil project with uncommitted changes is protected from automatic migration commits
 
@@ -95,7 +95,7 @@ Domain constraint: the dirty preflight refuses before any write, on both backend
       ```
 
 - [x] REFACTOR: shared.
-- [x] COMMIT: b6ee8145 -- the dirty-protection scenario's refactor commit; RED+GREEN in a224e40f.
+- [x] COMMIT: 9c26d30c -- the dirty-protection scenario's refactor commit; RED+GREEN in 7915dff7.
 
 ## Scenario: A Fossil checkout is refused by name until the Fossil backend is available (retired)
 
@@ -104,7 +104,7 @@ scenario is deleted in the same commit that implements the Fossil upgrade.
 
 - [x] GREEN: the scenario and its `then_fossil_refusal` binding are deleted;
       the fragments suite stays green (18 features, 116 scenarios, 548 steps).
-- [x] COMMIT: a224e40f -- the implementation slice that deleted the permanent scenario and its binding.
+- [x] COMMIT: 7915dff7 -- the implementation slice that deleted the permanent scenario and its binding.
 
 ## Finalize
 
@@ -116,4 +116,4 @@ scenario is deleted in the same commit that implements the Fossil upgrade.
 - [x] All tasks above checked with evidence and commit hashes. The three
       scenarios plus the retirement share one implementation commit because
       the seam operations, fixtures, and permanent alignment land together;
-      the commit is `a224e40f feat(release-0-3-0): the managed upgrade publishes allowlist-only revisions on both backends` (plan artifacts in `176cc8e4`).
+      the commit is `7915dff7 feat(release-0-3-0): the managed upgrade publishes allowlist-only revisions on both backends` (plan artifacts in `3b9769ee`).

@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "migration-retrofit-plan",
   "status": "proven",
-  "candidate_revision": "152dfc69495c4edb7a5207e6a2701fe5dc6e4e1e",
-  "tested_revision": "152dfc69495c4edb7a5207e6a2701fe5dc6e4e1e",
+  "candidate_revision": "9849caec5999f8165cb709e6e7de2f998746fd2d",
+  "tested_revision": "9849caec5999f8165cb709e6e7de2f998746fd2d",
   "scopes": {
     "e2e": {
       "status": "passed",

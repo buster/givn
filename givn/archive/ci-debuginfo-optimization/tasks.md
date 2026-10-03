@@ -65,7 +65,7 @@ Production surface (design.md):
 
 Code-only change; one atomic implementation commit:
 
-- [x] COMMIT: 621f698 -- implementation (dev profile line-tables-only,
+- [x] COMMIT: be4811f -- implementation (dev profile line-tables-only,
   job-wide CARGO_INCREMENTAL=0, one-time cache-key bump in ci.yml). No
   per-scenario commits exist because the change carries zero scenarios by
   decision.

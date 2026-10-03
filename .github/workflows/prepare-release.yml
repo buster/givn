@@ -176,7 +176,7 @@ jobs:
           if [[ -n "$latest_tag" ]]; then
             changelog_range="$latest_tag..HEAD"
           else
-            baseline_commit=45cc678
+            baseline_commit=afe8d21
             git cat-file -e "$baseline_commit^{commit}"
             changelog_range="$baseline_commit..HEAD"
           fi

@@ -27,19 +27,19 @@ exit status, output, files, and commit history.
 
 | Scenario | Commit hash | Authoritative release/runtime source touched? |
 |---|---|---|
-| The release identifies itself as its package version | `3f02170` | Yes — package and lockfile metadata plus real CLI binding |
-| The changelog describes the complete 0.3.0 release | `65d0b62` | Yes — public release artifact and executable documentation binding |
-| The migration guide is an executable prompt sequence | `2eb8248` | Yes — public migration artifact and executable guide binding |
-| The migration catalog defines complete release-owned bundles | `3989ebe` | Yes — embedded catalog, bundle assets, resolver, and executable catalog binding |
-| Cargo installation enables every declared feature by default | `65ece69`, `426f2a1`, `082d3db` | Yes — Cargo default list, minimal-build documentation, executable release assertion, all-default lint cleanup, and the corrected blocking-pair scope |
-| A clean 0.2.0 project receives a reviewable 0.3.0 migration plan | `6157355`, `787db96` | Yes — migration runtime, allowlist, ignored-path staging, Git commits, and CLI binding |
-| A clean project without migration requirements receives one managed upgrade commit | `c678344` | Yes — managed-upgrade runtime, no-migration dispatch, CLI binding, and no-empty-commit unit boundary |
-| An unclean project is protected from automatic migration commits | `86be977` | Yes — dirty-worktree runtime guard and CLI binding |
-| Repeating the upgrade does not duplicate the migration | `8fa1b29` | Yes — idempotent runtime guard and CLI binding |
-| A project outside Git is protected from a partial automatic migration | `56f8b09` | Yes — Git preflight diagnostic and CLI binding |
-| An existing migration plan is never overwritten | `24bd7fa` | Yes — migration-path preservation and CLI binding |
-| The migration change remains honest until the project review passes | `9193317` | Yes — generated plan contract and CLI/documentation binding |
-| A completed maintenance migration can be archived without a product specification | `062eb7f` | Yes — archive/check runtime path and CLI binding |
+| The release identifies itself as its package version | `ccb9cd3` | Yes — package and lockfile metadata plus real CLI binding |
+| The changelog describes the complete 0.3.0 release | `d234922` | Yes — public release artifact and executable documentation binding |
+| The migration guide is an executable prompt sequence | `b4c33bb` | Yes — public migration artifact and executable guide binding |
+| The migration catalog defines complete release-owned bundles | `e49f253` | Yes — embedded catalog, bundle assets, resolver, and executable catalog binding |
+| Cargo installation enables every declared feature by default | `19d9fd7`, `163653e`, `ef618c9` | Yes — Cargo default list, minimal-build documentation, executable release assertion, all-default lint cleanup, and the corrected blocking-pair scope |
+| A clean 0.2.0 project receives a reviewable 0.3.0 migration plan | `2062b46`, `65c1c71` | Yes — migration runtime, allowlist, ignored-path staging, Git commits, and CLI binding |
+| A clean project without migration requirements receives one managed upgrade commit | `70ec5bb` | Yes — managed-upgrade runtime, no-migration dispatch, CLI binding, and no-empty-commit unit boundary |
+| An unclean project is protected from automatic migration commits | `33bb7af` | Yes — dirty-worktree runtime guard and CLI binding |
+| Repeating the upgrade does not duplicate the migration | `a3f7a6c` | Yes — idempotent runtime guard and CLI binding |
+| A project outside Git is protected from a partial automatic migration | `a81d89b` | Yes — Git preflight diagnostic and CLI binding |
+| An existing migration plan is never overwritten | `52d82e1` | Yes — migration-path preservation and CLI binding |
+| The migration change remains honest until the project review passes | `8ae91e2` | Yes — generated plan contract and CLI/documentation binding |
+| A completed maintenance migration can be archived without a product specification | `f03a883` | Yes — archive/check runtime path and CLI binding |
 
 Documentation scenarios do not touch Rust production code because their
 authoritative product surface is the shipped changelog or migration guide;
