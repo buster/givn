@@ -103,6 +103,16 @@ None. No mandatory check is deferred.
 - `specs/fragments/generate-ideation-guidance.feature`: the per-event
   assertion now names the aggregate clause.
 - `arc42.md`: qualification value corrected to `NOT_QUALIFIED`.
+- During verification, the full suite's
+  `match-guidance-to-enabled-addons` scenario proved that the review lens
+  could not keep the proposal's "declared glossary aggregate" wording: with
+  the addons disabled no generated skill may mention "glossary"
+  (case-insensitive). The lens now reads "a declared consistency boundary"
+  (the term the aggregate bullet defines); the spec assertion and
+  `design.md` follow, RED and GREEN were re-proven for the corrected
+  assertion set, and the no-addon render of the ideation skill and command
+  was checked to contain none of `arc42`, `glossary`, `ubiquitous`, and
+  `domain-modeling`.
 - `givn lint --change harden-event-storming` exits 0 (advisory only).
 
 DESIGN-REVIEW: PASS
