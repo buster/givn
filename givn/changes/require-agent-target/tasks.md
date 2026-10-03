@@ -130,85 +130,95 @@ E2E scope: `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.s
 - [x] GREEN: re-run → passes (same output); the persisted `opencode, claude`
       selection survives the refused `--force`.
 - [x] REFACTOR: re-run → passes (same output).
-- [x] COMMIT: `<recorded after the commit>` — `feat(initialize-a-project): <release note>`;
+- [x] COMMIT: `78d758bd` — `feat(initialize-a-project): <release note>`;
       body carries the scenario title.
 
 ## Scenario 8: givn init defaults to all addons enabled and generates their files (modified) **[regression]**
 
-- [ ] RED: Remove `@wip`, run targeting this scenario → observed side-effect
-      GREEN (the modified `When` names `--agents opencode`). Evidence: <paste>
-- [ ] GREEN: re-run → passes. Evidence: <paste>
-- [ ] REFACTOR: re-run → passes. Evidence: <paste>
-- [ ] COMMIT: `<hash>` — `feat(enable-optional-addons): <release note>`; body
+- [x] RED: Remove `@wip`, run targeting this scenario → observed side-effect
+      GREEN (`1 scenario (1 passed), 8 steps (8 passed)`): the modified `When`
+      names `--agents opencode`. Migration + regression guard.
+- [x] GREEN: re-run → passes (same output).
+- [x] REFACTOR: re-run → passes (same output).
+- [x] COMMIT: `b477f7e2` — `feat(enable-optional-addons): <release note>`; body
       carries the scenario title.
 
 ## Scenario 9: givn init --no-addons produces no skill or command addon files (modified) **[regression]**
 
-- [ ] RED: Remove `@wip`, run targeting this scenario → observed side-effect
-      GREEN. Evidence: <paste>
-- [ ] GREEN: re-run → passes. Evidence: <paste>
-- [ ] REFACTOR: re-run → passes. Evidence: <paste>
-- [ ] COMMIT: `<hash>` — `feat(enable-optional-addons): <release note>`; body
+- [x] RED: Remove `@wip`, run targeting this scenario → observed side-effect
+      GREEN (`1 scenario (1 passed), 7 steps (7 passed)`). Migration +
+      regression guard.
+- [x] GREEN: re-run → passes (same output).
+- [x] REFACTOR: re-run → passes (same output).
+- [x] COMMIT: `15272625` — `feat(enable-optional-addons): <release note>`; body
       carries the scenario title.
 
 ## Scenario 10: A fresh project resolves the rules policy to local-only (modified) **[regression]**
 
-- [ ] RED: Remove `@wip`, run targeting this scenario → observed side-effect
-      GREEN. Evidence: <paste>
-- [ ] GREEN: re-run → passes. Evidence: <paste>
-- [ ] REFACTOR: re-run → passes. Evidence: <paste>
-- [ ] COMMIT: `<hash>` — `feat(rules-policy): <release note>`; body carries the
-      scenario title.
+- [x] RED: Remove `@wip`, run targeting this scenario → observed side-effect
+      GREEN (`1 scenario (1 passed), 5 steps (5 passed)`). Migration +
+      regression guard.
+- [x] GREEN: re-run → passes (same output).
+- [x] REFACTOR: re-run → passes (same output).
+- [x] COMMIT: `a6c360af` — `feat(rules-policy): <release note>`; body carries
+      the scenario title.
 
 ## E2E setup
 
-- [ ] Real interface and e2e runner confirmed: `./run-tests.sh --e2e` with the
+- [x] Real interface and e2e runner confirmed: `./run-tests.sh --e2e` with the
       delta scope; the e2e step definitions live in the capability files named
       in design.md; local infrastructure is the CLI subprocess plus the
-      `script` PTY for the interactive scenario — nothing to start.
+      `script` PTY for the interactive scenario — nothing to start. Single
+      scenarios run through the same cucumber binary with
+      `cargo test --locked --test features_runner -- --name "<title>"`.
 
 ## Scenario 11: Scaffolding ships an unconfigured run declaration (modified, @e2e) **[regression]**
 
-- [ ] RED: Remove `@wip`, run `./run-tests.sh --e2e` targeting this scenario →
-      observed side-effect GREEN. Evidence: <paste>
-- [ ] GREEN: re-run → passes. Evidence: <paste>
-- [ ] REFACTOR: re-run → passes. Evidence: <paste>
-- [ ] COMMIT: `<hash>` — `test(e2e): <release note>`; body carries the scenario
-      title.
+- [x] RED: Remove `@wip`, run targeting this scenario → observed side-effect
+      GREEN (`1 scenario (1 passed), 6 steps (6 passed)`). Migration +
+      regression guard.
+- [x] GREEN: re-run → passes (same output).
+- [x] REFACTOR: re-run → passes (same output).
+- [x] COMMIT: `0723aefa` — `test(e2e): <release note>`; body carries the
+      scenario title.
 
 ## Scenario 12: An initialized project documents reusable test and coverage scripts (modified, @e2e) **[regression]**
 
-- [ ] RED: Remove `@wip`, run targeting this scenario → observed side-effect
-      GREEN. Evidence: <paste>
-- [ ] GREEN: re-run → passes. Evidence: <paste>
-- [ ] REFACTOR: re-run → passes. Evidence: <paste>
-- [ ] COMMIT: `<hash>` — `test(e2e): <release note>`; body carries the scenario
-      title.
+- [x] RED: Remove `@wip`, run targeting this scenario → observed side-effect
+      GREEN (`1 scenario (1 passed), 5 steps (5 passed)`). Migration +
+      regression guard.
+- [x] GREEN: re-run → passes (same output).
+- [x] REFACTOR: re-run → passes (same output).
+- [x] COMMIT: `f2d69c4e` — `test(e2e): <release note>`; body carries the
+      scenario title. (First landed bundled with Scenario 13; `git reset
+      --soft` + separate commits produced this scenario's own revision.)
 
 ## Scenario 13: Scaffolding marks the unfilled sections (modified, @e2e) **[regression]**
 
-- [ ] RED: Remove `@wip`, run targeting this scenario → observed side-effect
-      GREEN. Evidence: <paste>
-- [ ] GREEN: re-run → passes. Evidence: <paste>
-- [ ] REFACTOR: re-run → passes. Evidence: <paste>
-- [ ] COMMIT: `<hash>` — `test(e2e): <release note>`; body carries the scenario
-      title.
+- [x] RED: Remove `@wip`, run targeting this scenario → observed side-effect
+      GREEN (`1 scenario (1 passed), 6 steps (6 passed)`). Migration +
+      regression guard.
+- [x] GREEN: re-run → passes (same output).
+- [x] REFACTOR: re-run → passes (same output).
+- [x] COMMIT: `d6340e8d` — `test(e2e): <release note>`; body carries the
+      scenario title.
 
 ## Scenario 14: Consumer runs init non-interactively and gets opencode skills (modified, @e2e) **[regression]**
 
-- [ ] RED: Remove `@wip`, run targeting this scenario → observed side-effect
-      GREEN. Evidence: <paste>
-- [ ] GREEN: re-run → passes. Evidence: <paste>
-- [ ] REFACTOR: re-run → passes. Evidence: <paste>
-- [ ] COMMIT: `<hash>` — `test(e2e): <release note>`; body carries the scenario
-      title.
+- [x] RED: Remove `@wip`, run targeting this scenario → observed side-effect
+      GREEN (`1 scenario (1 passed), 5 steps (5 passed)`): `--agents opencode`
+      already worked. Kept as the non-interactive e2e guard.
+- [x] GREEN: re-run → passes (same output).
+- [x] REFACTOR: re-run → passes (same output).
+- [x] COMMIT: `2a88b6fc` — `test(e2e): <release note>`; body carries the
+      scenario title.
 
 ## Final verification
 
-- [ ] Delta scope, both scopes: `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.sh`
-      and `... ./run-tests.sh --e2e` → exit 0. Evidence: <paste>
-- [ ] `cargo clippy --workspace --all-targets -- -D warnings` → clean.
-      Evidence: <paste>
-- [ ] `givn lint --change require-agent-target` → no `@wip` findings remain
-      (advisory shape/subset notes are dispositioned in review.md).
-      Evidence: <paste>
+- [x] Delta scope, both scopes:
+      `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.sh`
+      → `19 tests run: 19 passed, 0 skipped`, exit 0; `... --e2e` →
+      `4 tests run: 4 passed, 15 skipped`, exit 0.
+- [x] `cargo clippy --workspace --all-targets -- -D warnings` → clean (exit 0).
+- [x] `givn lint --change require-agent-target` → exit 0, no `@wip` findings;
+      advisory shape/subset notes are dispositioned in review.md.
