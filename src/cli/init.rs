@@ -173,7 +173,8 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
 /// Ask the user which agents to install skills/commands to.
 ///
 /// On a real terminal, shows an arrow-key/space/enter checkbox list with
-/// `.opencode` marked; confirming nothing is refused. `dialoguer` needs a
+/// `.opencode` marked; a confirmation that marks nothing reports the
+/// requirement and shows the list again (Ctrl-C aborts). `dialoguer` needs a
 /// controlling terminal, so with piped/closed stdin (automation, tests) this
 /// instead reads one line of comma-separated names, same as before. EOF
 /// without an `--agents` flag is refused. Unknown names are dropped with a
@@ -188,15 +189,27 @@ fn prompt_for_targets() -> Result<Vec<AgentTarget>> {
             .map(|target| *target == DEFAULT_PROMPT_TARGET)
             .collect();
 
-        let selected = dialoguer::MultiSelect::new()
-            .with_prompt(
-                "Which agents should givn install skills to? (space to toggle, enter to confirm)",
-            )
-            .items(&items)
-            .defaults(&defaults)
-            .interact()?;
+        // The dialog stays open until a target is marked. Each iteration
+        // rebuilds the builder — `interact(self)` consumes it and seeds the
+        // checkboxes from `defaults` at entry, so the pre-marked entry
+        // reappears after a re-ask.
+        loop {
+            let selected = dialoguer::MultiSelect::new()
+                .with_prompt(
+                    "Which agents should givn install skills to? (space to toggle, enter to confirm)",
+                )
+                .items(&items)
+                .defaults(&defaults)
+                .interact()?;
 
-        return require_agent_target(selected.into_iter().map(|i| AgentTarget::ALL[i]).collect());
+            if !selected.is_empty() {
+                return Ok(selected.into_iter().map(|i| AgentTarget::ALL[i]).collect());
+            }
+            eprintln!(
+                "error: no agent target selected; mark at least one agent target ({}) and confirm",
+                crate::skills::targets::valid_names().join(", ")
+            );
+        }
     }
 
     let mut line = String::new();
