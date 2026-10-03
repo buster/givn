@@ -25,69 +25,74 @@ E2E scope: `GIVN_FEATURES=givn/changes/require-agent-target/specs/ ./run-tests.s
 
 ## Setup
 
-- [ ] Runner and strict mode confirmed. `verify.command` is `./run-tests.sh`
+- [x] Runner and strict mode confirmed. `verify.command` is `./run-tests.sh`
       (unchanged); the cucumber-rs builder sets `.fail_on_skipped()`
       (`tests/features_runner.rs:55,129`). Proof-of-strictness:
       `GIVN_FEATURES=/tmp/givn-strict-proof/ cargo test --locked --test features_runner -- --name "An undefined step must fail the runner"`
       → exit 1, `Step doesn't match any function`.
-- [ ] Interaction Coverage re-checked: five inventory entries, five matrix rows,
+- [x] Interaction Coverage re-checked: five inventory entries, five matrix rows,
       five `@e2e` titles, all CLI subprocess mechanisms (recorded in
       design-review.md).
-- [ ] Note: scenarios marked **[regression]** are already green before the
+- [x] Note: scenarios marked **[regression]** are already green before the
       change (no distinguishable RED state). They are kept as guards; their RED
       sub-task records the observed side-effect GREEN instead of failing.
 
 ## Scenario 1: Non-interactive init without an agent target refuses initialization
 
-- [ ] RED: Remove `@wip`, run targeting this scenario → must fail (current code
-      falls back to `.opencode` on EOF, exit 0). Evidence: <paste>
-- [ ] GREEN: refuse before the first write. Production changes:
-      `src/cli/init.rs` — add `require_agent_target()`, make
-      `prompt_for_targets()` return `Result`, refuse the EOF branch, resolve the
-      targets before scaffolding; test fixtures name the selection
-      (`tests/common/mod.rs`, `tests/steps/mod.rs`,
-      `tests/steps/archive_proof_steps.rs`, `tests/steps/local_only_rules_steps.rs`,
-      `tests/steps/release_0_3_0_e2e_steps.rs`,
-      `tests/steps/repository_ownership_fixtures_support.rs`,
-      `tests/steps/run_execution_e2e_steps.rs`,
-      `tests/steps/scm_backend_selection_steps.rs`).
-      Run targeting this scenario → passes. Evidence: <paste>
-- [ ] REFACTOR: re-run → passes. Evidence: <paste>
-- [ ] COMMIT: `<hash>` — `feat(initialize-a-project): <release note>`; body
+- [x] RED: Remove `@wip`, run targeting this scenario → failed as expected
+      (exit 1; current code fell back to `.opencode` on EOF, exit 0):
+      `1 scenario (1 failed), 3 steps (2 passed, 1 failed)`.
+- [x] GREEN: refuse before the first write. Production changed:
+      `src/cli/init.rs` (`require_agent_target()`, `prompt_for_targets() ->
+      Result`, EOF refusal, target resolution moved before scaffolding) and the
+      fixture call sites now name the selection (`tests/common/mod.rs`,
+      `tests/steps/mod.rs`, `archive_proof_steps.rs`, `local_only_rules_steps.rs`,
+      `release_0_3_0_e2e_steps.rs`, `repository_ownership_fixtures_support.rs`,
+      `run_execution_e2e_steps.rs`, `scm_backend_selection_steps.rs`).
+      Run → `1 scenario (1 passed), 8 steps (8 passed)`, exit 0.
+- [x] REFACTOR: `cargo fmt` + `cargo clippy --workspace --all-targets -- -D warnings`
+      clean (exit 0); scenario re-run → `1 scenario (1 passed), 8 steps (8 passed)`,
+      exit 0.
+- [x] COMMIT: `34360457` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
 ## Scenario 2: The interactive prompt refuses a confirmation without a marked target
 
-- [ ] RED: Remove `@wip`, add the PTY step
+- [x] RED: Remove `@wip`, add the PTY step
       (`tests/steps/init_agent_target_selection_steps.rs`), run targeting this
-      scenario → must fail (the pre-marked `.opencode` is installed, exit 0).
-      Evidence: <paste>
-- [ ] GREEN: drop the dialog default and refuse an empty selection.
-      Production: `src/cli/init.rs` (`MultiSelect` without `defaults`,
-      empty→`require_agent_target`). Run targeting this scenario → passes.
-      Evidence: <paste>
-- [ ] REFACTOR: re-run → passes. Evidence: <paste>
-- [ ] COMMIT: `<hash>` — `feat(initialize-a-project): <release note>`; body
+      scenario → failed as expected (exit 1; transcript showed
+      `COMMAND_EXIT_CODE="0"` — the pre-marked `.opencode` was installed).
+- [x] GREEN: drop the dialog default and refuse an empty selection.
+      Production: `src/cli/init.rs` (`MultiSelect` without `defaults`, empty
+      selection → `require_agent_target`). Run → `1 scenario (1 passed), 5
+      steps (5 passed)`, exit 0 — the real dialoguer path is exercised through
+      a `script` PTY.
+- [x] REFACTOR: `cargo fmt` + `cargo clippy --workspace --all-targets -- -D warnings`
+      clean; scenario re-run → `1 scenario (1 passed), 5 steps (5 passed)`.
+- [x] COMMIT: `a11ae096` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
 ## Scenario 3: An empty answer refuses initialization
 
-- [ ] RED: Remove `@wip`, run targeting this scenario → must fail (empty answer
-      falls back to `.opencode`). Evidence: <paste>
-- [ ] GREEN: route the piped answer through `require_agent_target`; remove the
+- [x] RED: Remove `@wip`, run targeting this scenario → failed as expected
+      (exit 1). The answer step now writes one newline-terminated line, so the
+      empty answer is the empty-line path, distinct from the null-stdin EOF
+      path of Scenario 1.
+- [x] GREEN: route the piped answer through `require_agent_target`; remove the
       `DEFAULT_TARGETS` fallback from `resolve_target_names` and delete the
-      constant. Run targeting this scenario → passes. Evidence: <paste>
-- [ ] REFACTOR: re-run → passes. Evidence: <paste>
-- [ ] COMMIT: `<hash>` — `feat(initialize-a-project): <release note>`; body
+      constant. Run → `1 scenario (1 passed), 5 steps (5 passed)`, exit 0.
+- [x] REFACTOR: `cargo fmt` + clippy clean; scenario re-run → `1 scenario
+      (1 passed), 5 steps (5 passed)`.
+- [x] COMMIT: `9d1072e7` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
 ## Scenario 4: An answer without any known agent refuses initialization
 
-- [ ] RED: Remove `@wip`, run targeting this scenario → must fail (unknown-only
-      answer falls back to `.opencode`). Evidence: <paste>
-- [ ] GREEN: covered by Scenario 3's resolution path (side-effect GREEN); record
-      the command output. Evidence: <paste>
-- [ ] REFACTOR: re-run → passes. Evidence: <paste>
+- [ ] RED: Remove `@wip`, run targeting this scenario → side-effect GREEN
+      expected (Scenario 3's resolution path covers the unknown-only answer).
+      Evidence: <pending>
+- [ ] GREEN: re-run → passes. Evidence: <pending>
+- [ ] REFACTOR: re-run → passes. Evidence: <pending>
 - [ ] COMMIT: `<hash>` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
