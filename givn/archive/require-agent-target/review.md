@@ -244,6 +244,17 @@ reported none.
 | Scenario | Decision |
 |---|---|
 
+## Post-merge verification repair
+
+The archive's merged-corpus regular verification failed one scenario:
+`fragments/detect-the-project-repository.feature::A Fossil checkout nested
+inside an ancestor Git worktree selects Fossil` — its Given calls
+`run_givn_with_envs_in(..., &["init"], ...)` in
+`tests/steps/scm_backend_selection_steps.rs`, a call site the fixture sweep
+missed because it uses `let scaffold =` instead of `let out =`. The Given now
+passes `--agents opencode`; the scenario passes. No spec, design, or review
+decision changed — this is a test-fixture conformance repair.
+
 ## Sign-off
 
 - [x] Fabrication audit: CLEAN (0 empty step bodies, all commits verified,
