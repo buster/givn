@@ -162,6 +162,61 @@ fn consumer_init_silent(world: &mut GivnWorld) {
     world.last_output = Some(out);
 }
 
+#[when("the user runs `givn init` in a terminal and confirms without marking a target")]
+fn init_in_terminal_empty_confirmation(world: &mut GivnWorld) {
+    use std::io::Write;
+    use std::process::{Command, Output, Stdio};
+    use std::time::{Duration, Instant};
+
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let transcript = env.path(".terminal-transcript.txt");
+    let bin = env!("CARGO_BIN_EXE_givn");
+    // A real PTY: `script` (util-linux) gives the child a terminal on stdin, so
+    // the dialoguer checkbox prompt runs; the piped newline confirms the list
+    // without marking any entry.
+    let mut child = Command::new("script")
+        .args([
+            "-qec",
+            &format!("{bin} init"),
+            &transcript.to_string_lossy(),
+        ])
+        .current_dir(env.root())
+        .env_remove("GIVN_FEATURES")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .expect("spawn `script` (util-linux) to drive the terminal prompt");
+    child
+        .stdin
+        .take()
+        .expect("piped stdin for the PTY session")
+        .write_all(b"\n")
+        .expect("write the confirmation key");
+    let deadline = Instant::now() + Duration::from_secs(60);
+    let status = loop {
+        match child.try_wait().expect("poll the PTY session") {
+            Some(status) => break status,
+            None if Instant::now() < deadline => std::thread::sleep(Duration::from_millis(50)),
+            None => {
+                let _ = child.kill();
+                panic!("the terminal prompt did not finish within 60 seconds");
+            }
+        }
+    };
+    let bytes = std::fs::read(&transcript).expect("read the terminal transcript");
+    // The terminal transcript is the command's observable output: the prompt,
+    // the banner, and the refusal all write to the same PTY.
+    world.last_output = Some(Output {
+        status,
+        stdout: bytes.clone(),
+        stderr: bytes,
+    });
+}
+
 #[when(regex = r#"^the consumer runs `([^`]+)`$"#)]
 fn consumer_runs(world: &mut GivnWorld, cmd: String) {
     let env = world
