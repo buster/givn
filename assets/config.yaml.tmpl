@@ -193,8 +193,9 @@ givn_config_version: "{{GIVN_VERSION}}"
 
 # --- Skill agent targets ------------------------------------------------------
 # Which agent targets receive the generated skills and commands.
-# `givn init` requires a selection (pass --agents in scripts; the interactive
-# prompt starts with nothing marked, and an empty selection is refused).
+# `givn init` requires a selection: the interactive prompt opens with opencode
+# marked and re-asks until something is marked; scripts pass --agents, and a
+# missing or unknown-only selection is refused.
 # `givn skills sync` installs to exactly the persisted targets, falling back
 # to opencode when no skills block exists. Toggle by editing the list below
 # (allowed values: opencode, agents, claude).

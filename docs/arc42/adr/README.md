@@ -66,7 +66,7 @@ superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 | ADR-039, 041, 044, 045, 046, 047, 052, 054, 055-061, 063, 064, 066, 068 -> ADR-069 | ADR-069 supersedes the semantic-engine records; the deterministic overlap boundary of ADR-037 remains current. |
 | ADR-070 -> ADR-072 | ADR-072 generalizes ADR-070's Git-specific publication consequence onto the backend seam; ADR-070 keeps the forward-only proof decision. |
 | ADR-071 (amended by maintain-project) | The seam decision now also governs the managed upgrade and migration bundles on Fossil: allowlist staging, pending-change detection, and commit run on both backends. |
-| ADR-013 (amended by require-agent-target) | Initialization requires an explicitly selected target set: an empty selection refuses before the first write instead of defaulting to `opencode`; synchronization keeps the fallback for a configuration without a `skills:` block. |
+| ADR-013 (amended by require-agent-target, refined by keep-agent-prompt-open) | Initialization requires an explicitly selected target set: the interactive prompt opens with `opencode` marked and re-asks until something is marked, while a non-terminal empty selection is refused before the first write; synchronization keeps the fallback for a configuration without a `skills:` block. |
 | ADR-023 (amended by 0.3.0) | The versioned-config decision now also governs managed-only commits, catalog-selected migrations, aggregate plans, and their clean-worktree boundary. |
 
 ## Evidence

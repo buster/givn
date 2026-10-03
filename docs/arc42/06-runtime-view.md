@@ -11,9 +11,11 @@ The sequence is:
 2. Decide whether a fresh `givn/config.yaml` will be written (absent, or
    `--force`). If so, resolve the agent-target selection before the first
    write: `--agents`, else one piped answer line, else the interactive
-   checkbox prompt, which starts with nothing marked. Recognized selections
-   are `.opencode`, `.agents`, and `.claude`. An empty selection refuses with
-   a non-zero exit and leaves the checkout unchanged.
+   checkbox prompt, which opens with `.opencode` marked and re-asks — with an
+   error naming the requirement — until a target is marked. Recognized
+   selections are `.opencode`, `.agents`, and `.claude`. A non-terminal empty
+   or unknown-only selection refuses with a non-zero exit and leaves the
+   checkout unchanged.
 3. Create `givn/specs`, `givn/changes`, and `givn/archive`.
 4. Write `givn/config.yaml` from the embedded, versioned scaffold unless the
    file already exists and `--force` is absent; append the resolved selection

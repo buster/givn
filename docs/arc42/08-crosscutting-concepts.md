@@ -202,10 +202,11 @@ the persisted target selection:
 The target selection is stored in `skills.targets` in `givn/config.yaml`; an
 absent, empty, or unknown-only list falls back to opencode when `givn skills
 sync` runs, so projects initialized by older versions keep syncing.
-Initialization itself requires a selection: the interactive prompt starts with
-nothing marked, and an empty confirmation, an empty or unknown-only answer, and
-EOF without the `--agents` flag all refuse with a non-zero exit before the first
-write, naming `.opencode`, `.agents`, and `.claude` plus the `--agents` flag.
+Initialization itself requires a selection: the interactive prompt opens with
+`.opencode` marked and re-asks — with an error naming the requirement — until a
+target is marked, while an empty or unknown-only answer and EOF without the
+`--agents` flag refuse with a non-zero exit before the first write, naming
+`.opencode`, `.agents`, and `.claude` plus the `--agents` flag.
 
 The generated implementation guidance states the revision-message rule: every
 revision a change records carries the change's release note (authored in its
