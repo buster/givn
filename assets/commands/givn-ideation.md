@@ -67,3 +67,6 @@ Frame → Event Storming → Use Case Definition → Use Case Elaboration → Ha
   from the `givn-ideation` skill.
 - Cut seeds by deliverable guarantee; a confirmed rule must stay true.
 - The Frame is confirmed once; later phase boundaries report and proceed.
+- The event storming ships a rendered mermaid canvas naming every event,
+  command, aggregate, and actor — and every aggregate is a declared
+  consistency boundary, never a record or a specification.
