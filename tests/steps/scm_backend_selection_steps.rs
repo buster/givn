@@ -253,7 +253,8 @@ fn given_fossil_checkout_nested_in_git(world: &mut GivnWorld) {
         "fossil open failed: {}",
         String::from_utf8_lossy(&open.stderr)
     );
-    let scaffold = common::run_givn_with_envs_in(&env, &nested, &["init"], &[]);
+    let scaffold =
+        common::run_givn_with_envs_in(&env, &nested, &["init", "--agents", "opencode"], &[]);
     assert!(
         scaffold.status.success(),
         "givn init in the nested checkout failed: {}",
