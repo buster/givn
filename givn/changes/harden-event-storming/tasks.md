@@ -120,5 +120,5 @@ stay in sync.
       569 passed, 0 skipped`.
 - [x] `./run-tests.sh --e2e` — green. Evidence: `Summary [7.069s] 91 tests
       run: 91 passed, 478 skipped`.
-- [ ] Review artifact complete and signed off.
-- [ ] Archive the change.
+- [x] Review artifact complete and signed off.
+- [x] Archive the change.
