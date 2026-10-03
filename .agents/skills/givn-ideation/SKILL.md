@@ -110,8 +110,9 @@ All ideation work lives under `givn/ideation/<topic-id>/`:
 - `session.md` — resume state: current phase, progress, the next question.
   Read it first in every session; update it after every turn.
 - `frame.md` — the Frame protocol.
-- `eventstorming.md` — the event chain with actors, commands, policies, read
-  models.
+- `eventstorming.md` — the event chain with actors, commands, aggregates,
+  policies, read models, drawn as a rendered mermaid canvas whose kinds are
+  distinguishable.
 - `use-case-definitions.md` — the sized, bounded use case list.
 - `use-cases/<uc-id>.md` — one elaborated use case per file.
 - `personas/<type>--<segment>.md` — one persona per file.
@@ -271,8 +272,26 @@ in place of a missing answer.
 Model the domain as a chain of past-tense domain events.
 
 - One event per line, past tense, in the domain's own language.
-- For each event: who triggers it (actor), with which command, which policy
+- For each event: who triggers it (actor), with which command, on which
+  aggregate (the consistency boundary the command changes), which policy
   reacts, what the actor reads (read model).
+- Draw the canvas: one or more mermaid diagrams in `eventstorming.md` that
+  show every event, command, aggregate, and actor, with the kinds
+  distinguishable (per-node kind markers or a legend). A command sits between
+  the actor that issues it and the aggregate it changes; the aggregate emits
+  its events.
+- Aggregates are given, not minted. An aggregate is a consistency boundary:
+  a domain-noun root that receives commands and emits events under one
+  invariant. Reuse the aggregates the project already declares
+  (the arc42 glossary's "Aggregates / boundaries"); a new aggregate is
+  introduced as a domain term — its root noun, invariant, commands, and
+  events — and confirmed before the canvas relies on it.
+- A contract, a declaration, a configuration, a cursor position, a grant, a
+  report, a request record, or a hosted service is a record, a specification,
+  a configuration, or an external system — never an aggregate. Name the kind
+  where the canvas shows it.
+- A text chain without a canvas is an incomplete event storming: the picture
+  and the lines must cover the same elements, and the canvas must render.
 - Reverse narrative: "which events must have happened to make this one
   possible?" — walk backwards until the chain starts at the domain's
   beginning.
@@ -379,8 +398,13 @@ A fresh-context subagent runs a quality review at each phase boundary; one
 reviewer per boundary, findings advisory, the user arbitrates:
 
 - Frame: research protocol completeness, stakeholder list with interests.
-- Event Storming: symmetry of cause and effect, missing event partners, and a
-  recorded collision check for every `confirmed` term entry.
+- Event Storming: symmetry of cause and effect, missing event partners, a
+  canvas that shows every event, command, aggregate, and actor with its kinds
+  distinguishable, every aggregate a declared consistency boundary or a
+  confirmed domain term (a record, specification, configuration, or service
+  drawn as an aggregate is a defect), the lines and the picture naming the
+  same aggregates, a canvas that renders, and a recorded collision check for
+  every `confirmed` term entry.
 - Use Case Definition: sizing, boundaries, value criterion.
 - Use Case Elaboration: rules complete, examples concrete, contract
   unambiguous.
