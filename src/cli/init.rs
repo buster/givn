@@ -38,7 +38,7 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
         let targets = if agents.is_empty() {
             prompt_for_targets()?
         } else {
-            resolve_agents_flag(agents)
+            resolve_agents_flag(agents)?
         };
         let target_print = targets.iter().map(|t| t.display().to_string()).collect();
         (targets, target_print)
@@ -215,12 +215,12 @@ fn require_agent_target(targets: Vec<AgentTarget>) -> Result<Vec<AgentTarget>> {
 
 /// Resolve the `--agents` flag values into targets, skipping the prompt.
 /// `all` (case-insensitive, alone or alongside other names) expands to
-/// every known target.
-fn resolve_agents_flag(agents: &[String]) -> Vec<AgentTarget> {
+/// every known target. An empty result is refused.
+fn resolve_agents_flag(agents: &[String]) -> Result<Vec<AgentTarget>> {
     if agents.iter().any(|a| a.trim().eq_ignore_ascii_case("all")) {
-        return AgentTarget::ALL.to_vec();
+        return require_agent_target(AgentTarget::ALL.to_vec());
     }
-    resolve_target_names(agents.iter().map(String::as_str))
+    require_agent_target(resolve_target_names(agents.iter().map(String::as_str)))
 }
 
 /// Resolve comma-split or flag-provided names into targets, deduplicated,

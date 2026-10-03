@@ -58,7 +58,7 @@ Feature: initialize-a-project
     And stderr contains ".agents"
     And the directory "givn" does not exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unknown-only --agents value refuses initialization
     Given a project root without a givn/ directory
     When the user runs `givn init --agents nope`
