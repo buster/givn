@@ -79,9 +79,10 @@ givn init                             # scaffold givn/ + generate skills + AGENT
 ```
 
 `givn init` asks which agent targets receive the generated skills and commands;
-at least one must be selected — an empty selection is refused before anything
-is written. Scripted runs state the selection explicitly:
-`givn init --agents opencode,claude`. `givn skills sync` keeps writing to the
+the list opens with `.opencode` marked and re-asks until at least one target is
+marked. Scripted runs state the selection explicitly:
+`givn init --agents opencode,claude` — a missing or unknown-only selection is
+refused before anything is written. `givn skills sync` keeps writing to the
 persisted selection and falls back to `opencode` only for a config without a
 skills block.
 

@@ -44,13 +44,15 @@ reasoned `none` is valid only for a change without a user-visible surface.
 The identity criteria and the reuse protocol stay guidance-level. This
 remains an extension of the same boundary, not a new record.
 
-ADR-013 is amended by the `require-agent-target` change. Its target-selection
-contract no longer accepts an empty selection at initialization: the
-interactive prompt starts unmarked, and an empty confirmation, an empty or
-unknown-only answer, and EOF without `--agents` refuse with a non-zero exit
-before the first write. Synchronization keeps the `opencode` fallback for a
-configuration without a `skills:` block. This refines ADR-013's existing
-agent-integration boundary; it introduces no new decision.
+ADR-013 is amended by the `require-agent-target` change; its interaction
+wording is refined by `keep-agent-prompt-open`. Its target-selection contract
+no longer accepts an empty selection at initialization: the interactive
+prompt opens with `.opencode` marked and re-asks, with an error naming the
+requirement, until a target is marked; an empty or unknown-only answer and EOF
+without `--agents` refuse with a non-zero exit before the first write.
+Synchronization keeps the `opencode` fallback for a configuration without a
+`skills:` block. This refines ADR-013's existing agent-integration boundary;
+it introduces no new decision.
 
 ADR-071 is accepted by the `scm-backend` change: repository-state commands ask
 one selection seam which version-control system owns the project root. Detection
