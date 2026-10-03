@@ -14,6 +14,12 @@ const BANNER: &str = r#"
   from Given to done.
 "#;
 
+/// The pre-marked entry in the interactive agent-target prompt.
+///
+/// `AgentTarget::ALL[0]`, so the checkbox list highlights it first; it is the
+/// only pre-marked entry, not a fallback for a missing selection.
+const DEFAULT_PROMPT_TARGET: AgentTarget = AgentTarget::Opencode;
+
 /// Scaffold `givn/{specs,changes,archive}` and write the documented,
 /// versioned `givn/config.yaml`. Enables all addons by default (opt-out via
 /// `--no-addons`). Generates skills. Idempotent. `AGENTS.md` is otherwise
@@ -167,7 +173,7 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
 /// Ask the user which agents to install skills/commands to.
 ///
 /// On a real terminal, shows an arrow-key/space/enter checkbox list with
-/// nothing marked; confirming nothing is refused. `dialoguer` needs a
+/// `.opencode` marked; confirming nothing is refused. `dialoguer` needs a
 /// controlling terminal, so with piped/closed stdin (automation, tests) this
 /// instead reads one line of comma-separated names, same as before. EOF
 /// without an `--agents` flag is refused. Unknown names are dropped with a
@@ -177,12 +183,17 @@ fn prompt_for_targets() -> Result<Vec<AgentTarget>> {
 
     if stdin.is_terminal() {
         let items: Vec<&str> = AgentTarget::ALL.iter().map(|t| t.display()).collect();
+        let defaults: Vec<bool> = AgentTarget::ALL
+            .iter()
+            .map(|target| *target == DEFAULT_PROMPT_TARGET)
+            .collect();
 
         let selected = dialoguer::MultiSelect::new()
             .with_prompt(
                 "Which agents should givn install skills to? (space to toggle, enter to confirm)",
             )
             .items(&items)
+            .defaults(&defaults)
             .interact()?;
 
         return require_agent_target(selected.into_iter().map(|i| AgentTarget::ALL[i]).collect());
