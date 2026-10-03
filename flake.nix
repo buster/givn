@@ -1,7 +1,7 @@
 {
   description = "givn — single-binary, Gherkin-first spec-driven workflow tool";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
   outputs =
     { self, nixpkgs }:
@@ -18,7 +18,9 @@
       packages = forAllSystems (pkgs: rec {
         givn = pkgs.rustPlatform.buildRustPackage {
           pname = "givn";
-          inherit ((pkgs.lib.importTOML ./Cargo.toml).package) version;
+          version = "${(pkgs.lib.importTOML ./Cargo.toml).package.version}-${
+            self.shortRev or self.dirtyShortRev or "dirty"
+          }";
           src = self;
           cargoLock.lockFile = ./Cargo.lock;
           # Unit tests shell out to git.
