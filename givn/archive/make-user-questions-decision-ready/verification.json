@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "make-user-questions-decision-ready",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "0cfd1316d22fbccd17d8b7aa4ee834acce6a5a7c",
+  "tested_revision": "0cfd1316d22fbccd17d8b7aa4ee834acce6a5a7c",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 14.207188409
+    },
+    "regular": {
+      "status": "passed",
+      "total": 592,
+      "passed": 592,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 63.338898689
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 8145,
+    "line_valid": 10183,
+    "line_percent": 79
+  },
   "started_at_unix": 1791144539,
-  "finished_at_unix": null
+  "finished_at_unix": 1791144675
 }
