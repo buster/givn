@@ -35,6 +35,10 @@
 | **Forward repair** | Repairing a failed archive in place and rerunning the archive against the new published state; the failed candidate is kept, never silently discarded. Anti-terms: rollback, restore. |
 | **Delta** | An active Gherkin feature marked `@givn.delta` that describes Added, Modified, or Removed scenarios. |
 | **Release note** | The one complete, user-facing sentence a change's proposal carries naming what the change does; every revision the change records shares it as the message subject, with the scenario title in the message body. A changelog line derived from revision subjects is a consequence, not the release note. Anti-terms: change summary, changelog entry. |
+| **Changelog** | The durable `CHANGELOG.md` whose release sections list each release's user-visible changes, one entry per change, taken from the change's release note. Anti-terms: release history, commit log. |
+| **Release section** | One `## [x.y.z] - date` block of the changelog, generated from the revisions since the last version tag and carrying only user-visible groups; a range without user-visible change has no release section and stops the release. Anti-terms: release block, release notes file. |
+| **Release base tag** | The annotated version tag that matches the version the package manifest declares current; the generated release range starts there. Anti-term: last tag. |
+| **Release revision** | The repository revision the release preparation records, carrying the version bump and the release section; the annotated version tag points at it. Anti-term: version commit. |
 | **Disposition** | A review entry for a deterministic overlap finding involving a change delta. |
 | **Fingerprint** | A deterministic masked assertion sequence plus best-effort facts: exit code, `contains` polarity, table values, `[DONE]`, and TTY mention. |
 | **Generated skill** | A skill file written from a skill template into an agent target directory when `givn skills sync` runs. |
