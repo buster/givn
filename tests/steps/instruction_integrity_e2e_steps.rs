@@ -59,57 +59,6 @@ fn cli_no_longer_advertises_retrieval(world: &mut GivnWorld) {
     );
 }
 
-#[when("the author requests the design instructions through the Givn CLI")]
-fn author_requests_design_instructions(world: &mut GivnWorld) {
-    let output = {
-        let env = active_project(world);
-        crate::common::run_givn(
-            env,
-            &[
-                "instructions",
-                "design",
-                "--change",
-                "instruction-integrity",
-            ],
-        )
-    };
-    world.last_output = Some(output);
-}
-
-#[then("the CLI output contains every required E2E design decision")]
-fn cli_contains_e2e_design_decisions(world: &mut GivnWorld) {
-    let output = stdout(world);
-    for required in [
-        "E2E smoke test infrastructure",
-        "verify.e2e_command",
-        "Local test infrastructure",
-        "E2E framework choice and justification",
-        "Interaction Coverage Matrix",
-    ] {
-        assert!(
-            output.contains(required),
-            "design guidance missing {required}"
-        );
-    }
-}
-
-#[when("the reviewer requests the review instructions through the Givn CLI")]
-fn reviewer_requests_review_instructions(world: &mut GivnWorld) {
-    let output = {
-        let env = active_project(world);
-        crate::common::run_givn(
-            env,
-            &[
-                "instructions",
-                "review",
-                "--change",
-                "instruction-integrity",
-            ],
-        )
-    };
-    world.last_output = Some(output);
-}
-
 // Step kept for the @givn.removed placeholder in the removal delta (the
 // scenario itself was removed with the semantic gate).
 
@@ -119,23 +68,6 @@ fn cli_contains_remediation_checks(world: &mut GivnWorld) {
     assert!(
         !output.contains("Semantic remediation verification"),
         "semantic remediation guidance must be gone"
-    );
-}
-
-#[then("the CLI output contains the deterministic gate dispositions guidance")]
-fn cli_contains_dispositions_guidance(world: &mut GivnWorld) {
-    let output = stdout(world);
-    assert!(
-        output.contains("## Deterministic gate dispositions"),
-        "review guidance missing deterministic gate dispositions section"
-    );
-    assert!(
-        output.contains("Overlap") && output.contains("dispositions"),
-        "review guidance missing overlap dispositions table requirement"
-    );
-    assert!(
-        output.contains("split-or-keep"),
-        "review guidance missing split-or-keep decision requirement"
     );
 }
 

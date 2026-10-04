@@ -743,7 +743,9 @@ fn diagnostic_contrast_excludes_invalid_answer(world: &mut GivnWorld) {
 
 // --- decision-ready questions: material commitments -------------------------
 
-#[when("the author reads the material-commitment teaching contrast from the returned dialog instructions")]
+#[when(
+    "the author reads the material-commitment teaching contrast from the returned dialog instructions"
+)]
 fn author_reads_material_commitment_contrast(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("dialog fixture is missing");
     world.last_output = Some(crate::common::run_givn(env, &["instructions", "dialog"]));
@@ -754,7 +756,9 @@ fn author_reads_material_commitment_contrast(world: &mut GivnWorld) {
     );
 }
 
-#[then("the contrast distinguishes required recovery verification from already implemented recovery support")]
+#[then(
+    "the contrast distinguishes required recovery verification from already implemented recovery support"
+)]
 fn commitment_contrast_requires_recovery_verification(world: &mut GivnWorld) {
     let output = cli_stdout(world);
     let section = example_section(&output, 4);
@@ -765,7 +769,9 @@ fn commitment_contrast_requires_recovery_verification(world: &mut GivnWorld) {
     );
 }
 
-#[then("the less-committing answer leaves saved projects unchanged rather than promising a reversible upgrade")]
+#[then(
+    "the less-committing answer leaves saved projects unchanged rather than promising a reversible upgrade"
+)]
 fn commitment_contrast_keeps_saved_projects(world: &mut GivnWorld) {
     let output = cli_stdout(world);
     let section = example_section(&output, 4);
@@ -780,7 +786,9 @@ fn commitment_contrast_keeps_saved_projects(world: &mut GivnWorld) {
     );
 }
 
-#[then("the policy requires unknown compatibility facts to be established or consent narrowed before rollout approval")]
+#[then(
+    "the policy requires unknown compatibility facts to be established or consent narrowed before rollout approval"
+)]
 fn commitment_contrast_requires_established_facts(world: &mut GivnWorld) {
     let output = cli_stdout(world);
     let section = example_section(&output, 4);
@@ -792,7 +800,9 @@ fn commitment_contrast_requires_established_facts(world: &mut GivnWorld) {
 
 // --- decision-ready questions: general policy without a change --------------
 
-#[then("the returned general policy governs question preparation without requiring a selected change")]
+#[then(
+    "the returned general policy governs question preparation without requiring a selected change"
+)]
 fn general_policy_governs_question_preparation(world: &mut GivnWorld) {
     let output = cli_stdout(world);
     assert!(
@@ -802,13 +812,82 @@ fn general_policy_governs_question_preparation(world: &mut GivnWorld) {
     );
 }
 
-#[then("the returned policy distinguishes routine clarification from decisions that require alternatives and consequences")]
+#[then(
+    "the returned policy distinguishes routine clarification from decisions that require alternatives and consequences"
+)]
 fn general_policy_distinguishes_clarification(world: &mut GivnWorld) {
     let output = cli_stdout(world);
     assert!(
         output.contains("A short information request")
             && output.contains("A substantive choice receives the full treatment"),
         "policy does not distinguish routine clarification from substantive decisions: {output}"
+    );
+}
+
+// --- decision-ready questions: design guidance migration --------------------
+
+#[when("the author requests the design instructions through the Givn CLI")]
+fn author_requests_design_instructions_cli(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("design-guidance fixture is missing");
+    world.last_output = Some(crate::common::run_givn(
+        env,
+        &[
+            "instructions",
+            "design",
+            "--change",
+            "instruction-integrity",
+        ],
+    ));
+}
+
+#[then(
+    "the returned design guidance requires the runner scope strictness proof separate bindings real driver and local infrastructure"
+)]
+fn design_guidance_requires_setup_record(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    for marker in [
+        "verify.e2e_command",
+        "E2E strict-mode proof",
+        "separate from unit/integration steps",
+        "Local test infrastructure",
+        "named real interface",
+    ] {
+        assert!(
+            output.contains(marker),
+            "returned design guidance is missing {marker:?}: {output}"
+        );
+    }
+}
+
+#[then(
+    "the returned design guidance requires framework justification and a matching interaction coverage matrix"
+)]
+fn design_guidance_requires_framework_and_matrix(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    for marker in [
+        "E2E framework choice and justification",
+        "Interaction Coverage Matrix",
+    ] {
+        assert!(
+            output.contains(marker),
+            "returned design guidance is missing {marker:?}: {output}"
+        );
+    }
+}
+
+#[then(
+    "the returned design guidance distinguishes terminal transcripts from Web UI viewport evidence"
+)]
+fn design_guidance_distinguishes_terminal_evidence(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("screenshot per viewport")
+            && output.contains("terminal interface")
+            && output.contains("transcript.txt"),
+        "returned design guidance does not distinguish terminal from Web UI evidence: {output}"
     );
 }
 
