@@ -4,6 +4,8 @@ description: Execute the RED/GREEN/REFACTOR TDD loop for a givn change, one scen
 
 Implement a givn change using scenario-by-scenario TDD.
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 **Input**: Optionally specify a change ID after `/givn-implement`. If omitted,
 infer from conversation context, or auto-select if only one active change exists.
 If ambiguous, list changes and ask.

@@ -1019,6 +1019,148 @@ fn startup_json_does_not_embed_full_policy(world: &mut GivnWorld) {
     );
 }
 
+// --- decision-ready questions: addon-independent obligations ----------------
+
+pub(crate) const CORE_SKILL_FAMILIES: [&str; 13] = [
+    "givn-propose",
+    "givn-spec",
+    "givn-design",
+    "givn-tasks",
+    "givn-implement",
+    "givn-review",
+    "givn-archive",
+    "givn-explore",
+    "givn-design-review",
+    "givn-steps",
+    "givn-reverse-engineer",
+    "givn-characterize",
+    "givn-ideation",
+];
+
+pub(crate) const CORE_COMMANDS: [&str; 13] = CORE_SKILL_FAMILIES;
+
+#[given("a Givn project with all agent skill targets selected and every optional addon disabled")]
+fn project_with_all_targets_and_no_addons(world: &mut GivnWorld) {
+    let env = crate::common::make_bare_root();
+    let output = crate::common::run_givn(
+        &env,
+        &["init", "--no-addons", "--agents", "opencode,agents,claude"],
+    );
+    assert!(
+        output.status.success(),
+        "addon-free init failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    world.env = Some(env);
+}
+
+#[when("the author synchronizes the selected guidance through the Givn CLI")]
+fn author_synchronizes_selected_guidance(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("sync fixture is missing");
+    world.last_output = Some(crate::common::run_givn(env, &["skills", "sync"]));
+}
+
+#[then(
+    "every available core skill and command still requires the effective dialog policy for every user-facing question"
+)]
+fn core_entries_require_dialog_policy(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("sync fixture is missing");
+    for skill in CORE_SKILL_FAMILIES {
+        for target in ["opencode", "agents", "claude"] {
+            let rel = format!(".{target}/skills/{skill}/SKILL.md");
+            let content = std::fs::read_to_string(env.path(&rel))
+                .unwrap_or_else(|e| panic!("{rel} missing after sync: {e}"));
+            assert!(
+                content.contains("for every user-facing question")
+                    && content.contains("effective policy from `givn instructions dialog`"),
+                "{rel} does not carry the dialog obligation: {content}"
+            );
+        }
+    }
+    for command in CORE_COMMANDS {
+        let rel = format!(".opencode/commands/{command}.md");
+        let content = std::fs::read_to_string(env.path(&rel))
+            .unwrap_or_else(|e| panic!("{rel} missing after sync: {e}"));
+        assert!(
+            content.contains("for every user-facing question")
+                && content.contains("effective policy from `givn instructions dialog`"),
+            "{rel} does not carry the dialog obligation: {content}"
+        );
+    }
+}
+
+#[then("guidance for disabled addons is not installed")]
+fn disabled_addon_guidance_is_absent(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("sync fixture is missing");
+    for absent in [
+        ".opencode/skills/givn-domain-modeling",
+        ".opencode/skills/givn-dev-principles",
+        ".opencode/commands/grill-me.md",
+        ".opencode/commands/grill-with-docs.md",
+    ] {
+        assert!(
+            !env.path(absent).exists(),
+            "disabled-addon guidance was installed at {absent}"
+        );
+    }
+    let content = std::fs::read_to_string(env.path(".opencode/skills/givn-propose/SKILL.md"))
+        .expect("core skill missing");
+    for vocabulary in [
+        "arc42",
+        "Absolute Mode",
+        "domain-modeling",
+        "dev-principles",
+    ] {
+        assert!(
+            !content.contains(vocabulary),
+            "core guidance leaks disabled-addon vocabulary {vocabulary:?}: {content}"
+        );
+    }
+}
+
+#[then("the core dialog obligation does not depend on the optional tone policy")]
+fn core_obligation_is_addon_independent(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("sync fixture is missing");
+    let content = std::fs::read_to_string(env.path(".opencode/skills/givn-propose/SKILL.md"))
+        .expect("core skill missing");
+    assert!(
+        content.contains("effective policy from `givn instructions dialog`")
+            && !content.contains("Absolute Mode"),
+        "core obligation depends on the optional tone policy: {content}"
+    );
+}
+
+#[then("the selected targets and addon choices remain unchanged")]
+fn selected_targets_and_addons_unchanged(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("sync fixture is missing");
+    let config = std::fs::read_to_string(env.path("givn/config.yaml")).expect("config missing");
+    // Managed scaffold comments mention the addon keys; only live keys count.
+    let active: String = config
+        .lines()
+        .filter(|line| !line.trim_start().starts_with('#'))
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(
+        active.contains("targets: [opencode, agents, claude]"),
+        "selected targets changed after sync: {active}"
+    );
+    for addon in [
+        "arc42",
+        "absolute_mode",
+        "readme",
+        "coverage",
+        "domain_modeling",
+        "dev_principles",
+        "grill_me",
+        "grill_with_docs",
+    ] {
+        assert!(
+            !active.contains(&format!("{addon}: true")),
+            "optional addon {addon} was enabled without a user decision: {active}"
+        );
+    }
+}
+
 fn dialog_policy(world: &GivnWorld) -> &str {
     world
         .additional_output

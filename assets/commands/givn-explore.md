@@ -4,6 +4,8 @@ description: Think through a problem before proposing a change — investigate, 
 
 Think through a problem before proposing a change.
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 **NEVER write code or implement features during explore.** If the user asks to
 implement, direct them to `/givn-propose`.
 

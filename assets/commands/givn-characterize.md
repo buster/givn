@@ -6,6 +6,8 @@ Execute the characterization loop for a givn reverse-engineering change.
 RED/GREEN/REFACTOR per scenario: step definitions assert **observed**
 behaviour, production code is refactored only for testability seams.
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 **Input**: Optionally specify a change ID after `/givn-characterize`. If
 omitted, infer from conversation context, or auto-select if only one active
 change exists. If ambiguous, list changes and ask.

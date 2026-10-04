@@ -6,6 +6,8 @@ Reverse-engineer an existing codebase capability into **descriptive Gherkin
 specs** that document what the system *does* today. No proposals, no designs —
 just `.feature` files + characterization tasks that make them executable.
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 **Input**: The argument after `/givn-reverse-engineer` is the change ID
 (kebab-case), OR a plain description of the capability to reverse-engineer
 (e.g. "the gherkin merge engine"). If nothing is provided, ask.
