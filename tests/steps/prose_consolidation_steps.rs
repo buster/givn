@@ -75,6 +75,103 @@ fn assert_delegation_obligation(where_: &str, text: &str) {
     }
 }
 
+// --- decision-ready questions: project-owned replacements -------------------
+
+pub(crate) const REPLACEMENT_SKILL: &str = "---\nname: givn-propose\ndescription: Project-owned propose skill.\n---\n\n# givn-propose\n\nProject-owned propose guidance.\n";
+
+pub(crate) const REPLACEMENT_COMMAND: &str = "---\ndescription: Project-owned propose command\n---\n\nProject-owned propose command body.\n";
+
+const MANAGED_POLICY_REFERENCE: &str = "follow the effective dialog policy from";
+const MANAGED_HANDOFF_REFERENCE: &str = "pass the obligation explicitly to fresh delegated contexts";
+
+#[given("a Givn project with all agent skill targets selected")]
+fn project_with_all_skill_targets(world: &mut GivnWorld) {
+    let env = crate::common::make_bare_root();
+    let output = crate::common::run_givn(&env, &["init", "--agents", "opencode,agents,claude"]);
+    assert!(
+        output.status.success(),
+        "init with all targets failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    world.env = Some(env);
+}
+
+#[given("valid project-owned skill and command replacements intentionally omit the bundled dialog obligation")]
+fn project_replacements_omit_obligation(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("replacement fixture is missing");
+    let skill_path = env.path("givn/skills/givn-propose/SKILL.md.tmpl");
+    std::fs::create_dir_all(skill_path.parent().expect("skill parent")).expect("create skills dir");
+    std::fs::write(&skill_path, REPLACEMENT_SKILL).expect("write replacement skill");
+    let command_path = env.path("givn/commands/givn-propose.md");
+    std::fs::create_dir_all(command_path.parent().expect("command parent"))
+        .expect("create commands dir");
+    std::fs::write(&command_path, REPLACEMENT_COMMAND).expect("write replacement command");
+    assert!(
+        !REPLACEMENT_SKILL.contains("givn instructions dialog")
+            && !REPLACEMENT_COMMAND.contains("givn instructions dialog"),
+        "the replacement fixture must intentionally omit the bundled obligation"
+    );
+}
+
+#[then("the project-owned skill and command source bytes remain unchanged")]
+fn replacement_sources_unchanged(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("replacement fixture is missing");
+    let skill = std::fs::read_to_string(env.path("givn/skills/givn-propose/SKILL.md.tmpl"))
+        .expect("replacement skill missing");
+    assert_eq!(
+        skill, REPLACEMENT_SKILL,
+        "the project-owned skill template bytes changed"
+    );
+    let command = std::fs::read_to_string(env.path("givn/commands/givn-propose.md"))
+        .expect("replacement command missing");
+    assert_eq!(
+        command, REPLACEMENT_COMMAND,
+        "the project-owned command template bytes changed"
+    );
+}
+
+#[then("every selected skill consumer receives the authoritative rendered replacement without a bundled prefix")]
+fn skill_consumers_receive_replacement(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("replacement fixture is missing");
+    for target in ["opencode", "agents", "claude"] {
+        let rel = format!(".{target}/skills/givn-propose/SKILL.md");
+        let delivered =
+            std::fs::read_to_string(env.path(&rel)).unwrap_or_else(|e| panic!("{rel}: {e}"));
+        assert_eq!(
+            delivered, REPLACEMENT_SKILL,
+            "{rel} is not the authoritative replacement (a bundled prefix or suffix was injected)"
+        );
+    }
+}
+
+#[then("the opencode command consumer receives the authoritative rendered replacement without a bundled prefix")]
+fn command_consumer_receives_replacement(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("replacement fixture is missing");
+    let delivered = std::fs::read_to_string(env.path(".opencode/commands/givn-propose.md"))
+        .expect("delivered command missing");
+    assert_eq!(
+        delivered, REPLACEMENT_COMMAND,
+        "the delivered command is not the authoritative replacement"
+    );
+}
+
+#[then("the managed project-start guidance still references the effective dialog policy")]
+fn managed_guidance_references_policy(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("replacement fixture is missing");
+    let agents = std::fs::read_to_string(env.path("AGENTS.md")).expect("AGENTS.md missing");
+    let start = agents
+        .find("<!-- givn:begin:givn-project -->")
+        .expect("managed block start missing");
+    let end = agents
+        .find("<!-- givn:end:givn-project -->")
+        .expect("managed block end missing");
+    let block = &agents[start..end];
+    assert!(
+        block.contains(MANAGED_POLICY_REFERENCE) && block.contains(MANAGED_HANDOFF_REFERENCE),
+        "managed project-start guidance lost the effective-policy reference: {block}"
+    );
+}
+
 #[given("a Givn project with delegated authoring and review guidance enabled")]
 fn project_with_delegated_guidance(world: &mut GivnWorld) {
     let env = crate::common::make_bare_root();
