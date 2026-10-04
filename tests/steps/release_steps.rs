@@ -165,6 +165,20 @@ fn given_internal_and_uncategorised(world: &mut GivnWorld) {
     fixture.commit("misc: An uncategorised revision");
 }
 
+#[given(
+    "a release range with only documentation, refactoring, test, chore, and uncategorised revisions"
+)]
+fn given_skipped_range(world: &mut GivnWorld) {
+    let fixture = make_fixture();
+    fixture.commit("docs(alpha): A documentation revision");
+    fixture.commit("refactor(beta): A refactoring revision");
+    fixture.commit("test(gamma): A test revision");
+    fixture.commit("chore(delta): A chore revision");
+    fixture.commit("misc: An uncategorised revision");
+    world.release.expected_groups.clear();
+    world.release.fixture = Some(fixture);
+}
+
 #[when("the maintainer generates the changelog for the release range")]
 fn when_generate(world: &mut GivnWorld) {
     let fixture = world
@@ -215,6 +229,20 @@ fn then_no_group(world: &mut GivnWorld, group: String) {
     assert!(
         section_body(&changelog, &group).is_none(),
         "the changelog lists an unexpected {group} group:\n{changelog}"
+    );
+}
+
+#[then("the release section lists no change group")]
+fn then_no_change_group(world: &mut GivnWorld) {
+    let changelog = generated(world).stdout.clone();
+    let groups: Vec<&str> = changelog
+        .lines()
+        .map(str::trim)
+        .filter(|line| line.starts_with("### "))
+        .collect();
+    assert!(
+        groups.is_empty(),
+        "the release section lists change groups {groups:?}:\n{changelog}"
     );
 }
 

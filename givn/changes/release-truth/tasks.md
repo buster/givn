@@ -132,7 +132,7 @@ fallback in `cliff.toml`.
 - [x] REFACTOR: tidy the helper without behavior change; rerun; paste the pass
   - OUTPUT: `cargo fmt --all` applied to the new module; exit 0;
     `1 scenario (1 passed)`, `6 steps (6 passed)` (log `/tmp/s1-refactor.log`).
-- [ ] COMMIT: `<hash>` -- describe-the-release: A release section lists only the user-visible change groups
+- [x] COMMIT: `b5f91a1c` -- describe-the-release: A release section lists only the user-visible change groups
 
 ## Task S2 — A release range without user-visible change has no release section
 
@@ -140,13 +140,20 @@ Owning rule: a range without user-visible change produces no release section.
 Production change owned by this scenario: the `^docs` and `^refactor` skip
 rules that complete the allowlist in `cliff.toml`.
 
-- [ ] RED: add the scenario's steps and run it; paste the failure showing the
+- [x] RED: add the scenario's steps and run it; paste the failure showing the
       remaining `Documentation`/`Refactoring` groups
-  - OUTPUT: _pending_
-- [ ] GREEN: complete the allowlist; rerun; paste the pass
-  - OUTPUT: _pending_
-- [ ] REFACTOR: rerun; paste the pass
-  - OUTPUT: _pending_
+  - OUTPUT: exit 101; `1 scenario (1 failed)`, `Then the release section lists
+    no change group` — `Step panicked. Captured output: the release section
+    lists change groups ["### Documentation", "### Refactoring"]:` followed by
+    the generated section (log `/tmp/s2-red.log`).
+- [x] GREEN: complete the allowlist; rerun; paste the pass
+  - OUTPUT: exit 0; `3 steps (3 passed)`; production file: `cliff.toml`
+    (`^docs` and `^refactor` skip; the narrower `docs(givn)`/`docs(plan)`
+    rules became redundant); S1 regression rerun also exit 0
+    (log `/tmp/s2-green.log`).
+- [x] REFACTOR: rerun; paste the pass
+  - OUTPUT: `cargo fmt --all` applied to the long Given attribute; exit 0;
+    `3 steps (3 passed)` (log `/tmp/s2-refactor.log`).
 - [ ] COMMIT: `<hash>` -- describe-the-release: A release range without user-visible change has no release section
 
 ## Task S3 — A release cannot be prepared without a tag for the current version
