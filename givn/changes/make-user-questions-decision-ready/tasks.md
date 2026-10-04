@@ -1017,13 +1017,13 @@ Project-owned dialog policy."
       $ (re-ran unchanged) → 1 scenario (1 passed), 6 steps                EXIT=0
       ```
       ```
-      - [x] COMMIT: `None` -- initialize-a-project: Initialization without SCM preserves guidance and names the later archive refusal
+      - [x] COMMIT: `af60abc6` -- initialize-a-project: Initialization without SCM preserves guidance and names the later archive refusal
 
 ---
 
 ## E2E setup (after all non-@e2e scenarios are GREEN)
 
-- [ ] Setup: e2e step skeletons, e2e strict-mode proof, and `verify.e2e_command` isolation proof
+- [x] Setup: e2e step skeletons, e2e strict-mode proof, and `verify.e2e_command` isolation proof
       Design constraints:
         - E2E step files, one file per capability, separate from the regular
           steps: extend `tests/steps/instruction_integrity_e2e_steps.rs`; create
@@ -1047,15 +1047,29 @@ Project-owned dialog policy."
         - Same with `GIVN_CUCUMBER_TAGS='@e2e'` → 5 units, strictly fewer than
           the default scope; and `'not @e2e'` → 14.
       ```
-      <!-- paste e2e strictness proof + the three listings -->
       ```
-  - [ ] COMMIT: `<hash>` -- Setup: e2e step skeletons, strict-mode proof and scope isolation
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/probe ./run-tests.sh --e2e
+             Summary [0.332s] 1 test run: 0 passed, 1 failed, 2 skipped
+        error: test run failed                          EXIT=100   (e2e probe with an unimplemented!() step)
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs GIVN_CUCUMBER_TAGS='' cargo nextest list --locked --test features_runner
+        19 units        (removed_hits=0)
+      $ ... GIVN_CUCUMBER_TAGS='not @e2e' ...   14 units   (removed_hits=0)
+      $ ... GIVN_CUCUMBER_TAGS='@e2e' ...        5 units   (removed_hits=0)
+      $ ... GIVN_CUCUMBER_TAGS='@e2e' ... -- --ignored    14 units   (removed_hits=0)
+      Least-strictly-smaller proof: 5 < 19 and `verify.e2e_command` ("./run-tests.sh --e2e") differs from
+      `verify.command` ("./run-tests.sh"). E2E step modules registered: instruction_integrity_e2e_steps,
+      prose_consolidation_e2e_steps, initialize_a_project_e2e_steps (one file per capability).
+      Local environment start/stop: not applicable — every changed action is a real CLI subprocess or a real
+      PTY; no server, port, database, digital twin or network dependency is introduced.
+      ```
+      ```
+  - [x] COMMIT: `cfe1951a` -- Setup: e2e step skeletons, strict-mode proof and scope isolation
 
 ---
 
 ## E2E Smoke Tests
 
-- [ ] @e2e instruction-integrity: Author starts a session with the universal dialog obligation
+- [x] @e2e instruction-integrity: Author starts a session with the universal dialog obligation
       Design constraints:
         - Real CLI subprocess: `CARGO_BIN_EXE_givn instructions` (text, no
           `--change`, no artifact id) in an initialized root WITHOUT an active
@@ -1081,7 +1095,18 @@ Project-owned dialog policy."
                 overview excerpt but preserve the next-action text → FAIL. Paste
                 command + output + category.
       ```
-      <!-- paste RED evidence: command + output + category -->
+      ```
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs cargo test --locked --test features_runner -- --name '^Author starts a session with the universal dialog obligation$'
+         ✔ Given an initialized Givn project without an active change
+         ✔ When the author requests the normal Givn startup instructions through the Givn CLI
+         ✔ Then the startup guidance requires loading the effective dialog policy before the context's first user-facing question
+         ✔ And the startup guidance applies that obligation outside named skills and to delegated question preparation
+         ✘ And the startup guidance distinguishes loading once per context from rereading before every question
+            Step panicked. Captured output: startup guidance does not distinguish loading once from rereading
+         1 scenario (1 failed), 6 steps (5 passed, 1 failed)          EXIT=1
+      OLD_PRODUCT_RED: the shared overview required the load but never distinguished it from rereading
+      before every question. Existing real CLI subprocess driving; no HTTP or in-process shortcut.
+      ```
       ```
       GREEN:    Production surface: `src/cli/instructions.rs::generic_overview()`
                 plus `assets/agents-project-hint.md` (unconditional startup
@@ -1092,15 +1117,26 @@ Project-owned dialog policy."
                 ```
                 Run scoped → PASSES. Paste output.
       ```
-      <!-- paste GREEN evidence: command + output + category -->
+      ```
+      $ (same scoped command after adding the once-per-context distinction to generic_overview())
+         1 scenario (1 passed), 6 steps (6 passed)                    EXIT=0
+      Production files: src/cli/instructions.rs::generic_overview() (single-load distinction).
+      Test files: tests/steps/instruction_integrity_e2e_steps.rs (no-change fixture Given, startup When,
+      four terminal-baseline assertions).
+      Evidence: givn/changes/make-user-questions-decision-ready/evidence/visual/author-starts-a-session-with-the-universal-dialog-obligation/transcript.txt
+      (real argv, cwd disposition, exit, raw stdout/stderr; captured after the final assertion).
+      Companion: delta JSON startup scenario still passes (5 steps)     EXIT=0
+      ```
       ```
       REFACTOR: Clean up e2e code. Re-run scoped → still PASSES. Paste output.
       ```
-      <!-- paste REFACTOR evidence -->
       ```
-      - [ ] COMMIT: `<hash>` -- test(e2e): Author starts a session with the universal dialog obligation
+      $ (re-ran after cargo fmt) → 1 scenario (1 passed), 6 steps        EXIT=0
+      ```
+      ```
+      - [x] COMMIT: `8644f419` -- test(e2e): Author starts a session with the universal dialog obligation
 
-- [ ] @e2e prose-consolidation: Generated guidance points to the canonical E2E policy
+- [x] @e2e prose-consolidation: Generated guidance points to the canonical E2E policy
       Design constraints:
         - Real `givn skills sync` in a project with all three agent targets and
           all optional guidance enabled. Independently expect 15 skill families
@@ -1123,7 +1159,16 @@ Project-owned dialog policy."
                 assertion FAILS; every expected consumer must still be checked.
                 Paste command + output + category.
       ```
-      <!-- paste RED evidence: command + output + category -->
+      ```
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs cargo test --locked --test features_runner -- --name '^Generated guidance points to the canonical E2E policy$'
+         ✔ Given a Givn project with all agent skill targets and optional guidance enabled
+         ✔ When the consumer synchronizes the selected agent guidance through the Givn CLI
+         ✘ Then every emitted skill and command requires the effective dialog policy before its context asks a user-facing question
+            Step panicked. Captured output: .opencode/skills/givn-domain-modeling/SKILL.md does not require the effective dialog policy
+         1 scenario (1 failed), 3 steps (2 passed, 1 failed)          EXIT=1
+      OLD_PRODUCT_RED: the optional skill and command templates shipped without the obligation. The
+      independent 15/15 family inventory drives the sweep; the generator's own list is never the oracle.
+      ```
       ```
       GREEN:    Production surface: the 13 core skill templates, the 2 optional
                 skill templates, the 13 core command templates, the 2 optional
@@ -1134,15 +1179,29 @@ Project-owned dialog policy."
                 ```
                 Run scoped → PASSES. Paste output.
       ```
-      <!-- paste GREEN evidence: command + output + category -->
+      ```
+      $ (same scoped command after editing the four optional templates)
+         1 scenario (1 passed), 8 steps (8 passed)                    EXIT=0
+      Production files: assets/skills/givn-domain-modeling/SKILL.md.tmpl,
+      assets/skills/givn-dev-principles/SKILL.md.tmpl, assets/commands/grill-me.md,
+      assets/commands/grill-with-docs.md (obligation added; 15 skill families × 3 targets and 15 commands
+      in opencode now carry it, canonical specs/E2E references preserved, no competing policy copies).
+      Test file: tests/steps/prose_consolidation_e2e_steps.rs (independent family/command inventory, sync
+      report, no-copy and canonical-reference assertions).
+      Evidence: evidence/visual/generated-guidance-points-to-the-canonical-e2e-policy/transcript.txt
+      (real argv, cwd, exit, raw stdout plus path-labeled delivered excerpts).
+      Companion: ./run-tests.sh --non-e2e → 482 passed, 0 failed, 91 skipped   EXIT=0
+      ```
       ```
       REFACTOR: Clean up e2e code. Re-run scoped → still PASSES. Paste output.
       ```
-      <!-- paste REFACTOR evidence -->
       ```
-      - [ ] COMMIT: `<hash>` -- test(e2e): Generated guidance points to the canonical E2E policy
+      $ (re-ran after cargo fmt + clippy) → 1 scenario (1 passed), 8 steps    EXIT=0
+      ```
+      ```
+      - [x] COMMIT: `4fde0ad6` -- test(e2e): Generated guidance points to the canonical E2E policy
 
-- [ ] @e2e initialize-a-project: Consumer runs init non-interactively and gets opencode skills
+- [x] @e2e initialize-a-project: Consumer runs init non-interactively and gets opencode skills
       Design constraints:
         - Real `givn init --no-addons --agents opencode` in a root without
           `givn/`, containing human-authored agent instructions to preserve.
@@ -1164,7 +1223,22 @@ Project-owned dialog policy."
                 keeping the successful install report and files. Paste command +
                 output + category.
       ```
-      <!-- paste RED evidence: command + output + category -->
+      ```
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs cargo test --locked --test features_runner -- --name '^Consumer runs init non-interactively and gets opencode skills$'
+         ... ✔ 11 assertions ...
+         ✘ And no optional tone addon is required for the obligation
+            Step panicked. Captured output: the obligation depends on the optional tone addon
+         1 scenario (1 failed), 12 steps (11 passed, 1 failed)        EXIT=1
+      The first failure exposed an assertion-scoping defect (the managed scaffold comments mention
+      `absolute_mode: true`); the assertion now reads only live config lines. ORACLE_RED calibration for the
+      managed reference (temporary omission of the obligation bullet from assets/agents-project-hint.md,
+      immediately restored):
+        ✘ And the generated project-start guidance requires the effective dialog policy before every
+          context's first user-facing question
+            managed project-start guidance does not require the policy load
+         1 scenario (1 failed)                                        EXIT=1
+      Both the reported-install path and the managed obligation are discriminated.
+      ```
       ```
       GREEN:    Production surface: `assets/agents-project-hint.md` (and
                 `src/cli/instructions.rs::generic_overview()` only if the
@@ -1174,15 +1248,27 @@ Project-owned dialog policy."
                 ```
                 Run scoped → PASSES. Paste output.
       ```
-      <!-- paste GREEN evidence: command + output + category -->
+      ```
+      $ (same scoped command after the config-comment scope fix)
+         1 scenario (1 passed), 12 steps (12 passed)                  EXIT=0
+      Production files: none for this scenario — the managed obligation was delivered by the preservation
+      task; this scenario drives the real non-interactive init and asserts report, delivered outputs, managed
+      obligation, preserved human bytes and addon independence.
+      Test file: tests/steps/initialize_a_project_e2e_steps.rs (human-instructions Given + managed-block and
+      report assertions).
+      Evidence: evidence/visual/consumer-runs-init-non-interactively-and-gets-opencode-skills/transcript.txt
+      (real argv, cwd, exit, raw stdout, delivered skill head, managed block, preserved human bytes).
+      ```
       ```
       REFACTOR: Clean up e2e code. Re-run scoped → still PASSES. Paste output.
       ```
-      <!-- paste REFACTOR evidence -->
       ```
-      - [ ] COMMIT: `<hash>` -- test(e2e): Consumer runs init non-interactively and gets opencode skills
+      $ (re-ran after restoring the hint and cargo fmt) → 1 scenario (1 passed), 12 steps   EXIT=0
+      ```
+      ```
+      - [x] COMMIT: `b3cc273f` -- test(e2e): Consumer runs init non-interactively and gets opencode skills
 
-- [ ] @e2e initialize-a-project: Consumer re-syncs skills after init and the selection is honoured
+- [x] @e2e initialize-a-project: Consumer re-syncs skills after init and the selection is honoured
       Design constraints:
         - Fixture: `givn/` initialized; `givn/config.yaml` skills targets equal
           `opencode, claude`; an older managed startup block beside
@@ -1204,7 +1290,19 @@ Project-owned dialog policy."
                 delivered excerpt → the assertion FAILS; a successful exit alone
                 cannot pass. Paste command + output + category.
       ```
-      <!-- paste RED evidence: command + output + category -->
+      ```
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs cargo test --locked --test features_runner -- --name '^Consumer re-syncs skills after init and the selection is honoured$'
+         1 scenario (1 passed), 13 steps (13 passed)                  EXIT=0
+      BASELINE_GREEN permitted (the refresh already replaces the stale block). The first RED attempt also
+      exposed two assertion-scoping defects (a commented scaffold line and a case/phrase-sensitive marker),
+      now fixed; ORACLE_RED calibration for the refreshed obligation (temporary omission of the obligation
+      bullet from assets/agents-project-hint.md, immediately restored):
+        ✘ And the managed project-start block now requires the effective dialog policy for every user-facing question
+           the refreshed managed block does not require the policy
+        1 scenario (1 failed)                                       EXIT=1
+      The refreshed-block assertion discriminates the missing obligation; a successful sync exit alone
+      cannot pass it.
+      ```
       ```
       GREEN:    Production surface: `assets/agents-project-hint.md` and the
                 managed-block writing path in `src/cli/agents_block.rs` only if
@@ -1215,15 +1313,27 @@ Project-owned dialog policy."
                 ```
                 Run scoped → PASSES. Paste output.
       ```
-      <!-- paste GREEN evidence: command + output + category -->
+      ```
+      $ (same scoped command after the marker fixes)
+         1 scenario (1 passed), 13 steps (13 passed)                  EXIT=0
+      Production files: none for this scenario — the managed obligation was delivered by the preservation
+      task; this scenario drives real `givn skills sync` over a stale block and asserts report, selected
+      outputs, exactly-one refreshed block, preserved human bytes and unchanged persisted selection.
+      Test file: tests/steps/initialize_a_project_e2e_steps.rs (stale-block Given + four refresh/preservation
+      assertions).
+      Evidence: evidence/visual/consumer-re-syncs-skills-after-init-and-the-selection-is-honoured/transcript.txt
+      (real argv, cwd, exit, raw stdout, refreshed block, occurrence count, preserved human bytes, targets).
+      ```
       ```
       REFACTOR: Clean up e2e code. Re-run scoped → still PASSES. Paste output.
       ```
-      <!-- paste REFACTOR evidence -->
       ```
-      - [ ] COMMIT: `<hash>` -- test(e2e): Consumer re-syncs skills after init and the selection is honoured
+      $ (re-ran after cargo fmt) → 1 scenario (1 passed), 13 steps      EXIT=0
+      ```
+      ```
+      - [x] COMMIT: `d365e66a` -- test(e2e): Consumer re-syncs skills after init and the selection is honoured
 
-- [ ] @e2e initialize-a-project: Consumer selects agent targets during interactive init
+- [x] @e2e initialize-a-project: Consumer selects agent targets during interactive init
       Design constraints:
         - REAL terminal: reuse the existing script-backed helper
           (`script -qec` via `run_init_in_terminal`, 60-second deadline,
@@ -1251,7 +1361,19 @@ Project-owned dialog policy."
                 prompt, so the assertion FAILS. Never claim the old product's
                 real PTY prompt failed. Paste command + output + category.
       ```
-      <!-- paste RED evidence: command + output + category -->
+      ```
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs cargo test --locked --test features_runner -- --name '^Consumer selects agent targets during interactive init$'
+         1 scenario (1 passed), 8 steps (8 passed)                    EXIT=0
+      BASELINE_GREEN with the new real-PTY binding. DRIVER_RED calibration against the pre-change driver
+      (piped stdin, outside the repo):
+        $ printf 'opencode, .claude\n' | givn init
+          ABSENT:  Which agents should givn install skills to?
+          ABSENT:  labeled choice rows (.opencode marked, .agents unmarked, .claude marked)
+          PRESENT: .opencode, .claude
+      The piped driver never renders the labeled checkbox selection, so the prompt assertion genuinely
+      discriminates the harness-fidelity defect; the old product prompt behavior itself is unchanged and
+      was never claimed failing.
+      ```
       ```
       GREEN:    Test-fidelity cutover: helper move into `tests/common/mod.rs`,
                 every caller updated, new
@@ -1262,13 +1384,27 @@ Project-owned dialog policy."
                 ```
                 Run scoped → PASSES. Paste output.
       ```
-      <!-- paste GREEN evidence: command + output + category -->
+      ```
+      $ (same scoped command with the real terminal binding)
+         1 scenario (1 passed), 8 steps (8 passed)                    EXIT=0
+      Test-fidelity cutover: the script-backed PTY helper moved from
+      tests/steps/init_agent_target_selection_steps.rs into tests/common/mod.rs (raw-key semantics,
+      60-second deadline and propagated child exit status preserved; every existing caller updated) and the
+      new tests/steps/initialize_a_project_e2e_steps.rs binding sends \x1b[B \x1b[B \x20 \n to mark
+      .claude beside the premarked .opencode and confirm.
+      Production prompt behavior: unchanged.
+      Evidence: evidence/visual/consumer-selects-agent-targets-during-interactive-init/transcript.txt
+      (raw PTY stream, persisted targets, delivered targets).
+      ```
       ```
       REFACTOR: Clean up e2e code. Re-run scoped → still PASSES. Paste output.
       ```
-      <!-- paste REFACTOR evidence -->
       ```
-      - [ ] COMMIT: `<hash>` -- test(e2e): Consumer selects agent targets during interactive init
+      $ (re-ran after cargo fmt + clippy -- -D warnings clean) → 1 passed, 8 steps   EXIT=0
+      Evidence transcript committed separately (e36eedd0).
+      ```
+      ```
+      - [x] COMMIT: `b782fc33` -- test(e2e): Consumer selects agent targets during interactive init
 
 ---
 
