@@ -1,0 +1,177 @@
+scenario: Consumer selects agent targets during interactive init
+argv: script -qec 'givn init' <pty>   (keys: \x1b[B \x1b[B \x20 \n)
+cwd: <bare temp root>
+exit: 0
+--- raw terminal transcript (cat -v) ---
+Script started on 2026-10-04 22:03:58+02:00 [COMMAND="/home/buster/projects/givn/target/debug/givn init" <not executed on terminal>]
+^[[B^[[B ^M
+^M
+  ________  .__^M
+ /  _____/  |__|__  __ ____^M
+/   \  ___  |  \  \/ //    \^M
+\    \_\  \ |  |\   /|   |  \^M
+ \______  / |__| \_/ |___|  /^M
+        \/                \/^M
+^M
+  from Given to done.^M
+  version 0.8.0^M
+^M
+M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@^M
+^[[?25lWhich agents should givn install skills to? (space to toggle, enter to confirm):^M
+> [x] .opencode^M
+  [ ] .agents^M
+  [ ] .claude^M
+^[[3A^M^[[2K^[[1B^M^[[2K^[[1B^M^[[2K^[[1B^[[3A  [x] .opencode^M
+> [ ] .agents^M
+  [ ] .claude^M
+^[[3A^M^[[2K^[[1B^M^[[2K^[[1B^M^[[2K^[[1B^[[3A  [x] .opencode^M
+  [ ] .agents^M
+> [ ] .claude^M
+^[[3A^M^[[2K^[[1B^M^[[2K^[[1B^M^[[2K^[[1B^[[3A  [x] .opencode^M
+  [ ] .agents^M
+> [x] .claude^M
+^[[4A^M^[[2K^[[1B^M^[[2K^[[1B^M^[[2K^[[1B^M^[[2K^[[1B^[[4AWhich agents should givn install skills to? (space to toggle, enter to confirm): .opencode, .claude^M
+^[[?25h^M
+Scaffolding project...^M
+^M
+  created  givn/specs^M
+  created  givn/changes^M
+  created  givn/archive^M
+  wrote    givn/config.yaml^M
+  skills will be installed to: .opencode, .claude^M
+  wrote    givn/commands.yaml^M
+^M
+Enabling addons...^M
+^M
+enabled addon 'arc42' in givn/config.yaml^M
+^M
+Scaffolded docs/arc42/:^M
+  created  docs/arc42/01-introduction-and-goals.md^M
+  created  docs/arc42/02-architecture-constraints.md^M
+  created  docs/arc42/03-context-and-scope.md^M
+  created  docs/arc42/04-solution-strategy.md^M
+  created  docs/arc42/05-building-block-view.md^M
+  created  docs/arc42/06-runtime-view.md^M
+  created  docs/arc42/07-deployment-view.md^M
+  created  docs/arc42/08-crosscutting-concepts.md^M
+  created  docs/arc42/09-architecture-decisions.md^M
+  created  docs/arc42/10-quality-requirements.md^M
+  created  docs/arc42/11-risks-and-technical-debt.md^M
+  created  docs/arc42/12-glossary.md^M
+  created  docs/arc42/README.md^M
+  created  docs/arc42/adr/adr-template.md^M
+^M
+The 'arc42' artifact is now part of the effective workflow.^M
+It will appear after 'design' in `givn status`.^M
+^M
+Next steps:^M
+  givn status              M-bM-^@M-^T see the updated workflow^M
+  givn eject arc42:instruction   M-bM-^@M-^T customise the instruction (optional)^M
+enabled addon 'absolute_mode' in givn/config.yaml^M
+^M
+Wrote the Absolute Mode policy block to AGENTS.md.^M
+Only the fenced <!-- givn:begin:absolute-mode --> block was added;^M
+the rest of AGENTS.md is untouched.^M
+enabled addon 'readme' in givn/config.yaml^M
+^M
+Scaffolded project README.md.^M
+^M
+The 'readme' addon does not modify the workflow graph.^M
+To customise the template, eject and edit it: givn eject readme:template^M
+enabled addon 'coverage' in givn/config.yaml^M
+^M
+The 'coverage' gate is now enabled.^M
+Coverage is measured at archive time (not per-change).^M
+^M
+Next steps:^M
+  Edit givn/commands.yaml to set coverage.measure_command^M
+  and coverage.merge_command to use your project scripts.^M
+enabled addon 'domain_modeling' in givn/config.yaml^M
+^M
+enabled addon 'dev_principles' in givn/config.yaml^M
+^M
+enabled addon 'grill_me' in givn/config.yaml^M
+^M
+enabled addon 'grill_with_docs' in givn/config.yaml^M
+^M
+^M
+Generating skills and agent commands...^M
+^M
+  commit attribution: .githooks/commit-msg^M
+  Git activation: unavailable (no Git worktree)^M
+  attribution integration: .opencode/plugins/givn-attribution.js^M
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json^M
+  synced skill: givn-propose^M
+  synced skill: givn-spec^M
+  synced skill: givn-design^M
+  synced skill: givn-tasks^M
+  synced skill: givn-implement^M
+  synced skill: givn-review^M
+  synced skill: givn-archive^M
+  synced skill: givn-explore^M
+  synced skill: givn-design-review^M
+  synced skill: givn-steps^M
+  synced skill: givn-reverse-engineer^M
+  synced skill: givn-characterize^M
+  synced skill: givn-ideation^M
+  synced skill: givn-domain-modeling^M
+  synced skill: givn-dev-principles^M
+  synced command: /givn-propose^M
+  synced command: /givn-spec^M
+  synced command: /givn-design^M
+  synced command: /givn-tasks^M
+  synced command: /givn-implement^M
+  synced command: /givn-review^M
+  synced command: /givn-archive^M
+  synced command: /givn-explore^M
+  synced command: /givn-design-review^M
+  synced command: /givn-steps^M
+  synced command: /givn-reverse-engineer^M
+  synced command: /givn-characterize^M
+  synced command: /givn-ideation^M
+  synced command: /grill-me^M
+  synced command: /grill-with-docs^M
+  sync: rules: local-only^M
+  sync: no tracked rule in the current revision^M
+  sync: no rule in reachable history^M
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee^M
+^M
+  warning: no Git worktree or Fossil checkout found at '/tmp/tmp.JfKuBVTlob'^M
+  warning: archive and managed upgrade are unavailable until the project is version-controlled^M
+^M
+M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@^M
+^M
+Installed:^M
+^M
+  givn/config.yaml, givn/{specs,changes,archive}^M
+  core skills and commands^M
+  commit attribution: .githooks/commit-msg (best effort)^M
+  attribution integration: .opencode/plugins/givn-attribution.js^M
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json^M
+  addons:  enabled^M
+    - arc42: Arc42 architecture documentation M-bM-^@M-^T creates and maintains durable docs/arc42/ chapters^M
+    - absolute_mode: Absolute Mode communication policy M-bM-^@M-^T manages a fenced block in AGENTS.md^M
+    - readme: README scaffolding M-bM-^@M-^T writes an initial README.md to the project root^M
+    - coverage: Archive-level coverage gate M-bM-^@M-^T runs project measurement and merge scripts, updates README from the merged Cobertura XML^M
+    - domain_modeling: Skill M-bM-^@M-^T model a change's domain (ubiquitous language, aggregates, invariants) before design^M
+    - dev_principles: Skill M-bM-^@M-^T apply the team's engineering principles during implementation^M
+    - grill_me: Command M-bM-^@M-^T Socratically grill the current plan/design, one question at a time^M
+    - grill_with_docs: Command M-bM-^@M-^T grill the plan/design, citing a source in the project's own docs for every challenge^M
+^M
+M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@M-bM-^TM-^@^M
+^M
+Ready. Three steps to your first change:^M
+^M
+  1. Start a change    givn new <change-id>^M
+  2. Plan it           /givn-propose  (in your AI agent)^M
+  3. Implement it      /givn-implement^M
+^M
+
+Script done on 2026-10-04 22:03:58+02:00 [COMMAND_EXIT_CODE="0"]
+--- persisted targets ---
+skills:
+  targets: [opencode, claude]
+--- delivered targets ---
+.claude/skills
+.opencode/skills
+.agents absent
