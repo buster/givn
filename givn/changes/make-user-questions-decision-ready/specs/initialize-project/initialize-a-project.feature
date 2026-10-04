@@ -8,8 +8,7 @@ Feature: Unconditional dialog obligations in project startup guidance
   # Interactive target selection -> Consumer selects agent targets during interactive init
   # Fossil and no-SCM are init preconditions; remove their redundant E2E identities explicitly.
 
-  @givn.modified @e2e @wip
-  Scenario: Consumer runs init non-interactively and gets opencode skills
+  @givn.modified @e2e Scenario: Consumer runs init non-interactively and gets opencode skills
     Given a project root without a givn/ directory
     And the root contains human-authored agent instructions to preserve
     When the consumer runs `givn init --no-addons --agents opencode`
@@ -23,8 +22,7 @@ Feature: Unconditional dialog obligations in project startup guidance
     And the human-authored agent instructions remain unchanged
     And no optional tone addon is required for the obligation
 
-  @givn.modified @e2e @wip
-  Scenario: Consumer re-syncs skills after init and the selection is honoured
+  @givn.modified @e2e Scenario: Consumer re-syncs skills after init and the selection is honoured
     Given a project root with givn/ initialised
     And givn skills targets in givn/config.yaml equal "opencode, claude"
     And the project contains an older managed startup block beside human-authored agent instructions
@@ -39,8 +37,7 @@ Feature: Unconditional dialog obligations in project startup guidance
     And the human-authored agent instructions remain unchanged
     And the persisted agent selection and unrelated configuration remain unchanged
 
-  @givn.modified @e2e @wip
-  Scenario: Consumer selects agent targets during interactive init
+  @givn.modified @e2e Scenario: Consumer selects agent targets during interactive init
     Given a project root without a givn/ directory
     When the consumer selects opencode and claude in the real terminal init prompt
     Then the terminal displays a labeled agent-target selection and confirms the selected integrations
@@ -50,12 +47,10 @@ Feature: Unconditional dialog obligations in project startup guidance
     And the file ".claude/skills/givn-propose/SKILL.md" exists
     And the directory ".agents/skills/givn-propose" does not exist
 
-  @givn.removed @e2e @wip
-  Scenario: Consumer initializes a Fossil checkout and receives backend-aware guidance
+  @givn.removed @e2e Scenario: Consumer initializes a Fossil checkout and receives backend-aware guidance
     Given the Fossil-precondition contract is preserved as a regular initialization variant
 
-  @givn.added @wip
-  Scenario: Fossil initialization names the supported attribution path without Git plumbing
+  @givn.added Scenario: Fossil initialization names the supported attribution path without Git plumbing
     Given a Fossil checkout without a givn/ directory
     When the consumer runs `givn init --agents opencode`
     Then the command exits 0
@@ -64,12 +59,10 @@ Feature: Unconditional dialog obligations in project startup guidance
     And the generated guidance names the commit path of the active backend
     And the generated guidance states that a raw fossil commit carries no attribution
 
-  @givn.removed @e2e @wip
-  Scenario: Consumer initializes a plain directory and receives a named warning
+  @givn.removed @e2e Scenario: Consumer initializes a plain directory and receives a named warning
     Given the no-SCM contract is preserved as a regular initialization variant
 
-  @givn.added @wip
-  Scenario: Initialization without SCM preserves guidance and names the later archive refusal
+  @givn.added Scenario: Initialization without SCM preserves guidance and names the later archive refusal
     Given a project root without a Git worktree or a Fossil checkout
     When the consumer runs `givn init --agents opencode`
     Then the command exits 0
