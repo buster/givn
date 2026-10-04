@@ -114,7 +114,7 @@ must not be started early.
 
 ## Strict-mode proof and runner setup (do first)
 
-- [ ] Setup: configure the Gherkin runner, prove strict mode, and confirm `verify.command`
+- [x] Setup: configure the Gherkin runner, prove strict mode, and confirm `verify.command`
       Design constraints:
         - Runner: `tests/features_runner.rs` (cucumber-rs 0.23) is the single
           runner for `givn/specs/` and the change delta. Confirm strict mode in
@@ -162,7 +162,20 @@ must not be started early.
            discovery listing (step 5's command) once to confirm no probe title
            appears and the delta count is back to 19 units.
       ```
-      <!-- paste strictness commands + non-zero outputs (regular, unimplemented, e2e) -->
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/probe cargo test --locked --test features_runner -- --name '^Probe with an undefined step$'
+         ✘  Given an undefined strictness probe step
+            Step doesn't match any function
+        1 scenario (1 failed)  → exit status: 1        EXIT=1
+      $ ... --name '^Probe with an unimplemented step$'
+            Matched: tests/steps/strictness_probe_steps.rs:6:1
+            Step panicked. Captured output: not implemented: strictness probe
+        1 scenario (1 failed)  → exit status: 1        EXIT=1
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/probe ./run-tests.sh --e2e
+             Summary [0.332s] 1 test run: 0 passed, 1 failed, 2 skipped
+        error: test run failed                          EXIT=100
+      Probes removed afterwards (probe dir, tests/steps/strictness_probe_steps.rs, its mod.rs registration).
+      Step files already exist and are extended per scenario:
+      tests/steps/{instruction_integrity_steps.rs,prose_consolidation_steps.rs,init_agent_target_selection_steps.rs}.
       ```
       PROOF OF REMOVAL EXCLUSION (mandatory — paste output):
         5. `GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs GIVN_CUCUMBER_TAGS='' cargo nextest list --locked --test features_runner`
@@ -176,7 +189,14 @@ must not be started early.
            (same format the listing prints for kept units) → MUST exit non-zero
            with the named refusal, not a zero-match success.
       ```
-      <!-- paste exclusion listings + refusal output -->
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs GIVN_CUCUMBER_TAGS='' cargo nextest list --locked --test features_runner
+        units=19  removed_hits=0
+      $ ... GIVN_CUCUMBER_TAGS='not @e2e' ...        units=14  removed_hits=0
+      $ ... GIVN_CUCUMBER_TAGS='@e2e' ...           units=5   removed_hits=0
+      $ ... GIVN_CUCUMBER_TAGS='@e2e' ... -- --ignored (complement phase)   units=14  removed_hits=0
+      $ target/debug/deps/features_runner-c70aeaa80791cd33 'create-change/prose-consolidation.feature::Generated interactive guidance points to the canonical dialog policy' --exact --nocapture
+        refusing to run removed scenario 'Generated interactive guidance points to the canonical dialog policy':
+        @givn.removed records are merge instructions, not executable evidence   EXIT=2
       ```
       - Confirm and record the actual values in `givn/commands.yaml`:
         `verify.command: ./run-tests.sh`, `verify.e2e_command: ./run-tests.sh --e2e`
@@ -184,9 +204,11 @@ must not be started early.
       - Run: `./run-tests.sh` on the permanent corpus → must exit 0 (delta
         scenarios are still `@wip` and are not part of that scope).
       ```
-      <!-- paste the permanent-corpus exit-0 run -->
+      $ ./run-tests.sh   EXIT=0
+        Summary [  47.544s] 573 tests run: 573 passed, 0 skipped
+      givn/commands.yaml: verify.command: "./run-tests.sh" · verify.e2e_command: "./run-tests.sh --e2e" (shipped defaults, unchanged)
       ```
-  - [ ] COMMIT: `<hash>` -- Setup: runner strict-mode proof and runner-owned removal exclusion
+  - [x] COMMIT: `3c4d6fc5` -- Setup: runner strict-mode proof and runner-owned removal exclusion
         Commit the runner edit and the command config only if it actually
         changed. No scenario step bodies yet.
 
@@ -194,7 +216,7 @@ must not be started early.
 
 ## Scenario tasks (non-@e2e, in dependency order)
 
-- [ ] instruction-integrity: The canonical dialog policy is retrievable through the Givn CLI
+- [x] instruction-integrity: The canonical dialog policy is retrievable through the Givn CLI
       Design constraints:
         - Production surface: `assets/instructions/dialog.md` is the single
           complete effective policy (broadened to every user-facing question,
@@ -217,7 +239,13 @@ must not be started early.
                 is limited to named interactive workflows). Paste command +
                 non-zero output.
       ```
-      <!-- paste RED evidence: command + output + category -->
+      ```
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs cargo test --locked --test features_runner -- --name '^The canonical dialog policy is retrievable through the Givn CLI$'
+         ✘  Then the returned policy applies to every user-facing question inside and outside a named workflow
+            Step panicked. Captured output: returned policy does not state its universal scope: # Instruction: dialog
+         1 scenario (1 failed), 3 steps (2 passed, 1 failed)          EXIT=1
+      OLD_PRODUCT_RED: the current CLI policy is scoped to named interactive steps and lacks the universal scope.
+      ```
       ```
       GREEN:    Edit `assets/instructions/dialog.md` to the canonical policy.
                 Minimum production code: that file only. Files created/modified:
@@ -226,16 +254,29 @@ must not be started early.
                 ```
                 Run scoped → PASSES. Paste output.
       ```
-      <!-- paste GREEN evidence: command + output + category -->
+      ```
+      $ (same scoped command after editing assets/instructions/dialog.md)
+         1 scenario (1 passed), 8 steps (8 passed)                    EXIT=0
+      Production files: assets/instructions/dialog.md (canonical policy broadened: universal scope,
+      project-familiar audience, authoring-vs-enforcement, necessary/independent, subject, brief context +
+      source, consequences, material later-change costs, proportional/standalone treatment).
+      Test file: tests/steps/instruction_integrity_steps.rs (dialog request decoupled from the
+      `--change dialog-question-quality` fixture; six contract assertions added).
+      Companion: ./run-tests.sh --non-e2e → 482 passed, 0 failed, 91 skipped   EXIT=0
+      ```
       ```
       REFACTOR: Clean up without behaviour change. Re-run scoped → still PASSES.
                 Paste output.
       ```
-      <!-- paste REFACTOR evidence -->
       ```
-      - [ ] COMMIT: `<hash>` -- instruction-integrity: The canonical dialog policy is retrievable through the Givn CLI
+      $ (re-ran the same scoped command after rewrapping the option-treatment sentence so the
+         legacy option markers stay contiguous) → 1 scenario (1 passed)   EXIT=0
+      cfg: cargo fmt + cargo clippy --locked --test features_runner -- -D warnings → clean
+      ```
+      ```
+      - [x] COMMIT: `900d4113` -- instruction-integrity: The canonical dialog policy is retrievable through the Givn CLI
 
-- [ ] instruction-integrity: The canonical dialog policy demonstrates the full question record
+- [x] instruction-integrity: The canonical dialog policy demonstrates the full question record
       Design constraints:
         - `assets/instructions/dialog.md` must keep the complete decision
           record (context, genuine alternatives, consequences, resolution with
@@ -256,7 +297,15 @@ must not be started early.
                 intact; rerun the same assertion → FAIL; restore immediately.
                 Paste command + output + category.
       ```
-      <!-- paste RED evidence: command + output + category -->
+      ```
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs cargo test --locked --test features_runner -- --name '^The canonical dialog policy demonstrates the full question record$'
+         ✘  And confirmations disclose both acceptance and revision consequences without treating consent as a rule waiver
+            Step panicked. Captured output: policy does not bound what confirmation consent authorizes: # Instruction: dialog
+         1 scenario (1 failed)                                        EXIT=1
+      OLD_PRODUCT_RED, coupled: the record fields, chosen/rejected reasons, gloss rule and proportional
+      clarification rule already pass from scenario 1's policy content; the missing consent-boundary
+      treatment fails here. ORACLE_RED not needed — a genuine missing rule failed.
+      ```
       ```
       GREEN:    Edit `assets/instructions/dialog.md`. Files created/modified:
                 ```
@@ -264,15 +313,26 @@ must not be started early.
                 ```
                 Run scoped → PASSES. Paste output.
       ```
-      <!-- paste GREEN evidence: command + output + category -->
+      ```
+      $ (same scoped command after adding the consent boundary to Rule 4)
+         1 scenario (1 passed), 7 steps (7 passed)                    EXIT=0
+      Production files: assets/instructions/dialog.md (consent covers the stated authorization only; it
+      does not waive the policy or authorize work outside the question).
+      Test file: tests/steps/instruction_integrity_steps.rs (Given an initialized Givn project + five
+      record/proportional contract assertions).
+      Companion: legacy permanent scenario 'The canonical dialog policy demonstrates the full question
+      record' still passes (GIVN_FEATURES=givn/specs, 6 steps)      EXIT=0
+      ```
       ```
       REFACTOR: Clean up. Re-run scoped → still PASSES. Paste output.
       ```
-      <!-- paste REFACTOR evidence -->
       ```
-      - [ ] COMMIT: `<hash>` -- instruction-integrity: The canonical dialog policy demonstrates the full question record
+      $ (re-ran after rewrapping Rule 4) → 1 scenario (1 passed), 7 steps   EXIT=0
+      ```
+      ```
+      - [x] COMMIT: `4b62e672` -- instruction-integrity: The canonical dialog policy demonstrates the full question record
 
-- [ ] instruction-integrity: Dialog teaching contrasts show complete decisions rather than bare labels
+- [x] instruction-integrity: Dialog teaching contrasts show complete decisions rather than bare labels
       Design constraints:
         - Publish the proposal's five complete contrasts
           (proposal.md §"Multi-shot examples for publication in the dialog
@@ -295,7 +355,13 @@ must not be started early.
                 or one linked record from a delivered override while keeping all
                 headings → assertion FAILS. Paste command + output + category.
       ```
-      <!-- paste RED evidence: command + output + category -->
+      ```
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs cargo test --locked --test features_runner -- --name '^Dialog teaching contrasts show complete decisions rather than bare labels$'
+         ✘  Then the returned teaching examples identify their records as hypothetical rather than current product behavior
+            Step panicked. Captured output: policy is missing "### Example 1 decision record"
+         1 scenario (1 failed)                                        EXIT=1
+      OLD_PRODUCT_RED: the canonical policy contained none of the five supplied records/contrasts.
+      ```
       ```
       GREEN:    Edit `assets/instructions/dialog.md`. Files created/modified:
                 ```
@@ -303,15 +369,27 @@ must not be started early.
                 ```
                 Run scoped → PASSES. Paste output.
       ```
-      <!-- paste GREEN evidence: command + output + category -->
+      ```
+      $ (same scoped command after publishing the five contrasts into assets/instructions/dialog.md)
+         1 scenario (1 passed), 10 steps (10 passed)                  EXIT=0
+      Production files: assets/instructions/dialog.md (the five hypothetical worked contrasts with anchors
+      example-1-decision-record .. example-5-decision-record, resolvable local record links, own-records
+      declared illustrative, three goal rows, both availability outcomes, port 8080 with compatibility
+      cost/benefit, inactive-project counterexample, rejected invariant-violating answer).
+      Test file: tests/steps/instruction_integrity_steps.rs (slicing helper + eight contrast assertions).
+      Companion: ./run-tests.sh --non-e2e → 482 passed, 0 failed, 91 skipped   EXIT=0
+      ```
       ```
       REFACTOR: Clean up. Re-run scoped → still PASSES. Paste output.
       ```
-      <!-- paste REFACTOR evidence -->
       ```
-      - [ ] COMMIT: `<hash>` -- instruction-integrity: Dialog teaching contrasts show complete decisions rather than bare labels
+      $ (re-ran after rewrapping the boundedness/commitment markers) → 1 scenario (1 passed), 10 steps EXIT=0
+      cfg: cargo clippy --locked --test features_runner -- -D warnings → clean
+      ```
+      ```
+      - [x] COMMIT: `ad0c8873` -- instruction-integrity: Dialog teaching contrasts show complete decisions rather than bare labels
 
-- [ ] instruction-integrity: Migration consent does not imply an unverified recovery guarantee
+- [x] instruction-integrity: Migration consent does not imply an unverified recovery guarantee
       Design constraints:
         - The material-commitment contrast (example 4) must distinguish
           conversion/recovery required before rollout from recovery already
@@ -328,7 +406,14 @@ must not be started early.
                 choice and port value intact → assertion FAILS. Paste command +
                 output + category.
       ```
-      <!-- paste RED evidence: command + output + category -->
+      ```
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs cargo test --locked --test features_runner -- --name '^Migration consent does not imply an unverified recovery guarantee$'
+         ✘  Then the contrast distinguishes required recovery verification from already implemented recovery support
+            Step panicked. Captured output: example 4 does not distinguish required recovery from implemented support
+         1 scenario (1 failed)                                        EXIT=1
+      OLD_PRODUCT_RED: example 4 lacked the required-recovery-vs-implemented-support distinction and the
+      establish-or-narrow rule.
+      ```
       ```
       GREEN:    Edit `assets/instructions/dialog.md`. Files created/modified:
                 ```
@@ -336,15 +421,25 @@ must not be started early.
                 ```
                 Run scoped → PASSES. Paste output.
       ```
-      <!-- paste GREEN evidence: command + output + category -->
+      ```
+      $ (same scoped command after extending example 4)
+         1 scenario (1 passed), 5 steps (5 passed)                    EXIT=0
+      Production files: assets/instructions/dialog.md (example 4: older releases cannot open upgraded
+      projects; separately verified reverse conversion; "required work, not demonstrated support";
+      establish unknown facts or narrow approval to investigation).
+      Test file: tests/steps/instruction_integrity_steps.rs (When reads the material-commitment contrast
+      + three recovery/consent assertions).
+      ```
       ```
       REFACTOR: Clean up. Re-run scoped → still PASSES. Paste output.
       ```
-      <!-- paste REFACTOR evidence -->
       ```
-      - [ ] COMMIT: `<hash>` -- instruction-integrity: Migration consent does not imply an unverified recovery guarantee
+      $ (re-ran after rewrapping the recovery sentence) → 1 scenario (1 passed)   EXIT=0
+      ```
+      ```
+      - [x] COMMIT: `637206b1` -- instruction-integrity: Migration consent does not imply an unverified recovery guarantee
 
-- [ ] instruction-integrity: The dialog policy is retrievable without an active change
+- [x] instruction-integrity: The dialog policy is retrievable without an active change
       Design constraints:
         - Real `givn instructions dialog` in a root with `givn/` initialized and
           NO active change: exits 0 and returns the effective universal/
@@ -363,7 +458,21 @@ must not be started early.
                 binding is never its behavioral RED. Paste command + output +
                 category.
       ```
-      <!-- paste RED evidence: command + output + category -->
+      ```
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs cargo test --locked --test features_runner -- --name '^The dialog policy is retrievable without an active change$'
+         ✘  And the returned policy distinguishes routine clarification from decisions that require alternatives and consequences
+            Step panicked. Captured output: policy does not distinguish routine clarification from substantive decisions
+         1 scenario (1 failed), 3 steps (2 passed, 1 failed)          EXIT=1
+      ORACLE_RED calibration (controlled omission, temporary outside the repo):
+        $ givn init --agents opencode ; write givn/artifacts/dialog/instructions.md without the
+          universal/proportional clauses ; givn instructions dialog
+          ABSENT:  every user-facing question
+          ABSENT:  does not invent alternatives or trade-offs
+          ABSENT:  A short information request
+          ABSENT:  A substantive choice receives the full treatment
+      Both asserted clauses disappear from the effective policy under the omission, so the assertions
+      discriminate; the fixture override was removed immediately. No production switch or fake success.
+      ```
       ```
       GREEN:    Production changes only if the assertion exposes a real gap
                 (`assets/instructions/dialog.md`); otherwise this is assertion
@@ -374,16 +483,27 @@ must not be started early.
                 ```
                 Run scoped → PASSES. Paste output.
       ```
-      <!-- paste GREEN evidence: command + output + category -->
+      ```
+      $ (same scoped command after rewrapping Rule 6 so the proportional clause reads contiguously)
+         1 scenario (1 passed), 5 steps (5 passed)                    EXIT=0
+      Production files: assets/instructions/dialog.md (Rule 6 proportional treatment, rewrapped).
+      Availability itself is retained behavior: `givn instructions dialog` in an initialized root
+      without a change already exits 0. Test file: tests/steps/instruction_integrity_steps.rs
+      (two general-policy contract assertions).
+      Companion legacy boundary: ./run-tests.sh --non-e2e keeps 'The dialog policy is retrievable
+      without an active change' (exit 0 + named-artifact rule) and the unknown-id refusal green.
+      ```
       ```
       REFACTOR: Clean up retired handlers; re-run scoped → still PASSES. Paste
                 output.
       ```
-      <!-- paste REFACTOR evidence -->
       ```
-      - [ ] COMMIT: `<hash>` -- instruction-integrity: The dialog policy is retrievable without an active change
+      $ (re-ran after the rewrap) → 1 scenario (1 passed)             EXIT=0
+      ```
+      ```
+      - [x] COMMIT: `516c8361` -- instruction-integrity: The dialog policy is retrievable without an active change
 
-- [ ] instruction-integrity: Design guidance requires the complete E2E setup record
+- [x] instruction-integrity: Design guidance requires the complete E2E setup record
       Design constraints:
         - Real `givn instructions design` returned guidance must require: the
           runner's isolated E2E scope, undefined/pending proof, separate
@@ -402,7 +522,22 @@ must not be started early.
                 assertions → FAIL; restore immediately. Never claim an old
                 product defect. Paste command + output + category.
       ```
-      <!-- paste RED evidence: command + output + category -->
+      ```
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs cargo test --locked --test features_runner -- --name '^Design guidance requires the complete E2E setup record$'
+         1 scenario (1 passed), 5 steps (5 passed)                    EXIT=0
+      BASELINE_GREEN permitted (the design instruction already defines the setup record). ORACLE_RED calibration,
+      temporary override outside the repo:
+        $ givn init --agents opencode ; givn new instruction-integrity ;
+          write givn/artifacts/design/instructions.md without the E2E setup record ;
+          givn instructions design --change instruction-integrity
+          ABSENT: verify.e2e_command   ABSENT: E2E strict-mode proof
+          ABSENT: separate from unit/integration steps   ABSENT: Local test infrastructure
+          ABSENT: named real interface   ABSENT: E2E framework choice and justification
+          ABSENT: Interaction Coverage Matrix   ABSENT: screenshot per viewport
+          ABSENT: terminal interface   ABSENT: transcript.txt
+      Every asserted marker disappears under the controlled omission, so the assertions discriminate; the
+      override fixture was deleted immediately. No old-product defect is claimed.
+      ```
       ```
       GREEN:    Production changes only if the assertions expose a real gap
                 (`assets/instructions/design.md`); otherwise state
@@ -412,16 +547,28 @@ must not be started early.
                 ```
                 Run scoped → PASSES. Paste output.
       ```
-      <!-- paste GREEN evidence: command + output + category -->
+      ```
+      $ (same scoped command after moving the request binding and migrating the assertions)
+         1 scenario (1 passed), 5 steps (5 passed)                    EXIT=0
+      Production files: none (migration only — the delivered design instruction already carries the
+      runner scope, strictness proof, separate bindings, real interface, local infrastructure, framework
+      justification, matrix and terminal-vs-viewport record).
+      Test files: tests/steps/instruction_integrity_steps.rs (design request binding + three returned-guidance
+      assertions migrated from the removed E2E identity), tests/steps/instruction_integrity_e2e_steps.rs
+      (obsolete request/assertion bindings removed, no duplicate step text).
+      Companion: legacy regular scenario keeps its source-reader variant green (2 scenarios, 10 steps) EXIT=0.
+      ```
       ```
       REFACTOR: Remove the stale source reader; re-run scoped → still PASSES.
                 Paste output.
       ```
-      <!-- paste REFACTOR evidence -->
       ```
-      - [ ] COMMIT: `<hash>` -- instruction-integrity: Design guidance requires the complete E2E setup record
+      $ (re-ran after cargo fmt) → 1 scenario (1 passed)             EXIT=0
+      ```
+      ```
+      - [x] COMMIT: `a4672291` -- instruction-integrity: Design guidance requires the complete E2E setup record
 
-- [ ] instruction-integrity: Review guidance names the deterministic disposition gates
+- [x] instruction-integrity: Review guidance names the deterministic disposition gates
       Design constraints:
         - Real `givn instructions review` returned guidance must require a
           reasoned disposition for every reported overlap pair, a split-or-keep
@@ -436,7 +583,15 @@ must not be started early.
                 per-pair or split/keep requirement → assertion FAILS; restore
                 immediately. Paste command + output + category.
       ```
-      <!-- paste RED evidence: command + output + category -->
+      ```
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs cargo test --locked --test features_runner -- --name '^Review guidance names the deterministic disposition gates$'
+         ✔ pair dispositions    ✔ split-or-keep
+         ✘ And the returned review guidance distinguishes an advisory finding from completed verification evidence
+            Step panicked. Captured output: returned review guidance does not distinguish advisory from completed evidence
+         1 scenario (1 failed), 5 steps (4 passed, 1 failed)          EXIT=1
+      OLD_PRODUCT_RED: the returned review guidance carried the pair and split-or-keep gates but never
+      distinguished an advisory finding from completed verification evidence.
+      ```
       ```
       GREEN:    Production changes only if the assertions expose a real gap;
                 otherwise state "migration only" with the file list. Files
@@ -446,16 +601,25 @@ must not be started early.
                 ```
                 Run scoped → PASSES. Paste output.
       ```
-      <!-- paste GREEN evidence: command + output + category -->
+      ```
+      $ (same scoped command after adding the distinction to assets/instructions/review.md)
+         1 scenario (1 passed), 5 steps (5 passed)                    EXIT=0
+      Production files: assets/instructions/review.md (an overlap finding is advisory evidence until its
+      disposition is recorded; the recorded disposition is the completed verification evidence).
+      Test file: tests/steps/instruction_integrity_steps.rs (review request binding moved out of the e2e
+      module + three returned-guidance assertions; no duplicate step text).
+      ```
       ```
       REFACTOR: Remove the stale source reader; re-run scoped → still PASSES.
                 Paste output.
       ```
-      <!-- paste REFACTOR evidence -->
       ```
-      - [ ] COMMIT: `<hash>` -- instruction-integrity: Review guidance names the deterministic disposition gates
+      $ (re-ran after cargo fmt) → 1 scenario (1 passed), 5 steps        EXIT=0
+      ```
+      ```
+      - [x] COMMIT: `b2a21aa9` -- instruction-integrity: Review guidance names the deterministic disposition gates
 
-- [ ] instruction-integrity: Machine-readable startup guidance retains the dialog obligation while reporting an active change
+- [x] instruction-integrity: Machine-readable startup guidance retains the dialog obligation while reporting an active change
       Design constraints:
         - `src/cli/instructions.rs::generic_overview()` supplies the shared
           overview for every text report and the JSON `overview` field; append
@@ -474,7 +638,17 @@ must not be started early.
                 ORACLE_RED alternative after a coupled edit: omit only the
                 overview obligation. Paste command + output + category.
       ```
-      <!-- paste RED evidence: command + output + category -->
+      ```
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs cargo test --locked --test features_runner -- --name '^Machine-readable startup guidance retains the dialog obligation while reporting an active change$'
+         ✔ Given an initialized Givn project with an active change awaiting specifications
+         ✔ When the author requests the normal Givn startup instructions as JSON
+         ✔ Then the response preserves the active change identity and next required artifact
+         ✘ And the response includes the same universal effective-dialog loading obligation in its guidance
+            Step panicked. Captured output: startup JSON overview does not carry the dialog obligation
+         1 scenario (1 failed), 5 steps (3 passed, 1 failed)          EXIT=1
+      OLD_PRODUCT_RED: the shared overview omitted the loading/handoff obligation. The fixture change
+      `decision-ready-json` (proposal complete, specs next) already discriminated identity and stage.
+      ```
       ```
       GREEN:    Edit `src/cli/instructions.rs::generic_overview()`. Files
                 created/modified:
@@ -483,15 +657,25 @@ must not be started early.
                 ```
                 Run scoped → PASSES. Paste output.
       ```
-      <!-- paste GREEN evidence: command + output + category -->
+      ```
+      $ (same scoped command after appending the obligation to generic_overview())
+         1 scenario (1 passed), 5 steps (5 passed)                    EXIT=0
+      Production files: src/cli/instructions.rs::generic_overview() (short universal loading + fresh-context
+      handoff obligation; no dialog_policy field, no second policy copy, JSON shape unchanged).
+      Test file: tests/steps/instruction_integrity_steps.rs (pending-specs fixture Given, JSON request When,
+      identity/next-action, obligation and no-second-policy assertions).
+      Companion: cargo test --lib generic_overview → 1 passed                  EXIT=0
+      ```
       ```
       REFACTOR: Clean up. Re-run scoped → still PASSES. Paste output.
       ```
-      <!-- paste REFACTOR evidence -->
       ```
-      - [ ] COMMIT: `<hash>` -- instruction-integrity: Machine-readable startup guidance retains the dialog obligation while reporting an active change
+      $ (re-ran after cargo fmt) → 1 scenario (1 passed), 5 steps        EXIT=0
+      ```
+      ```
+      - [x] COMMIT: `feb04512` -- instruction-integrity: Machine-readable startup guidance retains the dialog obligation while reporting an active change
 
-- [ ] prose-consolidation: Disabling optional addons does not disable the dialog obligation
+- [x] prose-consolidation: Disabling optional addons does not disable the dialog obligation
       Design constraints:
         - Fixture: all three agent targets selected, every optional addon
           disabled → real `givn skills sync`. Independently require the 13
@@ -510,7 +694,15 @@ must not be started early.
                 core reference while optional families stay disabled → the
                 per-entry assertion FAILS. Paste command + output + category.
       ```
-      <!-- paste RED evidence: command + output + category -->
+      ```
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs cargo test --locked --test features_runner -- --name '^Disabling optional addons does not disable the dialog obligation$'
+         ✔ Given a Givn project with all agent skill targets selected and every optional addon disabled
+         ✔ When the author synchronizes the selected guidance through the Givn CLI
+         ✘ Then every available core skill and command still requires the effective dialog policy for every user-facing question
+            Step panicked. Captured output: .opencode/skills/givn-propose/SKILL.md does not carry the dialog obligation
+         1 scenario (1 failed), 3 steps (2 passed, 1 failed)          EXIT=1
+      OLD_PRODUCT_RED: addon-free generated core guidance carried no dialog obligation.
+      ```
       ```
       GREEN:    Edit the core skill/command templates under `assets/skills/`
                 and `assets/commands/`. Files created/modified:
@@ -519,15 +711,27 @@ must not be started early.
                 ```
                 Run scoped → PASSES. Paste output.
       ```
-      <!-- paste GREEN evidence: command + output + category -->
+      ```
+      $ (same scoped command after the template edit set)
+         1 scenario (1 passed), 6 steps (6 passed)                    EXIT=0
+      Production files: the 13 core skill templates (assets/skills/*/SKILL.md.tmpl) and 13 core command
+      templates (assets/commands/*.md) each carry the short effective-policy obligation after the H1 /
+      introductory summary, outside addon conditionals; assets/addons/absolute-mode/policy.md defers its
+      question-content rules to the effective dialog policy.
+      Test file: tests/steps/instruction_integrity_steps.rs (addon-free fixture Given, sync When, four
+      distribution/preservation assertions using the independent 13+13 family inventory).
+      Companion: ./run-tests.sh --non-e2e → 482 passed, 0 failed, 91 skipped   EXIT=0
+      ```
       ```
       REFACTOR: Clean up. Re-run scoped → still PASSES. Paste output.
       ```
-      <!-- paste REFACTOR evidence -->
       ```
-      - [ ] COMMIT: `<hash>` -- prose-consolidation: Disabling optional addons does not disable the dialog obligation
+      $ (re-ran after the config-comment filter fix) → 1 scenario (1 passed), 6 steps   EXIT=0
+      ```
+      ```
+      - [x] COMMIT: `5b6883bb` -- prose-consolidation: Disabling optional addons does not disable the dialog obligation
 
-- [ ] prose-consolidation: Delegated question preparation carries the policy without assuming inherited context
+- [x] prose-consolidation: Delegated question preparation carries the policy without assuming inherited context
       Design constraints:
         - Insert the obligation INSIDE each self-contained delegated prompt,
           never merely in the parent's surrounding prose: command templates
@@ -549,7 +753,16 @@ must not be started early.
                 intact but omit it in one nested prompt → the prompt-local
                 assertion FAILS. Paste command + output + category.
       ```
-      <!-- paste RED evidence: command + output + category -->
+      ```
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs cargo test --locked --test features_runner -- --name '^Delegated question preparation carries the policy without assuming inherited context$'
+         ✔ Given a Givn project with delegated authoring and review guidance enabled
+         ✔ When the author reads the synchronized delegation instructions
+         ✘ Then every question-preparing delegation explicitly requires the effective dialog policy in the fresh context
+            Step panicked. Captured output: .opencode/commands/givn-propose.md prompt 1 is missing the
+            delegated-dialog obligation marker "effective policy from `givn instructions dialog`"
+         1 scenario (1 failed), 3 steps (2 passed, 1 failed)          EXIT=1
+      OLD_PRODUCT_RED: the self-contained delegated prompts carried no prompt-local policy obligation.
+      ```
       ```
       GREEN:    Edit the six command templates and six skill templates named
                 above. Files created/modified:
@@ -558,15 +771,30 @@ must not be started early.
                 ```
                 Run scoped → PASSES. Paste output.
       ```
-      <!-- paste GREEN evidence: command + output + category -->
+      ```
+      $ (same scoped command after the delegation edit set)
+         1 scenario (1 passed), 6 steps (6 passed)                    EXIT=0
+      Production files: the six delegating command templates (givn-propose, givn-design-review incl. both
+      the grilling and hardening prompt blocks, givn-implement, givn-review, givn-characterize,
+      givn-reverse-engineer) each carry the obligation inside every self-contained "You are a ..." prompt;
+      the six skills (givn-implement, givn-design-review, givn-review, givn-characterize, givn-ideation,
+      givn-reverse-engineer) carry it in their spawning/review passage: fresh contexts do not inherit the
+      parent's loaded policy, they load it before the first question, the presenting agent stays
+      responsible, and a question tool's recommendation or option label does not replace context and
+      consequences.
+      Test file: tests/steps/prose_consolidation_steps.rs (prompt-block slicer + four delegation assertions).
+      Companion: ./run-tests.sh --non-e2e → 482 passed, 0 failed, 91 skipped   EXIT=0
+      ```
       ```
       REFACTOR: Clean up. Re-run scoped → still PASSES. Paste output.
       ```
-      <!-- paste REFACTOR evidence -->
       ```
-      - [ ] COMMIT: `<hash>` -- prose-consolidation: Delegated question preparation carries the policy without assuming inherited context
+      $ (re-ran after cargo fmt + collapsing the nested if) → 1 scenario (1 passed), 6 steps   EXIT=0
+      ```
+      ```
+      - [x] COMMIT: `8ee968d9` -- prose-consolidation: Delegated question preparation carries the policy without assuming inherited context
 
-- [ ] prose-consolidation: Successful project skill and command replacements are preserved without policy injection
+- [x] prose-consolidation: Successful project skill and command replacements are preserved without policy injection
       Design constraints:
         - Fixture (design.md §Successful replacement fixture and consumer
           paths): init with all three agent targets; write valid LF-terminated
@@ -591,7 +819,15 @@ must not be started early.
                 prefix WITHOUT changing production. Paste command + output +
                 category.
       ```
-      <!-- paste RED evidence: command + output + category -->
+      ```
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs cargo test --locked --test features_runner -- --name '^Successful project skill and command replacements are preserved without policy injection$'
+         ✔ source bytes unchanged    ✔ three skill consumers exact    ✔ command consumer exact
+         ✘ And the managed project-start guidance still references the effective dialog policy
+            Step panicked. Captured output: managed project-start guidance lost the effective-policy reference
+         1 scenario (1 failed), 7 steps (6 passed, 1 failed)          EXIT=1
+      OLD_PRODUCT_RED on the current managed block's missing obligation; preservation itself is retained
+      behavior and already passes (no-injection boundary proven by byte equality, not by a new mechanism).
+      ```
       ```
       GREEN:    Production changes needed only for the managed hint obligation
                 (`assets/agents-project-hint.md`); preserve-replacement
@@ -601,16 +837,25 @@ must not be started early.
                 ```
                 Run scoped → PASSES. Paste output.
       ```
-      <!-- paste GREEN evidence: command + output + category -->
+      ```
+      $ (same scoped command after adding the unconditional bullet to assets/agents-project-hint.md)
+         1 scenario (1 passed), 7 steps (7 passed)                    EXIT=0
+      Production files: assets/agents-project-hint.md (unconditional policy-loading/handoff bullet after the
+      startup instruction; names no addon).
+      Test file: tests/steps/prose_consolidation_steps.rs (all-target Given, project-owned skill + command
+      replacement Given, four preservation/reference assertions; equality rejects hidden prefixes).
+      ```
       ```
       REFACTOR: Remove the temporary fixture calibration; re-run scoped → still
                 PASSES. Paste output.
       ```
-      <!-- paste REFACTOR evidence -->
       ```
-      - [ ] COMMIT: `<hash>` -- prose-consolidation: Successful project skill and command replacements are preserved without policy injection
+      $ (re-ran after cargo fmt) → 1 scenario (1 passed), 7 steps        EXIT=0
+      ```
+      ```
+      - [x] COMMIT: `05b5be02` -- prose-consolidation: Successful project skill and command replacements are preserved without policy injection
 
-- [ ] instruction-integrity: A project dialog override remains the effective policy after synchronization
+- [x] instruction-integrity: A project dialog override remains the effective policy after synchronization
       Design constraints:
         - Fixture: project-owned dialog override at
           `givn/artifacts/dialog/instructions.md` requiring human approval
@@ -626,7 +871,20 @@ must not be started early.
                 from one consumer entry while preserving the override → the
                 reference assertion FAILS. Paste command + output + category.
       ```
-      <!-- paste RED evidence: command + output + category -->
+      ```
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs cargo test --locked --test features_runner -- --name '^A project dialog override remains the effective policy after synchronization$'
+         1 scenario (1 passed), 6 steps (6 passed)                    EXIT=0
+      BASELINE_GREEN permitted: cascade precedence and the entry loading obligation already exist.
+      ORACLE_RED calibration (controlled omission outside the repo):
+        $ init all targets ; write the dialog override ; replace givn/skills/givn-propose/SKILL.md.tmpl
+          WITHOUT the effective-policy reference ; givn skills sync
+          ABSENT:  effective-policy reference in the replaced consumer entry (assertion fails)
+          override still effective: "# Instruction: dialog
+
+Project-owned dialog policy."
+      The entry assertion discriminates a missing reference while the override stays effective; the
+      fixture was removed immediately.
+      ```
       ```
       GREEN:    The entry references come from the generated templates edited in
                 the earlier distribution tasks; only edit templates here if the
@@ -636,15 +894,25 @@ must not be started early.
                 ```
                 Run scoped → PASSES. Paste output.
       ```
-      <!-- paste GREEN evidence: command + output + category -->
+      ```
+      $ (same scoped command after covering text and JSON retrieval of the override)
+         1 scenario (1 passed), 6 steps (6 passed)                    EXIT=0
+      Production files: none (coverage of the approved precedence boundary — text and JSON both resolve
+      the project override, the override bytes stay unchanged, and the entry guidance delivered in the
+      earlier distribution tasks points at the effective policy with no bundled copy).
+      Test file: tests/steps/instruction_integrity_steps.rs (override fixture Given + approval Given,
+      synchronize-and-request When, three precedence/preservation assertions).
+      ```
       ```
       REFACTOR: Clean up. Re-run scoped → still PASSES. Paste output.
       ```
-      <!-- paste REFACTOR evidence -->
       ```
-      - [ ] COMMIT: `<hash>` -- instruction-integrity: A project dialog override remains the effective policy after synchronization
+      $ (re-ran after cargo fmt) → 1 scenario (1 passed), 6 steps        EXIT=0
+      ```
+      ```
+      - [x] COMMIT: `2b01c32a` -- instruction-integrity: A project dialog override remains the effective policy after synchronization
 
-- [ ] initialize-a-project: Fossil initialization names the supported attribution path without Git plumbing
+- [x] initialize-a-project: Fossil initialization names the supported attribution path without Git plumbing
       Design constraints:
         - Fixture: the existing Fossil fixture — a Fossil checkout without
           `givn/`. Run real `givn init --agents opencode`.
@@ -661,7 +929,17 @@ must not be started early.
                 restore immediately. Never present the oracle as an old-product
                 failure. Paste command + output + category.
       ```
-      <!-- paste RED evidence: command + output + category -->
+      ```
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs cargo test --locked --test features_runner -- --name '^Fossil initialization names the supported attribution path without Git plumbing$'
+         1 scenario (1 passed), 7 steps (7 passed)                    EXIT=0
+      BASELINE_GREEN permitted: the Fossil precondition, attribution path, absence of .githooks and the
+      generated backend guidance already hold. ORACLE_RED calibration (controlled omission, outside the repo):
+        $ fossil checkout ; givn init --agents opencode ; replace givn/skills/givn-implement/SKILL.md.tmpl
+          without the attribution guidance ; givn skills sync
+          ABSENT:  fossil limitation ("carries no attribution") — assertion fails
+          ABSENT:  givn commit path — assertion fails
+      The delivered-excerpt omission flips both guidance assertions; the fixture was removed immediately.
+      ```
       ```
       GREEN:    Production changes only if the assertion exposes a real gap
                 (`assets/agents-project-hint.md` / template wording); otherwise
@@ -672,13 +950,22 @@ must not be started early.
                 ```
                 Run scoped → PASSES. Paste output.
       ```
-      <!-- paste GREEN evidence: command + output + category -->
+      ```
+      $ (same scoped command; the delta reclassifies the former E2E identity as a regular precondition variant)
+         1 scenario (1 passed), 7 steps (7 passed)                    EXIT=0
+      Production files: none — precondition/coverage variant. The scenario now runs under verify.command
+      with the existing real-CLI bindings (Fossil checkout fixture, `givn init --agents opencode`, stdout
+      attribution path, absent .githooks, generated backend guidance); the redundant @e2e identity is removed
+      by the delta, not re-tagged.
+      ```
       ```
       REFACTOR: Clean up. Re-run scoped → still PASSES. Paste output.
       ```
-      <!-- paste REFACTOR evidence -->
       ```
-      - [ ] COMMIT: `<hash>` -- initialize-a-project: Fossil initialization names the supported attribution path without Git plumbing
+      $ (re-ran unchanged) → 1 scenario (1 passed), 7 steps                EXIT=0
+      ```
+      ```
+      - [x] COMMIT: `None` -- initialize-a-project: Fossil initialization names the supported attribution path without Git plumbing
 
 - [ ] initialize-a-project: Initialization without SCM preserves guidance and names the later archive refusal
       Design constraints:
