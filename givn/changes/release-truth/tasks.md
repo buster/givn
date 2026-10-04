@@ -230,15 +230,25 @@ Owning rule: one entry per change, taken from the release note. Production
 change owned by this scenario: the `unique(attribute="message",
 case_sensitive=true)` dedupe in the `cliff.toml` body template.
 
-- [ ] RED: add the scenario's bindings and run it; paste the failure showing
+- [x] RED: add the scenario's bindings and run it; paste the failure showing
       the same release note three times
-  - OUTPUT: _pending_
-- [ ] GREEN: add the dedupe filter; rerun; paste the pass
-  - OUTPUT: _pending_
-- [ ] REFACTOR: rerun; paste the pass
-  - OUTPUT: _pending_
-- [ ] Capture the terminal transcript to
+  - OUTPUT: exit 100; `Then the changelog lists "Givn reports the active SCM
+    backend in givn status" exactly once` — `assertion left == right failed:
+    the changelog lists "Givn reports the active SCM backend in givn status"
+    3 times:` followed by the generated section (log `/tmp/s5-red.log`).
+- [x] GREEN: add the dedupe filter; rerun; paste the pass
+  - OUTPUT: exit 0; `1 test run: 1 passed, 4 skipped`; the full delta is green
+    (`5 tests run: 5 passed, 0 skipped`); production file: `cliff.toml`
+    (`unique(attribute="message", case_sensitive=true)`; log
+    `/tmp/s5-green.log`).
+- [x] REFACTOR: rerun; paste the pass
+  - OUTPUT: `cargo fmt --all` applied to the e2e module; exit 0;
+    `1 test run: 1 passed, 4 skipped` (log `/tmp/s5-refactor.log`).
+- [x] Capture the terminal transcript to
       `givn/changes/release-truth/evidence/visual/repeated-revisions-of-one-change-yield-one-changelog-entry/transcript.txt`.
+  - OUTPUT: captured from the reproduced fixture (three shared-note revisions
+    plus one documentation revision): one `### Features` entry for the note,
+    no documentation entry, exit 0.
 - [ ] COMMIT: `<hash>` -- test(e2e): Repeated revisions of one change yield one changelog entry
 
 ## Task W — Release workflow and CI

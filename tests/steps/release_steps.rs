@@ -157,6 +157,42 @@ pub(crate) fn make_guard_repo() -> common::TestEnv {
     env
 }
 
+/// Install the changelog fixture for the current scenario.
+pub(crate) fn install_fixture(world: &mut GivnWorld, fixture: ChangelogFixture) {
+    world.release.fixture = Some(fixture);
+}
+
+/// Record one revision on the current changelog fixture.
+pub(crate) fn fixture_commit(world: &GivnWorld, subject: &str) {
+    world
+        .release
+        .fixture
+        .as_ref()
+        .expect("a release range is required first")
+        .commit(subject);
+}
+
+/// Generate the changelog for the current fixture and keep the output.
+pub(crate) fn generate_changelog(world: &mut GivnWorld) {
+    let fixture = world
+        .release
+        .fixture
+        .as_ref()
+        .expect("a release range is required first");
+    let generated = fixture.generate();
+    assert!(
+        generated.status.success(),
+        "git-cliff failed: {}",
+        generated.stderr
+    );
+    world.release.generated = Some(generated);
+}
+
+/// The stdout of the last generated changelog.
+pub(crate) fn changelog_stdout(world: &GivnWorld) -> String {
+    generated(world).stdout.clone()
+}
+
 fn guard_output(world: &GivnWorld) -> &Output {
     world
         .release

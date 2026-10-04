@@ -1,0 +1,20 @@
+scenario: Repeated revisions of one change yield one changelog entry
+argv: git-cliff --config <workspace>/cliff.toml <base>..HEAD
+cwd: <temporary fixture repository: three feature revisions of one change sharing the release note plus one documentation revision>
+exit: 0
+--- stdout ---
+# Changelog
+
+All notable changes to Givn are documented in this file.
+
+The release sections are generated with [git-cliff](https://git-cliff.org/).
+Versions are selected manually and use annotated `vX.Y.Z` Git tags.
+## [Unreleased]
+
+### Features
+
+- **describe-the-release:** Givn reports the active SCM backend in givn status
+
+
+--- stderr ---
+INFO  git_cliff > A new version of git-cliff is available: v2.13.1 -> v2.14.2
