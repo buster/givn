@@ -154,7 +154,7 @@ rules that complete the allowlist in `cliff.toml`.
 - [x] REFACTOR: rerun; paste the pass
   - OUTPUT: `cargo fmt --all` applied to the long Given attribute; exit 0;
     `3 steps (3 passed)` (log `/tmp/s2-refactor.log`).
-- [ ] COMMIT: `<hash>` -- describe-the-release: A release range without user-visible change has no release section
+- [x] COMMIT: `4071f575` -- describe-the-release: A release range without user-visible change has no release section
 
 ## Task S3 — A release cannot be prepared without a tag for the current version
 
@@ -162,14 +162,24 @@ Owning rule: a release starts at a version tag matching the package version.
 Production change owned by this scenario: `scripts/release-guard.sh` with the
 `base` check.
 
-- [ ] RED: add the scenario's steps, run it against the absent script, and
+- [x] RED: add the scenario's steps, run it against the absent script, and
       paste the literal failure and the failing named-tag assertion
-  - OUTPUT: _pending_
-- [ ] GREEN: add `scripts/release-guard.sh` with the `base` subcommand; make
+  - OUTPUT: exit 101; 5 steps with 1 failed: `Then the check fails naming the
+    missing tag "v0.8.0"` — `Step panicked. Captured output: the failure does
+    not name the missing tag "v0.8.0":` followed by `sh: 0: cannot open
+    /home/buster/projects/givn/scripts/release-guard.sh: No such file`
+    (behavior absent, recorded as the RED; no stub was introduced in its
+    place; log `/tmp/s3-red.log`).
+- [x] GREEN: add `scripts/release-guard.sh` with the `base` subcommand; make
       it executable; rerun; paste the pass
-  - OUTPUT: _pending_
-- [ ] REFACTOR: rerun; paste the pass
-  - OUTPUT: _pending_
+  - OUTPUT: first iteration failed on the message wording (it named `0.8.0`
+    and `v0.4.0` but not the expected tag); the message now names the
+    expected tag, exit 0, `5 steps (5 passed)`; production file:
+    `scripts/release-guard.sh` (`base`; log `/tmp/s3-green.log`).
+- [x] REFACTOR: rerun; paste the pass
+  - OUTPUT: `cargo fmt --all` applied to the new steps; exit 0; `5 steps
+    (5 passed)`; the delta's regular scope is green for S1–S3 with only S4
+    still unbound (log `/tmp/s3-refactor.log`).
 - [ ] COMMIT: `<hash>` -- describe-the-release: A release cannot be prepared without a tag for the current version
 
 ## Task S4 — A release section without user-visible change stops the release
