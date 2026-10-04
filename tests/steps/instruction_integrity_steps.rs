@@ -891,6 +891,52 @@ fn design_guidance_distinguishes_terminal_evidence(world: &mut GivnWorld) {
     );
 }
 
+// --- decision-ready questions: review guidance migration --------------------
+
+#[when("the reviewer requests the review instructions through the Givn CLI")]
+fn reviewer_requests_review_instructions_cli(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("review-guidance fixture is missing");
+    world.last_output = Some(crate::common::run_givn(
+        env,
+        &["instructions", "review", "--change", "instruction-integrity"],
+    ));
+}
+
+#[then("the returned review guidance requires a disposition for every reported overlap pair with a reason")]
+fn review_guidance_requires_pair_dispositions(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("## Overlap dispositions")
+            && output.contains("one row per finding pair")
+            && output.contains("an empty or unrecognised word does not"),
+        "returned review guidance does not require reasoned pair dispositions: {output}"
+    );
+}
+
+#[then("the returned review guidance requires a split-or-keep decision for every reported long scenario")]
+fn review_guidance_requires_split_or_keep(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("## Split-or-keep")
+            && output.contains("one row per long scenario")
+            && output.contains("either `split` or `keep`"),
+        "returned review guidance does not require split-or-keep decisions: {output}"
+    );
+}
+
+#[then("the returned review guidance distinguishes an advisory finding from completed verification evidence")]
+fn review_guidance_distinguishes_advisory_evidence(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("advisory evidence until its disposition is recorded")
+            && output.contains("completed verification evidence"),
+        "returned review guidance does not distinguish advisory from completed evidence: {output}"
+    );
+}
+
 fn dialog_policy(world: &GivnWorld) -> &str {
     world
         .additional_output

@@ -274,7 +274,9 @@ record a **split-or-keep** decision: write the section with the exact
 heading `## Split-or-keep`, one row per long scenario, each Decision
 either `split` or `keep`. For every removed+added pair, record whether the
 new scenario supersedes the removed one or is unrelated. These decisions
-are review evidence, not score thresholds.
+are review evidence, not score thresholds. An overlap finding is
+advisory evidence until its disposition is recorded; the recorded disposition,
+not the finding's presence, is the completed verification evidence.
 
 ## Sign-off checklist
 
