@@ -53,7 +53,9 @@ pub(crate) fn delegated_prompt_blocks(content: &str) -> Vec<String> {
         }
     }
     if let Some(block) = current
-        && block.iter().any(|l| l.trim_start().starts_with("You are a"))
+        && block
+            .iter()
+            .any(|l| l.trim_start().starts_with("You are a"))
     {
         blocks.push(block.join("\n"));
     }
@@ -79,10 +81,12 @@ fn assert_delegation_obligation(where_: &str, text: &str) {
 
 pub(crate) const REPLACEMENT_SKILL: &str = "---\nname: givn-propose\ndescription: Project-owned propose skill.\n---\n\n# givn-propose\n\nProject-owned propose guidance.\n";
 
-pub(crate) const REPLACEMENT_COMMAND: &str = "---\ndescription: Project-owned propose command\n---\n\nProject-owned propose command body.\n";
+pub(crate) const REPLACEMENT_COMMAND: &str =
+    "---\ndescription: Project-owned propose command\n---\n\nProject-owned propose command body.\n";
 
 const MANAGED_POLICY_REFERENCE: &str = "follow the effective dialog policy from";
-const MANAGED_HANDOFF_REFERENCE: &str = "pass the obligation explicitly to fresh delegated contexts";
+const MANAGED_HANDOFF_REFERENCE: &str =
+    "pass the obligation explicitly to fresh delegated contexts";
 
 #[given("a Givn project with all agent skill targets selected")]
 fn project_with_all_skill_targets(world: &mut GivnWorld) {
@@ -96,7 +100,9 @@ fn project_with_all_skill_targets(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
-#[given("valid project-owned skill and command replacements intentionally omit the bundled dialog obligation")]
+#[given(
+    "valid project-owned skill and command replacements intentionally omit the bundled dialog obligation"
+)]
 fn project_replacements_omit_obligation(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("replacement fixture is missing");
     let skill_path = env.path("givn/skills/givn-propose/SKILL.md.tmpl");
@@ -130,7 +136,9 @@ fn replacement_sources_unchanged(world: &mut GivnWorld) {
     );
 }
 
-#[then("every selected skill consumer receives the authoritative rendered replacement without a bundled prefix")]
+#[then(
+    "every selected skill consumer receives the authoritative rendered replacement without a bundled prefix"
+)]
 fn skill_consumers_receive_replacement(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("replacement fixture is missing");
     for target in ["opencode", "agents", "claude"] {
@@ -144,7 +152,9 @@ fn skill_consumers_receive_replacement(world: &mut GivnWorld) {
     }
 }
 
-#[then("the opencode command consumer receives the authoritative rendered replacement without a bundled prefix")]
+#[then(
+    "the opencode command consumer receives the authoritative rendered replacement without a bundled prefix"
+)]
 fn command_consumer_receives_replacement(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("replacement fixture is missing");
     let delivered = std::fs::read_to_string(env.path(".opencode/commands/givn-propose.md"))

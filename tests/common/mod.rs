@@ -369,6 +369,63 @@ pub fn run_givn_with_stdin_and_envs(
     child.wait_with_output().expect("wait for givn subprocess")
 }
 
+/// Drive `givn init`'s interactive prompt through a real PTY.
+///
+/// `keys` is the raw byte sequence sent to the terminal. util-linux `script`
+/// gives the child a terminal on stdin, so the dialoguer checkbox list runs;
+/// the transcript becomes the command output for exit-code and stderr
+/// assertions. `AgentTarget::ALL[0]` is `.opencode` and the only pre-marked
+/// entry, so one space (`\x20`) toggles exactly that default off.
+///
+/// Raw-key semantics, the 60-second deadline and the propagated child exit
+/// status are preserved for every caller.
+pub fn run_init_in_terminal(env: &TestEnv, keys: &[u8]) -> Output {
+    use std::io::Write;
+    use std::process::{Command, Output, Stdio};
+    use std::time::{Duration, Instant};
+
+    let transcript = env.path(".terminal-transcript.txt");
+    let bin = env!("CARGO_BIN_EXE_givn");
+    let mut child = Command::new("script")
+        .args([
+            "-qec",
+            &format!("{bin} init"),
+            &transcript.to_string_lossy(),
+        ])
+        .current_dir(env.root())
+        .env_remove("GIVN_FEATURES")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .expect("spawn `script` (util-linux) to drive the terminal prompt");
+    child
+        .stdin
+        .take()
+        .expect("piped stdin for the PTY session")
+        .write_all(keys)
+        .expect("write the terminal keys");
+    let deadline = Instant::now() + Duration::from_secs(60);
+    let status = loop {
+        match child.try_wait().expect("poll the PTY session") {
+            Some(status) => break status,
+            None if Instant::now() < deadline => std::thread::sleep(Duration::from_millis(50)),
+            None => {
+                let _ = child.kill();
+                panic!("the terminal prompt did not finish within 60 seconds");
+            }
+        }
+    };
+    let bytes = std::fs::read(&transcript).expect("read the terminal transcript");
+    // The terminal transcript is the command's observable output: prompt,
+    // banner, and messages all write to the same PTY.
+    Output {
+        status,
+        stdout: bytes.clone(),
+        stderr: bytes,
+    }
+}
+
 /// Write a project override at `givn/artifacts/<artifact>/<file>` inside the
 /// temp root. `givn init` does not scaffold `givn/artifacts/` (SMELL-3), so
 /// this helper `create_dir_all`s the subtree itself.
