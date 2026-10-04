@@ -11,7 +11,7 @@ use cucumber::{given, then, when};
 pub(crate) const HUMAN_INSTRUCTIONS: &str =
     "# Project house rules\n\nAlways run the release checklist before tagging.\n";
 
-fn fixture<'a>(world: &'a GivnWorld) -> &'a common::TestEnv {
+fn fixture(world: &GivnWorld) -> &common::TestEnv {
     world
         .env
         .as_ref()
@@ -125,6 +125,34 @@ fn no_tone_addon_required(world: &mut GivnWorld) {
     assert!(
         !block.contains("Absolute Mode") && !active.contains("absolute_mode: true"),
         "the obligation depends on the optional tone addon: {block}"
+    );
+}
+
+// --- interactive terminal initialization ------------------------------------
+
+#[when("the consumer selects opencode and claude in the real terminal init prompt")]
+fn consumer_selects_targets_in_terminal(world: &mut GivnWorld) {
+    let env = fixture(world);
+    // Option order is .opencode, .agents, .claude with only .opencode
+    // premarked: two down keys move to .claude, space marks it, enter confirms.
+    world.last_output = Some(common::run_init_in_terminal(env, b"\x1b[B\x1b[B\x20\n"));
+}
+
+#[then(
+    "the terminal displays a labeled agent-target selection and confirms the selected integrations"
+)]
+fn terminal_shows_labeled_selection(world: &mut GivnWorld) {
+    let out = report(world);
+    assert!(
+        out.contains("Which agents should givn install skills to?")
+            && out.contains("[x] .opencode")
+            && out.contains("[ ] .agents")
+            && out.contains("[x] .claude"),
+        "the terminal stream does not display the labeled agent-target selection: {out}"
+    );
+    assert!(
+        out.contains(".opencode, .claude"),
+        "the terminal stream does not confirm the selected integrations: {out}"
     );
 }
 
