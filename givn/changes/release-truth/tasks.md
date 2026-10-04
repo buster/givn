@@ -180,7 +180,7 @@ Production change owned by this scenario: `scripts/release-guard.sh` with the
   - OUTPUT: `cargo fmt --all` applied to the new steps; exit 0; `5 steps
     (5 passed)`; the delta's regular scope is green for S1–S3 with only S4
     still unbound (log `/tmp/s3-refactor.log`).
-- [ ] COMMIT: `<hash>` -- describe-the-release: A release cannot be prepared without a tag for the current version
+- [x] COMMIT: `5ddbad58` -- describe-the-release: A release cannot be prepared without a tag for the current version
 
 ## Task S4 — A release section without user-visible change stops the release
 
@@ -188,13 +188,20 @@ Owning rule: a range without user-visible change stops the release before the
 version revision and the tag. Production change owned by this scenario: the
 `section` subcommand of `scripts/release-guard.sh`.
 
-- [ ] RED: add the scenario's steps and run it against the script without the
+- [x] RED: add the scenario's steps and run it against the script without the
       `section` subcommand; paste the failure
-  - OUTPUT: _pending_
-- [ ] GREEN: add the `section` subcommand; rerun; paste the pass
-  - OUTPUT: _pending_
-- [ ] REFACTOR: rerun; paste the pass
-  - OUTPUT: _pending_
+  - OUTPUT: exit 101; 4 steps with 1 failed: `Then the check fails naming the
+    release version "0.9.0"` — `Step panicked. Captured output: the failure
+    does not name the release version "0.9.0":` followed by
+    `usage: .../scripts/release-guard.sh base <expected-version>` (behavior
+    absent; log `/tmp/s4-red.log`).
+- [x] GREEN: add the `section` subcommand; rerun; paste the pass
+  - OUTPUT: exit 0; `4 steps (4 passed)`; the delta's regular scope is fully
+    green (`4 tests run: 4 passed, 1 skipped`); production file:
+    `scripts/release-guard.sh` (`section`; log `/tmp/s4-green.log`).
+- [x] REFACTOR: rerun; paste the pass
+  - OUTPUT: formatting already clean; `sh -n scripts/release-guard.sh` ok;
+    exit 0; `4 steps (4 passed)` (log `/tmp/s4-refactor.log`).
 - [ ] COMMIT: `<hash>` -- describe-the-release: A release section without user-visible change stops the release
 
 ## Task E2E setup — e2e scope, skeleton, and scenario-count proof

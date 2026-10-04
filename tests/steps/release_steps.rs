@@ -26,6 +26,12 @@ pub(crate) struct ReleaseState {
     expected_version: Option<String>,
     /// Captured output of the last release-guard invocation.
     guard_output: Option<Output>,
+    /// Directory holding the generated changelog file under test.
+    changelog_dir: Option<common::TestEnv>,
+    /// The changelog file the section guard reads.
+    changelog_file: Option<std::path::PathBuf>,
+    /// The release version whose section the guard checks.
+    section_version: Option<String>,
 }
 
 #[derive(Debug)]
@@ -372,5 +378,86 @@ fn then_no_test_harness_fix(world: &mut GivnWorld) {
     assert!(
         !changelog.contains("Retarget the fixture scaffold"),
         "the release section lists the test-harness bug fix:\n{changelog}"
+    );
+}
+
+#[given(expr = "a generated changelog whose release section for {string} holds no change group")]
+fn given_sectionless_changelog(world: &mut GivnWorld, version: String) {
+    let env = common::make_bare_root();
+    let path = env.path("CHANGELOG.md");
+    std::fs::write(
+        &path,
+        format!("# Changelog\n\n## [Unreleased]\n\n## [{version}] - 2026-10-04\n"),
+    )
+    .expect("write the generated changelog fixture");
+    world.release.changelog_dir = Some(env);
+    world.release.changelog_file = Some(path);
+    world.release.section_version = Some(version);
+}
+
+#[when(expr = "the maintainer verifies the release section for {string}")]
+fn when_verify_release_section(world: &mut GivnWorld, version: String) {
+    let file = world
+        .release
+        .changelog_file
+        .clone()
+        .expect("a generated changelog is required first");
+    let cwd = world
+        .release
+        .changelog_dir
+        .as_ref()
+        .expect("a generated changelog is required first")
+        .root();
+    world.release.guard_output = Some(run_guard(
+        &["section", &version, &file.to_string_lossy()],
+        &cwd,
+    ));
+}
+
+#[then(expr = "the check fails naming the release version {string}")]
+fn then_section_check_fails(world: &mut GivnWorld, version: String) {
+    let out = guard_output(world);
+    let text = format!(
+        "{}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        !out.status.success(),
+        "the release section check passed unexpectedly:\n{text}"
+    );
+    assert!(
+        text.contains(&version),
+        "the failure does not name the release version {version:?}:\n{text}"
+    );
+}
+
+#[then("the check accepts a release section holding a change group")]
+fn then_section_check_accepts(world: &mut GivnWorld) {
+    let file = world
+        .release
+        .changelog_file
+        .clone()
+        .expect("a generated changelog is required first");
+    let version = world
+        .release
+        .section_version
+        .clone()
+        .expect("a release version is required first");
+    let mut content = std::fs::read_to_string(&file).expect("read the changelog fixture");
+    content.push_str("\n### Features\n\n- **scope:** A user-visible change\n");
+    std::fs::write(&file, content).expect("write the changelog fixture with a change group");
+    let cwd = world
+        .release
+        .changelog_dir
+        .as_ref()
+        .expect("a generated changelog is required first")
+        .root();
+    let out = run_guard(&["section", &version, &file.to_string_lossy()], &cwd);
+    assert!(
+        out.status.success(),
+        "the release section check failed for a section holding a change group:\n{}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
     );
 }
