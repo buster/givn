@@ -168,3 +168,205 @@ Good:
 
 Context required to answer a question is not filler; option codes without
 meanings are.
+
+## Worked contrasts
+
+The five contrasts below illustrate different question shapes; they are not a
+mandatory verbose template. Every record, link, file and setting in them is
+hypothetical: the in-file links point at the example's own record below, not
+at a real project file, implemented recovery mechanism, or current product
+behavior. Nothing here adopts the examples' hypothetical decisions.
+
+### Example 1 decision record
+
+Hypothetical neighborhood-library planning record: three proposed member goals
+are reserve an available copy, cancel one's own reservation, and view one's
+queue position. Staff acquisition and catalog editing are excluded.
+Confirmation authorizes elaborating these goals, not implementation, change
+count, or delivery order. Changing a goal later requires revisiting its
+affected elaboration, not treating the original confirmation as irrevocable.
+
+#### Bad — approving a count instead of the goals
+
+> The cut contains two changing goals and one observing goal. It is not three
+> changes or a delivery order. Adopt this cut for elaboration?
+
+#### Good — show the whole approval subject
+
+> Should these three member goals become the basis for use-case elaboration?
+>
+> We need their boundaries before drafting flows. Details:
+> [the planning record](#example-1-decision-record).
+>
+> | Proposed goal | Member outcome | Boundary |
+> |---|---|---|
+> | Reserve an available copy | A copy is reserved for the member. | Does not acquire new books. |
+> | Cancel one's own reservation | The member's reservation is removed. | Does not cancel another member's reservation. |
+> | View one's queue position | The member can see their position. | Read-only; does not edit the catalog. |
+>
+> **Adopt this cut:** elaborate these three goals with those boundaries. For
+> example, canceling another member's reservation is not added to the cancel
+> flow. Benefit: a bounded basis for elaboration; cost: omitted goals need
+> separate consideration. This does not approve implementation or delivery
+> order.
+>
+> **Revise the cut first:** identify a goal or boundary to change before
+> elaborating it. For example, if staff cancellation is needed, settle its
+> actor and outcome first. Benefit: avoids elaborating the wrong scope; cost:
+> delays the affected flow.
+>
+> Goals can be amended later, but affected rules and flows must be reviewed
+> again. Adopt these goals or revise a named boundary first?
+
+Contrast: all approved goals are visible; the count is not the evidence, and
+both answers have bounded consequences.
+
+### Example 2 decision record
+
+Hypothetical target-selection record: both `/work/catalog` and
+`/work/catalog-tools` are initialized projects the operator owns. The
+repository inspection identifies both but cannot establish which project the
+operator intends to work on. Selecting one sets the scope for subsequent
+commands; selecting it alone writes nothing. Neither current-directory
+inference nor another artifact settles the intent.
+
+#### Bad — an unexplained information request
+
+> Which directory?
+
+#### Good — short clarification, no artificial option ceremony
+
+> Both `/work/catalog` and `/work/catalog-tools` are initialized projects;
+> inspection cannot tell which one you intend to change. Details:
+> [the inspected target record](#example-2-decision-record).
+>
+> Which project root should subsequent commands use? For example, answering
+> `/work/catalog` limits the work to the catalog project, not catalog-tools.
+> Selecting a root alone writes nothing; we can switch before any write.
+
+Contrast: the agent establishes discoverable facts first, asks only the
+missing human intent, and explains how the answer will be used without
+invented gains or costs for arbitrary paths.
+
+### Example 3 decision record
+
+Hypothetical rule-reader project: general collaboration guidance can be read
+through `tool instructions dialog`; task-specific guidance is read through
+`tool instructions task`. No decision yet settles whether general guidance
+requires an active task. Task-specific guidance does require one. The draft
+rejects all instruction requests when no task exists. No data migration or
+permission change is involved. Altering an established command expectation
+later may require updating callers and guidance.
+
+#### Bad — a preference poll about implementation labels
+
+> D1 is open. Fallback first or task resolution first? Recommend fallback.
+
+#### Good — decide observable behavior
+
+> Should general collaboration rules be readable before an active task exists?
+>
+> The draft rejects `tool instructions dialog` with `No active task`, which
+> prevents an agent from reading the collaboration rules before planning.
+> Details: [the draft behavior and boundary](#example-3-decision-record).
+>
+> **Allow general guidance without a task — recommended.** The command prints
+> the collaboration rules; task-specific instructions still require a task.
+> Example: in a fresh project, `tool instructions dialog` prints the rules
+> while `tool instructions task` returns `No active task`. Benefit: rules are
+> available before planning. Cost: lookup must distinguish general from
+> task-specific guidance.
+>
+> **Require a task for both.** Example: both commands return `No active task`
+> until the operator creates or selects a task. Benefit: one prerequisite for
+> all lookup. Cost: the agent cannot retrieve the rules through this command
+> before planning.
+>
+> No stored information changes. The behavior is revisable, but callers and
+> guidance relying on it may need updates. Which availability rule should the
+> project establish?
+
+Contrast: the reader decides a real product expectation, not an internal
+ordering detail. The source is specific, both results are shown, and the
+local choice does not receive migration-style rollback ceremony. If the
+project already confirms availability, report and apply that decision instead
+of asking again.
+
+### Example 4 decision record
+
+Hypothetical saved-project upgrade: the old format records a preview setting
+called Backend Port; the proposed format calls the same setting Candidate
+Port. The port value is preserved. If approval includes upgrading saved
+projects, the conversion work becomes part of the approved change rather than
+a later follow-up. No implemented recovery support is assumed.
+
+#### Bad — hiding a lasting commitment in a label
+
+> Include the saved-format rename now or later? Recommend now for consistency.
+
+#### Good — show the hard-to-change cost and its purchased benefit
+
+> Should this terminology change include upgrading existing saved projects?
+>
+> Documentation will call the preview setting Candidate Port. We must choose
+> whether saved projects change with it. Details:
+> [the upgrade and compatibility record](#example-4-decision-record).
+>
+> **Upgrade saved projects in this change.** Example: a project saved as
+> Backend Port = 8080 becomes Candidate Port = 8080; the number stays the
+> same. Benefit: documentation and saved projects use one name, so future work
+> does not translate between them. Cost: implement and verify conversion
+> before rollout. Changing course after rollout requires verified reverse
+> conversion, not just reinstalling the old release.
+>
+> **Keep saved projects unchanged for now.** Example: documentation says
+> Candidate Port = 8080 while the saved project still calls it Backend Port.
+> Benefit: this change does not introduce that format-related downgrade
+> restriction. Cost: the project must maintain the documented distinction;
+> later alignment still needs a conversion.
+>
+> Both options preserve the configured port. The second leaves conversion open;
+> the first purchases immediate consistency with a harder-to-reverse format
+> commitment. Include the conversion, or leave saved projects out of this
+> change?
+
+Contrast: the difficult option states its benefit and compatibility cost; the
+safer option is concrete.
+
+### Example 5 decision record
+
+Hypothetical review record: a status scenario succeeds whenever the output
+contains the word active. Its declared requirement is that the project status
+is active. A response saying the project is inactive while an active-profile
+label exists still passes the substring check. The recorded contract already
+requires checking the actual project status. The assertion weakness and remedy
+are discoverable; no policy choice remains. A separate confirmed rule also
+prohibits processing one repeated write as two answers.
+
+#### Bad — delegating diagnosis or offering an invalid option
+
+> Which of the 22 status scenarios proves nothing? Should we keep the broad
+> substring check or choose exact whole-output matching?
+>
+> Alternatively, should a repeated answer become a second answer so a human
+> can decide? The run might continue twice.
+
+#### Good — do the research and report; do not ask a preference question
+
+> The status check accepts an inactive project when an unrelated label contains active.
+> Details: [the assertion counterexample and status contract](#example-5-decision-record).
+>
+> I will make the assertion distinguish the actual project status while
+> preserving the existing output contract. The inactive-project counterexample
+> will fail; an active project with the required status will pass. This
+> changes verification, not product behavior. Whole-output formatting is not
+> required by the supplied contract.
+>
+> I will not offer processing a repeated write as a second answer: that would
+> violate the confirmed one-answer rule. If a future request intentionally
+> changes that rule, it needs a separate explicit requirement decision and its
+> consequences, not a silent exception.
+
+Contrast: investigate unseen assertions instead of asking the human to
+memorize them; reject a false dilemma and an invariant-violating alternative.
+The policy's good outcome is sometimes a report with no user-facing question.
