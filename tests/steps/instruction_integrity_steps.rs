@@ -790,6 +790,28 @@ fn commitment_contrast_requires_established_facts(world: &mut GivnWorld) {
     );
 }
 
+// --- decision-ready questions: general policy without a change --------------
+
+#[then("the returned general policy governs question preparation without requiring a selected change")]
+fn general_policy_governs_question_preparation(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("every user-facing question")
+            && output.contains("does not invent alternatives or trade-offs"),
+        "returned general policy is not the universal/proportional question contract: {output}"
+    );
+}
+
+#[then("the returned policy distinguishes routine clarification from decisions that require alternatives and consequences")]
+fn general_policy_distinguishes_clarification(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("A short information request")
+            && output.contains("A substantive choice receives the full treatment"),
+        "policy does not distinguish routine clarification from substantive decisions: {output}"
+    );
+}
+
 fn dialog_policy(world: &GivnWorld) -> &str {
     world
         .additional_output

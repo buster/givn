@@ -67,12 +67,12 @@ choice with no material commitment.
 ## Rule 6 — Match the treatment to the question
 
 A short information request explains how the answer will be used and its
-immediate effect; it does not invent alternatives or trade-offs. A
-substantive choice receives the full treatment above. A question is
-answerable standalone: it names the decision it blocks, the context that
-forces it, the options with their gains and costs, and a concrete example of
-each, so the reader can decide without opening another file and without
-re-deriving the trade-offs.
+immediate effect; it does not invent alternatives or trade-offs.
+A substantive choice receives the full treatment above.
+A question is answerable standalone: it names the decision it blocks, the
+context that forces it, the options with their gains and costs, and a concrete
+example of each, so the reader can decide without opening another file and
+without re-deriving the trade-offs.
 
 ## Rule 7 — Name artifacts in domain language
 
