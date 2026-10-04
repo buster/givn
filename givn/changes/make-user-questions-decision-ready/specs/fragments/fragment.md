@@ -26,13 +26,6 @@
 
 ## Interactions
 
-The reviewed instruction-integrity inventory has two actions: request effective
-instructions with an instruction id, and request session-start instructions
-without one. Design, review, specs, dialog, JSON, and change context are input
-variants of those actions, not separate E2E actions. The retained JSON E2E
-requests specs only; it is not exercised dialog evidence. Other support
-capabilities and their contracts are unchanged.
-
 | Capability | Consumer action | E2E scenario |
 |---|---|---|
 | instruction-integrity | request effective instructions by id (artifact, general policy, JSON and change context are variants) | An agent requests machine-readable artifact guidance |
