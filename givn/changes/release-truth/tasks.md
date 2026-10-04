@@ -290,7 +290,7 @@ wiring is checked structurally here and reviewed in the archive.
     release build with the `--version` check, `cargo audit`/`cargo deny`, both
     acceptance suites, the fossil/git-filter-repo prerequisites, the absence
     of `cargo publish`/`crates.io`, and the `ci.yml` git-cliff install.
-- [ ] COMMIT: `<hash>` -- chore(release): one dispatch workflow for prepare, tag, and GitHub release
+- [x] COMMIT: `68893341` -- chore(release): one dispatch workflow for prepare, tag, and GitHub release
 
 ## Task D — Durable documentation
 
