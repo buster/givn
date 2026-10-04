@@ -1161,6 +1161,112 @@ fn selected_targets_and_addons_unchanged(world: &mut GivnWorld) {
     }
 }
 
+// --- decision-ready questions: project-owned dialog override ----------------
+
+pub(crate) const DIALOG_OVERRIDE: &str = "# Instruction: dialog\n\nProject-owned dialog policy: require human approval before broadening the\nselected project scope. Nothing else is delegated.\n";
+
+#[given("an initialized Givn project with a project-owned dialog instruction override")]
+fn initialized_project_with_dialog_override(world: &mut GivnWorld) {
+    let env = crate::common::make_bare_root();
+    let output = crate::common::run_givn(&env, &["init", "--agents", "opencode,agents,claude"]);
+    assert!(
+        output.status.success(),
+        "init for the override fixture failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    crate::common::write_override(&env, "dialog", "instructions.md", DIALOG_OVERRIDE);
+    world.env = Some(env);
+}
+
+#[given("the override requires human approval before broadening the selected project scope")]
+fn override_requires_human_approval(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("override fixture is missing");
+    let content = std::fs::read_to_string(env.path("givn/artifacts/dialog/instructions.md"))
+        .expect("dialog override missing");
+    assert_eq!(
+        content, DIALOG_OVERRIDE,
+        "the dialog override fixture does not carry the approval requirement"
+    );
+}
+
+#[when(
+    "the author synchronizes guidance and requests the dialog instructions through the Givn CLI"
+)]
+fn synchronize_and_request_dialog(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("override fixture is missing");
+    let sync = crate::common::run_givn(env, &["skills", "sync"]);
+    assert!(
+        sync.status.success(),
+        "skills sync failed: {}",
+        String::from_utf8_lossy(&sync.stderr)
+    );
+    let text = crate::common::run_givn(env, &["instructions", "dialog"]);
+    assert!(
+        text.status.success(),
+        "text dialog retrieval failed: {}",
+        String::from_utf8_lossy(&text.stderr)
+    );
+    world.additional_output = Some(String::from_utf8_lossy(&text.stdout).into_owned());
+    world.last_output = Some(crate::common::run_givn(
+        env,
+        &["instructions", "dialog", "--json"],
+    ));
+}
+
+#[then("the returned policy is the project-owned dialog override rather than the bundled default")]
+fn returned_policy_is_the_override(world: &mut GivnWorld) {
+    let text = dialog_policy(world).to_string();
+    let output = cli_stdout(world);
+    let value: serde_json::Value =
+        serde_json::from_str(&output).expect("dialog instruction JSON expected");
+    let instruction = value["instruction"].as_str().unwrap_or_default();
+    for policy in [text.as_str(), instruction] {
+        assert!(
+            policy.contains("require human approval before broadening the"),
+            "returned policy is not the project-owned override: {policy}"
+        );
+        assert!(
+            !policy.contains("## Rule 1 — Ask only necessary"),
+            "returned policy is the bundled default rather than the override: {policy}"
+        );
+    }
+}
+
+#[then("the project-owned override remains unchanged on disk")]
+fn override_unchanged_on_disk(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("override fixture is missing");
+    let content = std::fs::read_to_string(env.path("givn/artifacts/dialog/instructions.md"))
+        .expect("dialog override missing");
+    assert_eq!(
+        content, DIALOG_OVERRIDE,
+        "the project-owned override was rewritten by synchronization"
+    );
+}
+
+#[then(
+    "the synchronized entry guidance directs authors to the effective policy rather than a bundled policy copy"
+)]
+fn synchronized_entries_direct_to_effective_policy(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("override fixture is missing");
+    for rel in [
+        ".opencode/skills/givn-propose/SKILL.md",
+        ".claude/skills/givn-propose/SKILL.md",
+        ".opencode/commands/givn-propose.md",
+    ] {
+        let content =
+            std::fs::read_to_string(env.path(rel)).unwrap_or_else(|e| panic!("{rel}: {e}"));
+        assert!(
+            content.contains("effective policy from `givn instructions dialog`"),
+            "{rel} does not direct authors to the effective policy: {content}"
+        );
+        assert!(
+            !content.contains("## Rule 1 — Ask only necessary")
+                && !content.contains("### Example 1 decision record"),
+            "{rel} embeds a bundled policy copy: {content}"
+        );
+    }
+}
+
 fn dialog_policy(world: &GivnWorld) -> &str {
     world
         .additional_output
