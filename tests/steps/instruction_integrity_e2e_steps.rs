@@ -26,6 +26,60 @@ fn givn_project_with_active_change(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
+#[given("an initialized Givn project without an active change")]
+fn initialized_project_without_change(world: &mut GivnWorld) {
+    world.env = Some(crate::common::make_init_root());
+}
+
+#[when("the author requests the normal Givn startup instructions through the Givn CLI")]
+fn author_requests_startup_instructions(world: &mut GivnWorld) {
+    let env = active_project(world);
+    world.last_output = Some(crate::common::run_givn(env, &["instructions"]));
+}
+
+#[then(
+    "the startup guidance requires loading the effective dialog policy before the context's first user-facing question"
+)]
+fn startup_requires_policy_before_first_question(world: &mut GivnWorld) {
+    let output = stdout(world);
+    assert!(
+        output.contains("load it once per context before the first question"),
+        "startup guidance does not require loading the policy before the first question: {output}"
+    );
+}
+
+#[then(
+    "the startup guidance applies that obligation outside named skills and to delegated question preparation"
+)]
+fn startup_obligation_is_universal(world: &mut GivnWorld) {
+    let output = stdout(world);
+    assert!(
+        output.contains("outside a named workflow")
+            && output.contains("pass the obligation explicitly to fresh delegated contexts"),
+        "startup guidance does not carry the universal/delegated obligation: {output}"
+    );
+}
+
+#[then(
+    "the startup guidance distinguishes loading once per context from rereading before every question"
+)]
+fn startup_distinguishes_once_from_rereading(world: &mut GivnWorld) {
+    let output = stdout(world);
+    assert!(
+        output.contains("once per context rather than rereading before every question"),
+        "startup guidance does not distinguish loading once from rereading: {output}"
+    );
+}
+
+#[then("the startup guidance still explains how to begin a change")]
+fn startup_explains_begin_change(world: &mut GivnWorld) {
+    let output = stdout(world);
+    assert!(
+        output.contains("givn new"),
+        "startup guidance lost the begin-change guidance: {output}"
+    );
+}
+
 #[when("the author requests the specs instructions through the Givn CLI")]
 fn author_requests_specs_instructions(world: &mut GivnWorld) {
     let output = {
