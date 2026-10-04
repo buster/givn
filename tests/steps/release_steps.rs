@@ -6,7 +6,7 @@
 //! pinned `git-cliff` binary resolved through `PATH`, the same interface the
 //! release pipeline uses.
 
-use std::process::{Command, ExitStatus};
+use std::process::{Command, ExitStatus, Output};
 
 use cucumber::{given, then, when};
 
@@ -20,6 +20,12 @@ pub(crate) struct ReleaseState {
     /// Group heading to the entry sentence the fixture recorded for it.
     expected_groups: Vec<(String, String)>,
     generated: Option<Generated>,
+    /// Repository the release guards run against.
+    guard_repo: Option<common::TestEnv>,
+    /// The version the maintainer declares current.
+    expected_version: Option<String>,
+    /// Captured output of the last release-guard invocation.
+    guard_output: Option<Output>,
 }
 
 #[derive(Debug)]
@@ -126,6 +132,120 @@ fn generated(world: &GivnWorld) -> &Generated {
         .generated
         .as_ref()
         .expect("the changelog has not been generated yet")
+}
+
+/// Run the checked-in release guard script from the fixture root.
+pub(crate) fn run_guard(args: &[&str], cwd: &std::path::Path) -> Output {
+    Command::new("sh")
+        .arg(common::repo_path("scripts/release-guard.sh"))
+        .args(args)
+        .current_dir(cwd)
+        .output()
+        .expect("run scripts/release-guard.sh through sh")
+}
+
+/// A temporary repository the guards run against.
+pub(crate) fn make_guard_repo() -> common::TestEnv {
+    let env = common::make_bare_root();
+    common::git_init(&env);
+    env
+}
+
+fn guard_output(world: &GivnWorld) -> &Output {
+    world
+        .release
+        .guard_output
+        .as_ref()
+        .expect("the release guard has not been run yet")
+}
+
+fn record_annotated_tag(world: &GivnWorld, tag: &str) {
+    let env = world
+        .release
+        .guard_repo
+        .as_ref()
+        .expect("a release repository is required first");
+    let out = common::git(
+        env,
+        &[
+            "tag",
+            "--annotate",
+            tag,
+            "--message",
+            &format!("Release {tag}"),
+        ],
+    );
+    assert!(
+        out.status.success(),
+        "git tag failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+}
+
+fn state_guard_repo(world: &GivnWorld) -> (&common::TestEnv, &str) {
+    let env = world
+        .release
+        .guard_repo
+        .as_ref()
+        .expect("a release repository is required first");
+    let version = world
+        .release
+        .expected_version
+        .as_deref()
+        .expect("a current version is required first");
+    (env, version)
+}
+
+#[given(expr = "a repository whose current version is {string}")]
+fn given_guard_repository(world: &mut GivnWorld, version: String) {
+    world.release.guard_repo = Some(make_guard_repo());
+    world.release.expected_version = Some(version);
+}
+
+#[given(expr = "whose newest version tag is {string}")]
+fn given_newest_version_tag(world: &mut GivnWorld, tag: String) {
+    record_annotated_tag(world, &tag);
+}
+
+#[when("the maintainer verifies the release base")]
+fn when_verify_release_base(world: &mut GivnWorld) {
+    let (env, version) = state_guard_repo(world);
+    let version = version.to_string();
+    let root = env.root();
+    world.release.guard_output = Some(run_guard(&["base", &version], &root));
+}
+
+#[then(expr = "the check fails naming the missing tag {string}")]
+fn then_check_fails_naming_tag(world: &mut GivnWorld, tag: String) {
+    let out = guard_output(world);
+    let text = format!(
+        "{}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        !out.status.success(),
+        "the release base check passed unexpectedly:\n{text}"
+    );
+    assert!(
+        text.contains(&tag),
+        "the failure does not name the missing tag {tag:?}:\n{text}"
+    );
+}
+
+#[then(expr = "the check accepts the repository once the newest version tag is {string}")]
+fn then_check_accepts_with_tag(world: &mut GivnWorld, tag: String) {
+    record_annotated_tag(world, &tag);
+    let (env, version) = state_guard_repo(world);
+    let version = version.to_string();
+    let root = env.root();
+    let out = run_guard(&["base", &version], &root);
+    assert!(
+        out.status.success(),
+        "the release base check failed after the tag was recorded:\n{}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
 }
 
 #[given(
