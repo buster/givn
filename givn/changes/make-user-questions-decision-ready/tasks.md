@@ -965,9 +965,9 @@ Project-owned dialog policy."
       $ (re-ran unchanged) → 1 scenario (1 passed), 7 steps                EXIT=0
       ```
       ```
-      - [x] COMMIT: `None` -- initialize-a-project: Fossil initialization names the supported attribution path without Git plumbing
+      - [x] COMMIT: `3f6d677b` -- initialize-a-project: Fossil initialization names the supported attribution path without Git plumbing
 
-- [ ] initialize-a-project: Initialization without SCM preserves guidance and names the later archive refusal
+- [x] initialize-a-project: Initialization without SCM preserves guidance and names the later archive refusal
       Design constraints:
         - Fixture: a root without a Git worktree or Fossil checkout. Run real
           `givn init --agents opencode`.
@@ -983,7 +983,17 @@ Project-owned dialog policy."
                 assertion → FAIL; restore immediately. Paste command + output +
                 category.
       ```
-      <!-- paste RED evidence: command + output + category -->
+      ```
+      $ GIVN_FEATURES=givn/changes/make-user-questions-decision-ready/specs cargo test --locked --test features_runner -- --name '^Initialization without SCM preserves guidance and names the later archive refusal$'
+         1 scenario (1 passed), 6 steps (6 passed)                    EXIT=0
+      BASELINE_GREEN permitted: the named warning, successful generation and named later refusal already hold.
+      ORACLE_RED calibration (backend discrimination, outside the repo):
+        $ git init ; givn init --agents opencode
+          ABSENT:  warning in Git-backed transcript (the no-SCM assertion discriminates)
+          PRESENT: Git attribution path
+      The warning assertion distinguishes the no-SCM precondition from a Git-backed init; the fixture was
+      removed immediately. The later-refusal boundary runs the real second `givn archive` command.
+      ```
       ```
       GREEN:    Production changes only if the assertion exposes a real gap;
                 otherwise state "precondition variant" with the file list. Files
@@ -993,13 +1003,21 @@ Project-owned dialog policy."
                 ```
                 Run scoped → PASSES. Paste output.
       ```
-      <!-- paste GREEN evidence: command + output + category -->
+      ```
+      $ (same scoped command; the delta reclassifies the former E2E identity as a regular precondition variant)
+         1 scenario (1 passed), 6 steps (6 passed)                    EXIT=0
+      Production files: none — precondition/coverage variant. The scenario now runs under verify.command with
+      the existing real-CLI bindings (bare root, `givn init --agents opencode`, generated core skill, named
+      warning, real later archive refusal); the redundant @e2e identity is removed by the delta.
+      ```
       ```
       REFACTOR: Clean up. Re-run scoped → still PASSES. Paste output.
       ```
-      <!-- paste REFACTOR evidence -->
       ```
-      - [ ] COMMIT: `<hash>` -- initialize-a-project: Initialization without SCM preserves guidance and names the later archive refusal
+      $ (re-ran unchanged) → 1 scenario (1 passed), 6 steps                EXIT=0
+      ```
+      ```
+      - [x] COMMIT: `None` -- initialize-a-project: Initialization without SCM preserves guidance and names the later archive refusal
 
 ---
 
