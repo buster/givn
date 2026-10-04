@@ -107,7 +107,7 @@ the tag.
     (version 2.13.1), `git` `/usr/bin/git`, `fossil`
     `/home/buster/bin/fossil`, `git-filter-repo` `/usr/bin/git-filter-repo`,
     `script` `/usr/bin/script`, `jq` on PATH; `cargo-nextest 0.9.143`.
-- [ ] COMMIT: `<hash>` -- Setup: strictness proof, baseline, and command forms
+- [x] COMMIT: `760a3872` -- Setup: strictness proof, baseline, and command forms
 
 ## Task S1 — A release section lists only the user-visible change groups
 
@@ -115,14 +115,23 @@ Owning rule: a release section lists only user-visible change. Production
 change owned by this scenario: the internal-scope fix skip and the `.*` skip
 fallback in `cliff.toml`.
 
-- [ ] RED: implement the fixture and the scenario's assertions in
+- [x] RED: implement the fixture and the scenario's assertions in
       `tests/steps/release_steps.rs` against the current `cliff.toml`; run
       the single scenario; paste the failure
-  - OUTPUT: _pending_
-- [ ] GREEN: apply the parser change; rerun the scenario; paste the pass
-  - OUTPUT: _pending_
-- [ ] REFACTOR: tidy the helper without behavior change; rerun; paste the pass
-  - OUTPUT: _pending_
+  - OUTPUT: exit 101; `1 scenario (1 failed)`, 6 steps with 1 failed:
+    `And the changelog lists no "Other Changes" group` —
+    `Step panicked. Captured output: the changelog lists an unexpected Other Changes group:`
+    followed by the generated section showing `### Other Changes` and
+    `- **harness:** Retarget the fixture scaffold` under `### Bug Fixes`
+    (full log `/tmp/s1-red.log`).
+- [x] GREEN: apply the parser change; rerun the scenario; paste the pass
+  - OUTPUT: exit 0; `1 scenario (1 passed)`, `6 steps (6 passed)`; production
+    files: `cliff.toml` (internal-scope fix skip, `.*` skip fallback),
+    `tests/steps/release_steps.rs`, `tests/steps/mod.rs`
+    (log `/tmp/s1-green.log`).
+- [x] REFACTOR: tidy the helper without behavior change; rerun; paste the pass
+  - OUTPUT: `cargo fmt --all` applied to the new module; exit 0;
+    `1 scenario (1 passed)`, `6 steps (6 passed)` (log `/tmp/s1-refactor.log`).
 - [ ] COMMIT: `<hash>` -- describe-the-release: A release section lists only the user-visible change groups
 
 ## Task S2 — A release range without user-visible change has no release section

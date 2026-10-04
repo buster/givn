@@ -46,6 +46,7 @@ pub mod readme_enforcement_e2e_steps;
 pub mod readme_enforcement_steps;
 pub mod release_0_3_0_e2e_steps;
 pub mod release_0_3_0_steps;
+pub mod release_steps;
 pub mod remove_dead_skip_list_code_steps;
 pub mod repository_ownership_fixtures_steps;
 pub mod repository_ownership_fixtures_support;
@@ -138,6 +139,8 @@ pub struct GivnWorld {
     pub(crate) snapshot_on_run: bool,
     /// State for the SCM backend selection scenarios.
     pub(crate) scm_fixture: scm_backend_selection_steps::ScmFixture,
+    /// State for the release-truth changelog and guard scenarios.
+    pub(crate) release: release_steps::ReleaseState,
 }
 
 /// A readiness probe running on a background thread.

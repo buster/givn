@@ -41,6 +41,7 @@ commit_parsers = [
     { body = '.*BREAKING CHANGE.*', group = "Breaking Changes" },
     { message = '^[a-z]+(\([^)]*\))?!:', group = "Breaking Changes" },
     { message = '^feat', group = "Features" },
+    { message = '^fix\((harness|tests|e2e|ci|givn|release|specs)\)', skip = true },
     { message = '^fix', group = "Bug Fixes" },
     { message = '^perf', group = "Performance" },
     { message = '^revert', group = "Reverts" },
@@ -57,5 +58,5 @@ commit_parsers = [
     { message = '^chore', skip = true },
     { message = '^archive', skip = true },
     { message = '^Merge (pull request|branch)', skip = true },
-    { message = '.*', group = "Other Changes" },
+    { message = '.*', skip = true },
 ]
