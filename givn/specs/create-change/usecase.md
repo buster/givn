@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:a5ea95b03614da79b0c3dceac7a0ff65877ea043f6488c6b2f0eb9541037efd6 -->
+<!-- givn:base-sha256:163996724a6fb8c85c76e799adc2848cfbe69e58b5d28f80233bfc740b9c9124 -->
 # Use case: create-change
 
 ## Level
@@ -38,11 +38,15 @@ The developer starts a new change.
 - Change identities are stable kebab-case values.
 - Generated guidance is synchronized from canonical source assets.
 - One canonical policy exists per topic; derived guidance points at it.
+- Every user-facing question follows the effective dialog policy, including questions outside a named skill and questions prepared in a fresh delegated context.
+- Generated default guidance carries the policy obligation without copying the full policy; project-owned overrides remain authoritative.
+- The policy serves project-familiar readers with decision-critical facts, concrete consequences, material revision costs, and proportional clarification.
 - A change's proposal carries one release note; every revision the change records shares it as the message subject, with the scenario title in the message body.
 
 ## Examples
 
 - A developer creates a multi-word change without manual scaffolding.
+- An author entering directly through a generated skill loads the effective dialog policy before its first question, while the full worked examples remain in the canonical instructions.
 
 ## Minimal guarantee
 
