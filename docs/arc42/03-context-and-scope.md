@@ -48,7 +48,7 @@ not alter other content.
 | `GIVN_RESULT_FILE` | out | Per-scope result path exported to the verification runner; the runner writes the fail-closed scenario-count contract Givn reconciles. |
 | `givn instructions --json` | out | One object with `id`, `generates`, `requires`, and resolved `instruction`. |
 | `givn instructions arc42-docs` / `design-review` | out | Effective ADR qualification and review guidance; the project cascade may override the default source. |
-| `givn instructions dialog` | out | The canonical dialog policy for interactive questions; a policy instruction with no lifecycle stage, resolved through the same project-overrides-first cascade. |
+| `givn instructions dialog` | out | The effective question policy, resolved through the project-overrides-first cascade with no lifecycle stage. The `make-user-questions-decision-ready` target extends its explicit obligation to every user-facing question and all startup, skill, command, and delegated contexts; distribution is pending implementation. |
 | `givn spec find/tree/duplicates/progress/coverage/route` | in/out | Deterministic specification queries: overlap fingerprints, duplicate findings, coverage inventory, and migration comparison. |
 | `givn check review --change <id>` | in/out | Mandatory checks and the overlap disposition gate. |
 | `givn readme check` | out | Deterministic README report: open placeholders, legacy scaffold texts, development and run managed block damage, unmanaged or missing README; exit status reflects findings. |
@@ -78,6 +78,9 @@ not alter other content.
   README impact decision, and managed development-block refresh.
 - Addon management, including fixed-path durable Arc42 scaffolding and review.
 - Agent skill/command generation with selected targets and fenced-block ownership.
+- The pending `make-user-questions-decision-ready` contract keeps one effective
+  dialog policy and adds universal discovery obligations; it does not intercept
+  agent chat or claim runtime enforcement of question quality.
 - Pre-proposal ideation facilitation through the synchronized `givn-ideation`
   skill: structured domain exploration with topic state under `givn/ideation/`,
   stakeholder personas, and change seeds, as the artifact-producing alternative

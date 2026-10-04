@@ -22,8 +22,8 @@
 | **Artifact** | A lifecycle document or generated path described by the effective manifest. It may have `requires`, `optional`, and configurable `post` hooks. |
 | **Capability** | A named behavior unit, represented by one `.feature` file under a use case. A capability is not itself a use case; it is owned by one. |
 | **Cascade** | Project-overrides-first lookup for an individual template, instruction, skill, or command asset, with embedded content as fallback. |
-| **Dialog policy** | The canonical instruction (`dialog`) for how every interactive step phrases and records a question: named artifacts, four-part option treatment, cross-reference glosses, standalone answerability, rejected alternatives, one question at a time. Surfaces reference it; they do not restate it. |
-| **Question record** | The full per-question entry a dialog surface writes: title, status, what it blocks, context, the standalone question, one option entry each with meaning, concrete example, gain, and cost, and a resolution that names the chosen option and the rejected alternatives with their reasons. |
+| **Dialog policy** | The effective canonical instruction (`dialog`) governing user-facing questions and decision records; entry points reference it instead of copying the full rules. The pending `make-user-questions-decision-ready` contract makes that obligation explicit across startup, all bundled available guidance, and fresh delegated contexts, with proportional treatment for project-familiar readers. It is authoring guidance, not runtime interception. |
+| **Question record** | The full entry retained for an actual decision: title, status, what it blocks, context, the standalone question, each genuine option's meaning, concrete example, gain and cost, and a resolution naming the chosen and rejected alternatives with reasons. A short information request explains its use and immediate effect without inventing alternatives or tradeoffs. |
 | **Conditional section** | A marked region of a template retained only when its declared addon condition matches the current effective addon set; it is dropped from the generated file otherwise. |
 | **Change** | A unit of work under `givn/changes/<id>/` that, once archived, moves to `givn/archive/<id>/`. |
 | **Archive candidate** | A change whose accepted material has been merged into the permanent corpus at its archive location and published as a revision, but which has not yet passed archive verification. Anti-terms: pending change, merged change. |
@@ -176,11 +176,14 @@ commit path all run on Git and Fossil.
 
 - A change with a visual contract cannot pass review without a visual
   verdict (enforcement site: `check review`).
-- Every end-to-end scenario has one committed final-state screenshot per
-  contract viewport; missing evidence blocks review (enforcement site:
-  `check review` evidence completeness).
-- Every declared UI state has committed per-viewport evidence (enforcement
-  site: `check review` state-evidence check).
+- Every Web UI end-to-end scenario has one committed final-state screenshot
+  per contract viewport; missing evidence blocks review (enforcement site:
+  `check review` evidence completeness). A terminal end-to-end scenario commits
+  a captured final transcript instead, with the applicable text baseline;
+  a planning reference is not that consumer execution evidence.
+- Every declared Web UI state has committed per-viewport evidence (enforcement
+  site: `check review` state-evidence check); terminal contracts name the
+  covered textual states and preserve their transcripts.
 - A declared visual interface cannot pass review without a `PERSONAS:`
   disposition naming a confirmed Persona (enforcement site: `check review`
   persona check).

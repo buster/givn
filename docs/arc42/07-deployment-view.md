@@ -53,6 +53,10 @@ Generated skills are written only to the persisted target selection. Givn may
 maintain its own fenced blocks in root `AGENTS.md`; all content outside those
 blocks remains user-owned.
 
+The pending decision-ready-question contract adds a short effective-dialog
+reference to the existing managed project block and all bundled available
+guidance. It creates no additional deployed service or generated-file type.
+
 The checked-in `.githooks/commit-msg` is shared through normal version control.
 The local dispatcher under the Git hooks directory is machine-local and is
 recreated by `givn init` or `givn skills sync`; Git clones do not activate a
@@ -74,6 +78,12 @@ scoped Git commits and creates a second commit containing the LLM migration
 plan. For a release without a selected route, it creates one managed commit
 when files changed and no migration plan. Project overrides, durable Arc42 chapters, and user-owned
 `AGENTS.md` content outside givn blocks remain under project control.
+
+For the pending question-policy update, changed defaults require the rebuilt
+binary and normal guidance synchronization. Project-owned instruction, skill,
+and command replacements remain authoritative and untouched; their owners
+must review stale question guidance. Sync must not be described as upgrading
+an override or proving that an agent follows the referenced policy.
 
 The managed route requires a version-controlled project and a clean checkout.
 Projects without a usable backend and dirty projects receive no partial update;

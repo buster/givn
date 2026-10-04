@@ -91,6 +91,9 @@ graph TD
 | Q-90 | Gate safety | `review.md` records a `DEFERRAL:` without an `OPERATOR-DECISION:`. | `givn check review` fails naming the missing operator decision. |
 | Q-91 | Gate safety | A capability renders HTML/CSS/JS in a browser without controls or server state. | The emitted specs and design guidance classify it as a Web UI and require a browser driver; review rejects an HTTP-only step as a downgraded e2e scenario. |
 | Q-92 | Portability | A completed change is archived in a Fossil checkout. | The same proof runs as on Git: the candidate check-in contains exactly the merged corpus paths, the receipt binds the tested revision, and the finalization check-in contains only the archive evidence. |
+| Q-93 | Agent ergonomics | An author enters through startup, a direct bundled skill, or a fresh question-preparing delegation. | Target of `make-user-questions-decision-ready`: each context is directed to the same effective dialog policy before its first user-facing question; addon-free guidance remains covered. Implementation and execution evidence are pending. |
+| Q-94 | Configurability | A project synchronizes guidance beside human instructions and a project-owned dialog override. | The target refreshes only managed guidance, preserves human content and override precedence, and does not inject a bundled full policy into a project replacement. |
+| Q-95 | Question quality | A project-familiar reader evaluates an unseen decision question after the policy is delivered. | Review distinguishes the displayed subject, brief sourced context, answer consequences and material change costs from mere formatting; an invalid option or unnecessary fact-finding question is a defect. This is reviewed evidence, not a binary compliance guarantee. |
 
 ## 10.3 Verification Signals
 
@@ -98,3 +101,9 @@ graph TD
   single feature-free build.
 - Cucumber scenarios under `givn/specs/` exercise the CLI and filesystem
   boundaries. E2E scenarios invoke the compiled CLI in temporary projects.
+- For the pending dialog-policy contract, deterministic checks exercise
+  delivered CLI/generated documents, source-link integrity, override precedence,
+  and human-content preservation. They do not prove arbitrary question meaning.
+- Fresh-context exercises on unseen decisions record concrete judgments and
+  dispositions in ordinary review evidence, without adding model dependencies,
+  online test services, numerical score guarantees, or runtime chat interception.

@@ -82,6 +82,15 @@ enabled addon settings and scaffolds durable Arc42 chapters.
 Secondary goals are merge correctness, agent ergonomics, interface-fidelity in
 E2E evidence, and non-redundant architecture documentation.
 
+The approved `make-user-questions-decision-ready` target, pending implementation
+and behavioral review, refines agent ergonomics: a project-familiar Developer
+receives necessary questions with the decision subject, brief sourced context,
+and concrete answer consequences; the Authoring agent discovers one effective
+policy at startup, direct invocation, and fresh delegation; the Givn maintainer
+changes one policy rather than competing copies. These are outcomes for the
+existing stakeholders, not a new priority order or a runtime compliance claim.
+Acceptance targets and evidence boundaries are Q-93 through Q-95 in chapter 10.
+
 ## 1.4 Stakeholders
 
 | Stakeholder | Interest |

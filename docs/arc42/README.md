@@ -42,6 +42,15 @@ publication a hook rejected is republished on resume. Durable facts live in
 chapters 2 (TC-21, TC-31, TC-32), 3, 4, 5, 6.7/6.13/6.16, 7.3, 8.18, 10
 (Q-92), 11 (R-65, R-66), and the glossary.
 
+The approved `make-user-questions-decision-ready` change records a pending
+universal dialog-policy discovery and question-quality contract. Its target
+stakeholder quality objective, ownership, flows, delivery, review boundaries,
+and risks are documented in chapters 1, 3, 5, 6, 7, 8, 10, 11, and the refined
+existing dialog glossary entry.
+The source policy and generated guidance are not changed by the planning
+artifacts; implementation and fresh-context verification remain to be proved.
+No new ADR or runtime question gate is introduced.
+
 Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
 register](adr/README.md) for status, relationships, evidence, reserved IDs, and
 historical records.

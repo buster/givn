@@ -86,12 +86,21 @@ permission to weaken the assertion.
 Project overrides can replace the effective policy through the cascade. Generated
 skills and commands are snapshots and have no independent policy authority.
 
-The resolved `dialog` instruction is the single normative source for how every
-interactive step phrases and records a question: named artifacts, the four-part
-option treatment (meaning, gain, cost, concrete example), cross-reference
-glosses, standalone answerability, rejected alternatives, and one question at a
-time. Interactive surfaces (ideation, explore, grilling commands, proposal
-ambiguity, design-review grilling) reference it; they do not restate its rules.
+The resolved `dialog` instruction is the single normative source for phrasing
+and recording user-facing questions. The current delivered references cover
+only part of the authoring workflow. The approved target contract in
+`make-user-questions-decision-ready`, pending implementation, makes the
+obligation explicit at unconditional project/session startup, every bundled
+available skill and command, and fresh delegated contexts. The complete rules
+and five hypothetical worked contrasts belong only to the effective policy
+served by `givn instructions dialog`; derived entry points carry short
+references rather than competing copies. See that policy for question content,
+proportional clarification, answer consequences, and material revision costs.
+
+Distribution does not establish agent compliance. Real-interface delivery and
+override/preservation checks are deterministic evidence; unseen fresh-context
+question exercises require separate authoring/review judgment. Neither is a
+new model-dependent gate or runtime interception mechanism.
 
 ### 8.3b Machine-readable Instruction Contract
 
@@ -215,11 +224,12 @@ The rule is guidance only — `givn commit` neither composes nor validates the
 subject.
 
 `AGENTS.md` is user-owned outside givn-managed fenced blocks. The sync path may
-create or replace the `givn-project` block and, when enabled, the
-`absolute-mode` block. It does not rewrite surrounding user content. The
-Absolute Mode addon is the only reason the current code intentionally manages a
-policy block there. Givn never stages `AGENTS.md` under either rules policy;
-committing it is the developer's explicit act.
+create or replace the unconditional `givn-project` block and, when enabled, the
+`absolute-mode` block. It does not rewrite surrounding user content. The pending
+decision-ready-question contract puts policy discovery in `givn-project`, not
+behind a tone addon; the addon defers question content to the effective dialog
+policy. Givn never stages `AGENTS.md` under either rules policy; committing it
+is the developer's explicit act.
 
 The generated-rules policy is a flat scalar in `givn/config.yaml`:
 `rules: local-only` (the default when absent) or `rules: versioned`. An

@@ -87,6 +87,14 @@ flowchart TD
 | `spec::coverage` | Emit behavior-hash specification inventories, compare migration baselines, and block missing behavior, lost E2E evidence, or lower interaction/source coverage. |
 | `spec::route` | Rank capability-routing candidates with confidence: ownership-weighted goal/rules and interaction evidence above lexical overlap, a scatter penalty for goal-mismatched candidates, and an explicit no-signal verdict on ties or below-threshold overlap. |
 
+The pending `make-user-questions-decision-ready` design reuses these owners:
+`cli::instructions` adds a short obligation to its shared startup overview;
+the existing skill/command templates and managed project hint carry references;
+the effective dialog instruction owns the full rules and worked examples.
+No new production module, template include protocol, JSON field, or dependency
+is introduced. Deterministic delivery checks and fresh-context question review
+remain separate evidence; the former does not prove agent compliance.
+
 ## 5.5 Dependencies
 
 | Dependency | Use |
