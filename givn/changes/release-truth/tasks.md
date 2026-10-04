@@ -321,7 +321,7 @@ wiring is checked structurally here and reviewed in the archive.
   - OUTPUT: exit 0 — `✓ integrity passed`, `✓ run declaration passed`,
     `net delta: 5 added, 0 modified, 0 removed`, `✓ overlap dispositions
     passed`.
-- [ ] COMMIT: `<hash>` -- review(release-truth): coverage sign-off
+- [x] COMMIT: `ca877d35` -- review(release-truth): coverage sign-off
 
 ## Definition of done
 
