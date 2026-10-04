@@ -51,6 +51,8 @@ Pass a self-contained prompt:
 ```
 You are a review agent completing the coverage review for givn change '<id>'.
 
+For every user-facing question, follow the effective policy from `givn instructions dialog`: this fresh context does not inherit the parent's loaded policy, so load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
+
 ## Your objective
 Produce a complete, signed-off review.md at givn/changes/<id>/review.md.
 The final line MUST be REVIEW: PASS. Do not write it until all sign-off

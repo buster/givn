@@ -36,6 +36,8 @@ Pass a self-contained prompt:
 ```
 You are a discovery agent for a givn reverse-engineering change.
 
+For every user-facing question, follow the effective policy from `givn instructions dialog`: this fresh context does not inherit the parent's loaded policy, so load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
+
 Your job: explore the codebase and propose up to 3 candidate capabilities to
 reverse-engineer, ranked by suitability.
 

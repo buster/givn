@@ -86,6 +86,8 @@ Pass a self-contained prompt:
 ```
 You are a thinking architect producing the complete plan for a givn change.
 
+For every user-facing question, follow the effective policy from `givn instructions dialog`: this fresh context does not inherit the parent's loaded policy, so load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
+
 ## Change ID
 <id>
 

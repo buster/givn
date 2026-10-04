@@ -101,6 +101,8 @@ Pass a self-contained prompt:
 ```
 You are a grilling subagent for givn change '<id>'.
 
+For every user-facing question, follow the effective policy from `givn instructions dialog`: this fresh context does not inherit the parent's loaded policy, so load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
+
 Your job: read the full plan and return a prioritised list of questions that
 must be answered before implementation starts. You do NOT ask the user anything
 directly — you return the questions so the orchestrator can present them one at
@@ -295,6 +297,8 @@ Pass a self-contained prompt that includes the full grilling outcome:
 
 ```
 You are a hardening subagent for givn change '<id>'.
+
+For every user-facing question, follow the effective policy from `givn instructions dialog`: this fresh context does not inherit the parent's loaded policy, so load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
 
 The plan has been grilled. Your job: apply the decisions reached to the
 existing artifacts and write design-review.md.
