@@ -519,6 +519,61 @@ fn returned_policy_distinguishes_authoring(world: &mut GivnWorld) {
     );
 }
 
+// --- decision-ready questions: the full question record ---------------------
+
+#[given("an initialized Givn project")]
+fn initialized_givn_project(world: &mut GivnWorld) {
+    world.env = Some(crate::common::make_init_root());
+}
+
+#[then("the decision-record guidance keeps the complete context alternatives consequences and resolution")]
+fn record_guidance_keeps_complete_record(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    for marker in ["- Blocks:", "- Context:", "- Question:", "- Options:", "- Resolution:"] {
+        assert!(
+            output.contains(marker),
+            "record guidance is missing the {marker:?} field: {output}"
+        );
+    }
+}
+
+#[then("the chosen and rejected alternatives retain their reasons after the question closes")]
+fn record_guidance_retains_reasons(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("Chosen:") && output.contains("Rejected:"),
+        "record guidance does not retain chosen and rejected reasons: {output}"
+    );
+}
+
+#[then("decision-relevant cross-references carry their meaning rather than only their identifier")]
+fn record_guidance_glosses_cross_references(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("one-line gloss on first use"),
+        "record guidance does not require cross-reference glosses: {output}"
+    );
+}
+
+#[then("routine information requests are not forced into invented alternatives or tradeoffs")]
+fn record_guidance_keeps_clarification_proportional(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("does not invent alternatives or trade-offs"),
+        "policy forces routine information requests into invented alternatives: {output}"
+    );
+}
+
+#[then("confirmations disclose both acceptance and revision consequences without treating consent as a rule waiver")]
+fn record_guidance_bounds_confirmation_consent(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("Confirmations show both accept and revise outcomes")
+            && output.contains("does not waive"),
+        "policy does not bound what confirmation consent authorizes: {output}"
+    );
+}
+
 fn dialog_policy(world: &GivnWorld) -> &str {
     world
         .additional_output

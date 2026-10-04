@@ -48,9 +48,11 @@ fabricate a citation.
 For each genuine alternative, state four things:
 what it means, what it gains, what it costs, and one concrete example of
 what choosing it causes. Confirmations show both accept and revise outcomes,
-including what work or authority is and is not authorized. Never present a
-bare letter or an abstract label: "A now, C later, B possibly in between" is
-not an option; it is a code whose meaning exists nowhere.
+including what work or authority is and is not authorized: consent covers the
+stated authorization only and does not waive the policy or authorize work
+outside the question. Never present a bare letter or an abstract label: "A
+now, C later, B possibly in between" is not an option; it is a code whose
+meaning exists nowhere.
 
 ## Rule 5 — Disclose material later-change costs
 
