@@ -4,6 +4,8 @@ description: (Re-)write the Gherkin .feature spec for a givn change
 
 Write (or re-write) the Gherkin spec for a givn change.
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 For starting a new change, use `/givn-propose` instead — it writes the
 proposal, spec, design, and tasks in one pass.
 Use this command to redo or extend the spec for an existing change.

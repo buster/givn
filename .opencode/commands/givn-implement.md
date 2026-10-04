@@ -4,6 +4,8 @@ description: Execute the RED/GREEN/REFACTOR TDD loop for a givn change, one scen
 
 Implement a givn change using scenario-by-scenario TDD.
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 **Input**: Optionally specify a change ID after `/givn-implement`. If omitted,
 infer from conversation context, or auto-select if only one active change exists.
 If ambiguous, list changes and ask.
@@ -76,6 +78,8 @@ Pass a self-contained prompt:
 
 ```
 You are a coding agent executing a single TDD task for givn change '<id>'.
+
+For every user-facing question, follow the effective policy from `givn instructions dialog`: this fresh context does not inherit the parent's loaded policy, so load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
 
 ## Your task
 <paste the task line verbatim, including Design constraints>

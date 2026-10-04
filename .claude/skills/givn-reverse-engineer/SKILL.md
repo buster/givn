@@ -5,6 +5,8 @@ description: Reverse-engineer an existing capability into descriptive Gherkin sp
 
 # givn-reverse-engineer
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 Reverse-engineer an existing capability into **descriptive Gherkin specs** for
 change `<change-id>`. No proposals, no designs — just `.feature` files +
 characterization tasks that make them executable.
@@ -42,6 +44,8 @@ only for testability seams, with a behaviour-preservation guarantee.
   has no such artifacts — they are skipped via `givn new --skip`.
 
 ## Discovery phase
+
+**Delegated contexts:** a fresh delegated context does not inherit the parent's loaded policy. Pass the obligation explicitly — for every user-facing question, follow the effective policy from `givn instructions dialog`; load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
 
 Before writing any artifact, explore the codebase and propose ONE capability
 with a clear black-box boundary. Present the proposal to the user

@@ -5,6 +5,8 @@ description: Execute the RED/GREEN/REFACTOR TDD loop for a givn change, one scen
 
 # givn-implement
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 Implement change `<change-id>` using scenario-by-scenario TDD.
 
 ## Context
@@ -99,6 +101,8 @@ at this scenario only** and captures output as evidence.
    text-replacement tool to mass-check boxes is prohibited — each box
    is checked individually, with evidence and commit hash filled in.
 10. Move to the next scenario.
+
+**Delegated contexts:** a fresh delegated context does not inherit the parent's loaded policy. Pass the obligation explicitly — for every user-facing question, follow the effective policy from `givn instructions dialog`; load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
 
 ### @e2e smoke tests (after all non-@e2e are GREEN)
 

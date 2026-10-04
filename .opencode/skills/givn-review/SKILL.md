@@ -5,6 +5,8 @@ description: Complete the coverage review for a givn change — classify every g
 
 # givn-review
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 Complete the coverage review for change `<change-id>`.
 
 ## Context
@@ -181,6 +183,8 @@ Run this block when the change's design declares a visual interface (a
   `VISUAL-REVIEW: UNVERIFIED` and require a human sign-off.
 - End the block with `VISUAL-REVIEW: PASS` only when the evidence is complete,
   the baseline holds, and every Persona finding is dispositioned.
+
+**Delegated contexts:** a fresh delegated context does not inherit the parent's loaded policy. Pass the obligation explicitly — for every user-facing question, follow the effective policy from `givn instructions dialog`; load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
 
 ## Deterministic gate dispositions
 

@@ -4,6 +4,8 @@ description: Work a vague idea into change-ready use cases — structured, multi
 
 Work a vague idea into change-ready use cases.
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 **Never write givn change artifacts or code during ideation.** The outcome is
 topic state and change seeds, produced at handoff.
 

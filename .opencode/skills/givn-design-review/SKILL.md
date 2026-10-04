@@ -5,6 +5,8 @@ description: Stress-test the plan before tasks are written — grill the design 
 
 # givn-design-review
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 Stress-test the complete plan for change `<change-id>` before the task list
 is written. Grill every branch of the design, harden the artifacts with what
 you learn, then sign off.
@@ -19,6 +21,8 @@ lets you choose a model or reasoning-effort tier for the spawned subagent,
 choose the most capable one available and set reasoning/thinking effort to
 high — this step exists to catch subtle scope gaps and untestable scenarios
 that a fast/low-effort model tends to rubber-stamp instead of catching.
+
+**Delegated contexts:** a fresh delegated context does not inherit the parent's loaded policy. Pass the obligation explicitly — for every user-facing question, follow the effective policy from `givn instructions dialog`; load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
 
 ## Context
 

@@ -4,6 +4,8 @@ description: Complete the coverage review for a givn change — classify every g
 
 Complete the coverage review for a givn change.
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 **Input**: Optionally specify a change ID after `/givn-review`. If omitted, infer
 from conversation context, or auto-select if only one active change exists. If
 ambiguous, list changes and ask.
@@ -48,6 +50,8 @@ Pass a self-contained prompt:
 
 ```
 You are a review agent completing the coverage review for givn change '<id>'.
+
+For every user-facing question, follow the effective policy from `givn instructions dialog`: this fresh context does not inherit the parent's loaded policy, so load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
 
 ## Your objective
 Produce a complete, signed-off review.md at givn/changes/<id>/review.md.

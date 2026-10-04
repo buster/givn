@@ -6,6 +6,8 @@ Stress-test the plan (proposal, spec, design) before the task list is written.
 Catches scope, architecture, and testability problems when they cost a markdown
 edit rather than a rewrite.
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 **Input**: Optionally specify a change ID after `/givn-design-review`. If
 omitted, infer from conversation context, or auto-select if only one active
 change exists. If ambiguous, list changes and ask.
@@ -98,6 +100,8 @@ Pass a self-contained prompt:
 
 ```
 You are a grilling subagent for givn change '<id>'.
+
+For every user-facing question, follow the effective policy from `givn instructions dialog`: this fresh context does not inherit the parent's loaded policy, so load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
 
 Your job: read the full plan and return a prioritised list of questions that
 must be answered before implementation starts. You do NOT ask the user anything
@@ -289,6 +293,8 @@ Pass a self-contained prompt that includes the full grilling outcome:
 
 ```
 You are a hardening subagent for givn change '<id>'.
+
+For every user-facing question, follow the effective policy from `givn instructions dialog`: this fresh context does not inherit the parent's loaded policy, so load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
 
 The plan has been grilled. Your job: apply the decisions reached to the
 existing artifacts and write design-review.md.

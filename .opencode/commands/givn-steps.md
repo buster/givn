@@ -6,6 +6,8 @@ Shared step-writing mechanics for Gherkin `.feature` scenarios. Reference
 skill, not a standalone workflow — read by `/givn-implement` and
 `/givn-characterize` subagents before writing step definitions.
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 This command prints the reference only. To write steps as part of a change:
 `/givn-implement` (normal changes) or `/givn-characterize` (reverse changes).
 
