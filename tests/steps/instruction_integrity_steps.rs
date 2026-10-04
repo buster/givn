@@ -741,6 +741,55 @@ fn diagnostic_contrast_excludes_invalid_answer(world: &mut GivnWorld) {
     );
 }
 
+// --- decision-ready questions: material commitments -------------------------
+
+#[when("the author reads the material-commitment teaching contrast from the returned dialog instructions")]
+fn author_reads_material_commitment_contrast(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("dialog fixture is missing");
+    world.last_output = Some(crate::common::run_givn(env, &["instructions", "dialog"]));
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("### Example 4 decision record"),
+        "returned dialog instructions do not carry the material-commitment contrast"
+    );
+}
+
+#[then("the contrast distinguishes required recovery verification from already implemented recovery support")]
+fn commitment_contrast_requires_recovery_verification(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    let section = example_section(&output, 4);
+    assert!(
+        section.contains("required work, not demonstrated support")
+            && section.contains("separately verified reverse conversion"),
+        "example 4 does not distinguish required recovery from implemented support: {section}"
+    );
+}
+
+#[then("the less-committing answer leaves saved projects unchanged rather than promising a reversible upgrade")]
+fn commitment_contrast_keeps_saved_projects(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    let section = example_section(&output, 4);
+    assert!(
+        section.contains("still calls it Backend Port")
+            && section.contains("does not introduce that format-related downgrade"),
+        "example 4 does not describe the less-committing answer: {section}"
+    );
+    assert!(
+        !section.contains("reversible") && !section.contains("recovery already works"),
+        "example 4 promises an unverified reversible upgrade: {section}"
+    );
+}
+
+#[then("the policy requires unknown compatibility facts to be established or consent narrowed before rollout approval")]
+fn commitment_contrast_requires_established_facts(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    let section = example_section(&output, 4);
+    assert!(
+        section.contains("establish them or narrow approval to investigation"),
+        "example 4 does not require unknown facts to be established or consent narrowed: {section}"
+    );
+}
+
 fn dialog_policy(world: &GivnWorld) -> &str {
     world
         .additional_output
