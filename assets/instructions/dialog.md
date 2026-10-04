@@ -298,7 +298,11 @@ Hypothetical saved-project upgrade: the old format records a preview setting
 called Backend Port; the proposed format calls the same setting Candidate
 Port. The port value is preserved. If approval includes upgrading saved
 projects, the conversion work becomes part of the approved change rather than
-a later follow-up. No implemented recovery support is assumed.
+a later follow-up. No implemented recovery support is assumed. Under the
+stated assumptions, older releases cannot open upgraded projects; downgrading
+therefore needs a separately verified reverse conversion, and merely
+reinstalling an old release is insufficient. That recovery is
+required work, not demonstrated support.
 
 #### Bad — hiding a lasting commitment in a label
 
@@ -331,7 +335,10 @@ a later follow-up. No implemented recovery support is assumed.
 > change?
 
 Contrast: the difficult option states its benefit and compatibility cost; the
-safer option is concrete.
+safer option is concrete. The example does not promise an unimplemented
+rollback. If real compatibility or recovery constraints are unknown,
+establish them or narrow approval to investigation before asking for rollout
+consent.
 
 ### Example 5 decision record
 
