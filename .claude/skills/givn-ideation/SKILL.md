@@ -5,6 +5,8 @@ description: Work a vague idea into change-ready use cases through a structured,
 
 # givn-ideation
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 Work a vague idea into change-ready use cases. This is the structured,
 artifact-producing alternative to `givn-explore`: explore answers "do we want
 this, and which approach?" without artifacts; ideation answers "what does the
@@ -396,6 +398,8 @@ Authoring requirements for the contract:
 
 A fresh-context subagent runs a quality review at each phase boundary; one
 reviewer per boundary, findings advisory, the user arbitrates:
+
+**Delegated contexts:** a fresh delegated context does not inherit the parent's loaded policy. Pass the obligation explicitly — for every user-facing question, follow the effective policy from `givn instructions dialog`; load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
 
 - Frame: research protocol completeness, stakeholder list with interests.
 - Event Storming: symmetry of cause and effect, missing event partners, a

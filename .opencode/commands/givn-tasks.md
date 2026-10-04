@@ -4,6 +4,8 @@ description: (Re-)write the scenario-by-scenario RED/GREEN/REFACTOR task list fo
 
 Write (or re-write) the implementation task breakdown for a givn change.
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 For starting a new change, use `/givn-propose` instead. Use this command to
 redo or extend the task list for an existing change.
 

@@ -5,6 +5,8 @@ description: Execute the characterization loop for a reverse-engineering change 
 
 # givn-characterize
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 Execute the characterization loop for change `<change-id>`.
 
 ## Context
@@ -68,6 +70,8 @@ After all tasks are checked, a review subagent:
   suspected bugs.
 - Writes `review.md` with `REVIEW: PASS`.
 - Runs `givn check review --change <change-id>`.
+
+**Delegated contexts:** a fresh delegated context does not inherit the parent's loaded policy. Pass the obligation explicitly — for every user-facing question, follow the effective policy from `givn instructions dialog`; load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
 
 ## Transition out
 

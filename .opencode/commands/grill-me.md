@@ -4,6 +4,8 @@ description: Socratically grill the current plan or design — one hard question
 
 Grill the current plan or design before implementation.
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 This command is a **stress test**: it interrogates the proposal, specs, design,
 and tasks for a givn change one question at a time, refusing to let weak
 assumptions hide behind "looks reasonable."

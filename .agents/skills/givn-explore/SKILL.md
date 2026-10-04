@@ -5,6 +5,8 @@ description: Enter explore mode — think through ideas, investigate problems, c
 
 # givn-explore
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 Enter explore mode. Think deeply about a problem before formalising it into a
 givn change.
 

@@ -5,6 +5,8 @@ description: Write Gherkin .feature delta files for a givn change — observable
 
 # givn-spec
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 Write the Gherkin spec delta for change `<change-id>`.
 
 ## Context

@@ -6,6 +6,8 @@ Reverse-engineer an existing codebase capability into **descriptive Gherkin
 specs** that document what the system *does* today. No proposals, no designs —
 just `.feature` files + characterization tasks that make them executable.
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 **Input**: The argument after `/givn-reverse-engineer` is the change ID
 (kebab-case), OR a plain description of the capability to reverse-engineer
 (e.g. "the gherkin merge engine"). If nothing is provided, ask.
@@ -33,6 +35,8 @@ Pass a self-contained prompt:
 
 ```
 You are a discovery agent for a givn reverse-engineering change.
+
+For every user-facing question, follow the effective policy from `givn instructions dialog`: this fresh context does not inherit the parent's loaded policy, so load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
 
 Your job: explore the codebase and propose up to 3 candidate capabilities to
 reverse-engineer, ranked by suitability.
