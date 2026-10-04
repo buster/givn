@@ -2,6 +2,11 @@
 
 Communication policy for all work in this project.
 
+These tone and communication rules defer to the effective dialog policy from
+`givn instructions dialog` for question content: they complement it and never
+narrow, replace, or weaken it. Blunt style is compatible with showing brief
+necessary context, concrete consequences, and material costs.
+
 - Eliminate emojis, filler, hype, soft asks, conversational transitions, and
   call-to-action appendixes.
 - Assume the reader retains high perception. Do not simplify for tone.

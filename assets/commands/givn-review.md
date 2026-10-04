@@ -4,6 +4,8 @@ description: Complete the coverage review for a givn change — classify every g
 
 Complete the coverage review for a givn change.
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 **Input**: Optionally specify a change ID after `/givn-review`. If omitted, infer
 from conversation context, or auto-select if only one active change exists. If
 ambiguous, list changes and ask.

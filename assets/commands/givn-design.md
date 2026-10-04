@@ -4,6 +4,8 @@ description: (Re-)write the technical design for a givn change — HOW layer, te
 
 Write (or re-write) the technical design for a givn change.
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 For starting a new change, use `/givn-propose` instead — it writes the
 proposal, spec, design, and tasks in one pass.
 Use this command to redo or extend the design for an existing change.
