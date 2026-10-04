@@ -53,7 +53,9 @@ async fn main() {
     let features_path = features_path();
     let writer = GivnWorld::cucumber()
         .fail_on_skipped()
-        .run(features_path)
+        .filter_run(features_path, |_, _, scenario| {
+            !givn::gherkin::delta::is_removed_placeholder(scenario)
+        })
         .await;
     let stats = writer.scenarios_stats();
     if let Ok(path) = std::env::var("GIVN_RESULT_FILE") {
@@ -108,6 +110,12 @@ fn nextest_list(args: &[String]) {
 
     for (rel, feature) in parsed_features() {
         for scenario in &feature.scenarios {
+            // Removal records are merge instructions, never execution units:
+            // they are excluded before user tag matching and before the
+            // `--ignored` complement.
+            if givn::gherkin::delta::is_removed_placeholder(scenario) {
+                continue;
+            }
             let matches = tags_filter
                 .as_ref()
                 .is_none_or(|tags| tags.eval(feature.tags.iter().chain(&scenario.tags)));
@@ -124,11 +132,26 @@ fn nextest_list(args: &[String]) {
 /// regex, so scenario names never need escaping.
 async fn nextest_run(unit: &str) {
     let scenario_name = unit.rsplit("::").next().unwrap_or(unit).to_string();
+    // A directly requested removal record can never turn into passing
+    // behavioral evidence: refuse by name before Cucumber runs.
+    if parsed_features().iter().any(|(_, feature)| {
+        feature
+            .scenarios
+            .iter()
+            .any(|s| s.name == scenario_name && givn::gherkin::delta::is_removed_placeholder(s))
+    }) {
+        eprintln!(
+            "refusing to run removed scenario '{scenario_name}': @givn.removed records are \
+             merge instructions, not executable evidence"
+        );
+        std::process::exit(2);
+    }
     GivnWorld::cucumber()
         .with_default_cli()
         .fail_on_skipped()
         .filter_run_and_exit(features_path(), move |_, _, scenario| {
-            scenario.name == scenario_name
+            !givn::gherkin::delta::is_removed_placeholder(scenario)
+                && scenario.name == scenario_name
         })
         .await;
 }
