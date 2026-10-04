@@ -1,0 +1,12 @@
+scenario: Author starts a session with the universal dialog obligation
+argv: givn instructions
+cwd: <freshly initialized addon-free project root>
+exit: 0
+--- stdout ---
+givn — from Given to done. This project uses givn for spec-driven development: the `.feature` file is the executable specification, and its owning use case supplies the domain contract. Consult `usecase.md` and any linked ideation topic before changing a capability; consult confirmed Personas as review lenses, not as Gherkin actors. Workflow: propose → spec → design → design-review → tasks → implement → review → archive. Skills/slash-commands are named `/givn-<step>` (e.g. `/givn-propose`, `/givn-implement`). Run `givn status` or `givn status --change <id>` for a full checklist view with pending tasks, or `givn instructions <artifact>` for that artifact's writing instructions. For every user-facing question, follow the effective dialog policy from `givn instructions dialog`; load it once per context before the first question (once per context rather than rereading before every question), including clarification and confirmation outside a named workflow, and pass the obligation explicitly to fresh delegated contexts.
+
+Status: No changes exist yet.
+
+Next: run `givn new <change-id>` to start one, or `/givn-propose <description>`
+(as a skill) to plan and scaffold it in one pass.
+--- stderr ---

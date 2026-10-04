@@ -486,9 +486,10 @@ fn generic_overview() -> String {
 full checklist view with pending tasks, or `givn instructions <artifact>` for \
 that artifact's writing instructions. For every user-facing question, follow \
 the effective dialog policy from `givn instructions dialog`; load it once per \
-context before the first question, including clarification and confirmation \
-outside a named workflow, and pass the obligation explicitly to fresh \
-delegated contexts."
+context before the first question (once per context rather than rereading \
+before every question), including clarification and confirmation outside a \
+named workflow, and pass the obligation explicitly to fresh delegated \
+contexts."
         .to_string()
 }
 
