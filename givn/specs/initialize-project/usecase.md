@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:fdbebb1aed6d60ab527616b49db139a895dcf3cdf56cecfb4521e29193e528fa -->
+<!-- givn:base-sha256:ac0d56f76af47d5a55e64b6b6023b31b4b522262cd704b1c265903524ca6ed2b -->
 # Use case: initialize-project
 
 ## Level
@@ -47,12 +47,16 @@ The developer initializes a project.
 - Generated guidance may name only commands that work in the active project.
 - The installation report names what was installed, what was skipped, and why.
 - Optional addons are enabled or disabled by explicit user decision.
+- The managed project-start block requires the effective dialog policy independently of optional addons and preserves human-authored instructions outside that block.
+- Resynchronization refreshes the managed policy obligation without duplicating the block or changing the selected agent targets.
+- Fresh delegated contexts receive the obligation explicitly; the presenting agent remains responsible for user-facing questions.
 
 ## Examples
 
 - Git: `givn init` writes `.githooks/commit-msg`, chains an existing hook, generates skills, and reports `commit attribution: .githooks/commit-msg`. The agent then commits with `givn commit -m "feat: parser"` or raw `git commit`; both carry attribution.
 - Fossil: `givn init` scaffolds `givn/`, writes no hook, and reports `commit attribution: givn commit path only`. `givn commit -m "feat: parser"` stamps the check-in comment; raw `fossil commit` does not, and the generated skill states that.
 - No SCM: `givn init` exits 0 with a warning that archive and managed upgrade are unavailable; skills are generated; a later `givn archive` refuses by name.
+- Addon-free initialization still installs the managed dialog obligation beside existing human-authored project instructions; resynchronization updates only the managed block.
 - No agent target: the interactive prompt opens with `.opencode` marked; a confirmation that marks nothing prints an error naming the requirement and shows the list again. A scripted `givn init` without `--agents`, an empty answer, or an unknown-only value exits non-zero, names `.opencode`, `.agents`, `.claude`, and leaves the project unchanged.
 
 ## Minimal guarantee
@@ -80,11 +84,9 @@ that does not misstate the active project.
 
 | Capability | Consumer action | E2E scenario |
 |---|---|---|
-| initialize-a-project | select agent targets | Consumer selects agent targets during interactive init |
-| initialize-a-project | initialize non-interactively | Consumer runs init non-interactively and gets opencode skills |
+| initialize-a-project | select agent targets in the interactive terminal | Consumer selects agent targets during interactive init |
+| initialize-a-project | initialize with an explicit noninteractive target selection (SCM backend and no-SCM are precondition variants) | Consumer runs init non-interactively and gets opencode skills |
 | initialize-a-project | resynchronize selected targets | Consumer re-syncs skills after init and the selection is honoured |
-| initialize-a-project | initialize a Fossil project | Consumer initializes a Fossil checkout and receives backend-aware guidance |
-| initialize-a-project | initialize without SCM | Consumer initializes a plain directory and receives a named warning |
 
 ## Includes
 

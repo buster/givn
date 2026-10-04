@@ -12,19 +12,14 @@ Feature: prose-consolidation
 
   @e2e
   Scenario: Generated guidance points to the canonical E2E policy
-    Given a givn project with all agent skill targets enabled
-    When the user runs `givn skills sync`
-    Then stdout contains "Syncing skills and agent commands..."
-    And the generated givn-spec guidance contains "givn instructions specs"
-    And the generated givn-design guidance contains "givn instructions specs"
-    And the generated givn-review guidance contains "givn instructions specs"
-    And the generated givn-spec command contains "givn instructions specs"
-    And the generated givn-steps guidance contains "givn instructions specs"
-    And the generated givn-tasks guidance contains "givn instructions specs"
-    And the generated givn-implement guidance contains "givn instructions specs"
-    And the generated givn-design-review guidance contains "givn instructions specs"
-    And generated guidance does not contain "one `@e2e` scenario per User Interaction Inventory entry"
-    And generated guidance does not contain "one @e2e scenario per distinct happy-path action"
+    Given  a Givn project with all agent skill targets and optional guidance enabled
+    When  the consumer synchronizes the selected agent guidance through the Givn CLI
+    Then  every emitted skill and command requires the effective dialog policy before its context asks a user-facing question
+    And  direct skill invocation has the same obligation as session-start invocation
+    And  reference skills do not narrow the obligation to one workflow phase
+    And  the generated guidance preserves its references to the canonical interaction and E2E policy
+    And  detailed dialog rules and worked examples remain in the effective dialog instructions rather than competing generated copies
+    And  the synchronization result reports the selected guidance successfully
 
   Scenario: Project override replaces the canonical specs instruction
     Given a givn project
@@ -91,20 +86,32 @@ Feature: prose-consolidation
     Given  an initialized Fossil project
     Then  the generated guidance names the commit path of the active backend
     And  the generated guidance states that a raw fossil commit carries no attribution
-  Scenario: Generated interactive guidance points to the canonical dialog policy
-    Given  a givn project with all agent skill targets enabled
-    When  the user runs `givn skills sync`
-    Then  the generated givn-ideation guidance contains "givn instructions dialog"
-    And  the generated givn-explore guidance contains "givn instructions dialog"
-    And  the generated givn-design-review guidance contains "givn instructions dialog"
-    And  the generated givn-design-review command contains "givn instructions dialog"
-    And  the generated givn-ideation command contains "givn instructions dialog"
-    And  the generated givn-explore command contains "givn instructions dialog"
-    And  the generated givn-propose command contains "givn instructions dialog"
-    And  the generated grill-me command contains "givn instructions dialog"
-    And  the generated grill-with-docs command contains "givn instructions dialog"
   Scenario: The propose and archive commands carry the seed stamping instructions
     Given  a givn project with all agent skill targets enabled
     When  the user runs `givn skills sync`
     Then  the generated givn-propose command contains "proposed by"
     And  the generated givn-archive command contains "implemented in"
+  Scenario: Disabling optional addons does not disable the dialog obligation
+    Given  a Givn project with all agent skill targets selected and every optional addon disabled
+    When  the author synchronizes the selected guidance through the Givn CLI
+    Then  every available core skill and command still requires the effective dialog policy for every user-facing question
+    And  guidance for disabled addons is not installed
+    And  the core dialog obligation does not depend on the optional tone policy
+    And  the selected targets and addon choices remain unchanged
+
+  Scenario: Delegated question preparation carries the policy without assuming inherited context
+    Given  a Givn project with delegated authoring and review guidance enabled
+    When  the author reads the synchronized delegation instructions
+    Then  every question-preparing delegation explicitly requires the effective dialog policy in the fresh context
+    And  the delegation instructions do not assume the parent's loaded policy is inherited
+    And  the presenting agent remains responsible for the question before it reaches the person
+    And  a question-tool recommendation or option label does not replace context and answer consequences
+
+  Scenario: Successful project skill and command replacements are preserved without policy injection
+    Given  a Givn project with all agent skill targets selected
+    And  valid project-owned skill and command replacements intentionally omit the bundled dialog obligation
+    When  the author synchronizes the selected guidance through the Givn CLI
+    Then  the project-owned skill and command source bytes remain unchanged
+    And  every selected skill consumer receives the authoritative rendered replacement without a bundled prefix
+    And  the opencode command consumer receives the authoritative rendered replacement without a bundled prefix
+    And  the managed project-start guidance still references the effective dialog policy

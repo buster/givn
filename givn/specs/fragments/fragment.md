@@ -26,7 +26,10 @@
 
 ## Interactions
 
-- none
+| Capability | Consumer action | E2E scenario |
+|---|---|---|
+| instruction-integrity | request effective instructions by id (artifact, general policy, JSON and change context are variants) | An agent requests machine-readable artifact guidance |
+| instruction-integrity | request normal session-start instructions | Author starts a session with the universal dialog obligation |
 
 ## Diagram
 
@@ -35,6 +38,5 @@ flowchart LR
   Consumer((Use cases)) -.->|include| Support[[Reusable support behavior]]
 ```
 
-<!-- givn:base-sha256:db311dbecc71d458d4c2798500191f6e535506dcbef9a8dd9e69053fd2a72888 -->
+<!-- givn:base-sha256:68a339c6e8da86f8fe85cc4389535f099781a24dc6f4e5c346601fecb54cff8b -->
 
-<!-- givn:base-sha256:db311dbecc71d458d4c2798500191f6e535506dcbef9a8dd9e69053fd2a72888 -->
