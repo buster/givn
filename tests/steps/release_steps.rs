@@ -343,18 +343,7 @@ fn given_skipped_range(world: &mut GivnWorld) {
 
 #[when("the maintainer generates the changelog for the release range")]
 fn when_generate(world: &mut GivnWorld) {
-    let fixture = world
-        .release
-        .fixture
-        .as_ref()
-        .expect("a release range is required first");
-    let generated = fixture.generate();
-    assert!(
-        generated.status.success(),
-        "git-cliff failed: {}",
-        generated.stderr
-    );
-    world.release.generated = Some(generated);
+    generate_changelog(world);
 }
 
 #[then(

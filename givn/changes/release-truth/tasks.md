@@ -202,7 +202,7 @@ version revision and the tag. Production change owned by this scenario: the
 - [x] REFACTOR: rerun; paste the pass
   - OUTPUT: formatting already clean; `sh -n scripts/release-guard.sh` ok;
     exit 0; `4 steps (4 passed)` (log `/tmp/s4-refactor.log`).
-- [ ] COMMIT: `<hash>` -- describe-the-release: A release section without user-visible change stops the release
+- [x] COMMIT: `966aa7ef` -- describe-the-release: A release section without user-visible change stops the release
 
 ## Task E2E setup — e2e scope, skeleton, and scenario-count proof
 
@@ -222,7 +222,7 @@ version revision and the tag. Production change owned by this scenario: the
   - OUTPUT: exit 100; `Step panicked. Captured output: not implemented:
     implemented by the dedupe scenario task` — the stub fails instead of
     silently passing (log `/tmp/e2e-setup.log`).
-- [ ] COMMIT: `<hash>` -- E2E setup: e2e scope, skeleton, and scenario-count proof
+- [x] COMMIT: `654f0b89` -- E2E setup: e2e scope, skeleton, and scenario-count proof
 
 ## Task S5 — Repeated revisions of one change yield one changelog entry (`@e2e`)
 
@@ -249,7 +249,7 @@ case_sensitive=true)` dedupe in the `cliff.toml` body template.
   - OUTPUT: captured from the reproduced fixture (three shared-note revisions
     plus one documentation revision): one `### Features` entry for the note,
     no documentation entry, exit 0.
-- [ ] COMMIT: `<hash>` -- test(e2e): Repeated revisions of one change yield one changelog entry
+- [x] COMMIT: `1cf43a50` -- test(e2e): Repeated revisions of one change yield one changelog entry
 
 ## Task W — Release workflow and CI
 
@@ -294,24 +294,33 @@ wiring is checked structurally here and reviewed in the archive.
 
 ## Task D — Durable documentation
 
-- [ ] Update `AGENTS.md` (acceptance prerequisites name `git-cliff`) and
+- [x] Update `AGENTS.md` (acceptance prerequisites name `git-cliff`) and
       confirm the chapter updates for `docs/arc42/07-deployment-view.md`,
       `docs/arc42/11-risks-and-technical-debt.md`, and
       `docs/arc42/12-glossary.md` match the implementation.
-  - OUTPUT: _pending_
-- [ ] COMMIT: `<hash>` -- docs(release-truth): record the pipeline, risks, and vocabulary
+  - OUTPUT: `AGENTS.md` names `git-cliff` with the pinned 2.13.1 reason;
+    chapter 7.5 matches the built workflow (single dispatch, `base` and
+    `section` guards, GitHub release only, unwired channels); R-75/R-76 and
+    D-2 match the built selection rules and guard; the four glossary terms
+    match the delivered vocabulary.
+- [x] COMMIT: `df2a04bd` -- docs(release-truth): record the pipeline, risks, and vocabulary
 
 ## Task R — Review
 
-- [ ] Write `review.md` with every template section (fabrication audit,
+- [x] Write `review.md` with every template section (fabrication audit,
       commit cross-check, promised-architecture cross-check, strict-mode
       proof, e2e scope and isolation checks, use-case/persona conformance,
       design conformance, interaction coverage, visual review with the
       committed transcript, retirements, arc42 conformance, coverage
       classification, execution evidence, overlap dispositions, sign-off).
-- [ ] Run `givn check review --change release-truth` until it passes; paste
+  - OUTPUT: `givn/changes/release-truth/review.md` written with all sections;
+    `README-IMPACT: none`, `PERSONAS: givn-maintainer--owner`,
+    `VISUAL-REVIEW: PASS`, `ARC42 CONFORMANCE: CLEAN`, `REVIEW: PASS`.
+- [x] Run `givn check review --change release-truth` until it passes; paste
       the final invocation result.
-  - OUTPUT: _pending_
+  - OUTPUT: exit 0 — `✓ integrity passed`, `✓ run declaration passed`,
+    `net delta: 5 added, 0 modified, 0 removed`, `✓ overlap dispositions
+    passed`.
 - [ ] COMMIT: `<hash>` -- review(release-truth): coverage sign-off
 
 ## Definition of done
