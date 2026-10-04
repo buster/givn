@@ -29,6 +29,9 @@ The sequence is:
 7. Synchronize skills and opencode commands to the selected targets. The sync
    updates only givn-owned fenced blocks in `AGENTS.md` and leaves all other
    content unchanged.
+   The pending decision-ready-question change adds an unconditional dialog
+   obligation to the same `givn-project` block; it does not require enabling
+   the Absolute Mode addon or alter the surrounding human instructions.
 8. Materialize the checked-in commit-attribution hook and, when a Git worktree
    exists, install or refresh the local dispatcher without replacing an
    existing `commit-msg` hook.
@@ -112,6 +115,14 @@ the project state. It does not create lifecycle artifacts. When the readme
 addon is enabled and the README check reports findings, both report paths
 append one text-only status line naming `givn readme check` and the finding
 count; the JSON report shape is unchanged.
+
+Target flow, pending `make-user-questions-decision-ready` implementation:
+the shared generic overview directs each fresh context to load the effective
+dialog policy before its first user-facing question. Text and JSON state
+reports retain their existing next-action and metadata contracts. A delegated
+question-preparing context receives the obligation explicitly; no parent-context
+inheritance is assumed. The presenting agent checks the question before asking
+the person. This is authoring guidance, not a new runtime hook or question API.
 
 ## 6.4 `givn lint`
 
