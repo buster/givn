@@ -901,11 +901,18 @@ fn reviewer_requests_review_instructions_cli(world: &mut GivnWorld) {
         .expect("review-guidance fixture is missing");
     world.last_output = Some(crate::common::run_givn(
         env,
-        &["instructions", "review", "--change", "instruction-integrity"],
+        &[
+            "instructions",
+            "review",
+            "--change",
+            "instruction-integrity",
+        ],
     ));
 }
 
-#[then("the returned review guidance requires a disposition for every reported overlap pair with a reason")]
+#[then(
+    "the returned review guidance requires a disposition for every reported overlap pair with a reason"
+)]
 fn review_guidance_requires_pair_dispositions(world: &mut GivnWorld) {
     let output = cli_stdout(world);
     assert!(
@@ -916,7 +923,9 @@ fn review_guidance_requires_pair_dispositions(world: &mut GivnWorld) {
     );
 }
 
-#[then("the returned review guidance requires a split-or-keep decision for every reported long scenario")]
+#[then(
+    "the returned review guidance requires a split-or-keep decision for every reported long scenario"
+)]
 fn review_guidance_requires_split_or_keep(world: &mut GivnWorld) {
     let output = cli_stdout(world);
     assert!(
@@ -927,13 +936,86 @@ fn review_guidance_requires_split_or_keep(world: &mut GivnWorld) {
     );
 }
 
-#[then("the returned review guidance distinguishes an advisory finding from completed verification evidence")]
+#[then(
+    "the returned review guidance distinguishes an advisory finding from completed verification evidence"
+)]
 fn review_guidance_distinguishes_advisory_evidence(world: &mut GivnWorld) {
     let output = cli_stdout(world);
     assert!(
         output.contains("advisory evidence until its disposition is recorded")
             && output.contains("completed verification evidence"),
         "returned review guidance does not distinguish advisory from completed evidence: {output}"
+    );
+}
+
+// --- decision-ready questions: machine-readable startup ---------------------
+
+#[given("an initialized Givn project with an active change awaiting specifications")]
+fn initialized_project_awaiting_specs(world: &mut GivnWorld) {
+    let env = crate::common::make_init_root();
+    let output = crate::common::run_givn(&env, &["new", "decision-ready-json"]);
+    assert!(output.status.success(), "create fixture change failed");
+    world.env = Some(env);
+}
+
+#[when("the author requests the normal Givn startup instructions as JSON")]
+fn author_requests_startup_json(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("startup fixture is missing");
+    world.last_output = Some(crate::common::run_givn(env, &["instructions", "--json"]));
+}
+
+fn startup_json(world: &GivnWorld) -> serde_json::Value {
+    let output = world
+        .last_output
+        .as_ref()
+        .expect("startup JSON was not requested");
+    assert!(
+        output.status.success(),
+        "startup JSON command failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    serde_json::from_slice(&output.stdout).expect("startup output is not JSON")
+}
+
+#[then("the response preserves the active change identity and next required artifact")]
+fn startup_json_preserves_identity_and_next(world: &mut GivnWorld) {
+    let value = startup_json(world);
+    assert_eq!(
+        value["id"], "decision-ready-json",
+        "startup JSON lost the active change identity: {value}"
+    );
+    let next_command = value["next_command"].as_str().unwrap_or_default();
+    assert!(
+        next_command.contains("specs") && next_command.contains("decision-ready-json"),
+        "startup JSON does not request specs for the prepared change: {value}"
+    );
+    assert_eq!(
+        value["next_skill"], "givn-spec",
+        "startup JSON does not carry the specs skill for the prepared change: {value}"
+    );
+}
+
+#[then(
+    "the response includes the same universal effective-dialog loading obligation in its guidance"
+)]
+fn startup_json_carries_dialog_obligation(world: &mut GivnWorld) {
+    let value = startup_json(world);
+    let overview = value["overview"].as_str().unwrap_or_default();
+    assert!(
+        overview.contains("load it once per context before the first question")
+            && overview.contains("pass the obligation explicitly to fresh delegated contexts"),
+        "startup JSON overview does not carry the dialog obligation: {overview}"
+    );
+}
+
+#[then("the response does not embed a second complete dialog policy")]
+fn startup_json_does_not_embed_full_policy(world: &mut GivnWorld) {
+    let value = startup_json(world);
+    let overview = value["overview"].as_str().unwrap_or_default();
+    assert!(
+        !overview.contains("### Example 1 decision record")
+            && !overview.contains("## Rule 1 — Ask only necessary"),
+        "startup JSON embeds a second complete dialog policy: {overview}"
     );
 }
 
