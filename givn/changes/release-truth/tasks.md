@@ -258,24 +258,38 @@ split workflow, and the CI install of the pinned changelog tool. Verification
 bound (design.md A2): the guard predicates are scenarios S3/S4; the remaining
 wiring is checked structurally here and reviewed in the archive.
 
-- [ ] Rewrite `.github/workflows/release.yml` (dispatch with `version`/`tag`;
+- [x] Rewrite `.github/workflows/release.yml` (dispatch with `version`/`tag`;
       prepare job: branch/clean check, version checks, pinned tools, base
       guard call, version bump, Cargo verification, changelog generation with
       the section guard, acceptance prerequisites, nextest, suites, security
       checks, release build and `--version`, release commit, annotated tag,
       identity record, token push; release job: tag resolution, identity
       validation including the section guard, idempotent GitHub release).
-- [ ] Delete `.github/workflows/prepare-release.yml`.
-- [ ] Add the pinned `git-cliff 2.13.1` cache and install step to
+  - OUTPUT: written as designed; `env.RELEASE_TAG` in the checkout `with:`
+    follows the watn precedent.
+- [x] Delete `.github/workflows/prepare-release.yml`.
+  - OUTPUT: `git rm`ed; the workflow set is now `ci.yml`, `release.yml`,
+    `security.yml`.
+- [x] Add the pinned `git-cliff 2.13.1` cache and install step to
       `.github/workflows/ci.yml`.
-- [ ] Structural smoke: parse every workflow as YAML; run the shell syntax
+  - OUTPUT: cache key `givn-test-tools-<os>-<arch>-git-cliff-2.13.1` plus the
+    conditional `cargo install git-cliff --version 2.13.1 --locked`.
+- [x] Structural smoke: parse every workflow as YAML; run the shell syntax
       check on every extracted `run:` block; confirm the trigger is
       `workflow_dispatch` only; confirm the three version checks, both guard
       calls, the idempotence guard, and the `RELEASE_PUSH_TOKEN` push are
       present; confirm no crates.io publication step exists; run
       `git grep 'prepare-release'` excluding `givn/archive/**` and
       `assets/migrations/**` and paste the result.
-  - OUTPUT: _pending_
+  - OUTPUT: `python3 /tmp/workflow-smoke.py` → `run blocks syntax-checked:
+    31`, `prepare-release sweep: no hits`, `workflow smoke: OK`; the smoke
+    asserts the dispatch-only trigger with the `version` and `tag` inputs,
+    the `prepare`/`release` jobs, both guard invocations, the
+    newer-than-manifest and tag-absent checks, the annotated tag, the
+    `RELEASE_PUSH_TOKEN` push, the idempotent `gh release view` guard, the
+    release build with the `--version` check, `cargo audit`/`cargo deny`, both
+    acceptance suites, the fossil/git-filter-repo prerequisites, the absence
+    of `cargo publish`/`crates.io`, and the `ci.yml` git-cliff install.
 - [ ] COMMIT: `<hash>` -- chore(release): one dispatch workflow for prepare, tag, and GitHub release
 
 ## Task D — Durable documentation
