@@ -71,6 +71,8 @@ Pass a self-contained prompt:
 
 ```
 You are a characterization agent executing a single task for the givn
+
+For every user-facing question, follow the effective policy from `givn instructions dialog`: this fresh context does not inherit the parent's loaded policy, so load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
 reverse-engineering change '<id>'.
 
 ## Your task
@@ -203,6 +205,8 @@ givn instructions review --change <id>
 
 ```
 You are a review agent completing the reverse-engineering coverage review
+
+For every user-facing question, follow the effective policy from `givn instructions dialog`: this fresh context does not inherit the parent's loaded policy, so load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
 for givn change '<id>'. Produce review.md at
 givn/changes/<id>/review.md, final line REVIEW: PASS — only once all
 sign-off conditions are met.
