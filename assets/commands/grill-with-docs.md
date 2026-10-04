@@ -5,6 +5,8 @@ description: Grill the plan or design against the project's own docs and specs â
 Grill the current plan or design, grounding every challenge in the project's
 existing documentation and specs.
 
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
 Unlike `/grill-me`, this command **must cite a source** for each challenge: a
 line in the proposal, a spec scenario, the design doc, an architecture chapter,
 or an ADR. If no source backs a concern, drop it.

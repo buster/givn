@@ -1,0 +1,39 @@
+scenario: Generated guidance points to the canonical E2E policy
+argv: givn skills sync
+cwd: <freshly initialized project, all three agent targets, all addons>
+exit: 0
+--- stdout (head) ---
+Syncing skills and agent commands...
+  commit attribution: .githooks/commit-msg
+  Git activation: unavailable (no Git worktree)
+  attribution integration: .opencode/plugins/givn-attribution.js
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+--- delivered .opencode/skills/givn-propose/SKILL.md head ---
+---
+name: givn-propose
+description: Write the proposal for a givn change — describe WHAT and WHY in domain language, without implementation detail.
+---
+
+# givn-propose
+
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+--- delivered .opencode/commands/givn-propose.md head ---
+---
+description: Plan a givn change through design — proposal, spec, and design in the order the manifest defines; hands off to /givn-design-review next
+---
+
+Plan a new givn change from proposal through design.
+
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
+--- family counts ---
+15
+15
+--- stderr ---
