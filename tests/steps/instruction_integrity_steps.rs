@@ -397,15 +397,7 @@ fn dialog_policy_project(world: &mut GivnWorld) {
 #[when("the author requests the dialog policy through the Givn CLI")]
 fn author_requests_dialog_policy(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("dialog fixture is missing");
-    world.last_output = Some(crate::common::run_givn(
-        env,
-        &[
-            "instructions",
-            "dialog",
-            "--change",
-            "dialog-question-quality",
-        ],
-    ));
+    world.last_output = Some(crate::common::run_givn(env, &["instructions", "dialog"]));
 }
 
 #[then("the CLI output contains the named-artifact rule")]
@@ -448,6 +440,82 @@ fn cli_contains_rejected_alternative_rule(world: &mut GivnWorld) {
     assert!(
         output.contains("rejected alternatives") && output.contains("resolution"),
         "dialog policy missing the rejected-alternative rule: {output}"
+    );
+}
+
+// --- decision-ready questions: canonical policy contract --------------------
+
+#[then(
+    "the returned policy applies to every user-facing question inside and outside a named workflow"
+)]
+fn returned_policy_is_universal(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("every user-facing question")
+            && output.contains("with or without a named workflow"),
+        "returned policy does not state its universal scope: {output}"
+    );
+}
+
+#[then(
+    "the returned policy assumes project familiarity without assuming knowledge of every referenced artifact"
+)]
+fn returned_policy_assumes_project_familiarity(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("familiar with the project")
+            && output.contains("referenced artifact in mind"),
+        "returned policy does not state its audience: {output}"
+    );
+}
+
+#[then(
+    "the returned policy requires the decision subject brief sourced context and concrete consequences for each answer"
+)]
+fn returned_policy_requires_decision_subject(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    for marker in [
+        "Show the decision subject",
+        "State the context briefly",
+        "Point to a source",
+        "Make every answer consequential",
+    ] {
+        assert!(
+            output.contains(marker),
+            "returned policy is missing the {marker:?} obligation: {output}"
+        );
+    }
+}
+
+#[then(
+    "the returned policy requires material later-change costs and the benefit purchased by difficult commitments"
+)]
+fn returned_policy_requires_material_cost_disclosure(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("Disclose material later-change costs")
+            && output.contains("benefit purchased by the hard-to-change commitment"),
+        "returned policy does not require material-cost disclosure: {output}"
+    );
+}
+
+#[then(
+    "the returned policy directs the author to settle discoverable facts and confirmed constraints before asking"
+)]
+fn returned_policy_requires_research_before_asking(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("discoverable facts and confirmed constraints before asking"),
+        "returned policy does not require research before asking: {output}"
+    );
+}
+
+#[then("the returned policy distinguishes authoring obligations from runtime enforcement")]
+fn returned_policy_distinguishes_authoring(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("authoring obligation, not runtime enforcement"),
+        "returned policy does not distinguish authoring from enforcement: {output}"
     );
 }
 
