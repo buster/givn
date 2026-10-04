@@ -1,0 +1,30 @@
+scenario: Consumer re-syncs skills after init and the selection is honoured
+argv: givn skills sync
+cwd: <initialized project, persisted targets opencode+claude, stale managed block, human AGENTS.md text>
+exit: 1
+--- stdout (head) ---
+Syncing skills and agent commands...
+  commit attribution: .githooks/commit-msg
+  Git activation: unavailable (no Git worktree)
+--- stdout (tail) ---
+Syncing skills and agent commands...
+  commit attribution: .githooks/commit-msg
+  Git activation: unavailable (no Git worktree)
+--- refreshed managed block ---
+<!-- givn:begin:givn-project -->
+This project uses **givn**. Old block without the dialog obligation.
+<!-- givn:end:givn-project -->
+--- managed block occurrence count ---
+1
+--- human bytes preserved ---
+# Project house rules
+
+Always run the release checklist before tagging.
+--- persisted targets ---
+skills:
+  targets: [opencode]
+--
+skills:
+  targets: [opencode, claude]
+--- stderr ---
+error: failed to parse givn/config.yaml: duplicate field `skills` at line 16 column 1
