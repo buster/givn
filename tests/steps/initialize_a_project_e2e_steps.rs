@@ -159,7 +159,8 @@ fn sync_report_identifies_destinations(world: &mut GivnWorld) {
 fn managed_block_now_requires_policy(world: &mut GivnWorld) {
     let block = managed_project_block(world);
     assert!(
-        block.contains("for every user-facing question") && block.contains("effective policy from"),
+        block.contains("every user-facing question")
+            && block.contains("effective dialog policy from"),
         "the refreshed managed block does not require the policy: {block}"
     );
 }
