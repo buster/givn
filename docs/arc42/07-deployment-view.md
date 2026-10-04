@@ -14,8 +14,9 @@ checkout:
 cargo install --path .
 ```
 
-The planned release, shell-installer, Homebrew, and Cargo publication channels
-are not yet wired as release infrastructure in this checkout.
+The planned shell-installer, Homebrew, binary, and Cargo publication channels
+are not yet wired as release infrastructure in this checkout; the GitHub
+release channel is wired by the release workflow described in 7.5.
 
 ## 7.3 Target Environments
 
@@ -64,10 +65,23 @@ project hook merely because the source file is checked in.
 
 ## 7.5 Distribution Work
 
-The intended release pipeline uses release binaries, a shell installer,
-Homebrew, and `cargo publish`, potentially generated with `cargo-dist`. No
-remote release pipeline or target artifact should be treated as current checkout
-evidence until it is present and verified.
+The release pipeline is one dispatch-triggered workflow,
+`.github/workflows/release.yml`. A dispatch naming a release version prepares
+the version bump, generates the release section from the revisions since the
+last version tag, runs the repository gates, records the release revision and
+the annotated version tag, and publishes a GitHub release whose notes are the
+generated section. A dispatch naming an existing annotated version tag
+revalidates that tag and publishes its release when it is missing. The base
+check (`scripts/release-guard.sh base`) refuses a version whose package
+version has no matching version tag, and the section check refuses a release
+section without a user-visible group.
+
+The changelog selection rules live in `cliff.toml`: only breaking changes,
+features, bug fixes, performance changes, and reverts; one entry per change,
+taken from the change's release note. The GitHub release is the only
+publication channel. Release binaries, a shell installer, Homebrew, the exact
+target matrix, and `cargo publish` remain unwired; no such artifact should be
+treated as current checkout evidence until it is present and verified.
 
 ## 7.6 Upgrade
 
