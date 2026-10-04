@@ -206,15 +206,22 @@ version revision and the tag. Production change owned by this scenario: the
 
 ## Task E2E setup — e2e scope, skeleton, and scenario-count proof
 
-- [ ] Create `tests/steps/release_e2e_steps.rs` with the `@e2e` bindings
+- [x] Create `tests/steps/release_e2e_steps.rs` with the `@e2e` bindings
       (shared generator helper imported from the regular module) and register
       it in `tests/steps/mod.rs`.
-- [ ] Prove the e2e scope is a strict subset: run the delta's regular scope
+  - OUTPUT: the module binds the four `@e2e`-specific steps with
+    `unimplemented!()` bodies; the shared generator `When` stays in the
+    regular module.
+- [x] Prove the e2e scope is a strict subset: run the delta's regular scope
       and the e2e scope, paste both scenario counts, and state the relation.
-  - OUTPUT: _pending_
-- [ ] Confirm strict mode for the e2e runner by running the `@e2e` scenario
+  - OUTPUT: regular scope `4 tests run: 4 passed, 1 skipped` (exit 0); e2e
+    scope `1 test run: 0 passed, 1 failed, 4 skipped` (exit 100). e2e count 1
+    is strictly smaller than the regular count 4.
+- [x] Confirm strict mode for the e2e runner by running the `@e2e` scenario
       before its binding exists and pasting the non-zero failure.
-  - OUTPUT: _pending_
+  - OUTPUT: exit 100; `Step panicked. Captured output: not implemented:
+    implemented by the dedupe scenario task` — the stub fails instead of
+    silently passing (log `/tmp/e2e-setup.log`).
 - [ ] COMMIT: `<hash>` -- E2E setup: e2e scope, skeleton, and scenario-count proof
 
 ## Task S5 — Repeated revisions of one change yield one changelog entry (`@e2e`)

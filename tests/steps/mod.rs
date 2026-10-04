@@ -46,6 +46,7 @@ pub mod readme_enforcement_e2e_steps;
 pub mod readme_enforcement_steps;
 pub mod release_0_3_0_e2e_steps;
 pub mod release_0_3_0_steps;
+pub mod release_e2e_steps;
 pub mod release_steps;
 pub mod remove_dead_skip_list_code_steps;
 pub mod repository_ownership_fixtures_steps;
