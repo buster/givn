@@ -526,10 +526,18 @@ fn initialized_givn_project(world: &mut GivnWorld) {
     world.env = Some(crate::common::make_init_root());
 }
 
-#[then("the decision-record guidance keeps the complete context alternatives consequences and resolution")]
+#[then(
+    "the decision-record guidance keeps the complete context alternatives consequences and resolution"
+)]
 fn record_guidance_keeps_complete_record(world: &mut GivnWorld) {
     let output = cli_stdout(world);
-    for marker in ["- Blocks:", "- Context:", "- Question:", "- Options:", "- Resolution:"] {
+    for marker in [
+        "- Blocks:",
+        "- Context:",
+        "- Question:",
+        "- Options:",
+        "- Resolution:",
+    ] {
         assert!(
             output.contains(marker),
             "record guidance is missing the {marker:?} field: {output}"
@@ -564,13 +572,172 @@ fn record_guidance_keeps_clarification_proportional(world: &mut GivnWorld) {
     );
 }
 
-#[then("confirmations disclose both acceptance and revision consequences without treating consent as a rule waiver")]
+#[then(
+    "confirmations disclose both acceptance and revision consequences without treating consent as a rule waiver"
+)]
 fn record_guidance_bounds_confirmation_consent(world: &mut GivnWorld) {
     let output = cli_stdout(world);
     assert!(
         output.contains("Confirmations show both accept and revise outcomes")
             && output.contains("does not waive"),
         "policy does not bound what confirmation consent authorizes: {output}"
+    );
+}
+
+// --- decision-ready questions: teaching contrasts ---------------------------
+
+/// Slice one worked-contrast section out of the returned policy.
+fn example_section(policy: &str, n: usize) -> &str {
+    let marker = format!("### Example {n} decision record");
+    let start = policy
+        .find(&marker)
+        .unwrap_or_else(|| panic!("policy is missing {marker:?}"));
+    let rest = &policy[start..];
+    let end = rest[marker.len()..]
+        .find("### Example ")
+        .map(|offset| marker.len() + offset)
+        .unwrap_or(rest.len());
+    &rest[..end]
+}
+
+fn all_example_sections(world: &GivnWorld) -> Vec<String> {
+    let output = cli_stdout(world);
+    (1..=5)
+        .map(|n| example_section(&output, n).to_string())
+        .collect()
+}
+
+#[then(
+    "the returned teaching examples identify their records as hypothetical rather than current product behavior"
+)]
+fn teaching_examples_are_hypothetical(world: &mut GivnWorld) {
+    for (index, section) in all_example_sections(world).iter().enumerate() {
+        assert!(
+            section.contains("Hypothetical"),
+            "example {} does not label its record hypothetical: {section}",
+            index + 1
+        );
+    }
+}
+
+#[then(
+    "the goal-confirmation contrast displays every proposed goal and bounds what acceptance authorizes"
+)]
+fn goal_confirmation_contrast_is_bounded(world: &mut GivnWorld) {
+    let sections = all_example_sections(world);
+    let section = &sections[0];
+    for goal in [
+        "Reserve an available copy",
+        "Cancel one's own reservation",
+        "View one's queue position",
+    ] {
+        assert!(
+            section.contains(goal),
+            "example 1 does not display the proposed goal {goal:?}"
+        );
+    }
+    let goal_rows = section
+        .lines()
+        .map(|line| line.trim_start_matches('>').trim())
+        .filter(|line| line.starts_with("| "))
+        .filter(|line| !line.contains("Proposed goal") && !line.contains("|---"))
+        .count();
+    assert_eq!(
+        goal_rows, 3,
+        "example 1 must display exactly the three supplied goal rows: {section}"
+    );
+    assert!(
+        section.contains("does not approve implementation")
+            && section.contains("Adopt this cut")
+            && section.contains("Revise the cut first"),
+        "example 1 does not bound what acceptance authorizes: {section}"
+    );
+}
+
+#[then(
+    "the clarification contrast asks only the missing human intent and shows how the answer scopes subsequent work"
+)]
+fn clarification_contrast_shows_use(world: &mut GivnWorld) {
+    let sections = all_example_sections(world);
+    let section = &sections[1];
+    assert!(
+        section.contains("Which project root should subsequent commands use?")
+            && section.contains("limits the work to the catalog project"),
+        "example 2 does not ask the missing intent and show its use: {section}"
+    );
+    assert!(
+        !section.contains("Gain:") && !section.contains("Cost:"),
+        "example 2 invents gains or costs for a short clarification: {section}"
+    );
+}
+
+#[then(
+    "the behavior-choice contrast shows the observable outcome of both answers rather than implementation labels"
+)]
+fn behavior_choice_contrast_shows_outcomes(world: &mut GivnWorld) {
+    let sections = all_example_sections(world);
+    let section = &sections[2];
+    assert!(
+        section.contains("Allow general guidance without a task")
+            && section.contains("Require a task for both")
+            && section.contains(
+                "the collaboration rules; task-specific instructions still require a task"
+            )
+            && section.contains("No active task"),
+        "example 3 does not show both observable outcomes: {section}"
+    );
+}
+
+#[then(
+    "the commitment contrast shows the saved-information benefit compatibility restriction and later-change work"
+)]
+fn commitment_contrast_shows_material_cost(world: &mut GivnWorld) {
+    let sections = all_example_sections(world);
+    let section = &sections[3];
+    assert!(
+        section.contains("8080")
+            && section.contains("Benefit:")
+            && section.contains("Cost:")
+            && section.contains("not just reinstalling the old release"),
+        "example 4 does not show the material commitment: {section}"
+    );
+}
+
+#[then(
+    "the diagnostic contrast reports a researched assertion defect rather than asking the person to inspect unseen scenarios"
+)]
+fn diagnostic_contrast_reports_research(world: &mut GivnWorld) {
+    let sections = all_example_sections(world);
+    let section = &sections[4];
+    assert!(
+        section.contains("inactive project when an unrelated label contains active")
+            && section.contains("I will make the assertion distinguish the actual project status"),
+        "example 5 does not report the researched defect: {section}"
+    );
+}
+
+#[then("every good contrast links to its own supplied decision record")]
+fn every_contrast_links_its_record(world: &mut GivnWorld) {
+    let sections = all_example_sections(world);
+    for (index, section) in sections.iter().enumerate() {
+        let link = format!("(#example-{}-decision-record)", index + 1);
+        assert!(
+            section.contains(&link),
+            "example {} does not link its own decision record ({link})",
+            index + 1
+        );
+    }
+}
+
+#[then(
+    "the diagnostic contrast excludes an answer that violates the confirmed one-answer constraint"
+)]
+fn diagnostic_contrast_excludes_invalid_answer(world: &mut GivnWorld) {
+    let sections = all_example_sections(world);
+    let section = &sections[4];
+    assert!(
+        section.contains("violate the confirmed one-answer rule"),
+        "example 5 does not exclude the invariant-violating answer: {section}"
     );
 }
 
