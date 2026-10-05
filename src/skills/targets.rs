@@ -67,6 +67,11 @@ impl AgentTarget {
         self.dir()
     }
 
+    /// Whether this target owns a `<dir>/commands/` slash-command directory.
+    pub fn owns_commands(&self) -> bool {
+        matches!(self, AgentTarget::Opencode | AgentTarget::Omp)
+    }
+
     /// Resolve a (possibly dotted) name to a target.
     pub fn from_name(name: &str) -> Option<Self> {
         match name
@@ -232,8 +237,13 @@ pub fn sync(project_root: &Path) -> Result<()> {
         println!("  synced skill: {name}");
     }
 
-    // Write opencode slash commands (opencode target only).
-    if targets.contains(&AgentTarget::Opencode) {
+    // Write slash commands for every command-owning target.
+    let command_targets: Vec<AgentTarget> = targets
+        .iter()
+        .copied()
+        .filter(AgentTarget::owns_commands)
+        .collect();
+    if !command_targets.is_empty() {
         let mut command_names = default_command_names();
         if manifest.addons.grill_me {
             command_names.push("grill-me");
@@ -245,7 +255,9 @@ pub fn sync(project_root: &Path) -> Result<()> {
             let template = resolve_command_template_for(name)?;
             let content = render_template(&template, &ctx, &addons)
                 .with_context(|| format!("failed to render command template for '{name}'"))?;
-            write_opencode_command(project_root, name, &content)?;
+            for target in &command_targets {
+                write_command(project_root, *target, name, &content)?;
+            }
             println!("  synced command: /{name}");
         }
     }
@@ -333,15 +345,21 @@ fn reconcile_addon_artifacts(
         }
     }
     if !manifest.addons.grill_me {
-        let file = project_root.join(".opencode/commands/grill-me.md");
-        if file.exists() {
-            std::fs::remove_file(&file)?;
+        for target in targets.iter().filter(|t| t.owns_commands()) {
+            let file = project_root.join(target.dir()).join("commands/grill-me.md");
+            if file.exists() {
+                std::fs::remove_file(&file)?;
+            }
         }
     }
     if !manifest.addons.grill_with_docs {
-        let file = project_root.join(".opencode/commands/grill-with-docs.md");
-        if file.exists() {
-            std::fs::remove_file(&file)?;
+        for target in targets.iter().filter(|t| t.owns_commands()) {
+            let file = project_root
+                .join(target.dir())
+                .join("commands/grill-with-docs.md");
+            if file.exists() {
+                std::fs::remove_file(&file)?;
+            }
         }
     }
     Ok(())
@@ -380,6 +398,18 @@ pub fn managed_generated_paths(project_root: &Path) -> Result<Vec<std::path::Pat
 
     if targets.contains(&AgentTarget::Opencode) {
         paths.push(project_root.join(".opencode/plugins/givn-attribution.js"));
+    }
+
+    if targets.contains(&AgentTarget::Omp) {
+        paths.push(project_root.join(".omp/hooks/pre/givn-attribution.js"));
+    }
+
+    if targets.contains(&AgentTarget::Claude) {
+        paths.push(project_root.join(".claude/settings.local.json"));
+        paths.push(project_root.join(".claude/hooks/givn-attribution.sh"));
+    }
+
+    for target in targets.iter().filter(|t| t.owns_commands()) {
         let mut command_names = default_command_names();
         if manifest.addons.grill_me {
             command_names.push("grill-me");
@@ -388,13 +418,13 @@ pub fn managed_generated_paths(project_root: &Path) -> Result<Vec<std::path::Pat
             command_names.push("grill-with-docs");
         }
         for name in command_names {
-            paths.push(project_root.join(format!(".opencode/commands/{name}.md")));
+            paths.push(
+                project_root
+                    .join(target.dir())
+                    .join("commands")
+                    .join(format!("{name}.md")),
+            );
         }
-    }
-
-    if targets.contains(&AgentTarget::Claude) {
-        paths.push(project_root.join(".claude/settings.local.json"));
-        paths.push(project_root.join(".claude/hooks/givn-attribution.sh"));
     }
 
     paths.sort();
@@ -411,6 +441,16 @@ fn sync_agent_integrations(project_root: &Path, targets: &[AgentTarget]) -> Resu
             false,
         )?;
         println!("  attribution integration: .opencode/plugins/givn-attribution.js");
+    }
+
+    if targets.contains(&AgentTarget::Omp) {
+        write_embedded_file(
+            project_root,
+            ".omp/hooks/pre/givn-attribution.js",
+            "agent-integrations/omp/givn-attribution.js",
+            false,
+        )?;
+        println!("  attribution integration: .omp/hooks/pre/givn-attribution.js");
     }
 
     if targets.contains(&AgentTarget::Claude) {
@@ -525,9 +565,17 @@ fn write_skill_to_targets(
     Ok(())
 }
 
-/// Write an opencode command file to `.opencode/commands/<name>.md`.
-fn write_opencode_command(project_root: &Path, name: &str, content: &str) -> Result<()> {
-    let path = project_root.join(format!(".opencode/commands/{name}.md"));
+/// Write a command file to a command-owning target's `<dir>/commands/`.
+fn write_command(
+    project_root: &Path,
+    target: AgentTarget,
+    name: &str,
+    content: &str,
+) -> Result<()> {
+    let path = project_root
+        .join(target.dir())
+        .join("commands")
+        .join(format!("{name}.md"));
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
