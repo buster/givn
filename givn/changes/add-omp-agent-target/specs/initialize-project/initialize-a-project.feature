@@ -13,7 +13,7 @@ Feature: initialize-a-project
     And the file ".omp/skills/givn-propose/SKILL.md" exists
     And givn skills targets in givn/config.yaml equal "opencode, agents, claude, omp"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: givn skills targets add accepts "all" as a shorthand for every target
     Given a project root with givn/ initialised
     And givn skills targets in givn/config.yaml equal "opencode"

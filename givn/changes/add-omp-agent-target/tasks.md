@@ -48,20 +48,30 @@ E2E scope: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh
 
 ## Scenario 1: The --agents flag accepts "all" as a shorthand for every target
 
-- [ ] RED: remove `@wip` from this scenario only; run targeting this scenario;
-      paste the non-zero output.
-- [ ] GREEN: production changed (list files); run targeting this scenario; paste
-      the zero output.
-- [ ] REFACTOR: run targeting this scenario; paste the zero output.
-- [ ] COMMIT (`feat(initialize-a-project): <release note>`; body = scenario
-      title): hash —.
+- [x] RED: remove `@wip` from this scenario only; run targeting this scenario →
+      failed as expected (exit 1): `1 scenario (1 failed), 7 steps (6 passed, 1
+      failed)`; the added assertion `the file ".omp/skills/givn-propose/SKILL.md"
+      exists` failed because `omp` resolved to no target.
+- [x] GREEN: added `AgentTarget::Omp` (`src/skills/targets.rs`: enum variant,
+      `ALL`, `name()`, `dir()`, `from_name()`) and `omp` to
+      `KNOWN_AGENT_TARGETS` (`src/config/overlay.rs`). Run → `1 scenario (1
+      passed), 8 steps (8 passed)`, exit 0.
+- [x] REFACTOR: dropped the not-yet-needed `owns_commands()` helper; re-run →
+      `1 scenario (1 passed), 8 steps (8 passed)`.
+- [x] COMMIT: `84d57c7b` — `feat(initialize-a-project): <release note>`; body
+      carries the scenario title.
 
-## Scenario 2: givn skills targets add accepts "all" as a shorthand for every target
+## Scenario 2: givn skills targets add accepts "all" as a shorthand for every target **[regression]**
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
-- [ ] COMMIT: hash —.
+- [x] RED: remove `@wip`, run targeting this scenario → observed side-effect
+      GREEN (`1 scenario (1 passed), 8 steps (8 passed)`): the same
+      `AgentTarget::ALL` from Scenario 1 already expands `all` to the fourth
+      target, and `.omp` is now a known name. Kept as a regression guard; the
+      added assertion has no independent RED state.
+- [x] GREEN: re-run → passes (same output).
+- [x] REFACTOR: re-run → passes (same output).
+- [x] COMMIT: `4d0d83b8` — `feat(initialize-a-project): <release note>`; body
+      carries the scenario title.
 
 ## Scenario 3: The --agents flag accepts the dotted directory form for the omp target
 
