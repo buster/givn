@@ -38,9 +38,9 @@ E2E scope: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh
 - [x] `verify.e2e_command` is `./run-tests.sh --e2e` and is a strict subset of
       `verify.command` (`./run-tests.sh`). Proof at delta scope:
       `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh` →
-      `10 tests run: 10 passed, 0 skipped`;
+      `11 tests run: 11 passed, 0 skipped`;
       `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh --e2e`
-      → `3 tests run: 3 passed, 7 skipped`. 3 < 10.
+      → `3 tests run: 3 passed, 8 skipped`. 3 < 11.
 - [x] Interaction coverage re-checked: `fragments` carries no inventory row
       (skipped by `src/gherkin/interaction.rs`); the `initialize-project`
       selection action keeps its existing single `@e2e`, so the omp selection
@@ -209,6 +209,31 @@ E2E scope: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh
 - [x] COMMIT: `4c680535` — `test(e2e): <release note>`; body carries the
       scenario title.
 
+## Review remediation (coverage completed during review)
+
+Three uncovered regions of the new production code were closed in review, in
+one commit `eef5958b` (`test(add-omp-agent-target): assert the omp command
+paths in the sync report, the rule predicate, and the addon cleanup`):
+
+- Scenario 4 gained `stdout contains ".omp/commands/"`; an earlier attempt to
+  assert it under `givn init` failed because the commands-directory report is
+  printed by `givn skills sync`, not by the sync core — the assertion moved to
+  Scenario 5, which runs `givn skills sync` with `omp` selected. Covers the
+  generalized `src/cli/skills.rs` report.
+- Scenario 5 gained a tracked `.omp/commands/givn-propose.md` and its
+  "does not track" assertion. Covers the `.omp/commands/` branch of
+  `ignore_entries()` and `is_rule_path()`.
+- New Scenario 11: **givn addons disable removes generated command files
+  (extended)** — a `@givn.modified` delta for the permanent scenario of the
+  same name, now selecting `opencode, omp`, pre-creating both command files,
+  and asserting both are removed. Covers the `.omp` loops in
+  `src/cli/addons.rs` and `reconcile_addon_artifacts`. Requires the new
+  fixture step `the command "<name>" exists in .omp/commands`
+  (`tests/steps/mod.rs`).
+
+No production code changed; the three regions were already implemented and are
+now asserted.
+
 ## Live contract check
 
 - [x] Live smoke run against a real omp session (operator decision, R-78):
@@ -227,7 +252,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh
 ## Final
 
 - [x] `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh`
-      exits 0 → `10 tests run: 10 passed, 0 skipped`.
+      exits 0 → `11 tests run: 11 passed, 0 skipped`.
 - [x] `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh --e2e`
-      exits 0 → `3 tests run: 3 passed, 7 skipped`.
+      exits 0 → `3 tests run: 3 passed, 8 skipped`.
 - [x] `cargo fmt` and `cargo clippy --locked --all-targets` clean.

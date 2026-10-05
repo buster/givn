@@ -50,12 +50,21 @@ the same project under OpenCode or Claude Code does show it.
 
 ## Capability Routing
 
-`givn spec route` reports no signal for this change (the top candidates tie),
-so the decision is recorded directly.
+`givn spec route` reports no signal for this change (the top candidates tie at
+16.00), so each decision is recorded directly with its rationale. The two
+`attribute-*` capabilities live in the reusable `fragments` support home, whose
+own document (`fragment.md`) declares both, so the tooling's fragment route
+applies.
 
-| Proposed capability | Decision | Rationale |
-|---|---|---|
-| Commit attribution and agent-target generation | `EXTEND fragments` | The change adds one more agent target to the existing target-generation support fragment and one more generated integration implementing the existing attribution contract. No new protocol, message format, or permanent capability is introduced. |
+| Proposed capability | Route's recommendation | Decision | Rationale |
+|---|---|---|---|
+| initialize-a-project | no signal | `EXTEND initialize-a-project` | The `omp` name and `.omp` destination extend the existing target-selection contract; no new goal, actor, or use case. |
+| enable-optional-addons | no signal | `EXTEND enable-optional-addons` | Addon files are now also removed under `.omp`; the capability's goal and flow are unchanged. |
+| attribute-commits | no signal | `NEW in fragments` | The reusable fragment home is how a fragment capability is declared; `fragment.md` already lists `attribute-commits`, and the omp hook implements its existing contract. |
+| enable-commit-attribution | no signal | `NEW in fragments` | Same home; the initialization report names one more integration under the existing reporting contract. |
+
+All four capabilities already own permanent specs; no new use case is
+required.
 
 ## Out of Scope
 
