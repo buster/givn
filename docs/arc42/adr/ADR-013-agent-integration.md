@@ -68,7 +68,9 @@ versions stay runnable.
 
 ### Consequences
 
-- Skills are written under selected `.opencode/`, `.agents/`, and `.claude/` locations; opencode commands use `.opencode/commands/`.
+- Skills are written under selected `.opencode/`, `.agents/`, `.claude/`, and
+  `.omp/` locations; opencode and omp commands use their own
+  `<target>/commands/` directory.
 - The always-on `givn-project` block and the `absolute-mode` block are separately managed when applicable.
 - Generated files are snapshots and are refreshed by `givn skills sync`.
 - Target selection is explicit project configuration; the interactive prompt

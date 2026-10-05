@@ -39,7 +39,7 @@ graph TD
 | Q-2 | Configurability | A project adds or removes an artifact through overlay. | The effective graph changes only after validation; cycles and dangling references fail. |
 | Q-3 | Upgradeability | A project upgrades with uncommented overrides. | `givn upgrade` refreshes managed scaffold content and preserves user-owned values. |
 | Q-4 | Agent ergonomics | A project contains unrelated `AGENTS.md` content. | Init/sync changes only givn-owned fenced blocks and preserves all other content. |
-| Q-5 | Agent ergonomics | A project selects one or more agent targets during initialization. | The interactive prompt opens with `opencode` marked and re-asks until a target is marked; a non-terminal empty selection is refused before the first write; sync writes skills only to selected `.opencode`, `.agents`, and `.claude` targets, with opencode commands requiring the opencode target. |
+| Q-5 | Agent ergonomics | A project selects one or more agent targets during initialization. | The interactive prompt opens with `opencode` marked and re-asks until a target is marked; a non-terminal empty selection is refused before the first write; sync writes skills only to selected `.opencode`, `.agents`, `.claude`, and `.omp` targets, with commands requiring a command-owning target. |
 | Q-6 | Correctness | Archive receives a modified scenario with no permanent title match. | Merge aborts before writing the permanent file. |
 | Q-7 | Correctness | Archive applies several delta operations. | Added/modified/removed scenarios are merged and all `@givn.*` tags are stripped. |
 | Q-8 | Correctness | Lint sees parse errors, duplicate titles, and WIP. | Exit precedence is parse `1`, duplicate title `3`, WIP `2`, clean `0`; lint runs no tests. |
@@ -94,6 +94,7 @@ graph TD
 | Q-93 | Agent ergonomics | An author enters through startup, a direct bundled skill, or a fresh question-preparing delegation. | Target of `make-user-questions-decision-ready`: each context is directed to the same effective dialog policy before its first user-facing question; addon-free guidance remains covered. Implementation and execution evidence are pending. |
 | Q-94 | Configurability | A project synchronizes guidance beside human instructions and a project-owned dialog override. | The target refreshes only managed guidance, preserves human content and override precedence, and does not inject a bundled full policy into a project replacement. |
 | Q-95 | Question quality | A project-familiar reader evaluates an unseen decision question after the policy is delivered. | Review distinguishes the displayed subject, brief sourced context, answer consequences and material change costs from mere formatting; an invalid option or unnecessary fact-finding question is a defect. This is reviewed evidence, not a binary compliance guarantee. |
+| Q-96 | Commit attribution | An omp session with a current model prepares a Bash command that creates a revision. | The generated `pre` hook returns the command with attribution exports so the resulting Git committer and message identify the session model, thinking level, and the `omp` harness; a command that creates no revision is returned unchanged, and an unknown model yields `unavailable`. |
 
 ## 10.3 Verification Signals
 

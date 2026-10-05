@@ -206,7 +206,13 @@ the persisted target selection:
 
 - `.opencode/skills/<name>/SKILL.md` and `.opencode/commands/<name>.md`;
 - `.agents/skills/<name>/SKILL.md`;
-- `.claude/skills/<name>/SKILL.md`.
+- `.claude/skills/<name>/SKILL.md`;
+- `.omp/skills/<name>/SKILL.md` and `.omp/commands/<name>.md`.
+
+A target that owns a shell integration also receives its attribution
+integration: `.opencode/plugins/givn-attribution.js`,
+`.claude/hooks/givn-attribution.sh` with `.claude/settings.local.json`, and
+`.omp/hooks/pre/givn-attribution.js`.
 
 The target selection is stored in `skills.targets` in `givn/config.yaml`; an
 absent, empty, or unknown-only list falls back to opencode when `givn skills
@@ -215,7 +221,7 @@ Initialization itself requires a selection: the interactive prompt opens with
 `.opencode` marked and re-asks — with an error naming the requirement — until a
 target is marked, while an empty or unknown-only answer and EOF without the
 `--agents` flag refuse with a non-zero exit before the first write, naming
-`.opencode`, `.agents`, and `.claude` plus the `--agents` flag.
+`.opencode`, `.agents`, `.claude`, and `.omp` plus the `--agents` flag.
 
 The generated implementation guidance states the revision-message rule: every
 revision a change records carries the change's release note (authored in its
@@ -239,8 +245,9 @@ of the repository through a fenced block in the tracked ignore file
 (`.gitignore`, `.fossil-settings/ignore-glob`) and a local exclude
 (`.git/info/exclude`, the Fossil `ignore-glob` setting). The block carries
 prefix patterns for the reserved namespaces (`.opencode/skills/givn-*/`,
-`.opencode/commands/givn-*.md`, `.opencode/commands/grill-*.md`, and the fixed
-integration files), never individual rule names; tracked rules are discovered
+`.opencode/commands/givn-*.md`, `.opencode/commands/grill-*.md`,
+`.omp/skills/givn-*/`, `.omp/commands/givn-*.md`, `.omp/commands/grill-*.md`,
+and the fixed integration files), never individual rule names; tracked rules are discovered
 by a path predicate instead. A tracked strict rule
 becomes local-only through `git rm --cached` or `fossil rm --soft`; the file
 stays on disk, and the staged removals join the upgrade's managed revision or

@@ -5,11 +5,11 @@
 | **Addon** | Embedded behavior toggled through `addons.<name>`. The embedded manifest starts disabled, but current `givn init` enables all known addons unless `--no-addons` is supplied. |
 | **Addon-aware generation** | Generation that includes only the template sections whose declared addon condition matches the current effective addon set; an addon that is off leaves no trace in the generated skill or slash command. |
 | **AGENTS.md ownership** | Givn owns only the content between its own named fenced markers. All other `AGENTS.md` content is user-owned and preserved. |
-| **Agent target** | One generated guidance destination: `opencode`, `agents`, or `claude`, represented by `.opencode/`, `.agents/`, or `.claude/`. |
+| **Agent target** | One generated guidance destination: `opencode`, `agents`, `claude`, or `omp`, represented by `.opencode/`, `.agents/`, `.claude/`, or `.omp/`. |
 | **Attribution context** | The runtime facts available while one commit is created: LLM, reasoning mode, harness, and Givn version. Missing facts remain unknown rather than inferred. |
 | **Model identity** | The provider and model pair selected by the harness for the current attribution context. Anti-terms: model name, model label. |
 | **Commit attribution** | The best-effort LLM and harness identification visible through a revision's committer identity and message trailers; on Git through the hook, on Fossil through `givn commit`. |
-| **Harness** | The agent runtime that executes project commands, such as OpenCode or Claude Code. Anti-term: agent target. |
+| **Harness** | The agent runtime that executes project commands, such as OpenCode, Claude Code, or omp. Anti-term: agent target. |
 | **Reasoning mode** | The harness-reported effort or thinking variant active when a commit is created. |
 | **Attribution trailer** | The managed `Co-Authored-By` message trailer containing the commit-attribution context; on Git it is a commit message, on Fossil a check-in comment. |
 | **Managed co-author attribution** | The Givn-owned `Co-Authored-By` trailer formatted as `<model>/<reasoning>@<harness> with Givn <version>`; ordinary human co-author trailers remain user-owned. |
@@ -102,7 +102,7 @@
 | **ADR supersession** | A qualified replacement of an existing decision that keeps the old record as explicit architectural history; routed as `SUPERSEDE_ADR`. |
 | **ADR routing** | The single outcome `NEW_ADR`, `AMEND_ADR`, `SUPERSEDE_ADR`, or `CANONICAL_ARTIFACT` selected after qualification and duplicate checks. |
 | **Single-source architecture documentation** | The rule that current facts, behavior, implementation, process, and decision rationale each have one authoritative home rather than redundant copies. |
-| **Slash command** | A command file written from a command template into `.opencode/commands/` when `givn skills sync` runs. |
+| **Slash command** | A command file written from a command template into the `commands/` directory of a command-owning agent target (`.opencode/commands/` or `.omp/commands/`) when `givn skills sync` runs. |
 | **Managed upgrade path** | The machine-safe portion of a version migration: config scaffold and generated Givn integrations refreshed under an explicit SCM allowlist. |
 | **Maintenance change** | A visible Givn change for project-wide tooling or migration work that may intentionally skip a product feature specification. |
 | **Migration plan** | The proposal and detailed design generated for an upgrade so an LLM can derive project-specific tasks without fabricated completion evidence. |
