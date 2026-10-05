@@ -126,6 +126,27 @@ No schema or persisted-format change. The change adds files to the set that
 `AgentTarget` writes; the commit-attribution protocol and its trailers stay as
 they are.
 
+## Internal Primitives
+
+Internal data structures and abstractions this change introduces:
+
+| Primitive | Type | Purpose |
+|---|---|---|
+| `AgentTarget::Omp` | `enum` variant | The `.omp` generated-guidance destination, with canonical name `omp` |
+| `AgentTarget::owns_commands` | `fn` | Whether a target owns a `<dir>/commands/` slash-command directory (`opencode`, `omp`) |
+| `write_command` | `fn` | Writes one rendered command template to a command-owning target's `commands/` directory |
+| `GivnWorld::omp_attribution` | `struct` field | Per-scenario cucumber state for the omp scenarios |
+| `OmpAttributionState` | `struct` | The stubbed model and reasoning level, the prepared command, and the commit output |
+| `omp_prepared_command` | `fn` (test) | Drives the generated hook through `node` for one Bash command and returns the prepared command |
+| `assert_prepared_env` | `fn` (test) | Asserts one attribution variable in a prepared command |
+| `givnAttribution` | `fn` (generated asset) | The omp hook factory; registers the `tool_call` handler that rewrites a revision-creating Bash command |
+
+## Strict Mode (mandatory)
+
+Undefined or pending steps must fail the runner: `GivnWorld::cucumber()
+.fail_on_skipped()` in `tests/features_runner.rs`, proven in tasks.md's setup
+task.
+
 ## Step definitions
 
 - `tests/steps/init_agent_target_selection_steps.rs` — the omp target-selection
@@ -135,8 +156,10 @@ they are.
   command, and assert the resulting commit. The two non-`@e2e` omp scenarios
   reuse this harness because they assert the generated artifact's behaviour,
   not a weaker boundary.
-- `tests/steps/mod.rs` — the `--agents all` fixtures are target-agnostic; no
-  new file.
+- `tests/steps/mod.rs` — the `omp_attribution` world slot and the target-agnostic
+  file/directory-existence steps; no new file.
+- `tests/steps/llm_attribution_installation_e2e_steps.rs` — the omp
+  installation-report step and the extended managed-upgrade fixture.
 
 No second file is introduced for a capability an existing file already owns.
 

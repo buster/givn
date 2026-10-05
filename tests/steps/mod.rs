@@ -1002,6 +1002,17 @@ fn command_exists_in_opencode(world: &mut GivnWorld, cmd: String) {
     std::fs::write(&p, "# stub\n").expect("write stub");
 }
 
+#[given(regex = r#"^the command "([^"]+)" exists in \.omp/commands$"#)]
+fn command_exists_in_omp(world: &mut GivnWorld, cmd: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let p = env.path(&format!(".omp/commands/{cmd}.md"));
+    std::fs::create_dir_all(p.parent().unwrap()).expect("create commands dir");
+    std::fs::write(&p, "# stub\n").expect("write stub");
+}
+
 #[given(regex = r#"^a change "([^"]+)" exists with artifact "([^"]+)"$"#)]
 fn change_exists_with_artifact(world: &mut GivnWorld, id: String, file: String) {
     let env = world

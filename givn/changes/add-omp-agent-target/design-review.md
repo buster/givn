@@ -202,3 +202,27 @@ what the verdict names.
 - [x] Architecture documentation (arc42) check completed above.
 
 **DESIGN-REVIEW: PASS**
+
+---
+
+## Re-confirmation after the review-phase design.md addition
+
+During the review phase `design.md` gained the missing mandatory sections
+`## Internal Primitives` and `## Strict Mode`, plus a correction of the
+`## Step definitions` file list. No reviewed decision changed (`D1`, `D2`, the
+production files, the runner, the E2E infrastructure and the interaction matrix
+are untouched).
+
+A fresh-context check re-read the amended design against the committed
+implementation and confirmed every row of the new section and the rest of the
+document:
+
+- `AgentTarget::Omp`, `owns_commands`, `write_command`, `OmpAttributionState`,
+  `omp_prepared_command`, and the generated `givnAttribution` factory all exist
+  with the stated shape and purpose.
+- **Verdict: `DESIGN-REVIEW: PASS` still holds**; the additions add description
+  only.
+- Two wording imprecisions were flagged and fixed in the same edit: the section
+  now also lists the `GivnWorld::omp_attribution` slot and the
+  `assert_prepared_env` helper, and the step-definitions list now names
+  `tests/steps/llm_attribution_installation_e2e_steps.rs`.
