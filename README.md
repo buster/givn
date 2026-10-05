@@ -81,7 +81,8 @@ givn init                             # scaffold givn/ + generate skills + AGENT
 `givn init` asks which agent targets receive the generated skills and commands;
 the list opens with `.opencode` marked and re-asks until at least one target is
 marked. Scripted runs state the selection explicitly:
-`givn init --agents opencode,claude` — a missing or unknown-only selection is
+`givn init --agents opencode,claude,omp` (valid targets: `opencode`, `agents`,
+`claude`, `omp`) — a missing or unknown-only selection is
 refused before anything is written. `givn skills sync` keeps writing to the
 persisted selection and falls back to `opencode` only for a config without a
 skills block.
@@ -95,9 +96,10 @@ trailer when the harness provides context.
 `givn init` checks in shared Git commit-attribution plumbing and activates it
 locally when the project is a Git worktree; a Fossil checkout receives no hook
 and reports `commit attribution: givn commit path only` (a raw `fossil commit`
-carries no attribution). OpenCode and Claude Code targets receive best-effort
-runtime integrations; when an agent exposes attribution context, the commit
-committer and message show the LLM, reasoning mode, harness, and Givn version.
+carries no attribution). OpenCode, Claude Code, and omp targets receive
+best-effort runtime integrations; when an agent exposes attribution context,
+the commit committer and message show the LLM, reasoning mode, harness, and
+Givn version.
 Missing context never blocks a human commit.
 
 ## Default workflow
