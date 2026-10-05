@@ -4,6 +4,73 @@ All notable changes to Givn are documented in this file.
 
 The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
+## [Unreleased]
+
+## [0.8.3] - 2026-10-05
+
+### Bug Fixes
+
+- **adr-qualification-gate:** Restore the blank ADR template from the 0.8.0 asset
+
+- **adr-qualification-gate:** Retire the semantic-engine ADR residue
+
+- **adr-qualification-gate:** Re-eject the impact assessment template from 0.8.0
+
+- **confirm-persona-coverage:** Add the missing base hashes to two delta narratives
+
+- **migration:** Preserve word spacing in the aggregate proposal wrapper
+
+- **require-agent-target:** Name the agent selection in the nested Fossil fixture
+
+
+### Features
+
+- **migrate-0-7-0-to-0-8-0:** Catalog the 0.7.0 to 0.8.0 route and ship the bundle
+
+- **migration-retrofit-plan:** Amend the 0.8.0 bundle and guide to the inventory-and-follow-up model
+
+- **persona-identity-reuse:** Confirm persona coverage on five use cases
+
+- **use-case-model-scoping:** Split author-change into a summary and two leaves
+
+- **use-case-model-scoping:** Reshape archive-change to the 0.8.0 model
+
+- **use-case-model-scoping:** Split maintain-project into a summary and three leaves
+
+- **use-case-model-scoping:** Reshape verify-change to the 0.8.0 model
+
+- **use-case-model-scoping:** Reshape operate-product to the 0.8.0 model
+
+- **use-case-model-scoping:** Reshape inspect-change-state to the 0.8.0 model
+
+- **use-case-model-scoping:** Reshape discover-specifications to the 0.8.0 model
+
+- **use-case-model-scoping:** Anchor the make-usecases-canonical extension
+
+- **use-case-model-scoping:** Rename the support-fragment capabilities
+
+- **rules-policy:** Resolve the generated-rules policy
+
+- **local-only-transition:** Keep tracked rules out of the repository
+
+- **attribute-commits:** Stage project content only under local-only
+
+- **apply-a-managed-upgrade:** Publish a policy-aware managed revision
+
+- **publication-cleanliness:** Report tracked and historical rules
+
+- **history-rewrite:** Purge generated rules from reachable history
+
+- **initialize-a-project:** Mask generated rule names in the ignore block
+
+- **initialize-a-project:** `givn init` refuses to initialize unless at least one agent target is selected, instead of silently installing OpenCode skills
+
+- **initialize-a-project:** `givn init` keeps its interactive agent-target prompt open with OpenCode pre-selected and reports an error when the confirmation marks no target, instead of closing the dialog
+
+- **nix:** Add flake with givn package and overlay
+
+- **instruction-integrity:** Givn guides every user-facing question through one canonical dialog policy with brief sourced context, concrete answer consequences, material change costs, and multiple bad/good examples.
+
 ## [0.8.0] - 2026-09-17
 
 ### Added
@@ -231,3 +298,5 @@ planned work.
 
 The master-branch baseline for the 0.3.0 migration. See the repository history
 for the complete 0.2.0 feature set.
+
+[0.8.3]: https://github.com/buster/givn/compare/v0.8.0...v0.8.3
