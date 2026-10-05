@@ -19,7 +19,7 @@ Feature: Attribute commits
     When  omp prepares the Bash command "git status"
     Then  the prepared command is "git status"
 
-  @givn.added @wip
+  @givn.added
   Scenario: omp marks a partial attribution context as unavailable
     Given  a project with the generated omp attribution integration
     And  omp has no current model
