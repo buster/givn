@@ -601,10 +601,14 @@ fn when_omp_prepares_and_runs_commit(world: &mut GivnWorld, message: String) {
             .expect("omp attribution state");
         state.prepared = Some(prepared.clone());
     }
+    // The checked-in commit-msg hook only stamps attribution when `givn` is
+    // resolvable, so the shell that runs the prepared command needs the
+    // compiled binary on PATH — CI has no installed `givn`.
     let output = Command::new("sh")
         .arg("-c")
         .arg(&prepared)
         .current_dir(&root)
+        .env("PATH", givn_path())
         .output()
         .expect("run attributed omp command");
     world
