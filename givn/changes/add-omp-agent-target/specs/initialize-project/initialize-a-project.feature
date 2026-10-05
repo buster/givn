@@ -2,7 +2,7 @@
 
 Feature: initialize-a-project
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The --agents flag accepts "all" as a shorthand for every target
     Given a project root without a givn/ directory
     When the user runs `givn init --agents all`
