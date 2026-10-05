@@ -160,10 +160,16 @@ E2E scope: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh
 
 ## Scenario 8 (@e2e): Consumer initializes a project and receives shared attribution plumbing
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
-- [ ] COMMIT (`test(e2e): <release note>`): hash —.
+- [x] RED: with the scenario's `--agents` list held at the pre-change
+      `opencode,claude`, the added assertion fails: `assertion failed:
+      env.path(".omp/hooks/pre/givn-attribution.js").is_file()` →
+      `1 scenario (1 failed), 8 steps (7 passed, 1 failed)`, exit 1.
+- [x] GREEN: the omp target from Scenario 4 writes the integration; restored
+      `--agents opencode,claude,omp` → `1 scenario (1 passed), 8 steps
+      (8 passed)`, exit 0.
+- [x] REFACTOR: `./run-tests.sh --e2e` scope re-run at the end of the e2e phase.
+- [x] COMMIT: `9b0f2d71` — `test(e2e): <release note>`; body carries the
+      scenario title.
 
 ## Scenario 9 (@e2e): omp attributes a commit using its current model
 
