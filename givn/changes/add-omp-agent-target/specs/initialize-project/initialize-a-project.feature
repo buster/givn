@@ -36,7 +36,7 @@ Feature: initialize-a-project
     And the directory ".claude/skills/givn-propose" does not exist
     And givn skills targets in givn/config.yaml equal "omp"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The --agents flag accepts the dotted directory form for the omp target
     Given a project root without a givn/ directory
     When the user runs `givn init --agents .omp`

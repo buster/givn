@@ -70,7 +70,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh
       added assertion has no independent RED state.
 - [x] GREEN: re-run → passes (same output).
 - [x] REFACTOR: re-run → passes (same output).
-- [x] COMMIT: `4d0d83b8` — `feat(initialize-a-project): <release note>`; body
+- [x] COMMIT: `fb42e95e` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
 ## Scenario 3: The --agents flag accepts the dotted directory form for the omp target
