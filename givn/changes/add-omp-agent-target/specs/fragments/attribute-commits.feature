@@ -13,7 +13,7 @@ Feature: Attribute commits
     And  the Claude Code attribution integration exists
     And  the omp attribution integration exists
 
-  @givn.added @wip
+  @givn.added
   Scenario: omp leaves a command that creates no revision unchanged
     Given  a project with the generated omp attribution integration
     When  omp prepares the Bash command "git status"

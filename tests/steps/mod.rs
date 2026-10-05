@@ -85,6 +85,8 @@ pub struct GivnWorld {
     pub(crate) opencode_plugin: Option<llm_attribution_e2e_steps::OpencodePluginState>,
     /// State for the generated Claude attribution integration scenario.
     pub(crate) claude_attribution: Option<llm_attribution_e2e_steps::ClaudeAttributionState>,
+    /// State for the generated omp attribution integration scenarios.
+    pub(crate) omp_attribution: Option<llm_attribution_e2e_steps::OmpAttributionState>,
     /// Captured stdout/stderr/exit of the last `givn` invocation.
     last_output: Option<Output>,
     /// Output from the previous command in a parity scenario.

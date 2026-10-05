@@ -114,22 +114,34 @@ E2E scope: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh
       `is_rule_path()` gains the `.omp` command prefix, the `.omp` skill prefix,
       and the omp hook path). Run → passed, exit 0.
 - [x] REFACTOR: re-run → passes.
-- [x] COMMIT: `be1a1b04` — `feat(initialize-a-project): <release note>`; body
+- [x] COMMIT: `2fdcd508` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
-## Scenario 6: omp leaves a command that creates no revision unchanged
+## Scenario 6: omp leaves a command that creates no revision unchanged **[harness]**
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
-- [ ] COMMIT (`feat(attribute-commits): <release note>`): hash —.
+- [x] RED: remove `@wip`, run targeting this scenario → the step definitions did
+      not exist yet (`Step doesn't match any function`), exit 1. Recorded as the
+      RED for the new `node`-driven step harness.
+- [x] GREEN: production changed — the hook's revision-verb gate shipped with the
+      asset in Scenario 4; this scenario binds it through the new step
+      definitions in `tests/steps/llm_attribution_e2e_steps.rs` plus the world
+      state in `tests/steps/mod.rs`. Run → `1 scenario (1 passed), 3 steps
+      (3 passed)`, exit 0. The gate is discriminating: without it the hook would
+      rewrite `git status` too.
+- [x] REFACTOR: `cargo fmt`; re-run → passes.
+- [x] COMMIT: `5f0d1a2c` — `feat(attribute-commits): <release note>`; body
+      carries the scenario title.
 
-## Scenario 7: omp marks a partial attribution context as unavailable
+## Scenario 7: omp marks a partial attribution context as unavailable **[harness]**
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
-- [ ] COMMIT: hash —.
+- [x] RED: remove `@wip`, run targeting this scenario → observed side-effect
+      GREEN: the `unavailable` fallback shipped with the asset in Scenario 4 and
+      the harness steps landed with Scenario 6. Kept as the second invariant of
+      the generated hook.
+- [x] GREEN: re-run → `1 scenario (1 passed), 5 steps (5 passed)`.
+- [x] REFACTOR: re-run → passes.
+- [x] COMMIT: `e6a2c7d1` — `feat(attribute-commits): <release note>`; body
+      carries the scenario title.
 
 ## E2E setup
 

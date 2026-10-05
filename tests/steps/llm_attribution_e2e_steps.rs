@@ -478,3 +478,264 @@ fn then_attributed_message_has_complete_context(world: &mut GivnWorld) {
 fn then_legacy_attributed_message_wording_uses_current_contract(world: &mut GivnWorld) {
     then_attributed_message_has_complete_context(world);
 }
+
+/// State for the generated omp attribution integration scenarios.
+#[derive(Debug)]
+pub(crate) struct OmpAttributionState {
+    model: Option<(String, String)>,
+    reasoning: Option<String>,
+    prepared: Option<String>,
+    output: Option<Output>,
+}
+
+#[given("a project with the generated omp attribution integration")]
+fn given_generated_omp_integration(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    let root = env.root();
+    assert!(git(&root, &["init"]).status.success());
+    assert!(
+        git(&root, &["config", "user.name", "Human Developer"])
+            .status
+            .success()
+    );
+    assert!(
+        git(&root, &["config", "user.email", "human@example.test"])
+            .status
+            .success()
+    );
+    let output = common::run_givn(&env, &["init", "--agents", "omp"]);
+    assert!(
+        output.status.success(),
+        "givn init failed: stdout={} stderr={}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        include_str!("../../assets/agent-integrations/omp/givn-attribution.js"),
+        std::fs::read_to_string(root.join(".omp/hooks/pre/givn-attribution.js"))
+            .expect("read generated omp integration"),
+        "the generated omp integration must match the embedded asset"
+    );
+    // `node` resolves a `.js` file's module kind from the nearest package.json.
+    std::fs::write(root.join("package.json"), r#"{"type":"module"}"#)
+        .expect("write JavaScript module configuration");
+    world.env = Some(env);
+    world.omp_attribution = Some(OmpAttributionState {
+        model: None,
+        reasoning: None,
+        prepared: None,
+        output: None,
+    });
+}
+
+#[given(regex = r##"^the omp attribution integration exists$"##)]
+fn given_omp_integration_exists(world: &mut GivnWorld) {
+    then_omp_integration_exists(world);
+}
+
+#[given(regex = r##"^omp's current model is "([^"]+)" at reasoning mode "([^"]+)"$"##)]
+fn given_omp_current_model(world: &mut GivnWorld, model: String, reasoning: String) {
+    let (provider, id) = model
+        .split_once('/')
+        .map(|(provider, id)| (provider.to_string(), id.to_string()))
+        .unwrap_or_else(|| (String::new(), model.clone()));
+    let state = world
+        .omp_attribution
+        .as_mut()
+        .expect("omp attribution state");
+    state.model = Some((provider, id));
+    state.reasoning = Some(reasoning);
+}
+
+#[given("omp has no current model")]
+fn given_omp_without_model(world: &mut GivnWorld) {
+    let state = world
+        .omp_attribution
+        .as_mut()
+        .expect("omp attribution state");
+    state.model = None;
+    state.reasoning = None;
+}
+
+#[when(regex = r##"^omp prepares the Bash command "([^"]+)"$"##)]
+fn when_omp_prepares_command(world: &mut GivnWorld, command: String) {
+    let prepared = omp_prepared_command(world, &command);
+    world
+        .omp_attribution
+        .as_mut()
+        .expect("omp attribution state")
+        .prepared = Some(prepared);
+}
+
+#[then(regex = r##"^the prepared command is "([^"]+)"$"##)]
+fn then_prepared_command_is(world: &mut GivnWorld, expected: String) {
+    let prepared = world
+        .omp_attribution
+        .as_ref()
+        .and_then(|state| state.prepared.as_ref())
+        .expect("prepared omp command");
+    assert_eq!(prepared, &expected);
+}
+
+#[then(regex = r##"^the prepared command identifies LLM "([^"]+)"$"##)]
+fn then_prepared_command_identifies_llm(world: &mut GivnWorld, expected: String) {
+    assert_prepared_env(world, "GIVN_ATTRIBUTION_LLM", &expected);
+}
+
+#[then(regex = r##"^the prepared command identifies harness "([^"]+)"$"##)]
+fn then_prepared_command_identifies_harness(world: &mut GivnWorld, expected: String) {
+    assert_prepared_env(world, "GIVN_ATTRIBUTION_HARNESS", &expected);
+}
+
+#[when(regex = r##"^omp prepares and runs a Bash revision command with message "([^"]+)"$"##)]
+fn when_omp_prepares_and_runs_commit(world: &mut GivnWorld, message: String) {
+    let root = world.env.as_ref().expect("project root").root();
+    std::fs::write(root.join("fixture.txt"), &message).expect("write fixture");
+    assert!(git(&root, &["add", "fixture.txt"]).status.success());
+
+    let prepared = omp_prepared_command(world, &format!("git commit -m '{message}'"));
+    {
+        let state = world
+            .omp_attribution
+            .as_mut()
+            .expect("omp attribution state");
+        state.prepared = Some(prepared.clone());
+    }
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg(&prepared)
+        .current_dir(&root)
+        .output()
+        .expect("run attributed omp command");
+    world
+        .omp_attribution
+        .as_mut()
+        .expect("omp attribution state")
+        .output = Some(output);
+}
+
+#[then("the attributed omp commit succeeds")]
+fn then_omp_commit_succeeds(world: &mut GivnWorld) {
+    let output = world
+        .omp_attribution
+        .as_ref()
+        .and_then(|state| state.output.as_ref())
+        .expect("omp commit output");
+    assert!(
+        output.status.success(),
+        "omp commit failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[then(regex = r##"^its omp committer identifies "([^"]+)" and "([^"]+)"$"##)]
+fn then_omp_committer_identifies(world: &mut GivnWorld, llm: String, harness: String) {
+    let root = world.env.as_ref().expect("project root").root();
+    let output = git(&root, &["show", "-s", "--format=%cn", "HEAD"]);
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains(&format!("LLM: {llm} via {harness}")));
+}
+
+#[then(regex = r##"^its omp message identifies LLM "([^"]+)"$"##)]
+fn then_omp_message_identifies_llm(world: &mut GivnWorld, llm: String) {
+    let root = world.env.as_ref().expect("project root").root();
+    let output = git(&root, &["show", "-s", "--format=%B", "HEAD"]);
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains(&format!("Co-Authored-By: {llm}/")));
+}
+
+#[then(regex = r##"^its omp message identifies reasoning mode "([^"]+)"$"##)]
+fn then_omp_message_identifies_reasoning(world: &mut GivnWorld, reasoning: String) {
+    let root = world.env.as_ref().expect("project root").root();
+    let output = git(&root, &["show", "-s", "--format=%B", "HEAD"]);
+    assert!(output.status.success());
+    let message = String::from_utf8_lossy(&output.stdout);
+    assert!(message.contains(&format!("/{reasoning}@omp with Givn ")));
+}
+
+#[then("the omp attribution integration exists")]
+fn then_omp_integration_exists(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    assert!(env.path(".omp/hooks/pre/givn-attribution.js").is_file());
+}
+
+/// Drive the generated omp hook through `node` for one Bash command and return
+/// the command it prepared (unchanged when the hook returned no revision).
+fn omp_prepared_command(world: &GivnWorld, command: &str) -> String {
+    let state = world
+        .omp_attribution
+        .as_ref()
+        .expect("omp attribution state");
+    let root = world.env.as_ref().expect("project root").root();
+    let model = match &state.model {
+        Some((provider, id)) if provider.is_empty() => {
+            format!("{{ id: {} }}", javascript_string_value(id))
+        }
+        Some((provider, id)) => format!(
+            "{{ provider: {}, id: {} }}",
+            javascript_string_value(provider),
+            javascript_string_value(id)
+        ),
+        None => "null".to_string(),
+    };
+    let reasoning = match &state.reasoning {
+        Some(level) => javascript_string_value(level),
+        None => "null".to_string(),
+    };
+    let script = format!(
+        "import givn from {};
+const handlers = [];
+const model = {};
+const reasoning = {};
+const pi = {{
+  on: (event, handler) => handlers.push({{ event, handler }}),
+  getThinkingLevel: () => reasoning ?? undefined,
+}};
+givn(pi);
+const entry = handlers.find((candidate) => candidate.event === 'tool_call');
+if (!entry) throw new Error('no tool_call handler registered');
+const ctx = {{ models: {{ current: () => model ?? undefined }}, model: model ?? undefined }};
+const result = await entry.handler(
+  {{ type: 'tool_call', toolCallId: 'omp-1', toolName: 'bash', input: {{ command: {} }} }},
+  ctx,
+);
+console.log(JSON.stringify({{ command: result?.input?.command ?? null }}));
+",
+        javascript_string(&root.join(".omp/hooks/pre/givn-attribution.js")),
+        model,
+        reasoning,
+        javascript_string_value(command),
+    );
+    let script_path = root.join("invoke-omp-hook.mjs");
+    std::fs::write(&script_path, script).expect("write omp hook script");
+    let output = Command::new("node")
+        .arg(&script_path)
+        .current_dir(&root)
+        .output()
+        .expect("run node");
+    assert!(
+        output.status.success(),
+        "omp hook invocation failed: stdout={} stderr={}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let parsed: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("parse omp hook output");
+    parsed
+        .get("command")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or(command)
+        .to_string()
+}
+
+fn assert_prepared_env(world: &GivnWorld, name: &str, expected: &str) {
+    let prepared = world
+        .omp_attribution
+        .as_ref()
+        .and_then(|state| state.prepared.as_ref())
+        .expect("prepared omp command");
+    assert!(
+        prepared.contains(&format!("{name}='{expected}'")),
+        "prepared command does not identify {name} {expected}: {prepared}"
+    );
+}
