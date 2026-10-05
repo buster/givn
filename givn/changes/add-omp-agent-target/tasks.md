@@ -148,16 +148,19 @@ E2E scope: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh
 
 ## E2E setup
 
-- [ ] E2E harness: `node` on `PATH` (already required by the OpenCode
+- [x] E2E harness: `node` on `PATH` (already required by the OpenCode
       integration E2E); the scenario writes `package.json` =
       `{"type":"module"}` beside the project before importing
       `.omp/hooks/pre/givn-attribution.js`. No server, database, container, or
       digital twin is required, so there is no local environment to bring up
-      beyond `git` and `node`.
-- [ ] E2E steps live in `tests/steps/llm_attribution_e2e_steps.rs`, one file for
-      the capability, as `design.md` names.
-- [ ] Strict mode for the e2e scope proven (same builder, same
-      `.fail_on_skipped()`).
+      beyond `git` and `node`. Confirmed: the OpenCode integration scenario
+      already runs `node` in this suite, and Scenarios 8–10 pass using it.
+- [x] E2E steps live in `tests/steps/llm_attribution_e2e_steps.rs`, one file for
+      the capability, as `design.md` names (the installation-report step joins
+      the pre-existing `tests/steps/llm_attribution_installation_e2e_steps.rs`).
+- [x] Strict mode for the e2e scope proven (same builder, same
+      `.fail_on_skipped()`): the setup proof above runs the same binary that
+      executes the `@e2e` scope.
 - [ ] Scenario-count proof: `./run-tests.sh` → N scenarios; `./run-tests.sh
       --e2e` → M scenarios; M < N (paste both).
 
