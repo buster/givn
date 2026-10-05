@@ -41,9 +41,12 @@ Feature: initialize-a-project
     Given a committed project root with givn/ initialised
     And givn skills targets in givn/config.yaml equal "omp"
     And a tracked generated rule at ".omp/skills/givn-propose/SKILL.md"
+    And a tracked generated rule at ".omp/commands/givn-propose.md"
     When the user runs `givn skills sync`
     Then the command exits 0
+    And stdout contains ".omp/commands/"
     And the revision does not track ".omp/skills/givn-propose/SKILL.md"
+    And the revision does not track ".omp/commands/givn-propose.md"
     And the revision does not track ".omp/hooks/pre/givn-attribution.js"
     And the tracked ignore block contains ".omp/skills/givn-*/"
     And the tracked ignore block contains ".omp/commands/givn-*.md"
