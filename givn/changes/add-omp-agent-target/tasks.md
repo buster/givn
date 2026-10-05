@@ -99,7 +99,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh
       `1 scenario (1 passed), 9 steps (9 passed)`, exit 0.
 - [x] REFACTOR: `cargo fmt` + `cargo clippy --locked --all-targets` clean;
       re-run → `1 scenario (1 passed), 9 steps (9 passed)`.
-- [x] COMMIT: `1b4ea3c0` — `feat(initialize-a-project): <release note>`; body
+- [x] COMMIT: `f1222d85` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
 ## Scenario 5: An omp project keeps the generated omp rules out of the repository

@@ -36,7 +36,7 @@ Feature: initialize-a-project
     And the directory ".claude/skills/givn-propose" does not exist
     And givn skills targets in givn/config.yaml equal "omp"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An omp project keeps the generated omp rules out of the repository
     Given a committed project root with givn/ initialised
     And givn skills targets in givn/config.yaml equal "omp"
