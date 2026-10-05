@@ -29,14 +29,17 @@ pub enum AgentTarget {
     Agents,
     /// `.claude/` — Claude Code skills mirror.
     Claude,
+    /// `.omp/` — the omp (Oh My Pi) skills, commands, and hook location.
+    Omp,
 }
 
 impl AgentTarget {
     /// All known targets.
-    pub const ALL: [AgentTarget; 3] = [
+    pub const ALL: [AgentTarget; 4] = [
         AgentTarget::Opencode,
         AgentTarget::Agents,
         AgentTarget::Claude,
+        AgentTarget::Omp,
     ];
 
     /// Canonical config name (no leading dot).
@@ -45,6 +48,7 @@ impl AgentTarget {
             AgentTarget::Opencode => "opencode",
             AgentTarget::Agents => "agents",
             AgentTarget::Claude => "claude",
+            AgentTarget::Omp => "omp",
         }
     }
 
@@ -54,6 +58,7 @@ impl AgentTarget {
             AgentTarget::Opencode => ".opencode",
             AgentTarget::Agents => ".agents",
             AgentTarget::Claude => ".claude",
+            AgentTarget::Omp => ".omp",
         }
     }
 
@@ -73,6 +78,7 @@ impl AgentTarget {
             "opencode" => Some(AgentTarget::Opencode),
             "agents" => Some(AgentTarget::Agents),
             "claude" => Some(AgentTarget::Claude),
+            "omp" => Some(AgentTarget::Omp),
             _ => None,
         }
     }
