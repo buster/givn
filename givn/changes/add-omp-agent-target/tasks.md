@@ -35,9 +35,12 @@ E2E scope: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh
       delta step fails the runner:
       `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs cargo test --locked --test features_runner -- --name 'omp leaves a command that creates no revision unchanged'`
       → exit 1, `1 scenario (1 failed)`, `Step doesn't match any function`.
-- [ ] `verify.e2e_command` is `./run-tests.sh --e2e` and is a strict subset of
-      `verify.command` (`./run-tests.sh`): the scope counts from both runs are
-      pasted below.
+- [x] `verify.e2e_command` is `./run-tests.sh --e2e` and is a strict subset of
+      `verify.command` (`./run-tests.sh`). Proof at delta scope:
+      `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh` →
+      `10 tests run: 10 passed, 0 skipped`;
+      `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh --e2e`
+      → `3 tests run: 3 passed, 7 skipped`. 3 < 10.
 - [x] Interaction coverage re-checked: `fragments` carries no inventory row
       (skipped by `src/gherkin/interaction.rs`); the `initialize-project`
       selection action keeps its existing single `@e2e`, so the omp selection
@@ -129,7 +132,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh
       (3 passed)`, exit 0. The gate is discriminating: without it the hook would
       rewrite `git status` too.
 - [x] REFACTOR: `cargo fmt`; re-run → passes.
-- [x] COMMIT: `5f0d1a2c` — `feat(attribute-commits): <release note>`; body
+- [x] COMMIT: `de246cdf` — `feat(attribute-commits): <release note>`; body
       carries the scenario title.
 
 ## Scenario 7: omp marks a partial attribution context as unavailable **[harness]**
@@ -140,7 +143,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh
       the generated hook.
 - [x] GREEN: re-run → `1 scenario (1 passed), 5 steps (5 passed)`.
 - [x] REFACTOR: re-run → passes.
-- [x] COMMIT: `e6a2c7d1` — `feat(attribute-commits): <release note>`; body
+- [x] COMMIT: `db258059` — `feat(attribute-commits): <release note>`; body
       carries the scenario title.
 
 ## E2E setup
@@ -168,7 +171,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh
       `--agents opencode,claude,omp` → `1 scenario (1 passed), 8 steps
       (8 passed)`, exit 0.
 - [x] REFACTOR: `./run-tests.sh --e2e` scope re-run at the end of the e2e phase.
-- [x] COMMIT: `9b0f2d71` — `test(e2e): <release note>`; body carries the
+- [x] COMMIT: `f579c688` — `test(e2e): <release note>`; body carries the
       scenario title.
 
 ## Scenario 9 (@e2e): omp attributes a commit using its current model **[harness]**
@@ -185,7 +188,7 @@ E2E scope: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh
       committer `LLM: deepseek/deepseek-flash via omp`, message trailer
       `Co-Authored-By: deepseek/deepseek-flash/high@omp with Givn 0.8.3`.
 - [x] REFACTOR: `./run-tests.sh --e2e` scope re-run at the end of the e2e phase.
-- [x] COMMIT: `3c9a7e5b` — `test(e2e): <release note>`; body carries the
+- [x] COMMIT: `15008b38` — `test(e2e): <release note>`; body carries the
       scenario title.
 
 ## Scenario 10 (@e2e): Consumer sees the commit attribution installation report
@@ -203,17 +206,28 @@ E2E scope: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh
       also passes with the extended fixture (`1 scenario (1 passed), 5 steps
       (5 passed)`).
 - [x] REFACTOR: `./run-tests.sh --e2e` scope re-run at the end of the e2e phase.
-- [x] COMMIT: `7d2f1b90` — `test(e2e): <release note>`; body carries the
+- [x] COMMIT: `4c680535` — `test(e2e): <release note>`; body carries the
       scenario title.
 
 ## Live contract check
 
-- [ ] Live smoke run against a real omp session (operator decision, R-78): paste
-      the produced commit's `%cn` and `%B` from a throwaway project.
+- [x] Live smoke run against a real omp session (operator decision, R-78):
+      a throwaway Git project initialized with the built binary's
+      `givn init --agents omp`, then a real `omp -p --no-session` session
+      (omp 18.3.0) asked to run `git commit -m 'smoke attribution'`. The hook
+      fired through omp's real loader and `tool_call` event; the agent even
+      echoed the revised command back as a self-reported "deviation", which is
+      the rewritten input omp persisted. Produced commit `dfc97582`:
+      committer `LLM: deepseek/deepseek-flash via omp <smoke@example.test>`,
+      message:
+      `smoke attribution` + `Co-Authored-By: deepseek/deepseek-flash/high@omp with Givn 0.8.3`.
+      The contract assumed by D2 is therefore validated against the real
+      harness, not only against the faked E2E context.
 
 ## Final
 
-- [ ] `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh`
-      exits 0.
-- [ ] `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh --e2e`
-      exits 0.
+- [x] `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh`
+      exits 0 → `10 tests run: 10 passed, 0 skipped`.
+- [x] `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh --e2e`
+      exits 0 → `3 tests run: 3 passed, 7 skipped`.
+- [x] `cargo fmt` and `cargo clippy --locked --all-targets` clean.
