@@ -52,10 +52,14 @@ jobs:
             givn-cargo-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Cache pinned release tools
+        id: toolcache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cargo/bin/
           key: givn-release-tools-${{ runner.os }}-${{ runner.arch }}-cargo-release-1.1.4-git-cliff-2.13.1-cargo-audit-0.22.2-cargo-deny-0.20.2
+          restore-keys: |
+            givn-release-tools-${{ runner.os }}-${{ runner.arch }}-
+            givn-security-tools-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Verify branch and clean source
         shell: bash
@@ -135,18 +139,56 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
+          install_archive() {
+            url="$1"
+            checksum_cmd="$2"
+            checksum="$3"
+            binary="$4"
+            work="$(mktemp -d)"
+            curl --fail --location --silent --show-error "$url" --output "$work/$binary.tar.gz"
+            printf '%s  %s\n' "$checksum" "$work/$binary.tar.gz" | "$checksum_cmd" --check --status
+            tar --extract --gzip --file "$work/$binary.tar.gz" --directory "$work"
+            install --mode 0755 "$(find "$work" -type f -name "$binary" -print -quit)" \
+              "$HOME/.cargo/bin/$binary"
+            rm -rf "$work"
+          }
+
           if ! cargo release --version 2>/dev/null | grep -Fq 'cargo-release 1.1.4'; then
             cargo install cargo-release --version 1.1.4 --locked
           fi
           if ! git-cliff --version 2>/dev/null | grep -Fq 'git-cliff 2.13.1'; then
-            cargo install git-cliff --version 2.13.1 --locked
+            if [ "$(uname -m)" = x86_64 ]; then
+              install_archive \
+                "https://github.com/orhun/git-cliff/releases/download/v2.13.1/git-cliff-2.13.1-x86_64-unknown-linux-gnu.tar.gz" \
+                sha512sum \
+                "e716cce3a07dda41b1e370d6afbd7a59eb3d4739509fb7856aeec8da2be28c0396584e29e106141c1a1c535c1827dbc1f60417524f5cfb1da9e11f700bd00f30" \
+                git-cliff
+            else
+              cargo install git-cliff --version 2.13.1 --locked
+            fi
           fi
           if ! cargo audit --version 2>/dev/null | grep -Fq 'cargo-audit-audit 0.22.2'; then
             cargo install cargo-audit --version 0.22.2 --locked
           fi
           if ! cargo deny --version 2>/dev/null | grep -Fq 'cargo-deny 0.20.2'; then
-            cargo install cargo-deny --version 0.20.2 --locked
+            if [ "$(uname -m)" = x86_64 ]; then
+              install_archive \
+                "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-x86_64-unknown-linux-musl.tar.gz" \
+                sha256sum \
+                "9f12ed4c49936e09b48bf862b595cde2fe64fcbd9d74dfacac6131ca824c8d5f" \
+                cargo-deny
+            else
+              cargo install cargo-deny --version 0.20.2 --locked
+            fi
           fi
+
+      - name: Save pinned release tools cache
+        if: ${{ always() && steps.toolcache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cargo/bin/
+          key: givn-release-tools-${{ runner.os }}-${{ runner.arch }}-cargo-release-1.1.4-git-cliff-2.13.1-cargo-audit-0.22.2-cargo-deny-0.20.2
 
       - name: Verify release base
         run: scripts/release-guard.sh base "$CURRENT_VERSION"
