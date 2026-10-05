@@ -161,8 +161,10 @@ E2E scope: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh
 - [x] Strict mode for the e2e scope proven (same builder, same
       `.fail_on_skipped()`): the setup proof above runs the same binary that
       executes the `@e2e` scope.
-- [ ] Scenario-count proof: `./run-tests.sh` → N scenarios; `./run-tests.sh
-      --e2e` → M scenarios; M < N (paste both).
+- [x] Scenario-count proof: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh`
+      → `11 tests run: 11 passed, 0 skipped`; the same scope with
+      `--e2e` → `3 tests run: 3 passed, 8 skipped`. 3 < 11, so the e2e scope is
+      a strict subset.
 
 ## Scenario 8 (@e2e): Consumer initializes a project and receives shared attribution plumbing
 
