@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "add-omp-agent-target",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "e8789e553f345d63a5022421a6acb08149f836cd",
+  "tested_revision": "e8789e553f345d63a5022421a6acb08149f836cd",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 93,
+      "passed": 93,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 14.336419321
+    },
+    "regular": {
+      "status": "passed",
+      "total": 603,
+      "passed": 603,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 61.573073083
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 8184,
+    "line_valid": 10454,
+    "line_percent": 78
+  },
   "started_at_unix": 1791201297,
-  "finished_at_unix": null
+  "finished_at_unix": 1791201441
 }
