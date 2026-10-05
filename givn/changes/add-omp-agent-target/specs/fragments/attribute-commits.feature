@@ -27,7 +27,7 @@ Feature: Attribute commits
     Then  the prepared command identifies LLM "unavailable"
     And  the prepared command identifies harness "omp"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: omp attributes a commit using its current model
     Given  a project with the generated omp attribution integration
     And  omp's current model is "deepseek/deepseek-flash" at reasoning mode "high"

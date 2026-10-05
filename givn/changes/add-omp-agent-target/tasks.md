@@ -171,19 +171,40 @@ E2E scope: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh
 - [x] COMMIT: `9b0f2d71` — `test(e2e): <release note>`; body carries the
       scenario title.
 
-## Scenario 9 (@e2e): omp attributes a commit using its current model
+## Scenario 9 (@e2e): omp attributes a commit using its current model **[harness]**
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
-- [ ] COMMIT: hash —.
+- [x] RED: the step definitions for the omp hook did not exist before Scenario 6
+      (`Step doesn't match any function`, exit 1); the hook's rewrite behaviour
+      itself shipped with the asset in Scenario 4.
+- [x] GREEN: `node` imports the generated `.omp/hooks/pre/givn-attribution.js`,
+      resolves the `tool_call` handler from a fake `pi`, invokes it with
+      `{ toolName: "bash", input: { command } }` and
+      `{ models: { current: () => model }, model }`, `sh -c` runs the returned
+      command, and `git show` reads the commit → `1 scenario (1 passed), 7 steps
+      (7 passed)`, exit 0. Observed in the produced commit:
+      committer `LLM: deepseek/deepseek-flash via omp`, message trailer
+      `Co-Authored-By: deepseek/deepseek-flash/high@omp with Givn 0.8.3`.
+- [x] REFACTOR: `./run-tests.sh --e2e` scope re-run at the end of the e2e phase.
+- [x] COMMIT: `3c9a7e5b` — `test(e2e): <release note>`; body carries the
+      scenario title.
 
 ## Scenario 10 (@e2e): Consumer sees the commit attribution installation report
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
-- [ ] COMMIT: hash —.
+- [x] RED: with the scenario's `--agents` list held at the pre-change
+      `opencode,claude`, the added assertion fails: `assertion failed:
+      stdout.contains(".omp/hooks/pre/givn-attribution.js")` → `1 scenario
+      (1 failed), 7 steps (6 passed, 1 failed)`, exit 1.
+- [x] GREEN: production changed — `src/cli/init.rs` names the omp integration in
+      the installation summary (Scenario 4); this scenario adds the stdout step
+      in `tests/steps/llm_attribution_installation_e2e_steps.rs` and extends the
+      managed-upgrade fixture with the omp plumbing. Run → `1 scenario (1
+      passed), 7 steps (7 passed)`, exit 0; the permanent upgrade scenario
+      "Consumer upgrades an existing project with attribution plumbing missing"
+      also passes with the extended fixture (`1 scenario (1 passed), 5 steps
+      (5 passed)`).
+- [x] REFACTOR: `./run-tests.sh --e2e` scope re-run at the end of the e2e phase.
+- [x] COMMIT: `7d2f1b90` — `test(e2e): <release note>`; body carries the
+      scenario title.
 
 ## Live contract check
 
