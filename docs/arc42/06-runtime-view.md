@@ -26,7 +26,8 @@ The sequence is:
 6. Unless `--no-addons` is set, enable every registered addon. In the current
    registry this scaffolds Arc42, manages the Absolute Mode fenced block, may
    scaffold README content, and enables other registered extras.
-7. Synchronize skills and opencode commands to the selected targets. The sync
+7. Synchronize skills, commands, and attribution integrations to the selected
+   targets. The sync
    updates only givn-owned fenced blocks in `AGENTS.md` and leaves all other
    content unchanged.
    The pending decision-ready-question change adds an unconditional dialog
@@ -44,8 +45,8 @@ enables them. Existing Arc42 files are not overwritten by addon scaffolding.
 
 The commit flow is:
 
-1. An OpenCode or Claude Code integration provides optional attribution values
-   to the shell process that invokes Git.
+1. An OpenCode, Claude Code, or omp integration provides optional attribution
+   values to the shell process that invokes Git.
 2. Git resolves the committer identity from that process environment and starts
    the commit operation.
 3. The local dispatcher runs an existing `commit-msg` hook first, preserving its
@@ -82,6 +83,16 @@ Initialization and managed upgrade output explicitly reports the shared hook,
 local activation result, and selected agent integrations. Managed upgrades
 stage the Claude settings entry alongside the other attribution paths so the
 retrofit is represented in the upgrade commit.
+
+The omp path is ordered as follows: omp loads `.omp/hooks/pre/givn-attribution.js`
+as a `pre` hook; before a `bash` tool call executes, the handler reads
+`ctx.models.current()` (falling back to `ctx.model`) and `pi.getThinkingLevel()`;
+it returns a revised `command` with the same attribution exports the other
+integrations set when the command creates a revision, and returns no revision
+for any other call. omp re-validates and runs the revised command, so the
+exported environment reaches the Git process that invokes the shared hook. A
+missing model leaves the LLM value as `unavailable` and omits the committer
+override; the harness marker is still written.
 
 ## 6.2 `givn new <change-id>`
 
@@ -324,7 +335,7 @@ effective graph; `disable arc42` leaves existing docs in place. The same
 commands manage other registered addon flags.
 
 `givn skills sync` resolves the selected targets, writes generated skills and
-opencode commands, refreshes the `givn-project` block, and applies/removes the
+the commands of the command-owning targets, refreshes the `givn-project` block, and applies/removes the
 Absolute Mode block according to its addon flag. `givn upgrade` rewrites the
 managed config scaffold, preserves uncommented user blocks, and auto-enables
 newly known addons not represented in the old config.

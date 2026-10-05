@@ -56,9 +56,10 @@ not alter other content.
 | `givn upgrade` on a 0.2.0 project | in/out | Clean-checkout preflight through the selected backend, managed scaffold synchronization, two backend commits, and creation of a maintenance migration change. |
 | `assets/migrations/catalog.yaml` | in | Release-owned migration bundle policy used to resolve version gaps and aggregate ordered migration phases. |
 | `givn/archive/<id>/` | out | Archived change directory, its pending/proven verification receipt, and the raw per-scope runner results. |
-| Agent target directories | out | Selected `.opencode`, `.agents`, and `.claude` skill paths; opencode commands use `.opencode/commands`. |
+| Agent target directories | out | Selected `.opencode`, `.agents`, `.claude`, and `.omp` skill paths; opencode and omp commands use their own `<target>/commands` directory. |
 | OpenCode plugin boundary | in | The generated `.opencode/plugins/givn-attribution.js` receives the current session model through OpenCode's plugin hooks and contributes shell attribution variables. |
 | Claude hook boundary | in | The generated `.claude/hooks/givn-attribution.sh` receives Claude Code's PreToolUse JSON, resolves the current model through its transcript path, and rewrites Bash commands with exported attribution variables that remain available to compound commands and shell wrappers. |
+| omp hook boundary | in | The generated `.omp/hooks/pre/givn-attribution.js` is loaded by omp's extension runner as a `pre` hook; its `tool_call` handler rewrites a revision-creating Bash command with attribution exports carrying the live session model, thinking level, and the `omp` harness marker. |
 | Durable Arc42 path | out | Fixed `docs/arc42/`; no effective output-dir setting exists. |
 
 ## 3.3 Scope

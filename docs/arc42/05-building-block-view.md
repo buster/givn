@@ -59,7 +59,7 @@ flowchart TD
 | `cli::commit` | Create one attributed revision through the selected backend: stage the named paths (or, under the `local-only` policy, every pending project path except `AGENTS.md` and the strict rules), stamp the managed attribution trailer when context is active, and commit; refuse a project without a backend by name. |
 | `cli::readme` | Scaffold the README from the marked template with the development and run managed blocks, run the deterministic completeness check behind `givn readme check`, and refresh the development and run managed blocks from the effective command file at archive time. |
 | `cli::addons` | Toggle addon flags; Arc42 enable scaffolds fixed `docs/arc42/` files without overwriting existing files. |
-| `cli::skills` | Synchronize selected skill targets and opencode commands. |
+| `cli::skills` | Synchronize the selected skill targets, their commands, and their attribution integrations. |
 | `cli::attribution` | Stamp commit messages from optional runtime attribution, format Claude Bash hook responses, and install the checked-in Git hook with a local dispatcher. |
 | `cli::upgrade` | Refresh managed config comments, preserve uncommented overrides, backfill the `run:` scaffold into `givn/commands.yaml` when the key is absent, and dispatch the exact legacy migration preparation route. |
 | `cli::migration` | Load the release migration catalog, resolve ordered bundle paths, preflight the selected backend state through the SCM seam (a dirty checkout or a missing backend is refused before any write), calculate the managed-path allowlist (including `givn/commands.yaml` for the run backfill), create managed/migration revisions on the selected backend, and write the aggregate maintenance plan. |
@@ -77,7 +77,7 @@ flowchart TD
 | `overlap::fingerprint` | Produce masked assertion sequences and best-effort exit/contains/table/DONE/TTY facts. |
 | `overlap::analysis` | Find title duplicates, shape matches, subsets, long scenarios, dispositions, and net-delta receipts. |
 | `hooks` | Execute configured hooks with `GIVN_FEATURES`; built-in hook names are resolved and cannot be made allow-failure. |
-| Embedded attribution assets | Provide the checked-in `.githooks/commit-msg` hook and generated OpenCode/Claude harness integrations. |
+| Embedded attribution assets | Provide the checked-in `.githooks/commit-msg` hook and the generated OpenCode/Claude/omp harness integrations. |
 | `integrity_hook` | Check revision-identifier/task evidence, promised step-definition files, Arc42 affected-file edits, coverage configuration, the review-level README impact decision, and — for a declared visual interface — the visual verdict, the persona disposition with its ID resolved against the project persona collection, the final-state and per-state evidence completeness, plus the operator decision for any recorded deferral. |
 | `state` | Derive status from artifact paths, markers, skip files, and the manifest graph; expose archive provenance (legacy/pending/proven) from the receipt. |
 | `scm` | Select the version-control backend for the project root (a Git worktree first, then a Fossil checkout), enforce the project-boundary rule, refuse absence, ambiguity, a nested root, or a missing executable by name before any mutation, and expose the shared revision, clean-state, publication, and revision-content operations. |

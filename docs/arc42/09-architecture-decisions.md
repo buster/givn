@@ -54,6 +54,13 @@ Synchronization keeps the `opencode` fallback for a configuration without a
 `skills:` block. This refines ADR-013's existing agent-integration boundary;
 it introduces no new decision.
 
+ADR-013 is amended a third time by the `add-omp-agent-target` change: the
+generated-guidance destinations gain `.omp` (`omp`) alongside `.opencode`,
+`.agents`, and `.claude`, and the command-owning targets write commands into
+their own `<target>/commands/` directory. The ownership rule — givn writes only
+to configured target directories plus its own fenced blocks — is unchanged,
+so this extends the same boundary rather than deciding a new one.
+
 ADR-071 is accepted by the `scm-backend` change: repository-state commands ask
 one selection seam which version-control system owns the project root. Detection
 uses the project's own markers (Git worktree first, then a Fossil checkout) and
