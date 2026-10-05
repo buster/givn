@@ -37,11 +37,15 @@ pub fn ignore_entries() -> Vec<String> {
         ".opencode/skills/givn-*/".to_string(),
         ".agents/skills/givn-*/".to_string(),
         ".claude/skills/givn-*/".to_string(),
+        ".omp/skills/givn-*/".to_string(),
         ".opencode/commands/givn-*.md".to_string(),
         ".opencode/commands/grill-*.md".to_string(),
+        ".omp/commands/givn-*.md".to_string(),
+        ".omp/commands/grill-*.md".to_string(),
         ".opencode/plugins/givn-attribution.js".to_string(),
         ".claude/hooks/givn-attribution.sh".to_string(),
         ".claude/settings.local.json".to_string(),
+        ".omp/hooks/pre/givn-attribution.js".to_string(),
         ".githooks/commit-msg".to_string(),
     ]
 }
@@ -87,13 +91,21 @@ pub fn is_rule_path(relative: &str) -> bool {
         || relative == ".opencode/plugins/givn-attribution.js"
         || relative == ".claude/hooks/givn-attribution.sh"
         || relative == ".claude/settings.local.json"
+        || relative == ".omp/hooks/pre/givn-attribution.js"
     {
         return true;
     }
-    if let Some(name) = relative.strip_prefix(".opencode/commands/") {
-        return name.starts_with("givn-") || name.starts_with("grill-");
+    for prefix in [".opencode/commands/", ".omp/commands/"] {
+        if let Some(name) = relative.strip_prefix(prefix) {
+            return name.starts_with("givn-") || name.starts_with("grill-");
+        }
     }
-    for prefix in [".opencode/skills/", ".agents/skills/", ".claude/skills/"] {
+    for prefix in [
+        ".opencode/skills/",
+        ".agents/skills/",
+        ".claude/skills/",
+        ".omp/skills/",
+    ] {
         if let Some(rest) = relative.strip_prefix(prefix) {
             return rest.starts_with("givn-");
         }
