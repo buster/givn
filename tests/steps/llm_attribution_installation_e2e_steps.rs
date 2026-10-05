@@ -27,6 +27,13 @@ fn then_stdout_reports_claude(world: &mut GivnWorld) {
     assert!(stdout.contains(".claude/hooks/givn-attribution.sh"));
 }
 
+#[then("stdout reports the omp attribution integration")]
+fn then_stdout_reports_omp(world: &mut GivnWorld) {
+    let output = world.last_output.as_ref().expect("last Givn output");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains(".omp/hooks/pre/givn-attribution.js"));
+}
+
 #[given("an initialized Git project with attribution plumbing removed after its initial commit")]
 fn given_upgrade_project(world: &mut GivnWorld) {
     let env = common::make_bare_root();
@@ -42,7 +49,7 @@ fn given_upgrade_project(world: &mut GivnWorld) {
             .status
             .success()
     );
-    let init = common::run_givn(&env, &["init", "--agents", "opencode,claude"]);
+    let init = common::run_givn(&env, &["init", "--agents", "opencode,claude,omp"]);
     assert!(init.status.success());
     // The scenario exercises the versioned rules policy: the plumbing is
     // repository content that the managed upgrade refreshes.
@@ -67,6 +74,7 @@ fn given_upgrade_project(world: &mut GivnWorld) {
         ".opencode/plugins/givn-attribution.js",
         ".claude/hooks/givn-attribution.sh",
         ".claude/settings.local.json",
+        ".omp/hooks/pre/givn-attribution.js",
     ] {
         let _ = std::fs::remove_file(root.join(path));
     }
@@ -104,6 +112,7 @@ fn then_managed_commit_contains_attribution(world: &mut GivnWorld) {
         ".opencode/plugins/givn-attribution.js",
         ".claude/hooks/givn-attribution.sh",
         ".claude/settings.local.json",
+        ".omp/hooks/pre/givn-attribution.js",
     ] {
         assert!(changed.contains(path), "managed upgrade omitted {path}");
     }
