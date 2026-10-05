@@ -147,6 +147,9 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
                 "claude" => println!(
                     "  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json"
                 ),
+                "omp" => {
+                    println!("  attribution integration: .omp/hooks/pre/givn-attribution.js")
+                }
                 _ => {}
             }
         }
@@ -229,7 +232,7 @@ fn prompt_for_targets() -> Result<Vec<AgentTarget>> {
 fn require_agent_target(targets: Vec<AgentTarget>) -> Result<Vec<AgentTarget>> {
     if targets.is_empty() {
         bail!(
-            "no agent target selected; pass --agents <opencode|agents|claude|all> \
+            "no agent target selected; pass --agents <opencode|agents|claude|omp|all> \
              or select one in the prompt (valid targets: {})",
             crate::skills::targets::valid_names().join(", ")
         );

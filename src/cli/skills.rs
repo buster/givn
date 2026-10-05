@@ -18,8 +18,10 @@ pub fn run_sync() -> Result<()> {
     for name in &targets {
         println!("  .{name}/skills/   (skills for {name})");
     }
-    if targets.iter().any(|t| t == "opencode") {
-        println!("  .opencode/commands/ (opencode slash commands)");
+    for name in &targets {
+        if name == "opencode" || name == "omp" {
+            println!("  .{name}/commands/ ({name} slash commands)");
+        }
     }
 
     Ok(())

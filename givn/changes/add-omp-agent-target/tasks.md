@@ -73,28 +73,58 @@ E2E scope: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh
 - [x] COMMIT: `fb42e95e` — `feat(initialize-a-project): <release note>`; body
       carries the scenario title.
 
-## Scenario 3: The --agents flag accepts the dotted directory form for the omp target
+## Scenario 3: The --agents flag accepts the dotted directory form for the omp target **[regression]**
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
-- [ ] COMMIT: hash —.
+- [x] RED: remove `@wip`, run targeting this scenario → observed side-effect
+      GREEN (`1 scenario (1 passed), 5 steps (5 passed)`): `AgentTarget::from_name`
+      already trims a leading dot, so `.omp` resolves once `omp` is known
+      (Scenario 1). Kept as a regression guard.
+- [x] GREEN: re-run → passes (same output).
+- [x] REFACTOR: re-run → passes (same output).
+- [x] COMMIT: `4b0f2100` — `feat(initialize-a-project): <release note>`; body
+      carries the scenario title.
 
 ## Scenario 4: The omp target receives its own guidance and attribution integration
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
-- [ ] COMMIT: hash —.
+- [x] RED: remove `@wip`, run targeting this scenario → failed as expected
+      (exit 1): `1 scenario (1 failed), 5 steps (4 passed, 1 failed)`; the added
+      assertion `the file ".omp/commands/givn-propose.md" exists` failed because
+      command writing was opencode-only.
+- [x] GREEN: production changed — `assets/agent-integrations/omp/givn-attribution.js`
+      (new), `src/skills/targets.rs` (`owns_commands()`, per-target command loop,
+      `write_command`, the omp branch in `sync_agent_integrations`, per-target
+      `reconcile_addon_artifacts`, `.omp` entries in `managed_generated_paths`),
+      `src/cli/init.rs` (report line + refusal string), `src/cli/skills.rs`
+      (report), `src/cli/addons.rs` (`.omp` cleanup), `src/main.rs` (help). Run →
+      `1 scenario (1 passed), 9 steps (9 passed)`, exit 0.
+- [x] REFACTOR: `cargo fmt` + `cargo clippy --locked --all-targets` clean;
+      re-run → `1 scenario (1 passed), 9 steps (9 passed)`.
+- [x] COMMIT: `1b4ea3c0` — `feat(initialize-a-project): <release note>`; body
+      carries the scenario title.
 
-## Scenario 5: omp leaves a command that creates no revision unchanged
+## Scenario 5: An omp project keeps the generated omp rules out of the repository
+
+- [x] RED: remove `@wip`, run targeting this scenario → failed as expected
+      (exit 1): the ignore block and the rule predicate had no `.omp` entries,
+      so the tracked `.omp` rule stayed tracked: `the revision does not track
+      ".omp/skills/givn-propose/SKILL.md"` failed.
+- [x] GREEN: production changed — `src/skills/rules.rs` (`ignore_entries()`
+      gains `.omp/skills/givn-*/`, `.omp/commands/givn-*.md`,
+      `.omp/commands/grill-*.md`, `.omp/hooks/pre/givn-attribution.js`;
+      `is_rule_path()` gains the `.omp` command prefix, the `.omp` skill prefix,
+      and the omp hook path). Run → passed, exit 0.
+- [x] REFACTOR: re-run → passes.
+- [x] COMMIT: `be1a1b04` — `feat(initialize-a-project): <release note>`; body
+      carries the scenario title.
+
+## Scenario 6: omp leaves a command that creates no revision unchanged
 
 - [ ] RED
 - [ ] GREEN
 - [ ] REFACTOR
 - [ ] COMMIT (`feat(attribute-commits): <release note>`): hash —.
 
-## Scenario 6: omp marks a partial attribution context as unavailable
+## Scenario 7: omp marks a partial attribution context as unavailable
 
 - [ ] RED
 - [ ] GREEN
@@ -116,21 +146,21 @@ E2E scope: `GIVN_FEATURES=givn/changes/add-omp-agent-target/specs ./run-tests.sh
 - [ ] Scenario-count proof: `./run-tests.sh` → N scenarios; `./run-tests.sh
       --e2e` → M scenarios; M < N (paste both).
 
-## Scenario 7 (@e2e): Consumer initializes a project and receives shared attribution plumbing
+## Scenario 8 (@e2e): Consumer initializes a project and receives shared attribution plumbing
 
 - [ ] RED
 - [ ] GREEN
 - [ ] REFACTOR
 - [ ] COMMIT (`test(e2e): <release note>`): hash —.
 
-## Scenario 8 (@e2e): omp attributes a commit using its current model
+## Scenario 9 (@e2e): omp attributes a commit using its current model
 
 - [ ] RED
 - [ ] GREEN
 - [ ] REFACTOR
 - [ ] COMMIT: hash —.
 
-## Scenario 9 (@e2e): Consumer sees the commit attribution installation report
+## Scenario 10 (@e2e): Consumer sees the commit attribution installation report
 
 - [ ] RED
 - [ ] GREEN

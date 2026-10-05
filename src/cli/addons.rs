@@ -404,7 +404,7 @@ fn remove_skill_addon_files(addon: &str) {
         return;
     };
     let project_root = std::env::current_dir().expect("current dir");
-    for base in &[".agents", ".claude", ".opencode"] {
+    for base in &[".agents", ".claude", ".opencode", ".omp"] {
         let dir = project_root.join(format!("{base}/skills/{skill_name}"));
         if dir.exists() {
             let _ = std::fs::remove_dir_all(&dir);
@@ -418,9 +418,11 @@ fn remove_command_addon_files(addon: &str) {
         return;
     };
     let project_root = std::env::current_dir().expect("current dir");
-    let file = project_root.join(format!(".opencode/commands/{cmd_name}.md"));
-    if file.exists() {
-        let _ = std::fs::remove_file(&file);
+    for base in &[".opencode", ".omp"] {
+        let file = project_root.join(format!("{base}/commands/{cmd_name}.md"));
+        if file.exists() {
+            let _ = std::fs::remove_file(&file);
+        }
     }
 }
 
