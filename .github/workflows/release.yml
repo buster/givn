@@ -325,9 +325,19 @@ jobs:
                 ;;
             esac
           done < <(git diff --name-only)
-          if [[ -n "$(git status --porcelain --untracked-files=all)" ]]; then
-            printf 'release preparation left untracked or modified files\n' >&2
+          printf 'worktree before the release commit:\n'
+          git status --porcelain --untracked-files=all || true
+          tracked_leftovers="$(git status --porcelain --untracked-files=all |
+            awk '$1 != "??" && $2 != "Cargo.toml" && $2 != "Cargo.lock" && $2 != "CHANGELOG.md"')"
+          if [[ -n "$tracked_leftovers" ]]; then
+            printf 'release preparation left unexpected tracked changes:\n%s\n' \
+              "$tracked_leftovers" >&2
             exit 1
+          fi
+          untracked_leftovers="$(git status --porcelain --untracked-files=all | awk '$1 == "??"')"
+          if [[ -n "$untracked_leftovers" ]]; then
+            printf 'note: untracked files left by the preparation run; they are not part of the release commit:\n%s\n' \
+              "$untracked_leftovers" >&2
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
