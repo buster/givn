@@ -2,7 +2,7 @@
 
 Feature: Attribute commits
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Consumer initializes a project and receives shared attribution plumbing
     Given  a project root without a givn/ directory and with a Git repository
     When  the consumer runs `givn init --agents opencode,claude,omp`
