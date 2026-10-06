@@ -1024,3 +1024,13 @@ fn when_opencode_creates_shell_without_environment(world: &mut GivnWorld, comman
         .actions
         .push(serde_json::json!({"op": "create", "command": command, "environment": false}));
 }
+
+#[when(
+    regex = r##"^OpenCode creates the shell for "([^"]+)" and abandons the hook after its first tick$"##
+)]
+fn when_opencode_creates_shell_and_abandons_hook(world: &mut GivnWorld, command: String) {
+    characterization(world)
+        .actions
+        .push(serde_json::json!({"op": "create", "command": command, "abandon": true}));
+    replay(world);
+}

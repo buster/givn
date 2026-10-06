@@ -150,6 +150,9 @@ export default {
       ctx.shell.hook(
         "create.before",
         guarded(async (event) => {
+          // The runtime may abandon this hook while the default lookup is pending, so
+          // the unavailable defaults are written before the first await.
+          stamp(event.env, undefined)
           const linked = claimShell(event.command)
           let model = linked ? sessions.get(linked.sessionID) : undefined
           if (!model?.modelID) model = lastModel

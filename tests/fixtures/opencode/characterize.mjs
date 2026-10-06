@@ -132,6 +132,18 @@ const main = async () => {
       shell: "/bin/sh",
     }
     if (action.environment !== false) event.env = { ...initialEnv }
+    if (action.abandon) {
+      // The runtime gave up on the hook after its first tick: only what the
+      // handler wrote synchronously may be relied on. Later writes are not seen.
+      result.events.push({ group: "shell", name: "create.before", keys: Object.keys(event).sort() })
+      const handler = registered.shell["create.before"]
+      if (handler) {
+        handler(event).catch(() => {})
+        await new Promise((resolve) => setImmediate(resolve))
+      }
+      result.shells.push({ op, env: { ...event.env } })
+      return
+    }
     await fire("shell", "create.before", event)
     result.shells.push({ op, env: event.env })
   }

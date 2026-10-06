@@ -200,6 +200,19 @@ Feature: Attribute commits
     And the shell environment identifies committer "Human Developer"
 
   @givn.added
+  Scenario: A cancelled configured-default lookup still leaves attribution unavailable
+    Given an isolated OpenCode "V2" attribution integration
+    And no model has been remembered
+    And OpenCode's configured-default lookup is "hangs"
+    And the shell already identifies committer "Human Developer"
+    When OpenCode creates the shell for "git commit" and abandons the hook after its first tick
+    Then the shell environment enables commit attribution
+    And the shell environment identifies LLM "unavailable"
+    And the shell environment identifies reasoning mode "unavailable"
+    And the shell environment identifies harness "opencode"
+    And the shell environment identifies committer "Human Developer"
+
+  @givn.added
   Scenario: Absent hook payloads and a missing shell environment never fail attribution
     Given an isolated OpenCode "V2" attribution integration
     And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"

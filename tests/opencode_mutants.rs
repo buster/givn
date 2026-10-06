@@ -52,6 +52,43 @@ const CASES: &[(&str, &str)] = &[
     ),
 ];
 
+/// A mutant generated from the shipped adapter by replacing `anchor`, which
+/// must occur exactly once, with `replacement`. Generation cannot go stale: a
+/// shipped-adapter edit that moves the anchor fails the anchor assertion.
+struct Generated {
+    name: &'static str,
+    anchor: &'static str,
+    replacement: &'static str,
+    title: &'static str,
+}
+
+const GENERATED: &[Generated] = &[Generated {
+    name: "no-defaults-first.js",
+    anchor: "          stamp(event.env, undefined)\n",
+    replacement: "",
+    title: "A cancelled configured-default lookup still leaves attribution unavailable",
+}];
+
+fn shipped_adapter() -> String {
+    std::fs::read_to_string(repo().join("assets/agent-integrations/opencode/givn-attribution.js"))
+        .expect("shipped adapter")
+}
+
+/// Write the generated mutant into `dir` and return its path.
+fn generate(dir: &Path, mutant: &Generated) -> PathBuf {
+    let asset = shipped_adapter();
+    let matches = asset.matches(mutant.anchor).count();
+    assert_eq!(
+        matches, 1,
+        "mutant {}: the anchor must match the shipped adapter exactly once, found {matches}",
+        mutant.name
+    );
+    let path = dir.join(mutant.name);
+    std::fs::write(&path, asset.replacen(mutant.anchor, mutant.replacement, 1))
+        .expect("write the generated mutant");
+    path
+}
+
 /// Largest number of differing lines between the shipped adapter and a mutant:
 /// a mutant is one small edit, so a larger diff means it has gone stale.
 const MAX_CHANGED_LINES: usize = 12;
@@ -146,12 +183,10 @@ fn should_stay_a_small_edit_of_the_shipped_adapter_when_a_mutant_is_committed() 
     }
 }
 
-#[test]
-fn should_fail_the_scenario_when_its_mutant_replaces_the_adapter() {
+/// Fail unless `mutant_name` (a file at `path`) fails exactly the scenario `title`.
+fn assert_mutant_fails_scenario(mutant: &str, asset: &Path, title: &str) {
     let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
-    for (mutant, title) in CASES {
-        let asset = repo().join("tests/fixtures/opencode/mutants").join(mutant);
-        assert!(asset.is_file(), "missing mutant {}", asset.display());
+    {
         let root = feature_root(title).unwrap_or_else(|error| panic!("{error:#}"));
         let output = Command::new(&cargo)
             .args([
@@ -164,7 +199,7 @@ fn should_fail_the_scenario_when_its_mutant_replaces_the_adapter() {
             ])
             .arg(format!("^{}$", regex_escape(title)))
             .env("GIVN_FEATURES", &root)
-            .env("GIVN_OPENCODE_CHARACTERIZE_ASSET", &asset)
+            .env("GIVN_OPENCODE_CHARACTERIZE_ASSET", asset)
             .env("GIVN_OPENCODE_NEGATIVE_CONTROL", "1")
             .current_dir(repo())
             .output()
@@ -178,6 +213,59 @@ fn should_fail_the_scenario_when_its_mutant_replaces_the_adapter() {
             !output.status.success() && text.contains("1 scenario (1 failed)"),
             "mutant {mutant} did not fail scenario '{title}' (status {}):\n{text}",
             output.status
+        );
+    }
+}
+
+#[test]
+fn should_fail_the_scenario_when_its_mutant_replaces_the_adapter() {
+    for (mutant, title) in CASES {
+        let asset = repo().join("tests/fixtures/opencode/mutants").join(mutant);
+        assert!(asset.is_file(), "missing mutant {}", asset.display());
+        assert_mutant_fails_scenario(mutant, &asset, title);
+    }
+}
+
+#[test]
+fn should_fail_the_scenario_when_its_generated_mutant_replaces_the_adapter() {
+    let directory = tempfile::tempdir().expect("temporary directory");
+    for mutant in GENERATED {
+        let asset = generate(directory.path(), mutant);
+        assert_mutant_fails_scenario(mutant.name, &asset, mutant.title);
+    }
+}
+
+#[test]
+fn should_parse_every_mutant_as_a_module_when_checked_with_node() {
+    let node = std::env::var_os("GIVN_OPENCODE_NODE")
+        .expect("GIVN_OPENCODE_NODE is not exported by the development shell");
+    let directory = tempfile::tempdir().expect("temporary directory");
+    let mut files: Vec<PathBuf> = std::fs::read_dir(repo().join("tests/fixtures/opencode/mutants"))
+        .expect("mutants directory")
+        .map(|entry| entry.expect("mutant entry").path())
+        .collect();
+    files.extend(
+        GENERATED
+            .iter()
+            .map(|mutant| generate(directory.path(), mutant)),
+    );
+    for file in files {
+        // `node --check` needs a module extension to parse `export`; copy as .mjs.
+        let copy = directory.path().join(format!(
+            "check-{}.mjs",
+            file.file_name().unwrap().to_string_lossy()
+        ));
+        std::fs::copy(&file, &copy).expect("copy the mutant");
+        let output = Command::new(&node)
+            .arg("--check")
+            .arg(&copy)
+            .output()
+            .expect("run node --check");
+        assert!(
+            output.status.success(),
+            "{} is not valid JavaScript: {}",
+            file.display(),
+            String::from_utf8_lossy(&output.stderr)
         );
     }
 }
