@@ -1,0 +1,69 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "givn-fixture/model-a",
+  "shell": "/nix/store/cxam19d2wm0f5zflz830z9rf72brxiw5-fish-4.9.3/bin/fish",
+  "snapshots": false,
+  "providers": {
+    "givn-fixture": {
+      "name": "Attribution fixture",
+      "env": [
+        "GIVN_FIXTURE_API_KEY"
+      ],
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": {
+        "baseURL": "http://127.0.0.1:64545/v1"
+      },
+      "models": {
+        "model-a": {
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 32768,
+            "output": 4096
+          },
+          "variants": [
+            {
+              "id": "high",
+              "settings": {}
+            }
+          ]
+        },
+        "model-b": {
+          "variants": [
+            {
+              "id": "low",
+              "settings": {}
+            }
+          ]
+        }
+      }
+    }
+  },
+  "plugins": [
+    "-opencode.provider.ollama",
+    "-opencode.provider.lmstudio",
+    "-opencode.provider.vllm"
+  ],
+  "permissions": [
+    {
+      "action": "shell",
+      "resource": "/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs",
+      "effect": "allow"
+    }
+  ],
+  "agent": {
+    "build": {
+      "tools": {
+        "*": false,
+        "shell": true
+      }
+    }
+  }
+}

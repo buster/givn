@@ -20,11 +20,11 @@ The maintainer upgrades Givn.
 ## Preconditions
 
 - The project configuration and repository state are available.
-- The active version-control system is selected and its clean-state witness is available.
+- Repository information is available for selecting the active version-control backend and reading its current state; a clean-state witness is not assumed in advance.
 
 ## Main flow
 
-1. The maintainer requests an upgrade; the system witnesses the clean state and refuses before any write when the project is dirty or has no version-control system.
+1. The maintainer requests an upgrade; the system selects the active version-control backend, obtains and checks a fresh clean-state witness, and refuses before any write when the project is dirty or has no version-control system.
 2. The system synchronizes the managed scaffold and publishes the allowlist-only upgrade revision.
 3. When the upgrade carries migration requirements, the system publishes the plan revision recording the upgrade revision.
 4. The system names any command a release removed instead of leaving a silent gap.

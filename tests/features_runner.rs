@@ -25,6 +25,36 @@
 mod common;
 mod steps;
 
+mod strictness_probe_steps {
+    use crate::steps::GivnWorld;
+    use cucumber::{World as _, given};
+
+    #[given("a registered strictness probe step")]
+    fn registered_step_panics(_: &mut GivnWorld) {
+        unimplemented!("strictness registered probe")
+    }
+
+    pub async fn run(features: &str) {
+        let writer = GivnWorld::cucumber()
+            .with_default_cli()
+            .fail_on_skipped()
+            .run(features)
+            .await;
+        let stats = writer.scenarios_stats();
+        if stats.failed > 0 || stats.skipped > 0 {
+            std::process::exit(1);
+        }
+    }
+
+    pub async fn run_filtered(features: &str, name: String) {
+        GivnWorld::cucumber()
+            .with_default_cli()
+            .fail_on_skipped()
+            .filter_run_and_exit(features, move |_, _, scenario| scenario.name == name)
+            .await;
+    }
+}
+
 use std::path::{Path, PathBuf};
 
 use cucumber::{
@@ -38,7 +68,16 @@ use steps::GivnWorld;
 #[tokio::main]
 async fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    if is_setup_strictness_probe() && !args.iter().any(|arg| arg == "--list" || arg == "--exact") {
+        strictness_probe_steps::run(&features_path()).await;
+        return;
+    }
     if args.iter().any(|a| a == "--list") {
+        if is_setup_strictness_probe() {
+            nextest_list(&args);
+            return;
+        }
+        validate_runtime_setup();
         nextest_list(&args);
         return;
     }
@@ -47,9 +86,16 @@ async fn main() {
         .find(|a| !a.starts_with('-'))
         .filter(|_| args.iter().any(|a| a == "--exact"))
     {
+        if is_setup_strictness_probe() {
+            let scenario_name = unit.rsplit("::").next().unwrap_or(unit).to_string();
+            strictness_probe_steps::run_filtered(&features_path(), scenario_name).await;
+            return;
+        }
+        validate_runtime_setup();
         nextest_run(unit).await;
         return;
     }
+    validate_runtime_setup();
     let features_path = features_path();
     let writer = GivnWorld::cucumber()
         .fail_on_skipped()
@@ -63,6 +109,36 @@ async fn main() {
     }
     if stats.failed > 0 || stats.skipped > 0 {
         std::process::exit(1);
+    }
+}
+
+fn is_setup_strictness_probe() -> bool {
+    std::env::var_os("GIVN_STRICTNESS_PROBE_FEATURE").is_some()
+}
+
+fn validate_runtime_setup() {
+    if is_setup_strictness_probe() {
+        return;
+    }
+    let admission = common::opencode_runtime::ensure_admitted().unwrap_or_else(|error| {
+        eprintln!("OpenCode runtime admission failed before Cucumber: {error:#}");
+        std::process::exit(2);
+    });
+    let supervisor = std::env::var_os("GIVN_OPENCODE_SUPERVISOR").unwrap_or_else(|| {
+        eprintln!("OpenCode setup failure: GIVN_OPENCODE_SUPERVISOR is not prepared");
+        std::process::exit(2);
+    });
+    let supervisor = PathBuf::from(supervisor);
+    if !supervisor.is_file() {
+        eprintln!(
+            "OpenCode setup failure: prepared supervisor is missing: {}",
+            supervisor.display()
+        );
+        std::process::exit(2);
+    }
+    if admission.executables.is_empty() || admission.help_sha256.is_null() {
+        eprintln!("OpenCode setup failure: runtime admission lacks executable/help provenance");
+        std::process::exit(2);
     }
 }
 

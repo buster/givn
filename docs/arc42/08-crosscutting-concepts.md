@@ -229,6 +229,17 @@ proposal) as its message subject, with the scenario title in the message body.
 The rule is guidance only — `givn commit` neither composes nor validates the
 subject.
 
+Selected-target synchronization also regenerates runtime attribution from
+embedded assets. The
+[planned OpenCode compatibility change](../../givn/changes/fix-opencode-v2-attribution/design.md)
+uses the existing writer for init/reinit, skills sync, target addition, addon
+enable/disable, and managed upgrade. The one canonical generated plugin is
+overwritten even on reinit without force; project configuration, selected
+targets, and addon choices remain governed by their existing rules. No backup,
+override, version detector, or second V1 writer is introduced. Upgrade keeps
+its witness/allowlist and pending-migration early returns. Compatibility and
+regeneration tests are planned, not executed.
+
 `AGENTS.md` is user-owned outside givn-managed fenced blocks. The sync path may
 create or replace the unconditional `givn-project` block and, when enabled, the
 `absolute-mode` block. It does not rewrite surrounding user content. The pending
@@ -419,14 +430,31 @@ There are two distinct mechanisms.
 ### 8.12a Commit attribution environment
 
 OpenCode and Claude integrations set the process-scoped Givn attribution
-variables for every shell command they prepare. The values identify the active
-model, reasoning mode, and harness, using `unavailable` where a harness has no
-value. Claude exports these variables for the complete Bash command so compound
+variables for every shell command they prepare. The values supply model,
+reasoning mode, and harness labels, using `unavailable` when no usable value is
+supplied. Claude exports these variables for the complete Bash command so compound
 commands and shell wrappers such as RTK preserve them. The checked-in Git
 `commit-msg` hook consumes the variables only when `GIVN_ATTRIBUTION_ACTIVE` is
 present, stamps only the managed co-author attribution, removes stale legacy
 Givn attribution trailers, and never blocks a commit when context or the
 installed binary is absent.
+
+The planned OpenCode adapter preserves the supplied prototype's session
+memory, global last-observed model, and V2 configured-default fallback. These
+are an adapter-specific best-effort exception to treating supplied values as
+verified current-session facts. V2 can inject `OPENCODE_SESSION_ID` after the
+attribution hook, so last-observed fallback can label another session's
+command. For example, after session A uses model A, an unidentified shell from
+session B can receive model A's label. A configured default likewise does not
+verify the command's model. Omitted variant metadata retains a remembered
+variant, and failed default lookup leaves unavailable values without blocking
+shell execution.
+
+The generic stamper only consumes supplied values and marks missing values
+unavailable; it never infers a model itself. The compatibility change preserves
+the adapter logic at the user's explicit direction, rather than correcting
+its accuracy limitations. The V2 extension is planned, not shipped; runtime
+ordering and hook selection are detailed in [chapter 6.1a](06-runtime-view.md#61a-commit-attribution).
 
 ### Configurable post hooks
 
@@ -461,6 +489,18 @@ effective overlays, normally `givn/commands.yaml` in an initialized project.
 The embedded `givn missing-testrunner` value is only the manifest fallback when
 no later project command replaces it. The current generated command template
 uses `./run-tests.sh` and `./run-tests.sh --e2e` instead.
+
+For the planned OpenCode repair, those same commands validate the pinned runtime paths exported by the active
+development shell through the same POSIX-shell validator used by the suite
+wrapper and direct runtime fixtures. All Nix derivations and exports remain in
+`flake.nix`; test scripts do not invoke Nix or Fish. Preserve feature-root/tag
+selection, result scope and instrumented Givn paths; wrapper-private exports do
+not establish canonical-gate admission.
+Missing pinned runtimes, actual tool-selected shells, or isolation fail test
+setup, not the product's optional attribution fallback. Exact resolution and
+signal-aware fixture supervision remain in
+[the compatibility design](../../givn/changes/fix-opencode-v2-attribution/design.md);
+neither mechanism has been implemented or proved.
 
 ## 8.13 Reverse-engineering Flow
 

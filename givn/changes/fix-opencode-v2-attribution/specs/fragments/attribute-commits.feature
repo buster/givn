@@ -1,0 +1,147 @@
+@givn.delta @attribute-commits
+Feature: Attribute commits
+
+  @givn.modified @e2e @wip
+  Scenario Outline: Consumer initializes a project and receives shared attribution plumbing
+    Given a project root without a givn/ directory and with a Git repository
+    When the consumer runs `givn init --agents opencode,claude`
+    Then the command exits 0
+    And stdout reports the OpenCode attribution integration
+    And the checked-in commit attribution hook exists
+    And the Git repository uses the checked-in commit attribution hook
+    And the Claude Code attribution integration exists
+    And an attributed shell command through OpenCode "<release>" reports model "givn-fixture/model-a" and reasoning mode "high"
+
+    Examples:
+      | release   |
+      | V1 floor  |
+      | V1 latest |
+      | V2 latest |
+
+  @givn.modified @e2e @wip
+  Scenario Outline: OpenCode prepares attribution using its selected model
+    Given a project with the generated OpenCode attribution integration
+    When the developer asks OpenCode "<release>" with model "givn-fixture/model-a" and reasoning mode "high" to execute the attribution fixture command
+    Then the OpenCode command exits 0
+    And the OpenCode command output reports active commit attribution
+    And the OpenCode command output identifies LLM "givn-fixture/model-a"
+    And the OpenCode command output identifies reasoning mode "high"
+    And the OpenCode command output identifies harness "opencode"
+    And the OpenCode command output identifies committer "LLM: givn-fixture/model-a via opencode"
+
+    Examples:
+      | release   |
+      | V1 floor  |
+      | V1 latest |
+      | V2 latest |
+
+  @givn.added @wip
+  Scenario Outline: OpenCode accepts either supplied model identifier spelling
+    Given an isolated OpenCode "<generation>" attribution integration
+    When OpenCode reports provider "givn-fixture" with model "model-a" using identifier "<identifier>" for session "session-a"
+    And OpenCode prepares an attributed shell for session "session-a"
+    Then the shell environment identifies LLM "givn-fixture/model-a"
+
+    Examples:
+      | generation | identifier |
+      | V1         | id         |
+      | V1         | modelID    |
+      | V2         | id         |
+      | V2         | modelID    |
+
+  @givn.added @wip
+  Scenario Outline: A remembered session model takes precedence over a later model from another session
+    Given an isolated OpenCode "<generation>" attribution integration
+    And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"
+    And OpenCode has later remembered model "givn-fixture/model-b" with reasoning mode "low" for session "session-b"
+    When OpenCode prepares an attributed shell for session "session-a"
+    Then the shell environment identifies LLM "givn-fixture/model-a"
+    And the shell environment identifies reasoning mode "high"
+
+    Examples:
+      | generation |
+      | V1         |
+      | V2         |
+
+  @givn.added @wip
+  Scenario Outline: Omitted reasoning metadata retains the session's remembered variant
+    Given an isolated OpenCode "<generation>" attribution integration
+    And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"
+    When OpenCode reports model "givn-fixture/model-b" without reasoning metadata for session "session-a"
+    And OpenCode prepares an attributed shell for session "session-a"
+    Then the shell environment identifies LLM "givn-fixture/model-b"
+    And the shell environment identifies reasoning mode "high"
+
+    Examples:
+      | generation |
+      | V1         |
+      | V2         |
+
+  @givn.added @wip
+  Scenario Outline: A shell without a remembered session uses the last observed model
+    Given an isolated OpenCode "<generation>" attribution integration
+    And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"
+    When OpenCode prepares an attributed shell with "<session context>"
+    Then the shell environment identifies LLM "givn-fixture/model-a"
+    And the shell environment identifies reasoning mode "high"
+    And the shell environment identifies committer "LLM: givn-fixture/model-a via opencode"
+
+    Examples:
+      | generation | session context   |
+      | V1         | unknown session   |
+      | V2         | unknown session   |
+      | V2         | no session        |
+
+  @givn.added @wip
+  Scenario: The remembered model takes precedence over OpenCode V2's configured default
+    Given an isolated OpenCode "V2" attribution integration
+    And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"
+    And OpenCode's configured default is model "givn-fixture/model-b" with reasoning mode "low"
+    When OpenCode prepares an attributed shell with "no session"
+    Then the shell environment identifies LLM "givn-fixture/model-a"
+    And the shell environment identifies reasoning mode "high"
+
+  @givn.added @wip
+  Scenario: OpenCode V2 uses its configured default when no model has been remembered
+    Given an isolated OpenCode "V2" attribution integration
+    And OpenCode's configured default is model "givn-fixture/model-b" with reasoning mode "low"
+    When OpenCode prepares an attributed shell with "no session"
+    Then the shell environment identifies LLM "givn-fixture/model-b"
+    And the shell environment identifies reasoning mode "low"
+    And the shell environment identifies committer "LLM: givn-fixture/model-b via opencode"
+
+  @givn.added @wip
+  Scenario Outline: No usable model leaves attribution unavailable without changing the committer
+    Given an isolated OpenCode "<generation>" attribution integration
+    And no model has been remembered
+    And OpenCode's configured-default lookup is "<fallback>"
+    And the shell already identifies committer "Human Developer"
+    When OpenCode prepares an attributed shell with "unknown session"
+    Then shell preparation succeeds
+    And the shell environment enables commit attribution
+    And the shell environment identifies harness "opencode"
+    And the shell environment identifies LLM "unavailable"
+    And the shell environment identifies reasoning mode "unavailable"
+    And the shell environment identifies committer "Human Developer"
+
+    Examples:
+      | generation | fallback                |
+      | V1         | absent                  |
+      | V2         | absent                  |
+      | V2         | no model                |
+      | V2         | model without identity  |
+      | V2         | fails                   |
+
+  @givn.added @wip
+  Scenario Outline: OpenCode V2 remembers attribution during non-title model requests
+    Given an isolated OpenCode "V2" attribution integration
+    When OpenCode reports model "givn-fixture/model-b" with reasoning mode "low" for session "session-a" during "<request>"
+    And OpenCode prepares an attributed shell for session "session-a"
+    Then the shell environment identifies LLM "givn-fixture/model-b"
+    And the shell environment identifies reasoning mode "low"
+
+    Examples:
+      | request                 |
+      | primary conversation    |
+      | compaction              |
+      | transient generation    |

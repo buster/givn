@@ -6,11 +6,11 @@
 | **Addon-aware generation** | Generation that includes only the template sections whose declared addon condition matches the current effective addon set; an addon that is off leaves no trace in the generated skill or slash command. |
 | **AGENTS.md ownership** | Givn owns only the content between its own named fenced markers. All other `AGENTS.md` content is user-owned and preserved. |
 | **Agent target** | One generated guidance destination: `opencode`, `agents`, `claude`, or `omp`, represented by `.opencode/`, `.agents/`, `.claude/`, or `.omp/`. |
-| **Attribution context** | The runtime facts available while one commit is created: LLM, reasoning mode, harness, and Givn version. Missing facts remain unknown rather than inferred. |
-| **Model identity** | The provider and model pair selected by the harness for the current attribution context. Anti-terms: model name, model label. |
+| **Attribution context** | The process-scoped values supplied while one commit is created: LLM, reasoning mode, harness, and Givn version. The generic stamper never fabricates missing values. The OpenCode adapter retains best-effort session, last-observed-model, and (in V2) configured-default fallbacks; inferred fallback values are not verified current-session facts. Without a usable supplied or fallback value, the field remains unavailable. |
+| **Model identity** | The provider and model pair supplied for commit attribution. In the OpenCode adapter it may be the remembered session model, the last observed model, or (in V2) the configured-default fallback; a fallback does not verify which model issued the command. Anti-terms: model name, model label, verified session identity for inferred values. |
 | **Commit attribution** | The best-effort LLM and harness identification visible through a revision's committer identity and message trailers; on Git through the hook, on Fossil through `givn commit`. |
 | **Harness** | The agent runtime that executes project commands, such as OpenCode, Claude Code, or omp. Anti-term: agent target. |
-| **Reasoning mode** | The harness-reported effort or thinking variant active when a commit is created. |
+| **Reasoning mode** | The effort or thinking variant supplied for commit attribution. The OpenCode adapter retains a remembered variant when later metadata omits it; that retained or default variant is best effort, not proof of the current command's reasoning. |
 | **Attribution trailer** | The managed `Co-Authored-By` message trailer containing the commit-attribution context; on Git it is a commit message, on Fossil a check-in comment. |
 | **Managed co-author attribution** | The Givn-owned `Co-Authored-By` trailer formatted as `<model>/<reasoning>@<harness> with Givn <version>`; ordinary human co-author trailers remain user-owned. |
 | **Committer identity** | The Git name and email stored as the commit creator; an agent integration may provide the name while Git supplies the configured email fallback. Fossil records its own user and has no equivalent override. |
@@ -170,6 +170,12 @@
 | **Version-controlled project** | A project whose root carries a recognized backend marker and whose executable is available; a project without one is refused by name. |
 | **Witness-bounded publication** | The publication contract: resolve the publication paths, validate the exact dirty set against them, and record only that set. Git stages the paths; Fossil records all changes and commits the witnessed dirty set. |
 | **Unpublished candidate** | A pending candidate whose publication a backend hook rejected: the receipt exists on disk but the current revision does not contain it, so a rerun publishes the on-disk merged state again. |
+
+The OpenCode V2 clauses describe the retained prototype behavior planned by
+[the OpenCode compatibility design](../../givn/changes/fix-opencode-v2-attribution/design.md),
+not shipped compatibility or executed test evidence. These definitions clarify
+adapter-supplied labels; they do not relax the generic stamper's no-fabrication
+contract. No new Aggregate, Domain Event, or persisted model selection is added.
 
 Fossil-specific clauses in this glossary (Fossil `EXTRA` dirty semantics,
 attribution through `givn commit`, the Fossil backend itself) describe the

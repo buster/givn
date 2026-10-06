@@ -1,0 +1,10 @@
+{
+  "name": "givn-opencode-fixture-modules",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@ai-sdk/openai-compatible": "3.0.62",
+    "@opencode/ai": "2.0.22"
+  }
+}

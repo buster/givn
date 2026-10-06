@@ -76,7 +76,7 @@ graph TD
 | Q-75 | Migration safety | A migration loses a behavior, E2E entry, or interaction mapping. | `givn check migration` writes a failed comparison receipt and exits non-zero before archive. |
 | Q-76 | Migration safety | A migration preserves specification evidence and source coverage. | The check writes passing behavior and source comparison receipts containing before/after counters. |
 | Q-77 | Release safety | The 0.5.0-to-0.6.0 bundle is inspected before release. | The catalog resolves one target version and the proposal/design describe semantic moves, confirmation, coverage, Handoff safety, and archive protection. |
-| Q-78 | Commit attribution | OpenCode supplies a selected provider and model in chat parameters before a shell execution. | The generated integration returns the provider/model identity, OpenCode harness, and committer name in the shell environment used for Git. |
+| Q-78 | Commit attribution compatibility (planned) | A developer runs the generated integration through real OpenCode V1 floor 1.18.29, latest stable V1, and latest stable V2 with a selected model and variant. | The completed CLI shell-tool result reports active attribution, provider/model, reasoning, OpenCode harness, and committer name. Node-only hook invocation or installed-file parity is not real-loader evidence; successful labels do not prove session-correlated accuracy. |
 | Q-79 | Commit attribution | Claude supplies a current model in the session transcript before a Bash command that uses an RTK shell wrapper. | The generated hook exports context for the complete command so the resulting Git committer and message identify that model, reasoning mode, Claude Code harness, and managed co-author attribution. |
 | Q-80 | Archive proof | The project has uncommitted work when archive starts. | The archive refuses, names the offending files, and leaves the change active with no candidate created. |
 | Q-81 | Archive proof | The full suite fails against the merged candidate. | The candidate commit and pending receipt remain in `givn/archive/<id>/`; the permanent tree is not rolled back. |
@@ -95,6 +95,45 @@ graph TD
 | Q-94 | Configurability | A project synchronizes guidance beside human instructions and a project-owned dialog override. | The target refreshes only managed guidance, preserves human content and override precedence, and does not inject a bundled full policy into a project replacement. |
 | Q-95 | Question quality | A project-familiar reader evaluates an unseen decision question after the policy is delivered. | Review distinguishes the displayed subject, brief sourced context, answer consequences and material change costs from mere formatting; an invalid option or unnecessary fact-finding question is a defect. This is reviewed evidence, not a binary compliance guarantee. |
 | Q-96 | Commit attribution | An omp session with a current model prepares a Bash command that creates a revision. | The generated `pre` hook returns the command with attribution exports so the resulting Git committer and message identify the session model, thinking level, and the `omp` harness; a command that creates no revision is returned unchanged, and an unknown model yields `unavailable`. |
+| Q-97 | Regeneration compatibility (planned) | Initialization, skills sync, target addition, addon enable, addon disable, or managed upgrade generates OpenCode attribution for a selected target. | Each distinct action is followed by a real supported-release command and completed shell result; the canonical file matches the embedded asset. Upgrade's clean-state protection and allowlist-only revision remain intact. |
+| Q-98 | Behavior preservation (planned) | Metadata changes, session context is absent/unknown, or V2 default lookup is unavailable or fails. | Public-hook characterization matches the immutable supplied prototype, including variant retention and session/last/default precedence. No usable model leaves model/reasoning unavailable, preserves the committer, and does not block shell use. These tests are not loader or session-accuracy proof. |
+| Q-99 | Installation boundaries (planned) | Reinit runs without force, init runs without addons, or sync selects only Claude. | Reinit preserves configuration while refreshing the plugin; attribution remains independent of addons; a Claude-only target neither installs nor reports OpenCode attribution. |
+
+### Planned OpenCode acceptance mapping
+
+[The compatibility design](../../givn/changes/fix-opencode-v2-attribution/design.md)
+owns the runtime provisioning and deterministic provider/catalog twins. Its
+real-loader matrix uses isolated projects, fake credentials, owned loopback
+services, and OS-enforced network isolation; missing runtimes, loader errors,
+timeouts, malformed results, or skipped scenarios fail, never silently pass.
+Real-loader and public-hook tests below are planned and have not run.
+
+Runtime validation must also work through the unchanged configured
+`./run-tests.sh` and `./run-tests.sh --e2e` commands, direct cargo/nextest, and
+instrumented coverage using the POSIX-shell validator. `flake.nix` alone owns
+Nix derivations and exports runtime paths; validator/test scripts never invoke
+Nix or Fish. Setup smoke proves runtime admission, provider readiness, and permanent-runner connectivity. The real V2 attribution assertion belongs to the selected-model scenario after the adapter implementation is in place. Admission records the actual tool-selected shell rather than assuming the configured fixture shell is used. Controlled
+SIGINT/SIGTERM, runner-exit/lease-EOF, and timeout probes must prove termination
+and reaping of the owned server, runtime descendants and twins without stopping
+an unrelated service. These are hard infrastructure prerequisites, not new
+attribution fallback scenarios, and remain unexecuted.
+
+| Quality concern | Exact delta scenario title(s) |
+|---|---|
+| Initialization and supported loaders | “Consumer initializes a project and receives shared attribution plumbing”; “OpenCode prepares attribution using its selected model” |
+| Managed refresh | “Consumer upgrades an existing project with attribution plumbing missing” (missing and V1-only variants) |
+| Other regeneration actions | “Consumer synchronizes skills and retains compatible OpenCode attribution”; “Consumer adds an agent target and receives compatible OpenCode attribution”; “Consumer enables an addon and retains compatible OpenCode attribution”; “Consumer disables an addon and retains compatible OpenCode attribution” |
+| Identifier and session precedence | “OpenCode accepts either supplied model identifier spelling”; “A remembered session model takes precedence over a later model from another session” |
+| Retained best-effort behavior | “Omitted reasoning metadata retains the session's remembered variant”; “A shell without a remembered session uses the last observed model”; “The remembered model takes precedence over OpenCode V2's configured default”; “OpenCode V2 uses its configured default when no model has been remembered” |
+| Missing context and observed request kinds | “No usable model leaves attribution unavailable without changing the committer”; “OpenCode V2 remembers attribution during non-title model requests” |
+| Installation edges | “Reinitialization without force refreshes attribution without replacing project configuration”; “Initialization without addons still enables compatible OpenCode attribution”; “Synchronization without the OpenCode target does not install its attribution integration” |
+
+The first seven titles are E2E outlines; the other eleven are regular
+characterization/installation scenarios. Their bodies remain owned by
+[the attribution delta](../../givn/changes/fix-opencode-v2-attribution/specs/fragments/attribute-commits.feature)
+and [the installation delta](../../givn/changes/fix-opencode-v2-attribution/specs/fragments/enable-commit-attribution.feature),
+not by this table. The shared support fragment retains the complete
+38-interaction inventory without duplicating including use cases.
 
 ## 10.3 Verification Signals
 

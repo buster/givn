@@ -102,6 +102,15 @@ the commit committer and message show the LLM, reasoning mode, harness, and
 Givn version.
 Missing context never blocks a human commit.
 
+Planned OpenCode compatibility covers V1 1.18.29+ within V1 and V2 through one
+generated integration, refreshed by init, skills sync, target addition, addon
+enable/disable, and managed upgrade. The supplied best-effort behavior is
+retained: last-observed or configured-default model labels and remembered
+reasoning variants are not verified current-session facts. Regeneration still
+replaces the generated file; it does not preserve manual edits. This change is
+not implemented or runtime-verified; see
+[the compatibility design](givn/changes/fix-opencode-v2-attribution/design.md).
+
 ## Default workflow
 
 ![Givn change lifecycle: proposal to archive](docs/workflow.svg)

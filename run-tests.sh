@@ -1,6 +1,19 @@
 #!/bin/sh
 set -eu
 
+# Validate pinned runtimes supplied by the active development environment.
+# The resolver is shell-only and does not invoke Nix or Fish.
+GIVN_OPENCODE_ADMISSION_JSON=$(./tests/fixtures/opencode/resolve-runtime.sh --json)
+export GIVN_OPENCODE_ADMISSION_JSON
+
+# macOS exposes TMPDIR through a logical path in some shells (for example
+# /tmp) while Git reports its physical /private/tmp path. Keep fixture paths
+# physical before Cucumber creates any temporary projects.
+if [ "$(uname -s)" = Darwin ]; then
+    TMPDIR=$(cd "${TMPDIR:-/tmp}" && pwd -P)
+    export TMPDIR
+fi
+
 # Feature scope: the caller either scopes the suite to a change delta via
 # GIVN_FEATURES (as the check review/tasks gate does) or the permanent specs
 # run. There is deliberately no path sniffing here.
@@ -54,10 +67,18 @@ case "${1:-}" in
         ;;
 esac
 
-# Prepare the ready-fixture process before the suite runs. The on-demand
-# build inside a running suite would replace the givn binary the scenarios
-# spawn (CARGO_BIN_EXE_givn) mid-run.
+# Prepare the ready fixture and supervisor before the suite runs. Obtain the
+# supervisor path from Cargo's compiler-artifact JSON rather than guessing a
+# hashed filename. The on-demand build inside the suite could replace the givn
+# binary scenarios spawn (CARGO_BIN_EXE_givn) mid-run.
 cargo build --locked --test ready_fixture
+supervisor_json=$(cargo build --locked --test opencode_supervisor --message-format=json)
+supervisor_path=$(printf '%s\n' "$supervisor_json" | jq -r 'select(.reason == "compiler-artifact" and .target.name == "opencode_supervisor") | .executable' | tail -1)
+if [ -z "$supervisor_path" ] || [ ! -x "$supervisor_path" ]; then
+    printf 'setup failure: Cargo did not report an executable opencode_supervisor artifact\n' >&2
+    exit 1
+fi
+export GIVN_OPENCODE_SUPERVISOR="$supervisor_path"
 
 case "${1:-}" in
     --e2e)

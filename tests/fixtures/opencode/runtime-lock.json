@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "resolved_at": "2026-10-04",
+  "runtimes": {
+    "opencode_v1_floor": {
+      "version": "1.18.29",
+      "metadata": "https://registry.npmjs.org/opencode-ai/latest at setup refresh; exact release platform package metadata below",
+      "platforms": {
+        "aarch64-darwin": {"url": "https://registry.npmjs.org/opencode-darwin-arm64/-/opencode-darwin-arm64-1.18.29.tgz", "integrity": "sha512-EU0qma5GPJXcDp5rENvedSfqJjqxatQW/Qzjs71pR2YdbrSh7YmBwtvnIb2/KIvfQr0DErX4ST14sbBQI2mQdg=="},
+        "x86_64-darwin": {"url": "https://registry.npmjs.org/opencode-darwin-x64/-/opencode-darwin-x64-1.18.29.tgz", "integrity": "sha512-Soyw5WI5kRI3Wbk5eeuSkMw4x+ScXi3SqzITMsi6rnVX0hsAbFCOmKOieYcd8BKJ1aUTrrG0Vv556CFzekk5Bw=="},
+        "aarch64-linux": {"url": "https://registry.npmjs.org/opencode-linux-arm64/-/opencode-linux-arm64-1.18.29.tgz", "integrity": "sha512-Lr7XXik5wPJZBV5RW+aR6Uogf1n5GogpB565m+D/jiO/vRXr9LhvCpixgAr1tiwuH1ZfMsqOOlbFQz5jgH3Tqg=="},
+        "x86_64-linux": {"url": "https://registry.npmjs.org/opencode-linux-x64/-/opencode-linux-x64-1.18.29.tgz", "integrity": "sha512-X8/wS/8mzL7Ko0zYYF6RzKax39KkxXDRoimhmzXuo0gPrZX4DQjqBNpPAByBwUjFapk73ZGSVsjDGvoNapBa1Q=="}
+      },
+      "acceptance": {"version_command": "opencode --version", "help_command": "opencode run --help", "required_flags": ["--format", "--auto", "--model", "--variant"]},
+      "config_acceptance": "Plugin-migration guide: default server()/named legacy export; validate via real V1 loader run with V1 provider shape; plugin/index.ts and run CLI source at pinned tag.",
+      "provenance": "https://raw.githubusercontent.com/anomalyco/opencode/v1.18.29/packages/opencode/src/plugin/index.ts and packages/opencode/src/cli/cmd/run.ts"
+    },
+    "opencode_v1_latest": {
+      "version": "1.18.34",
+      "metadata_url": "https://registry.npmjs.org/opencode-ai/latest",
+      "platforms": {
+        "aarch64-darwin": {"url": "https://registry.npmjs.org/opencode-darwin-arm64/-/opencode-darwin-arm64-1.18.34.tgz", "integrity": "sha512-ioBEvc3nUA64waDIVsphh92LgJgyTbq+uRd0OurdqqT9WEI9rp4J7NrA24NfL6epCa1Xr06TnRx5+th9W3T/sA=="},
+        "x86_64-darwin": {"url": "https://registry.npmjs.org/opencode-darwin-x64/-/opencode-darwin-x64-1.18.34.tgz", "integrity": "sha512-o8KXQ4jP5zfEHJAYpCz5Ifs0aa5dX+26wyLbxHEvfyGJu8hrBoNiJed3PE0uiPIlHCrj5yzF0b6k5aWonaPcTw=="},
+        "aarch64-linux": {"url": "https://registry.npmjs.org/opencode-linux-arm64/-/opencode-linux-arm64-1.18.34.tgz", "integrity": "sha512-ZSjqcH0MEbAzLEmkRC9Aop1PbWZxe2NuKONAE/x8MRQdjKdOepX7M50UpjbsNoiLMkP584Z98Mg4a42fJhouvA=="},
+        "x86_64-linux": {"url": "https://registry.npmjs.org/opencode-linux-x64/-/opencode-linux-x64-1.18.34.tgz", "integrity": "sha512-RTAMjCve4euxP2QKLuvRmdoW5J5DQK1DiZqt+7slfixyjAEi79QC2Df2oYKogibaAI4IEU8uzenoJeEl3k+UEw=="}
+      },
+      "acceptance": {"version_command": "opencode --version", "help_command": "opencode run --help", "required_flags": ["--format", "--auto", "--model", "--variant"]},
+      "config_acceptance": "Plugin-migration guide and generated V1 singular provider/agent shape; validated by real runtime setup.",
+      "provenance": "https://registry.npmjs.org/opencode-ai/latest queried 2026-10-04; release package metadata for 1.18.34"
+    },
+    "opencode_v2_latest": {
+      "version": "2.0.22",
+      "metadata_url": "https://registry.npmjs.org/@opencode/cli/latest",
+      "platforms": {
+        "aarch64-darwin": {"url": "https://registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-2.0.22.tgz", "integrity": "sha512-NNg1VCCTWSfLlNKpRb4RA6IE7H67ZBLBYmfIWjP3CxR9NPtdROQFCL8lpPf+Tz2Qje4Bb27sQOLWanYyNT/9dQ=="},
+        "x86_64-darwin": {"url": "https://registry.npmjs.org/@opencode/cli-darwin-x64/-/cli-darwin-x64-2.0.22.tgz", "integrity": "sha512-R/o6HCCHdcDlmXSqveuYBBTB3mrGjMvG4H2AO3PpUJ2X1VEaHhei0BQ0nckGjJh6JXe7J/zJZqpxuBsVJbHfOw=="},
+        "aarch64-linux": {"url": "https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-2.0.22.tgz", "integrity": "sha512-t/yuu9Dqd/M44dFH95bphu7ikO6FATMQuVk/91QBnCMzsP8zVrXU7zAxD1wVLpYYUDqIonEmi80XETlFqx7chw=="},
+        "x86_64-linux": {"url": "https://registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-2.0.22.tgz", "integrity": "sha512-DlV1qgEDDnVqpTWMPqv7tCHCcXodzZBFaMcxjsiYdY6E5gHH2Q68JfasVksyQ1nu6m1887WQKGhOsepE+oKyYw=="}
+      },
+      "acceptance": {"version_command": "opencode --version", "help_command": "opencode run --help", "required_flags": ["--server", "--standalone", "--format", "--auto", "--model"]},
+      "config_acceptance": "https://opencode.ai/v2/docs/config; nested providers and plugins array; latest release metadata and CLI help checked during admission.",
+      "provenance": "https://registry.npmjs.org/@opencode/cli/latest queried 2026-10-04; @opencode/core 2.0.22"
+    },
+    "node": {
+      "version": "24.21.0",
+      "release_metadata": "https://nodejs.org/dist/index.json, first LTS release queried 2026-10-04",
+      "package": "nixpkgs nodejs_24 pinned by flake.lock",
+      "acceptance": {"version_command": "node --version", "required": "v24.21.0"}
+    },
+    "fixture_modules": {
+      "v1": {"name": "@ai-sdk/openai-compatible", "version": "3.0.62", "url": "https://registry.npmjs.org/@ai-sdk/openai-compatible/-/openai-compatible-3.0.62.tgz", "integrity": "sha512-IAz1xv8zot4KLGa8kN7UfAA6H5+ARzAgAKLsoKxHPBzZuOc2E3ohaELg0x/JR9HVTbMbiftb0dPyCb8cT2KBRg==", "note": "Module resolution closure must be preprovisioned; no runtime install."},
+      "v2": {"name": "@opencode/ai", "version": "2.0.22", "url": "https://registry.npmjs.org/@opencode/ai/-/ai-2.0.22.tgz", "integrity": "sha512-wdD2ut4G/areDkA9bYizYiho6C1sRQ6mPqMSji93XzadavbkIcbhU/VyodOmExtZtOg2IjheJCUVCpDXQ8n8FA==", "note": "Module closure and lockfile are provisioned from package-lock.json."},
+      "package_lock": "tests/fixtures/opencode/modules/package-lock.json",
+      "package_lock_sha256": "f61a0792bef56dc6c1d31cec3d2f1329df13d5dc9d9ff19b7dc2fb97056e7c1e",
+      "npm_lock_version": 3
+    },
+    "runtime_selected_shell": {
+      "darwin": {"expected_executable": "/bin/zsh", "reason": "V2 compatibility-priority selection rejects configured fish and falls back to Darwin default; actual diagnostic is rechecked at admission."},
+      "linux": {"expected_executable": "/bin/bash", "reason": "The actual selected executable and reason must be reported by the pinned runtime during admission."}
+    }
+  }
+}

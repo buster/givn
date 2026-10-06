@@ -44,7 +44,7 @@ givn/archive/
 .githooks/commit-msg                 # checked-in shared commit hook
 .opencode/plugins/givn-attribution.js # when opencode is selected (Git and Fossil)
 .claude/hooks/givn-attribution.sh    # when claude is selected
-.claude/settings.json                # merged Givn hook entry when claude is selected
+.claude/settings.local.json          # merged Givn hook entry when claude is selected
 ```
 
 The Arc42 addon currently enabled by default during `init` scaffolds the fixed
@@ -62,6 +62,37 @@ The checked-in `.githooks/commit-msg` is shared through normal version control.
 The local dispatcher under the Git hooks directory is machine-local and is
 recreated by `givn init` or `givn skills sync`; Git clones do not activate a
 project hook merely because the source file is checked in.
+
+### Planned OpenCode compatibility footprint
+
+[The compatibility design](../../givn/changes/fix-opencode-v2-attribution/design.md)
+retains exactly one generated `.opencode/plugins/givn-attribution.js` when
+OpenCode is selected. The same embedded asset is intended for V1 1.18.29+
+within V1 and V2. A rebuilt Givn binary supplies it through the existing
+generation path; no V1 sibling, runtime-version selection, or production npm
+installation is added. Regeneration still overwrites the canonical generated
+file, without backups, merges, or preservation of arbitrary manual edits.
+
+The planned acceptance environment preprovisions real OpenCode releases and
+Node through the Nix development closure. Each example owns an isolated
+temporary project and V2 server where applicable, plus deterministic loopback
+provider/catalog twins. Darwin Seatbelt or a Linux loopback-only network
+namespace denies other traffic; missing isolation fails setup. These are
+test-only processes, not deployed Givn services. Provisioning and compatibility
+tests remain unexecuted; the detailed lifecycle belongs to the design.
+
+The planned `tests/fixtures/opencode/resolve-runtime.sh` validates pinned runtime
+paths exported by the development shell defined only in `flake.nix`. It is used
+by the suite wrapper, direct `run-tests.sh`, and runtime fixtures used in
+cargo/nextest and coverage; the shell scripts never invoke Nix or Fish. Canonical
+archive/self-dogfood commands require the development environment to be active
+but do not depend on wrapper-private runtime discovery or a globally installed
+OpenCode. Missing prerequisites and actual tool-selected shell diagnostics are
+test-only concerns.
+The separate `tests/opencode_supervisor.rs` target owns fixture process groups
+and monitors a parent lease so runner signals/process exit trigger bounded
+termination and reaping. Admission and interruption probes remain unexecuted;
+RAII alone is not an interruption-cleanup guarantee.
 
 ## 7.5 Distribution Work
 

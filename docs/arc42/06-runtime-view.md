@@ -62,13 +62,53 @@ The commit flow is:
 Model and harness changes update only the next agent shell's process-scoped
 values. No model selection is written to project configuration.
 
-The OpenCode path is ordered as follows: `chat.message` may receive the
-selected model and variant, then `chat.params` receives the selected model
-under its required `model` object and caches its provider/model identity by
-session; OpenCode then invokes `shell.env` for a shell execution; the plugin
-looks up the same session and returns the existing Givn environment protocol.
-If the payload has no usable model, the harness marker remains available and
-the missing attribution fields retain their best-effort fallback behavior.
+The existing OpenCode V1 path observes `chat.message` and `chat.params`, then
+contributes process values through `shell.env`. The
+[planned dual-generation adapter](../../givn/changes/fix-opencode-v2-attribution/design.md)
+retains those hooks and adds default `server()` delegation to the named V1
+implementation. Its default `setup(ctx)` registers exactly V2 `context`,
+`compaction`, `generate`, and shell `create.before`; neither `title` nor
+`prompt` observation is added.
+
+The supplied prototype's retained behavior is:
+
+1. Remember provider, model (`id` or `modelID`), and variant by session. Omitted
+   metadata retains session values; an explicit variant takes precedence over
+   a model variant, then the remembered variant. Model-bearing observations
+   also update module-global `lastModel`.
+2. V1 shell preparation uses its session record or `lastModel`. V2 tries a
+   usable session record, then `lastModel`, then `ctx.model.default()` only
+   when neither remembered choice has a usable identity. Default lookup errors
+   remain swallowed.
+3. Set `GIVN_ATTRIBUTION_ACTIVE=1` and harness `opencode`; initialize model and
+   reasoning to `unavailable`. A usable identity supplies the model and
+   `GIT_COMMITTER_NAME`; a truthy variant supplies reasoning. Without an
+   identity, preserve the preexisting committer name. Author identity and email
+   are unchanged.
+
+The verified V2 shell lifecycle calls `create.before` before the shell-tool
+callback adds `OPENCODE_SESSION_ID`. The prototype normally cannot correlate
+the session at that lookup point and can use another session's last model.
+The following sequence describes that retained order in the plan; it is not
+evidence that the generated adapter has been implemented or tested.
+
+```mermaid
+sequenceDiagram
+    participant Runtime as OpenCode V2
+    participant Adapter as Attribution adapter
+    participant Shell
+    Runtime->>Adapter: context, compaction, or generate with model metadata
+    Adapter->>Adapter: Retain session metadata and lastModel
+    Runtime->>Adapter: create.before with shell environment
+    Adapter->>Adapter: Usable session, otherwise lastModel, otherwise default
+    Adapter-->>Runtime: Best-effort attribution environment
+    Runtime->>Runtime: Shell-tool callback adds OPENCODE_SESSION_ID
+    Runtime->>Shell: Execute command with prepared environment
+```
+
+Fallback labels and retained variants do not prove which model or reasoning
+mode issued the command. Model memory lasts only for the plugin instance;
+there is no persistence or eviction change.
 
 The Claude path is ordered as follows: Claude invokes the generated
 PreToolUse Bash hook with a Bash command and `transcript_path`; the Givn
@@ -93,6 +133,18 @@ for any other call. omp re-validates and runs the revised command, so the
 exported environment reaches the Git process that invokes the shared hook. A
 missing model leaves the LLM value as `unavailable` and omits the committer
 override; the harness marker is still written.
+
+### Planned regeneration compatibility
+
+The existing selected-target synchronization writes the canonical OpenCode
+asset for initialization/reinitialization, `givn skills sync`,
+`givn skills targets add`, addon enable/disable, and managed upgrade. The plan
+changes the embedded asset, not these call paths. Reinitialization without
+force preserves project configuration; addon state does not gate attribution;
+an unselected OpenCode target receives no plugin. Managed upgrade retains its
+clean-state witness and calculated allowlist. An upgrade returning early for a
+pending migration is not claimed to refresh attribution. Initialization still
+warns on generation errors; other commands retain their error propagation.
 
 ## 6.2 `givn new <change-id>`
 

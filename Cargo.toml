@@ -45,6 +45,10 @@ harness = false
 name = "ready_fixture"
 harness = false
 
+[[test]]
+name = "opencode_supervisor"
+harness = false
+
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
 
