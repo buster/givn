@@ -682,3 +682,20 @@ fn given_opencode_remembered_model(
         "variant": reasoning,
     }));
 }
+
+#[when(
+    regex = r##"^OpenCode reports model "([^"]+)" without reasoning metadata for session "([^"]+)"$"##
+)]
+fn when_opencode_reports_model_without_reasoning(
+    world: &mut GivnWorld,
+    model: String,
+    session: String,
+) {
+    let (provider, model) = split_model(&model);
+    characterization(world).actions.push(serde_json::json!({
+        "op": "remember",
+        "session": session,
+        "provider": provider,
+        "model": model,
+    }));
+}

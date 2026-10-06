@@ -63,7 +63,7 @@ Feature: Attribute commits
       | V1         |
       | V2         |
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Omitted reasoning metadata retains the session's remembered variant
     Given an isolated OpenCode "<generation>" attribution integration
     And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"
