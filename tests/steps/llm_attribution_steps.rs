@@ -529,8 +529,10 @@ fn prototype_path() -> PathBuf {
 fn prototype_is_oracle(state: &CharacterizationState) -> bool {
     state.generation == "V1"
         || !state.actions.iter().any(|action| {
-            matches!(action["op"].as_str(), Some("request" | "complete"))
-                || (action["op"] == "run" && !action["session"].is_null())
+            matches!(
+                action["op"].as_str(),
+                Some("request" | "complete" | "malformed")
+            ) || (action["op"] == "run" && !action["session"].is_null())
                 || (action["op"] == "default" && action["mode"] == "model")
         })
 }
@@ -981,4 +983,13 @@ fn when_opencode_reports_shell_completed(
         "message": message,
         "command": command,
     }));
+}
+
+#[when(
+    "OpenCode delivers tool events that are not shell requests or lack a command, a session or an input"
+)]
+fn when_opencode_delivers_malformed_tool_events(world: &mut GivnWorld) {
+    characterization(world)
+        .actions
+        .push(serde_json::json!({"op": "malformed"}));
 }

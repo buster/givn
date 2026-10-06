@@ -29,6 +29,10 @@ const CASES: &[(&str, &str)] = &[
         "no-completion-hook.js",
         "A completed shell request is cleared by its completion event",
     ),
+    (
+        "no-event-guards.js",
+        "Malformed tool events are ignored without blocking the shell",
+    ),
 ];
 
 /// Largest number of differing lines between the shipped adapter and a mutant:

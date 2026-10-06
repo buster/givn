@@ -160,6 +160,25 @@ const main = async () => {
         })
         break
       }
+      case "malformed": {
+        // Payloads the runtime contract does not promise: each must be ignored.
+        const base = { agent: "build", messageID: "message-malformed" }
+        const events = [
+          // not a shell tool, but carrying a command another session also uses
+          { ...base, tool: "read", sessionID: "session-b", id: "m1", input: { command: "git commit" } },
+          // shell without an input
+          { ...base, tool: "shell", sessionID: "session-b", id: "m2" },
+          // shell with a non-string command
+          { ...base, tool: "shell", sessionID: "session-b", id: "m3", input: { command: 42 } },
+          // shell without a session
+          { ...base, tool: "shell", id: "m4", input: { command: "git log" } },
+        ]
+        for (const event of events) {
+          await fire("tool", "execute.before", event)
+          await fire("tool", "execute.after", event)
+        }
+        break
+      }
       case "create":
         await create(action, "create")
         break

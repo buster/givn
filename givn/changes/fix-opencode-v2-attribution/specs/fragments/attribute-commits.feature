@@ -152,6 +152,19 @@ Feature: Attribute commits
     Then the shell environment identifies LLM "givn-fixture/model-b"
     And the shell environment identifies reasoning mode "low"
 
+  @givn.added
+  Scenario: Malformed tool events are ignored without blocking the shell
+    Given an isolated OpenCode "V2" attribution integration
+    And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"
+    And OpenCode has later remembered model "givn-fixture/model-b" with reasoning mode "low" for session "session-b"
+    When OpenCode delivers tool events that are not shell requests or lack a command, a session or an input
+    And OpenCode requests the shell command "git commit" for session "session-a"
+    And OpenCode creates the shell for "git commit"
+    Then shell preparation succeeds
+    And the shell environment identifies LLM "givn-fixture/model-a"
+    And the shell environment identifies reasoning mode "high"
+    And the shell environment identifies committer "LLM: givn-fixture/model-a via opencode"
+
   @givn.added @e2e
   Scenario: OpenCode V2 attributes a subagent's command to the subagent's model
     Given a project with the generated OpenCode attribution integration
