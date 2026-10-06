@@ -249,6 +249,13 @@ pub fn launch_supervisor_with_env(
     );
     let root_parent = root.parent().expect("fixture root parent");
     anyhow::ensure!(root_parent.is_dir(), "fixture temp parent does not exist");
+    let repository = std::fs::canonicalize(env!("CARGO_MANIFEST_DIR"))?;
+    let physical_parent = std::fs::canonicalize(root_parent)?;
+    anyhow::ensure!(
+        !physical_parent.starts_with(&repository),
+        "refusing fixture root inside the repository checkout: {}",
+        root.display()
+    );
     let mut command = Command::new(supervisor);
     command
         .arg("--timeout-seconds")

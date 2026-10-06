@@ -40,3 +40,9 @@ givn/.spec-nli-cache/
 /provider*.log
 /provider-ready.json
 /attribution-result.json
+
+# Fixture runtime output that must never be tracked in the repository root
+/opencode.json
+/node_modules
+/package.json
+/attribution-fixture.mjs
