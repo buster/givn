@@ -213,6 +213,19 @@ Feature: Attribute commits
     And the integration warns exactly once that the registration of "tool.execute.before" failed
 
   @givn.added
+  Scenario: A failing diagnostic channel does not stop hook registration
+    Given an isolated OpenCode "V2" attribution integration
+    And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"
+    And OpenCode has later remembered model "givn-fixture/model-b" with reasoning mode "low" for session "session-b"
+    And OpenCode rejects the registration of its "tool" hook "execute.before"
+    And OpenCode's diagnostic output throws
+    When OpenCode creates the shell for "git commit"
+    Then shell preparation succeeds
+    And the integration warns exactly once that the registration of "tool.execute.before" failed
+    And the shell environment identifies LLM "givn-fixture/model-b"
+    And the shell environment identifies committer "LLM: givn-fixture/model-b via opencode"
+
+  @givn.added
   Scenario: A hung configured-default lookup does not stall shell creation
     Given an isolated OpenCode "V2" attribution integration
     And no model has been remembered

@@ -1021,6 +1021,13 @@ fn given_opencode_rejects_registration(world: &mut GivnWorld, group: String, nam
         .push(serde_json::json!({"op": "reject", "group": group, "name": name}));
 }
 
+#[given("OpenCode's diagnostic output throws")]
+fn given_opencode_diagnostics_throw(world: &mut GivnWorld) {
+    characterization(world)
+        .actions
+        .push(serde_json::json!({"op": "diagnostics-throw"}));
+}
+
 #[when("OpenCode delivers no payload to any attribution hook")]
 fn when_opencode_delivers_no_payload(world: &mut GivnWorld) {
     characterization(world)

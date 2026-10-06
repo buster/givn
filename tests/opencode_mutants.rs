@@ -64,6 +64,12 @@ struct Generated {
 
 const GENERATED: &[Generated] = &[
     Generated {
+        name: "unguarded-diagnostics.js",
+        anchor: "  try {\n    console.warn(`givn-attribution: registering hook ${kind} failed: ${error?.message ?? error}`)\n  } catch {\n    // Diagnostics must never throw into OpenCode.\n  }\n",
+        replacement: "  console.warn(`givn-attribution: registering hook ${kind} failed: ${error?.message ?? error}`)\n",
+        title: "A failing diagnostic channel does not stop hook registration",
+    },
+    Generated {
         name: "inverted-stale-rule.js",
         anchor: "              pending.messageID === event.messageID,\n",
         replacement: "              pending.messageID !== event.messageID,\n",

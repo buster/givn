@@ -54,6 +54,13 @@ console.warn = (...parts) => {
 const main = async () => {
   const input = await readStdin()
   const { asset, generation, actions } = input
+  if (actions.some((action) => action.op === "diagnostics-throw")) {
+    // The warning is recorded first, so the scenario can still see it was attempted.
+    console.warn = (...parts) => {
+      warnings.push(parts.map(String).join(" "))
+      throw new Error("diagnostic channel unavailable")
+    }
+  }
   const initialEnv = input.initialEnv ?? {}
   const mod = await import(pathToFileURL(asset).href)
   const result = {
@@ -173,6 +180,7 @@ const main = async () => {
     switch (action.op) {
       case "default":
       case "reject":
+      case "diagnostics-throw":
         break
       case "setup-again":
         if (!setupAgain) throw new Error("setup-again needs a V2 integration")
