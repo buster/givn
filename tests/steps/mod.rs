@@ -96,6 +96,8 @@ pub struct GivnWorld {
     pub(crate) transcript_variant: Option<String>,
     /// Model and reasoning mode the fixture's OpenCode subagent is configured with.
     pub(crate) subagent_config: Option<(String, String)>,
+    /// Whether the contract-probe recorder plugin is installed beside the attribution plugin.
+    pub(crate) contract_probe: bool,
     /// State for the generated Claude attribution integration scenario.
     pub(crate) claude_attribution: Option<llm_attribution_e2e_steps::ClaudeAttributionState>,
     /// State for the generated omp attribution integration scenarios.

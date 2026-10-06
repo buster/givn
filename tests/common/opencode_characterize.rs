@@ -20,6 +20,8 @@ pub struct Characterization {
     pub hooks: Value,
     /// The environment of every created shell, in creation order.
     pub shells: Vec<Value>,
+    /// Every event the harness fired: hook group, hook name, sorted payload keys.
+    pub events: Vec<Value>,
 }
 
 /// Import `asset` afresh and replay `actions` through its public hooks.
@@ -73,5 +75,9 @@ pub fn run(
         module: parsed["module"].clone(),
         hooks: parsed["hooks"].clone(),
         shells,
+        events: parsed["events"]
+            .as_array()
+            .context("harness result lists events")?
+            .clone(),
     })
 }

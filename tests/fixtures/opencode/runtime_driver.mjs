@@ -76,6 +76,9 @@ const resultPath = process.env.GIVN_FIXTURE_RESULT_PATH
 const markerPath = path.join(root, 'provider-ready.json')
 const providerLog = path.join(root, 'provider.log')
 const attributionOutput = path.join(root, 'attribution-result.json')
+// Contract probe (test-only): an extra recorder plugin beside the canonical one.
+const probeLog = process.env.GIVN_FIXTURE_CONTRACT_PROBE ? path.join(root, 'contract-probe.jsonl') : null
+const PROBE_PLUGIN = 'givn-contract-probe.js'
 const nonce = crypto.randomUUID()
 // The V2 shell is zsh (its login PATH reset cannot resolve a bare 'node'), so the
 // fixed command uses the pinned absolute Node path.
@@ -94,6 +97,7 @@ const childEnvironment = {
   GIVN_DRIVER_NONCE: nonce,
   GIVN_FIXTURE_API_KEY: 'fixture-not-a-secret',
   GIVN_FIXTURE_COMMAND: fixtureCommand,
+  ...(probeLog ? { GIVN_CONTRACT_PROBE_LOG: probeLog } : {}),
   PATH: `${path.dirname(node)}:${path.dirname(git)}:/usr/bin:/bin:/usr/sbin:/sbin`,
   LANG: 'C.UTF-8',
   LC_ALL: 'C.UTF-8',
@@ -144,8 +148,9 @@ async function assertNoAncestorOpenCodeDiscovery() {
 async function validateGeneratedPlugin() {
   await assertNoAncestorOpenCodeDiscovery()
   const entries = await fs.readdir(path.dirname(generatedPlugin)).catch(() => [])
-  if (entries.length !== 1 || entries[0] !== 'givn-attribution.js') {
-    throw new Error(`the project must contain exactly one canonical OpenCode plugin; found ${JSON.stringify(entries)}`)
+  const expectedEntries = probeLog ? ['givn-attribution.js', PROBE_PLUGIN] : ['givn-attribution.js']
+  if (JSON.stringify([...entries].sort()) !== JSON.stringify(expectedEntries)) {
+    throw new Error(`the project must contain exactly ${JSON.stringify(expectedEntries)}; found ${JSON.stringify(entries)}`)
   }
   const source = await fs.readFile(generatedPlugin, 'utf8')
   const expected = await fs.readFile(path.resolve(here, '../../../assets/agent-integrations/opencode/givn-attribution.js'), 'utf8')
@@ -399,7 +404,7 @@ async function main() {
   if (isV2) {
     const { entry, local } = await activePlugin(apiPort)
     // The control plugin only exists to show the primary assertion rejects it; its failed activation is recorded, not thrown.
-    if (!process.env.GIVN_FIXTURE_CONTROL_PLUGIN && (!entry || entry.id !== 'givn-attribution' || entry.state?.status !== 'active' || local.length !== 1)) {
+    if (!process.env.GIVN_FIXTURE_CONTROL_PLUGIN && (!entry || entry.id !== 'givn-attribution' || entry.state?.status !== 'active' || local.length !== (probeLog ? 2 : 1))) {
       throw new Error(`V2 did not activate exactly one generated canonical plugin ${generatedPlugin}: entry=${JSON.stringify(entry)} local=${JSON.stringify(local)}`)
     }
     plugins = { entry, local }
@@ -418,6 +423,7 @@ async function main() {
     child,
     server: serverInfo,
     plugins,
+    contractProbe: probeLog ? (await fs.readFile(probeLog, 'utf8').catch(() => '')).split('\n').filter(Boolean).map((line) => JSON.parse(line)) : null,
     providerRequests: providerRequests.filter((entry) => !entry.proxy),
     refusedEgress: refused,
   }

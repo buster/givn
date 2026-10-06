@@ -86,6 +86,15 @@ pub(crate) fn run_release_and_record(
         assert_canonical_plugin(&root);
     }
     assert_no_generation_warning(world);
+    if world.contract_probe {
+        // Test-only recorder, written into the isolated temporary project only.
+        std::fs::copy(
+            common::repo_path("tests/fixtures/opencode/contract_probe_plugin.js"),
+            root.join(".opencode/plugins/givn-contract-probe.js"),
+        )
+        .expect("install the contract probe plugin in the temporary project");
+        extra_env.push(("GIVN_FIXTURE_CONTRACT_PROBE", "1"));
+    }
     let evidence =
         common::opencode_runtime::run_opencode_shell(&root, release, scenario, &extra_env)
             .unwrap_or_else(|error| panic!("{error:#}"));
@@ -160,6 +169,12 @@ fn transcript(world: &GivnWorld, release: &str, evidence: &serde_json::Value) ->
         "--- attribution environment ---\n{}",
         serde_json::to_string_pretty(&evidence["result"]).unwrap_or_default()
     );
+    if let Some(events) = evidence["contractProbe"].as_array() {
+        let _ = writeln!(text, "--- recorded raw events (arrival order) ---");
+        for event in events {
+            let _ = writeln!(text, "{event}");
+        }
+    }
     if !evidence["child"].is_null() {
         let _ = writeln!(
             text,
@@ -1087,4 +1102,139 @@ fn assert_prepared_env(world: &GivnWorld, name: &str, expected: &str) {
         prepared.contains(&format!("{name}='{expected}'")),
         "prepared command does not identify {name} {expected}: {prepared}"
     );
+}
+
+#[given("an event recorder is installed beside the attribution plugin in the project")]
+fn given_event_recorder(world: &mut GivnWorld) {
+    assert!(
+        world.opencode_plugin.is_none(),
+        "the recorder must be installed before OpenCode runs"
+    );
+    world.contract_probe = true;
+}
+
+/// The raw events the recorder saw for the one shell call, in arrival order.
+fn recorded_shell_events(world: &GivnWorld) -> Vec<serde_json::Value> {
+    let evidence = world
+        .opencode_plugin
+        .as_ref()
+        .and_then(|state| state.real_result.as_ref())
+        .expect("successful real OpenCode result");
+    let events = evidence["contractProbe"]
+        .as_array()
+        .expect("the driver reports the recorded events");
+    events
+        .iter()
+        .filter(|event| event["hook"] == "create.before" || event["tool"] == "shell")
+        .cloned()
+        .collect()
+}
+
+fn recorded_event(events: &[serde_json::Value], hook: &str) -> serde_json::Value {
+    let matching: Vec<_> = events
+        .iter()
+        .filter(|event| event["hook"] == hook)
+        .collect();
+    assert_eq!(
+        matching.len(),
+        1,
+        "expected exactly one recorded {hook} event: {events:?}"
+    );
+    matching[0].clone()
+}
+
+#[then("the recorded shell events arrive as tool start, shell creation, tool completion")]
+fn then_recorded_events_in_order(world: &mut GivnWorld) {
+    let events = recorded_shell_events(world);
+    let order: Vec<&str> = events
+        .iter()
+        .map(|event| event["hook"].as_str().expect("hook name"))
+        .collect();
+    assert_eq!(
+        order,
+        ["execute.before", "create.before", "execute.after"],
+        "recorded events: {events:?}"
+    );
+}
+
+#[then("the shell creation command equals the tool start command")]
+fn then_creation_command_equals_tool_command(world: &mut GivnWorld) {
+    let events = recorded_shell_events(world);
+    let creation = recorded_event(&events, "create.before");
+    let start = recorded_event(&events, "execute.before");
+    let command = start["inputCommand"]
+        .as_str()
+        .unwrap_or_else(|| panic!("tool start carries input.command: {start}"));
+    assert_eq!(
+        creation["command"].as_str(),
+        Some(command),
+        "create.before {creation} vs execute.before {start}"
+    );
+    assert!(
+        command.ends_with("attribution-fixture.mjs"),
+        "the recorded command is the fixture command: {command}"
+    );
+}
+
+#[then("the tool start event carries the tool name, session, message and call identifiers")]
+fn then_tool_start_carries_identifiers(world: &mut GivnWorld) {
+    let events = recorded_shell_events(world);
+    let start = recorded_event(&events, "execute.before");
+    assert_eq!(start["tool"], "shell", "tool name: {start}");
+    for field in ["sessionID", "messageID", "id"] {
+        assert!(
+            start[field].as_str().is_some_and(|value| !value.is_empty()),
+            "execute.before lacks a non-empty {field}: {start}"
+        );
+    }
+    let completion = recorded_event(&events, "execute.after");
+    for field in ["tool", "sessionID", "messageID", "id"] {
+        assert_eq!(
+            completion[field], start[field],
+            "execute.after {field} differs from execute.before: {completion} vs {start}"
+        );
+    }
+}
+
+#[then("the characterization harness fires events with the same key names")]
+fn then_harness_uses_same_keys(world: &mut GivnWorld) {
+    let events = recorded_shell_events(world);
+    let asset = common::repo_path("assets/agent-integrations/opencode/givn-attribution.js");
+    let harness = common::opencode_characterize::run(
+        &asset,
+        "V2",
+        &serde_json::Map::new(),
+        &[serde_json::json!({"op": "run", "session": "s", "command": "git commit"})],
+    )
+    .expect("the harness replays one shell call");
+    for hook in ["execute.before", "execute.after", "create.before"] {
+        let real = recorded_event(&events, hook);
+        let real_keys: Vec<String> = real["keys"]
+            .as_array()
+            .expect("recorded keys")
+            .iter()
+            .map(|key| key.as_str().expect("key").to_owned())
+            .collect();
+        let fired: Vec<&serde_json::Value> = harness
+            .events
+            .iter()
+            .filter(|event| event["name"] == hook)
+            .collect();
+        assert_eq!(
+            fired.len(),
+            1,
+            "harness fired {hook} once: {:?}",
+            harness.events
+        );
+        let harness_keys: Vec<String> = fired[0]["keys"]
+            .as_array()
+            .expect("harness keys")
+            .iter()
+            .map(|key| key.as_str().expect("key").to_owned())
+            .collect();
+        assert_eq!(
+            harness_keys, real_keys,
+            "harness {hook} key names differ from the real V2 runtime"
+        );
+    }
 }

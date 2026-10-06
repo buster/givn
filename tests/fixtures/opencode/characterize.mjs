@@ -6,7 +6,7 @@
 // state (session map, last model) never leaks between cases.
 //
 // stdin : {"asset": "<abs path>", "generation": "V1"|"V2", "initialEnv": {...}, "actions": [...]}
-// stdout: {"module": {...}, "hooks": {...}, "shells": [{"op": "...", "env": {...}}]}
+// stdout: {"module": {...}, "hooks": {...}, "shells": [{"op": "...", "env": {...}}], "events": [{"group", "name", "keys"}]}
 import { pathToFileURL } from "node:url"
 
 const readStdin = async () => {
@@ -55,6 +55,7 @@ const main = async () => {
     },
     hooks: {},
     shells: [],
+    events: [],
   }
   const defaultConfig = actions.find((action) => action.op === "default")
 
@@ -91,6 +92,7 @@ const main = async () => {
   // plugin without that hook (the immutable prototype has no tool hooks)
   // simply is not called.
   const fire = async (group, name, event) => {
+    result.events.push({ group, name, keys: Object.keys(event).sort() })
     const handler = registered[group][name]
     if (handler) await handler(event)
   }
@@ -159,6 +161,8 @@ const main = async () => {
             messageID: action.message ?? `message-${action.session}`,
             id: callID,
             input: { command: action.command },
+            status: "completed",
+            result: {},
           })
         } else {
           await create(action, "run")

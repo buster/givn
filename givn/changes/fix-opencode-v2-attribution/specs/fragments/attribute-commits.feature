@@ -139,6 +139,17 @@ Feature: Attribute commits
     And the subagent's command output identifies reasoning mode "low"
     And the subagent's command output identifies committer "LLM: givn-fixture/model-b via opencode"
 
+  @givn.added @e2e
+  Scenario: OpenCode V2 delivers the shell request to the attribution adapter before shell creation
+    Given a project with the generated OpenCode attribution integration
+    And an event recorder is installed beside the attribution plugin in the project
+    When the developer asks OpenCode "V2 latest" with model "givn-fixture/model-a" and reasoning mode "high" to execute the attribution fixture command
+    Then the OpenCode command exits 0
+    And the recorded shell events arrive as tool start, shell creation, tool completion
+    And the shell creation command equals the tool start command
+    And the tool start event carries the tool name, session, message and call identifiers
+    And the characterization harness fires events with the same key names
+
   @givn.added
   Scenario Outline: A shell without a remembered session uses the last observed model
     Given an isolated OpenCode "<generation>" attribution integration
