@@ -785,3 +785,30 @@ fn then_shell_enables_attribution(world: &mut GivnWorld) {
         "shell environment: {env}"
     );
 }
+
+#[when(
+    regex = r##"^OpenCode reports model "([^"]+)" with reasoning mode "([^"]+)" for session "([^"]+)" during "([^"]+)"$"##
+)]
+fn when_opencode_reports_model_during_request(
+    world: &mut GivnWorld,
+    model: String,
+    reasoning: String,
+    session: String,
+    request: String,
+) {
+    let hook = match request.as_str() {
+        "primary conversation" => "context",
+        "compaction" => "compaction",
+        "transient generation" => "generate",
+        _ => panic!("unsupported request kind: {request}"),
+    };
+    let (provider, model) = split_model(&model);
+    characterization(world).actions.push(serde_json::json!({
+        "op": "remember",
+        "session": session,
+        "provider": provider,
+        "model": model,
+        "variant": reasoning,
+        "request": hook,
+    }));
+}

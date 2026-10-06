@@ -194,7 +194,7 @@ Feature: Attribute commits
       | V2         | model without identity  |
       | V2         | fails                   |
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: OpenCode V2 remembers attribution during non-title model requests
     Given an isolated OpenCode "V2" attribution integration
     When OpenCode reports model "givn-fixture/model-b" with reasoning mode "low" for session "session-a" during "<request>"
