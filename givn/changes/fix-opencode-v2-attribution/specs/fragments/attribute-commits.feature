@@ -172,7 +172,7 @@ Feature: Attribute commits
     And the shell environment identifies reasoning mode "low"
     And the shell environment identifies committer "LLM: givn-fixture/model-b via opencode"
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: No usable model leaves attribution unavailable without changing the committer
     Given an isolated OpenCode "<generation>" attribution integration
     And no model has been remembered

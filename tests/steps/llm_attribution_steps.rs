@@ -732,3 +732,56 @@ fn given_opencode_configured_default(world: &mut GivnWorld, model: String, reaso
         "variant": reasoning,
     }));
 }
+
+#[given("no model has been remembered")]
+fn given_no_model_remembered(world: &mut GivnWorld) {
+    assert!(
+        !characterization(world)
+            .actions
+            .iter()
+            .any(|action| action["op"] == "remember"),
+        "a model was already remembered"
+    );
+}
+
+#[given(regex = r##"^OpenCode's configured-default lookup is "([^"]+)"$"##)]
+fn given_opencode_default_lookup(world: &mut GivnWorld, lookup: String) {
+    assert!(
+        matches!(
+            lookup.as_str(),
+            "absent" | "no model" | "model without identity" | "fails"
+        ),
+        "unsupported default lookup: {lookup}"
+    );
+    characterization(world).actions.push(serde_json::json!({
+        "op": "default",
+        "mode": lookup,
+    }));
+}
+
+#[given(regex = r##"^the shell already identifies committer "([^"]+)"$"##)]
+fn given_shell_identifies_committer(world: &mut GivnWorld, committer: String) {
+    characterization(world)
+        .initial_env
+        .insert("GIT_COMMITTER_NAME".to_owned(), committer.into());
+}
+
+#[then("shell preparation succeeds")]
+fn then_shell_preparation_succeeds(world: &mut GivnWorld) {
+    let state = characterization(world);
+    match state.outcome.as_ref().expect("a shell was prepared") {
+        Ok(result) => assert!(!result.shells.is_empty(), "no shell was created"),
+        Err(error) => panic!("OpenCode shell preparation failed: {error}"),
+    }
+}
+
+#[then("the shell environment enables commit attribution")]
+fn then_shell_enables_attribution(world: &mut GivnWorld) {
+    let env = characterized_shell_env(world).expect("characterized shell environment");
+    assert_eq!(
+        env.get("GIVN_ATTRIBUTION_ACTIVE")
+            .and_then(serde_json::Value::as_str),
+        Some("1"),
+        "shell environment: {env}"
+    );
+}
