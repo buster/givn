@@ -87,7 +87,7 @@ Feature: Enable commit attribution
     And the project configuration is unchanged
     And the generated OpenCode attribution integration matches the supplied attribution behavior across supported generations
 
-  @givn.added @wip
+  @givn.added
   Scenario: Initialization without addons still enables compatible OpenCode attribution
     Given a project root without a givn/ directory and with a Git repository
     When the consumer runs `givn init --agents opencode --no-addons`
