@@ -439,22 +439,23 @@ present, stamps only the managed co-author attribution, removes stale legacy
 Givn attribution trailers, and never blocks a commit when context or the
 installed binary is absent.
 
-The planned OpenCode adapter preserves the supplied prototype's session
-memory, global last-observed model, and V2 configured-default fallback. These
-are an adapter-specific best-effort exception to treating supplied values as
-verified current-session facts. V2 can inject `OPENCODE_SESSION_ID` after the
-attribution hook, so last-observed fallback can label another session's
-command. For example, after session A uses model A, an unidentified shell from
-session B can receive model A's label. A configured default likewise does not
-verify the command's model. Omitted variant metadata retains a remembered
-variant, and failed default lookup leaves unavailable values without blocking
-shell execution.
+The planned OpenCode adapter resolves the issuing session's model first: V1's
+shell hook names the issuing session, and in V2 the adapter links each shell
+request to its issuing session through the tool hooks, subagent child sessions
+included. A command that cannot be linked falls back to the global
+last-observed model and, in V2, the configured default. These fallbacks are an
+adapter-specific best-effort exception to treating supplied values as verified
+current-session facts; the user chose to keep them. For example, a user `!`
+command typed while a subagent last reported model B receives model B's label.
+A configured default likewise does not verify the command's model, and real
+V2 supplies no reasoning mode for it. Omitted variant metadata retains a
+remembered variant, and failed default lookup leaves unavailable values
+without blocking shell execution.
 
 The generic stamper only consumes supplied values and marks missing values
-unavailable; it never infers a model itself. The compatibility change preserves
-the adapter logic at the user's explicit direction, rather than correcting
-its accuracy limitations. The V2 extension is planned, not shipped; runtime
-ordering and hook selection are detailed in [chapter 6.1a](06-runtime-view.md#61a-commit-attribution).
+unavailable; it never infers a model itself. The V2 extension is planned, not
+shipped; runtime ordering and hook selection are detailed in
+[chapter 6.1a](06-runtime-view.md#61a-commit-attribution).
 
 ### Configurable post hooks
 

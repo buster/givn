@@ -1,6 +1,14 @@
 # Design Review: fix-opencode-v2-attribution
 
-Reviewed and hardened: 2026-10-04. Documentation/specification work only.
+Reviewed and hardened: 2026-10-04; re-reviewed 2026-10-05 (flake-only Nix
+boundary) and 2026-10-06 (V2 rewrite including subagents, D3).
+Documentation/specification work only.
+
+Reading note: sections up to “Re-review sign-off (2026-10-05)” are the record
+of the earlier plan, in which only `server()` delegation was added to the
+supplied prototype. Where they still differ from the current plan, the section
+“Re-review after the V2 rewrite (2026-10-06)” supersedes them. Rows below that
+the 2026-10-06 hardening corrected in place are marked “(updated 2026-10-06)”.
 
 ## Evidence boundary
 
@@ -112,16 +120,16 @@ not independently executed here.
 | Branch | Finding |
 |---|---|
 | Scope | No proposal/spec mismatch. Both deltas extend existing `attribute-commits` and `enable-commit-attribution` under the reusable support fragment, `givn/specs/fragments/fragment.md`. Changed actions are init, skills sync, target addition, addon enable, addon disable, and managed upgrade. Reinit, no-addons init, and target exclusion are regular variants. Three modified titles already exist permanently. Done requires supported-loader compatibility **and** retained behavior; no separate generated V1 adapter, version detection, preservation feature, or generic stamper change. |
-| Decision ledger | Supported-generation compatibility (D1) and supplied-behavior preservation (D2) retain full provenance/options/rejections in `proposal.md`; `design.md` explicitly resolves both. Source is a direct defect report, not an ideation seed. Binding operator decisions were not reopened. |
+| Decision ledger | (updated 2026-10-06) Supported-generation compatibility (D1), supplied-behavior preservation (D2), the V2 rewrite (D3) and its stale-request refinement retain full provenance/options/rejections in `proposal.md`; `design.md` resolves all four in its decision ledger and states that D3 supersedes D2 for the V2 session link and default lookup. Source is a direct defect report, not an ideation seed. |
 | Tech choices | `src/config/embedded.rs` embeds the asset; `src/skills/targets.rs:399–448` is the canonical selected-target integration writer and overwrites unconditionally. Init, skill sync, target addition, addon enable/disable and upgrade converge there. Official V2 plugin migration docs support default `id/server/setup` and V1 object entrypoints from 1.18.29. Grilling inspected released `@opencode/core@2.0.22` default `id/setup` or `id/effect` decoding. One local asset replacement is simpler than runtime detection or two generated files. No new production library or ADR. |
 | Tech choices / source freshness | Loaded OpenCode skill. Read official V2 plugins, plugin migration and configuration docs; no V1 documentation was used to infer V2 shapes. V2 `context`, `compaction`, `generate`, shell `create.before`, and `ctx.model.default()` are valid. Context7 resolution was attempted again in hardening and returned `Invalid API key`; official V2 docs and the released-source evidence in the grilling record are the fallback. Existing release refresh/pinning remains a mandatory mechanical setup step, not an invented current version. |
 | Tech choices / runtime shell | Corrected the false assumption that the built-in V2 tool executes the configured fixture shell. Grilling inspected released V2 compatibility-priority selection: fish is incompatible and Darwin falls back to `/bin/zsh`. The revised orchestration uses POSIX `sh`; the pinned Fish executable remains a test dependency only for explicitly configured fixture behavior. Validation records the actual selected executable/reason per pinned runtime/platform and requires that executable; fixed `node attribution-fixture.mjs` remains valid. No production shell logic was introduced. |
-| Missing scenarios | All mandatory retained paths are represented: missing/no/identityless/failing default, absent/unknown sessions, remembered/session/default precedence, omitted-variant retention, both `id`/`modelID` spellings, and the three non-title request kinds. Whole-source preservation/registration comparison prevents accidental hook changes. Executable/loading/result/timeout failures are hard infrastructure errors, not new product fallbacks. No missing scenario or authorized scope expansion was identified; feature edits are unnecessary. |
-| Testability | `tests/features_runner.rs:54–64` uses `fail_on_skipped()` and explicit failed/skipped non-zero exit; nextest uses the same strictness at `:125–133`. Design requires independent undefined/unimplemented probes under cargo, nextest and E2E, nonempty `unimplemented!` starting bindings, anchored single-title command, concrete attribution/committer assertions, and 18 scenario identities. Current 38-line V1-only asset cannot pass the V2 loader matrix. These observations are static; strictness probes have not run. Characterization reuse is governed only by the operator exception above. |
+| Missing scenarios | All mandatory retained paths are represented: missing/no/identityless/failing default, absent/unknown sessions, remembered/session/default precedence, omitted-variant retention, both `id`/`modelID` spellings, and the three non-title request kinds. (updated 2026-10-06) Registration is checked against the design's hook list; prototype behavior comparison covers the V1 hooks and retained fallbacks only, because the V2 `setup()` is rewritten. Executable/loading/result/timeout failures are hard infrastructure errors, not new product fallbacks. No missing scenario or authorized scope expansion was identified; feature edits are unnecessary. |
+| Testability | `tests/features_runner.rs:54–64` uses `fail_on_skipped()` and explicit failed/skipped non-zero exit; nextest uses the same strictness at `:125–133`. Design requires independent undefined/unimplemented probes under cargo, nextest and E2E, nonempty `unimplemented!` starting bindings, anchored single-title command, concrete attribution/committer assertions, and (updated 2026-10-06) 23 scenario identities. Current 38-line V1-only asset cannot pass the V2 loader matrix. These observations are static; strictness probes have not run. Characterization reuse is governed only by the operator exception above. |
 | Testability / canonical gate admission | The operator clarified that Nix must appear only in `flake.nix`. Revised design inlines the pinned runtime/module derivations in `flake.nix`, exports the exact `GIVN_OPENCODE_*` paths from the dev-shell hook, and uses POSIX-shell `resolve-runtime.sh` only to validate those exported paths. `run-tests.sh`, `run-suite.sh`, and direct Cucumber test admission do not invoke Nix or Fish; without the active dev-shell environment they fail with a named missing-variable error. The wrapper retains the canonical `./run-tests.sh` and `./run-tests.sh --e2e` commands and prepares `ready_fixture`/supervisor before scenarios. Parent direct-shell validation succeeded with explicit paths from the existing Nix store; this is validator evidence, not a flake rebuild or test-suite proof. |
 | Testability / binding enforcement | `src/integrity_hook.rs:526–540` skips promised-file validation without exact `## Step Definitions`. Added that heading and four rows, capability in column one and exactly one existing path in column two: `tests/steps/llm_attribution_steps.rs`, `tests/steps/llm_attribution_e2e_steps.rs`, `tests/steps/llm_attribution_installation_steps.rs`, `tests/steps/llm_attribution_installation_e2e_steps.rs`. Regular/E2E remain separate. Presence is not assertion-quality or GREEN proof. |
-| E2E fidelity | Seven changed E2E outlines correspond to distinct capability/action boundaries; release, target and missing/obsolete Examples are variants. Real provisioned OpenCode executes its built-in shell tool against deterministic local twins. Primary assertion is the completed acknowledged CLI tool result, not model prose; regeneration also retains Givn command reports. Read `llm_attribution_e2e_steps.rs`: its Node public-hook call and mutable-root parity are explicitly replaced by the real driver, not credited as loader proof. Grilling searched for stronger drivers and found none. The separate 38-line legacy harness plugin is excluded and remains untouched. |
-| Interaction coverage | All 38 durable inventory titles match permanent or delta E2E titles and design matrix rows. Corrected the retained “Synchronized guidance explains how to resolve the deterministic gates” driver to `tests/steps/mod.rs::user_runs` (real sync) plus `prose_consolidation_steps.rs` (generated-content assertions), not instruction-reading `skill_rewrites_steps.rs`. Non-attribution rows remain outside repair scope and their historical assertion limitations are not claimed fixed. |
+| E2E fidelity | (updated 2026-10-06: eight, adding the V2 subagent characterization scenario) Seven changed E2E outlines correspond to distinct capability/action boundaries; release, target and missing/obsolete Examples are variants. Real provisioned OpenCode executes its built-in shell tool against deterministic local twins. Primary assertion is the completed acknowledged CLI tool result, not model prose; regeneration also retains Givn command reports. Read `llm_attribution_e2e_steps.rs`: its Node public-hook call and mutable-root parity are explicitly replaced by the real driver, not credited as loader proof. Grilling searched for stronger drivers and found none. The separate 38-line legacy harness plugin is excluded and remains untouched. |
+| Interaction coverage | (updated 2026-10-06: 39 with the subagent row) All 38 durable inventory titles match permanent or delta E2E titles and design matrix rows. Corrected the retained “Synchronized guidance explains how to resolve the deterministic gates” driver to `tests/steps/mod.rs::user_runs` (real sync) plus `prose_consolidation_steps.rs` (generated-content assertions), not instruction-reading `skill_rewrites_steps.rs`. Non-attribution rows remain outside repair scope and their historical assertion limitations are not claimed fixed. |
 | Risk | Most likely failure is isolated runtime admission/cleanup, not adapter entrypoint complexity. RAII does not cover runner SIGINT/SIGTERM or `process::exit`. Design now specifies test-only `tests/opencode_supervisor.rs`, existing `libc`, `sigaction` with signal-safe notification, parent pipe lease/EOF via `poll/read`, `CommandExt::process_group`, owned fixture PGID, bounded readiness/deadlines, TERM then 3-second KILL escalation, direct-child reaping, Linux subreaper/waitpid and Darwin OS-reaping/disappearance checks. Controlled interrupt, runner-exit and timeout probes must terminate owned server/descendants/twins without touching an unrelated sentinel service. No probe ran; chapter 11 now states this boundary. |
 | Domain context / use-case and Persona | Support fragment owns the capabilities; initialization and upgrade contracts have typed `Includes: fragment: support`. Historical use-case rename provenance does not change current identity. Three confirmed Personas are backed by `givn/ideation/multi-scm-support/session.md` confirmation and promotion to `givn/personas/`. Developer needs no repeated manual repair and preserved targets/work; technical role needs parseable machine/revision evidence without human-approval substitution; maintainer needs one writer, truthful best effort, immutable baseline and bounded harness. No Actor, Persona, use case, Aggregate or Domain Event was invented. |
 | Domain context / use-case scope | Applied review instruction's rejection criteria to linked contracts: identifiable actors/triggers, mutating guarantees, goal-shaped capability ownership, numbered extension references and typed Includes remain valid. Found pre-existing upgrade contradiction: precondition assumed a clean-state witness that main flow obtains; `src/cli/migration.rs:351–354` selects backend and reads dirty entries. Narrowly changed `givn/specs/upgrade-a-project/usecase.md` to repository/backend information availability as precondition and fresh witness acquisition/check in main flow. Missing-backend refusal remains reachable; no product scope rewrite. |
@@ -130,8 +138,8 @@ not independently executed here.
 | Deferrals | No implicit runtime, network, strictness or terminal-evidence deferral. Unavailable prerequisites fail. Sole explicit operator exception is the production-diff rule for real characterization/reuse revisions, not skipping tests. Hardening's lack of shell initially blocked instruction/lint validation; actual parent command evidence on 2026-10-04 resolves that historical blocker without deferral. |
 | ADR qualification | Active/archive register search and generated-agent ownership (ADR-013) / preservation-oriented upgrade (ADR-023) reads found unchanged boundaries. Both candidates fail qualification and name exactly one canonical lower-level home; summaries below. No new, amended, replaced or archived MADR required. Test-only resolver/supervisor mechanics fit the same reversible design rather than a new authority boundary. Chapter 11 contains retained consequences. |
 | Architecture documentation | Original all-12 independent table found row 1 Yes versus marker No: selection row maps chapters 01 **and 10**, with quality refinement already in chapter 10. Corrected design handoff and marker to Yes without inventing chapter-01 goals. Corrected stale `.claude/settings.json` footprint to `.claude/settings.local.json`, confirmed by `src/skills/targets.rs:452` and glossary's user-owned/shared-settings distinction. Aligned chapters 05/07/08/10/11 with shared admission and bounded teardown; all twelve are substantive. Original and final assessment preserved below. |
-| Ubiquitous language | Attribution context, Model identity and Reasoning mode in `docs/arc42/12-glossary.md` already describe best-effort inference and retained variants, not verified current-session facts. Session map/lastModel are ephemeral adapter state, not Aggregates. Existing `llm_attribution_*` binding names are code symbols, not new domain nouns; no renaming. Generic stamper still never fabricates missing values. |
-| Security / errors / Git | Cleared fixture credentials/config, fake keys only, owned ports and fixed safe command; no inherited provider secrets, global plugins or host service. Adapter mutability and swallowed default lookup errors remain binding prototype behavior; driver errors are hard. Supplied immutable baseline hashes remain unchanged in design; no root plugin rewrite. No issue ID, commit identifier, executed GREEN or cleanup proof was invented. Dirty user work preserved by narrow patch-only documentation edits. |
+| Ubiquitous language | (updated 2026-10-06: Issuing session added; Model identity amended) Attribution context, Model identity and Reasoning mode in `docs/arc42/12-glossary.md` already describe best-effort inference and retained variants, not verified current-session facts. Session map/lastModel are ephemeral adapter state, not Aggregates. Existing `llm_attribution_*` binding names are code symbols, not new domain nouns; no renaming. Generic stamper still never fabricates missing values. |
+| Security / errors / Git | Cleared fixture credentials/config, fake keys only, owned ports and fixed safe command; no inherited provider secrets, global plugins or host service. Swallowed default lookup errors remain retained behavior (the V2 half is rewritten under D3); driver errors are hard. Supplied immutable baseline hashes remain unchanged in design; no root plugin rewrite. No issue ID, commit identifier, executed GREEN or cleanup proof was invented. Dirty user work preserved by narrow patch-only documentation edits. |
 
 ## Open questions
 
@@ -154,9 +162,9 @@ remains at this planning-stage sign-off.
 
 | Persona | Relevance | Evidence / disposition |
 |---|---|---|
-| Primary user, developer/maintainer (`developer--primary-user`) | Routine init/sync/upgrade should not require manual plugin repair or lose selected targets/work. | Proposal promise, six-action generation matrix, reinit/no-addons/no-target edges and clean upgrade fixture. Relevant; planned assertions preserve outcome, not yet runtime-proved. |
-| Technical role, authoring agent/automation (`agent--technical-role`) | Needs exact executable commands, JSON tool results and one revision per scenario; cannot supply human judgment. | Shared admission, fail-closed result scope, explicit binding table, anchored command and authorized characterization evidence rule. Relevant; neither operator authorization nor prose substitutes for execution. |
-| Givn maintainer/owner (`givn-maintainer--owner`) | Must preserve one adapter/writer, prototype logic and truthful compatibility scope with bounded test processes. | Immutable baseline, whole-source comparison, recent-V1/V2 matrix, risk corrections and non-ADR qualification. Relevant; no broader production seam or vocabulary introduced. |
+| Primary user, developer/maintainer (`developer--primary-user`) | Routine init/sync/upgrade should not require manual plugin repair or lose selected targets/work; on V2 each agent's commits, subagents included, should carry that agent's model. | Proposal promise, six-action generation matrix, reinit/no-addons/no-target edges and clean upgrade fixture; (updated 2026-10-06) gains subagent-correct labels through the issuing-session link and its regular/E2E scenarios. Relevant; planned assertions preserve outcome, not yet runtime-proved. |
+| Technical role, authoring agent/automation (`agent--technical-role`) | Needs exact executable commands, JSON tool results and one revision per scenario; cannot supply human judgment. | Shared admission, fail-closed result scope, explicit binding table, anchored command and authorized characterization evidence rule. Relevant; unchanged by the 2026-10-06 rewrite. Neither operator authorization nor prose substitutes for execution. |
+| Givn maintainer/owner (`givn-maintainer--owner`) | Must keep one adapter/writer and a truthful compatibility scope with bounded test processes. | (rewritten 2026-10-06) V1 semantics preserved; V2 session link plus retained fallbacks; limits documented (chapter 11 R-73–R-81, design “Retained risks and limitations”). Recent-V1/V2 matrix, non-ADR qualification of all three candidates. Relevant; no broader production seam or vocabulary beyond the issuing session. |
 
 ## Architecture documentation (arc42) check
 
@@ -206,6 +214,7 @@ selection row, not an instruction to rewrite every mapped chapter.
 |---|---|---|---|
 | Shared dual-generation entrypoint and recent-V1/V2 support realization | Alternatives PASS; architectural impact PASS (external protocol, ownership unchanged); durable consequence FAIL (one reversible asset, no migration/authority boundary); lower-level artifact FAIL (complete rationale fits design); existing-ADR check PASS; must-be-shared SUPPORTING. **NOT_QUALIFIED**. | CANONICAL_ARTIFACT: `givn/changes/fix-opencode-v2-attribution/design.md` | Same design is the cheaper home. Single-change reversibility applies; no multi-change constraint applies; support promise is observable product behavior. No new/amended/replaced ADR. |
 | Retain supplied best-effort model and reasoning fallbacks | Alternatives PASS (preserve versus current-session-only unavailable); architectural impact FAIL; durable consequence FAIL; lower-level artifact FAIL; existing-ADR check PASS; must-be-shared SUPPORTING. **NOT_QUALIFIED**. | CANONICAL_ARTIFACT: `givn/changes/fix-opencode-v2-attribution/specs/fragments/attribute-commits.feature` | Same feature is the cheaper home. No moved component, authority, deployment or persisted-data invariant. All three falsifications apply; glossary/risks clarify rather than duplicate ADR rationale. |
+| V2 rewrite: link each shell command to its issuing session; drop stale same-session requests (D3 and refinement, added 2026-10-06) | Alternatives PASS (three unlinked fallbacks; three stale-request strategies); architectural impact FAIL (internal state of one adapter asset); durable consequence FAIL (in-memory, reversible in one change); lower-level artifact FAIL; existing-ADR check PASS (registers re-searched 2026-10-06); must-be-shared SUPPORTING. **NOT_QUALIFIED**. | CANONICAL_ARTIFACT: `givn/changes/fix-opencode-v2-attribution/design.md` | Cheaper home: the D3 entry in `design.md` plus `attribute-commits.feature`. All three falsifications apply. No MADR. |
 
 Existing-check evidence: searched active/archived `docs/arc42/adr/` for OpenCode,
 plugin, attribution and agent integration; read both registers and generated-agent
@@ -350,7 +359,8 @@ cleanup, coverage and terminal proofs remain **mandatory and UNEXECUTED** before
 scenario completion. This PASS is design-review evidence only, not implemented
 GREEN, a completion review, or archive proof. No tasks were authored here.
 
-DESIGN-REVIEW: FAIL
+Historical marker of this 2026-10-04/05 section: FAIL (superseded by the
+re-review sign-offs below).
 
 ## Re-review sign-off (2026-10-05)
 
@@ -372,5 +382,220 @@ The previous Fish-based PASS is historical and superseded. The current design
 review passes for the revised flake-only Nix boundary. This does not complete
 the setup task or prove the full suites, real V2 plugin activation, network
 isolation, or complete supervisor lifecycle matrix.
+
+Historical marker (2026-10-05): PASS for the flake-only boundary. Superseded by
+the V2 rewrite (D3) on 2026-10-06; see the re-review below.
+
+## Re-review after the V2 rewrite (2026-10-06)
+
+The user asked for a rewrite of the OpenCode plugin for V2, including
+subagents; the decision is recorded as D3 in `proposal.md` and `design.md`.
+The production asset `assets/agent-integrations/opencode/givn-attribution.js`
+is final for this plan and was read in full; this hardening did not edit it,
+the user-owned `.opencode/plugins/*.js`, or `tasks.md`. A fresh-context grill
+found about thirty passages still describing the earlier plan (prototype kept
+byte-for-byte except `server()`). This section records the grilling outcome,
+the user decisions, and the hardening applied.
+
+Hardening ran `givn instructions design-review --change fix-opencode-v2-attribution`
+and `givn instructions arc42-docs --change fix-opencode-v2-attribution` first
+(both resolved and read; the first invocation also loaded the domain-modeling
+pointer). Released 2.0.22 `@opencode/core` and `@opencode/client` tarballs in
+the session scratchpad were read for the subagent observation point.
+
+### Grilling log (2026-10-06)
+
+| # | Branch | Question | Outcome |
+|---|---|---|---|
+| 1 | Missing scenarios / Risk | How does the V2 link forget a shell request that never reaches shell creation? | User: “Drop older same-session entries”. Two regular scenarios added. |
+| 2 | Testability | The V2 subagent E2E scenario can pass before the change. Keep it? | User: “Keep it as written”. Recorded as characterization; observation point specified. |
+| 3 | Testability / Scope | The configured-default scenario expects reasoning `low`, but real V2 `Model.Info` has no variant. | User: “Keep reasoning low”. Retained, documented spec/reality mismatch. |
+| 4 | Scope | The release note still promised “without changing the supplied attribution behavior”. | User-supplied release note applied to `proposal.md`. |
+| 5 | Scope / Architecture documentation | Stale “prototype except `server()`” passages, scenario/E2E counts, diagrams, matrix, invariant table, ADR evidence, old PASS marker. | Code-resolved; edits listed below. |
+| 6 | Ubiquitous language | No term for the session that issued a command; Model identity order was stale. | Code-resolved: Issuing session added; Model identity amended. |
+| 7 | Interaction coverage | The subagent E2E action had no fragment inventory row. | Code-resolved: row added (39 rows). |
+| 8 | Decision ledger | D1–D3 and the refinement must resolve; D2 supersession must be explicit. | Code-resolved: ledger table in `design.md`. |
+| 9 | ADR qualification | D3 had no verdict. | Code-resolved: `NOT_QUALIFIED`, `CANONICAL_ARTIFACT`. |
+| 10 | Architecture documentation | Chapters 05, 06, 08, 10, 11, 12 described the old plan. | Code-resolved: updated; 02, 03, 04, 07, 09 checked unchanged. |
+| 11 | Persona disposition | Maintainer disposition cited prototype logic and whole-source comparison. | Code-resolved: dispositions rewritten above. |
+| 12 | Git hygiene | Junk files in revision `fe9cf077`. | Not handled here at the orchestrator's direction; the orchestrator owns it as a separate action. Not a design question. |
+| 13 | Closure | Is the plan internally consistent after hardening? | Resolved by the closure state below. |
+
+### Stale pending shell requests (2026-10-06 Q1)
+
+- Question: “How should the plugin forget a pending shell request that never
+  reached shell creation?” Context: a request vetoed by another plugin or
+  aborted fires `execute.before` but neither `create.before` nor
+  `execute.after` (released source: `execute.after` fires only when the tool
+  ran, with status completed or error). Example: session A's `git commit` is
+  aborted; session B's later `git commit` would be labeled with A's model.
+- Options:
+  1. **Expire by age.** Drop a pending request after a fixed time. Gain: also
+     clears quiet sessions. Cost: a slow permission prompt expires a
+     legitimate request, whose command falls back to the last observed model.
+  2. **Drop older same-session entries (recommended).** On each shell-tool
+     `execute.before`, drop that session's pending entries from an older
+     message. Gain: no timer. Cost: a quiet session's stale entry stays until
+     cleanup.
+  3. **Accept.** Keep stale entries until unload. Gain: simplest. Cost: an
+     aborted request can label any later identical command.
+- User answer: **“Drop older same-session entries”**.
+- Realization: entries removed in `execute.after` by `(sessionID, id)`;
+  command read from the stored event at claim time; `pendingShells` lives in
+  the `setup()` closure (per plugin instance). D3 refinement added to
+  `proposal.md` and `design.md` with all options. Regular scenarios added with
+  `@givn.added @wip`: “A blocked shell request does not label a later identical
+  command from another session” and “A request from an older message of the
+  same session is dropped”. Residual risk R-77 (quiet sessions). The asset
+  triggers the drop only on shell-tool requests; a session that afterwards uses
+  only other tools keeps its stale entry. This is stated in design and is
+  covered by R-77.
+
+### Subagent E2E scenario (2026-10-06 Q2)
+
+- Question: the E2E “OpenCode V2 attributes a subagent's command to the
+  subagent's model” passes with the prior plugin, because the child's own
+  context event is the last model observed before the child's shell. Keep it,
+  or change it?
+- Options: keep it as written (chosen); the alternative was to change the
+  scenario so the real-loader run discriminates. The alternative's exact
+  wording was not relayed to this hardening session and is not reconstructed.
+- User answer: **“Keep it as written”**.
+- Realization in `design.md` (“Subagent E2E scenario: what it proves”): the
+  E2E is characterization of real-loader subagent behavior and can pass before
+  the change; the discriminating behavior (a main command after the child's
+  context keeps the main model) is proven by the regular scenarios “A
+  subagent's shell command is attributed to the subagent's own model” and
+  “Identical shell commands from two OpenCode V2 sessions are attributed in the
+  order issued”. Observation point justified from released 2.0.22 source: the
+  child's shell result is in the child session, not the parent's NDJSON; the
+  driver takes the child `sessionID` from the `subagent` tool result metadata,
+  reads `GET /api/session/<child>/message` on the owned server, and parses the
+  child's shell result, whose `OPENCODE_SESSION_ID` (set by the shell tool after
+  the attribution hook) must be the child's. Fixture config gains the
+  `attribution-subagent` agent (`mode: "subagent"`,
+  `model: "givn-fixture/model-b#low"`) and the `subagent` permission; the
+  provider twin gains a finite state returning a `subagent` tool call with
+  `{agent, description, prompt}`.
+
+### Configured-default reasoning (2026-10-06 Q3)
+
+- Question: real V2 `Model.Info` from `ctx.model.default()` carries no
+  variant, so against real V2 the default yields reasoning `unavailable`, but
+  “OpenCode V2 uses its configured default when no model has been remembered”
+  expects `low`. Change the scenario?
+- Options: keep reasoning `low` (chosen); the alternative was to expect
+  `unavailable`. The alternative's exact wording was not relayed to this
+  session.
+- User answer: **“Keep reasoning low”**.
+- Realization: scenario text unchanged. Recorded as a retained known
+  spec/reality mismatch in `design.md` (“Runtime semantics”, invariant table,
+  risk 2), the glossary (Reasoning mode, Model identity), and R-74. The
+  regular scenario characterizes the adapter's handling of a payload that
+  carries a variant. The adapter reads only `response.data`.
+
+### Release note (2026-10-06 Q4)
+
+- Question: the release note promised compatibility “without changing the
+  supplied attribution behavior”, which D3 contradicts.
+- User answer (chosen text): “Givn initialization and regeneration provide
+  commit attribution compatible with recent OpenCode V1 and OpenCode V2, and on
+  V2 attribute each agent's shell commands, including subagents', to that
+  agent's model.” Applied to `proposal.md`.
+
+### Code-resolved findings (2026-10-06 Q5–Q11, Q13)
+
+- Q5: `design.md` scope, decisions, responsibility table, runtime semantics,
+  sequence diagram (`execute.before` → `create.before` → `execute.after`),
+  twin states, fixture config, prototype-oracle scope (V1 and retained
+  fallbacks only; no text equality), counts, invariant table (subagent link,
+  identical commands, blocked request, older-message drop), traceability,
+  coverage matrix (39 rows, new E2E title), visual evidence (eight titles),
+  risks, arc42 handoff, glossary/cross-cutting text, ADR evidence. Old PASS and
+  FAIL markers in this file turned into historical notes.
+- Counts, recounted from both delta files: 23 scenario identities (20 added,
+  3 modified); 8 E2E (26 executions) and 15 regular (31 executions); 57
+  executions. `attribute-commits.feature` 15 identities,
+  `enable-commit-attribution.feature` 8.
+- Q6: glossary adds Issuing session (anti-terms: linked shell, current
+  session); Model identity is the issuing session's remembered model (V1 shell
+  hook; V2 tool-hook link), else last observed, else V2 configured default (no
+  reasoning mode).
+- Q7: `givn/specs/fragments/fragment.md` row “have a subagent execute an
+  attributed shell command through OpenCode” → “OpenCode V2 attributes a
+  subagent's command to the subagent's model”; design matrix updated.
+- Q8: `design.md` decision ledger resolves D1, D2 (superseded in part by D3),
+  D3, and the D3 refinement; none carried, none seed-sourced.
+- Q9: D3 verdict `NOT_QUALIFIED` (alternatives PASS; architectural impact
+  FAIL; durable consequence FAIL; lower-level artifact FAIL; existing-ADR check
+  PASS); cheaper home: D3 entry in `design.md` plus `attribute-commits.feature`.
+  Recorded in `design.md`, `arc42.md`, and the ADR summary table above.
+- Q10: chapters 05, 06, 08, 10 (Q-94 scoped, Q-96 added, mapping row), 11
+  (R-73 rewritten for unlinked commands; R-74, R-75 adjusted; R-77–R-81
+  added), 12 updated; architecture index note updated; Mermaid only.
+- Q11: Persona dispositions rewritten in the table above.
+- Q13: closure state below.
+
+### Use-case and Persona context (2026-10-06)
+
+The support fragment still owns `attribute-commits`; the subagent behavior is
+an extension of that capability, not a new use case or actor goal. Actors
+remain Developer, Authoring agent, Project maintainer, and OpenCode acting for
+the developer; subagents are OpenCode runtime sessions, not Gherkin actors or
+Personas. No Persona was invented or promoted. Developer: gains
+subagent-correct labels. Agent: unchanged. Maintainer: V1 semantics preserved;
+V2 session link plus retained fallbacks; limits documented.
+
+### Independent arc42 assessment (2026-10-06)
+
+Formed from proposal, both delta files, and design before re-reading
+`arc42.md`.
+
+| # | Chapter | Independent | Marker | Match | Content check |
+|---|---|---|---|---|---|
+| 1 | 01/10 | Yes (quality via ch 10) | Yes | Yes | Q-96 issuing-session quality scenario added in ch 10; ch 01 unchanged. |
+| 2 | 02 | Yes (earlier) | Yes | Yes | TC-29 support window and best-effort fallback still true; no D3 edit needed. |
+| 3 | 03 | Yes (earlier) | Yes | Yes | OpenCode boundary row still true; no D3 edit needed. |
+| 4 | 04 | Yes (2026-10-05 flake boundary) | Yes | Yes | Unaffected by D3. |
+| 5 | 05 | Yes | Yes | Yes | Rewritten V2 `setup()` described; “only the delegation” removed. |
+| 6 | 06 | Yes | Yes | Yes | V2 Mermaid sequence with tool hooks and drop; V1 unchanged. |
+| 7 | 07 | Yes (earlier) | Yes | Yes | One canonical file; unaffected by D3. |
+| 8 | 08 | Yes | Yes | Yes | Issuing-session link first; fallbacks for unlinked commands. |
+| 9 | 09 | No | No | Yes | Three candidates `NOT_QUALIFIED`; no MADR. |
+| 10 | 10 | Yes | Yes | Yes | Q-94 scoped to V1/retained fallbacks; Q-96; 23-identity note; 39 interactions. |
+| 11 | 11 | Yes | Yes | Yes | R-73 unlinked only; R-77–R-81 new. |
+| 12 | 12 | Yes | Yes | Yes | Issuing session; Model identity; Reasoning mode mismatch. |
+
+All twelve chapter files exist with substantive content. A scan of
+`docs/arc42/*.md` for box-drawing characters returned no match; new and changed
+diagrams are Mermaid. No qualified ADR exists, so no chapter-09 MADR is
+missing; retained consequences are in chapter 11. `arc42.md` keeps
+`STATUS: DONE`, now consistent with the chapters.
+
+### Validation (2026-10-06, executed by this hardening session)
+
+| Command | Result |
+|---|---|
+| `givn instructions design-review --change fix-opencode-v2-attribution` | Resolved output read. |
+| `givn instructions arc42-docs --change fix-opencode-v2-attribution` | Exit 0; resolved output read. |
+| `givn lint --change fix-opencode-v2-attribution` | Exit 2: `2 file(s) checked, 23 finding(s)`; 23 WIP findings plus advisory overlaps; no parse error. |
+| `git diff --check` | Exit 0, no output. |
+
+### Known handoff item
+
+`tasks.md` still describes the earlier plan (for example “adding only V2
+`server()` delegation” and seven E2E / eleven regular identities). It was not
+edited, as instructed: the task list is regenerated in the next step and must
+cover all 23 scenario identities.
+
+### Sign-off (2026-10-06)
+
+- [x] All 2026-10-06 grilling questions answered by the user (Q1–Q4) or
+  resolved from the codebase (Q5–Q11, Q13); Q12 is owned by the orchestrator as
+  a separate Git-hygiene action, not a design question.
+- [x] Decision ledger D1–D3 and the D3 refinement resolved in `design.md`.
+- [x] Missing scenarios added with `@givn.added @wip`; no `@e2e` tag removed.
+- [x] Architecture documentation independently reassessed; no mismatch.
+- [x] Lint exit 2 (allowed); `git diff --check` exit 0.
 
 DESIGN-REVIEW: PASS

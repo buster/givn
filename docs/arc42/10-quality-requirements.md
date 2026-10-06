@@ -96,8 +96,9 @@ graph TD
 | Q-95 | Question quality | A project-familiar reader evaluates an unseen decision question after the policy is delivered. | Review distinguishes the displayed subject, brief sourced context, answer consequences and material change costs from mere formatting; an invalid option or unnecessary fact-finding question is a defect. This is reviewed evidence, not a binary compliance guarantee. |
 | Q-96 | Commit attribution | An omp session with a current model prepares a Bash command that creates a revision. | The generated `pre` hook returns the command with attribution exports so the resulting Git committer and message identify the session model, thinking level, and the `omp` harness; a command that creates no revision is returned unchanged, and an unknown model yields `unavailable`. |
 | Q-97 | Regeneration compatibility (planned) | Initialization, skills sync, target addition, addon enable, addon disable, or managed upgrade generates OpenCode attribution for a selected target. | Each distinct action is followed by a real supported-release command and completed shell result; the canonical file matches the embedded asset. Upgrade's clean-state protection and allowlist-only revision remain intact. |
-| Q-98 | Behavior preservation (planned) | Metadata changes, session context is absent/unknown, or V2 default lookup is unavailable or fails. | Public-hook characterization matches the immutable supplied prototype, including variant retention and session/last/default precedence. No usable model leaves model/reasoning unavailable, preserves the committer, and does not block shell use. These tests are not loader or session-accuracy proof. |
+| Q-98 | Behavior preservation (planned) | Metadata changes, session context is absent/unknown, or V2 default lookup is unavailable or fails. | Public-hook characterization of the V1 hooks and the retained fallbacks matches the immutable supplied prototype, including variant retention and session/last/default precedence. No usable model leaves model/reasoning unavailable, preserves the committer, and does not block shell use. These tests are not loader or session-accuracy proof. |
 | Q-99 | Installation boundaries (planned) | Reinit runs without force, init runs without addons, or sync selects only Claude. | Reinit preserves configuration while refreshing the plugin; attribution remains independent of addons; a Claude-only target neither installs nor reports OpenCode attribution. |
+| Q-100 | Issuing-session attribution (planned) | On OpenCode V2 a main session on model A and a subagent child session on model B each run a shell command; a session's shell request is blocked and the session moves on; two sessions request an identical command. | Each linked command carries its issuing session's model and reasoning mode; a blocked request dropped by its session's newer message labels no later command; identical commands are claimed in issue order. Hook-level scenarios prove the link; the real-loader subagent scenario characterizes the child's label and can pass before the change. Unlinked commands keep the best-effort fallback. |
 
 ### Planned OpenCode acceptance mapping
 
@@ -124,16 +125,18 @@ attribution fallback scenarios, and remain unexecuted.
 | Managed refresh | “Consumer upgrades an existing project with attribution plumbing missing” (missing and V1-only variants) |
 | Other regeneration actions | “Consumer synchronizes skills and retains compatible OpenCode attribution”; “Consumer adds an agent target and receives compatible OpenCode attribution”; “Consumer enables an addon and retains compatible OpenCode attribution”; “Consumer disables an addon and retains compatible OpenCode attribution” |
 | Identifier and session precedence | “OpenCode accepts either supplied model identifier spelling”; “A remembered session model takes precedence over a later model from another session” |
+| Issuing-session link (Q-96) | “A subagent's shell command is attributed to the subagent's own model”; “Identical shell commands from two OpenCode V2 sessions are attributed in the order issued”; “A blocked shell request does not label a later identical command from another session”; “A request from an older message of the same session is dropped”; “OpenCode V2 attributes a subagent's command to the subagent's model” (E2E characterization) |
 | Retained best-effort behavior | “Omitted reasoning metadata retains the session's remembered variant”; “A shell without a remembered session uses the last observed model”; “The remembered model takes precedence over OpenCode V2's configured default”; “OpenCode V2 uses its configured default when no model has been remembered” |
 | Missing context and observed request kinds | “No usable model leaves attribution unavailable without changing the committer”; “OpenCode V2 remembers attribution during non-title model requests” |
 | Installation edges | “Reinitialization without force refreshes attribution without replacing project configuration”; “Initialization without addons still enables compatible OpenCode attribution”; “Synchronization without the OpenCode target does not install its attribution integration” |
 
-The first seven titles are E2E outlines; the other eleven are regular
-characterization/installation scenarios. Their bodies remain owned by
+The delta has 23 scenario identities: eight E2E (seven outlines plus the V2
+subagent scenario) and fifteen regular characterization/installation
+scenarios. Their bodies remain owned by
 [the attribution delta](../../givn/changes/fix-opencode-v2-attribution/specs/fragments/attribute-commits.feature)
 and [the installation delta](../../givn/changes/fix-opencode-v2-attribution/specs/fragments/enable-commit-attribution.feature),
 not by this table. The shared support fragment retains the complete
-38-interaction inventory without duplicating including use cases.
+39-interaction inventory without duplicating including use cases.
 
 ## 10.3 Verification Signals
 

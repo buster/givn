@@ -78,6 +78,68 @@ Feature: Attribute commits
       | V2         |
 
   @givn.added @wip
+  Scenario Outline: A subagent's shell command is attributed to the subagent's own model
+    Given an isolated OpenCode "<generation>" attribution integration
+    And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "main-session"
+    And OpenCode has later remembered model "givn-fixture/model-b" with reasoning mode "low" for subagent session "child-session" of "main-session"
+    When OpenCode runs the shell command "git commit" for session "<issuing session>"
+    Then the shell environment identifies LLM "<model>"
+    And the shell environment identifies reasoning mode "<reasoning>"
+    And the shell environment identifies committer "LLM: <model> via opencode"
+
+    Examples:
+      | generation | issuing session | model                | reasoning |
+      | V1         | main-session    | givn-fixture/model-a | high      |
+      | V1         | child-session   | givn-fixture/model-b | low       |
+      | V2         | main-session    | givn-fixture/model-a | high      |
+      | V2         | child-session   | givn-fixture/model-b | low       |
+
+  @givn.added @wip
+  Scenario: Identical shell commands from two OpenCode V2 sessions are attributed in the order issued
+    Given an isolated OpenCode "V2" attribution integration
+    And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"
+    And OpenCode has later remembered model "givn-fixture/model-b" with reasoning mode "low" for session "session-b"
+    When OpenCode requests the shell command "git commit" for session "session-a"
+    And OpenCode requests the shell command "git commit" for session "session-b"
+    And OpenCode creates both shells
+    Then the first shell environment identifies LLM "givn-fixture/model-a"
+    And the second shell environment identifies LLM "givn-fixture/model-b"
+
+  @givn.added @wip
+  Scenario: A blocked shell request does not label a later identical command from another session
+    Given an isolated OpenCode "V2" attribution integration
+    And OpenCode has remembered model "givn-fixture/model-b" with reasoning mode "low" for session "session-b"
+    And OpenCode has later remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"
+    And OpenCode requested the shell command "git commit" for session "session-a" in message "message-1" and that request never reached shell creation
+    When OpenCode requests the shell command "git status" for session "session-a" in message "message-2"
+    And OpenCode requests the shell command "git commit" for session "session-b" in message "message-3"
+    And OpenCode creates the shell for "git commit"
+    Then the shell environment identifies LLM "givn-fixture/model-b"
+    And the shell environment identifies reasoning mode "low"
+    And the shell environment identifies committer "LLM: givn-fixture/model-b via opencode"
+
+  @givn.added @wip
+  Scenario: A request from an older message of the same session is dropped
+    Given an isolated OpenCode "V2" attribution integration
+    And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"
+    And OpenCode has later remembered model "givn-fixture/model-b" with reasoning mode "low" for session "session-b"
+    And OpenCode requested the shell command "git commit" for session "session-a" in message "message-1" and that request never reached shell creation
+    When OpenCode requests the shell command "git status" for session "session-a" in message "message-2"
+    And OpenCode creates the shell for "git commit"
+    Then the shell environment identifies LLM "givn-fixture/model-b"
+    And the shell environment identifies reasoning mode "low"
+
+  @givn.added @e2e @wip
+  Scenario: OpenCode V2 attributes a subagent's command to the subagent's model
+    Given a project with the generated OpenCode attribution integration
+    And the project's subagent is configured with model "givn-fixture/model-b" and reasoning mode "low"
+    When the developer asks OpenCode "V2 latest" with model "givn-fixture/model-a" and reasoning mode "high" to have its subagent execute the attribution fixture command
+    Then the OpenCode command exits 0
+    And the subagent's command output identifies LLM "givn-fixture/model-b"
+    And the subagent's command output identifies reasoning mode "low"
+    And the subagent's command output identifies committer "LLM: givn-fixture/model-b via opencode"
+
+  @givn.added @wip
   Scenario Outline: A shell without a remembered session uses the last observed model
     Given an isolated OpenCode "<generation>" attribution integration
     And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"

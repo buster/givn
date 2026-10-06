@@ -63,52 +63,67 @@ Model and harness changes update only the next agent shell's process-scoped
 values. No model selection is written to project configuration.
 
 The existing OpenCode V1 path observes `chat.message` and `chat.params`, then
-contributes process values through `shell.env`. The
+contributes process values through `shell.env`, whose input names the issuing
+session (subagent child sessions included). The
 [planned dual-generation adapter](../../givn/changes/fix-opencode-v2-attribution/design.md)
 retains those hooks and adds default `server()` delegation to the named V1
-implementation. Its default `setup(ctx)` registers exactly V2 `context`,
-`compaction`, `generate`, and shell `create.before`; neither `title` nor
+implementation. Its default `setup(ctx)` registers V2 `context`, `compaction`,
+and `generate` (model observation), tool `execute.before` and `execute.after`
+(issuing-session link), and shell `create.before`; neither `title` nor
 `prompt` observation is added.
 
-The supplied prototype's retained behavior is:
+The adapter behavior is:
 
 1. Remember provider, model (`id` or `modelID`), and variant by session. Omitted
    metadata retains session values; an explicit variant takes precedence over
    a model variant, then the remembered variant. Model-bearing observations
-   also update module-global `lastModel`.
-2. V1 shell preparation uses its session record or `lastModel`. V2 tries a
-   usable session record, then `lastModel`, then `ctx.model.default()` only
-   when neither remembered choice has a usable identity. Default lookup errors
-   remain swallowed.
-3. Set `GIVN_ATTRIBUTION_ACTIVE=1` and harness `opencode`; initialize model and
+   also update module-global `lastModel`. A subagent's child session observes
+   its own model.
+2. V1 shell preparation uses the issuing session's record or `lastModel`.
+3. V2 links the shell to its issuing session: each shell-tool `execute.before`
+   first drops that session's pending requests from older messages, then
+   stores the request (session, message, call identifier, command).
+   `create.before` claims the first pending request with the identical command
+   and uses its session's record. Without a linked request or usable record it
+   uses `lastModel`, then `ctx.model.default()` (reading `response.data`; real
+   V2 supplies no variant there). `execute.after` removes the request by
+   session and call identifier. Default lookup errors remain swallowed.
+4. Set `GIVN_ATTRIBUTION_ACTIVE=1` and harness `opencode`; initialize model and
    reasoning to `unavailable`. A usable identity supplies the model and
    `GIT_COMMITTER_NAME`; a truthy variant supplies reasoning. Without an
    identity, preserve the preexisting committer name. Author identity and email
    are unchanged.
 
 The verified V2 shell lifecycle calls `create.before` before the shell-tool
-callback adds `OPENCODE_SESSION_ID`. The prototype normally cannot correlate
-the session at that lookup point and can use another session's last model.
-The following sequence describes that retained order in the plan; it is not
-evidence that the generated adapter has been implemented or tested.
+callback adds `OPENCODE_SESSION_ID`, so the adapter cannot read the session at
+that point; the preceding tool `execute.before` supplies it. The following
+sequence describes the planned order; it is not evidence that the generated
+adapter has been tested.
 
 ```mermaid
 sequenceDiagram
     participant Runtime as OpenCode V2
     participant Adapter as Attribution adapter
     participant Shell
-    Runtime->>Adapter: context, compaction, or generate with model metadata
+    Runtime->>Adapter: context, compaction, or generate with session and model
     Adapter->>Adapter: Retain session metadata and lastModel
-    Runtime->>Adapter: create.before with shell environment
-    Adapter->>Adapter: Usable session, otherwise lastModel, otherwise default
-    Adapter-->>Runtime: Best-effort attribution environment
+    Runtime->>Adapter: tool execute.before (session, message, call ID, command)
+    Adapter->>Adapter: Drop the session's older-message requests, store this one
+    Runtime->>Adapter: shell create.before (command, environment)
+    Adapter->>Adapter: Claim identical request: its session's model, else lastModel, else default
+    Adapter-->>Runtime: Attribution environment
     Runtime->>Runtime: Shell-tool callback adds OPENCODE_SESSION_ID
     Runtime->>Shell: Execute command with prepared environment
+    Runtime->>Adapter: tool execute.after (session, call ID)
+    Adapter->>Adapter: Remove the request if still pending
 ```
 
-Fallback labels and retained variants do not prove which model or reasoning
-mode issued the command. Model memory lasts only for the plugin instance;
-there is no persistence or eviction change.
+A linked command carries its issuing session's model. Fallback labels for
+unlinked commands (user `!` commands, terminals, requests whose text no longer
+matches) and retained variants do not prove which model or reasoning mode
+issued the command. Model memory and pending requests last only for the plugin
+instance; there is no persistence. A quiet session's stale request stays
+pending until plugin cleanup.
 
 The Claude path is ordered as follows: Claude invokes the generated
 PreToolUse Bash hook with a Bash command and `transcript_path`; the Givn

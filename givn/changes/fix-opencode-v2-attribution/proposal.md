@@ -2,7 +2,7 @@
 
 ## Release note
 
-Givn initialization and regeneration provide commit attribution compatible with recent OpenCode V1 and OpenCode V2 without changing the supplied attribution behavior.
+Givn initialization and regeneration provide commit attribution compatible with recent OpenCode V1 and OpenCode V2, and on V2 attribute each agent's shell commands, including subagents', to that agent's model.
 
 ## Use-Case Context
 
@@ -16,12 +16,15 @@ Givn initialization and regeneration provide commit attribution compatible with 
 
 A developer's manually updated OpenCode attribution integration works with OpenCode V2. Initializing Givn or synchronizing skills replaces it with an integration usable only by OpenCode V1. Target additions, addon changes, and managed upgrades can also regenerate the same integration. The developer must repair it repeatedly and can lose LLM, reasoning-mode, and committer attribution after routine maintenance.
 
+The manually updated V2 integration also mislabels subagent work. OpenCode V2 runs a subagent in its own session, often on another model and in parallel with the main session, and its shell hook does not identify the session. Commands from either session therefore receive whichever model was observed last (D3).
+
 ## Proposed Solution
 
 - Whenever OpenCode is a selected agent target, initialization and every regeneration action provide the same commit-attribution compatibility: OpenCode V1 1.18.29 and newer within the V1 generation, and OpenCode V2.
 - Cover initializing a project, synchronizing skills, adding an agent target, enabling an addon, disabling an addon, and performing a managed upgrade. Reinitialization without force and initialization without addons must not regress compatibility.
 - After these actions, the developer can use OpenCode to execute an attributed shell command without manually repairing the integration. Existing installation reports continue naming the integration.
-- Preserve the supplied model remembering and reasoning-mode retention, the last observed model fallback, and OpenCode V2's configured-default fallback when no remembered model is usable. Missing usable context remains unavailable and does not prevent shell execution or human commits.
+- On OpenCode V2, attribute each shell command to the model of the session that issued it, including subagent child sessions that run another model, by linking the command through the tool hooks (D3).
+- Preserve the supplied model remembering and reasoning-mode retention, the last observed model fallback, and OpenCode V2's configured-default fallback when no remembered model is usable; the configured-default lookup reads the real V2 response. Missing usable context remains unavailable and does not prevent shell execution or human commits.
 - This is best-effort attribution, not proof of which session issued a command. A shell command without identifiable session context can receive the last model observed in another session or the configured default. Preserve that behavior at the user's explicit direction and state the limitation; do not describe fallback values as verified current-session facts.
 - Preserve chosen targets, addon choices, Git/Fossil attribution boundaries, and the managed-upgrade clean-state and publication guarantees.
 
@@ -37,14 +40,14 @@ Routing this completed draft on 2026-10-04 with `givn spec route --change fix-op
 ## Out of Scope
 
 - Supporting OpenCode V1 older than 1.18.29 or guaranteeing unreleased future plugin APIs.
-- Changing the supplied attribution logic, including improving cross-session accuracy, clearing remembered variants, adding title-model remembering, or making configured-default lookup failures fatal.
+- Changing the attribution logic beyond D3: clearing remembered variants, adding title-model remembering, removing the last-observed-model fallback, or making configured-default lookup failures fatal. Linking V2 shell commands to their session (including subagent sessions) and reading the real configured-default response are in scope.
 - Changing generic commit stamping, Claude attribution, author identity, human co-author preservation, SCM selection, hook activation, upgrade authorization, or migration-plan early returns.
 - Preserving arbitrary manual customization of generated attribution content through backup, merge, override, force, or runtime-version selection features. Regeneration still replaces the generated integration; it must replace it with compatible content.
 - Producing separate generated integrations for each OpenCode generation or modifying either user-supplied plugin file during this change's planning.
 
 ## Open Questions
 
-No unresolved operator decision remains. The two binding dialogs are retained in full below, including the rejected alternatives. Resolution plumbing belongs in the technical design, not this proposal.
+No unresolved operator decision remains. The binding dialogs are retained in full below, including the rejected alternatives. Resolution plumbing belongs in the technical design, not this proposal.
 
 ### Supported OpenCode generations (D1)
 
@@ -69,3 +72,30 @@ No unresolved operator decision remains. The two binding dialogs are retained in
   2. **Keep best-effort fallback.** Meaning: keep the last-model fallback and then the supplied configured-default fallback. Gain: more attribution labels. Cost: a label may name a model that did not issue the command, requiring contract clarification. Example: unknown session B can be stamped with model A.
 - Exact user response: **“No changes to the plugin logic itself.”** This is a constraint, not a claim that inferred labels are accurate.
 - Disposition: answered — preserve the prototype behavior, with a narrow adapter exception to generic no-fabrication wording and an explicit retained risk. Reject changing unknown-session behavior to unavailable because the user expressly disallowed logic changes. Reject broader fallback redesign, additional hooks, and fatal lookup errors for the same reason. The generic stamper continues to consume supplied context and never fabricate missing values.
+- Superseded in part by D3 (2026-10-06): the user asked for a rewrite of the plugin for OpenCode V2, including subagents. The retained fallback chain (last observed model, then configured default) stays; "no changes to the plugin logic" no longer binds.
+
+### Rewrite the V2 half for subagents and the real V2 API (D3)
+
+- Status: answered by the user on 2026-10-06 (rewrite request plus the fallback choice below).
+- Blocks: the plugin's V2 session correlation and its configured-default lookup.
+- Context: released OpenCode V2 2.0.22 runs a subagent in a child session with its own model, possibly in parallel with the main session. The V2 shell hook (`create.before`) receives only command, working directory, timeout, shell, and environment. `OPENCODE_SESSION_ID` is added after that hook, so the prototype's session lookup is always empty or stale and every V2 command falls through to the last model seen in any session. For example, when the main session runs `litellm/gpt-6-luna#high` and an `explore` subagent runs `anthropic/haiku`, a main-session commit can be stamped `anthropic/haiku`. The configured-default lookup also reads the wrong shape: `ctx.model.default()` returns `{location, data}`, not the model.
+- Question: “When a V2 shell command cannot be linked to a session (a user `!` command, or identical commands from two sessions at once), what should the commit record?”
+- Options:
+  1. **Unavailable (Recommended).** Gain: no commit names a model that did not issue it. Cost: some commits lose attribution.
+  2. **Main-session model.** Gain: subagent models never label unlinked commands. Cost: still a guess with parallel top-level sessions.
+  3. **Keep last-model guess.** Gain: most commits carry a label. Cost: an unlinked command can carry another session's model.
+- User selection: **“Keep last-model guess”**.
+- Disposition: answered — rewrite the V2 half to link each shell command to its session through the tool hooks (`execute.before` carries the session and the command, and precedes `create.before`), so main-session and subagent commands each get their own model. Keep the last-observed-model fallback, then the configured default, for commands that cannot be linked. Fix the configured-default lookup to read the real response shape. V1 behavior is unchanged, because V1's `shell.env` already receives the child session for subagents. State the limitation: an unlinked command can receive a model that did not issue it. Reject unavailable and main-session-only fallbacks because the user chose to keep the guess.
+
+### Stale pending shell requests (D3 refinement)
+
+- Status: answered by the user on 2026-10-06 during design review.
+- Blocks: how the V2 session link forgets a shell request that never reaches shell creation.
+- Context: the V2 link remembers each requested shell command until OpenCode creates the shell or reports the request finished. A request can be vetoed by another plugin or aborted before either happens. It then stays pending, and a later identical command from another session can claim it. For example, session A asks for `git commit`, the request is aborted, and later session B runs `git commit`: B's commit is labeled with A's model.
+- Question: “How should the plugin forget a pending shell request that never reached shell creation?”
+- Options:
+  1. **Expire by age.** Meaning: drop a pending request after a fixed time. Gain: also clears sessions that go quiet. Cost: a time constant, and a slow permission prompt can expire a legitimate request, so its command falls back to the last observed model.
+  2. **Drop older same-session entries (Recommended).** Meaning: when a session requests a new shell command from a newer message, drop that session's pending requests from older messages. Gain: no timer; a session that keeps working cannot leave a stale request behind. Cost: requests of a session that goes quiet stay pending until the plugin unloads.
+  3. **Accept the risk.** Meaning: keep stale requests until the plugin unloads. Gain: simplest. Cost: an aborted request can label any later identical command from any session.
+- User selection: **“Drop older same-session entries”**.
+- Disposition: answered — on each V2 shell request the plugin drops that session's pending requests from an older message; a finished request is removed by its session and request identifier; the claimed command is read from the stored request; pending requests belong to one plugin instance. Residual risk, stated in design and risks: a quiet session's stale request stays pending until the plugin unloads. Reject expiry by age because a time constant mislabels slow but legitimate requests; reject accepting the risk because it leaves the mislabel unbounded.

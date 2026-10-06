@@ -7,8 +7,10 @@ attribution asset; supporting tests and their isolated runtime provisioning are
 described here, not implemented. No changes to user-owned
 `.opencode/plugins/givn-attribution.js`, `.opencode/plugins/givn-attribution_v1.js`,
 or harness plugins are permitted. Both user files were read in full on
-2026-10-04. The former is the immutable behavioral baseline; the latter is the
-legacy installation fixture input, not a second generated entrypoint.
+2026-10-04. The former is the supplied prototype: it remains the behavioral
+baseline for the V1 hooks and the retained fallbacks, but not for the V2
+`setup()`, which the rewrite decision (D3) replaces. The latter is the legacy
+installation fixture input, not a second generated entrypoint.
 
 Read-baseline SHA-256 values, rechecked after authoring:
 `e7e5fa591521ba67fd05f3d5757b68baea4b9bb15ad674fb2f3ca9178c886c9d`
@@ -18,9 +20,17 @@ for the legacy file. The immutable fixture copies must match these values;
 if root content changes meanwhile, do not copy it blindly as the baseline.
 
 The compatibility-window decision (D1) promises recent V1 and V2, not older V1.
-The preserve-attribution-behavior decision (D2) prohibits changing the supplied
-logic, including correcting its cross-session inference risk. Full questions,
-options, user responses, and rejected alternatives remain in `proposal.md`.
+The preserve-attribution-behavior decision (D2) originally prohibited changing
+the supplied logic; the V2 rewrite decision (D3, 2026-10-06) supersedes it for
+the V2 session link and the configured-default lookup, and its refinement
+(stale pending shell requests) fixes how unclaimed requests are forgotten. The
+retained fallbacks of D2 still bind. Full questions, options, user responses,
+and rejected alternatives remain in `proposal.md`.
+
+The production asset `assets/agent-integrations/opencode/givn-attribution.js`
+is already final for this plan (120 lines, read 2026-10-06). The sections
+below describe that asset; implementation tasks verify it scenario by scenario
+and must not rewrite it again without a new decision.
 
 ## Decisions
 
@@ -32,14 +42,80 @@ options, user responses, and rejected alternatives remain in `proposal.md`.
   version detection and no generated V1 sibling. Reject older-V1 support and
   separate version-specific installation because the user selected the recent
   V1 plus V2 window.
-- **Decides D2: preserve the supplied prototype byte-for-byte except for the
-  added default `server()` delegation** — realized by an immutable prototype
-  fixture, public-hook characterization, installed-file parity, and a narrowly
-  clarified glossary/adapter risk. Reject current-session-only fallback,
-  clearing retained variants, extra title hooks, persistent model state,
-  fallback refactoring, and fatal default lookup failures. The exact user
-  constraint was “No changes to the plugin logic itself.” This is not an
-  endorsement of inferred labels as verified facts.
+- **Decides D2 (superseded in part by D3): retain the supplied prototype's
+  fallbacks** — realized by public-hook characterization of the V1 hooks and
+  the retained fallbacks, installed-file parity with the embedded asset, and a
+  narrowly clarified glossary/adapter risk. Per-session memory, `id`/`modelID`,
+  variant retention, last observed model, configured default, and swallowed
+  lookup errors behave as in the prototype. Reject current-session-only
+  fallback, clearing retained variants, extra title hooks, persistent model
+  state, and fatal default lookup failures. The user's original constraint was
+  “No changes to the plugin logic itself.” D3 supersedes it for the V2 session
+  link and the default lookup; it no longer binds the V2 `setup()` text or
+  logic. Inferred labels are not verified facts.
+- **Decides D3: rewrite the V2 half — link each V2 shell command to its
+  issuing session through the tool hooks, and read the real configured-default
+  response** — realized in the embedded asset. User answer on 2026-10-06:
+  “Keep last-model guess”. Released V2 2.0.22 evidence: the shell
+  `create.before` event carries only `{command, cwd, timeout, shell, env}` and
+  `OPENCODE_SESSION_ID` is added after it, so the prototype's session lookup
+  never matches. Tool `execute.before` carries
+  `{tool, sessionID, agent, messageID, id, input}` and runs before shell
+  creation; `execute.after` carries the same `sessionID` and `id` and fires for
+  completed and failed (`Tool.Error`) executions. The adapter stores the whole
+  `execute.before` event of each `shell` tool call with a string command,
+  claims the first pending entry whose stored `input.command` equals the
+  `create.before` command (read from the stored event at claim time, so a later
+  rewrite of the event's input by another plugin is seen), and removes an entry
+  in `execute.after` by `(sessionID, id)`. A claimed entry selects the issuing
+  session's remembered model; a subagent runs in its own child session that
+  observes its own model, so main and subagent commands each get their own.
+  Unlinked commands (user `!` commands, terminals, requests whose text no
+  longer matches) use `lastModel`, then `ctx.model.default()`. Two sessions
+  issuing an identical command concurrently are claimed in issue order, which
+  can swap their labels; this is the retained best-effort risk.
+  `ctx.model.default()` returns `{location, data}` where `data` is the real V2
+  `Model.Info` (`id`/`modelID`, no variant); the adapter reads only
+  `response.data` and keeps the swallowed-error behavior. V1 is unchanged: its
+  `shell.env` input carries the child session's `sessionID` for task-tool
+  subagents. Reject unavailable and main-session-only fallbacks because the
+  user chose to keep the guess.
+- **Decides D3 refinement: drop stale pending shell requests by newer message
+  of the same session** — realized in the embedded asset. User answer on
+  2026-10-06: “Drop older same-session entries”. Options kept in full:
+  1. *Expire by age* — drop a pending request after a fixed time. Gain: also
+     clears quiet sessions. Cost: a time constant; a slow permission prompt
+     expires a legitimate request, whose command then falls back to the last
+     observed model.
+  2. *Drop older same-session entries (chosen)* — each shell-tool
+     `execute.before` first drops that session's pending entries whose
+     `messageID` differs from the new request's, then records the new one.
+     Gain: no timer; a session that keeps working leaves no stale request.
+     Cost: entries of a session that goes quiet stay until plugin cleanup.
+  3. *Accept* — keep stale entries until unload. Gain: simplest. Cost: an
+     aborted request can label any later identical command from any session.
+  Entries are removed in `execute.after` by `(sessionID, id)`; the command is
+  read from the stored event at claim time; `pendingShells` lives in the
+  `setup()` closure (one list per plugin instance) and the returned cleanup
+  empties it. Example: session A's `git commit` is aborted in message 1; A then
+  requests `git status` in message 2, which drops the stale entry; session B's
+  later `git commit` is labeled with B's model, not A's. Residual risk: a quiet
+  session's stale entry stays pending until cleanup and can still label a
+  later identical command from another session. Only shell-tool requests
+  trigger the drop; a session that only uses other tools afterwards keeps its
+  stale entry. Reject expiry by age and acceptance for the reasons recorded in
+  `proposal.md`.
+
+### Decision ledger
+
+| Question | Status | Resolution in this design |
+|---|---|---|
+| Supported OpenCode generations (D1) | Resolved | First bullet above; recent V1 plus V2, one default object. |
+| Preserve supplied attribution behavior (D2) | Resolved; superseded in part by D3 | Retained fallbacks bind; the V2 session link and default lookup are no longer bound by “No changes to the plugin logic itself.” |
+| Rewrite the V2 half for subagents and the real V2 API (D3) | Resolved | Tool-hook session link, last-model then configured-default fallback, `response.data` lookup. |
+| Stale pending shell requests (D3 refinement) | Resolved | Drop older same-session entries; residual quiet-session risk documented. |
+
+No proposal question is carried; none is seed-sourced.
 
 No operator question remains unresolved. Deployment provision hashes and the
 latest release refresh are mechanical setup values, not new product choices.
@@ -56,7 +132,7 @@ state, not a domain Aggregate or a persisted model selection.
 
 | Exact path | Planned responsibility/change |
 |---|---|
-| `assets/agent-integrations/opencode/givn-attribution.js` | Replace the V1-only asset with the supplied canonical prototype, adding only `async server() { return GivnAttributionPlugin() }` on its default object. Retain all existing prototype statements and hook registrations. |
+| `assets/agent-integrations/opencode/givn-attribution.js` | Already final (120 lines): V1 hooks as in the prototype, a default object with `id`, `server()` delegating to `GivnAttributionPlugin`, and a rewritten V2 `setup` with the tool-hook session link, the stale-request drop, and the `response.data` default lookup (D3 and its refinement). |
 | `src/config/embedded.rs` | Existing Rust embedding; no source change required. A rebuilt binary embeds the updated asset. |
 | `src/skills/targets.rs` | Existing `sync_agent_integrations` writes `.opencode/plugins/givn-attribution.js` from that asset when OpenCode is selected; `write_embedded_file` overwrites it unconditionally. No seam refactor, preservation feature, or second writer. |
 | `src/cli/init.rs`, `src/cli/skills.rs`, `src/cli/addons.rs`, `src/cli/migration.rs`, `src/cli/upgrade.rs` | Existing callers converge on `skills::targets::sync`. Keep call order, reports, error policy, clean-state witnesses, allowlist calculation, and pending-migration early returns. No production edits expected. |
@@ -68,9 +144,9 @@ state, not a domain Aggregate or a persisted model selection.
 | `tests/opencode_supervisor.rs`, `Cargo.toml` test-target declaration | Test-only `harness = false` supervisor target using the existing unix `libc` dependency; signal-aware process-group teardown and parent-lease monitoring. No new production dependency or executor change. |
 | `tests/fixtures/opencode/runtime_driver.mjs` | Real-runtime orchestration and result normalization; does not emulate the plugin loader. |
 | `tests/fixtures/opencode/provider_stub.mjs` | Deterministic loopback OpenAI-compatible provider, catalog/proxy twin, request recording, deadlines and rejection of unexpected requests. |
-| `tests/fixtures/opencode/prototype/givn-attribution.js` | Immutable copy of the full supplied 107-line prototype, made during implementation from the read baseline; never import mutable root content. |
+| `tests/fixtures/opencode/prototype/givn-attribution.js` | Immutable copy of the full supplied 107-line prototype, made during implementation from the read baseline; never import mutable root content. Oracle for the V1 hooks and retained fallbacks only. |
 | `tests/fixtures/opencode/prototype/givn-attribution_v1.js` | Immutable copy of the supplied 38-line legacy input, used only to seed obsolete integrations in temporary projects. |
-| `tests/fixtures/opencode/characterize.mjs` | Consumer of public V1/V2 hooks with controlled event payloads; compares generated behavior with the immutable prototype. Not E2E loader evidence. |
+| `tests/fixtures/opencode/characterize.mjs` | Consumer of public V1/V2 hooks with controlled event payloads, including V2 tool `execute.before`/`execute.after` events with `sessionID`, `messageID`, `id`, and `input.command`. For the V1 hooks and the retained fallbacks it also compares generated behavior with the immutable prototype; the V2 session-link, identical-command, and stale-request scenarios are asserted against their Gherkin values only, because the prototype has no link. Not E2E loader evidence. |
 | `tests/fixtures/opencode/run-suite.sh`, `tests/fixtures/opencode/resolve-runtime.sh`, `tests/fixtures/opencode/network.sb`, `tests/fixtures/opencode/runtime-lock.json` | Test-only shell suite and validator for the runtime variables exported by the active development environment, Darwin network policy template, and exact runtime URL/integrity/version/help provenance. These scripts never invoke Nix or Fish. |
 | `run-tests.sh` | Validate the active-shell runtime variables using `resolve-runtime.sh` before running the existing scope command; preserve feature-root selection, tag filters, exit propagation, and one result per scope. |
 | `flake.nix` | The sole Nix expression: inline the test-only pinned OpenCode runtimes, latest-LTS Node, required modules, and existing development tools; export the `GIVN_OPENCODE_*` runtime paths from the dev-shell hook. This is the only repository file containing Nix expressions or invoking Nix. No production npm dependencies. |
@@ -80,8 +156,10 @@ The existing E2E fixture at `llm_attribution_e2e_steps.rs:23–26` compares the
 embedded asset with the manually editable root plugin. Remove that dependency
 from the fixture, not from the user file. Compare the generated temporary
 project's installed canonical file against the embedded asset. Separately
-compare baseline behavior against the immutable prototype fixture; do not
-mistake byte parity with the asset for compatibility or behavior preservation.
+compare the V1 hooks and retained-fallback behavior against the immutable
+prototype fixture; the rewritten V2 session link has no prototype oracle and is
+asserted against its Gherkin values. Do not mistake byte parity with the asset
+for compatibility or behavior preservation.
 
 ```mermaid
 flowchart LR
@@ -125,21 +203,35 @@ provider output, omitted shell result, and loader failure are hard test failures
 not skips. A pending-migration upgrade may return before generation; it is not
 claimed to refresh attribution.
 
-### Retained runtime semantics
+### Runtime semantics
 
 `rememberModel` accepts `id` or `modelID`; it retains provider, model and variant
 from the current session when omitted. An explicit variant overrides a model
 variant, which overrides the remembered variant. A record with a model identity
 updates global `lastModel`, including non-session observations. An event with
-neither model nor variant is ignored. Module state remains ephemeral and
-unbounded for the plugin instance's lifetime.
+neither model nor variant is ignored. The session map and `lastModel` are
+module state, ephemeral and unbounded for the module's lifetime; the pending
+shell list lives in the V2 `setup()` closure and is emptied by its cleanup.
 
-V1 returns `chat.message`, `chat.params`, and `shell.env`. It uses the session
-record or global last record. V2 registers exactly `context`, `compaction`,
-`generate`, and shell `create.before`; no `title` or `prompt` hook is added. V2
-tries a usable session record, then `lastModel`, then `ctx.model.default()` only
-when neither has a usable model identity. Default lookup returns the model
-directly, not a V1 HTTP response envelope; its errors remain swallowed.
+V1 returns `chat.message`, `chat.params`, and `shell.env`, unchanged from the
+prototype. It uses the issuing session's record (V1 `shell.env` receives the
+issuing session, subagent child sessions included) or the global last record.
+V2 registers `context`, `compaction`, and `generate` (model observation), tool
+`execute.before` and `execute.after` (session link and stale-request drop, D3
+and its refinement), and shell `create.before`; no `title` or `prompt` hook is
+added. At `create.before` V2 claims the pending request with the identical
+command and uses its session's record; when no request is linked or the linked
+session has no usable identity it uses `lastModel`, then
+`ctx.model.default()`. The default lookup reads only `response.data` from the
+real `{location, data}` response; its errors remain swallowed.
+
+Real V2 `Model.Info` carries no variant, so against a real V2 runtime the
+configured-default fallback yields reasoning `unavailable`. The regular
+scenario “OpenCode V2 uses its configured default when no model has been
+remembered” expects reasoning `low` because its controlled payload carries a
+variant; it characterizes the adapter's handling of such a payload, not real
+V2 output. The user chose on 2026-10-06 to keep that scenario text; this is a
+retained, documented spec/reality mismatch, not a claim about real V2.
 
 Both generations initialize `GIVN_ATTRIBUTION_ACTIVE=1`, model and reasoning
 to `unavailable`, and harness to `opencode`. With a usable identity they stamp
@@ -148,11 +240,16 @@ truthy remembered/default variant. Without a usable identity the prior Git
 committer name stays unchanged. Do not invent an author-name/email change.
 
 The verified V2 shell lifecycle invokes `create.before` before the shell-tool
-callback adds `OPENCODE_SESSION_ID`. Normally this field is therefore absent
-at the prototype's lookup point. A one-session real-runtime happy path can
-succeed through `lastModel` without proving session-correlated accuracy. Keep
-that ordering; fixture-supplied session environments characterize the explicit
-session branch without pretending it is always available in production.
+callback adds `OPENCODE_SESSION_ID`, so that field is absent or stale at the
+hook and is not read. The session link comes from the tool hooks (D3):
+`execute.before` precedes `create.before` and names the issuing session, the
+message, the call identifier, and the command; `execute.after` follows the
+execution. Subagent child sessions fire `context`/`compaction`/`generate` with
+their own `sessionID` and model, so their linked commands resolve to the
+child's model. Fixture-supplied tool events characterize the link, identical
+concurrent commands, and stale-request dropping (regular scenarios). The
+real-runtime subagent E2E scenario characterizes the real loader's subagent
+path; see “Subagent E2E scenario: what it proves”.
 
 ```mermaid
 sequenceDiagram
@@ -163,21 +260,27 @@ sequenceDiagram
     participant Shell
     Developer->>Runtime: Run fixture prompt with selected model and variant
     Runtime->>Plugin: context with session and model
-    Plugin->>Plugin: Retain model and variant
+    Plugin->>Plugin: Retain model and variant for the session
     Runtime->>Twin: Model request with shell tool definition
     Twin-->>Runtime: Fixed safe shell tool call
-    Runtime->>Plugin: create.before with environment
-    Plugin->>Plugin: Session if available, otherwise lastModel/default
+    Runtime->>Plugin: tool execute.before (sessionID, messageID, id, command)
+    Plugin->>Plugin: Drop the session's entries from older messages, store request
+    Runtime->>Plugin: shell create.before (command, env)
+    Plugin->>Plugin: Claim identical pending command, else lastModel, else default
     Plugin-->>Runtime: Attribution environment
-    Runtime->>Runtime: Shell-tool callback adds current session ID
+    Runtime->>Runtime: Shell-tool callback adds OPENCODE_SESSION_ID
     Runtime->>Shell: Execute fixed fixture command
     Shell-->>Runtime: Actual environment JSON
+    Runtime->>Plugin: tool execute.after (sessionID, id)
+    Plugin->>Plugin: Remove the request if still pending
     Runtime-->>Developer: CLI tool result and deterministic final text
 ```
 
-Map access/update is expected O(1) per observation and shell event; state uses
-O(number of observed sessions) memory. Default lookup is one asynchronous
-fallback, not a new retry policy. No performance optimization is warranted.
+Map access/update is O(1) per observation; claiming and dropping scan the
+pending list, which holds at most the in-flight shell requests plus stale
+entries of quiet sessions. State uses O(number of observed sessions) memory.
+Default lookup is one asynchronous fallback, not a new retry policy. No
+performance optimization is warranted.
 
 ## Technology decisions and verified sources
 
@@ -394,6 +497,21 @@ return a fixed title without tools; compaction and transient-generation
 requests return fixed text. Requests beyond this finite state machine fail
 with diagnostic fixture output. No arbitrary model-supplied command is run.
 
+For the V2 subagent E2E scenario the twin gains one more finite state. A
+primary request for `model-a` that advertises the `subagent` tool and carries
+the subagent prompt returns one `subagent` tool call with arguments
+`{agent: "attribution-subagent", description: "Run the attribution fixture", prompt: "Run the attribution fixture command."}`
+(the released 2.0.22 `subagent` tool input is `{agent, description, prompt}`
+plus optional `model`, `sessionID`, `background`, which the twin omits so the
+child runs in the foreground on the agent's configured model). The child
+session's first request reaches the twin for `model-b`; its user text starts
+with the released prefix “You are a subagent spawned by another session.”.
+The twin answers it with the fixed `shell` tool call
+`node attribution-fixture.mjs`, then the child's request carrying that tool
+result with fixed final text, then the parent's request carrying the
+`subagent` tool result with fixed final text. The twin selects states by
+requested model and message content, never by a plugin-only switch.
+
 ### Verified runtime command and configuration shapes
 
 V2 `run --help` was checked locally at 2.0.22; `--server`, `--standalone`,
@@ -421,13 +539,63 @@ result containing the actual spawned environment, not the provider's final
 text (which could repeat invented values). Installed-file parity, repository
 state and plugin diagnostics are secondary checks.
 
+#### Subagent E2E scenario: what it proves
+
+“OpenCode V2 attributes a subagent's command to the subagent's model” is a
+characterization of real-loader subagent behavior. It can pass before this
+change: the prior V2 half falls back to `lastModel`, and at the child's shell
+creation the last model observed is the child's own `context` event
+(`model-b`), so the prior fallback happens to stamp the child's model. The user
+chose on 2026-10-06 to keep the scenario as written. The discriminating
+behavior — a main-session command issued after the child's context still gets
+the main model — is proven by the regular hook-level scenarios “A subagent's
+shell command is attributed to the subagent's own model” (V2 `main-session`
+row) and “Identical shell commands from two OpenCode V2 sessions are attributed
+in the order issued”, not by this E2E.
+
+Driver: V2 latest only, owned foreground server, prompt asking the main agent
+to have its subagent run the fixture command, `--model
+givn-fixture/model-a#high`. The fixture config adds the `attribution-subagent`
+agent (`mode: "subagent"`, `model: "givn-fixture/model-b#low"`) and the
+`subagent` permission for it; admission must confirm the shell allowance for
+`node attribution-fixture.mjs` also applies to that agent and fail otherwise.
+
+Observation point, justified from released 2.0.22 source in
+`@opencode/core` (`dist/chunks/instruction-discovery-qg6jkzae.js`, the
+`subagent` tool, and `instruction-discovery-0n82x6dt.js`, the `shell` tool) and
+`@opencode/client` 2.0.22:
+
+1. The child's shell tool result belongs to the child session, not to the
+   parent's `run --format json` stream. The parent only receives the
+   `subagent` tool result, whose metadata is `{sessionID, status}` and whose
+   content wraps the child's final text in
+   `<subagent sessionID="…" state="completed">`. The child's final text is
+   twin-written and is never attribution evidence.
+2. The driver reads the child `sessionID` from that completed `subagent` tool
+   result, then requests `GET /api/session/<child sessionID>/message` from the
+   owned server and parses the child's completed `shell` tool result: the
+   actual stdout of `node attribution-fixture.mjs`.
+3. The fixture prints, besides the four attribution variables and the
+   committer name, `OPENCODE_SESSION_ID`. The shell tool callback sets it after
+   the attribution hook (released `invocation.env.OPENCODE_SESSION_ID =
+   context.sessionID`), so it names the issuing session without being visible
+   to the plugin. The driver records one output per role: the subagent role's
+   record must carry the child `sessionID`, differ from the parent session ID
+   reported in the parent's NDJSON, and is the record asserted by the Then
+   steps. A missing child result, a parent-session ID in the subagent record,
+   or a missing `subagent` tool result is a hard failure.
+
 The shared regeneration assertion checks all four attribution variables and
 the committer name from that completed tool result, not only the two model and
 reasoning fields named by the step. Check installed bytes, only one canonical
 external plugin path, and the absence of generation warnings as secondary
-evidence. The full existing supplied prototype remains the behavior oracle;
-remove the one added `server()` property for the structural baseline comparison
-and demand exact remaining text equality, not a broad regex allowing edits.
+evidence. The supplied prototype is the behavior oracle for the V1 hooks and
+the retained fallbacks only. There is no text-equality comparison with the
+prototype: the V2 `setup()` is rewritten (D3), so a structural baseline that
+removes only `server()` would be false. Hook registration is checked against
+the design's list (V1 `chat.message`, `chat.params`, `shell.env`; V2
+`context`, `compaction`, `generate`, tool `execute.before`/`execute.after`,
+shell `create.before`; no `title`/`prompt`).
 
 Native V2 fixture project config uses the official V2 shape below; its global
 temporary config additionally disables updates. Substitute the bound URL and
@@ -458,14 +626,27 @@ This corrects test setup only; no production shell-selection logic changes.
           "limit": {"context": 32768, "output": 4096},
           "variants": [{"id": "high", "settings": {}}]
         },
-        "model-b": {"variants": [{"id": "low", "settings": {}}]},
+        "model-b": {
+          "capabilities": {"tools": true, "input": ["text"], "output": ["text"]},
+          "variants": [{"id": "low", "settings": {}}]
+        },
         "title-model": {}
       }
     }
   },
-  "agents": {"title": {"model": "givn-fixture/title-model"}},
+  "agents": {
+    "title": {"model": "givn-fixture/title-model"},
+    "attribution-subagent": {
+      "mode": "subagent",
+      "description": "Runs the attribution fixture command.",
+      "model": "givn-fixture/model-b#low"
+    }
+  },
   "plugins": ["-opencode.provider.ollama", "-opencode.provider.lmstudio", "-opencode.provider.vllm"],
-  "permissions": [{"action": "shell", "resource": "node attribution-fixture.mjs", "effect": "allow"}]
+  "permissions": [
+    {"action": "shell", "resource": "node attribution-fixture.mjs", "effect": "allow"},
+    {"action": "subagent", "resource": "attribution-subagent", "effect": "allow"}
+  ]
 }
 ```
 
@@ -564,32 +745,45 @@ Remove only temporary proof inputs afterward. This proves exact config, not
 an assumed Cucumber default. Planning inspected the configured mechanism but
 did not create bindings or execute these probes.
 
-The delta contains 18 scenario identities: 15 added, 3 modified, none removed.
-Seven E2E outlines cover distinct changed actions; 11 regular scenarios cover
-separate edge/variant invariants. Expanded Examples yield 25 E2E executions
-and 24 regular executions, 49 total. Feature tags are `@givn.delta` and exact
-capability; every delta scenario is `@wip`. The permanent fragment retains
-its other E2E actions without copying their scenarios into this change.
+The delta contains 23 scenario identities: 20 added, 3 modified, none removed.
+Eight E2E scenarios (seven outlines plus the V2 subagent scenario) cover
+distinct changed actions; 15 regular scenarios cover separate edge/variant
+invariants. Expanded Examples yield 26 E2E executions and 31 regular
+executions, 57 total. Counted on 2026-10-06 from both delta files:
+`attribute-commits.feature` has 15 identities (3 E2E, 12 regular) and
+`enable-commit-attribution.feature` has 8 (5 E2E, 3 regular). Feature tags are
+`@givn.delta` and exact capability; every delta scenario is `@wip`. The
+permanent fragment retains its other E2E actions without copying their
+scenarios into this change.
 
 ### Why regular characterization is retained
 
 These public-hook tests are deliberately not advertised as real-loader
-compatibility. They execute both immutable prototype and generated module in
-fresh processes, constructing identical consumer payloads and comparing
-observable environments. Use named V1 hook consumer and default V2 setup
-consumer; fresh module loading avoids global/session state leakage. Inspect
-registration names against the immutable prototype to catch adding a title
-hook or omitting an existing hook. Do not fake current OpenCode payloads for
-the E2E matrix.
+compatibility. They load the generated module in fresh processes and drive it
+with controlled consumer payloads; fresh module loading avoids global/session
+state leakage. For the V1 hooks and the retained fallbacks the same payloads
+also run against the immutable prototype and the observable environments are
+compared. The V2 session link, identical-command, and stale-request scenarios
+have no prototype oracle (the prototype has no link) and assert their Gherkin
+values directly. In V2 regular scenarios, “prepares an attributed shell for
+session X” means a shell-tool `execute.before` for session X followed by
+`create.before` with the same command; “no session” and “unknown session” mean
+`create.before` without a linkable request. Inspect registration names against
+the design's hook list to catch adding a title hook or omitting a hook. Do not
+fake current OpenCode payloads for the E2E matrix.
 
 | Regular invariant | Concrete coverage not provided by one-session real-loader happy path |
 |---|---|
 | Identifier spelling | Controlled `id` versus `modelID` payloads; real releases choose their own one spelling. |
-| Session precedence | Two observations in different sessions with an explicitly supplied session shell environment. |
+| Session precedence | Two observations in different sessions; the shell is linked to the first session (V1 `shell.env` session, V2 tool-hook link). |
 | Omitted variant retention | Model changes while variant is absent; successful high-variant E2E cannot detect clearing. |
+| Subagent session link | “A subagent's shell command is attributed to the subagent's own model”: main and child sessions with different models, command issued by either; the V2 `main-session` row is the discriminating proof that a main command after the child's context keeps the main model. |
+| Identical concurrent commands | “Identical shell commands from two OpenCode V2 sessions are attributed in the order issued”: two pending identical commands are claimed in issue order. |
+| Blocked request across sessions | “A blocked shell request does not label a later identical command from another session”: an unclaimed request of session A is dropped by A's newer-message request, so B's identical command gets B's model, not A's (which is also the last observed model). |
+| Older-message drop | “A request from an older message of the same session is dropped”: after the drop, a shell with the old command is unlinked and uses the last observed model, not the dropped session's model. |
 | Global fallback | Unknown/absent session after a different session's observation; intentionally retains risk. |
 | Remembered versus default priority | Contradictory remembered/default models, not one model. |
-| Configured default only | No observed model before shell creation; E2E has a primary context event. |
+| Configured default only | No observed model before shell creation; E2E has a primary context event. Its payload carries a variant, which real V2 `Model.Info` lacks (retained mismatch, see “Runtime semantics”). |
 | Unavailable/failing fallback | Missing/identityless/throwing default with preexisting committer; no live provider failure needed. |
 | Non-title request kinds | Explicit primary/compaction/transient-generation inputs; E2E primary happy path is not compaction proof. |
 | Reinit without force | Snapshot of saved config remains equal while canonical generated behavior refreshes. |
@@ -671,12 +865,13 @@ flow outcomes, not a newly minted event vocabulary.
 | Backend attribution limitations | Generic Git hook and Fossil `givn commit` remain unchanged | Existing attributed-Git/Claude E2E and Fossil installation E2E | Developer's backend is not misrepresented. |
 | Ownership/reuse | Two EXTEND decisions; fragment inventory instead of including-use-case duplication | Both delta files under `specs/fragments/`; no new use case | Agent and maintainer retain one support contract. |
 | Runtime context optional/no fabrication in generic stamper | Preserve unavailable defaults and swallowed fallback; narrow adapter exception | Unknown/default/failed fallback regular invariants, existing human/partial commit cases | All three Personas must read inferred model labels as best effort, not verified current-session identity. |
+| Subagent-correct labels on V2 | Tool-hook link from each shell request to its issuing session (D3) plus stale-request drop | `attribute-commits`: “A subagent's shell command is attributed to the subagent's own model”, identical-command, blocked-request and older-message regular scenarios; E2E “OpenCode V2 attributes a subagent's command to the subagent's model” as real-loader characterization | Developer reads each agent's own model on its commits, subagents included; agent unchanged; maintainer sees V1 semantics preserved and V2 limits documented. |
 | Events/flow outcomes | No new Domain Event, Aggregate or persisted model state; reports and managed revision remain existing outcomes | Runtime sequence above and CLI transcripts | Agent/maintainer avoid fabricated modeling entities. |
 
 ## Interaction Coverage Matrix
 
-Rows below cover all 38 normalized rows now recorded in the durable support
-fragment. Non-attribution rows are retained inventory evidence, not extra
+Rows below cover all 39 normalized rows now recorded in the durable support
+fragment (38 before design review plus the subagent row added on 2026-10-06). Non-attribution rows are retained inventory evidence, not extra
 implementation scope. Their existing driver files are explicitly named;
 limitations in historical file-only assertions remain preexisting and are not
 claimed repaired by this compatibility change.
@@ -686,6 +881,7 @@ claimed repaired by this compatibility change.
 | attribute-commits / initialize shared attribution | Consumer initializes a project and receives shared attribution plumbing | CLI | Compiled givn init subprocess in Git fixture, stdout report, then actual provisioned OpenCode run acknowledges shell environment; `llm_attribution_e2e_steps.rs`. |
 | attribute-commits / attributed Git commit | An attributed commit exposes the current LLM and harness | CLI | Existing real Git commit subprocess and Git show readback; same E2E file, unchanged. |
 | attribute-commits / OpenCode attributed shell | OpenCode prepares attribution using its selected model | CLI | Actual V1/V2 run with loopback provider tool call, parse completed shell result and captured actual environment; same E2E file, new shared runtime driver. |
+| attribute-commits / subagent attributed shell | OpenCode V2 attributes a subagent's command to the subagent's model | CLI | Actual V2 latest run on the owned server with the `attribution-subagent` fixture agent; parent NDJSON yields the `subagent` tool result and child session ID; `GET /api/session/<child>/message` yields the child's completed shell result, whose `OPENCODE_SESSION_ID` must be the child's; `llm_attribution_e2e_steps.rs` plus runtime driver. Characterization; can pass before the change. |
 | attribute-commits / Claude attributed commit | Claude attributes a commit using its current model | CLI | Existing generated Claude hook invoked with fixture transcript/PreToolUse JSON, real wrapped Git command and Git show; same E2E file, unchanged. |
 | enable-commit-attribution / read init report | Consumer sees the commit attribution installation report | CLI | Existing compiled givn init output assertions; `llm_attribution_installation_e2e_steps.rs`. |
 | enable-commit-attribution / upgrade retrofit | Consumer upgrades an existing project with attribution plumbing missing | CLI | Real givn upgrade on clean committed missing/obsolete state, stdout refresh and OpenCode completed shell result; same installation E2E file. |
@@ -735,7 +931,7 @@ claimed repaired by this compatibility change.
 - Language: preserve current English CLI text and existing labels. The change
   does not add a terminal screen or style contract under `docs/design/`.
 - Evidence kind: captured real terminal/subprocess transcript. For each of the
-  seven affected E2E titles, combine its release/flag Examples into labeled
+  eight affected E2E titles, combine its release/flag Examples into labeled
   sections under
   `givn/changes/fix-opencode-v2-attribution/evidence/visual/<scenario-slug>/transcript.txt`.
   Include executed argv, CLI stdout/stderr, actual shell tool result, exit
@@ -762,11 +958,30 @@ claimed repaired by this compatibility change.
 
 ## Retained risks and limitations
 
-1. A command with unknown/late-injected session ID can be attributed to another
-   session's last model; V2's verified hook order makes this realistic, not a
-   hypothetical accuracy guarantee. No correction is authorized.
+1. A command that cannot be linked to its issuing session (V1 unknown session;
+   V2 user `!` command, terminal, or a request whose text no longer matches)
+   can be attributed to another session's last model. The user chose to keep
+   this guess (D3); it is not a verified current-session fact.
 2. Configured default is a fallback model, not proof of the command's model.
+   Real V2 `Model.Info` has no variant, so the default yields reasoning
+   `unavailable` against real V2; the regular scenario expecting `low`
+   characterizes a payload that carries a variant (retained mismatch).
    Swallowed lookup failures leave unavailable fields and preserve shell use.
+2a. Pending-request residuals of the V2 link (D3 and its refinement):
+   - A quiet session's stale request (vetoed or aborted, no newer shell request
+     from that session) stays pending until plugin cleanup and can label a
+     later identical command from another session.
+   - Two sessions issuing an identical command concurrently are claimed in
+     issue order; if shells are created in the other order, their labels swap.
+   - A provider that reuses tool-call IDs across messages could let one
+     request's `execute.after` remove another pending request of the same
+     session; the command then falls back to the last observed model.
+   - A plugin that rewrites the command text after `execute.before` by
+     mutating the stored event is seen at claim time; a rewrite applied only at
+     shell creation breaks the match and the command falls back.
+   - A user `!` command identical to an agent's pending command can claim the
+     agent's entry, so the user's shell gets the agent's model and the agent's
+     shell falls back.
 3. Omitted variants retain an earlier session variant even after model changes;
    compaction/transient-generation can update the remembered model. Title
    requests are intentionally not observed.
@@ -800,44 +1015,46 @@ tests as executed. Keep current facts distinct from planned implementation.
 | Assessment row | Affected? | Exact handoff |
 |---|---|---|
 | 1 Goals, stakeholders, quality attributes | Yes | This row maps chapters 01 and 10: supported-generation compatibility and truthfulness refine quality attributes in chapter 10. Existing chapter-01 goals/stakeholders/Personas remain unchanged; no chapter-01 churn is required. |
-| 2 Constraints | Yes | `02-architecture-constraints.md`: replace V1-only TC-29 with the public recent-V1/V2 support window and unchanged optional best-effort behavior. Avoid hook/function detail in chapters 1–3. |
-| 3 External systems/interfaces/context | Yes | `03-context-and-scope.md`: OpenCode row covers both supported generations and explicitly distinguishes inferred fallback values from verified session facts; no new external production service. |
-| 4 Major strategy | No | Embedded adapter, one binary and generic stamper strategy remain unchanged; no new system-wide approach or dependency direction. |
-| 5 Building blocks | Yes | `05-building-block-view.md`: embedded OpenCode adapter has dual protocol entrypoints, still one source and one generation writer; no new production module. |
-| 6 Runtime flows | Yes | `06-runtime-view.md`: add V2 request observation/shell environment flow, preserve V1 sequence and document late session-ID injection plus retained fallback order. Use Mermaid if diagrammed. |
-| 7 Deployment | Yes | `07-deployment-view.md`: one canonical selected-target file works with the support window; no generated V1 sibling or production npm install. Test-only runtimes/twins are not new production services. |
-| 8 Cross-cutting concepts | Yes | `08-crosscutting-concepts.md` attribution environment and generation sections: describe session/last/default adapter behavior and preserve generic stamper no-fabrication/unknown handling. |
-| 9 Architecture decisions | No | No qualified new/amended/superseding ADR. Rationale is local/reversible and completely owned by this design plus feature behavior; existing agent ownership and upgrade ADR boundaries remain unchanged. |
-| 10 Quality scenarios | Yes | `10-quality-requirements.md`: refine Q-78 from V1-only payload wording to real supported-loader/command output evidence; add regeneration compatibility across distinct actions with edge cases linked to delta titles. Do not claim session accuracy. |
-| 11 Risks/debt | Yes | `11-risks-and-technical-debt.md`: refine R-50 payload-drift mitigation to real-loader matrix and append retained cross-session/late-ID, configured-default and variant-retention risks from above; distinguish accepted behavior from future fixes. Assign free IDs only after reading current register. |
-| 12 Glossary | Yes | `12-glossary.md`: apply narrow attribution-context/model-identity/reasoning definitions below; no new Aggregate or events. |
+| 2 Constraints | Yes | `02-architecture-constraints.md`: replace V1-only TC-29 with the public recent-V1/V2 support window and unchanged optional best-effort behavior. Avoid hook/function detail in chapters 1–3. Unchanged by the 2026-10-06 rewrite (D3). |
+| 3 External systems/interfaces/context | Yes | `03-context-and-scope.md`: OpenCode row covers both supported generations and explicitly distinguishes inferred fallback values from verified session facts; no new external production service. Unchanged by D3. |
+| 4 Major strategy | Yes | Updated on 2026-10-05 for the flake-only test-runtime boundary; embedded adapter, one binary and generic stamper strategy unchanged. Unchanged by D3. |
+| 5 Building blocks | Yes | `05-building-block-view.md`: one embedded adapter with V1 `server()` and a rewritten V2 `setup()` (tool-hook session link, stale-request drop, `response.data` default lookup); still one source and one generation writer; no new production module. |
+| 6 Runtime flows | Yes | `06-runtime-view.md`: V2 sequence `execute.before` → `create.before` → `execute.after` with the issuing-session link, drop of older same-session entries, and fallback order; V1 unchanged. Mermaid only. |
+| 7 Deployment | Yes | `07-deployment-view.md`: one canonical selected-target file works with the support window; no generated V1 sibling or production npm install. Test-only runtimes/twins are not new production services. Unchanged by D3. |
+| 8 Cross-cutting concepts | Yes | `08-crosscutting-concepts.md`: issuing-session link first, then last-observed and configured-default fallbacks for unlinked commands; generic stamper no-fabrication/unknown handling preserved. |
+| 9 Architecture decisions | No | No qualified new/amended/superseding ADR (dual entrypoint, retained fallbacks, and D3 all `NOT_QUALIFIED`). Existing agent ownership and upgrade ADR boundaries remain unchanged. |
+| 10 Quality scenarios | Yes | `10-quality-requirements.md`: Q-78 real-loader evidence, Q-93–Q-95, plus a subagent/issuing-session quality scenario and the new delta titles in the acceptance mapping. Do not claim session accuracy for unlinked commands. |
+| 11 Risks/debt | Yes | `11-risks-and-technical-debt.md`: R-73 rewritten for unlinked commands only; new risks for stale entries of quiet sessions, identical concurrent commands swapped, provider call-ID reuse, plugin rewriting command text, and a user `!` command claiming an agent's entry. |
+| 12 Glossary | Yes | `12-glossary.md`: add Issuing session; amend Attribution context, Model identity and Reasoning mode as below; no new Aggregate or events. |
 
 Update `docs/arc42/README.md` index/context note with a link to this change's
 design and the compatible OpenCode adapter scope. Preserve unrelated chapters
-and existing ADR indexes. The support-fragment inventory is already complete
-in `givn/specs/fragments/fragment.md` (38 rows; 34 existing E2E mappings plus
-four new regeneration actions). Do not duplicate it into including use cases.
+and existing ADR indexes. The support-fragment inventory in
+`givn/specs/fragments/fragment.md` has 39 rows: 34 existing E2E mappings, four
+new regeneration actions, and the subagent shell action added on 2026-10-06.
+Do not duplicate it into including use cases.
 
-Exact glossary replacement text:
+Exact glossary text:
 
 ```markdown
-| **Attribution context** | The process-scoped values supplied while one commit is created: LLM, reasoning mode, harness, and Givn version. The generic stamper never fabricates missing values. The OpenCode adapter retains best-effort session, last-observed-model, and (in V2) configured-default fallbacks; inferred fallback values are not verified current-session facts. Without a usable supplied or fallback value, the field remains unavailable. |
-| **Model identity** | The provider and model pair supplied for commit attribution. In the OpenCode adapter it may be the remembered session model, the last observed model, or (in V2) the configured-default fallback; a fallback does not verify which model issued the command. Anti-terms: model name, model label, verified session identity for inferred values. |
-| **Reasoning mode** | The effort or thinking variant supplied for commit attribution. The OpenCode adapter retains a remembered variant when later metadata omits it; that retained or default variant is best effort, not proof of the current command's reasoning. |
+| **Attribution context** | The process-scoped values supplied while one commit is created: LLM, reasoning mode, harness, and Givn version. The generic stamper never fabricates missing values. The OpenCode adapter resolves the issuing session's model first and retains best-effort last-observed-model and (in V2) configured-default fallbacks; inferred fallback values are not verified current-session facts. Without a usable supplied or fallback value, the field remains unavailable. |
+| **Issuing session** | The OpenCode session whose agent requested a shell command. A subagent runs in its own child session, which is then the issuing session of its commands. V1 hands the issuing session to the shell hook; in V2 the adapter links the command to it through the tool hooks. Anti-terms: linked shell, current session. |
+| **Model identity** | The provider and model pair supplied for commit attribution. In the OpenCode adapter it is the issuing session's remembered model (V1 shell hook; V2 tool-hook link), else the last observed model, else the V2 configured default (no reasoning mode); a fallback does not verify which model issued the command. Anti-terms: model name, model label, verified session identity for inferred values. |
+| **Reasoning mode** | The effort or thinking variant supplied for commit attribution. The OpenCode adapter retains a remembered variant when later metadata omits it; that retained variant is best effort, not proof of the current command's reasoning. Real OpenCode V2's configured default carries no variant, so a default-only label leaves reasoning unavailable. |
 ```
 
 Exact cross-cutting clarification to insert adjacent to the environment
 contract, not into the generic stamping algorithm:
 
-> OpenCode attribution is an adapter-specific best-effort exception to treating
-> every supplied value as a verified current-session fact. The adapter retains
-> the supplied prototype's session memory, global last-observed model, and V2
-> configured-default fallback. V2 can inject the shell's current session ID
-> after the attribution hook, so the last-observed fallback may label a command
-> from another session. The generic stamper only consumes supplied values and
-> marks missing values unavailable; it does not infer a model itself. This
-> compatibility change preserves the adapter behavior at the user's explicit
-> direction rather than correcting its accuracy limitations.
+> OpenCode attribution resolves the issuing session's model first: V1's shell
+> hook names the issuing session, and in V2 the adapter links each shell
+> request to its issuing session through the tool hooks, subagent child
+> sessions included. A command that cannot be linked falls back to the global
+> last-observed model and, in V2, the configured default. These fallbacks are
+> an adapter-specific best-effort exception to treating every supplied value
+> as a verified current-session fact; the user chose to keep them. The generic
+> stamper only consumes supplied values and marks missing values unavailable;
+> it does not infer a model itself.
 
 ### ADR classification supplied to the documentation writer
 
@@ -861,10 +1078,10 @@ found. One canonical target owns the local dual-entrypoint rationale:
   "target_adr": null,
   "replacement_adr": null,
   "evidence": {
-    "alternatives": ["User chose recent V1 plus V2 over older V1 support", "User rejected attribution-logic changes"],
+    "alternatives": ["User chose recent V1 plus V2 over older V1 support (D1)", "One shared default object versus separate version-specific installation"],
     "architectural_impact": ["Documented adapter compatibility with the supported external plugin protocols"],
     "durable_consequence": ["One embedded adapter asset changes; entrypoint update can be reversed in one change without data migration"],
-    "lower_level_artifact": ["Compatibility behavior belongs in the two existing features; complete local plumbing rationale belongs in design.md"],
+    "lower_level_artifact": ["Compatibility behavior belongs in the two existing features; complete local entrypoint rationale belongs in design.md"],
     "existing_adr_check": ["Read active and archived registers and ADR-013; searched all ADRs for OpenCode/plugin/attribution; existing ownership and upgrade boundaries are not changed"]
   }
 }
@@ -891,6 +1108,43 @@ falsify a new ADR. Chapter 11 and the glossary record limits, not parallel
 decision rationale; generated-agent ownership (ADR-013) and preservation-oriented
 upgrade (ADR-023) remain unchanged. No new/amended/superseding MADR is required.
 
+The V2 rewrite candidate (D3, including its stale-request refinement) has a
+separate verdict, re-checked on 2026-10-06 against the active and archived
+registers (searched for OpenCode, plugin, attribution, subagent, session):
+
+```json
+{
+  "qualification": "NOT_QUALIFIED",
+  "alternatives": "PASS",
+  "architectural_impact": "FAIL",
+  "durable_consequence": "FAIL",
+  "lower_level_artifact": "FAIL",
+  "existing_adr_check": "PASS",
+  "must_be_shared": "SUPPORTING",
+  "routing": "CANONICAL_ARTIFACT",
+  "canonical_artifact": "givn/changes/fix-opencode-v2-attribution/design.md",
+  "target_adr": null,
+  "replacement_adr": null,
+  "evidence": {
+    "alternatives": ["Unlinked-command fallback: unavailable, main-session model, or last-model guess (user chose last-model guess)", "Stale requests: expire by age, drop older same-session entries, or accept (user chose drop older same-session entries)"],
+    "architectural_impact": [],
+    "durable_consequence": [],
+    "lower_level_artifact": ["Observable labels belong in attribute-commits.feature (subagent, identical-command, blocked-request and older-message scenarios); the complete correlation rationale belongs in design.md"],
+    "existing_adr_check": ["Generated-agent ownership (ADR-013) and preservation-oriented upgrade (ADR-023) are unchanged; no attribution, plugin or session-correlation ADR exists"]
+  }
+}
+```
+
+Architectural impact fails: the link is internal state of one embedded adapter
+asset and moves no component, authority, dependency, or deployment boundary.
+Durable consequence fails: the in-memory link is reversible within one change,
+with no persisted data or migration. Lower-level artifact fails: the D3 entry
+in this design plus `attribute-commits.feature` completely own the rationale
+and the observable behavior. Single-change reversibility, no multi-change
+constraint, and product-behavior exclusion all apply. Cheaper home: the D3
+entry in this design and `attribute-commits.feature`; the verdict's single
+canonical artifact is this design. No MADR, amendment, or register entry.
+
 ## Planning validation and handoff boundary
 
 - Wrote only proposal, delta specs, this design and the permitted durable
@@ -899,7 +1153,7 @@ upgrade (ADR-023) remain unchanged. No new/amended/superseding MADR is required.
 - Routing the real proposal exited 0 with signal recommending
   `apply-a-managed-upgrade`, score 17.00; the proposal records both mandatory
   EXTEND decisions and explains the consumer-versus-fragment deviation.
-- `givn lint --change fix-opencode-v2-attribution` exited 2: all 18 scenarios
+- Historical (2026-10-04, before D3): `givn lint --change fix-opencode-v2-attribution` exited 2: all 18 scenarios
   parse; 18 WIP findings, plus advisory masked overlaps. JSON inspection found
   13 shape matches and 267 subsets, no syntax errors or contradictions. Many
   subsets share only generic successful CLI/output assertions; same-shaped
@@ -910,6 +1164,13 @@ upgrade (ADR-023) remain unchanged. No new/amended/superseding MADR is required.
   `givn lint givn/specs/fragments/*.feature givn/changes/fix-opencode-v2-attribution/specs/fragments/*.feature --json`
   exited 2 with exactly the 18 WIP findings and no parse errors. It is the
   file-scoped parsing check, not a claim that all repository lint is clean.
+- 2026-10-06 design-review hardening: `givn lint --change fix-opencode-v2-attribution`
+  exited 2 with `2 file(s) checked, 23 finding(s)`: 23 WIP findings (one per
+  scenario identity) plus advisory overlaps, no parse error. `git diff --check`
+  exited 0. The subagent tool, shell-tool session-ID injection, tool-hook
+  trigger points (`execute.after` on completion and `Tool.Error`), and the
+  `/api/session/{id}/message` client route were read in the released 2.0.22
+  `@opencode/core` and `@opencode/client` tarballs.
 - Source/help/registry and Darwin network proofs above were actually checked.
   Delta Cucumber runtime compatibility, strictness probes, runtime provisioning and
   terminal evidence are mandatory; distinguish setup-scope permanent runs from final `--all` execution after deltas are green. They require implementation

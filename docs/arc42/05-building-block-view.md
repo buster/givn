@@ -15,10 +15,15 @@ keeps one embedded source,
 `assets/agent-integrations/opencode/givn-attribution.js`, and the existing
 `skills::targets::sync_agent_integrations` writer. Its default object exposes
 `id`, V1 `server()` delegating to the retained named `GivnAttributionPlugin`,
-and V2 `setup(ctx)`. Only the delegation is added to the supplied prototype;
-model extraction, metadata retention, fallback logic, and hook selection stay
-unchanged. There is no version detector, second generated plugin, new
-production module, or domain dependency.
+and V2 `setup(ctx)`. The V1 half keeps the supplied prototype's hooks, model
+extraction, metadata retention, and fallbacks. The V2 `setup(ctx)` is
+rewritten (D3 in the design): it links each shell request to its issuing
+session through the tool hooks, so main-session and subagent commands each get
+their own session's model; it drops a session's pending requests from older
+messages; and its configured-default lookup reads `response.data`. The pending
+request list is per plugin instance (inside `setup`); the session map and last
+observed model remain module state. There is no version detector, second
+generated plugin, new production module, or domain dependency.
 
 Initialization, skill synchronization, target addition, addon enable/disable,
 and managed upgrade already converge on `skills::targets::sync`. Rebuilding the
