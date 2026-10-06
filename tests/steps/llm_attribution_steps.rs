@@ -533,7 +533,8 @@ fn prototype_is_oracle(state: &CharacterizationState) -> bool {
                 action["op"].as_str(),
                 Some("request" | "complete" | "malformed" | "reject")
             ) || (action["op"] == "run" && !action["session"].is_null())
-                || (action["op"] == "default" && action["mode"] == "model")
+                || (action["op"] == "default"
+                    && matches!(action["mode"].as_str(), Some("model" | "hangs")))
         })
 }
 
@@ -752,7 +753,7 @@ fn given_opencode_default_lookup(world: &mut GivnWorld, lookup: String) {
     assert!(
         matches!(
             lookup.as_str(),
-            "absent" | "no model" | "model without identity" | "fails"
+            "absent" | "no model" | "model without identity" | "fails" | "hangs"
         ),
         "unsupported default lookup: {lookup}"
     );

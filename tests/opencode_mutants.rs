@@ -37,6 +37,10 @@ const CASES: &[(&str, &str)] = &[
         "no-registration-guard.js",
         "A rejected hook registration does not stop shell attribution",
     ),
+    (
+        "unbounded-default-lookup.js",
+        "A hung configured-default lookup does not stall shell creation",
+    ),
 ];
 
 /// Largest number of differing lines between the shipped adapter and a mutant:

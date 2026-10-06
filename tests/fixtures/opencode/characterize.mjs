@@ -34,6 +34,10 @@ const defaultResponse = (config) => {
       return { location: {}, data: undefined }
     case "model without identity":
       return { location: {}, data: { providerID: config.provider ?? "givn-fixture" } }
+    case "hangs":
+      // Never settles. The timer is unref'd, so the process can still exit when
+      // nothing else is pending (the plugin's own bounded wait keeps it alive).
+      return new Promise(() => setInterval(() => {}, 1000).unref())
     case "fails":
       throw new Error("configured default lookup failed")
     default:
@@ -221,7 +225,16 @@ const main = async () => {
   process.stdout.write(JSON.stringify(result))
 }
 
-main().catch((error) => {
+// A hook that never settles leaves the event loop empty; exit loudly instead of silently.
+let completed = false
+process.on("exit", () => {
+  if (completed) return
+  process.stderr.write("characterize failed: the process ended before every hook settled\n")
+  process.exitCode = 1
+})
+
+main().then(() => { completed = true }).catch((error) => {
+  completed = true
   process.stderr.write(`characterize failed: ${error?.stack ?? error}\n`)
   process.exit(1)
 })

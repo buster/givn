@@ -187,6 +187,18 @@ Feature: Attribute commits
     And the shell environment identifies LLM "givn-fixture/model-b"
     And the shell environment identifies committer "LLM: givn-fixture/model-b via opencode"
 
+  @givn.added
+  Scenario: A hung configured-default lookup does not stall shell creation
+    Given an isolated OpenCode "V2" attribution integration
+    And no model has been remembered
+    And OpenCode's configured-default lookup is "hangs"
+    And the shell already identifies committer "Human Developer"
+    When OpenCode prepares an attributed shell with "no session"
+    Then shell preparation succeeds
+    And the shell environment enables commit attribution
+    And the shell environment identifies LLM "unavailable"
+    And the shell environment identifies committer "Human Developer"
+
   @givn.added @e2e
   Scenario: OpenCode V2 attributes a subagent's command to the subagent's model
     Given a project with the generated OpenCode attribution integration

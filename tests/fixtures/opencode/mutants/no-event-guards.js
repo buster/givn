@@ -56,10 +56,23 @@ const attempt = async (action) => {
   }
 }
 
+// A hung lookup must not stall shell creation: wait a short, bounded time.
+const DEFAULT_LOOKUP_TIMEOUT_MS = 2000
+
+const withTimeout = (promise) =>
+  new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(undefined), DEFAULT_LOOKUP_TIMEOUT_MS)
+    const settle = (value) => {
+      clearTimeout(timer)
+      resolve(value)
+    }
+    promise.then(settle, () => settle(undefined))
+  })
+
 const configuredDefault = async (ctx) => {
   if (!ctx.model?.default) return undefined
   try {
-    const response = await ctx.model.default()
+    const response = await withTimeout(Promise.resolve(ctx.model.default()))
     const model = response?.data
     if (!model) return undefined
     return {
