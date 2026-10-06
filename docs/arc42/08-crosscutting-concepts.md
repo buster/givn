@@ -231,14 +231,14 @@ subject.
 
 Selected-target synchronization also regenerates runtime attribution from
 embedded assets. The
-[planned OpenCode compatibility change](../../givn/changes/fix-opencode-v2-attribution/design.md)
+[OpenCode compatibility change](../../givn/changes/fix-opencode-v2-attribution/design.md)
 uses the existing writer for init/reinit, skills sync, target addition, addon
 enable/disable, and managed upgrade. The one canonical generated plugin is
 overwritten even on reinit without force; project configuration, selected
 targets, and addon choices remain governed by their existing rules. No backup,
 override, version detector, or second V1 writer is introduced. Upgrade keeps
 its witness/allowlist and pending-migration early returns. Compatibility and
-regeneration tests are planned, not executed.
+regeneration tests have run and pass (evidence in the change's `tasks.md`).
 
 `AGENTS.md` is user-owned outside givn-managed fenced blocks. The sync path may
 create or replace the unconditional `givn-project` block and, when enabled, the
@@ -439,7 +439,7 @@ present, stamps only the managed co-author attribution, removes stale legacy
 Givn attribution trailers, and never blocks a commit when context or the
 installed binary is absent.
 
-The planned OpenCode adapter resolves the issuing session's model first: V1's
+The OpenCode adapter resolves the issuing session's model first: V1's
 shell hook names the issuing session, and in V2 the adapter links each shell
 request to its issuing session through the tool hooks, subagent child sessions
 included. A command that cannot be linked falls back to the global
@@ -453,12 +453,11 @@ remembered variant, and failed default lookup leaves unavailable values
 without blocking shell execution. The adapter never blocks a shell: every hook
 registration and handler body is guarded, so a throwing registration, a
 malformed or absent event payload, or a missing shell environment leaves the
-remaining hooks and the shell intact, and the configured-default lookup waits
+remaining hooks and the shell intact (a rejected registration is reported once per kind with `console.warn`), tool events need string session, message and call identifiers, `create.before` writes the unavailable defaults before its first await so an abandoned hook still leaves them, and the configured-default lookup waits
 at most two seconds.
 
 The generic stamper only consumes supplied values and marks missing values
-unavailable; it never infers a model itself. The V2 extension is planned, not
-shipped; runtime ordering and hook selection are detailed in
+unavailable; it never infers a model itself. The V2 extension is implemented in the embedded asset; runtime ordering and hook selection are detailed in
 [chapter 6.1a](06-runtime-view.md#61a-commit-attribution).
 
 ### Configurable post hooks
@@ -495,7 +494,7 @@ The embedded `givn missing-testrunner` value is only the manifest fallback when
 no later project command replaces it. The current generated command template
 uses `./run-tests.sh` and `./run-tests.sh --e2e` instead.
 
-For the planned OpenCode repair, those same commands validate the pinned runtime paths exported by the active
+For the OpenCode repair, those same commands validate the pinned runtime paths exported by the active
 development shell through the same POSIX-shell validator used by the suite
 wrapper and direct runtime fixtures. All Nix derivations and exports remain in
 `flake.nix`; test scripts do not invoke Nix or Fish. Preserve feature-root/tag

@@ -622,4 +622,41 @@ written by the implementer, not by a design reviewer. A reviewer must re-read
 them against the code before relying on this artifact; the PASS verdict below
 does not cover the amendments.
 
+### Second amendment after implementation (2026-10-06, second review follow-ups)
+
+All amendments made after the verdict, listed for the re-check:
+
+1. Fixed command, refusing proxy, FIFO lease, negative-control switches and
+   stderr warnings (first amendment above).
+2. Contract probe: `contract_probe_plugin.js` copied into the isolated project
+   only; E2E scenario "OpenCode V2 delivers the shell request to the attribution
+   adapter before shell creation", with a fragment inventory row and a matrix row
+   (40 rows now).
+3. Adapter robustness (design ledger entry "Robustness of the V2 adapter"):
+   `guarded` handlers, `attempt` registrations, 2 s bound on the default lookup,
+   string guards for `sessionID`, `messageID` and `id` (`execute.before`) and
+   `id` (`execute.after`, defence in depth: a mutant without it survives),
+   defaults-first stamping in `create.before`, once-per-kind `console.warn` for
+   rejected registrations. The asset is 198 lines, not the 120 the plan called
+   final.
+4. Test infrastructure: committed and generated mutants (exact-once anchor
+   replacement) with a `node --check` pass in `tests/opencode_mutants.rs`;
+   characterization harness options `abandon`, `omit`, `setup-again`, a
+   `console.warn` recorder and a 20 s deadline; `--mutants` in `run-suite.sh`.
+5. Subagent E2E: the main session now also runs its own command after the child
+   (second allowed command `... attribution-fixture.mjs main`). It stays
+   characterization (the immutable prototype still passes; concurrent tool calls
+   ran the main shell first in 3 of 3 runs) by user decision, option A; the
+   regular subagent scenario is the discriminator. Design "Subagent E2E scenario:
+   what it proves", retained risk 9, R-82 and the proposal D3 refinement say so.
+6. Counts recounted from the feature files: 34 delta identities (31 added, 3
+   modified), 9 E2E and 25 regular; no delta scenario carries `@wip`.
+7. Stale "planned/not implemented/unexecuted" statements were rewritten in
+   `design.md`, `arc42.md`, `README.md`, `docs/arc42/README.md` and chapters
+   05, 06, 07, 08, 10 and 11.
+
+Amended after implementation; re-check requested. The `DESIGN-REVIEW: PASS`
+marker below is kept because the workflow gate requires it (`src/state.rs`
+detects it); it was issued before these amendments and does not cover them.
+
 DESIGN-REVIEW: PASS

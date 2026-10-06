@@ -2,9 +2,11 @@
 
 ## Scope and binding inputs
 
-Planning only. The production change is confined to the embedded OpenCode
-attribution asset; supporting tests and their isolated runtime provisioning are
-described here, not implemented. No changes to user-owned
+Implemented (this design began as a planning document and was amended after
+implementation, 2026-10-06; see "Post-implementation amendments"). The production
+change is confined to the embedded OpenCode attribution asset; supporting tests
+and their isolated runtime provisioning are implemented as described here.
+No changes to user-owned
 `.opencode/plugins/givn-attribution.js`, `.opencode/plugins/givn-attribution_v1.js`,
 or harness plugins are permitted. Both user files were read in full on
 2026-10-04. The former is the supplied prototype: it remains the behavioral
@@ -28,9 +30,10 @@ retained fallbacks of D2 still bind. Full questions, options, user responses,
 and rejected alternatives remain in `proposal.md`.
 
 The production asset `assets/agent-integrations/opencode/givn-attribution.js`
-is already final for this plan (120 lines, read 2026-10-06). The sections
-below describe that asset; implementation tasks verify it scenario by scenario
-and must not rewrite it again without a new decision.
+as implemented (198 lines, counted 2026-10-06 after the second review
+follow-ups; the 120-line plan-time version was extended by the robustness
+decision recorded in the ledger below). The sections below describe that asset.
+Further rewrites need a new decision.
 
 ## Decisions
 
@@ -114,6 +117,8 @@ and must not rewrite it again without a new decision.
 | Preserve supplied attribution behavior (D2) | Resolved; superseded in part by D3 | Retained fallbacks bind; the V2 session link and default lookup are no longer bound by “No changes to the plugin logic itself.” |
 | Rewrite the V2 half for subagents and the real V2 API (D3) | Resolved | Tool-hook session link, last-model then configured-default fallback, `response.data` lookup. |
 | Stale pending shell requests (D3 refinement) | Resolved | Drop older same-session entries; residual quiet-session risk documented. |
+| Robustness of the V2 adapter (D3 robustness, 2026-10-06, user-approved scope of the review follow-ups) | Resolved | Every handler runs through `guarded` (a throwing or null-payload hook never fails a shell); every registration runs through `attempt`, so one rejected registration does not stop the others, and each failed kind is reported once with `console.warn` (never throwing); the configured-default lookup is bounded to 2 s with a timer cleared on settle; `execute.before` requires string `sessionID`, `messageID`, `id` and command, `execute.after` a string `id` (the latter is defence in depth); `create.before` stamps the unavailable defaults before its first await so an abandoned hook still leaves attribution unavailable. Attribution semantics are unchanged. |
+| Subagent E2E discrimination (D3 refinement, 2026-10-06) | Resolved as characterization | Kept as real-loader characterization; see "Subagent E2E scenario: what it proves". |
 
 No proposal question is carried; none is seed-sourced.
 
@@ -132,7 +137,7 @@ state, not a domain Aggregate or a persisted model selection.
 
 | Exact path | Planned responsibility/change |
 |---|---|
-| `assets/agent-integrations/opencode/givn-attribution.js` | Already final (120 lines): V1 hooks as in the prototype, a default object with `id`, `server()` delegating to `GivnAttributionPlugin`, and a rewritten V2 `setup` with the tool-hook session link, the stale-request drop, and the `response.data` default lookup (D3 and its refinement). |
+| `assets/agent-integrations/opencode/givn-attribution.js` | Implemented (198 lines; the robustness decision added the guards, bounded lookup, defaults-first stamp and once-only warning): V1 hooks as in the prototype, a default object with `id`, `server()` delegating to `GivnAttributionPlugin`, and a rewritten V2 `setup` with the tool-hook session link, the stale-request drop, and the `response.data` default lookup (D3 and its refinement). |
 | `src/config/embedded.rs` | Existing Rust embedding; no source change required. A rebuilt binary embeds the updated asset. |
 | `src/skills/targets.rs` | Existing `sync_agent_integrations` writes `.opencode/plugins/givn-attribution.js` from that asset when OpenCode is selected; `write_embedded_file` overwrites it unconditionally. No seam refactor, preservation feature, or second writer. |
 | `src/cli/init.rs`, `src/cli/skills.rs`, `src/cli/addons.rs`, `src/cli/migration.rs`, `src/cli/upgrade.rs` | Existing callers converge on `skills::targets::sync`. Keep call order, reports, error policy, clean-state witnesses, allowlist calculation, and pending-migration early returns. No production edits expected. |
@@ -346,7 +351,7 @@ evidence. Do not add an unrequested exactly-once-hook product requirement.
 
 ### One command and complete lifecycle
 
-Local setup commands: `tests/fixtures/opencode/run-suite.sh --regular` and `tests/fixtures/opencode/run-suite.sh --e2e`, from an already active project development shell whose `flake.nix` hook provides pinned test-runtime variables and tools. Setup modes validate and execute permanent specs only; delta scenarios remain `@wip` until their scenario-by-scenario TDD tasks.
+Local setup commands: `tests/fixtures/opencode/run-suite.sh --regular` and `tests/fixtures/opencode/run-suite.sh --e2e`, from an already active project development shell whose `flake.nix` hook provides pinned test-runtime variables and tools. Setup modes validate and execute permanent specs only; the delta scenarios were `@wip` until their scenario-by-scenario TDD tasks and are all green now; `--all` runs both roots.
 
 After all delta scenarios are green, run `tests/fixtures/opencode/run-suite.sh --all`. That final mode executes four fail-fast root/scope combinations: permanent regular, delta regular, permanent E2E, delta E2E. `--name <anchored title>` targets matching permanent and delta scenarios separately; a zero match in either tree is an error. Every mode validates exported runtimes, prepares `ready_fixture` and the supervisor, and fails on any child error; skips are not treated as passing. No host OpenCode service or existing project database is used. The wrapper uses POSIX shell and never invokes Nix or Fish.
 
@@ -428,7 +433,7 @@ exercise runner process exit/lease EOF, and force the run deadline while an
 owned server, runtime descendant, and twins are alive. Each must demonstrate
 escalation/reaping and closed owned ports, while an unrelated user-service
 sentinel PID/listener remains alive and responsive. Record observed PIDs,
-signals, exit status and logs; these probes have not run. Simultaneous external
+signals, exit status and logs; these probes have run and pass (`run-suite.sh --probes`, exit 0, recorded in `tasks.md`). Simultaneous external
 SIGKILL of the supervisor itself is outside this controlled-interruption proof,
 not an RAII guarantee. Never kill a process found only by a port number.
 
@@ -582,19 +587,50 @@ result containing the actual spawned environment, not the provider's final
 text (which could repeat invented values). Installed-file parity, repository
 state and plugin diagnostics are secondary checks.
 
+Second review follow-ups (2026-10-06, after the asset in this design was
+first called final): the asset was extended and the test infrastructure with it.
+(a) `guarded` wraps every handler; (b) `attempt` isolates registrations and
+reports each failed kind once; (c) the default lookup is bounded to 2 s;
+(d) the tool-hook guards require string `sessionID`, `messageID` and `id`
+(`execute.after`: `id`); (e) `create.before` stamps unavailable defaults before
+its first await; (f) generated mutants (exact-once anchor replacement, anchor
+count asserted) and a `node --check` pass over all mutants join the committed
+mutants in `tests/opencode_mutants.rs`; (g) the characterization harness gained
+`abandon`, `omit`, `setup-again` and a `console.warn` recorder, plus a 20 s
+deadline; (h) the subagent E2E now also runs the main session's own command
+and is documented as characterization. `tasks.md` carries the evidence per item.
+
 #### Subagent E2E scenario: what it proves
 
 “OpenCode V2 attributes a subagent's command to the subagent's model” is a
-characterization of real-loader subagent behavior. It can pass before this
-change: the prior V2 half falls back to `lastModel`, and at the child's shell
-creation the last model observed is the child's own `context` event
-(`model-b`), so the prior fallback happens to stamp the child's model. The user
-chose on 2026-10-06 to keep the scenario as written. The discriminating
-behavior — a main-session command issued after the child's context still gets
-the main model — is proven by the regular hook-level scenarios “A subagent's
-shell command is attributed to the subagent's own model” (V2 `main-session`
-row) and “Identical shell commands from two OpenCode V2 sessions are attributed
-in the order issued”, not by this E2E.
+characterization of real-loader subagent behavior and does not discriminate the
+old last-observed-model fallback. The user decided on 2026-10-06 to keep it as
+characterization (option A) after an attempt to make it discriminate failed:
+
+- Variant 1 (committed): after the subagent's result the main session resumes
+  and runs its own command (`<pinned Node path> attribution-fixture.mjs main`,
+  its own permission rule, its own result file). The real asset gives the main
+  command model-a/high and the child's model-b/low, the main command runs after
+  the child's (recorded order), each `execute.before` names its own session (the
+  child's equals the child session ID in the parent's `subagent` tool result),
+  and no `create.before` environment carries `OPENCODE_SESSION_ID`. The
+  immutable prototype also passes (negative control with
+  `GIVN_OPENCODE_NEGATIVE_CONTROL=1`: `1 scenario (1 passed) 14 steps (14
+  passed)`), because the main session's resumed request fires the `context`
+  hook with model-a after the child ran and so re-sets the last-observed model
+  before the main command.
+- Variant 2 (not committed): the main session asks for the subagent and its own
+  command in one step, which is the only way to run the main command while
+  last-observed is still model-b. The runtime runs the tool calls concurrently
+  and the main shell ran first in 3 of 3 runs, so no deterministic ordering
+  exists. Parallel subagents with different models were not tried (user decision).
+
+The discriminating behavior — a main-session command issued after the child's
+context still gets the main model — is proven by the regular hook-level
+scenarios “A subagent's shell command is attributed to the subagent's own
+model” (V2 `main-session` row) and “Identical shell commands from two OpenCode
+V2 sessions are attributed in the order issued”, not by this E2E. The scenario
+carries a Gherkin description saying so.
 
 Driver: V2 latest only, owned foreground server, prompt asking the main agent
 to have its subagent run the fixture command, `--model
@@ -725,7 +761,7 @@ the existing runner's scope/result contract. `run-tests.sh` defaults to
 nextest; `GIVN_TEST_RUNNER=cargo` selects plain cargo. Default runs all tags,
 `--non-e2e` excludes E2E, and `--e2e` includes only E2E. It accepts exactly one
 feature root from `GIVN_FEATURES` and does NOT combine permanent and delta
-trees. For setup, `run-suite.sh --regular` and `--e2e` validate the permanent root only; this allows environment verification while all delta scenarios remain `@wip`. The final `--all` wrapper explicitly executes both roots after every delta scenario is green, using the same configured command per root and failing if any invocation fails:
+trees. For setup, `run-suite.sh --regular` and `--e2e` validate the permanent root only; this allowed environment verification before the delta scenarios were green (all are green now and `--all` covers both roots). The final `--all` wrapper explicitly executes both roots after every delta scenario is green, using the same configured command per root and failing if any invocation fails:
 
 ```sh
 env GIVN_FEATURES=givn/specs ./run-tests.sh --non-e2e
@@ -777,7 +813,7 @@ Strictness already uses `.fail_on_skipped()` at
 runner explicitly exits non-zero on failed OR skipped scenarios. New Rust
 bindings start with `unimplemented!("<step meaning>")`; no empty/no-op body,
 `assert!(true)`, or catch-and-return-success. All added/modified scenarios stay
-`@wip` until their bindings and scenario execution are genuinely green.
+`@wip` until their bindings and scenario execution are genuinely green (done: no delta scenario carries `@wip` now).
 
 Before the first scenario, setup proves strictness and validates the environment using permanent-root gates only. The final `--all` run is after all delta scenarios are green. Setup verification independently runs two temporary Gherkin probes:
 one undefined step, and one registered step that explicitly panics with
@@ -785,17 +821,18 @@ one undefined step, and one registered step that explicitly panics with
 and `--e2e` path with an `@e2e` probe. Each must exit non-zero and identify the
 undefined/pending-or-unimplemented failure, not a setup/network failure.
 Remove only temporary proof inputs afterward. This proves exact config, not
-an assumed Cucumber default. Planning inspected the configured mechanism but
-did not create bindings or execute these probes.
+an assumed Cucumber default. These probes were planned at design time; the implemented runner is exercised by the suite and recorded in `tasks.md`.
 
-The delta contains 23 scenario identities: 20 added, 3 modified, none removed.
-Eight E2E scenarios (seven outlines plus the V2 subagent scenario) cover
-distinct changed actions; 15 regular scenarios cover separate edge/variant
-invariants. Expanded Examples yield 26 E2E executions and 31 regular
-executions, 57 total. Counted on 2026-10-06 from both delta files:
-`attribute-commits.feature` has 15 identities (3 E2E, 12 regular) and
-`enable-commit-attribution.feature` has 8 (5 E2E, 3 regular). Feature tags are
-`@givn.delta` and exact capability; every delta scenario is `@wip`. The
+The delta contains 34 scenario identities (recounted 2026-10-06 from both
+delta files after implementation): 31 added, 3 modified, none removed. Nine are
+E2E (seven outlines, the V2 subagent characterization scenario and the V2
+contract-probe scenario) and 25 are regular; the runner reports them as
+`25 tests run` (regular) and `9 tests run` (E2E) for the delta root. Expanded
+Examples are not recounted here. `attribute-commits.feature` has 26 identities
+(4 E2E, 22 regular) and `enable-commit-attribution.feature` has 8 (5 E2E, 3
+regular). Feature tags are `@givn.delta`, the change type and the capability;
+no delta scenario carries `@wip` any more (the tag was removed as each became
+green). The
 permanent fragment retains its other E2E actions without copying their
 scenarios into this change.
 
@@ -913,8 +950,8 @@ flow outcomes, not a newly minted event vocabulary.
 
 ## Interaction Coverage Matrix
 
-Rows below cover all 39 normalized rows now recorded in the durable support
-fragment (38 before design review plus the subagent row added on 2026-10-06). Non-attribution rows are retained inventory evidence, not extra
+Rows below cover all 40 normalized rows now recorded in the durable support
+fragment (38 before design review, plus the subagent row and the contract-probe row). Non-attribution rows are retained inventory evidence, not extra
 implementation scope. Their existing driver files are explicitly named;
 limitations in historical file-only assertions remain preexisting and are not
 claimed repaired by this compatibility change.
@@ -924,7 +961,8 @@ claimed repaired by this compatibility change.
 | attribute-commits / initialize shared attribution | Consumer initializes a project and receives shared attribution plumbing | CLI | Compiled givn init subprocess in Git fixture, stdout report, then actual provisioned OpenCode run acknowledges shell environment; `llm_attribution_e2e_steps.rs`. |
 | attribute-commits / attributed Git commit | An attributed commit exposes the current LLM and harness | CLI | Existing real Git commit subprocess and Git show readback; same E2E file, unchanged. |
 | attribute-commits / OpenCode attributed shell | OpenCode prepares attribution using its selected model | CLI | Actual V1/V2 run with loopback provider tool call, parse completed shell result and captured actual environment; same E2E file, new shared runtime driver. |
-| attribute-commits / subagent attributed shell | OpenCode V2 attributes a subagent's command to the subagent's model | CLI | Actual V2 latest run on the owned server with the `attribution-subagent` fixture agent; parent NDJSON yields the `subagent` tool result and child session ID; `GET /api/session/<child>/message` yields the child's completed shell result, whose `OPENCODE_SESSION_ID` must be the child's; `llm_attribution_e2e_steps.rs` plus runtime driver. Characterization; can pass before the change. |
+| attribute-commits / subagent attributed shell | OpenCode V2 attributes a subagent's command to the subagent's model | CLI | Actual V2 latest run on the owned server with the `attribution-subagent` fixture agent; parent NDJSON yields the `subagent` tool result and child session ID; `GET /api/session/<child>/message` yields the child's completed shell result, whose `OPENCODE_SESSION_ID` must be the child's; `llm_attribution_e2e_steps.rs` plus runtime driver. The main session then runs its own command after the child (second allowed command `... attribution-fixture.mjs main`); the contract probe confirms each `execute.before` session. Characterization; it also passes with the immutable prototype. |
+| attribute-commits / V2 shell event contract | OpenCode V2 delivers the shell request to the attribution adapter before shell creation | CLI | Actual V2 latest run with the test-only recorder plugin installed beside the generated plugin in the isolated project; records raw `execute.before`, `create.before` and `execute.after` payload keys, order and command equality; `llm_attribution_e2e_steps.rs` plus runtime driver. Real-loader contract evidence for the D3 assumptions. |
 | attribute-commits / Claude attributed commit | Claude attributes a commit using its current model | CLI | Existing generated Claude hook invoked with fixture transcript/PreToolUse JSON, real wrapped Git command and Git show; same E2E file, unchanged. |
 | enable-commit-attribution / read init report | Consumer sees the commit attribution installation report | CLI | Existing compiled givn init output assertions; `llm_attribution_installation_e2e_steps.rs`. |
 | enable-commit-attribution / upgrade retrofit | Consumer upgrades an existing project with attribution plumbing missing | CLI | Real givn upgrade on clean committed missing/obsolete state, stdout refresh and OpenCode completed shell result; same installation E2E file. |
@@ -974,7 +1012,7 @@ claimed repaired by this compatibility change.
 - Language: preserve current English CLI text and existing labels. The change
   does not add a terminal screen or style contract under `docs/design/`.
 - Evidence kind: captured real terminal/subprocess transcript. For each of the
-  eight affected E2E titles, combine its release/flag Examples into labeled
+  nine affected E2E titles, combine its release/flag Examples into labeled
   sections under
   `givn/changes/fix-opencode-v2-attribution/evidence/visual/<scenario-slug>/transcript.txt`.
   Include executed argv, CLI stdout/stderr, actual shell tool result, exit
@@ -1040,16 +1078,21 @@ claimed repaired by this compatibility change.
    synthetic loader status, live credentials, or host networking. The shell-only
    validator must work through canonical gates and coverage, not only the
    wrapper. RAII is insufficient for runner process exit or SIGINT/SIGTERM;
-   supervisor lease and owned-process-group probes remain mandatory and unrun.
+   supervisor lease and owned-process-group probes remain mandatory; they have run and pass (`run-suite.sh --probes`).
 8. Active-plugin diagnostics and idempotent outputs cannot independently prove
    every hook was called exactly once. That is not a new product requirement;
    the documented entrypoint and real-loader evidence bound compatibility.
-9. The V2 subagent E2E scenario does not discriminate the D3 link by itself:
-   in the fixture the subagent's model is also the last observed model, so the
-   immutable prototype passes it as a negative control. The regular subagent
-   scenario (which fails against the prototype) and the contract probe scenario
-   carry that proof; a parent shell after the subagent would be needed to make
-   the E2E discriminating.
+9. The V2 subagent E2E scenario is characterization and does not discriminate
+   the D3 link: the immutable prototype passes it as a negative control, even
+   with the main session's own command after the child, because the main
+   session's resumed request re-sets the last-observed model; running the main
+   shell concurrently with the child instead ran it first in 3 of 3 runs. The
+   user accepted this on 2026-10-06 (option A). The regular subagent scenario
+   (which fails against the prototype) and the contract probe scenario carry
+   the proof.
+10. The `execute.after` id guard is defence in depth: with the `execute.before`
+   guard in place no id-less entry exists, and a mutant without it survived,
+   so no mutant is committed for it.
 
 ## Durable arc42 documentation handoff
 
@@ -1079,8 +1122,8 @@ tests as executed. Keep current facts distinct from planned implementation.
 Update `docs/arc42/README.md` index/context note with a link to this change's
 design and the compatible OpenCode adapter scope. Preserve unrelated chapters
 and existing ADR indexes. The support-fragment inventory in
-`givn/specs/fragments/fragment.md` has 39 rows: 34 existing E2E mappings, four
-new regeneration actions, and the subagent shell action added on 2026-10-06.
+`givn/specs/fragments/fragment.md` has 40 rows: 34 existing E2E mappings, four
+new regeneration actions, the subagent shell action and the contract-probe action.
 Do not duplicate it into including use cases.
 
 Exact glossary text:
@@ -1196,7 +1239,7 @@ canonical artifact is this design. No MADR, amendment, or register entry.
 
 ## Planning validation and handoff boundary
 
-- Wrote only proposal, delta specs, this design and the permitted durable
+- Historical (planning session, before implementation): wrote only proposal, delta specs, this design and the permitted durable
   support-fragment inventory. No implementation, bindings, commits, regeneration,
   status commands, reviews, task authoring or arc42 marker writing.
 - Routing the real proposal exited 0 with signal recommending
@@ -1225,7 +1268,7 @@ canonical artifact is this design. No MADR, amendment, or register entry.
   terminal evidence are mandatory; distinguish setup-scope permanent runs from final `--all` execution after deltas are green. They require implementation
   of the test infrastructure before any scenario can be marked complete.
 
-Stop after this technical design. The orchestrator's documentation writer owns
+Historical: the planning session stopped after this technical design. The orchestrator's documentation writer owns
 the durable arc42 step and required marker before a fresh-context design-review
 handoff. No next-stage command sequence is hardcoded here; the effective
 manifest remains the workflow authority.

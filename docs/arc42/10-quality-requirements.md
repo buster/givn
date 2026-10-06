@@ -76,7 +76,7 @@ graph TD
 | Q-75 | Migration safety | A migration loses a behavior, E2E entry, or interaction mapping. | `givn check migration` writes a failed comparison receipt and exits non-zero before archive. |
 | Q-76 | Migration safety | A migration preserves specification evidence and source coverage. | The check writes passing behavior and source comparison receipts containing before/after counters. |
 | Q-77 | Release safety | The 0.5.0-to-0.6.0 bundle is inspected before release. | The catalog resolves one target version and the proposal/design describe semantic moves, confirmation, coverage, Handoff safety, and archive protection. |
-| Q-78 | Commit attribution compatibility (planned) | A developer runs the generated integration through real OpenCode V1 floor 1.18.29, latest stable V1, and latest stable V2 with a selected model and variant. | The completed CLI shell-tool result reports active attribution, provider/model, reasoning, OpenCode harness, and committer name. Node-only hook invocation or installed-file parity is not real-loader evidence; successful labels do not prove session-correlated accuracy. |
+| Q-78 | Commit attribution compatibility | A developer runs the generated integration through real OpenCode V1 floor 1.18.29, latest stable V1, and latest stable V2 with a selected model and variant. | The completed CLI shell-tool result reports active attribution, provider/model, reasoning, OpenCode harness, and committer name. Node-only hook invocation or installed-file parity is not real-loader evidence; successful labels do not prove session-correlated accuracy. |
 | Q-79 | Commit attribution | Claude supplies a current model in the session transcript before a Bash command that uses an RTK shell wrapper. | The generated hook exports context for the complete command so the resulting Git committer and message identify that model, reasoning mode, Claude Code harness, and managed co-author attribution. |
 | Q-80 | Archive proof | The project has uncommitted work when archive starts. | The archive refuses, names the offending files, and leaves the change active with no candidate created. |
 | Q-81 | Archive proof | The full suite fails against the merged candidate. | The candidate commit and pending receipt remain in `givn/archive/<id>/`; the permanent tree is not rolled back. |
@@ -95,19 +95,19 @@ graph TD
 | Q-94 | Configurability | A project synchronizes guidance beside human instructions and a project-owned dialog override. | The target refreshes only managed guidance, preserves human content and override precedence, and does not inject a bundled full policy into a project replacement. |
 | Q-95 | Question quality | A project-familiar reader evaluates an unseen decision question after the policy is delivered. | Review distinguishes the displayed subject, brief sourced context, answer consequences and material change costs from mere formatting; an invalid option or unnecessary fact-finding question is a defect. This is reviewed evidence, not a binary compliance guarantee. |
 | Q-96 | Commit attribution | An omp session with a current model prepares a Bash command that creates a revision. | The generated `pre` hook returns the command with attribution exports so the resulting Git committer and message identify the session model, thinking level, and the `omp` harness; a command that creates no revision is returned unchanged, and an unknown model yields `unavailable`. |
-| Q-97 | Regeneration compatibility (planned) | Initialization, skills sync, target addition, addon enable, addon disable, or managed upgrade generates OpenCode attribution for a selected target. | Each distinct action is followed by a real supported-release command and completed shell result; the canonical file matches the embedded asset. Upgrade's clean-state protection and allowlist-only revision remain intact. |
-| Q-98 | Behavior preservation (planned) | Metadata changes, session context is absent/unknown, or V2 default lookup is unavailable or fails. | Public-hook characterization of the V1 hooks and the retained fallbacks matches the immutable supplied prototype, including variant retention and session/last/default precedence. No usable model leaves model/reasoning unavailable, preserves the committer, and does not block shell use. These tests are not loader or session-accuracy proof. |
-| Q-99 | Installation boundaries (planned) | Reinit runs without force, init runs without addons, or sync selects only Claude. | Reinit preserves configuration while refreshing the plugin; attribution remains independent of addons; a Claude-only target neither installs nor reports OpenCode attribution. |
-| Q-100 | Issuing-session attribution (planned) | On OpenCode V2 a main session on model A and a subagent child session on model B each run a shell command; a session's shell request is blocked and the session moves on; two sessions request an identical command. | Each linked command carries its issuing session's model and reasoning mode; a blocked request dropped by its session's newer message labels no later command; identical commands are claimed in issue order. Hook-level scenarios prove the link; the real-loader subagent scenario characterizes the child's label and can pass before the change. Unlinked commands keep the best-effort fallback. |
+| Q-97 | Regeneration compatibility | Initialization, skills sync, target addition, addon enable, addon disable, or managed upgrade generates OpenCode attribution for a selected target. | Each distinct action is followed by a real supported-release command and completed shell result; the canonical file matches the embedded asset. Upgrade's clean-state protection and allowlist-only revision remain intact. |
+| Q-98 | Behavior preservation | Metadata changes, session context is absent/unknown, or V2 default lookup is unavailable or fails. | Public-hook characterization of the V1 hooks and the retained fallbacks matches the immutable supplied prototype, including variant retention and session/last/default precedence. No usable model leaves model/reasoning unavailable, preserves the committer, and does not block shell use. These tests are not loader or session-accuracy proof. |
+| Q-99 | Installation boundaries | Reinit runs without force, init runs without addons, or sync selects only Claude. | Reinit preserves configuration while refreshing the plugin; attribution remains independent of addons; a Claude-only target neither installs nor reports OpenCode attribution. |
+| Q-100 | Issuing-session attribution | On OpenCode V2 a main session on model A and a subagent child session on model B each run a shell command; a session's shell request is blocked and the session moves on; two sessions request an identical command. | Each linked command carries its issuing session's model and reasoning mode; a blocked request dropped by its session's newer message labels no later command; identical commands are claimed in issue order. Hook-level scenarios prove the link; the real-loader subagent scenario characterizes the child's label and can pass before the change. Unlinked commands keep the best-effort fallback. |
 
-### Planned OpenCode acceptance mapping
+### OpenCode acceptance mapping
 
 [The compatibility design](../../givn/changes/fix-opencode-v2-attribution/design.md)
 owns the runtime provisioning and deterministic provider/catalog twins. Its
 real-loader matrix uses isolated projects, fake credentials, owned loopback
 services, and OS-enforced network isolation; missing runtimes, loader errors,
 timeouts, malformed results, or skipped scenarios fail, never silently pass.
-Real-loader and public-hook tests below are planned and have not run.
+Real-loader and public-hook tests below have run and pass (`run-suite.sh --all`; evidence in the change's `tasks.md`).
 
 Runtime validation must also work through the unchanged configured
 `./run-tests.sh` and `./run-tests.sh --e2e` commands, direct cargo/nextest, and
@@ -117,7 +117,7 @@ Nix or Fish. Setup smoke proves runtime admission, provider readiness, and perma
 SIGINT/SIGTERM, runner-exit/lease-EOF, and timeout probes must prove termination
 and reaping of the owned server, runtime descendants and twins without stopping
 an unrelated service. These are hard infrastructure prerequisites, not new
-attribution fallback scenarios, and remain unexecuted.
+attribution fallback scenarios; the probes have run and pass (`run-suite.sh --probes`).
 
 | Quality concern | Exact delta scenario title(s) |
 |---|---|

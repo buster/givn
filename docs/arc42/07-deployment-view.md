@@ -63,17 +63,17 @@ The local dispatcher under the Git hooks directory is machine-local and is
 recreated by `givn init` or `givn skills sync`; Git clones do not activate a
 project hook merely because the source file is checked in.
 
-### Planned OpenCode compatibility footprint
+### OpenCode compatibility footprint
 
 [The compatibility design](../../givn/changes/fix-opencode-v2-attribution/design.md)
 retains exactly one generated `.opencode/plugins/givn-attribution.js` when
-OpenCode is selected. The same embedded asset is intended for V1 1.18.29+
+OpenCode is selected. The same embedded asset serves V1 1.18.29+
 within V1 and V2. A rebuilt Givn binary supplies it through the existing
 generation path; no V1 sibling, runtime-version selection, or production npm
 installation is added. Regeneration still overwrites the canonical generated
 file, without backups, merges, or preservation of arbitrary manual edits.
 
-The planned acceptance environment preprovisions real OpenCode releases and
+The acceptance environment preprovisions real OpenCode releases and
 Node through the Nix development closure. Each example owns an isolated
 temporary project and V2 server where applicable, plus a deterministic loopback
 provider twin and a refusing forward proxy. The proxy answers `403` to every
@@ -84,9 +84,9 @@ The fixed fixture command uses the absolute pinned Node path because V2's
 `/bin/zsh` login shell resets `PATH`. Darwin Seatbelt or a Linux loopback-only network
 namespace denies other traffic; missing isolation fails setup. These are
 test-only processes, not deployed Givn services. Provisioning and compatibility
-tests remain unexecuted; the detailed lifecycle belongs to the design.
+tests have run and pass (evidence in the change's `tasks.md`); the detailed lifecycle belongs to the design.
 
-The planned `tests/fixtures/opencode/resolve-runtime.sh` validates pinned runtime
+`tests/fixtures/opencode/resolve-runtime.sh` validates pinned runtime
 paths exported by the development shell defined only in `flake.nix`. It is used
 by the suite wrapper, direct `run-tests.sh`, and runtime fixtures used in
 cargo/nextest and coverage; the shell scripts never invoke Nix or Fish. Canonical
@@ -100,7 +100,7 @@ termination and reaping; `run-suite.sh --setup-smoke` holds that lease with a
 FIFO writer so a closed caller stdin (CI) is not read as a closed lease. The
 test-only negative-control overrides (substitute plugin files) are refused
 unless `GIVN_OPENCODE_NEGATIVE_CONTROL=1` is set, so no exported variable can
-turn the suite green against a substitute. Admission and interruption probes remain unexecuted;
+turn the suite green against a substitute. Admission and interruption probes have run and pass (`run-suite.sh --probes`);
 RAII alone is not an interruption-cleanup guarantee.
 
 ## 7.5 Distribution Work

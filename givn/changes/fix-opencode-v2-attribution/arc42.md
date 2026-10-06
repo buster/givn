@@ -53,8 +53,9 @@ does not erase the original finding or create new chapter-01 goals.
   retained label/variant caveat, overwrite boundary, and design link. Preserve
   unrelated release, coverage, and installation content.
 - The reusable support fragment (`givn/specs/fragments/fragment.md`) contains
-  39 normalized interactions after design review added “have a subagent
-  execute an attributed shell command through OpenCode” on 2026-10-06; no
+  40 normalized interactions after design review added “have a subagent
+  execute an attributed shell command through OpenCode” and the second
+  follow-ups added the contract-probe row on 2026-10-06; no
   duplicated inventory or invented `usecase.md` is added.
 
 ## ADR classification
@@ -222,6 +223,21 @@ lease, overrides), 08 (crosscutting: never-blocking adapter, negative controls,
 refusing proxy) and 11 (R-50, R-76 amended; R-82 added). Chapters 02-06, 09, 10
 and 12 are unaffected by these test-infrastructure deviations. This is
 documentation only; the reviewer must re-check it.
+
+### Second post-implementation amendment — 2026-10-06
+
+After the second review follow-ups the asset gained guards, a bounded default
+lookup, defaults-first stamping and a once-only registration warning, and the
+subagent E2E was documented as characterization (see the design's ledger entry
+"Robustness of the V2 adapter"). Chapters changed: 05 (acceptance blocks
+implemented), 06 (guarded handlers, string identifier checks, defaults-first,
+2 s bound, once-only warning, observed order), 07 (probes have run), 08
+(robustness statement, "planned" wording removed), 10 (Q-78, Q-93-Q-96 no longer
+"planned"; tests have run) and 11 (R-50, R-76 wording; R-82 reworded: the
+subagent E2E is characterization and the gap is closed by user decision). This
+supersedes the earlier statement that chapters 05, 06 and 10 were unaffected by
+the test-infrastructure deviations. Chapters 02, 03, 04, 09 and 12 remain
+unaffected. The reviewer must re-check this documentation.
 
 ## Status
 STATUS: DONE

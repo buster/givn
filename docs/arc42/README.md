@@ -55,14 +55,13 @@ Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
 register](adr/README.md) for status, relationships, evidence, reserved IDs, and
 historical records.
 
-The [planned OpenCode attribution compatibility change](../../givn/changes/fix-opencode-v2-attribution/design.md)
+The [OpenCode attribution compatibility change](../../givn/changes/fix-opencode-v2-attribution/design.md)
 keeps one embedded adapter and generated path for V1 1.18.29+ within V1 and
 V2 across initialization and regeneration, and on V2 links each shell command
 to its issuing session (subagents included). Chapters 2, 3, 5–8, and 10–12
-record its planned scope, retained fallback limitations, and pending runtime
-evidence. No ADR is created or amended: the local reversible approach remains
-owned by the design. Documentation completion is not implementation or test
-proof.
+record its scope, retained fallback limitations, and runtime evidence (real
+V1 and V2 runtimes, recorded in the change's `tasks.md`). No ADR is created or amended: the local reversible approach remains
+owned by the design. Documentation is not itself test proof; the change's evidence is.
 
 ## Chapters
 

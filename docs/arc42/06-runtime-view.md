@@ -65,7 +65,7 @@ values. No model selection is written to project configuration.
 The existing OpenCode V1 path observes `chat.message` and `chat.params`, then
 contributes process values through `shell.env`, whose input names the issuing
 session (subagent child sessions included). The
-[planned dual-generation adapter](../../givn/changes/fix-opencode-v2-attribution/design.md)
+[dual-generation adapter](../../givn/changes/fix-opencode-v2-attribution/design.md)
 retains those hooks and adds default `server()` delegation to the named V1
 implementation. Its default `setup(ctx)` registers V2 `context`, `compaction`,
 and `generate` (model observation), tool `execute.before` and `execute.after`
@@ -87,7 +87,14 @@ The adapter behavior is:
    and uses its session's record. Without a linked request or usable record it
    uses `lastModel`, then `ctx.model.default()` (reading `response.data`; real
    V2 supplies no variant there). `execute.after` removes the request by
-   session and call identifier. Default lookup errors remain swallowed.
+   session and call identifier. Default lookup errors remain swallowed and the
+   lookup waits at most 2 seconds. Tool events lacking a string session,
+   message or call identifier (`execute.after`: call identifier) or a string
+   command are ignored. `create.before` writes the unavailable defaults before
+   its first await, so a hook the runtime abandons mid-lookup still leaves
+   attribution unavailable. Every handler is guarded: a throwing or payload-less
+   hook never fails the shell. A rejected hook registration does not stop the
+   others and is reported once per kind with `console.warn`.
 4. Set `GIVN_ATTRIBUTION_ACTIVE=1` and harness `opencode`; initialize model and
    reasoning to `unavailable`. A usable identity supplies the model and
    `GIT_COMMITTER_NAME`; a truthy variant supplies reasoning. Without an
@@ -97,8 +104,9 @@ The adapter behavior is:
 The verified V2 shell lifecycle calls `create.before` before the shell-tool
 callback adds `OPENCODE_SESSION_ID`, so the adapter cannot read the session at
 that point; the preceding tool `execute.before` supplies it. The following
-sequence describes the planned order; it is not evidence that the generated
-adapter has been tested.
+sequence is the order observed against released V2 2.0.22 by the contract-probe
+scenario (`execute.before`, `create.before`, `execute.after`; recorded in the
+change's evidence transcript).
 
 ```mermaid
 sequenceDiagram
@@ -149,12 +157,12 @@ exported environment reaches the Git process that invokes the shared hook. A
 missing model leaves the LLM value as `unavailable` and omits the committer
 override; the harness marker is still written.
 
-### Planned regeneration compatibility
+### Regeneration compatibility
 
 The existing selected-target synchronization writes the canonical OpenCode
 asset for initialization/reinitialization, `givn skills sync`,
-`givn skills targets add`, addon enable/disable, and managed upgrade. The plan
-changes the embedded asset, not these call paths. Reinitialization without
+`givn skills targets add`, addon enable/disable, and managed upgrade. The change
+replaces the embedded asset, not these call paths. Reinitialization without
 force preserves project configuration; addon state does not gate attribution;
 an unselected OpenCode target receives no plugin. Managed upgrade retains its
 clean-state witness and calculated allowlist. An upgrade returning early for a

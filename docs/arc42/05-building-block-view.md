@@ -10,7 +10,7 @@ extraction remains in its generated plugin asset. The same attribution CLI
 stamps only the managed co-author line at the commit boundary (`givn commit` on every backend, the hook on Git) and removes
 stale legacy Givn attribution trailers.
 
-The [planned OpenCode compatibility change](../../givn/changes/fix-opencode-v2-attribution/design.md)
+The [OpenCode compatibility change](../../givn/changes/fix-opencode-v2-attribution/design.md)
 keeps one embedded source,
 `assets/agent-integrations/opencode/givn-attribution.js`, and the existing
 `skills::targets::sync_agent_integrations` writer. Its default object exposes
@@ -137,7 +137,7 @@ test-only child process that binds a port, answers a readiness path, and can
 self-exit or trap signals; it exists so `givn run` scenarios exercise a real
 HTTP-ready product without shipping any test surface in the binary.
 
-The planned OpenCode acceptance blocks add a POSIX-shell runtime validator
+The OpenCode acceptance blocks add a POSIX-shell runtime validator
 (`tests/fixtures/opencode/resolve-runtime.sh`) and separate supervisor test
 target (`tests/opencode_supervisor.rs`). The development shell in `flake.nix`
 exports pinned runtime paths; the validator checks those same paths for the
@@ -145,4 +145,4 @@ wrapper, direct runner, cargo/nextest fixtures, and coverage without invoking
 Nix or Fish. The supervisor uses the existing unix `libc` dependency, a parent
 pipe lease, and owned process groups; it is not a new production executor or
 attribution hook. These blocks and their executable admission/teardown proofs
-are not implemented.
+are implemented and have run (`run-suite.sh --probes`).
