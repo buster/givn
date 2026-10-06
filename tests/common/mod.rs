@@ -10,6 +10,7 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 use tempfile::TempDir;
 
+pub mod opencode_characterize;
 pub mod opencode_runtime;
 
 /// The version-control fixture the project root emulates.

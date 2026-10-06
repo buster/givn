@@ -35,7 +35,7 @@ Feature: Attribute commits
       | V1 latest |
       | V2 latest |
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: OpenCode accepts either supplied model identifier spelling
     Given an isolated OpenCode "<generation>" attribution integration
     When OpenCode reports provider "givn-fixture" with model "model-a" using identifier "<identifier>" for session "session-a"

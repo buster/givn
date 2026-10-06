@@ -356,6 +356,14 @@ pub(crate) struct OpencodePluginState {
 }
 
 fn assert_opencode_env(world: &GivnWorld, name: &str, expected: &str) {
+    if let Some(env) = super::llm_attribution_steps::characterized_shell_env(world) {
+        assert_eq!(
+            env.get(name).and_then(serde_json::Value::as_str),
+            Some(expected),
+            "characterized shell environment: {env}"
+        );
+        return;
+    }
     let state = world
         .opencode_plugin
         .as_ref()

@@ -83,6 +83,8 @@ pub struct GivnWorld {
     pub(crate) git_attribution: Option<llm_attribution_steps::GitAttributionState>,
     /// State for the generated OpenCode attribution integration scenario.
     pub(crate) opencode_plugin: Option<llm_attribution_e2e_steps::OpencodePluginState>,
+    /// State for the public-hook OpenCode attribution characterization.
+    pub(crate) opencode_characterization: Option<llm_attribution_steps::CharacterizationState>,
     /// State for the generated Claude attribution integration scenario.
     pub(crate) claude_attribution: Option<llm_attribution_e2e_steps::ClaudeAttributionState>,
     /// State for the generated omp attribution integration scenarios.

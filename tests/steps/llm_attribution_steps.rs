@@ -7,6 +7,7 @@ use cucumber::{given, then, when};
 
 use super::GivnWorld;
 use crate::common;
+use crate::common::opencode_characterize::Characterization;
 
 #[derive(Debug, Default)]
 pub(crate) struct GitAttributionState {
@@ -487,4 +488,171 @@ fn then_latest_revision_lacks(world: &mut GivnWorld, path: String) {
         !crate::steps::archive_proof_support::revision_contains(world, &path),
         "the latest revision unexpectedly contains {path}"
     );
+}
+
+/// One public-hook characterization case: a generated OpenCode plugin of one
+/// generation plus the ordered actions replayed through its hooks.
+#[derive(Debug)]
+pub(crate) struct CharacterizationState {
+    generation: String,
+    /// Keeps the project that holds the generated plugin alive.
+    _project: common::TestEnv,
+    asset: PathBuf,
+    initial_env: serde_json::Map<String, serde_json::Value>,
+    actions: Vec<serde_json::Value>,
+    outcome: Option<Result<Characterization, String>>,
+}
+
+/// The environment of the most recently created characterized shell.
+pub(crate) fn characterized_shell_env(world: &GivnWorld) -> Option<&serde_json::Value> {
+    let state = world.opencode_characterization.as_ref()?;
+    match state.outcome.as_ref().expect("a shell was prepared") {
+        Ok(result) => Some(result.shells.last().expect("a shell was created")),
+        Err(error) => panic!("OpenCode shell preparation failed: {error}"),
+    }
+}
+
+fn characterization(world: &mut GivnWorld) -> &mut CharacterizationState {
+    world
+        .opencode_characterization
+        .as_mut()
+        .expect("an isolated OpenCode attribution integration")
+}
+
+fn prototype_path() -> PathBuf {
+    common::repo_path("tests/fixtures/opencode/prototype/givn-attribution.js")
+}
+
+/// The immutable prototype is an oracle only where it has the same observable
+/// contract: the V1 hooks, and V2 commands that are not linked to a session
+/// (the prototype has no session link and a different default-lookup shape).
+fn prototype_is_oracle(state: &CharacterizationState) -> bool {
+    state.generation == "V1"
+        || !state.actions.iter().any(|action| {
+            matches!(action["op"].as_str(), Some("request"))
+                || (action["op"] == "run" && !action["session"].is_null())
+                || (action["op"] == "default" && action["mode"] == "model")
+        })
+}
+
+/// Replay the recorded actions through the generated plugin, and compare the
+/// result with the immutable prototype wherever it is an oracle.
+fn replay(world: &mut GivnWorld) {
+    let state = characterization(world);
+    let outcome = common::opencode_characterize::run(
+        &state.asset,
+        &state.generation,
+        &state.initial_env,
+        &state.actions,
+    );
+    if let Ok(result) = &outcome {
+        if state.asset != prototype_path() && prototype_is_oracle(state) {
+            let oracle = common::opencode_characterize::run(
+                &prototype_path(),
+                &state.generation,
+                &state.initial_env,
+                &state.actions,
+            )
+            .expect("the immutable prototype replays the same actions");
+            assert_eq!(
+                result.shells, oracle.shells,
+                "generated plugin differs from the supplied prototype's observable behavior"
+            );
+        }
+    }
+    state.outcome = Some(outcome.map_err(|error| format!("{error:#}")));
+}
+
+#[given(regex = r##"^an isolated OpenCode "([^"]+)" attribution integration$"##)]
+fn given_isolated_opencode_integration(world: &mut GivnWorld, generation: String) {
+    assert!(
+        matches!(generation.as_str(), "V1" | "V2"),
+        "unsupported OpenCode generation: {generation}"
+    );
+    let env = common::make_bare_root();
+    let init = common::run_givn(&env, &["init", "--agents", "opencode", "--no-addons"]);
+    assert!(
+        init.status.success(),
+        "givn init failed: {}",
+        String::from_utf8_lossy(&init.stderr)
+    );
+    std::fs::write(env.path("package.json"), r#"{"type":"module"}"#)
+        .expect("write JavaScript module configuration");
+    let generated = env.path(".opencode/plugins/givn-attribution.js");
+    // An alternative module may stand in for the generated plugin, to show a
+    // scenario fails against it (for example the immutable prototype).
+    let alternative = std::env::var_os("GIVN_OPENCODE_CHARACTERIZE_ASSET").map(PathBuf::from);
+    if alternative.is_none() {
+        assert_eq!(
+            std::fs::read(&generated).expect("generated OpenCode plugin"),
+            include_bytes!("../../assets/agent-integrations/opencode/givn-attribution.js"),
+            "the generated plugin must be the embedded asset"
+        );
+    }
+    let state = CharacterizationState {
+        generation,
+        asset: alternative.unwrap_or(generated),
+        _project: env,
+        initial_env: serde_json::Map::new(),
+        actions: Vec::new(),
+        outcome: None,
+    };
+    let shape = common::opencode_characterize::run(
+        &state.asset,
+        &state.generation,
+        &state.initial_env,
+        &[],
+    )
+    .expect("the generated plugin loads through its public entrypoint");
+    if state.asset != prototype_path()
+        && std::env::var_os("GIVN_OPENCODE_CHARACTERIZE_ASSET").is_none()
+    {
+        assert_eq!(shape.module["id"], "givn-attribution");
+        assert_eq!(shape.module["server"], "function");
+        assert_eq!(shape.module["setup"], "function");
+        let expected_hooks = if state.generation == "V1" {
+            serde_json::json!({"v1": ["chat.message", "chat.params", "shell.env"]})
+        } else {
+            serde_json::json!({"v2": {
+                "session": ["compaction", "context", "generate"],
+                "tool": ["execute.after", "execute.before"],
+                "shell": ["create.before"],
+            }})
+        };
+        assert_eq!(shape.hooks, expected_hooks, "registered hooks");
+    }
+    world.opencode_characterization = Some(state);
+}
+
+#[when(
+    regex = r##"^OpenCode reports provider "([^"]+)" with model "([^"]+)" using identifier "([^"]+)" for session "([^"]+)"$"##
+)]
+fn when_opencode_reports_identifier(
+    world: &mut GivnWorld,
+    provider: String,
+    model: String,
+    identifier: String,
+    session: String,
+) {
+    assert!(
+        matches!(identifier.as_str(), "id" | "modelID"),
+        "unsupported identifier spelling: {identifier}"
+    );
+    characterization(world).actions.push(serde_json::json!({
+        "op": "remember",
+        "session": session,
+        "provider": provider,
+        "model": model,
+        "identifier": identifier,
+    }));
+}
+
+#[when(regex = r##"^OpenCode prepares an attributed shell for session "([^"]+)"$"##)]
+fn when_opencode_prepares_shell_for_session(world: &mut GivnWorld, session: String) {
+    characterization(world).actions.push(serde_json::json!({
+        "op": "run",
+        "session": session,
+        "command": "git commit",
+    }));
+    replay(world);
 }
