@@ -78,7 +78,7 @@ Feature: Enable commit attribution
       | V1 latest |
       | V2 latest |
 
-  @givn.added @wip
+  @givn.added
   Scenario: Reinitialization without force refreshes attribution without replacing project configuration
     Given an initialized project selecting OpenCode with a V1-only attribution integration
     And the project configuration is snapshotted

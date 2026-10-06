@@ -81,6 +81,8 @@ pub struct GivnWorld {
     env: Option<common::TestEnv>,
     /// State for the commit-attribution scenarios.
     pub(crate) git_attribution: Option<llm_attribution_steps::GitAttributionState>,
+    /// Saved project configuration captured before a regeneration command.
+    pub(crate) config_snapshot: Option<llm_attribution_installation_steps::ConfigSnapshot>,
     /// State for the generated OpenCode attribution integration scenario.
     pub(crate) opencode_plugin: Option<llm_attribution_e2e_steps::OpencodePluginState>,
     /// State for the public-hook OpenCode attribution characterization.
