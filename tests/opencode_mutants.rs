@@ -11,6 +11,11 @@ use std::process::Command;
 
 use anyhow::Context;
 
+// Only `run_with` is exercised here; the rest serves the feature runner.
+#[allow(dead_code)]
+#[path = "common/opencode_characterize.rs"]
+mod characterize;
+
 /// (mutant file under `tests/fixtures/opencode/mutants/`, scenario it must fail)
 const CASES: &[(&str, &str)] = &[
     (
@@ -230,5 +235,31 @@ fn should_refuse_a_substitute_plugin_when_negative_control_is_not_set() {
     assert!(
         text.contains("GIVN_OPENCODE_NEGATIVE_CONTROL=1"),
         "the refusal must name the required flag:\n{text}"
+    );
+}
+
+#[test]
+fn should_fail_with_a_deadline_error_when_the_harness_never_finishes() {
+    let directory = tempfile::tempdir().expect("temporary directory");
+    let harness = directory.path().join("hang.sh");
+    std::fs::write(&harness, "sleep 30\n").expect("write the hanging harness");
+    let started = std::time::Instant::now();
+    let error = characterize::run_with(
+        std::ffi::OsStr::new("/bin/sh"),
+        &harness,
+        std::time::Duration::from_millis(300),
+        Path::new("/unused"),
+        "V2",
+        &serde_json::Map::new(),
+        &[],
+    )
+    .expect_err("a harness that never finishes must fail");
+    assert!(
+        format!("{error:#}").contains("deadline"),
+        "the failure must name the deadline: {error:#}"
+    );
+    assert!(
+        started.elapsed() < std::time::Duration::from_secs(10),
+        "the harness was not stopped at its deadline"
     );
 }

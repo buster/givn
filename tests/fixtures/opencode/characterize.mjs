@@ -1,9 +1,9 @@
 // Characterization harness for the generated OpenCode attribution plugin.
 //
 // Consumes PUBLIC hooks only, with controlled payloads. This is not evidence
-// of real-loader behavior (the E2E scenarios provide that). Each invocation
-// imports the plugin module afresh (cache-busting query string) so module
-// state (session map, last model) never leaks between cases.
+// of real-loader behavior (the E2E scenarios provide that). Each case runs in
+// a fresh Node process (tests/common/opencode_characterize.rs spawns one per
+// case), so module state (session map, last model) never leaks between cases.
 //
 // stdin : {"asset": "<abs path>", "generation": "V1"|"V2", "initialEnv": {...}, "actions": [...]}
 // stdout: {"module": {...}, "hooks": {...}, "shells": [{"op": "...", "env": {...}}], "events": [{"group", "name", "keys"}]}
@@ -49,7 +49,7 @@ const main = async () => {
   const input = await readStdin()
   const { asset, generation, actions } = input
   const initialEnv = input.initialEnv ?? {}
-  const mod = await import(`${pathToFileURL(asset).href}?case=${process.pid}-${Date.now()}`)
+  const mod = await import(pathToFileURL(asset).href)
   const result = {
     module: {
       id: mod.default?.id ?? null,

@@ -4,12 +4,19 @@
 //! with controlled payloads in a fresh Node process per case. It is not
 //! evidence of real-loader behavior.
 
-use std::io::Write;
+use std::ffi::OsStr;
+use std::io::{Read, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
+use std::thread;
+use std::time::{Duration, Instant};
 
 use anyhow::Context;
 use serde_json::{Value, json};
+
+/// Longest a characterization case may run. The plugin's own bounded wait for
+/// a configured default is two seconds, so a case beyond this is a hang.
+const DEADLINE: Duration = Duration::from_secs(20);
 
 /// Result of one characterization run.
 #[derive(Debug, Clone)]
@@ -24,18 +31,40 @@ pub struct Characterization {
     pub events: Vec<Value>,
 }
 
-/// Import `asset` afresh and replay `actions` through its public hooks.
+/// Import `asset` in a fresh process and replay `actions` through its public hooks.
 pub fn run(
     asset: &Path,
     generation: &str,
     initial_env: &serde_json::Map<String, Value>,
     actions: &[Value],
 ) -> anyhow::Result<Characterization> {
-    let node = std::env::var_os("GIVN_OPENCODE_NODE").context(
-        "OpenCode setup failure: GIVN_OPENCODE_NODE is not exported by the development shell",
+    let node = std::env::var_os("GIVN_OPENCODE_NODE").with_context(
+        || "OpenCode setup failure: GIVN_OPENCODE_NODE is not exported by the development shell",
     )?;
     let harness =
         Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/opencode/characterize.mjs");
+    run_with(
+        &node,
+        &harness,
+        DEADLINE,
+        asset,
+        generation,
+        initial_env,
+        actions,
+    )
+}
+
+/// Like [`run`], with an explicit interpreter, harness script and deadline.
+/// The child is killed when the deadline passes.
+pub fn run_with(
+    node: &OsStr,
+    harness: &Path,
+    deadline: Duration,
+    asset: &Path,
+    generation: &str,
+    initial_env: &serde_json::Map<String, Value>,
+    actions: &[Value],
+) -> anyhow::Result<Characterization> {
     let request = json!({
         "asset": asset,
         "generation": generation,
@@ -49,25 +78,62 @@ pub fn run(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .context("spawn the characterization harness")?;
-    child
-        .stdin
-        .take()
-        .context("harness stdin")?
-        .write_all(request.to_string().as_bytes())
-        .context("write the harness request")?;
-    let output = child.wait_with_output().context("wait for the harness")?;
+        .with_context(|| format!("spawn the characterization harness {}", harness.display()))?;
+    let mut stdin = child.stdin.take().context("harness stdin")?;
+    let mut stdout = child.stdout.take().context("harness stdout")?;
+    let mut stderr = child.stderr.take().context("harness stderr")?;
+    // Drain both pipes concurrently so a full pipe never blocks the child.
+    let out_reader = thread::spawn(move || {
+        let mut bytes = Vec::new();
+        stdout.read_to_end(&mut bytes).map(|_| bytes)
+    });
+    let err_reader = thread::spawn(move || {
+        let mut bytes = Vec::new();
+        stderr.read_to_end(&mut bytes).map(|_| bytes)
+    });
+    // A harness that stops reading early closes the pipe; its exit status explains why.
+    let written = stdin.write_all(request.to_string().as_bytes());
+    drop(stdin);
+
+    let started = Instant::now();
+    let status = loop {
+        if let Some(status) = child.try_wait().context("poll the harness")? {
+            break status;
+        }
+        if started.elapsed() >= deadline {
+            child.kill().context("kill the hung harness")?;
+            child.wait().context("reap the hung harness")?;
+            anyhow::bail!(
+                "characterization harness exceeded its {} ms deadline for {generation} {}",
+                deadline.as_millis(),
+                asset.display()
+            );
+        }
+        thread::sleep(Duration::from_millis(10));
+    };
+    let stdout = out_reader
+        .join()
+        .map_err(|_| anyhow::anyhow!("harness stdout reader panicked"))?
+        .context("read the harness stdout")?;
+    let stderr = err_reader
+        .join()
+        .map_err(|_| anyhow::anyhow!("harness stderr reader panicked"))?
+        .context("read the harness stderr")?;
     anyhow::ensure!(
-        output.status.success(),
-        "characterization harness failed ({}): {}",
-        output.status,
-        String::from_utf8_lossy(&output.stderr)
+        status.success(),
+        "characterization harness failed ({status}): {}",
+        String::from_utf8_lossy(&stderr)
     );
-    let parsed: Value =
-        serde_json::from_slice(&output.stdout).context("parse the harness result")?;
+    written.with_context(|| "write the harness request")?;
+    let parsed: Value = serde_json::from_slice(&stdout).with_context(|| {
+        format!(
+            "parse the harness result of {generation} {}",
+            asset.display()
+        )
+    })?;
     let shells = parsed["shells"]
         .as_array()
-        .context("harness result lists shells")?
+        .with_context(|| "harness result lists shells")?
         .iter()
         .map(|shell| shell["env"].clone())
         .collect();
@@ -77,7 +143,7 @@ pub fn run(
         shells,
         events: parsed["events"]
             .as_array()
-            .context("harness result lists events")?
+            .with_context(|| "harness result lists events")?
             .clone(),
     })
 }
