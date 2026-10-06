@@ -139,7 +139,7 @@ Feature: Attribute commits
     And the subagent's command output identifies reasoning mode "low"
     And the subagent's command output identifies committer "LLM: givn-fixture/model-b via opencode"
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: A shell without a remembered session uses the last observed model
     Given an isolated OpenCode "<generation>" attribution integration
     And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"

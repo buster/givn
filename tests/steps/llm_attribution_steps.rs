@@ -699,3 +699,22 @@ fn when_opencode_reports_model_without_reasoning(
         "model": model,
     }));
 }
+
+/// A shell the plugin cannot link to a remembered session. V1 hands its shell
+/// hook a session identifier, which may be unknown; V2 hands none, because
+/// the tool hooks never announced a matching request.
+#[when(regex = r##"^OpenCode prepares an attributed shell with "([^"]+)"$"##)]
+fn when_opencode_prepares_shell_with_context(world: &mut GivnWorld, context: String) {
+    let state = characterization(world);
+    let session = match (context.as_str(), state.generation.as_str()) {
+        ("unknown session", "V1") => serde_json::json!("unknown-session"),
+        ("unknown session" | "no session", _) => serde_json::Value::Null,
+        _ => panic!("unsupported session context: {context}"),
+    };
+    state.actions.push(serde_json::json!({
+        "op": "run",
+        "session": session,
+        "command": "git commit",
+    }));
+    replay(world);
+}
