@@ -812,3 +812,44 @@ fn when_opencode_reports_model_during_request(
         "request": hook,
     }));
 }
+
+/// A subagent runs in its own child session and observes its own model there.
+/// The plugin payloads carry no parent link, so the parent only needs to have
+/// been observed itself.
+#[given(
+    regex = r##"^OpenCode has later remembered model "([^"]+)" with reasoning mode "([^"]+)" for subagent session "([^"]+)" of "([^"]+)"$"##
+)]
+fn given_opencode_remembered_subagent_model(
+    world: &mut GivnWorld,
+    model: String,
+    reasoning: String,
+    subagent_session: String,
+    parent_session: String,
+) {
+    let state = characterization(world);
+    assert!(
+        state
+            .actions
+            .iter()
+            .any(|action| action["op"] == "remember" && action["session"] == parent_session),
+        "parent session {parent_session} has not been observed"
+    );
+    let (provider, model) = split_model(&model);
+    state.actions.push(serde_json::json!({
+        "op": "remember",
+        "session": subagent_session,
+        "provider": provider,
+        "model": model,
+        "variant": reasoning,
+    }));
+}
+
+#[when(regex = r##"^OpenCode runs the shell command "([^"]+)" for session "([^"]+)"$"##)]
+fn when_opencode_runs_shell_command(world: &mut GivnWorld, command: String, session: String) {
+    characterization(world).actions.push(serde_json::json!({
+        "op": "run",
+        "session": session,
+        "command": command,
+    }));
+    replay(world);
+}

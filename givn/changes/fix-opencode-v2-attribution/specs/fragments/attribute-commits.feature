@@ -77,7 +77,7 @@ Feature: Attribute commits
       | V1         |
       | V2         |
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: A subagent's shell command is attributed to the subagent's own model
     Given an isolated OpenCode "<generation>" attribution integration
     And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "main-session"
