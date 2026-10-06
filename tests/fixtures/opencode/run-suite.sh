@@ -12,13 +12,14 @@ setup_smoke=0
 case "${1-}" in
     --regular|--e2e|--all) scope=${1#--}; shift ;;
     --setup-smoke) setup_smoke=1; scope=smoke; shift ;;
+    --probes) scope=probes; shift ;;
     --name)
         [ "$#" -eq 2 ] || { echo 'usage: run-suite.sh --name <scenario title>' >&2; exit 2; }
         scenario_title=$2
         scope=name
         ;;
     '') ;;
-    *) echo 'usage: run-suite.sh [--regular|--e2e|--all|--setup-smoke|--name <scenario title>]' >&2; exit 2 ;;
+    *) echo 'usage: run-suite.sh [--regular|--e2e|--all|--setup-smoke|--probes|--name <scenario title>]' >&2; exit 2 ;;
 esac
 
 GIVN_OPENCODE_ADMISSION_JSON=$(./tests/fixtures/opencode/resolve-runtime.sh --json)
@@ -31,13 +32,27 @@ supervisor_path=$(printf '%s\n' "$supervisor_json" | jq -r 'select(.reason == "c
 export GIVN_OPENCODE_SUPERVISOR=$supervisor_path
 
 if [ "$setup_smoke" -eq 1 ]; then
+    # The supervisor treats EOF on its stdin as a closed parent lease, so the
+    # wrapper owns a lease that stays open independent of the caller's stdin
+    # (CI commonly runs with stdin closed). A FIFO writer holds it open.
     smoke_root=$(mktemp -d "${TMPDIR:-/tmp}/givn-opencode-setup-smoke.XXXXXX")
-    trap 'rm -rf "$smoke_root"' EXIT HUP INT TERM
+    mkfifo "$smoke_root/lease"
+    sleep 3600 > "$smoke_root/lease" &
+    lease_pid=$!
+    trap 'kill "$lease_pid" 2>/dev/null || true; rm -rf "$smoke_root"' EXIT HUP INT TERM
     for release in v1_floor v1_latest v2_latest; do
         release_root=$(mktemp -d "${TMPDIR:-/tmp}/givn-opencode-setup-smoke-${release}.XXXXXX")
         "$supervisor_path" --timeout-seconds 60 --root "$release_root" -- \
-            "$GIVN_OPENCODE_NODE" "$repo_root/tests/fixtures/opencode/runtime_driver.mjs" setup-smoke "$release"
+            "$GIVN_OPENCODE_NODE" "$repo_root/tests/fixtures/opencode/runtime_driver.mjs" setup-smoke "$release" < "$smoke_root/lease"
     done
+    exit 0
+fi
+
+if [ "$scope" = probes ]; then
+    # Actual-port Seatbelt proof, then controlled supervisor probes (SIGINT,
+    # SIGTERM, lease EOF, runner exit, deadline) with an unrelated sentinel.
+    "$GIVN_OPENCODE_NODE" "$repo_root/tests/fixtures/opencode/probe_isolation.mjs"
+    "$GIVN_OPENCODE_NODE" "$repo_root/tests/fixtures/opencode/probe_supervisor.mjs" "$supervisor_path"
     exit 0
 fi
 
