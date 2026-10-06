@@ -15,6 +15,7 @@ const record = (hook, event) => {
     sessionID: event?.sessionID ?? null,
     messageID: event?.messageID ?? null,
     id: event?.id ?? null,
+    envKeys: event?.env && typeof event.env === "object" ? Object.keys(event.env).sort() : null,
     command: typeof event?.command === "string" ? event.command : null,
     inputCommand: typeof event?.input?.command === "string" ? event.input.command : null,
   }

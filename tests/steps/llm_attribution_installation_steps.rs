@@ -1,6 +1,6 @@
 //! Step definitions for the enable-commit-attribution capability.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::{Command, Output};
 
 use cucumber::{given, then};
@@ -131,7 +131,7 @@ fn then_generated_integration_matches_supplied_behavior(world: &mut GivnWorld) {
     let generated = env.path(".opencode/plugins/givn-attribution.js");
     // An alternative module may stand in for the generated plugin, to show this
     // assertion rejects it (for example the obsolete V1-only integration).
-    let alternative = std::env::var_os("GIVN_OPENCODE_CHARACTERIZE_ASSET").map(PathBuf::from);
+    let alternative = common::negative_control_override("GIVN_OPENCODE_CHARACTERIZE_ASSET");
     if alternative.is_none() {
         assert_eq!(
             std::fs::read(&generated).expect("generated OpenCode plugin"),

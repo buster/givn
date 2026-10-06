@@ -72,6 +72,11 @@ const git = required(process.env.GIVN_OPENCODE_GIT, 'GIVN_OPENCODE_GIT')
 required(process.env.TMPDIR, 'TMPDIR')
 const executable = required(runtimes[release], release)
 const isV2 = release === 'v2_latest'
+// A substitute plugin is a negative control only; an exported variable alone must never pass the suite.
+const controlPlugin = Boolean(process.env.GIVN_FIXTURE_CONTROL_PLUGIN)
+if (controlPlugin && process.env.GIVN_OPENCODE_NEGATIVE_CONTROL !== '1') {
+  throw new Error('GIVN_FIXTURE_CONTROL_PLUGIN is only valid as a negative control: also set GIVN_OPENCODE_NEGATIVE_CONTROL=1')
+}
 const resultPath = process.env.GIVN_FIXTURE_RESULT_PATH
 const markerPath = path.join(root, 'provider-ready.json')
 const providerLog = path.join(root, 'provider.log')
@@ -154,7 +159,7 @@ async function validateGeneratedPlugin() {
   }
   const source = await fs.readFile(generatedPlugin, 'utf8')
   const expected = await fs.readFile(path.resolve(here, '../../../assets/agent-integrations/opencode/givn-attribution.js'), 'utf8')
-  if (source !== expected && !process.env.GIVN_FIXTURE_CONTROL_PLUGIN) throw new Error('the generated canonical plugin differs from the embedded asset')
+  if (source !== expected && !controlPlugin) throw new Error('the generated canonical plugin differs from the embedded asset')
 }
 
 function ndjson(stdout) {
@@ -404,7 +409,7 @@ async function main() {
   if (isV2) {
     const { entry, local } = await activePlugin(apiPort)
     // The control plugin only exists to show the primary assertion rejects it; its failed activation is recorded, not thrown.
-    if (!process.env.GIVN_FIXTURE_CONTROL_PLUGIN && (!entry || entry.id !== 'givn-attribution' || entry.state?.status !== 'active' || local.length !== (probeLog ? 2 : 1))) {
+    if (!controlPlugin && (!entry || entry.id !== 'givn-attribution' || entry.state?.status !== 'active' || local.length !== (probeLog ? 2 : 1))) {
       throw new Error(`V2 did not activate exactly one generated canonical plugin ${generatedPlugin}: entry=${JSON.stringify(entry)} local=${JSON.stringify(local)}`)
     }
     plugins = { entry, local }

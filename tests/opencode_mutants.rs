@@ -160,6 +160,7 @@ fn should_fail_the_scenario_when_its_mutant_replaces_the_adapter() {
             .arg(format!("^{}$", regex_escape(title)))
             .env("GIVN_FEATURES", &root)
             .env("GIVN_OPENCODE_CHARACTERIZE_ASSET", &asset)
+            .env("GIVN_OPENCODE_NEGATIVE_CONTROL", "1")
             .current_dir(repo())
             .output()
             .expect("run the scenario against the mutant");
@@ -174,4 +175,60 @@ fn should_fail_the_scenario_when_its_mutant_replaces_the_adapter() {
             output.status
         );
     }
+}
+
+/// Run one scenario with `variable` pointing at a mutant and no negative-control flag.
+fn run_with_override_only(variable: &str, title: &str) -> String {
+    let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
+    let root = feature_root(title).unwrap_or_else(|error| panic!("{error:#}"));
+    let mutant = repo().join("tests/fixtures/opencode/mutants/no-drop-rule.js");
+    let output = Command::new(cargo)
+        .args([
+            "test",
+            "--locked",
+            "--test",
+            "features_runner",
+            "--",
+            "--name",
+        ])
+        .arg(format!("^{}$", regex_escape(title)))
+        .env("GIVN_FEATURES", root)
+        .env(variable, mutant)
+        .env_remove("GIVN_OPENCODE_NEGATIVE_CONTROL")
+        .current_dir(repo())
+        .output()
+        .expect("run the scenario with an exported override");
+    assert!(
+        !output.status.success(),
+        "{variable} alone must fail the suite, but the run succeeded"
+    );
+    format!(
+        "{}{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    )
+}
+
+#[test]
+fn should_refuse_a_substitute_adapter_when_negative_control_is_not_set() {
+    let text = run_with_override_only(
+        "GIVN_OPENCODE_CHARACTERIZE_ASSET",
+        "A request from an older message of the same session is dropped",
+    );
+    assert!(
+        text.contains("GIVN_OPENCODE_NEGATIVE_CONTROL=1"),
+        "the refusal must name the required flag:\n{text}"
+    );
+}
+
+#[test]
+fn should_refuse_a_substitute_plugin_when_negative_control_is_not_set() {
+    let text = run_with_override_only(
+        "GIVN_OPENCODE_CONTROL_PLUGIN",
+        "OpenCode V2 delivers the shell request to the attribution adapter before shell creation",
+    );
+    assert!(
+        text.contains("GIVN_OPENCODE_NEGATIVE_CONTROL=1"),
+        "the refusal must name the required flag:\n{text}"
+    );
 }

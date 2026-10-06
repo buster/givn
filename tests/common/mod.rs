@@ -597,3 +597,20 @@ pub fn fossil_commit_all(env: &TestEnv, message: &str) {
         String::from_utf8_lossy(&commit.stderr)
     );
 }
+
+/// A test-only substitute for a shipped OpenCode module, named by `variable`.
+///
+/// It exists to show a scenario rejects a mutant or legacy module (a negative
+/// control). An exported variable alone must never turn the suite green against
+/// a substitute file, so it is refused unless `GIVN_OPENCODE_NEGATIVE_CONTROL=1`
+/// is set as well.
+pub fn negative_control_override(variable: &str) -> Option<std::path::PathBuf> {
+    let value = std::env::var_os(variable)?;
+    assert!(
+        std::env::var("GIVN_OPENCODE_NEGATIVE_CONTROL").as_deref() == Ok("1"),
+        "{variable} substitutes a file for the shipped OpenCode module and is only valid as a \
+         negative control: also set GIVN_OPENCODE_NEGATIVE_CONTROL=1 (tests/opencode_mutants.rs \
+         does), or unset {variable}"
+    );
+    Some(std::path::PathBuf::from(value))
+}

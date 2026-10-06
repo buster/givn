@@ -585,8 +585,9 @@ fn given_isolated_opencode_integration(world: &mut GivnWorld, generation: String
     let generated = env.path(".opencode/plugins/givn-attribution.js");
     // An alternative module may stand in for the generated plugin, to show a
     // scenario fails against it (for example the immutable prototype).
-    let alternative = std::env::var_os("GIVN_OPENCODE_CHARACTERIZE_ASSET").map(PathBuf::from);
-    if alternative.is_none() {
+    let alternative = common::negative_control_override("GIVN_OPENCODE_CHARACTERIZE_ASSET");
+    let substituted = alternative.is_some();
+    if !substituted {
         assert_eq!(
             std::fs::read(&generated).expect("generated OpenCode plugin"),
             include_bytes!("../../assets/agent-integrations/opencode/givn-attribution.js"),
@@ -608,9 +609,7 @@ fn given_isolated_opencode_integration(world: &mut GivnWorld, generation: String
         &[],
     )
     .expect("the generated plugin loads through its public entrypoint");
-    if state.asset != prototype_path()
-        && std::env::var_os("GIVN_OPENCODE_CHARACTERIZE_ASSET").is_none()
-    {
+    if !substituted {
         assert_eq!(shape.module["id"], "givn-attribution");
         assert_eq!(shape.module["server"], "function");
         assert_eq!(shape.module["setup"], "function");

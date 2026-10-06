@@ -78,10 +78,11 @@ pub(crate) fn run_release_and_record(
     // Negative control for the RED evidence: another module (for example the
     // legacy V1-only plugin) stands in for the generated plugin, to show that
     // the real-loader assertions reject it. Never set by the regular suites.
-    if let Some(control) = std::env::var_os("GIVN_OPENCODE_CONTROL_PLUGIN") {
+    if let Some(control) = common::negative_control_override("GIVN_OPENCODE_CONTROL_PLUGIN") {
         std::fs::copy(control, root.join(".opencode/plugins/givn-attribution.js"))
             .expect("install the control plugin");
         extra_env.push(("GIVN_FIXTURE_CONTROL_PLUGIN", "1"));
+        extra_env.push(("GIVN_OPENCODE_NEGATIVE_CONTROL", "1"));
     } else {
         assert_canonical_plugin(&root);
     }
