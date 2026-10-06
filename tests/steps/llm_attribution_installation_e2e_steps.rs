@@ -292,23 +292,24 @@ fn when_consumer_runs_quoted_command(world: &mut GivnWorld, command: String) {
     world.last_output = Some(output);
 }
 
-/// Whether the real `givn addons list` reports `addon` as enabled.
+/// Whether the real `givn addons list` reports `addon` as enabled. Each addon
+/// line reads `  [enabled ]  <name>` or `  [disabled]  <name>`.
 fn addon_enabled(env: &common::TestEnv, addon: &str) -> bool {
     let list = common::run_givn(env, &["addons", "list"]);
     assert!(list.status.success(), "givn addons list failed");
     let stdout = String::from_utf8_lossy(&list.stdout);
-    let line = stdout
+    let (state, _) = stdout
         .lines()
-        .find(|line| line.split_whitespace().nth(1) == Some(addon))
+        .filter_map(|line| {
+            let (state, name) = line.trim().strip_prefix('[')?.split_once(']')?;
+            (name.trim() == addon).then_some((state.trim().to_owned(), name))
+        })
+        .next()
         .unwrap_or_else(|| panic!("addon {addon} is not listed: {stdout}"));
-    if line.trim_start().starts_with("[enabled]") {
-        true
-    } else {
-        assert!(
-            line.trim_start().starts_with("[disabled]"),
-            "unrecognised addon state: {line}"
-        );
-        false
+    match state.as_str() {
+        "enabled" => true,
+        "disabled" => false,
+        other => panic!("unrecognised addon state {other:?} for {addon}"),
     }
 }
 
@@ -318,5 +319,29 @@ fn given_addon_is_disabled(world: &mut GivnWorld, addon: String) {
     assert!(
         !addon_enabled(env, &addon),
         "the {addon} addon must start disabled (the project was initialized with --no-addons)"
+    );
+}
+
+#[given(regex = r##"^the "([^"]+)" addon is enabled$"##)]
+fn given_addon_is_enabled(world: &mut GivnWorld, addon: String) {
+    let env = world.env.as_ref().expect("project root");
+    if !addon_enabled(env, &addon) {
+        let enable = common::run_givn(env, &["addons", "enable", &addon]);
+        assert!(
+            enable.status.success(),
+            "givn addons enable failed: {}",
+            String::from_utf8_lossy(&enable.stderr)
+        );
+        // Enabling regenerates the plugin; the scenario under test starts from
+        // the obsolete V1-only integration, so record that state again.
+        std::fs::copy(
+            common::repo_path("tests/fixtures/opencode/prototype/givn-attribution_v1.js"),
+            env.path(".opencode/plugins/givn-attribution.js"),
+        )
+        .expect("restore the V1-only integration at the canonical path");
+    }
+    assert!(
+        addon_enabled(env, &addon),
+        "the {addon} addon must be enabled"
     );
 }

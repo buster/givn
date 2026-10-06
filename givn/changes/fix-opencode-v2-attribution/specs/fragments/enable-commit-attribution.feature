@@ -63,7 +63,7 @@ Feature: Enable commit attribution
       | V1 latest |
       | V2 latest |
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario Outline: Consumer disables an addon and retains compatible OpenCode attribution
     Given an initialized project selecting OpenCode with a V1-only attribution integration
     And the "dev_principles" addon is enabled
