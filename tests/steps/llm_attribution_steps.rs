@@ -531,7 +531,7 @@ fn prototype_is_oracle(state: &CharacterizationState) -> bool {
         || !state.actions.iter().any(|action| {
             matches!(
                 action["op"].as_str(),
-                Some("request" | "complete" | "malformed" | "reject")
+                Some("request" | "complete" | "malformed" | "reject" | "absent")
             ) || (action["op"] == "run" && !action["session"].is_null())
                 || (action["op"] == "default"
                     && matches!(action["mode"].as_str(), Some("model" | "hangs")))
@@ -1010,4 +1010,18 @@ fn given_opencode_rejects_registration(world: &mut GivnWorld, group: String, nam
     characterization(world)
         .actions
         .push(serde_json::json!({"op": "reject", "group": group, "name": name}));
+}
+
+#[when("OpenCode delivers no payload to any attribution hook")]
+fn when_opencode_delivers_no_payload(world: &mut GivnWorld) {
+    characterization(world)
+        .actions
+        .push(serde_json::json!({"op": "absent"}));
+}
+
+#[when(regex = r##"^OpenCode creates the shell for "([^"]+)" without an environment$"##)]
+fn when_opencode_creates_shell_without_environment(world: &mut GivnWorld, command: String) {
+    characterization(world)
+        .actions
+        .push(serde_json::json!({"op": "create", "command": command, "environment": false}));
 }

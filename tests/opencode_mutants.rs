@@ -41,6 +41,10 @@ const CASES: &[(&str, &str)] = &[
         "unbounded-default-lookup.js",
         "A hung configured-default lookup does not stall shell creation",
     ),
+    (
+        "no-handler-guard.js",
+        "Absent hook payloads and a missing shell environment never fail attribution",
+    ),
 ];
 
 /// Largest number of differing lines between the shipped adapter and a mutant:

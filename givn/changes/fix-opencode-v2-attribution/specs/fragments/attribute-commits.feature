@@ -199,6 +199,18 @@ Feature: Attribute commits
     And the shell environment identifies LLM "unavailable"
     And the shell environment identifies committer "Human Developer"
 
+  @givn.added
+  Scenario: Absent hook payloads and a missing shell environment never fail attribution
+    Given an isolated OpenCode "V2" attribution integration
+    And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"
+    When OpenCode delivers no payload to any attribution hook
+    And OpenCode creates the shell for "git commit" without an environment
+    And OpenCode requests the shell command "git commit" for session "session-a"
+    And OpenCode creates the shell for "git commit"
+    Then shell preparation succeeds
+    And the shell environment identifies LLM "givn-fixture/model-a"
+    And the shell environment identifies committer "LLM: givn-fixture/model-a via opencode"
+
   @givn.added @e2e
   Scenario: OpenCode V2 attributes a subagent's command to the subagent's model
     Given a project with the generated OpenCode attribution integration

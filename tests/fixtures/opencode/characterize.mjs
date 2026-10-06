@@ -100,7 +100,7 @@ const main = async () => {
   // plugin without that hook (the immutable prototype has no tool hooks)
   // simply is not called.
   const fire = async (group, name, event) => {
-    result.events.push({ group, name, keys: Object.keys(event).sort() })
+    result.events.push({ group, name, keys: Object.keys(event ?? {}).sort() })
     const handler = registered[group][name]
     if (handler) await handler(event)
   }
@@ -130,8 +130,8 @@ const main = async () => {
       cwd: "/fixture/project",
       timeout: 120000,
       shell: "/bin/sh",
-      env: { ...initialEnv },
     }
+    if (action.environment !== false) event.env = { ...initialEnv }
     await fire("shell", "create.before", event)
     result.shells.push({ op, env: event.env })
   }
@@ -171,6 +171,11 @@ const main = async () => {
         })
         break
       }
+      case "absent":
+        for (const name of Object.keys(registered.session)) await fire("session", name, undefined)
+        for (const name of Object.keys(registered.tool)) await fire("tool", name, undefined)
+        for (const name of Object.keys(registered.shell)) await fire("shell", name, undefined)
+        break
       case "malformed": {
         // Payloads the runtime contract does not promise: each must be ignored.
         const base = { agent: "build", messageID: "message-malformed" }

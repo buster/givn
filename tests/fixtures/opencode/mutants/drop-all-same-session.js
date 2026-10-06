@@ -1,6 +1,27 @@
 const sessions = new Map()
 let lastModel = null
 const UNAVAILABLE = "unavailable"
+// A hung configured-default lookup must not stall shell creation.
+const DEFAULT_LOOKUP_TIMEOUT_MS = 2000
+
+// Attribution is best effort and never blocks: a hook that throws, for example
+// on a malformed payload, must not fail the command or the other hooks.
+const guarded = (handler) => async (...args) => {
+  try {
+    await handler(...args)
+  } catch {
+    // Ignored on purpose; the shell is created without this attribution step.
+  }
+}
+
+// A failing hook registration must not stop the remaining hooks from being registered.
+const attempt = async (action) => {
+  try {
+    return await action()
+  } catch {
+    return undefined
+  }
+}
 
 const rememberModel = (sessionID, model, variant) => {
   if (!model && !variant) return
@@ -16,6 +37,8 @@ const rememberModel = (sessionID, model, variant) => {
 }
 
 const stamp = (env, model) => {
+  if (!env || typeof env !== "object") return
+
   env.GIVN_ATTRIBUTION_ACTIVE = "1"
   env.GIVN_ATTRIBUTION_LLM = UNAVAILABLE
   env.GIVN_ATTRIBUTION_REASONING = UNAVAILABLE
@@ -34,30 +57,17 @@ const stamp = (env, model) => {
 // OpenCode V1: shell.env receives the issuing session, subagent child sessions included.
 export const GivnAttributionPlugin = async () => {
   return {
-    "chat.message": async (input) => {
+    "chat.message": guarded(async (input) => {
       rememberModel(input.sessionID, input.model, input.variant)
-    },
-    "chat.params": async (input) => {
+    }),
+    "chat.params": guarded(async (input) => {
       rememberModel(input.sessionID, input.model)
-    },
-    "shell.env": async (input, output) => {
+    }),
+    "shell.env": guarded(async (input, output) => {
       stamp(output.env, sessions.get(input.sessionID) ?? lastModel)
-    },
+    }),
   }
 }
-
-// Attribution is best effort and never blocks: a failing hook registration
-// must not stop the remaining hooks from being registered.
-const attempt = async (action) => {
-  try {
-    return await action()
-  } catch {
-    return undefined
-  }
-}
-
-// A hung lookup must not stall shell creation: wait a short, bounded time.
-const DEFAULT_LOOKUP_TIMEOUT_MS = 2000
 
 const withTimeout = (promise) =>
   new Promise((resolve) => {
@@ -93,9 +103,12 @@ export default {
   async setup(ctx) {
     for (const kind of ["context", "compaction", "generate"]) {
       await attempt(() =>
-        ctx.session.hook(kind, (event) => {
-          rememberModel(event.sessionID, event.model, event.model?.variant)
-        }),
+        ctx.session.hook(
+          kind,
+          guarded((event) => {
+            rememberModel(event.sessionID, event.model, event.model?.variant)
+          }),
+        ),
       )
     }
 
@@ -104,48 +117,57 @@ export default {
     let pendingShells = []
 
     await attempt(() =>
-      ctx.tool.hook("execute.before", (event) => {
-        if (
-          event.tool !== "shell" ||
-          typeof event.sessionID !== "string" ||
-          typeof event.input?.command !== "string"
-        ) {
-          return
-        }
-        // A request from an older message of the same session never reached shell
-        // creation (vetoed, denied, or aborted); it must not label a later command.
-        pendingShells = pendingShells.filter(
-          (entry) => entry.event.sessionID !== event.sessionID,
-        )
-        pendingShells.push({ event })
-      }),
+      ctx.tool.hook(
+        "execute.before",
+        guarded((event) => {
+          if (
+            event.tool !== "shell" ||
+            typeof event.sessionID !== "string" ||
+            typeof event.input?.command !== "string"
+          ) {
+            return
+          }
+          // A request from an older message of the same session never reached shell
+          // creation (vetoed, denied, or aborted); it must not label a later command.
+          pendingShells = pendingShells.filter(
+            (pending) => pending.sessionID !== event.sessionID,
+          )
+          pendingShells.push(event)
+        }),
+      ),
     )
 
     await attempt(() =>
-      ctx.tool.hook("execute.after", (event) => {
-        if (event.tool !== "shell") return
-        pendingShells = pendingShells.filter(
-          (entry) =>
-            entry.event.sessionID !== event.sessionID || entry.event.id !== event.id,
-        )
-      }),
+      ctx.tool.hook(
+        "execute.after",
+        guarded((event) => {
+          if (event.tool !== "shell") return
+          pendingShells = pendingShells.filter(
+            (pending) =>
+              pending.sessionID !== event.sessionID || pending.id !== event.id,
+          )
+        }),
+      ),
     )
 
     const claimShell = (command) => {
       const index = pendingShells.findIndex(
-        (entry) => entry.event.input?.command === command,
+        (pending) => pending.input?.command === command,
       )
-      return index < 0 ? undefined : pendingShells.splice(index, 1)[0].event
+      return index < 0 ? undefined : pendingShells.splice(index, 1)[0]
     }
 
     await attempt(() =>
-      ctx.shell.hook("create.before", async (event) => {
-        const linked = claimShell(event.command)
-        let model = linked ? sessions.get(linked.sessionID) : undefined
-        if (!model?.modelID) model = lastModel
-        if (!model?.modelID) model = await configuredDefault(ctx)
-        stamp(event.env, model)
-      }),
+      ctx.shell.hook(
+        "create.before",
+        guarded(async (event) => {
+          const linked = claimShell(event.command)
+          let model = linked ? sessions.get(linked.sessionID) : undefined
+          if (!model?.modelID) model = lastModel
+          if (!model?.modelID) model = await configuredDefault(ctx)
+          stamp(event.env, model)
+        }),
+      ),
     )
 
     return () => {
