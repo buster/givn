@@ -25,6 +25,10 @@ const CASES: &[(&str, &str)] = &[
         "drop-all-same-session.js",
         "Parallel shell requests in one message are all attributed",
     ),
+    (
+        "no-completion-hook.js",
+        "A completed shell request is cleared by its completion event",
+    ),
 ];
 
 /// Largest number of differing lines between the shipped adapter and a mutant:

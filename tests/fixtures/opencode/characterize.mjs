@@ -98,9 +98,12 @@ const main = async () => {
   }
 
   let counter = 0
+  const callIDs = new Map()
+  const callKey = (action) => JSON.stringify([action.session, action.message ?? `message-${action.session}`, action.command])
   const request = async (action) => {
     counter += 1
     const callID = action.id ?? `call-${counter}`
+    callIDs.set(callKey(action), callID)
     await fire("tool", "execute.before", {
       tool: "shell",
       sessionID: action.session,
@@ -142,6 +145,21 @@ const main = async () => {
       case "request":
         await request(action)
         break
+      case "complete": {
+        const id = callIDs.get(callKey(action))
+        if (!id) throw new Error(`no request to complete: ${callKey(action)}`)
+        await fire("tool", "execute.after", {
+          tool: "shell",
+          sessionID: action.session,
+          agent: "build",
+          messageID: action.message ?? `message-${action.session}`,
+          id,
+          input: { command: action.command },
+          status: "completed",
+          result: {},
+        })
+        break
+      }
       case "create":
         await create(action, "create")
         break

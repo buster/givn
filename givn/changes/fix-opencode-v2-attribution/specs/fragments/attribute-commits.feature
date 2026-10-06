@@ -140,6 +140,18 @@ Feature: Attribute commits
     Then the first shell environment identifies LLM "givn-fixture/model-a"
     And the second shell environment identifies LLM "givn-fixture/model-a"
 
+  @givn.added
+  Scenario: A completed shell request is cleared by its completion event
+    Given an isolated OpenCode "V2" attribution integration
+    And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"
+    And OpenCode has later remembered model "givn-fixture/model-b" with reasoning mode "low" for session "session-b"
+    And OpenCode requested the shell command "git commit" for session "session-a" in message "message-1" and that request never reached shell creation
+    When OpenCode reports the shell command "git commit" of session "session-a" in message "message-1" as completed
+    And OpenCode requests the shell command "git commit" for session "session-b" in message "message-2"
+    And OpenCode creates the shell for "git commit"
+    Then the shell environment identifies LLM "givn-fixture/model-b"
+    And the shell environment identifies reasoning mode "low"
+
   @givn.added @e2e
   Scenario: OpenCode V2 attributes a subagent's command to the subagent's model
     Given a project with the generated OpenCode attribution integration

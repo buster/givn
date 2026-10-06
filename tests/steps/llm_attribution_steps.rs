@@ -529,7 +529,7 @@ fn prototype_path() -> PathBuf {
 fn prototype_is_oracle(state: &CharacterizationState) -> bool {
     state.generation == "V1"
         || !state.actions.iter().any(|action| {
-            matches!(action["op"].as_str(), Some("request"))
+            matches!(action["op"].as_str(), Some("request" | "complete"))
                 || (action["op"] == "run" && !action["session"].is_null())
                 || (action["op"] == "default" && action["mode"] == "model")
         })
@@ -964,4 +964,21 @@ fn when_opencode_creates_shell_for(world: &mut GivnWorld, command: String) {
         .actions
         .push(serde_json::json!({"op": "create", "command": command}));
     replay(world);
+}
+
+#[when(
+    regex = r##"^OpenCode reports the shell command "([^"]+)" of session "([^"]+)" in message "([^"]+)" as completed$"##
+)]
+fn when_opencode_reports_shell_completed(
+    world: &mut GivnWorld,
+    command: String,
+    session: String,
+    message: String,
+) {
+    characterization(world).actions.push(serde_json::json!({
+        "op": "complete",
+        "session": session,
+        "message": message,
+        "command": command,
+    }));
 }
