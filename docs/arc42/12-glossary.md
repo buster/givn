@@ -8,6 +8,7 @@
 | **Agent target** | One generated guidance destination: `opencode`, `agents`, `claude`, or `omp`, represented by `.opencode/`, `.agents/`, `.claude/`, or `.omp/`. |
 | **Attribution context** | The process-scoped values supplied while one commit is created: LLM, reasoning mode, harness, and Givn version. The generic stamper never fabricates missing values. The OpenCode adapter resolves the issuing session's model first and retains best-effort last-observed-model and (in V2) configured-default fallbacks; inferred fallback values are not verified current-session facts. Without a usable supplied or fallback value, the field remains unavailable. |
 | **Issuing session** | The OpenCode session whose agent requested a shell command. A subagent runs in its own child session, which is then the issuing session of its commands. V1 hands the issuing session to the shell hook; in V2 the adapter links the command to it through the tool hooks. Anti-terms: linked shell, current session. |
+| **Shell request** | OpenCode V2's announcement, before the shell exists, that an agent of an issuing session wants to run one shell command; it names the session, the message, the call identifier and the command. The OpenCode adapter keeps a shell request pending until a shell with the identical command claims it, its completion clears it, or a request from a newer message of the same session drops it. A request without a session, message or call identifier is ignored. Anti-terms: pending shell, tool call. |
 | **Model identity** | The provider and model pair supplied for commit attribution. In the OpenCode adapter it is the issuing session's remembered model (V1 shell hook; V2 tool-hook link), else the last observed model, else the V2 configured default (no reasoning mode); a fallback does not verify which model issued the command. Anti-terms: model name, model label, verified session identity for inferred values. |
 | **Commit attribution** | The best-effort LLM and harness identification visible through a revision's committer identity and message trailers; on Git through the hook, on Fossil through `givn commit`. |
 | **Harness** | The agent runtime that executes project commands, such as OpenCode, Claude Code, or omp. Anti-term: agent target. |
@@ -172,9 +173,9 @@
 | **Witness-bounded publication** | The publication contract: resolve the publication paths, validate the exact dirty set against them, and record only that set. Git stages the paths; Fossil records all changes and commits the witnessed dirty set. |
 | **Unpublished candidate** | A pending candidate whose publication a backend hook rejected: the receipt exists on disk but the current revision does not contain it, so a rerun publishes the on-disk merged state again. |
 
-The OpenCode V2 clauses describe the issuing-session link and retained fallbacks planned by
-[the OpenCode compatibility design](../../givn/changes/fix-opencode-v2-attribution/design.md),
-not shipped compatibility or executed test evidence. These definitions clarify
+The OpenCode V2 clauses describe the issuing-session link and retained fallbacks implemented by
+[the OpenCode compatibility design](../../givn/changes/fix-opencode-v2-attribution/design.md);
+the definitions are vocabulary, not test evidence. These definitions clarify
 adapter-supplied labels; they do not relax the generic stamper's no-fabrication
 contract. No new Aggregate, Domain Event, or persisted model selection is added.
 

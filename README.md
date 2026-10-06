@@ -104,8 +104,11 @@ Missing context never blocks a human commit.
 
 OpenCode compatibility covers V1 1.18.29+ within V1 and V2 through one
 generated integration, refreshed by init, skills sync, target addition, addon
-enable/disable, and managed upgrade. The supplied best-effort behavior is
-retained: last-observed or configured-default model labels and remembered
+enable/disable, and managed upgrade. Each shell command is attributed to the
+model of the session that issued it, subagents included. A command that cannot
+be linked to its session (for example a user `!` command on V2) falls back to
+the last observed model and, on V2, the configured default; these fallback
+labels and remembered
 reasoning variants are not verified current-session facts. Regeneration still
 replaces the generated file; it does not preserve manual edits. It is verified against real
 OpenCode V1 and V2 runtimes (change `fix-opencode-v2-attribution`); see

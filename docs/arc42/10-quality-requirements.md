@@ -129,14 +129,17 @@ attribution fallback scenarios; the probes have run and pass (`run-suite.sh --pr
 | Retained best-effort behavior | “Omitted reasoning metadata retains the session's remembered variant”; “A shell without a remembered session uses the last observed model”; “The remembered model takes precedence over OpenCode V2's configured default”; “OpenCode V2 uses its configured default when no model has been remembered” |
 | Missing context and observed request kinds | “No usable model leaves attribution unavailable without changing the committer”; “OpenCode V2 remembers attribution during non-title model requests” |
 | Installation edges | “Reinitialization without force refreshes attribution without replacing project configuration”; “Initialization without addons still enables compatible OpenCode attribution”; “Synchronization without the OpenCode target does not install its attribution integration” |
+| Shell-request bookkeeping (Q-96) | “Parallel shell requests in one message are all attributed”; “A completed shell request is cleared by its completion event”; “Malformed tool events are ignored without blocking the shell”; “A shell request without a session does not shadow a later request”; “A shell request without a message or call identifier cannot keep or wipe other entries” |
+| Never-blocking adapter (Q-94) | “A rejected hook registration does not stop shell attribution”; “A rejected hook registration is reported once”; “A hung configured-default lookup does not stall shell creation”; “A cancelled configured-default lookup still leaves attribution unavailable”; “Absent hook payloads and a missing shell environment never fail attribution” |
+| Real V2 event contract the link relies on | “OpenCode V2 delivers the shell request to the attribution adapter before shell creation” (E2E contract probe) |
 
-The delta has 23 scenario identities: eight E2E (seven outlines plus the V2
-subagent scenario) and fifteen regular characterization/installation
-scenarios. Their bodies remain owned by
+The delta has 34 scenario identities (31 added, 3 modified): nine E2E (seven
+outlines, the V2 subagent characterization scenario and the V2 contract-probe
+scenario) and 25 regular characterization/installation scenarios. Their bodies remain owned by
 [the attribution delta](../../givn/changes/fix-opencode-v2-attribution/specs/fragments/attribute-commits.feature)
 and [the installation delta](../../givn/changes/fix-opencode-v2-attribution/specs/fragments/enable-commit-attribution.feature),
 not by this table. The shared support fragment retains the complete
-39-interaction inventory without duplicating including use cases.
+40-interaction inventory without duplicating including use cases.
 
 ## 10.3 Verification Signals
 

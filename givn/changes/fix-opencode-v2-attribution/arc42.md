@@ -2,7 +2,7 @@
 
 ## Scope and evidence boundary
 
-Documentation for a planned change. Read the complete proposal, both fragment
+Documentation for this change (planned 2026-10-04, implemented 2026-10-06). Read the complete proposal, both fragment
 delta features, technical design, durable support-fragment inventory, all
 twelve current chapters, architecture index, and active/archived ADR register.
 The selected approach keeps the supplied prototype's V1 hooks and retained
@@ -238,6 +238,20 @@ subagent E2E is characterization and the gap is closed by user decision). This
 supersedes the earlier statement that chapters 05, 06 and 10 were unaffected by
 the test-infrastructure deviations. Chapters 02, 03, 04, 09 and 12 remain
 unaffected. The reviewer must re-check this documentation.
+
+### Review correction — 2026-10-06
+
+The completion review found stale "planned / pending / not shipped" statements
+that the amendments above had missed, and corrected them (documentation only):
+02 (TC-29 no longer "Planned"; its source no longer says verification is
+pending), 03 (OpenCode boundary row and §3.3 now state the implemented,
+runtime-exercised extension), 10 (scenario counts 34/9/25 instead of 23/8/15,
+40 instead of 39 interactions, and three mapping rows for the eleven
+review-follow-up scenarios), 12 (closing note no longer says "planned"; new
+term Shell request). The statement above that chapters 02, 03 and 12 remain
+unaffected is superseded. Chapter 10's claim that runtime validation works
+through instrumented coverage is NOT corrected here: it is an open
+implementation finding recorded in `review.md`.
 
 ## Status
 STATUS: DONE

@@ -211,7 +211,7 @@ claimed to refresh attribution.
 ### Runtime semantics
 
 `rememberModel` accepts `id` or `modelID`; it retains provider, model and variant
-from the current session when omitted. An explicit variant overrides a model
+from that session's remembered record when omitted. An explicit variant overrides a model
 variant, which overrides the remembered variant. A record with a model identity
 updates global `lastModel`, including non-session observations. An event with
 neither model nor variant is ignored. The session map and `lastModel` are
