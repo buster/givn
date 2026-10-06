@@ -1,7 +1,6 @@
 //! E2E step definitions for the llm-attribution capability.
 
 use std::process::{Command, Output};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use cucumber::{given, then, when};
 
@@ -11,101 +10,155 @@ use super::llm_attribution_steps::{
 };
 use crate::common;
 
-fn run_real_opencode_runtime(release: &str) -> serde_json::Value {
-    let admission = common::opencode_runtime::admission().expect("admitted OpenCode runtime");
-    let temp = std::path::PathBuf::from(
-        std::env::var_os("TMPDIR").expect("runtime admission supplies TMPDIR"),
-    );
-    let nonce = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock after Unix epoch")
-        .as_nanos();
-    let root = temp.join(format!("givn-opencode-{}-{nonce}", std::process::id()));
-    std::fs::create_dir_all(&root).expect("create owned OpenCode runtime root");
-    for directory in ["home", "config", "data", "cache", "state", "tmp"] {
-        std::fs::create_dir_all(root.join(directory)).expect("create isolated runtime directory");
+/// The five values the attribution plugin must put into the shell the real
+/// OpenCode loader creates: all four attribution variables plus the committer.
+pub(crate) fn assert_attribution_environment(
+    result: &serde_json::Value,
+    model: &str,
+    reasoning: &str,
+) {
+    let expected = [
+        ("GIVN_ATTRIBUTION_ACTIVE", "1".to_owned()),
+        ("GIVN_ATTRIBUTION_LLM", model.to_owned()),
+        ("GIVN_ATTRIBUTION_REASONING", reasoning.to_owned()),
+        ("GIVN_ATTRIBUTION_HARNESS", "opencode".to_owned()),
+        ("GIT_COMMITTER_NAME", format!("LLM: {model} via opencode")),
+    ];
+    for (name, value) in expected {
+        assert_eq!(
+            result[name].as_str(),
+            Some(value.as_str()),
+            "completed shell result {name}: {result}"
+        );
     }
-    let result_path = temp.join(format!(
-        "givn-opencode-result-{}-{nonce}.json",
-        std::process::id()
-    ));
-    let project = root.join("project");
-    std::fs::create_dir_all(&project).expect("create fixture project");
-    assert!(
-        Command::new("git")
-            .args(["init", "--quiet"])
-            .current_dir(&project)
-            .status()
-            .expect("git init")
-            .success()
-    );
-    let init = Command::new(env!("CARGO_BIN_EXE_givn"))
-        .args(["init", "--agents", "opencode", "--no-addons"])
-        .current_dir(&project)
-        .env_clear()
-        .env("PATH", std::env::var_os("PATH").expect("prepared PATH"))
-        .env("HOME", root.join("home"))
-        .env("TMPDIR", temp.as_os_str())
-        .env("XDG_CONFIG_HOME", root.join("config"))
-        .env("XDG_DATA_HOME", root.join("data"))
-        .env("XDG_CACHE_HOME", root.join("cache"))
-        .env("XDG_STATE_HOME", root.join("state"))
-        .env("GIT_CONFIG_GLOBAL", root.join("gitconfig"))
-        .env("GIT_CONFIG_NOSYSTEM", "1")
-        .env("LANG", "C.UTF-8")
-        .env("LC_ALL", "C.UTF-8")
-        .env("GIVN_OPENCODE_V1_FLOOR", &admission.executables[0])
-        .env("GIVN_OPENCODE_V1_LATEST", &admission.executables[1])
-        .env("GIVN_OPENCODE_V2_LATEST", &admission.executables[2])
-        .env("GIVN_OPENCODE_NODE", &admission.executables[3])
-        .env("GIVN_OPENCODE_FISH", &admission.executables[4])
-        .env("GIVN_OPENCODE_MODULES", &admission.executables[5])
-        .output()
-        .expect("compiled Givn init");
-    assert!(init.status.success(), "compiled Givn init failed: {init:?}");
+}
+
+/// A generation failure warning of `givn init`/sync is a failure in the happy
+/// path: an exit code alone does not prove the integration was written.
+pub(crate) fn assert_no_generation_warning(world: &GivnWorld) {
+    if let Some(output) = world.last_output.as_ref() {
+        let text = format!(
+            "{}{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert!(
+            !text.contains("generation failed"),
+            "the Givn command reported an integration generation warning: {text}"
+        );
+    }
+}
+
+/// The generated plugin of the prepared project is the embedded asset and the
+/// only plugin file OpenCode can discover.
+pub(crate) fn assert_canonical_plugin(root: &std::path::Path) {
+    let plugins = root.join(".opencode/plugins");
+    let names: Vec<_> = std::fs::read_dir(&plugins)
+        .expect("plugin directory")
+        .map(|entry| entry.expect("plugin entry").file_name())
+        .collect();
+    assert_eq!(names, ["givn-attribution.js"], "one canonical plugin only");
     assert_eq!(
-        std::fs::read_dir(project.join(".opencode/plugins"))
-            .expect("plugins")
-            .count(),
-        1
+        std::fs::read(plugins.join("givn-attribution.js")).expect("generated plugin"),
+        include_bytes!("../../assets/agent-integrations/opencode/givn-attribution.js"),
+        "the generated plugin must be the embedded asset"
     );
-    assert_eq!(
-        std::fs::read(project.join(".opencode/plugins/givn-attribution.js"))
-            .expect("generated plugin"),
-        include_bytes!("../../assets/agent-integrations/opencode/givn-attribution.js")
+}
+
+/// Run the real OpenCode `release` in the scenario's prepared project and
+/// file the labeled transcript shard. Returns the runtime evidence.
+pub(crate) fn run_release_and_record(
+    world: &GivnWorld,
+    release: &str,
+    scenario: &str,
+    extra_env: &[(&str, &str)],
+) -> serde_json::Value {
+    let root = world.env.as_ref().expect("project root").root();
+    assert_canonical_plugin(&root);
+    assert_no_generation_warning(world);
+    let evidence =
+        common::opencode_runtime::run_opencode_shell(&root, release, scenario, extra_env)
+            .unwrap_or_else(|error| panic!("{error:#}"));
+    let title = world.scenario_title.clone().unwrap_or_default();
+    let key = common::opencode_runtime::release_key(release).expect("release key");
+    let shard = match world.transcript_variant.as_deref() {
+        Some(variant) => format!("{variant}--{key}"),
+        None => key.to_owned(),
+    };
+    common::opencode_runtime::write_transcript_shard(
+        &title,
+        &shard,
+        &transcript(world, release, &evidence),
+    )
+    .expect("write transcript shard");
+    evidence
+}
+
+fn transcript(world: &GivnWorld, release: &str, evidence: &serde_json::Value) -> String {
+    use std::fmt::Write as _;
+    let mut text = String::new();
+    let version = evidence["version"].as_str().unwrap_or("unknown");
+    let _ = writeln!(text, "=== {release} (OpenCode {version}) ===");
+    if let Some(variant) = world.transcript_variant.as_deref() {
+        let _ = writeln!(text, "example: {variant}");
+    }
+    if let (Some(argv), Some(output)) = (world.last_argv.as_ref(), world.last_output.as_ref()) {
+        let _ = writeln!(text, "\n$ givn {}", argv.join(" "));
+        let _ = writeln!(text, "exit status: {}", output.status.code().unwrap_or(-1));
+        let _ = writeln!(
+            text,
+            "--- givn stdout ---\n{}",
+            String::from_utf8_lossy(&output.stdout)
+        );
+        let _ = writeln!(
+            text,
+            "--- givn stderr ---\n{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    let argv: Vec<&str> = evidence["argv"]
+        .as_array()
+        .map(|items| items.iter().filter_map(|item| item.as_str()).collect())
+        .unwrap_or_default();
+    let _ = writeln!(text, "$ {}", argv.join(" "));
+    let _ = writeln!(text, "exit status: {}", evidence["cli"]["exitCode"]);
+    let _ = writeln!(
+        text,
+        "--- opencode stdout (raw) ---\n{}",
+        evidence["cli"]["stdout"].as_str().unwrap_or_default()
     );
-    let project_string = project.to_string_lossy().into_owned();
-    let result_string = result_path.to_string_lossy().into_owned();
-    let extras = [
-        ("GIVN_OPENCODE_PROJECT", project_string.as_str()),
-        ("GIVN_FIXTURE_RESULT_PATH", result_string.as_str()),
-    ];
-    let driver = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fixtures/opencode/runtime_driver.mjs");
-    let argv = vec![
-        admission.executables[3].to_string_lossy().into_owned(),
-        driver.to_string_lossy().into_owned(),
-        "run".to_owned(),
-        release.to_owned(),
-    ];
-    let lease = common::opencode_runtime::launch_supervisor_with_env(root.clone(), &argv, &extras)
-        .expect("launch supervised real OpenCode runtime");
-    lease
-        .close()
-        .expect("real OpenCode runtime and teardown succeed");
-    let evidence = std::fs::read(&result_path).expect("real OpenCode result evidence");
-    let _ = std::fs::remove_file(result_path);
-    let result: serde_json::Value =
-        serde_json::from_slice(&evidence).expect("parse runtime evidence");
-    assert_eq!(result["release"], release);
-    assert_eq!(result["kind"], "attribution-result");
-    let _ = std::fs::remove_dir_all(&root);
-    result
+    let _ = writeln!(
+        text,
+        "--- opencode stderr (raw) ---\n{}",
+        evidence["cli"]["stderr"].as_str().unwrap_or_default()
+    );
+    let _ = writeln!(
+        text,
+        "--- completed shell tool result ---\n{}",
+        evidence["toolOutput"].as_str().unwrap_or_default()
+    );
+    let _ = writeln!(
+        text,
+        "--- attribution environment ---\n{}",
+        serde_json::to_string_pretty(&evidence["result"]).unwrap_or_default()
+    );
+    if !evidence["child"].is_null() {
+        let _ = writeln!(
+            text,
+            "--- subagent session ---\n{}",
+            serde_json::to_string_pretty(&evidence["child"]).unwrap_or_default()
+        );
+    }
+    text
 }
 
 #[given("a project with the generated OpenCode attribution integration")]
 fn given_generated_opencode_integration(world: &mut GivnWorld) {
     let env = common::make_bare_root();
+    assert!(
+        git(&env.root(), &["init", "--quiet"]).status.success(),
+        "git init failed"
+    );
     let output = common::run_givn(&env, &["init", "--agents", "opencode"]);
     assert!(
         output.status.success(),
@@ -113,6 +166,9 @@ fn given_generated_opencode_integration(world: &mut GivnWorld) {
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)
     );
+    world.last_argv = Some(vec!["init".into(), "--agents".into(), "opencode".into()]);
+    world.last_output = Some(output);
+    assert_no_generation_warning(world);
     let installed = std::fs::read_to_string(env.path(".opencode/plugins/givn-attribution.js"))
         .expect("read generated OpenCode integration");
     assert_eq!(
@@ -202,78 +258,73 @@ fn when_developer_runs_real_opencode(
     model: String,
     reasoning: String,
 ) {
-    assert_eq!(model, "givn-fixture/model-a");
-    assert_eq!(reasoning, "high");
-    let runtime = match release.as_str() {
-        "V1 floor" => "v1_floor",
-        "V1 latest" => "v1_latest",
-        "V2 latest" => "v2_latest",
-        _ => panic!("unsupported OpenCode fixture release: {release}"),
-    };
-    let runtime_root = std::env::var_os("TMPDIR")
-        .map(std::path::PathBuf::from)
-        .expect("admitted TMPDIR")
-        .join(format!(
-            "givn-opencode-{}-{}",
-            std::process::id(),
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("clock")
-                .as_nanos()
-        ));
-    std::fs::create_dir_all(&runtime_root).expect("create runtime project root");
-    for directory in ["home", "config", "data", "cache", "state", "tmp"] {
-        std::fs::create_dir_all(runtime_root.join(directory))
-            .expect("create isolated runtime directory");
-    }
-    let runtime_project = runtime_root.join("project");
-    std::fs::create_dir_all(&runtime_project).expect("create runtime project directory");
-    assert!(
-        Command::new("git")
-            .args(["init", "--quiet"])
-            .current_dir(&runtime_project)
-            .status()
-            .expect("git init")
-            .success()
-    );
-    let init = Command::new(env!("CARGO_BIN_EXE_givn"))
-        .args(["init", "--agents", "opencode", "--no-addons"])
-        .current_dir(&runtime_project)
-        .env_clear()
-        .env("PATH", std::env::var_os("PATH").expect("prepared PATH"))
-        .env("HOME", runtime_root.join("home"))
-        .env("TMPDIR", std::env::var_os("TMPDIR").expect("TMPDIR"))
-        .env("XDG_CONFIG_HOME", runtime_root.join("config"))
-        .env("XDG_DATA_HOME", runtime_root.join("data"))
-        .env("XDG_CACHE_HOME", runtime_root.join("cache"))
-        .env("XDG_STATE_HOME", runtime_root.join("state"))
-        .env("GIT_CONFIG_GLOBAL", runtime_root.join("gitconfig"))
-        .env("GIT_CONFIG_NOSYSTEM", "1")
-        .env("LANG", "C.UTF-8")
-        .env("LC_ALL", "C.UTF-8")
-        .output()
-        .expect("run compiled Givn init in runtime project");
-    assert!(init.status.success(), "compiled Givn init failed: {init:?}");
-    let plugin = runtime_project.join(".opencode/plugins/givn-attribution.js");
-    assert_eq!(
-        std::fs::read(&plugin).expect("generated canonical plugin"),
-        include_bytes!("../../assets/agent-integrations/opencode/givn-attribution.js")
-    );
-    assert_eq!(
-        std::fs::read_dir(runtime_project.join(".opencode/plugins"))
-            .expect("plugin directory")
-            .count(),
-        1
-    );
-    let output = run_real_opencode_runtime(runtime);
-    let _ = std::fs::remove_dir_all(&runtime_root);
+    assert_eq!(model, "givn-fixture/model-a", "the fixture's primary model");
+    assert_eq!(reasoning, "high", "the fixture's primary reasoning mode");
+    let evidence = run_release_and_record(world, &release, "main", &[]);
     world.opencode_plugin = Some(OpencodePluginState {
         provider: "givn-fixture".to_owned(),
         model,
         session: "real-runtime".to_owned(),
         output: None,
-        real_result: Some(output),
+        real_result: Some(evidence),
     });
+}
+
+#[given(
+    regex = r##"^the project's subagent is configured with model "([^"]+)" and reasoning mode "([^"]+)"$"##
+)]
+fn given_subagent_configuration(world: &mut GivnWorld, model: String, reasoning: String) {
+    assert_eq!(
+        model, "givn-fixture/model-b",
+        "the fixture provider twin serves the subagent model-b"
+    );
+    world.subagent_config = Some((model, reasoning));
+}
+
+#[when(
+    regex = r##"^the developer asks OpenCode "([^"]+)" with model "([^"]+)" and reasoning mode "([^"]+)" to have its subagent execute the attribution fixture command$"##
+)]
+fn when_developer_runs_real_opencode_subagent(
+    world: &mut GivnWorld,
+    release: String,
+    model: String,
+    reasoning: String,
+) {
+    assert_eq!(release, "V2 latest", "the subagent scenario is V2 only");
+    assert_eq!(model, "givn-fixture/model-a", "the fixture's primary model");
+    assert_eq!(reasoning, "high", "the fixture's primary reasoning mode");
+    let (subagent_model, subagent_reasoning) = world
+        .subagent_config
+        .clone()
+        .expect("the subagent configuration is given first");
+    let configured = format!("{subagent_model}#{subagent_reasoning}");
+    let evidence = run_release_and_record(
+        world,
+        &release,
+        "subagent",
+        &[("GIVN_FIXTURE_SUBAGENT_MODEL", configured.as_str())],
+    );
+    world.opencode_plugin = Some(OpencodePluginState {
+        provider: "givn-fixture".to_owned(),
+        model,
+        session: "real-runtime".to_owned(),
+        output: None,
+        real_result: Some(evidence),
+    });
+}
+
+#[then(
+    regex = r##"^an attributed shell command through OpenCode "([^"]+)" reports model "([^"]+)" and reasoning mode "([^"]+)"$"##
+)]
+fn then_attributed_shell_command_reports(
+    world: &mut GivnWorld,
+    release: String,
+    model: String,
+    reasoning: String,
+) {
+    let evidence = run_release_and_record(world, &release, "main", &[]);
+    assert_eq!(evidence["kind"], "attribution-result");
+    assert_attribution_environment(&evidence["result"], &model, &reasoning);
 }
 
 #[then("the OpenCode command exits 0")]
@@ -306,6 +357,44 @@ fn then_real_opencode_identifies_harness(world: &mut GivnWorld, expected: String
 #[then(regex = r##"^the OpenCode command output identifies committer "([^"]+)"$"##)]
 fn then_real_opencode_identifies_committer(world: &mut GivnWorld, expected: String) {
     assert_real_opencode_result(world, "GIT_COMMITTER_NAME", &expected);
+}
+
+#[then(regex = r##"^the subagent's command output identifies LLM "([^"]+)"$"##)]
+fn then_subagent_identifies_model(world: &mut GivnWorld, expected: String) {
+    assert_subagent_result(world, "GIVN_ATTRIBUTION_LLM", &expected);
+}
+
+#[then(regex = r##"^the subagent's command output identifies reasoning mode "([^"]+)"$"##)]
+fn then_subagent_identifies_reasoning(world: &mut GivnWorld, expected: String) {
+    assert_subagent_result(world, "GIVN_ATTRIBUTION_REASONING", &expected);
+}
+
+#[then(regex = r##"^the subagent's command output identifies committer "([^"]+)"$"##)]
+fn then_subagent_identifies_committer(world: &mut GivnWorld, expected: String) {
+    assert_subagent_result(world, "GIT_COMMITTER_NAME", &expected);
+}
+
+fn assert_subagent_result(world: &GivnWorld, name: &str, expected: &str) {
+    let evidence = world
+        .opencode_plugin
+        .as_ref()
+        .and_then(|state| state.real_result.as_ref())
+        .expect("successful real OpenCode result");
+    assert_eq!(evidence["kind"], "subagent-attribution-result");
+    let child = evidence["child"]["sessionID"]
+        .as_str()
+        .expect("the subagent's child session");
+    assert_eq!(
+        evidence["sessionID"].as_str(),
+        Some(child),
+        "the asserted record is the subagent's own shell result"
+    );
+    assert_ne!(
+        evidence["child"]["parentSessionID"].as_str(),
+        Some(child),
+        "the subagent runs in its own session"
+    );
+    assert_eq!(evidence["result"][name].as_str(), Some(expected));
 }
 
 #[then("the OpenCode command output reports active commit attribution")]

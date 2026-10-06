@@ -1,0 +1,529 @@
+# Scenario: Consumer initializes a project and receives shared attribution plumbing
+# Captured terminal transcript: real givn CLI and real OpenCode CLI, assembled from 3 example shard(s).
+# Random temporary-path prefixes are redacted to <TMPDIR>; everything else is raw output.
+
+=== V1 floor (OpenCode 1.18.29) ===
+
+$ givn init --agents opencode,claude
+exit status: 0
+--- givn stdout ---
+
+  ________  .__
+ /  _____/  |__|__  __ ____
+/   \  ___  |  \  \/ //    \
+\    \_\  \ |  |\   /|   |  \
+ \______  / |__| \_/ |___|  /
+        \/                \/
+
+  from Given to done.
+  version 0.8.0
+
+────────────────────────────────────────────────────
+
+Scaffolding project...
+
+  created  givn/specs
+  created  givn/changes
+  created  givn/archive
+  wrote    givn/config.yaml
+  skills will be installed to: .opencode, .claude
+  wrote    givn/commands.yaml
+
+Enabling addons...
+
+enabled addon 'arc42' in givn/config.yaml
+
+Scaffolded docs/arc42/:
+  created  docs/arc42/01-introduction-and-goals.md
+  created  docs/arc42/02-architecture-constraints.md
+  created  docs/arc42/03-context-and-scope.md
+  created  docs/arc42/04-solution-strategy.md
+  created  docs/arc42/05-building-block-view.md
+  created  docs/arc42/06-runtime-view.md
+  created  docs/arc42/07-deployment-view.md
+  created  docs/arc42/08-crosscutting-concepts.md
+  created  docs/arc42/09-architecture-decisions.md
+  created  docs/arc42/10-quality-requirements.md
+  created  docs/arc42/11-risks-and-technical-debt.md
+  created  docs/arc42/12-glossary.md
+  created  docs/arc42/README.md
+  created  docs/arc42/adr/adr-template.md
+
+The 'arc42' artifact is now part of the effective workflow.
+It will appear after 'design' in `givn status`.
+
+Next steps:
+  givn status              — see the updated workflow
+  givn eject arc42:instruction   — customise the instruction (optional)
+enabled addon 'absolute_mode' in givn/config.yaml
+
+Wrote the Absolute Mode policy block to AGENTS.md.
+Only the fenced <!-- givn:begin:absolute-mode --> block was added;
+the rest of AGENTS.md is untouched.
+enabled addon 'readme' in givn/config.yaml
+
+Scaffolded project README.md.
+
+The 'readme' addon does not modify the workflow graph.
+To customise the template, eject and edit it: givn eject readme:template
+enabled addon 'coverage' in givn/config.yaml
+
+The 'coverage' gate is now enabled.
+Coverage is measured at archive time (not per-change).
+
+Next steps:
+  Edit givn/commands.yaml to set coverage.measure_command
+  and coverage.merge_command to use your project scripts.
+enabled addon 'domain_modeling' in givn/config.yaml
+
+enabled addon 'dev_principles' in givn/config.yaml
+
+enabled addon 'grill_me' in givn/config.yaml
+
+enabled addon 'grill_with_docs' in givn/config.yaml
+
+
+Generating skills and agent commands...
+
+  commit attribution: .githooks/commit-msg
+  Git activation: local commit-msg dispatcher installed
+  attribution integration: .opencode/plugins/givn-attribution.js
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced skill: givn-domain-modeling
+  synced skill: givn-dev-principles
+  synced command: /givn-propose
+  synced command: /givn-spec
+  synced command: /givn-design
+  synced command: /givn-tasks
+  synced command: /givn-implement
+  synced command: /givn-review
+  synced command: /givn-archive
+  synced command: /givn-explore
+  synced command: /givn-design-review
+  synced command: /givn-steps
+  synced command: /givn-reverse-engineer
+  synced command: /givn-characterize
+  synced command: /givn-ideation
+  synced command: /grill-me
+  synced command: /grill-with-docs
+  sync: rules: local-only
+  sync: no tracked rule in the current revision
+  sync: no rule in reachable history
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+
+────────────────────────────────────────────────────
+
+Installed:
+
+  givn/config.yaml, givn/{specs,changes,archive}
+  core skills and commands
+  commit attribution: .githooks/commit-msg (best effort)
+  attribution integration: .opencode/plugins/givn-attribution.js
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json
+  addons:  enabled
+    - arc42: Arc42 architecture documentation — creates and maintains durable docs/arc42/ chapters
+    - absolute_mode: Absolute Mode communication policy — manages a fenced block in AGENTS.md
+    - readme: README scaffolding — writes an initial README.md to the project root
+    - coverage: Archive-level coverage gate — runs project measurement and merge scripts, updates README from the merged Cobertura XML
+    - domain_modeling: Skill — model a change's domain (ubiquitous language, aggregates, invariants) before design
+    - dev_principles: Skill — apply the team's engineering principles during implementation
+    - grill_me: Command — Socratically grill the current plan/design, one question at a time
+    - grill_with_docs: Command — grill the plan/design, citing a source in the project's own docs for every challenge
+
+────────────────────────────────────────────────────
+
+Ready. Three steps to your first change:
+
+  1. Start a change    givn new <change-id>
+  2. Plan it           /givn-propose  (in your AI agent)
+  3. Implement it      /givn-implement
+
+
+--- givn stderr ---
+
+$ /nix/store/lmbi32dk6x53sw1ya8673l0j7drrh1bp-opencode_v1_floor-1.18.29/bin/opencode run --format json --auto --model givn-fixture/model-a --variant high Run the attribution fixture command.
+exit status: 0
+--- opencode stdout (raw) ---
+{"type":"step_start","timestamp":1791296836142,"sessionID":"ses_eee63710effeOR9MswEW6o8RvS","part":{"id":"prt_1119c9224001ItMoQOp2LOYw3r","messageID":"msg_1119c8fff001cPmNzE33wSJZl6","sessionID":"ses_eee63710effeOR9MswEW6o8RvS","type":"step-start"}}
+{"type":"tool_use","timestamp":1791296836257,"sessionID":"ses_eee63710effeOR9MswEW6o8RvS","part":{"type":"tool","tool":"bash","callID":"fixture-call-b7899e7f","state":{"status":"completed","input":{"command":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs"},"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":null}\n","metadata":{"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":null}\n","exit":0,"truncated":false},"title":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs","time":{"start":1791296836138,"end":1791296836248}},"id":"prt_1119c9226001iM848YEy6wmPOk","sessionID":"ses_eee63710effeOR9MswEW6o8RvS","messageID":"msg_1119c8fff001cPmNzE33wSJZl6"}}
+{"type":"step_finish","timestamp":1791296836257,"sessionID":"ses_eee63710effeOR9MswEW6o8RvS","part":{"id":"prt_1119c929a001V78OQP7TSnNmLx","reason":"tool-calls","messageID":"msg_1119c8fff001cPmNzE33wSJZl6","sessionID":"ses_eee63710effeOR9MswEW6o8RvS","type":"step-finish","tokens":{"input":0,"output":0,"reasoning":0,"cache":{"write":0,"read":0}},"cost":0}}
+{"type":"step_start","timestamp":1791296836273,"sessionID":"ses_eee63710effeOR9MswEW6o8RvS","part":{"id":"prt_1119c92a9001bzGhMG64EIPpFh","messageID":"msg_1119c929e001S3sOq6WwZUn612","sessionID":"ses_eee63710effeOR9MswEW6o8RvS","type":"step-start"}}
+{"type":"text","timestamp":1791296836273,"sessionID":"ses_eee63710effeOR9MswEW6o8RvS","part":{"id":"prt_1119c92aa001LAlFWZhZB1ExmR","messageID":"msg_1119c929e001S3sOq6WwZUn612","sessionID":"ses_eee63710effeOR9MswEW6o8RvS","type":"text","text":"Attribution fixture completed.","time":{"start":1791296836266,"end":1791296836267}}}
+{"type":"step_finish","timestamp":1791296836273,"sessionID":"ses_eee63710effeOR9MswEW6o8RvS","part":{"id":"prt_1119c92ac001sEYlR2bgQmCAV3","reason":"stop","messageID":"msg_1119c929e001S3sOq6WwZUn612","sessionID":"ses_eee63710effeOR9MswEW6o8RvS","type":"step-finish","tokens":{"input":0,"output":0,"reasoning":0,"cache":{"write":0,"read":0}},"cost":0}}
+
+--- opencode stderr (raw) ---
+
+--- completed shell tool result ---
+GIVN_ATTRIBUTION_FIXTURE_RESULT {"GIVN_ATTRIBUTION_ACTIVE":"1","GIVN_ATTRIBUTION_LLM":"givn-fixture/model-a","GIVN_ATTRIBUTION_REASONING":"high","GIVN_ATTRIBUTION_HARNESS":"opencode","GIT_COMMITTER_NAME":"LLM: givn-fixture/model-a via opencode","OPENCODE_SESSION_ID":null}
+
+--- attribution environment ---
+{
+  "GIT_COMMITTER_NAME": "LLM: givn-fixture/model-a via opencode",
+  "GIVN_ATTRIBUTION_ACTIVE": "1",
+  "GIVN_ATTRIBUTION_HARNESS": "opencode",
+  "GIVN_ATTRIBUTION_LLM": "givn-fixture/model-a",
+  "GIVN_ATTRIBUTION_REASONING": "high"
+}
+
+=== V1 latest (OpenCode 1.18.34) ===
+
+$ givn init --agents opencode,claude
+exit status: 0
+--- givn stdout ---
+
+  ________  .__
+ /  _____/  |__|__  __ ____
+/   \  ___  |  \  \/ //    \
+\    \_\  \ |  |\   /|   |  \
+ \______  / |__| \_/ |___|  /
+        \/                \/
+
+  from Given to done.
+  version 0.8.0
+
+────────────────────────────────────────────────────
+
+Scaffolding project...
+
+  created  givn/specs
+  created  givn/changes
+  created  givn/archive
+  wrote    givn/config.yaml
+  skills will be installed to: .opencode, .claude
+  wrote    givn/commands.yaml
+
+Enabling addons...
+
+enabled addon 'arc42' in givn/config.yaml
+
+Scaffolded docs/arc42/:
+  created  docs/arc42/01-introduction-and-goals.md
+  created  docs/arc42/02-architecture-constraints.md
+  created  docs/arc42/03-context-and-scope.md
+  created  docs/arc42/04-solution-strategy.md
+  created  docs/arc42/05-building-block-view.md
+  created  docs/arc42/06-runtime-view.md
+  created  docs/arc42/07-deployment-view.md
+  created  docs/arc42/08-crosscutting-concepts.md
+  created  docs/arc42/09-architecture-decisions.md
+  created  docs/arc42/10-quality-requirements.md
+  created  docs/arc42/11-risks-and-technical-debt.md
+  created  docs/arc42/12-glossary.md
+  created  docs/arc42/README.md
+  created  docs/arc42/adr/adr-template.md
+
+The 'arc42' artifact is now part of the effective workflow.
+It will appear after 'design' in `givn status`.
+
+Next steps:
+  givn status              — see the updated workflow
+  givn eject arc42:instruction   — customise the instruction (optional)
+enabled addon 'absolute_mode' in givn/config.yaml
+
+Wrote the Absolute Mode policy block to AGENTS.md.
+Only the fenced <!-- givn:begin:absolute-mode --> block was added;
+the rest of AGENTS.md is untouched.
+enabled addon 'readme' in givn/config.yaml
+
+Scaffolded project README.md.
+
+The 'readme' addon does not modify the workflow graph.
+To customise the template, eject and edit it: givn eject readme:template
+enabled addon 'coverage' in givn/config.yaml
+
+The 'coverage' gate is now enabled.
+Coverage is measured at archive time (not per-change).
+
+Next steps:
+  Edit givn/commands.yaml to set coverage.measure_command
+  and coverage.merge_command to use your project scripts.
+enabled addon 'domain_modeling' in givn/config.yaml
+
+enabled addon 'dev_principles' in givn/config.yaml
+
+enabled addon 'grill_me' in givn/config.yaml
+
+enabled addon 'grill_with_docs' in givn/config.yaml
+
+
+Generating skills and agent commands...
+
+  commit attribution: .githooks/commit-msg
+  Git activation: local commit-msg dispatcher installed
+  attribution integration: .opencode/plugins/givn-attribution.js
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced skill: givn-domain-modeling
+  synced skill: givn-dev-principles
+  synced command: /givn-propose
+  synced command: /givn-spec
+  synced command: /givn-design
+  synced command: /givn-tasks
+  synced command: /givn-implement
+  synced command: /givn-review
+  synced command: /givn-archive
+  synced command: /givn-explore
+  synced command: /givn-design-review
+  synced command: /givn-steps
+  synced command: /givn-reverse-engineer
+  synced command: /givn-characterize
+  synced command: /givn-ideation
+  synced command: /grill-me
+  synced command: /grill-with-docs
+  sync: rules: local-only
+  sync: no tracked rule in the current revision
+  sync: no rule in reachable history
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+
+────────────────────────────────────────────────────
+
+Installed:
+
+  givn/config.yaml, givn/{specs,changes,archive}
+  core skills and commands
+  commit attribution: .githooks/commit-msg (best effort)
+  attribution integration: .opencode/plugins/givn-attribution.js
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json
+  addons:  enabled
+    - arc42: Arc42 architecture documentation — creates and maintains durable docs/arc42/ chapters
+    - absolute_mode: Absolute Mode communication policy — manages a fenced block in AGENTS.md
+    - readme: README scaffolding — writes an initial README.md to the project root
+    - coverage: Archive-level coverage gate — runs project measurement and merge scripts, updates README from the merged Cobertura XML
+    - domain_modeling: Skill — model a change's domain (ubiquitous language, aggregates, invariants) before design
+    - dev_principles: Skill — apply the team's engineering principles during implementation
+    - grill_me: Command — Socratically grill the current plan/design, one question at a time
+    - grill_with_docs: Command — grill the plan/design, citing a source in the project's own docs for every challenge
+
+────────────────────────────────────────────────────
+
+Ready. Three steps to your first change:
+
+  1. Start a change    givn new <change-id>
+  2. Plan it           /givn-propose  (in your AI agent)
+  3. Implement it      /givn-implement
+
+
+--- givn stderr ---
+
+$ /nix/store/52gifl7n6nzyn3yxy7dsff4d30gz9crx-opencode_v1_latest-1.18.34/bin/opencode run --format json --auto --model givn-fixture/model-a --variant high Run the attribution fixture command.
+exit status: 0
+--- opencode stdout (raw) ---
+{"type":"step_start","timestamp":1791296846539,"sessionID":"ses_eee634894ffeD5nh6c1Wgg0Kop","part":{"id":"prt_1119cbac2001OMPWJzrYMpl9vo","messageID":"msg_1119cb89f001Ceh6vJ6w6RfdFy","sessionID":"ses_eee634894ffeD5nh6c1Wgg0Kop","type":"step-start"}}
+{"type":"tool_use","timestamp":1791296846632,"sessionID":"ses_eee634894ffeD5nh6c1Wgg0Kop","part":{"type":"tool","tool":"bash","callID":"fixture-call-adbc25ec","state":{"status":"completed","input":{"command":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs"},"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":null}\n","metadata":{"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":null}\n","exit":0,"truncated":false},"title":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs","time":{"start":1791296846536,"end":1791296846624}},"id":"prt_1119cbac4001NlXOTWsTl04i23","sessionID":"ses_eee634894ffeD5nh6c1Wgg0Kop","messageID":"msg_1119cb89f001Ceh6vJ6w6RfdFy"}}
+{"type":"step_finish","timestamp":1791296846632,"sessionID":"ses_eee634894ffeD5nh6c1Wgg0Kop","part":{"id":"prt_1119cbb22001O4uCVbgqVkYG90","reason":"tool-calls","messageID":"msg_1119cb89f001Ceh6vJ6w6RfdFy","sessionID":"ses_eee634894ffeD5nh6c1Wgg0Kop","type":"step-finish","tokens":{"input":0,"output":0,"reasoning":0,"cache":{"write":0,"read":0}},"cost":0}}
+{"type":"step_start","timestamp":1791296846654,"sessionID":"ses_eee634894ffeD5nh6c1Wgg0Kop","part":{"id":"prt_1119cbb36001JztPX6kuicCl3h","messageID":"msg_1119cbb26001OduI6y0ACUe6S4","sessionID":"ses_eee634894ffeD5nh6c1Wgg0Kop","type":"step-start"}}
+{"type":"text","timestamp":1791296846654,"sessionID":"ses_eee634894ffeD5nh6c1Wgg0Kop","part":{"id":"prt_1119cbb37001Tu5DOJqLU9DGOM","messageID":"msg_1119cbb26001OduI6y0ACUe6S4","sessionID":"ses_eee634894ffeD5nh6c1Wgg0Kop","type":"text","text":"Attribution fixture completed.","time":{"start":1791296846647,"end":1791296846648}}}
+{"type":"step_finish","timestamp":1791296846654,"sessionID":"ses_eee634894ffeD5nh6c1Wgg0Kop","part":{"id":"prt_1119cbb390013FQ7UcMlFFCGug","reason":"stop","messageID":"msg_1119cbb26001OduI6y0ACUe6S4","sessionID":"ses_eee634894ffeD5nh6c1Wgg0Kop","type":"step-finish","tokens":{"input":0,"output":0,"reasoning":0,"cache":{"write":0,"read":0}},"cost":0}}
+
+--- opencode stderr (raw) ---
+
+--- completed shell tool result ---
+GIVN_ATTRIBUTION_FIXTURE_RESULT {"GIVN_ATTRIBUTION_ACTIVE":"1","GIVN_ATTRIBUTION_LLM":"givn-fixture/model-a","GIVN_ATTRIBUTION_REASONING":"high","GIVN_ATTRIBUTION_HARNESS":"opencode","GIT_COMMITTER_NAME":"LLM: givn-fixture/model-a via opencode","OPENCODE_SESSION_ID":null}
+
+--- attribution environment ---
+{
+  "GIT_COMMITTER_NAME": "LLM: givn-fixture/model-a via opencode",
+  "GIVN_ATTRIBUTION_ACTIVE": "1",
+  "GIVN_ATTRIBUTION_HARNESS": "opencode",
+  "GIVN_ATTRIBUTION_LLM": "givn-fixture/model-a",
+  "GIVN_ATTRIBUTION_REASONING": "high"
+}
+
+=== V2 latest (OpenCode opencode v2.0.22) ===
+
+$ givn init --agents opencode,claude
+exit status: 0
+--- givn stdout ---
+
+  ________  .__
+ /  _____/  |__|__  __ ____
+/   \  ___  |  \  \/ //    \
+\    \_\  \ |  |\   /|   |  \
+ \______  / |__| \_/ |___|  /
+        \/                \/
+
+  from Given to done.
+  version 0.8.0
+
+────────────────────────────────────────────────────
+
+Scaffolding project...
+
+  created  givn/specs
+  created  givn/changes
+  created  givn/archive
+  wrote    givn/config.yaml
+  skills will be installed to: .opencode, .claude
+  wrote    givn/commands.yaml
+
+Enabling addons...
+
+enabled addon 'arc42' in givn/config.yaml
+
+Scaffolded docs/arc42/:
+  created  docs/arc42/01-introduction-and-goals.md
+  created  docs/arc42/02-architecture-constraints.md
+  created  docs/arc42/03-context-and-scope.md
+  created  docs/arc42/04-solution-strategy.md
+  created  docs/arc42/05-building-block-view.md
+  created  docs/arc42/06-runtime-view.md
+  created  docs/arc42/07-deployment-view.md
+  created  docs/arc42/08-crosscutting-concepts.md
+  created  docs/arc42/09-architecture-decisions.md
+  created  docs/arc42/10-quality-requirements.md
+  created  docs/arc42/11-risks-and-technical-debt.md
+  created  docs/arc42/12-glossary.md
+  created  docs/arc42/README.md
+  created  docs/arc42/adr/adr-template.md
+
+The 'arc42' artifact is now part of the effective workflow.
+It will appear after 'design' in `givn status`.
+
+Next steps:
+  givn status              — see the updated workflow
+  givn eject arc42:instruction   — customise the instruction (optional)
+enabled addon 'absolute_mode' in givn/config.yaml
+
+Wrote the Absolute Mode policy block to AGENTS.md.
+Only the fenced <!-- givn:begin:absolute-mode --> block was added;
+the rest of AGENTS.md is untouched.
+enabled addon 'readme' in givn/config.yaml
+
+Scaffolded project README.md.
+
+The 'readme' addon does not modify the workflow graph.
+To customise the template, eject and edit it: givn eject readme:template
+enabled addon 'coverage' in givn/config.yaml
+
+The 'coverage' gate is now enabled.
+Coverage is measured at archive time (not per-change).
+
+Next steps:
+  Edit givn/commands.yaml to set coverage.measure_command
+  and coverage.merge_command to use your project scripts.
+enabled addon 'domain_modeling' in givn/config.yaml
+
+enabled addon 'dev_principles' in givn/config.yaml
+
+enabled addon 'grill_me' in givn/config.yaml
+
+enabled addon 'grill_with_docs' in givn/config.yaml
+
+
+Generating skills and agent commands...
+
+  commit attribution: .githooks/commit-msg
+  Git activation: local commit-msg dispatcher installed
+  attribution integration: .opencode/plugins/givn-attribution.js
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced skill: givn-domain-modeling
+  synced skill: givn-dev-principles
+  synced command: /givn-propose
+  synced command: /givn-spec
+  synced command: /givn-design
+  synced command: /givn-tasks
+  synced command: /givn-implement
+  synced command: /givn-review
+  synced command: /givn-archive
+  synced command: /givn-explore
+  synced command: /givn-design-review
+  synced command: /givn-steps
+  synced command: /givn-reverse-engineer
+  synced command: /givn-characterize
+  synced command: /givn-ideation
+  synced command: /grill-me
+  synced command: /grill-with-docs
+  sync: rules: local-only
+  sync: no tracked rule in the current revision
+  sync: no rule in reachable history
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+
+────────────────────────────────────────────────────
+
+Installed:
+
+  givn/config.yaml, givn/{specs,changes,archive}
+  core skills and commands
+  commit attribution: .githooks/commit-msg (best effort)
+  attribution integration: .opencode/plugins/givn-attribution.js
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json
+  addons:  enabled
+    - arc42: Arc42 architecture documentation — creates and maintains durable docs/arc42/ chapters
+    - absolute_mode: Absolute Mode communication policy — manages a fenced block in AGENTS.md
+    - readme: README scaffolding — writes an initial README.md to the project root
+    - coverage: Archive-level coverage gate — runs project measurement and merge scripts, updates README from the merged Cobertura XML
+    - domain_modeling: Skill — model a change's domain (ubiquitous language, aggregates, invariants) before design
+    - dev_principles: Skill — apply the team's engineering principles during implementation
+    - grill_me: Command — Socratically grill the current plan/design, one question at a time
+    - grill_with_docs: Command — grill the plan/design, citing a source in the project's own docs for every challenge
+
+────────────────────────────────────────────────────
+
+Ready. Three steps to your first change:
+
+  1. Start a change    givn new <change-id>
+  2. Plan it           /givn-propose  (in your AI agent)
+  3. Implement it      /givn-implement
+
+
+--- givn stderr ---
+
+$ /nix/store/bdml7ssb6rx2cfydr1sl9abbp1pq2djv-opencode_v2_latest-2.0.22/bin/opencode run --server http://127.0.0.1:54872 --format json --auto --model givn-fixture/model-a#high Run the attribution fixture command.
+exit status: 0
+--- opencode stdout (raw) ---
+{"type":"step_start","timestamp":1791296855986,"sessionID":"ses_eee6320dbffe0vV9wZI2wTnCg0","part":{"id":"prt_1119cdfb2002yKuwgqUdVi2JMC","sessionID":"ses_eee6320dbffe0vV9wZI2wTnCg0","messageID":"msg_1119cdfa3001Y7lyI7zT54oLNV","type":"step-start"}}
+{"type":"tool_use","timestamp":1791296856078,"sessionID":"ses_eee6320dbffe0vV9wZI2wTnCg0","part":{"partID":"prt_1119cdfb3001n5M9BQk8fLEsfi","sessionID":"ses_eee6320dbffe0vV9wZI2wTnCg0","messageID":"msg_1119cdfa3001Y7lyI7zT54oLNV","type":"tool","id":"fixture-call-0eadbdc3","tool":"shell","state":{"status":"completed","input":{"command":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs"},"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":\"ses_eee6320dbffe0vV9wZI2wTnCg0\"}\n","title":"shell","metadata":{"metadata":{"status":"completed","truncated":false,"exit":0},"content":[{"type":"text","text":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":\"ses_eee6320dbffe0vV9wZI2wTnCg0\"}\n"}],"providerCall":{"executed":false},"providerResult":{"executed":false},"rawInput":"{\"command\":\"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs\"}"},"time":{"start":1791296855987,"end":1791296856078}}}}
+{"type":"step_finish","timestamp":1791296856080,"sessionID":"ses_eee6320dbffe0vV9wZI2wTnCg0","part":{"id":"prt_1119ce01000167Q4X9tUXABaNG","sessionID":"ses_eee6320dbffe0vV9wZI2wTnCg0","messageID":"msg_1119cdfa3001Y7lyI7zT54oLNV","type":"step-finish","reason":"tool-calls","cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0,"write":0}}}}
+{"type":"text","timestamp":1791296856103,"sessionID":"ses_eee6320dbffe0vV9wZI2wTnCg0","part":{"id":"prt_1119ce0140013DW2aZ30xv2YwV_text-0","sessionID":"ses_eee6320dbffe0vV9wZI2wTnCg0","messageID":"msg_1119ce0140013DW2aZ30xv2YwV","type":"text","text":"Attribution fixture completed.","time":{"start":1791296856088,"end":1791296856103}}}
+
+--- opencode stderr (raw) ---
+
+--- completed shell tool result ---
+GIVN_ATTRIBUTION_FIXTURE_RESULT {"GIVN_ATTRIBUTION_ACTIVE":"1","GIVN_ATTRIBUTION_LLM":"givn-fixture/model-a","GIVN_ATTRIBUTION_REASONING":"high","GIVN_ATTRIBUTION_HARNESS":"opencode","GIT_COMMITTER_NAME":"LLM: givn-fixture/model-a via opencode","OPENCODE_SESSION_ID":"ses_eee6320dbffe0vV9wZI2wTnCg0"}
+
+--- attribution environment ---
+{
+  "GIT_COMMITTER_NAME": "LLM: givn-fixture/model-a via opencode",
+  "GIVN_ATTRIBUTION_ACTIVE": "1",
+  "GIVN_ATTRIBUTION_HARNESS": "opencode",
+  "GIVN_ATTRIBUTION_LLM": "givn-fixture/model-a",
+  "GIVN_ATTRIBUTION_REASONING": "high"
+}

@@ -201,6 +201,7 @@ fn consumer_runs(world: &mut GivnWorld, cmd: String) {
         argv.remove(0);
     }
     let out = crate::common::run_givn(env, &argv);
+    world.last_argv = Some(argv.iter().map(|arg| (*arg).to_owned()).collect());
     world.last_output = Some(out);
 }
 

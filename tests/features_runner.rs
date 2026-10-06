@@ -98,6 +98,7 @@ async fn main() {
     validate_runtime_setup();
     let features_path = features_path();
     let writer = GivnWorld::cucumber()
+        .before(record_scenario_title)
         .fail_on_skipped()
         .filter_run(features_path, |_, _, scenario| {
             !givn::gherkin::delta::is_removed_placeholder(scenario)
@@ -110,6 +111,19 @@ async fn main() {
     if stats.failed > 0 || stats.skipped > 0 {
         std::process::exit(1);
     }
+}
+
+/// Hand the running scenario's title to its World so evidence transcripts can
+/// be filed under the scenario they prove.
+fn record_scenario_title<'a>(
+    _feature: &'a cucumber::gherkin::Feature,
+    _rule: Option<&'a cucumber::gherkin::Rule>,
+    scenario: &'a cucumber::gherkin::Scenario,
+    world: &'a mut GivnWorld,
+) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + 'a>> {
+    Box::pin(async move {
+        world.scenario_title = Some(scenario.name.clone());
+    })
 }
 
 fn is_setup_strictness_probe() -> bool {
@@ -224,6 +238,7 @@ async fn nextest_run(unit: &str) {
     }
     GivnWorld::cucumber()
         .with_default_cli()
+        .before(record_scenario_title)
         .fail_on_skipped()
         .filter_run_and_exit(features_path(), move |_, _, scenario| {
             !givn::gherkin::delta::is_removed_placeholder(scenario)

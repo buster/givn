@@ -1,7 +1,7 @@
 //! Test-only OpenCode runtime admission and supervised process-group leases.
 
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
 
 #[derive(Debug, Clone, serde::Deserialize)]
@@ -116,6 +116,108 @@ pub fn admission() -> anyhow::Result<Admission> {
         anyhow::ensure!(exists, "admitted runtime is missing: {}", path.display());
     }
     Ok(parsed)
+}
+
+/// The runtime-driver key of a feature-file release label.
+pub fn release_key(label: &str) -> anyhow::Result<&'static str> {
+    match label {
+        "V1 floor" => Ok("v1_floor"),
+        "V1 latest" => Ok("v1_latest"),
+        "V2 latest" => Ok("v2_latest"),
+        other => anyhow::bail!("unsupported OpenCode fixture release: {other}"),
+    }
+}
+
+/// Run the real OpenCode release in `project` (already prepared by the real
+/// Givn CLI) through the supervised runtime driver and return its evidence.
+///
+/// `scenario` is `main` or `subagent`. The project must contain the generated
+/// canonical plugin; the driver writes the fixture configuration after the
+/// scenario's own commands, never before them.
+pub fn run_opencode_shell(
+    project: &Path,
+    label: &str,
+    scenario: &str,
+    extra_env: &[(&str, &str)],
+) -> anyhow::Result<serde_json::Value> {
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    let admission = admission()?;
+    let release = release_key(label)?;
+    let temp = std::fs::canonicalize(&admission.runtime_tmp)?;
+    let nonce = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
+    let root = temp.join(format!("givn-opencode-{}-{nonce}", std::process::id()));
+    for directory in ["home", "config", "data", "cache", "state", "tmp"] {
+        std::fs::create_dir_all(root.join(directory))?;
+    }
+    let result_path = temp.join(format!(
+        "givn-opencode-result-{}-{nonce}.json",
+        std::process::id()
+    ));
+    let project = std::fs::canonicalize(project)?;
+    let project_string = project.to_string_lossy().into_owned();
+    let result_string = result_path.to_string_lossy().into_owned();
+    let mut extras = vec![
+        ("GIVN_OPENCODE_PROJECT", project_string.as_str()),
+        ("GIVN_FIXTURE_RESULT_PATH", result_string.as_str()),
+    ];
+    extras.extend_from_slice(extra_env);
+    let driver =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/opencode/runtime_driver.mjs");
+    let argv = vec![
+        admission.executables[3].to_string_lossy().into_owned(),
+        driver.to_string_lossy().into_owned(),
+        "run".to_owned(),
+        release.to_owned(),
+        scenario.to_owned(),
+    ];
+    let lease = launch_supervisor_with_env(root.clone(), &argv, &extras)?;
+    lease.close().map_err(|error| {
+        anyhow::anyhow!("real OpenCode {label} run or its teardown failed: {error}")
+    })?;
+    let bytes = std::fs::read(&result_path)
+        .map_err(|error| anyhow::anyhow!("real OpenCode {label} left no evidence: {error}"))?;
+    let _ = std::fs::remove_file(&result_path);
+    let evidence: serde_json::Value = serde_json::from_slice(&bytes)?;
+    anyhow::ensure!(
+        evidence["release"] == release,
+        "evidence is for another release: {}",
+        evidence["release"]
+    );
+    Ok(evidence)
+}
+
+/// Directory of the intermediate evidence shards of one scenario.
+fn transcript_shard_dir(title: &str) -> PathBuf {
+    let slug = title
+        .to_lowercase()
+        .split(|c: char| !c.is_ascii_alphanumeric())
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join("-");
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("reports/visual")
+        .join(slug)
+}
+
+/// Write one example's labeled transcript shard. Each example owns its file, so
+/// concurrent examples never append to a shared transcript; the assembling
+/// script orders the shards.
+pub fn write_transcript_shard(title: &str, shard: &str, text: &str) -> anyhow::Result<()> {
+    let directory = transcript_shard_dir(title);
+    std::fs::create_dir_all(&directory)?;
+    // Random temporary-path prefixes are the only redaction.
+    let mut text = text.to_owned();
+    let mut prefixes = vec![std::env::temp_dir()];
+    if let Ok(physical) = std::fs::canonicalize(std::env::temp_dir()) {
+        prefixes.push(physical);
+    }
+    prefixes.sort_by_key(|prefix| std::cmp::Reverse(prefix.as_os_str().len()));
+    for prefix in prefixes {
+        text = text.replace(prefix.to_string_lossy().trim_end_matches('/'), "<TMPDIR>");
+    }
+    std::fs::write(directory.join(format!("{shard}.txt")), text)?;
+    Ok(())
 }
 
 pub fn ensure_admitted() -> anyhow::Result<Admission> {

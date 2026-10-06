@@ -87,6 +87,15 @@ pub struct GivnWorld {
     pub(crate) opencode_plugin: Option<llm_attribution_e2e_steps::OpencodePluginState>,
     /// State for the public-hook OpenCode attribution characterization.
     pub(crate) opencode_characterization: Option<llm_attribution_steps::CharacterizationState>,
+    /// Title of the scenario being executed, set by the runner's before hook.
+    pub(crate) scenario_title: Option<String>,
+    /// Arguments (without the program) of the last `givn` command a step ran,
+    /// kept for the labeled evidence transcripts.
+    pub(crate) last_argv: Option<Vec<String>>,
+    /// Example label (for example the prior integration) naming a transcript shard.
+    pub(crate) transcript_variant: Option<String>,
+    /// Model and reasoning mode the fixture's OpenCode subagent is configured with.
+    pub(crate) subagent_config: Option<(String, String)>,
     /// State for the generated Claude attribution integration scenario.
     pub(crate) claude_attribution: Option<llm_attribution_e2e_steps::ClaudeAttributionState>,
     /// State for the generated omp attribution integration scenarios.

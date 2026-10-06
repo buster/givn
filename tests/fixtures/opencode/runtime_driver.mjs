@@ -206,6 +206,9 @@ function proxyEnvironment(readiness) {
   return { HTTP_PROXY: url, HTTPS_PROXY: url, http_proxy: url, https_proxy: url }
 }
 
+// The subagent's configured model comes from the scenario (default: the fixture's model-b at variant low).
+const subagentModel = process.env.GIVN_FIXTURE_SUBAGENT_MODEL ?? 'givn-fixture/model-b#low'
+
 function projectConfig(providerUrl) {
   if (isV2) {
     return {
@@ -228,7 +231,7 @@ function projectConfig(providerUrl) {
       },
       agents: {
         title: { model: 'givn-fixture/title-model' },
-        'attribution-subagent': { mode: 'subagent', description: 'Runs the attribution fixture command.', model: 'givn-fixture/model-b#low' },
+        'attribution-subagent': { mode: 'subagent', description: 'Runs the attribution fixture command.', model: subagentModel },
       },
       plugins: ['-opencode.provider.ollama', '-opencode.provider.lmstudio', '-opencode.provider.vllm'],
       permissions: [
