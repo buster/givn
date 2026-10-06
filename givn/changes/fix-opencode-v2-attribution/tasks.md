@@ -10,7 +10,7 @@
 
 ## Setup: regular Gherkin runner, strictness, and runtime admission
 
-- [ ] Setup: configure regular test infrastructure and prove strict mode
+- [x] Setup: configure regular test infrastructure and prove strict mode
   - Keep `verify.command: "./run-tests.sh"` and `verify.e2e_command: "./run-tests.sh --e2e"` in `givn/commands.yaml`, preserving existing scope/result behavior. The locked `cucumber` 0.23.0 / `gherkin` 0.16.0 runner executes feature files selected by `GIVN_FEATURES`; strictness is `.fail_on_skipped()` for cargo and nextest, and the plain runner exits non-zero on failed or skipped scenarios.
   - Keep regular bindings one file per capability: `tests/steps/llm_attribution_steps.rs` (`attribute-commits`) and `tests/steps/llm_attribution_installation_steps.rs` (`enable-commit-attribution`). Keep shared runtime fixtures in their designed common modules.
   - New Rust bindings use `unimplemented!("<step meaning>")`, never empty/no-op bodies, `assert!(true)`, or catch-and-return-success.
@@ -18,13 +18,13 @@
   - Enter the active development shell. Validate exported runtimes against `runtime-lock.json` with `tests/fixtures/opencode/resolve-runtime.sh`; it must not invoke Nix, Fish, registries, or installers. Build `opencode_supervisor` and export the Cargo-reported executable as `GIVN_OPENCODE_SUPERVISOR`.
   - Run `tests/fixtures/opencode/run-suite.sh --regular` against permanent specs only while delta scenarios remain `@wip`. Validate the Darwin Seatbelt profile with actual owned-port allowances, a denied unrelated loopback listener, and a denied non-loopback destination. Missing isolation/runtime prerequisites are named setup failures, never a host-network fallback.
   - Do not proceed until all strictness probes are evidenced and the permanent-root regular setup gate passes.
-  - Cargo undefined probe command/output/status: **paste evidence**
-  - Cargo explicit-unimplemented probe command/output/status: **paste evidence**
-  - Nextest undefined probe command/output/status: **paste evidence**
-  - Nextest explicit-unimplemented probe command/output/status: **paste evidence**
-  - E2E undefined probe command/output/status: **paste evidence**
-  - E2E explicit-unimplemented probe command/output/status: **paste evidence**
-  - Permanent-root regular setup command/output/status: **paste evidence**
+  - Cargo undefined probe command/output/status: `nix develop --command env GIVN_STRICTNESS_PROBE_FEATURE=1 GIVN_FEATURES=<scratch>/undef cargo test --locked --test features_runner` (temporary probe feature outside the repo, scenario step `a step that no binding defines`). Output tail: `✘ Given a step that no binding defines / Step failed: ... Step doesn't match any function`, `2 scenarios (2 failed)`, `error: test failed`. Exit status 1 (undefined step).
+  - Cargo explicit-unimplemented probe command/output/status: same command with `GIVN_FEATURES=<scratch>/unimpl` (registered step `a registered strictness probe step` in `tests/features_runner.rs`). Output: `✘ Given a registered strictness probe step / Matched: tests/features_runner.rs:32:5 / Step panicked. Captured output: not implemented: strictness registered probe`, `2 scenarios (2 failed)`. Exit status 1.
+  - Nextest undefined probe command/output/status: `nix develop --command env GIVN_STRICTNESS_PROBE_FEATURE=1 GIVN_FEATURES=<scratch>/undef GIVN_CUCUMBER_TAGS= cargo nextest run --no-tests=warn --locked --test features_runner`. Output: `Step doesn't match any function`, `Summary [0.276s] 2 tests run: 0 passed, 2 failed, 0 skipped`, `error: test run failed`. Exit status 100.
+  - Nextest explicit-unimplemented probe command/output/status: same with `<scratch>/unimpl`. Output: `Step panicked. Captured output: not implemented: strictness registered probe`, `Summary [0.275s] 2 tests run: 0 passed, 2 failed, 0 skipped`. Exit status 100.
+  - E2E undefined probe command/output/status: `nix develop --command env GIVN_STRICTNESS_PROBE_FEATURE=1 GIVN_FEATURES=<scratch>/undef ./run-tests.sh --e2e` (probe scenario tagged `@e2e`; runtime admission and supervisor build ran normally). Output: `Starting 1 test across 1 binary (1 test skipped)`, `FAIL Probe undefined e2e`, `Step doesn't match any function`, `Summary 1 test run: 0 passed, 1 failed, 1 skipped`. Exit status 100.
+  - E2E explicit-unimplemented probe command/output/status: same with `<scratch>/unimpl`. Output: `FAIL Probe unimplemented e2e`, `Step panicked. Captured output: not implemented: strictness registered probe`, `Summary 1 test run: 0 passed, 1 failed, 1 skipped`. Exit status 100. The temporary probe features lived only in the session scratch directory and were removed from consideration (nothing was added to the repository); the permanent `strictness_probe_steps` binding in `tests/features_runner.rs` was already committed.
+  - Permanent-root regular setup command/output/status: `nix develop --command tests/fixtures/opencode/run-suite.sh --regular` -> `Summary [80.119s] 482 tests run: 482 passed, 91 skipped`, exit 0. Runtime admission: `nix develop --command tests/fixtures/opencode/resolve-runtime.sh --json` exits 0 and reports platform aarch64-darwin, V1 floor 1.18.29, V1 latest 1.18.34, V2 latest 2.0.22, Node 24.21.0, fish and modules paths from the dev shell (lock_sha256 4558f00d...6cca). Seatbelt/supervisor probes belong to the E2E setup task and were not run here.
 
 ## Regular scenarios
 
