@@ -64,6 +64,12 @@ struct Generated {
 
 const GENERATED: &[Generated] = &[
     Generated {
+        name: "inverted-stale-rule.js",
+        anchor: "              pending.messageID === event.messageID,\n",
+        replacement: "              pending.messageID !== event.messageID,\n",
+        title: "A request from an older message of the same session is dropped",
+    },
+    Generated {
         name: "no-configured-default.js",
         anchor: "    if (!model?.modelID) model = await configuredDefault(ctx)\n",
         replacement: "",
