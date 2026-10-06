@@ -48,7 +48,7 @@ Feature: Enable commit attribution
       | claude   | givn skills targets add opencode | V2 latest |
       | opencode | givn skills targets add claude   | V2 latest |
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario Outline: Consumer enables an addon and retains compatible OpenCode attribution
     Given an initialized project selecting OpenCode with a V1-only attribution integration
     And the "dev_principles" addon is disabled

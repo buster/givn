@@ -291,3 +291,32 @@ fn when_consumer_runs_quoted_command(world: &mut GivnWorld, command: String) {
     world.last_argv = Some(argv);
     world.last_output = Some(output);
 }
+
+/// Whether the real `givn addons list` reports `addon` as enabled.
+fn addon_enabled(env: &common::TestEnv, addon: &str) -> bool {
+    let list = common::run_givn(env, &["addons", "list"]);
+    assert!(list.status.success(), "givn addons list failed");
+    let stdout = String::from_utf8_lossy(&list.stdout);
+    let line = stdout
+        .lines()
+        .find(|line| line.split_whitespace().nth(1) == Some(addon))
+        .unwrap_or_else(|| panic!("addon {addon} is not listed: {stdout}"));
+    if line.trim_start().starts_with("[enabled]") {
+        true
+    } else {
+        assert!(
+            line.trim_start().starts_with("[disabled]"),
+            "unrecognised addon state: {line}"
+        );
+        false
+    }
+}
+
+#[given(regex = r##"^the "([^"]+)" addon is disabled$"##)]
+fn given_addon_is_disabled(world: &mut GivnWorld, addon: String) {
+    let env = world.env.as_ref().expect("project root");
+    assert!(
+        !addon_enabled(env, &addon),
+        "the {addon} addon must start disabled (the project was initialized with --no-addons)"
+    );
+}
