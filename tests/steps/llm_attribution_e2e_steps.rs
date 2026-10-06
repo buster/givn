@@ -228,7 +228,6 @@ fn when_opencode_supplies_selected_model(
         provider,
         model,
         session,
-        output: None,
         real_result: None,
     });
 }
@@ -239,48 +238,22 @@ fn when_opencode_prepares_shell(world: &mut GivnWorld, session: String) {
         .opencode_plugin
         .as_ref()
         .expect("OpenCode plugin state");
+    // The session label is selection state only: the real runtime issues its own
+    // session identifier, so the label is checked, not forged.
     assert_eq!(state.session, session);
-    let root = world.env.as_ref().expect("project root").root();
-    let plugin_state = world
-        .opencode_plugin
-        .as_ref()
-        .expect("OpenCode plugin state");
-    let script = format!(
-        "import {{ GivnAttributionPlugin }} from {};
- const hooks = await GivnAttributionPlugin();
- await hooks['chat.message']({{ sessionID: {}, model: {{ providerID: {}, modelID: {} }}, variant: 'high' }}, {{}});
-await hooks['chat.params']({{ sessionID: {}, model: {{ providerID: {}, modelID: {} }}, agent: 'build', provider: {{}}, message: {{}} }}, {{}});
- const output = {{ env: {{}} }};
-await hooks['shell.env']({{ sessionID: {} }}, output);
-console.log(JSON.stringify(output.env));
-",
-        javascript_string(&root.join(".opencode/plugins/givn-attribution.js")),
-        javascript_string_value(&session),
-        javascript_string_value(&plugin_state.provider),
-        javascript_string_value(&plugin_state.model),
-        javascript_string_value(&session),
-        javascript_string_value(&plugin_state.provider),
-        javascript_string_value(&plugin_state.model),
-        javascript_string_value(&session),
+    let requested = format!("{}/{}", state.provider, state.model);
+    let evidence = run_release_and_record(
+        world,
+        "V1 floor",
+        "main",
+        &[("GIVN_FIXTURE_PRIMARY_MODEL", requested.as_str())],
     );
-    let script_path = root.join("invoke-opencode-shell.mjs");
-    std::fs::write(&script_path, script).expect("write OpenCode shell script");
-    let output = Command::new("node")
-        .arg(&script_path)
-        .current_dir(&root)
-        .output()
-        .expect("run node");
-    assert!(
-        output.status.success(),
-        "OpenCode shell hook failed: stdout={} stderr={}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
-    );
+    assert_eq!(evidence["kind"], "attribution-result");
     world
         .opencode_plugin
         .as_mut()
         .expect("OpenCode plugin state")
-        .output = Some(output);
+        .real_result = Some(evidence);
 }
 
 #[when(
@@ -299,7 +272,6 @@ fn when_developer_runs_real_opencode(
         provider: "givn-fixture".to_owned(),
         model,
         session: "real-runtime".to_owned(),
-        output: None,
         real_result: Some(evidence),
     });
 }
@@ -342,7 +314,6 @@ fn when_developer_runs_real_opencode_subagent(
         provider: "givn-fixture".to_owned(),
         model,
         session: "real-runtime".to_owned(),
-        output: None,
         real_result: Some(evidence),
     });
 }
@@ -600,7 +571,6 @@ pub(crate) struct OpencodePluginState {
     provider: String,
     model: String,
     session: String,
-    output: Option<Output>,
     real_result: Option<serde_json::Value>,
 }
 
@@ -613,21 +583,18 @@ fn assert_opencode_env(world: &GivnWorld, name: &str, expected: &str) {
         );
         return;
     }
-    let state = world
+    let evidence = world
         .opencode_plugin
         .as_ref()
-        .expect("OpenCode plugin state");
-    let output = state.output.as_ref().expect("OpenCode shell output");
-    let env: serde_json::Value =
-        serde_json::from_slice(&output.stdout).expect("parse OpenCode shell environment");
+        .and_then(|state| state.real_result.as_ref())
+        .expect("completed OpenCode shell result");
+    assert_eq!(evidence["kind"], "attribution-result");
     assert_eq!(
-        env.get(name).and_then(serde_json::Value::as_str),
-        Some(expected)
+        evidence["result"][name].as_str(),
+        Some(expected),
+        "completed shell result: {}",
+        evidence["result"]
     );
-}
-
-fn javascript_string(path: &std::path::Path) -> String {
-    serde_json::to_string(&path.to_string_lossy()).expect("encode JavaScript string")
 }
 
 fn javascript_string_value(value: &str) -> String {

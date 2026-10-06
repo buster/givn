@@ -224,6 +224,14 @@ function proxyEnvironment(readiness) {
 // The subagent's configured model comes from the scenario (default: the fixture's model-b at variant low).
 const subagentModel = process.env.GIVN_FIXTURE_SUBAGENT_MODEL ?? 'givn-fixture/model-b#low'
 
+// The permanent scenario requests its own provider/model pair (V1 only). The
+// twin serves it from the same loopback endpoint; the identity is the alias.
+const primaryAlias = process.env.GIVN_FIXTURE_PRIMARY_MODEL ?? null
+if (primaryAlias && (isV2 || !/^[^/]+\/[^/]+$/.test(primaryAlias))) {
+  throw new Error(`GIVN_FIXTURE_PRIMARY_MODEL must be a provider/model pair on a V1 release: ${primaryAlias}`)
+}
+const [primaryProvider, primaryModelId] = primaryAlias ? primaryAlias.split('/') : ['givn-fixture', 'model-a']
+
 function projectConfig(providerUrl) {
   if (isV2) {
     return {
@@ -258,8 +266,8 @@ function projectConfig(providerUrl) {
   }
   return {
     '$schema': 'https://opencode.ai/config.json',
-    provider: { 'givn-fixture': { npm: '@ai-sdk/openai-compatible', name: 'Attribution fixture', options: { baseURL: providerUrl, apiKey: 'fixture-not-a-secret' }, models: { 'model-a': { tool_call: true, variants: { high: {} } } } } },
-    model: 'givn-fixture/model-a',
+    provider: { [primaryProvider]: { npm: '@ai-sdk/openai-compatible', name: 'Attribution fixture', options: { baseURL: providerUrl, apiKey: 'fixture-not-a-secret' }, models: { [primaryModelId]: { tool_call: true, variants: { high: {} } } } } },
+    model: `${primaryProvider}/${primaryModelId}`,
     snapshot: false,
     autoupdate: false,
     permission: { bash: { '*': 'deny', [fixtureCommand]: 'allow' } },
@@ -373,7 +381,7 @@ async function main() {
   const debug = process.env.GIVN_DRIVER_DEBUG ? ['--print-logs', '--log-level', 'DEBUG'] : []
   const args = isV2
     ? ['run', '--server', `http://127.0.0.1:${apiPort}`, '--format', 'json', '--auto', '--model', 'givn-fixture/model-a#high', prompt]
-    : ['run', ...debug, '--format', 'json', '--auto', '--model', 'givn-fixture/model-a', '--variant', 'high', prompt]
+    : ['run', ...debug, '--format', 'json', '--auto', '--model', `${primaryProvider}/${primaryModelId}`, '--variant', 'high', prompt]
   const ports = isV2 ? [readiness.port, readiness.proxyPort, apiPort] : [readiness.port, readiness.proxyPort]
   const cli = await sandboxed(executable, args, ports)
   const env = { ...childEnvironment, ...proxyEnvironment(readiness), ...(isV2 ? { OPENCODE_PASSWORD: SERVER_PASSWORD } : {}) }

@@ -377,3 +377,42 @@ fn should_fail_with_a_deadline_error_when_the_harness_never_finishes() {
         "the harness was not stopped at its deadline"
     );
 }
+
+/// The permanent real-runtime scenario must read the completed shell result: with
+/// a plugin that loads but never attributes, it has to fail.
+#[test]
+fn should_fail_the_permanent_selected_model_scenario_when_the_plugin_does_not_attribute() {
+    let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
+    let title = "OpenCode prepares attribution using its selected model";
+    let output = Command::new(cargo)
+        .args([
+            "test",
+            "--locked",
+            "--test",
+            "features_runner",
+            "--",
+            "--name",
+        ])
+        .arg(format!("^{}$", regex_escape(title)))
+        .env("GIVN_FEATURES", repo().join("givn/specs"))
+        .env(
+            "GIVN_OPENCODE_CONTROL_PLUGIN",
+            repo().join("tests/fixtures/opencode/controls/inert-plugin.js"),
+        )
+        .env("GIVN_OPENCODE_NEGATIVE_CONTROL", "1")
+        .current_dir(repo())
+        .output()
+        .expect("run the permanent scenario against the inert plugin");
+    let text = format!(
+        "{}{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(
+        !output.status.success()
+            && text.contains("1 scenario (1 failed)")
+            && text.contains("Then the shell environment identifies LLM"),
+        "the inert plugin did not fail the permanent scenario at its assertion (status {}):\n{text}",
+        output.status
+    );
+}
