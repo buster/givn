@@ -32,3 +32,11 @@ givn/.spec-nli-cache/
 *.swo
 .idea/
 .vscode/
+
+# OpenCode fixture runtime output
+/config/opencode/
+/data/opencode/
+/tmp/
+/provider*.log
+/provider-ready.json
+/attribution-result.json
