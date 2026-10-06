@@ -545,20 +545,21 @@ fn replay(world: &mut GivnWorld) {
         &state.initial_env,
         &state.actions,
     );
-    if let Ok(result) = &outcome {
-        if state.asset != prototype_path() && prototype_is_oracle(state) {
-            let oracle = common::opencode_characterize::run(
-                &prototype_path(),
-                &state.generation,
-                &state.initial_env,
-                &state.actions,
-            )
-            .expect("the immutable prototype replays the same actions");
-            assert_eq!(
-                result.shells, oracle.shells,
-                "generated plugin differs from the supplied prototype's observable behavior"
-            );
-        }
+    if let Ok(result) = &outcome
+        && state.asset != prototype_path()
+        && prototype_is_oracle(state)
+    {
+        let oracle = common::opencode_characterize::run(
+            &prototype_path(),
+            &state.generation,
+            &state.initial_env,
+            &state.actions,
+        )
+        .expect("the immutable prototype replays the same actions");
+        assert_eq!(
+            result.shells, oracle.shells,
+            "generated plugin differs from the supplied prototype's observable behavior"
+        );
     }
     state.outcome = Some(outcome.map_err(|error| format!("{error:#}")));
 }

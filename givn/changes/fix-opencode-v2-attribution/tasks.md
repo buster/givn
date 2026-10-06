@@ -134,12 +134,12 @@ RED must be a targeted non-zero undefined/unimplemented failure or an assertion-
   - REFACTOR: `cargo fmt --check` exit 0; rerun `1 scenario (1 passed) 5 steps (5 passed)`, exit status 0.
   - COMMIT: `givn commit -m "test(enable-commit-attribution): install OpenCode without addons"`; scenario title in body. Revision hash: `givn commit -m "test(enable-commit-attribution): install OpenCode without addons"`; scenario title in body. Revision hash: 3e9dbb8b.
 
-- [ ] `enable-commit-attribution`: Synchronization without the OpenCode target does not install its attribution integration
+- [x] `enable-commit-attribution`: Synchronization without the OpenCode target does not install its attribution integration
   - Design constraints: With Claude selected and no addons, `givn skills sync` succeeds without creating the canonical OpenCode plugin or reporting its path. Preserve target selection; never widen installation to unselected agents.
   - RED: Remove `@wip` only here; Removed `@wip` from this scenario only. Exact-title targeted command (`... -- --name '^Synchronization without the OpenCode target does not install its attribution integration$'`). New steps `an initialized project selecting "<targets>" without addons` and `no OpenCode attribution integration exists` registered in `tests/steps/llm_attribution_installation_steps.rs` as `unimplemented!(...)`: `1 scenario (1 failed) 1 step (1 failed)`, exit status 1.
   - GREEN: Assert successful sync, absent plugin, and absent path in stdout. Production files changed: Implemented both bindings: the Given runs the real `givn init --agents claude --no-addons` in a Git project; the Then asserts `.opencode/plugins/givn-attribution.js` does not exist; the reused steps assert `givn skills sync` exits 0 and `stdout does not contain ".opencode/plugins/givn-attribution.js"`. Production files changed: none (characterization exception: target selection already skips the unselected OpenCode writer; reference adapter revision d61b44c9 is not involved because no plugin is generated). Output: all five steps `✔`, `1 scenario (1 passed) 5 steps (5 passed)`, exit status 0.
   - REFACTOR: `cargo fmt --check` exit 0; rerun `1 scenario (1 passed) 5 steps (5 passed)`, exit status 0.
-  - COMMIT: `givn commit -m "test(enable-commit-attribution): skip unselected OpenCode target"`; scenario title in body. Revision hash: `givn commit -m "test(enable-commit-attribution): skip unselected OpenCode target"`; scenario title in body. Revision hash: HASH.
+  - COMMIT: `givn commit -m "test(enable-commit-attribution): skip unselected OpenCode target"`; scenario title in body. Revision hash: `givn commit -m "test(enable-commit-attribution): skip unselected OpenCode target"`; scenario title in body. Revision hash: d6edb2dd.
 
 ## Setup: E2E infrastructure and isolated real-runtime proof
 
