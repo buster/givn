@@ -163,7 +163,7 @@ Feature: Attribute commits
     Then the shell environment identifies LLM "givn-fixture/model-a"
     And the shell environment identifies reasoning mode "high"
 
-  @givn.added @wip
+  @givn.added
   Scenario: OpenCode V2 uses its configured default when no model has been remembered
     Given an isolated OpenCode "V2" attribution integration
     And OpenCode's configured default is model "givn-fixture/model-b" with reasoning mode "low"
