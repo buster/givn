@@ -993,3 +993,13 @@ fn when_opencode_delivers_malformed_tool_events(world: &mut GivnWorld) {
         .actions
         .push(serde_json::json!({"op": "malformed"}));
 }
+
+#[when(regex = r##"^OpenCode requests the shell command "([^"]+)" without a session$"##)]
+fn when_opencode_requests_shell_command_without_session(world: &mut GivnWorld, command: String) {
+    characterization(world).actions.push(serde_json::json!({
+        "op": "request",
+        "session": null,
+        "message": "message-sessionless",
+        "command": command,
+    }));
+}

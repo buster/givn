@@ -104,14 +104,16 @@ const main = async () => {
     counter += 1
     const callID = action.id ?? `call-${counter}`
     callIDs.set(callKey(action), callID)
-    await fire("tool", "execute.before", {
+    const event = {
       tool: "shell",
-      sessionID: action.session,
       agent: "build",
       messageID: action.message ?? `message-${action.session}`,
       id: callID,
       input: { command: action.command },
-    })
+    }
+    // A request without a session omits the key, as a malformed payload would.
+    if (action.session !== null && action.session !== undefined) event.sessionID = action.session
+    await fire("tool", "execute.before", event)
     return callID
   }
   const create = async (action, op) => {

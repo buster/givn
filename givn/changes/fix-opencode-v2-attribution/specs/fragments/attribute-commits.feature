@@ -165,6 +165,17 @@ Feature: Attribute commits
     And the shell environment identifies reasoning mode "high"
     And the shell environment identifies committer "LLM: givn-fixture/model-a via opencode"
 
+  @givn.added
+  Scenario: A shell request without a session does not shadow a later request
+    Given an isolated OpenCode "V2" attribution integration
+    And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"
+    And OpenCode has later remembered model "givn-fixture/model-b" with reasoning mode "low" for session "session-b"
+    When OpenCode requests the shell command "git commit" without a session
+    And OpenCode requests the shell command "git commit" for session "session-a"
+    And OpenCode creates the shell for "git commit"
+    Then the shell environment identifies LLM "givn-fixture/model-a"
+    And the shell environment identifies reasoning mode "high"
+
   @givn.added @e2e
   Scenario: OpenCode V2 attributes a subagent's command to the subagent's model
     Given a project with the generated OpenCode attribution integration

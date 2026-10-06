@@ -79,7 +79,13 @@ export default {
     let pendingShells = []
 
     await ctx.tool.hook("execute.before", (event) => {
-      if (event.tool !== "shell" || typeof event.input?.command !== "string") return
+      if (
+        event.tool !== "shell" ||
+        typeof event.sessionID !== "string" ||
+        typeof event.input?.command !== "string"
+      ) {
+        return
+      }
       // A request from an older message of the same session never reached shell
       // creation (vetoed, denied, or aborted); it must not label a later command.
       pendingShells.push({ event })
