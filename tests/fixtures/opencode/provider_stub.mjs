@@ -24,7 +24,9 @@ function toolName(tool) {
 }
 
 // Pure decision function: returns { kind, ... } for one chat completion body.
-export function decide(body, command) {
+// With `mainCommand`, a primary session that has just received its subagent's
+// result issues its own shell call, so the primary command runs after the child's.
+export function decide(body, command, mainCommand) {
   const model = String(body.model ?? '')
   const tools = (body.tools ?? []).map(toolName)
   const messages = body.messages ?? []
@@ -35,20 +37,26 @@ export function decide(body, command) {
   const lastUser = users.at(-1) ?? ''
 
   if (model === 'title-model') return { kind: 'title' }
-  if (hasToolResult) return { kind: 'final' }
+  const isChild = firstUser.startsWith(SUBAGENT_CHILD_PREFIX)
+  const called = messages.flatMap((message) => (message.tool_calls ?? []).map((call) => call.function?.name))
+  if (hasToolResult) {
+    if (mainCommand && !isChild && called.includes('subagent') && !called.some((name) => name === 'shell' || name === 'bash')) {
+      if (model !== 'model-a') return { kind: 'reject', reason: `primary shell request after the subagent used model ${model}, expected model-a` }
+      if (!shell) return { kind: 'reject', reason: 'primary session was not offered a shell tool after its subagent finished' }
+      return { kind: 'tool', name: shell, args: { command: mainCommand } }
+    }
+    return { kind: 'final' }
+  }
   if (!shell && !tools.includes('subagent')) return { kind: 'text' }
-  if (firstUser.startsWith(SUBAGENT_CHILD_PREFIX)) {
+  if (isChild) {
     if (model !== 'model-b') return { kind: 'reject', reason: `subagent child reached the provider with model ${model}, expected model-b` }
     if (!shell) return { kind: 'reject', reason: 'subagent child was not offered a shell tool' }
     return { kind: 'tool', name: shell, args: { command } }
   }
   if (tools.includes('subagent') && lastUser.includes(SUBAGENT_PROMPT_MARKER)) {
     if (model !== 'model-a') return { kind: 'reject', reason: `primary subagent request used model ${model}, expected model-a` }
-    return {
-      kind: 'tool',
-      name: 'subagent',
-      args: { agent: 'attribution-subagent', description: 'Run the attribution fixture', prompt: 'Run the attribution fixture command.' },
-    }
+    const subagent = { name: 'subagent', args: { agent: 'attribution-subagent', description: 'Run the attribution fixture', prompt: 'Run the attribution fixture command.' } }
+    return { kind: 'tool', ...subagent }
   }
   if (shell) return { kind: 'tool', name: shell, args: { command } }
   return { kind: 'reject', reason: `unexpected request: model=${model} tools=${JSON.stringify(tools)}` }
@@ -65,7 +73,7 @@ function completion(decision, model) {
   return { message: { role: 'assistant', content }, finish: 'stop', model }
 }
 
-export function createServer({ logPath, command }) {
+export function createServer({ logPath, command, mainCommand }) {
   return http.createServer(async (request, response) => {
     const chunks = []
     for await (const chunk of request) chunks.push(chunk)
@@ -91,7 +99,7 @@ export function createServer({ logPath, command }) {
       response.end('malformed JSON')
       return
     }
-    const decision = decide(parsed, command)
+    const decision = decide(parsed, command, mainCommand)
     await log({ model: parsed.model, tools: (parsed.tools ?? []).map(toolName), decision: decision.kind, tool: decision.name, reason: decision.reason })
     if (decision.kind === 'reject') {
       response.writeHead(400, { 'content-type': 'text/plain' })
@@ -136,7 +144,7 @@ export function createRefusingProxy({ logPath }) {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const portFile = process.argv[2]
   const nonce = crypto.randomUUID()
-  const server = createServer({ logPath: process.env.GIVN_PROVIDER_LOG, command: process.env.GIVN_FIXTURE_COMMAND })
+  const server = createServer({ logPath: process.env.GIVN_PROVIDER_LOG, command: process.env.GIVN_FIXTURE_COMMAND, mainCommand: process.env.GIVN_FIXTURE_MAIN_COMMAND })
   server.on('clientError', (_error, socket) => socket.destroy())
   const proxy = createRefusingProxy({ logPath: process.env.GIVN_PROVIDER_LOG })
   proxy.listen(0, '127.0.0.1', () => {

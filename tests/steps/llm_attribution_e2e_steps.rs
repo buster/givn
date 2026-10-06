@@ -316,7 +316,7 @@ fn given_subagent_configuration(world: &mut GivnWorld, model: String, reasoning:
 }
 
 #[when(
-    regex = r##"^the developer asks OpenCode "([^"]+)" with model "([^"]+)" and reasoning mode "([^"]+)" to have its subagent execute the attribution fixture command$"##
+    regex = r##"^the developer asks OpenCode "([^"]+)" with model "([^"]+)" and reasoning mode "([^"]+)" to have its subagent execute the attribution fixture command and then execute it itself$"##
 )]
 fn when_developer_runs_real_opencode_subagent(
     world: &mut GivnWorld,
@@ -429,6 +429,132 @@ fn assert_subagent_result(world: &GivnWorld, name: &str, expected: &str) {
         "the subagent runs in its own session"
     );
     assert_eq!(evidence["result"][name].as_str(), Some(expected));
+}
+
+#[then(regex = r##"^the primary session's own command output identifies LLM "([^"]+)"$"##)]
+fn then_primary_identifies_model(world: &mut GivnWorld, expected: String) {
+    assert_primary_result(world, "GIVN_ATTRIBUTION_LLM", &expected);
+}
+
+#[then(
+    regex = r##"^the primary session's own command output identifies reasoning mode "([^"]+)"$"##
+)]
+fn then_primary_identifies_reasoning(world: &mut GivnWorld, expected: String) {
+    assert_primary_result(world, "GIVN_ATTRIBUTION_REASONING", &expected);
+}
+
+#[then(regex = r##"^the primary session's own command output identifies committer "([^"]+)"$"##)]
+fn then_primary_identifies_committer(world: &mut GivnWorld, expected: String) {
+    assert_primary_result(world, "GIT_COMMITTER_NAME", &expected);
+}
+
+fn subagent_evidence(world: &GivnWorld) -> &serde_json::Value {
+    let evidence = world
+        .opencode_plugin
+        .as_ref()
+        .and_then(|state| state.real_result.as_ref())
+        .expect("successful real OpenCode result");
+    assert_eq!(evidence["kind"], "subagent-attribution-result");
+    evidence
+}
+
+fn assert_primary_result(world: &GivnWorld, name: &str, expected: &str) {
+    let evidence = subagent_evidence(world);
+    let primary = evidence["parent"]["sessionID"]
+        .as_str()
+        .expect("the primary session");
+    assert_ne!(
+        evidence["child"]["sessionID"].as_str(),
+        Some(primary),
+        "the primary command belongs to the primary session, not the child"
+    );
+    assert_eq!(evidence["parent"]["result"][name].as_str(), Some(expected));
+}
+
+/// Recorded probe events of the fixture command, as (hook, role) in arrival order.
+/// The subagent's command is the plain fixture command, the primary's ends in `main`.
+fn recorded_roles(world: &GivnWorld) -> Vec<(String, &'static str, serde_json::Value)> {
+    let evidence = subagent_evidence(world);
+    evidence["contractProbe"]
+        .as_array()
+        .expect("the driver reports the recorded events")
+        .iter()
+        .filter_map(|event| {
+            let command = event["command"]
+                .as_str()
+                .or_else(|| event["inputCommand"].as_str())?;
+            let role = if command.ends_with("attribution-fixture.mjs main") {
+                "primary"
+            } else if command.ends_with("attribution-fixture.mjs") {
+                "subagent"
+            } else {
+                return None;
+            };
+            Some((
+                event["hook"].as_str().expect("hook name").to_owned(),
+                role,
+                event.clone(),
+            ))
+        })
+        .collect()
+}
+
+#[then("the primary session's command ran after the subagent's command completed")]
+fn then_primary_ran_after_subagent(world: &mut GivnWorld) {
+    let order: Vec<(String, &str)> = recorded_roles(world)
+        .into_iter()
+        .map(|(hook, role, _)| (hook, role))
+        .collect();
+    let expected: Vec<(String, &str)> = [
+        ("execute.before", "subagent"),
+        ("create.before", "subagent"),
+        ("execute.after", "subagent"),
+        ("execute.before", "primary"),
+        ("create.before", "primary"),
+        ("execute.after", "primary"),
+    ]
+    .into_iter()
+    .map(|(hook, role)| (hook.to_owned(), role))
+    .collect();
+    assert_eq!(order, expected, "recorded command events in arrival order");
+}
+
+#[then("OpenCode announced the subagent's command for the subagent's own session")]
+fn then_subagent_request_names_child_session(world: &mut GivnWorld) {
+    let evidence = subagent_evidence(world);
+    let child = evidence["child"]["sessionID"]
+        .as_str()
+        .expect("child session");
+    let primary = evidence["parent"]["sessionID"]
+        .as_str()
+        .expect("primary session");
+    for (hook, role, event) in recorded_roles(world) {
+        if hook != "execute.before" {
+            continue;
+        }
+        let expected = if role == "subagent" { child } else { primary };
+        assert_eq!(
+            event["sessionID"].as_str(),
+            Some(expected),
+            "the {role} command's execute.before names the wrong session: {event}"
+        );
+    }
+}
+
+#[then("shell creation carried no session identifier in its environment")]
+fn then_shell_creation_has_no_session_in_env(world: &mut GivnWorld) {
+    let creations: Vec<_> = recorded_roles(world)
+        .into_iter()
+        .filter(|(hook, _, _)| hook == "create.before")
+        .collect();
+    assert_eq!(creations.len(), 2, "one shell creation per command");
+    for (_, role, event) in creations {
+        let keys = event["envKeys"].as_array().expect("recorded env keys");
+        assert!(
+            !keys.iter().any(|key| key == "OPENCODE_SESSION_ID"),
+            "the {role} shell creation environment already names the session: {event}"
+        );
+    }
 }
 
 #[then("the OpenCode command output reports active commit attribution")]

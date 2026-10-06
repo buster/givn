@@ -81,6 +81,8 @@ const resultPath = process.env.GIVN_FIXTURE_RESULT_PATH
 const markerPath = path.join(root, 'provider-ready.json')
 const providerLog = path.join(root, 'provider.log')
 const attributionOutput = path.join(root, 'attribution-result.json')
+// The primary session's own command (subagent scenario only) records into a separate file.
+const primaryAttributionOutput = `${attributionOutput}.main`
 // Contract probe (test-only): an extra recorder plugin beside the canonical one.
 const probeLog = process.env.GIVN_FIXTURE_CONTRACT_PROBE ? path.join(root, 'contract-probe.jsonl') : null
 const PROBE_PLUGIN = 'givn-contract-probe.js'
@@ -88,6 +90,8 @@ const nonce = crypto.randomUUID()
 // The V2 shell is zsh (its login PATH reset cannot resolve a bare 'node'), so the
 // fixed command uses the pinned absolute Node path.
 const fixtureCommand = `${node} attribution-fixture.mjs`
+// A distinct allowed command for the primary session's own shell call after its subagent finished.
+const primaryCommand = `${node} attribution-fixture.mjs main`
 const childEnvironment = {
   HOME: path.join(root, 'home'),
   TMPDIR: path.join(root, 'tmp'),
@@ -102,6 +106,7 @@ const childEnvironment = {
   GIVN_DRIVER_NONCE: nonce,
   GIVN_FIXTURE_API_KEY: 'fixture-not-a-secret',
   GIVN_FIXTURE_COMMAND: fixtureCommand,
+  ...(scenario === 'subagent' ? { GIVN_FIXTURE_MAIN_COMMAND: primaryCommand } : {}),
   ...(probeLog ? { GIVN_CONTRACT_PROBE_LOG: probeLog } : {}),
   PATH: `${path.dirname(node)}:${path.dirname(git)}:/usr/bin:/bin:/usr/sbin:/sbin`,
   LANG: 'C.UTF-8',
@@ -189,9 +194,9 @@ function toolOutput(part) {
   return (part.state.content ?? []).map((entry) => entry?.text ?? '').join('')
 }
 
-function shellResult(toolParts) {
+function shellResult(toolParts, label = 'shell') {
   const parts = toolParts.filter((part) => ['shell', 'bash'].includes(toolName(part)))
-  if (parts.length !== 1) throw new Error(`expected exactly one completed shell tool result, found ${parts.length}`)
+  if (parts.length !== 1) throw new Error(`expected exactly one completed ${label} tool result, found ${parts.length}`)
   const output = toolOutput(parts[0])
   const line = output.split(/\r?\n/).find((entry) => entry.startsWith(SENTINEL))
   if (!line) throw new Error(`completed shell tool result omitted the attribution sentinel: ${output}`)
@@ -246,6 +251,7 @@ function projectConfig(providerUrl) {
       plugins: ['-opencode.provider.ollama', '-opencode.provider.lmstudio', '-opencode.provider.vllm'],
       permissions: [
         { action: 'shell', resource: fixtureCommand, effect: 'allow' },
+        { action: 'shell', resource: primaryCommand, effect: 'allow' },
         { action: 'subagent', resource: 'attribution-subagent', effect: 'allow' },
       ],
     }
@@ -269,7 +275,7 @@ async function writeFixtureProject(providerUrl) {
     `const names = ${JSON.stringify([...ATTRIBUTION_NAMES, 'OPENCODE_SESSION_ID'])}`,
     'const result = Object.fromEntries(names.map((name) => [name, process.env[name] ?? null]))',
     `console.log(${JSON.stringify(SENTINEL)} + JSON.stringify(result))`,
-    `writeFileSync(${JSON.stringify(attributionOutput)}, JSON.stringify(result))`,
+    `writeFileSync(process.argv[2] === 'main' ? ${JSON.stringify(primaryAttributionOutput)} : ${JSON.stringify(attributionOutput)}, JSON.stringify(result))`,
     '',
   ].join('\n')
   await fs.writeFile(path.join(project, 'attribution-fixture.mjs'), script)
@@ -387,6 +393,7 @@ async function main() {
 
   let recorded
   let child = null
+  let parent = null
   if (scenario === 'subagent') {
     const subagent = parentTools.filter((part) => toolName(part) === 'subagent')
     if (subagent.length !== 1) throw new Error(`expected exactly one completed subagent tool result in the parent stream, found ${subagent.length}; ${diagnose()}`)
@@ -398,6 +405,14 @@ async function main() {
     try { recorded = shellResult(completedTools(messages)) } catch (error) { throw new Error(`${error.message}; child messages: ${JSON.stringify(messages).slice(0, 3000)}`) }
     if (recorded.record.OPENCODE_SESSION_ID !== childSessionID) throw new Error(`the subagent shell result belongs to session ${recorded.record.OPENCODE_SESSION_ID}, expected child ${childSessionID}`)
     child = { sessionID: childSessionID, parentSessionID, parentToolResult: output }
+    // The primary session resumed after its subagent and ran its own command: that
+    // result is the one completed shell tool part of the parent stream.
+    let primary
+    try { primary = shellResult(parentTools, "primary-session shell") } catch (error) { throw new Error(`${error.message}; ${diagnose()}`) }
+    if (primary.record.OPENCODE_SESSION_ID !== parentSessionID) throw new Error(`the primary shell result belongs to session ${primary.record.OPENCODE_SESSION_ID}, expected the primary session ${parentSessionID}`)
+    const primarySpawned = JSON.parse(await fs.readFile(primaryAttributionOutput, 'utf8'))
+    if (JSON.stringify(primarySpawned) !== JSON.stringify(primary.record)) throw new Error(`primary tool result environment differs from spawned shell evidence: tool=${JSON.stringify(primary.record)}, file=${JSON.stringify(primarySpawned)}`)
+    parent = { sessionID: parentSessionID, toolOutput: primary.output, result: Object.fromEntries(ATTRIBUTION_NAMES.map((name) => [name, primarySpawned[name]])) }
   } else {
     recorded = shellResult(parentTools)
     if (isV2 && recorded.record.OPENCODE_SESSION_ID !== parentSessionID) throw new Error(`shell result session ${recorded.record.OPENCODE_SESSION_ID} differs from run session ${parentSessionID}`)
@@ -426,6 +441,7 @@ async function main() {
     result: Object.fromEntries(ATTRIBUTION_NAMES.map((name) => [name, spawned[name]])),
     sessionID: spawned.OPENCODE_SESSION_ID,
     child,
+    parent,
     server: serverInfo,
     plugins,
     contractProbe: probeLog ? (await fs.readFile(probeLog, 'utf8').catch(() => '')).split('\n').filter(Boolean).map((line) => JSON.parse(line)) : null,

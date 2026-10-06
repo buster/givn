@@ -251,13 +251,25 @@ Feature: Attribute commits
 
   @givn.added @e2e
   Scenario: OpenCode V2 attributes a subagent's command to the subagent's model
+    Characterization of real-loader behavior, not a discriminator: it also passes
+    with the immutable prototype, because the primary session's resumed request
+    re-sets the last-observed model before the primary's own command. The regular
+    scenario "A subagent's shell command is attributed to the subagent's own model"
+    is the discriminator of the old last-observed-model fallback.
     Given a project with the generated OpenCode attribution integration
+    And an event recorder is installed beside the attribution plugin in the project
     And the project's subagent is configured with model "givn-fixture/model-b" and reasoning mode "low"
-    When the developer asks OpenCode "V2 latest" with model "givn-fixture/model-a" and reasoning mode "high" to have its subagent execute the attribution fixture command
+    When the developer asks OpenCode "V2 latest" with model "givn-fixture/model-a" and reasoning mode "high" to have its subagent execute the attribution fixture command and then execute it itself
     Then the OpenCode command exits 0
     And the subagent's command output identifies LLM "givn-fixture/model-b"
     And the subagent's command output identifies reasoning mode "low"
     And the subagent's command output identifies committer "LLM: givn-fixture/model-b via opencode"
+    And the primary session's own command output identifies LLM "givn-fixture/model-a"
+    And the primary session's own command output identifies reasoning mode "high"
+    And the primary session's own command output identifies committer "LLM: givn-fixture/model-a via opencode"
+    And the primary session's command ran after the subagent's command completed
+    And OpenCode announced the subagent's command for the subagent's own session
+    And shell creation carried no session identifier in its environment
 
   @givn.added @e2e
   Scenario: OpenCode V2 delivers the shell request to the attribution adapter before shell creation
