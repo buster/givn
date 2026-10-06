@@ -66,8 +66,12 @@ const main = async () => {
     v1 = mod.default?.server ? await mod.default.server({}) : await mod.GivnAttributionPlugin({})
     result.hooks.v1 = Object.keys(v1).sort()
   } else {
+    const rejected = new Set(
+      actions.filter((action) => action.op === "reject").map((action) => `${action.group}.${action.name}`),
+    )
     const register = (group) => ({
       hook: async (name, handler) => {
+        if (rejected.has(`${group}.${name}`)) throw new Error(`registration rejected: ${group}.${name}`)
         if (registered[group][name]) throw new Error(`duplicate ${group} hook ${name}`)
         registered[group][name] = handler
       },
@@ -131,6 +135,7 @@ const main = async () => {
   for (const action of actions) {
     switch (action.op) {
       case "default":
+      case "reject":
         break
       case "remember":
         if (generation === "V1") {

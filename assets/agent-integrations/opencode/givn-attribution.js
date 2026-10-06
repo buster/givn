@@ -46,6 +46,16 @@ export const GivnAttributionPlugin = async () => {
   }
 }
 
+// Attribution is best effort and never blocks: a failing hook registration
+// must not stop the remaining hooks from being registered.
+const attempt = async (action) => {
+  try {
+    return await action()
+  } catch {
+    return undefined
+  }
+}
+
 const configuredDefault = async (ctx) => {
   if (!ctx.model?.default) return undefined
   try {
@@ -69,40 +79,46 @@ export default {
   },
   async setup(ctx) {
     for (const kind of ["context", "compaction", "generate"]) {
-      await ctx.session.hook(kind, (event) => {
-        rememberModel(event.sessionID, event.model, event.model?.variant)
-      })
+      await attempt(() =>
+        ctx.session.hook(kind, (event) => {
+          rememberModel(event.sessionID, event.model, event.model?.variant)
+        }),
+      )
     }
 
     // OpenCode V2: the shell hook carries no session, so a command is linked to
     // its session through the tool hooks, which run before shell creation.
     let pendingShells = []
 
-    await ctx.tool.hook("execute.before", (event) => {
-      if (
-        event.tool !== "shell" ||
-        typeof event.sessionID !== "string" ||
-        typeof event.input?.command !== "string"
-      ) {
-        return
-      }
-      // A request from an older message of the same session never reached shell
-      // creation (vetoed, denied, or aborted); it must not label a later command.
-      pendingShells = pendingShells.filter(
-        (entry) =>
-          entry.event.sessionID !== event.sessionID ||
-          entry.event.messageID === event.messageID,
-      )
-      pendingShells.push({ event })
-    })
+    await attempt(() =>
+      ctx.tool.hook("execute.before", (event) => {
+        if (
+          event.tool !== "shell" ||
+          typeof event.sessionID !== "string" ||
+          typeof event.input?.command !== "string"
+        ) {
+          return
+        }
+        // A request from an older message of the same session never reached shell
+        // creation (vetoed, denied, or aborted); it must not label a later command.
+        pendingShells = pendingShells.filter(
+          (entry) =>
+            entry.event.sessionID !== event.sessionID ||
+            entry.event.messageID === event.messageID,
+        )
+        pendingShells.push({ event })
+      }),
+    )
 
-    await ctx.tool.hook("execute.after", (event) => {
-      if (event.tool !== "shell") return
-      pendingShells = pendingShells.filter(
-        (entry) =>
-          entry.event.sessionID !== event.sessionID || entry.event.id !== event.id,
-      )
-    })
+    await attempt(() =>
+      ctx.tool.hook("execute.after", (event) => {
+        if (event.tool !== "shell") return
+        pendingShells = pendingShells.filter(
+          (entry) =>
+            entry.event.sessionID !== event.sessionID || entry.event.id !== event.id,
+        )
+      }),
+    )
 
     const claimShell = (command) => {
       const index = pendingShells.findIndex(
@@ -111,13 +127,15 @@ export default {
       return index < 0 ? undefined : pendingShells.splice(index, 1)[0].event
     }
 
-    await ctx.shell.hook("create.before", async (event) => {
-      const linked = claimShell(event.command)
-      let model = linked ? sessions.get(linked.sessionID) : undefined
-      if (!model?.modelID) model = lastModel
-      if (!model?.modelID) model = await configuredDefault(ctx)
-      stamp(event.env, model)
-    })
+    await attempt(() =>
+      ctx.shell.hook("create.before", async (event) => {
+        const linked = claimShell(event.command)
+        let model = linked ? sessions.get(linked.sessionID) : undefined
+        if (!model?.modelID) model = lastModel
+        if (!model?.modelID) model = await configuredDefault(ctx)
+        stamp(event.env, model)
+      }),
+    )
 
     return () => {
       pendingShells = []

@@ -33,6 +33,10 @@ const CASES: &[(&str, &str)] = &[
         "no-event-guards.js",
         "Malformed tool events are ignored without blocking the shell",
     ),
+    (
+        "no-registration-guard.js",
+        "A rejected hook registration does not stop shell attribution",
+    ),
 ];
 
 /// Largest number of differing lines between the shipped adapter and a mutant:

@@ -531,7 +531,7 @@ fn prototype_is_oracle(state: &CharacterizationState) -> bool {
         || !state.actions.iter().any(|action| {
             matches!(
                 action["op"].as_str(),
-                Some("request" | "complete" | "malformed")
+                Some("request" | "complete" | "malformed" | "reject")
             ) || (action["op"] == "run" && !action["session"].is_null())
                 || (action["op"] == "default" && action["mode"] == "model")
         })
@@ -1002,4 +1002,11 @@ fn when_opencode_requests_shell_command_without_session(world: &mut GivnWorld, c
         "message": "message-sessionless",
         "command": command,
     }));
+}
+
+#[given(regex = r##"^OpenCode rejects the registration of its "([^"]+)" hook "([^"]+)"$"##)]
+fn given_opencode_rejects_registration(world: &mut GivnWorld, group: String, name: String) {
+    characterization(world)
+        .actions
+        .push(serde_json::json!({"op": "reject", "group": group, "name": name}));
 }
