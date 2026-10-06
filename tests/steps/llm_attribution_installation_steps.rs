@@ -26,16 +26,27 @@ pub(crate) fn git(root: &Path, args: &[&str]) -> Output {
         .expect("run git")
 }
 
+/// `givn init` catches generation errors and only warns, so the exit code alone
+/// does not prove that the selected integrations were written.
+fn assert_init_succeeded_without_warning(init: &Output) {
+    let stdout = String::from_utf8_lossy(&init.stdout);
+    let stderr = String::from_utf8_lossy(&init.stderr);
+    assert!(
+        init.status.success(),
+        "givn init failed: stdout={stdout} stderr={stderr}"
+    );
+    assert!(
+        !stdout.contains("generation failed") && !stderr.contains("generation failed"),
+        "givn init reported a generation warning: stdout={stdout} stderr={stderr}"
+    );
+}
+
 #[given("an initialized project selecting OpenCode with a V1-only attribution integration")]
 fn given_initialized_project_with_v1_only_integration(world: &mut GivnWorld) {
     let env = common::make_bare_root();
     assert!(git(&env.root(), &["init", "--quiet"]).status.success());
     let init = common::run_givn(&env, &["init", "--agents", "opencode", "--no-addons"]);
-    assert!(
-        init.status.success(),
-        "givn init failed: {}",
-        String::from_utf8_lossy(&init.stderr)
-    );
+    assert_init_succeeded_without_warning(&init);
     // The legacy file is the supplied V1-only integration: no default export.
     std::fs::copy(
         common::repo_path("tests/fixtures/opencode/prototype/givn-attribution_v1.js"),
@@ -159,11 +170,7 @@ fn given_initialized_project_selecting_without_addons(world: &mut GivnWorld, tar
     let env = common::make_bare_root();
     assert!(git(&env.root(), &["init", "--quiet"]).status.success());
     let init = common::run_givn(&env, &["init", "--agents", &targets, "--no-addons"]);
-    assert!(
-        init.status.success(),
-        "givn init failed: {}",
-        String::from_utf8_lossy(&init.stderr)
-    );
+    assert_init_succeeded_without_warning(&init);
     world.env = Some(env);
 }
 

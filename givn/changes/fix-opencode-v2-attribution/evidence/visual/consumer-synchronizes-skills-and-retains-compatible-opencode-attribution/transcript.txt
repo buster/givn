@@ -1,0 +1,211 @@
+# Scenario: Consumer synchronizes skills and retains compatible OpenCode attribution
+# Captured terminal transcript: real givn CLI and real OpenCode CLI, assembled from 3 example shard(s).
+# Random temporary-path prefixes are redacted to <TMPDIR>; everything else is raw output.
+
+=== V1 floor (OpenCode 1.18.29) ===
+
+$ givn skills sync
+exit status: 0
+--- givn stdout ---
+Syncing skills and agent commands...
+  commit attribution: .githooks/commit-msg
+  Git activation: local commit-msg dispatcher installed
+  attribution integration: .opencode/plugins/givn-attribution.js
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced command: /givn-propose
+  synced command: /givn-spec
+  synced command: /givn-design
+  synced command: /givn-tasks
+  synced command: /givn-implement
+  synced command: /givn-review
+  synced command: /givn-archive
+  synced command: /givn-explore
+  synced command: /givn-design-review
+  synced command: /givn-steps
+  synced command: /givn-reverse-engineer
+  synced command: /givn-characterize
+  synced command: /givn-ideation
+  sync: rules: local-only
+  sync: no tracked rule in the current revision
+  sync: no rule in reachable history
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+
+Done. Generated:
+  .opencode/skills/   (skills for opencode)
+  .opencode/commands/ (opencode slash commands)
+
+--- givn stderr ---
+
+$ /nix/store/lmbi32dk6x53sw1ya8673l0j7drrh1bp-opencode_v1_floor-1.18.29/bin/opencode run --format json --auto --model givn-fixture/model-a --variant high Run the attribution fixture command.
+exit status: 0
+--- opencode stdout (raw) ---
+{"type":"step_start","timestamp":1791297822522,"sessionID":"ses_eee5463edffebQmUiPhPKBBgaq","part":{"id":"prt_111ab9f30001K0jRoqDkH7keMv","messageID":"msg_111ab9d290012N0Uo21BAILzMZ","sessionID":"ses_eee5463edffebQmUiPhPKBBgaq","type":"step-start"}}
+{"type":"tool_use","timestamp":1791297822627,"sessionID":"ses_eee5463edffebQmUiPhPKBBgaq","part":{"type":"tool","tool":"bash","callID":"fixture-call-43ba48de","state":{"status":"completed","input":{"command":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs"},"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":null}\n","metadata":{"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":null}\n","exit":0,"truncated":false},"title":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs","time":{"start":1791297822518,"end":1791297822619}},"id":"prt_111ab9f32001QBjfMFxSYjrJGD","sessionID":"ses_eee5463edffebQmUiPhPKBBgaq","messageID":"msg_111ab9d290012N0Uo21BAILzMZ"}}
+{"type":"step_finish","timestamp":1791297822628,"sessionID":"ses_eee5463edffebQmUiPhPKBBgaq","part":{"id":"prt_111ab9f9d0013Fv8bAStKY1nW2","reason":"tool-calls","messageID":"msg_111ab9d290012N0Uo21BAILzMZ","sessionID":"ses_eee5463edffebQmUiPhPKBBgaq","type":"step-finish","tokens":{"input":0,"output":0,"reasoning":0,"cache":{"write":0,"read":0}},"cost":0}}
+{"type":"step_start","timestamp":1791297822649,"sessionID":"ses_eee5463edffebQmUiPhPKBBgaq","part":{"id":"prt_111ab9fb0001JTFXswkMyIWThy","messageID":"msg_111ab9fa1001DHWXwZPWt2EFJW","sessionID":"ses_eee5463edffebQmUiPhPKBBgaq","type":"step-start"}}
+{"type":"text","timestamp":1791297822649,"sessionID":"ses_eee5463edffebQmUiPhPKBBgaq","part":{"id":"prt_111ab9fb2001pBs6jxQ5GbDhKN","messageID":"msg_111ab9fa1001DHWXwZPWt2EFJW","sessionID":"ses_eee5463edffebQmUiPhPKBBgaq","type":"text","text":"Attribution fixture completed.","time":{"start":1791297822642,"end":1791297822643}}}
+{"type":"step_finish","timestamp":1791297822649,"sessionID":"ses_eee5463edffebQmUiPhPKBBgaq","part":{"id":"prt_111ab9fb4001b7oP9COAdjTkMG","reason":"stop","messageID":"msg_111ab9fa1001DHWXwZPWt2EFJW","sessionID":"ses_eee5463edffebQmUiPhPKBBgaq","type":"step-finish","tokens":{"input":0,"output":0,"reasoning":0,"cache":{"write":0,"read":0}},"cost":0}}
+
+--- opencode stderr (raw) ---
+
+--- completed shell tool result ---
+GIVN_ATTRIBUTION_FIXTURE_RESULT {"GIVN_ATTRIBUTION_ACTIVE":"1","GIVN_ATTRIBUTION_LLM":"givn-fixture/model-a","GIVN_ATTRIBUTION_REASONING":"high","GIVN_ATTRIBUTION_HARNESS":"opencode","GIT_COMMITTER_NAME":"LLM: givn-fixture/model-a via opencode","OPENCODE_SESSION_ID":null}
+
+--- attribution environment ---
+{
+  "GIT_COMMITTER_NAME": "LLM: givn-fixture/model-a via opencode",
+  "GIVN_ATTRIBUTION_ACTIVE": "1",
+  "GIVN_ATTRIBUTION_HARNESS": "opencode",
+  "GIVN_ATTRIBUTION_LLM": "givn-fixture/model-a",
+  "GIVN_ATTRIBUTION_REASONING": "high"
+}
+
+=== V1 latest (OpenCode 1.18.34) ===
+
+$ givn skills sync
+exit status: 0
+--- givn stdout ---
+Syncing skills and agent commands...
+  commit attribution: .githooks/commit-msg
+  Git activation: local commit-msg dispatcher installed
+  attribution integration: .opencode/plugins/givn-attribution.js
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced command: /givn-propose
+  synced command: /givn-spec
+  synced command: /givn-design
+  synced command: /givn-tasks
+  synced command: /givn-implement
+  synced command: /givn-review
+  synced command: /givn-archive
+  synced command: /givn-explore
+  synced command: /givn-design-review
+  synced command: /givn-steps
+  synced command: /givn-reverse-engineer
+  synced command: /givn-characterize
+  synced command: /givn-ideation
+  sync: rules: local-only
+  sync: no tracked rule in the current revision
+  sync: no rule in reachable history
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+
+Done. Generated:
+  .opencode/skills/   (skills for opencode)
+  .opencode/commands/ (opencode slash commands)
+
+--- givn stderr ---
+
+$ /nix/store/52gifl7n6nzyn3yxy7dsff4d30gz9crx-opencode_v1_latest-1.18.34/bin/opencode run --format json --auto --model givn-fixture/model-a --variant high Run the attribution fixture command.
+exit status: 0
+--- opencode stdout (raw) ---
+{"type":"step_start","timestamp":1791297832961,"sessionID":"ses_eee543b6bffedGno528X1B297z","part":{"id":"prt_111abc7fa001VE3q5grxicLDxd","messageID":"msg_111abc5ca001B8U5TTZl5aUvLK","sessionID":"ses_eee543b6bffedGno528X1B297z","type":"step-start"}}
+{"type":"tool_use","timestamp":1791297833051,"sessionID":"ses_eee543b6bffedGno528X1B297z","part":{"type":"tool","tool":"bash","callID":"fixture-call-40a56766","state":{"status":"completed","input":{"command":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs"},"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":null}\n","metadata":{"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":null}\n","exit":0,"truncated":false},"title":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs","time":{"start":1791297832958,"end":1791297833043}},"id":"prt_111abc7fb001h8Xib8bw0fa38i","sessionID":"ses_eee543b6bffedGno528X1B297z","messageID":"msg_111abc5ca001B8U5TTZl5aUvLK"}}
+{"type":"step_finish","timestamp":1791297833051,"sessionID":"ses_eee543b6bffedGno528X1B297z","part":{"id":"prt_111abc855001KI8OcMin77eFub","reason":"tool-calls","messageID":"msg_111abc5ca001B8U5TTZl5aUvLK","sessionID":"ses_eee543b6bffedGno528X1B297z","type":"step-finish","tokens":{"input":0,"output":0,"reasoning":0,"cache":{"write":0,"read":0}},"cost":0}}
+{"type":"step_start","timestamp":1791297833067,"sessionID":"ses_eee543b6bffedGno528X1B297z","part":{"id":"prt_111abc863001NIALcKo51XcC1k","messageID":"msg_111abc859001yNvmuUrJROQG9x","sessionID":"ses_eee543b6bffedGno528X1B297z","type":"step-start"}}
+{"type":"text","timestamp":1791297833067,"sessionID":"ses_eee543b6bffedGno528X1B297z","part":{"id":"prt_111abc865001n6AY4wkxxjdJyj","messageID":"msg_111abc859001yNvmuUrJROQG9x","sessionID":"ses_eee543b6bffedGno528X1B297z","type":"text","text":"Attribution fixture completed.","time":{"start":1791297833061,"end":1791297833062}}}
+{"type":"step_finish","timestamp":1791297833067,"sessionID":"ses_eee543b6bffedGno528X1B297z","part":{"id":"prt_111abc8670016ekWukgm0TUJU1","reason":"stop","messageID":"msg_111abc859001yNvmuUrJROQG9x","sessionID":"ses_eee543b6bffedGno528X1B297z","type":"step-finish","tokens":{"input":0,"output":0,"reasoning":0,"cache":{"write":0,"read":0}},"cost":0}}
+
+--- opencode stderr (raw) ---
+
+--- completed shell tool result ---
+GIVN_ATTRIBUTION_FIXTURE_RESULT {"GIVN_ATTRIBUTION_ACTIVE":"1","GIVN_ATTRIBUTION_LLM":"givn-fixture/model-a","GIVN_ATTRIBUTION_REASONING":"high","GIVN_ATTRIBUTION_HARNESS":"opencode","GIT_COMMITTER_NAME":"LLM: givn-fixture/model-a via opencode","OPENCODE_SESSION_ID":null}
+
+--- attribution environment ---
+{
+  "GIT_COMMITTER_NAME": "LLM: givn-fixture/model-a via opencode",
+  "GIVN_ATTRIBUTION_ACTIVE": "1",
+  "GIVN_ATTRIBUTION_HARNESS": "opencode",
+  "GIVN_ATTRIBUTION_LLM": "givn-fixture/model-a",
+  "GIVN_ATTRIBUTION_REASONING": "high"
+}
+
+=== V2 latest (OpenCode opencode v2.0.22) ===
+
+$ givn skills sync
+exit status: 0
+--- givn stdout ---
+Syncing skills and agent commands...
+  commit attribution: .githooks/commit-msg
+  Git activation: local commit-msg dispatcher installed
+  attribution integration: .opencode/plugins/givn-attribution.js
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced command: /givn-propose
+  synced command: /givn-spec
+  synced command: /givn-design
+  synced command: /givn-tasks
+  synced command: /givn-implement
+  synced command: /givn-review
+  synced command: /givn-archive
+  synced command: /givn-explore
+  synced command: /givn-design-review
+  synced command: /givn-steps
+  synced command: /givn-reverse-engineer
+  synced command: /givn-characterize
+  synced command: /givn-ideation
+  sync: rules: local-only
+  sync: no tracked rule in the current revision
+  sync: no rule in reachable history
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+
+Done. Generated:
+  .opencode/skills/   (skills for opencode)
+  .opencode/commands/ (opencode slash commands)
+
+--- givn stderr ---
+
+$ /nix/store/bdml7ssb6rx2cfydr1sl9abbp1pq2djv-opencode_v2_latest-2.0.22/bin/opencode run --server http://127.0.0.1:55687 --format json --auto --model givn-fixture/model-a#high Run the attribution fixture command.
+exit status: 0
+--- opencode stdout (raw) ---
+{"type":"step_start","timestamp":1791297842031,"sessionID":"ses_eee54150affem5Pmgv92XQYPeR","part":{"id":"prt_111abeb6f001zT5Mbeq650h2pm","sessionID":"ses_eee54150affem5Pmgv92XQYPeR","messageID":"msg_111abeb62001UDMTMdZl1wFnJL","type":"step-start"}}
+{"type":"tool_use","timestamp":1791297842114,"sessionID":"ses_eee54150affem5Pmgv92XQYPeR","part":{"partID":"prt_111abeb70001kc1ozVmtRy5CyY","sessionID":"ses_eee54150affem5Pmgv92XQYPeR","messageID":"msg_111abeb62001UDMTMdZl1wFnJL","type":"tool","id":"fixture-call-97c88c9c","tool":"shell","state":{"status":"completed","input":{"command":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs"},"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":\"ses_eee54150affem5Pmgv92XQYPeR\"}\n","title":"shell","metadata":{"metadata":{"status":"completed","truncated":false,"exit":0},"content":[{"type":"text","text":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":\"ses_eee54150affem5Pmgv92XQYPeR\"}\n"}],"providerCall":{"executed":false},"providerResult":{"executed":false},"rawInput":"{\"command\":\"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs\"}"},"time":{"start":1791297842032,"end":1791297842114}}}}
+{"type":"step_finish","timestamp":1791297842116,"sessionID":"ses_eee54150affem5Pmgv92XQYPeR","part":{"id":"prt_111abebc4001PAzyPLhY6KhYyG","sessionID":"ses_eee54150affem5Pmgv92XQYPeR","messageID":"msg_111abeb62001UDMTMdZl1wFnJL","type":"step-finish","reason":"tool-calls","cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0,"write":0}}}}
+{"type":"text","timestamp":1791297842133,"sessionID":"ses_eee54150affem5Pmgv92XQYPeR","part":{"id":"prt_111abebc9001vAAjr254N7uw3I_text-0","sessionID":"ses_eee54150affem5Pmgv92XQYPeR","messageID":"msg_111abebc9001vAAjr254N7uw3I","type":"text","text":"Attribution fixture completed.","time":{"start":1791297842126,"end":1791297842133}}}
+
+--- opencode stderr (raw) ---
+
+--- completed shell tool result ---
+GIVN_ATTRIBUTION_FIXTURE_RESULT {"GIVN_ATTRIBUTION_ACTIVE":"1","GIVN_ATTRIBUTION_LLM":"givn-fixture/model-a","GIVN_ATTRIBUTION_REASONING":"high","GIVN_ATTRIBUTION_HARNESS":"opencode","GIT_COMMITTER_NAME":"LLM: givn-fixture/model-a via opencode","OPENCODE_SESSION_ID":"ses_eee54150affem5Pmgv92XQYPeR"}
+
+--- attribution environment ---
+{
+  "GIT_COMMITTER_NAME": "LLM: givn-fixture/model-a via opencode",
+  "GIVN_ATTRIBUTION_ACTIVE": "1",
+  "GIVN_ATTRIBUTION_HARNESS": "opencode",
+  "GIVN_ATTRIBUTION_LLM": "givn-fixture/model-a",
+  "GIVN_ATTRIBUTION_REASONING": "high"
+}
