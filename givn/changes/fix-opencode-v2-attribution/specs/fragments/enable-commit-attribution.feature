@@ -33,7 +33,7 @@ Feature: Enable commit attribution
       | V1 latest |
       | V2 latest |
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario Outline: Consumer adds an agent target and receives compatible OpenCode attribution
     Given an initialized project selecting "<targets>" without addons
     When the consumer runs "<command>"

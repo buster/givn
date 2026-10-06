@@ -1,6 +1,6 @@
 //! E2E step definitions for installation and upgrade reporting.
 
-use cucumber::{given, then};
+use cucumber::{given, then, when};
 
 use super::GivnWorld;
 use super::llm_attribution_installation_steps::git;
@@ -269,4 +269,25 @@ fn then_managed_commit_contains_refreshed_plumbing(world: &mut GivnWorld) {
             include_bytes!("../../assets/hooks/commit-msg")
         );
     }
+}
+
+#[when(regex = r##"^the consumer runs "([^"]+)"$"##)]
+fn when_consumer_runs_quoted_command(world: &mut GivnWorld, command: String) {
+    let mut argv: Vec<String> = command.split_whitespace().map(str::to_owned).collect();
+    assert_eq!(
+        argv.first().map(String::as_str),
+        Some("givn"),
+        "the command must be a `givn` invocation: {command}"
+    );
+    argv.remove(0);
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let arguments: Vec<&str> = argv.iter().map(String::as_str).collect();
+    let output = common::run_givn(env, &arguments);
+    // Examples differ by command, so the command names the transcript shard.
+    world.transcript_variant = Some(argv.join("-"));
+    world.last_argv = Some(argv);
+    world.last_output = Some(output);
 }
