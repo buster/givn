@@ -16,8 +16,9 @@ configured-default fallbacks for unlinked commands remain at the user's choice.
 
 The compatibility contract covers V1 1.18.29+ within V1 and V2, using one
 embedded canonical asset and the existing selected-target generation seam.
-Real-loader compatibility, deterministic provider/catalog twins, OS network
-isolation, and prototype characterization are planned, not implemented or run.
+Real-loader compatibility, a deterministic provider twin with a refusing
+(non-intercepting) proxy, OS network isolation, and prototype characterization
+are implemented; see the 2026-10-06 post-implementation amendment below.
 This artifact completes documentation only; it is not implementation,
 design-review, coverage, terminal, or archive proof.
 
@@ -209,6 +210,18 @@ refinement. Chapters 02, 03, 04, 07, and 09 needed no change: their content
 footprint, no ADR) is not affected by the session link. Diagrams remain
 Mermaid; a scan of all chapters found no box-drawing characters. This is
 documentation only; no runtime or scenario evidence is implied.
+
+### Post-implementation amendment — 2026-10-06
+
+The design was amended after implementation to match reality (absolute pinned
+Node path for the fixed command, refusing proxy instead of a TLS-intercepting
+catalog proxy, FIFO lease for `--setup-smoke`, negative-control switches guarded
+by `GIVN_OPENCODE_NEGATIVE_CONTROL=1`, stderr for generation warnings). The
+project chapters were updated accordingly: 07 (deployment: proxy, command,
+lease, overrides), 08 (crosscutting: never-blocking adapter, negative controls,
+refusing proxy) and 11 (R-50, R-76 amended; R-82 added). Chapters 02-06, 09, 10
+and 12 are unaffected by these test-infrastructure deviations. This is
+documentation only; the reviewer must re-check it.
 
 ## Status
 STATUS: DONE

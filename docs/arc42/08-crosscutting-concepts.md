@@ -450,7 +450,11 @@ command typed while a subagent last reported model B receives model B's label.
 A configured default likewise does not verify the command's model, and real
 V2 supplies no reasoning mode for it. Omitted variant metadata retains a
 remembered variant, and failed default lookup leaves unavailable values
-without blocking shell execution.
+without blocking shell execution. The adapter never blocks a shell: every hook
+registration and handler body is guarded, so a throwing registration, a
+malformed or absent event payload, or a missing shell environment leaves the
+remaining hooks and the shell intact, and the configured-default lookup waits
+at most two seconds.
 
 The generic stamper only consumes supplied values and marks missing values
 unavailable; it never infers a model itself. The V2 extension is planned, not
@@ -498,7 +502,12 @@ wrapper and direct runtime fixtures. All Nix derivations and exports remain in
 selection, result scope and instrumented Givn paths; wrapper-private exports do
 not establish canonical-gate admission.
 Missing pinned runtimes, actual tool-selected shells, or isolation fail test
-setup, not the product's optional attribution fallback. Exact resolution and
+setup, not the product's optional attribution fallback. Test-only negative
+controls (a substitute plugin or mutant standing in for the shipped adapter)
+require `GIVN_OPENCODE_NEGATIVE_CONTROL=1` in addition to their path variable
+and are exercised only by `tests/opencode_mutants.rs`. Egress from the pinned
+runtimes is answered by a refusing proxy that records, never forwards, the
+destination (amended after implementation; see the compatibility design). Exact resolution and
 signal-aware fixture supervision remain in
 [the compatibility design](../../givn/changes/fix-opencode-v2-attribution/design.md);
 neither mechanism has been implemented or proved.

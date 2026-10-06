@@ -598,4 +598,28 @@ cover all 23 scenario identities.
 - [x] Architecture documentation independently reassessed; no mismatch.
 - [x] Lint exit 2 (allowed); `git diff --check` exit 0.
 
+## Design amended after implementation (2026-10-06)
+
+The verdict below was issued on the design as it stood before implementation.
+After implementation a reviewer found the design and the delivered fixtures had
+diverged: the previous E2E task deviated from `design.md` and recorded the
+deviations only in `tasks.md`. `design.md` ("External systems and twins",
+fixture configuration, "Local runnability", and the new "Post-implementation
+amendments" section), `arc42.md` and the project arc42 chapters 07, 08 and 11
+were amended to match reality. Proposal decisions were not changed. Why each
+deviation was needed:
+
+| Deviation | Why |
+|---|---|
+| Fixed fixture command uses the pinned absolute Node path | V2's `/bin/zsh` login shell resets `PATH`; a bare `node` does not resolve. |
+| Refusing forward proxy (403 on every CONNECT, destination recorded) replaced the TLS-intercepting catalog proxy; no fixture CA | Pinned V1 hangs for 30 seconds on the unreachable catalog without an immediate refusal; V2 needs nothing. Observed refused hosts: `models.opencode.ai:443`, `registry.npmjs.org:443`; any other host fails the run. |
+| `run-suite.sh --setup-smoke` holds the supervisor lease with a FIFO writer | A closed caller stdin (CI) would be read as lease EOF. |
+| Test-only `GIVN_OPENCODE_CONTROL_PLUGIN` / `GIVN_OPENCODE_CHARACTERIZE_ASSET` switches, now guarded by `GIVN_OPENCODE_NEGATIVE_CONTROL=1` | Negative-control RED evidence needs a substitute plugin; an exported variable alone must not let the suite pass against it. |
+| Generation warnings are on stderr, steps check both streams | `givn init`/sync print the warning on stderr. |
+
+Required re-check: the amended design text and the three arc42 chapters were
+written by the implementer, not by a design reviewer. A reviewer must re-read
+them against the code before relying on this artifact; the PASS verdict below
+does not cover the amendments.
+
 DESIGN-REVIEW: PASS

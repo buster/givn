@@ -75,8 +75,13 @@ file, without backups, merges, or preservation of arbitrary manual edits.
 
 The planned acceptance environment preprovisions real OpenCode releases and
 Node through the Nix development closure. Each example owns an isolated
-temporary project and V2 server where applicable, plus deterministic loopback
-provider/catalog twins. Darwin Seatbelt or a Linux loopback-only network
+temporary project and V2 server where applicable, plus a deterministic loopback
+provider twin and a refusing forward proxy. The proxy answers `403` to every
+request, records the destination (the pinned runtimes try `models.opencode.ai:443`
+and `registry.npmjs.org:443`; any other destination fails the run) and never
+forwards; it is not a TLS-intercepting catalog twin and no fixture CA exists.
+The fixed fixture command uses the absolute pinned Node path because V2's
+`/bin/zsh` login shell resets `PATH`. Darwin Seatbelt or a Linux loopback-only network
 namespace denies other traffic; missing isolation fails setup. These are
 test-only processes, not deployed Givn services. Provisioning and compatibility
 tests remain unexecuted; the detailed lifecycle belongs to the design.
@@ -91,7 +96,11 @@ OpenCode. Missing prerequisites and actual tool-selected shell diagnostics are
 test-only concerns.
 The separate `tests/opencode_supervisor.rs` target owns fixture process groups
 and monitors a parent lease so runner signals/process exit trigger bounded
-termination and reaping. Admission and interruption probes remain unexecuted;
+termination and reaping; `run-suite.sh --setup-smoke` holds that lease with a
+FIFO writer so a closed caller stdin (CI) is not read as a closed lease. The
+test-only negative-control overrides (substitute plugin files) are refused
+unless `GIVN_OPENCODE_NEGATIVE_CONTROL=1` is set, so no exported variable can
+turn the suite green against a substitute. Admission and interruption probes remain unexecuted;
 RAII alone is not an interruption-cleanup guarantee.
 
 ## 7.5 Distribution Work

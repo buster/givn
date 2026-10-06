@@ -143,7 +143,7 @@ state, not a domain Aggregate or a persisted model selection.
 | `tests/common/opencode_runtime.rs`, `tests/common/mod.rs`, `tests/steps/mod.rs` | Test-only runtime admission, supervisor lease, fresh World state, and module registration; no production abstraction. |
 | `tests/opencode_supervisor.rs`, `Cargo.toml` test-target declaration | Test-only `harness = false` supervisor target using the existing unix `libc` dependency; signal-aware process-group teardown and parent-lease monitoring. No new production dependency or executor change. |
 | `tests/fixtures/opencode/runtime_driver.mjs` | Real-runtime orchestration and result normalization; does not emulate the plugin loader. |
-| `tests/fixtures/opencode/provider_stub.mjs` | Deterministic loopback OpenAI-compatible provider, catalog/proxy twin, request recording, deadlines and rejection of unexpected requests. |
+| `tests/fixtures/opencode/provider_stub.mjs` | Deterministic loopback OpenAI-compatible provider and a refusing forward proxy (403 on every request/CONNECT, destination recorded; amended after implementation, see the amendments section), request recording, deadlines and rejection of unexpected requests. |
 | `tests/fixtures/opencode/prototype/givn-attribution.js` | Immutable copy of the full supplied 107-line prototype, made during implementation from the read baseline; never import mutable root content. Oracle for the V1 hooks and retained fallbacks only. |
 | `tests/fixtures/opencode/prototype/givn-attribution_v1.js` | Immutable copy of the supplied 38-line legacy input, used only to seed obsolete integrations in temporary projects. |
 | `tests/fixtures/opencode/characterize.mjs` | Consumer of public V1/V2 hooks with controlled event payloads, including V2 tool `execute.before`/`execute.after` events with `sessionID`, `messageID`, `id`, and `input.command`. For the V1 hooks and the retained fallbacks it also compares generated behavior with the immutable prototype; the V2 session-link, identical-command, and stale-request scenarios are asserted against their Gherkin values only, because the prototype has no link. Not E2E loader evidence. |
@@ -327,9 +327,10 @@ Primary official sources:
   `https://models.opencode.ai/api.json`; do not guess a disable-fetch env flag.
 - `https://raw.githubusercontent.com/anomalyco/opencode/v1.18.29/packages/core/src/models-dev.ts:160–176`
   — V1 floor also defaults to `https://models.opencode.ai/api.json` (with
-  `OPENCODE_MODELS_URL` override). No override is needed: intercept the exact
-  default catalog request in the fixture proxy. Inspect the latest pinned V1
-  source at setup to detect drift, not to choose an unspecified architecture.
+  `OPENCODE_MODELS_URL` override). No override is needed: the fixture proxy
+  refuses that default catalog request (amended after implementation: it does
+  not serve a catalog). Inspect the latest pinned V1 source at setup to detect
+  drift, not to choose an unspecified architecture.
 - `https://opencode.ai/v2/openapi.json` — `server.info` is `GET /api/info`,
   including `pid`, `version`, `urls` and `paths.tmp`; `plugin.list` is
   `GET /api/plugin` with deep-object `location[directory]` query encoding.
@@ -348,6 +349,8 @@ evidence. Do not add an unrequested exactly-once-hook product requirement.
 Local setup commands: `tests/fixtures/opencode/run-suite.sh --regular` and `tests/fixtures/opencode/run-suite.sh --e2e`, from an already active project development shell whose `flake.nix` hook provides pinned test-runtime variables and tools. Setup modes validate and execute permanent specs only; delta scenarios remain `@wip` until their scenario-by-scenario TDD tasks.
 
 After all delta scenarios are green, run `tests/fixtures/opencode/run-suite.sh --all`. That final mode executes four fail-fast root/scope combinations: permanent regular, delta regular, permanent E2E, delta E2E. `--name <anchored title>` targets matching permanent and delta scenarios separately; a zero match in either tree is an error. Every mode validates exported runtimes, prepares `ready_fixture` and the supervisor, and fails on any child error; skips are not treated as passing. No host OpenCode service or existing project database is used. The wrapper uses POSIX shell and never invokes Nix or Fish.
+
+Amended after implementation (2026-10-06): `run-suite.sh --setup-smoke` wraps the supervisor's parent lease in a FIFO writer (`sleep 3600 > lease &`, removed by a trap) so the lease stays open even when the caller's stdin is closed, as in CI; the supervisor treats EOF on its stdin as a closed lease. `--probes` runs the isolation and supervisor probes, and `--mutants` (also part of `--all`) runs `tests/opencode_mutants.rs`, which proves each committed mutant under `tests/fixtures/opencode/mutants/` fails the scenario that exists to catch it.
 
 ### Shared runtime admission for every verification entrypoint
 
@@ -479,8 +482,8 @@ failure, not authorization to weaken network evidence.
 | External dependency | Local deterministic twin/control |
 |---|---|
 | Paid/model-provider API | `provider_stub.mjs`: actual loopback HTTP server implementing OpenAI-compatible chat completion JSON and streaming SSE. Fake `givn-fixture/model-a`, `model-b`, and `title-model`; no real credentials or model inference. |
-| models.dev/catalog refresh | The same fixture's HTTPS-intercepting proxy serves fixed `/api.json` catalog JSON (empty catalog is valid; the fixture's models are configured explicitly). Preprovision a fixture CA/key in the development closure with OpenSSL; trust only in the test process with `NODE_EXTRA_CA_CERTS`. `HTTP_PROXY` and `HTTPS_PROXY` point at the local proxy; `NO_PROXY=localhost,127.0.0.1,::1` leaves owned local services direct. Support CONNECT only to `models.opencode.ai:443`, verified for V1 floor and V2; latest-release drift requires updating an explicit pinned fixture mapping. Log and fail on unknown destinations, never forward traffic. The proxy is test infrastructure, not a plugin. |
-| OpenCode update service | Disable V2 updates with global `update: "disable"` in the temporary XDG config, as documented; V1 with `autoupdate: false`. Any unexpected residual update request is rejected/recorded by the proxy and OS sandbox; no live update/registry request can occur. |
+| models.dev/catalog refresh | Amended after implementation: a refusing forward proxy in `provider_stub.mjs` answers `403` to every CONNECT/HTTP request, records the destination in the provider log and never forwards. It does not intercept TLS and serves no catalog; there is no fixture CA and no `NODE_EXTRA_CA_CERTS`. The pinned V1 releases hang for 30 seconds on the unreachable catalog, so an immediate refusal is required. `HTTP_PROXY`/`HTTPS_PROXY` point at it; `NO_PROXY=localhost,127.0.0.1,::1` leaves owned services direct. Observed refused destinations: `models.opencode.ai:443` and `registry.npmjs.org:443`; the driver fails the run for any other recorded destination. The bundled catalog snapshot suffices because the fixture's models are configured explicitly. The proxy is test infrastructure, not a plugin. |
+| OpenCode update service | Disable V2 updates with global `update: "disable"` in the temporary XDG config, as documented; V1 with `autoupdate: false`. Any unexpected residual update request is refused/recorded by the proxy and blocked by the OS sandbox; no live update/registry request can occur. |
 | npm/provider/plugin package acquisition | The test-only hash-pinned development closure supplies native runtimes and all modules before scenario execution. No local package plugin and no runtime install; unplanned acquisition is a failing fixture prerequisite. |
 | Git/Fossil and OpenCode itself | Real provisioned executables, not API twins. OpenCode's real loader is indispensable compatibility evidence. The existing Fossil fixture uses a private repository. |
 
@@ -488,7 +491,7 @@ The fake provider recognizes request kind from actual messages/tool schemas,
 not a plugin-only test switch. Primary requests first return one tool call to
 the runtime's advertised `shell` (V2) or `bash` (V1), using the exact advertised
 schema. Arguments select only the fixed safe command
-`node attribution-fixture.mjs` in the temporary project; it prints a sentinel
+`<absolute pinned Node path> attribution-fixture.mjs` in the temporary project; it prints a sentinel
 and JSON containing the four Givn attribution variables and Git committer name.
 The next request containing that tool result returns deterministic final text.
 Non-streaming and SSE formats include role, tool-call ID, argument deltas,
@@ -507,10 +510,50 @@ child runs in the foreground on the agent's configured model). The child
 session's first request reaches the twin for `model-b`; its user text starts
 with the released prefix “You are a subagent spawned by another session.”.
 The twin answers it with the fixed `shell` tool call
-`node attribution-fixture.mjs`, then the child's request carrying that tool
+`<pinned Node path> attribution-fixture.mjs`, then the child's request carrying that tool
 result with fixed final text, then the parent's request carrying the
 `subagent` tool result with fixed final text. The twin selects states by
 requested model and message content, never by a plugin-only switch.
+
+### Post-implementation amendments (2026-10-06)
+
+The implementation deviated from this design in five places; each was first
+recorded only in `tasks.md`. This design is amended to match reality, and
+`design-review.md` records that the amended text must be re-checked. Proposal
+decisions are unchanged.
+
+1. Fixed fixture command: it uses the pinned absolute Node path
+   (`GIVN_OPENCODE_NODE attribution-fixture.mjs`). Released V2 starts the
+   Darwin shell as `/bin/zsh`, whose login `PATH` reset cannot resolve a bare
+   `node`. The permission rule, provider twin arguments and `GIVN_FIXTURE_COMMAND`
+   carry the same string.
+2. Catalog proxy: a refusing forward proxy (`403` on every CONNECT and HTTP
+   request, destination recorded, never forwarding) replaced the planned
+   TLS-intercepting proxy that served a fixed catalog. Pinned V1 hangs for 30
+   seconds without an immediate refusal; V2 needs nothing from it. No fixture CA
+   exists and `NODE_EXTRA_CA_CERTS` is not set. Observed refused destinations
+   are `models.opencode.ai:443` and `registry.npmjs.org:443`; any other
+   destination fails the run.
+3. `run-suite.sh --setup-smoke` holds the supervisor lease with a FIFO writer
+   (see the one-command section) because a closed caller stdin would be read as
+   a closed lease.
+4. A test-only negative-control switch replaces the generated plugin with a
+   substitute file to show a real-loader assertion rejects it
+   (`GIVN_OPENCODE_CONTROL_PLUGIN`, regular steps use
+   `GIVN_OPENCODE_CHARACTERIZE_ASSET`). Since the review follow-ups both refuse to
+   act unless `GIVN_OPENCODE_NEGATIVE_CONTROL=1` is also set, so an exported
+   variable can never turn the suite green against a substitute; the committed
+   mutants run only through `tests/opencode_mutants.rs`, which sets the flag.
+5. `givn init`/sync report generation warnings on stderr, so the E2E steps
+   check both streams for `generation failed`.
+
+Further additions from the review follow-ups: a test-only contract probe
+(`contract_probe_plugin.js`, copied into the isolated temporary project only,
+enabled by `GIVN_FIXTURE_CONTRACT_PROBE`) records the raw `execute.before`,
+`create.before` and `execute.after` payload keys against the real V2 2.0.22 for
+the scenario that proves the D3 link assumptions; the characterization harness
+reports the key names of every event it fires so the harness can be compared
+with the real runtime.
 
 ### Verified runtime command and configuration shapes
 
@@ -558,7 +601,7 @@ to have its subagent run the fixture command, `--model
 givn-fixture/model-a#high`. The fixture config adds the `attribution-subagent`
 agent (`mode: "subagent"`, `model: "givn-fixture/model-b#low"`) and the
 `subagent` permission for it; admission must confirm the shell allowance for
-`node attribution-fixture.mjs` also applies to that agent and fail otherwise.
+`<pinned Node path> attribution-fixture.mjs` also applies to that agent and fail otherwise.
 
 Observation point, justified from released 2.0.22 source in
 `@opencode/core` (`dist/chunks/instruction-discovery-qg6jkzae.js`, the
@@ -574,7 +617,7 @@ Observation point, justified from released 2.0.22 source in
 2. The driver reads the child `sessionID` from that completed `subagent` tool
    result, then requests `GET /api/session/<child sessionID>/message` from the
    owned server and parses the child's completed `shell` tool result: the
-   actual stdout of `node attribution-fixture.mjs`.
+   actual stdout of `<pinned Node path> attribution-fixture.mjs`.
 3. The fixture prints, besides the four attribution variables and the
    committer name, `OPENCODE_SESSION_ID`. The shell tool callback sets it after
    the attribution hook (released `invocation.env.OPENCODE_SESSION_ID =
@@ -604,7 +647,7 @@ metadata without fetching it. The test orchestration scripts use POSIX `sh`; the
 selection rejects fish and falls back to `/bin/zsh` on Darwin. Runtime admission
 must record the actual selected executable and compatibility-selection reason
 from the pinned runtime, require that executable to exist, and retain a fixed
-`node attribution-fixture.mjs` command valid in that shell. Linux admission
+`attribution-fixture.mjs` command valid in that shell (amended after implementation: the command is `<absolute pinned Node path> attribution-fixture.mjs`, because the `/bin/zsh` login shell resets `PATH` and cannot resolve a bare `node`). Linux admission
 records its own actual selection; do not assume Darwin's fallback everywhere.
 This corrects test setup only; no production shell-selection logic changes.
 
@@ -644,7 +687,7 @@ This corrects test setup only; no production shell-selection logic changes.
   },
   "plugins": ["-opencode.provider.ollama", "-opencode.provider.lmstudio", "-opencode.provider.vllm"],
   "permissions": [
-    {"action": "shell", "resource": "node attribution-fixture.mjs", "effect": "allow"},
+    {"action": "shell", "resource": "NODE_ABSOLUTE_PATH attribution-fixture.mjs", "effect": "allow"},
     {"action": "subagent", "resource": "attribution-subagent", "effect": "allow"}
   ]
 }
@@ -1001,6 +1044,12 @@ claimed repaired by this compatibility change.
 8. Active-plugin diagnostics and idempotent outputs cannot independently prove
    every hook was called exactly once. That is not a new product requirement;
    the documented entrypoint and real-loader evidence bound compatibility.
+9. The V2 subagent E2E scenario does not discriminate the D3 link by itself:
+   in the fixture the subagent's model is also the last observed model, so the
+   immutable prototype passes it as a negative control. The regular subagent
+   scenario (which fails against the prototype) and the contract probe scenario
+   carry that proof; a parent shell after the subagent would be needed to make
+   the E2E discriminating.
 
 ## Durable arc42 documentation handoff
 
