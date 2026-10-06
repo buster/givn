@@ -129,7 +129,7 @@ Feature: Attribute commits
     Then the shell environment identifies LLM "givn-fixture/model-b"
     And the shell environment identifies reasoning mode "low"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: OpenCode V2 attributes a subagent's command to the subagent's model
     Given a project with the generated OpenCode attribution integration
     And the project's subagent is configured with model "givn-fixture/model-b" and reasoning mode "low"

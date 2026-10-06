@@ -142,9 +142,17 @@ fn transcript(world: &GivnWorld, release: &str, evidence: &serde_json::Value) ->
         "--- opencode stderr (raw) ---\n{}",
         evidence["cli"]["stderr"].as_str().unwrap_or_default()
     );
+    let label = if evidence["child"].is_null() {
+        "completed shell tool result".to_owned()
+    } else {
+        format!(
+            "completed shell tool result of the subagent's child session {} (read from GET /api/session/<child>/message)",
+            evidence["child"]["sessionID"].as_str().unwrap_or_default()
+        )
+    };
     let _ = writeln!(
         text,
-        "--- completed shell tool result ---\n{}",
+        "--- {label} ---\n{}",
         evidence["toolOutput"].as_str().unwrap_or_default()
     );
     let _ = writeln!(
