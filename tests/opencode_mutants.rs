@@ -62,12 +62,26 @@ struct Generated {
     title: &'static str,
 }
 
-const GENERATED: &[Generated] = &[Generated {
-    name: "no-defaults-first.js",
-    anchor: "          stamp(event.env, undefined)\n",
-    replacement: "",
-    title: "A cancelled configured-default lookup still leaves attribution unavailable",
-}];
+const GENERATED: &[Generated] = &[
+    Generated {
+        name: "no-defaults-first.js",
+        anchor: "          stamp(event.env, undefined)\n",
+        replacement: "",
+        title: "A cancelled configured-default lookup still leaves attribution unavailable",
+    },
+    Generated {
+        name: "no-message-guard.js",
+        anchor: "            typeof event.messageID !== \"string\" ||\n",
+        replacement: "",
+        title: "A shell request without a message or call identifier cannot keep or wipe other entries",
+    },
+    Generated {
+        name: "no-call-guard-before.js",
+        anchor: "            typeof event.id !== \"string\" ||\n",
+        replacement: "",
+        title: "A shell request without a message or call identifier cannot keep or wipe other entries",
+    },
+];
 
 fn shipped_adapter() -> String {
     std::fs::read_to_string(repo().join("assets/agent-integrations/opencode/givn-attribution.js"))

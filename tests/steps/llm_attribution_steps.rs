@@ -928,6 +928,11 @@ fn then_second_shell_identifies_llm(world: &mut GivnWorld, expected: String) {
     assert_shell_llm(world, 1, &expected);
 }
 
+#[then(regex = r##"^the third shell environment identifies LLM "([^"]+)"$"##)]
+fn then_third_shell_identifies_llm(world: &mut GivnWorld, expected: String) {
+    assert_shell_llm(world, 2, &expected);
+}
+
 #[given(
     regex = r##"^OpenCode requested the shell command "([^"]+)" for session "([^"]+)" in message "([^"]+)" and that request never reached shell creation$"##
 )]
@@ -1033,4 +1038,38 @@ fn when_opencode_creates_shell_and_abandons_hook(world: &mut GivnWorld, command:
         .actions
         .push(serde_json::json!({"op": "create", "command": command, "abandon": true}));
     replay(world);
+}
+
+#[when(
+    regex = r##"^OpenCode requests the shell command "([^"]+)" for session "([^"]+)" without a (message|call) identifier$"##
+)]
+fn when_opencode_requests_shell_command_without_identifier(
+    world: &mut GivnWorld,
+    command: String,
+    session: String,
+    kind: String,
+) {
+    let field = if kind == "message" { "messageID" } else { "id" };
+    characterization(world).actions.push(serde_json::json!({
+        "op": "request",
+        "session": session,
+        "command": command,
+        "omit": [field],
+    }));
+}
+
+#[when(
+    regex = r##"^OpenCode reports the shell command "([^"]+)" of session "([^"]+)" as completed without a call identifier$"##
+)]
+fn when_opencode_reports_completed_without_call_identifier(
+    world: &mut GivnWorld,
+    command: String,
+    session: String,
+) {
+    characterization(world).actions.push(serde_json::json!({
+        "op": "complete",
+        "session": session,
+        "command": command,
+        "omit": ["id"],
+    }));
 }

@@ -177,6 +177,22 @@ Feature: Attribute commits
     And the shell environment identifies reasoning mode "high"
 
   @givn.added
+  Scenario: A shell request without a message or call identifier cannot keep or wipe other entries
+    Given an isolated OpenCode "V2" attribution integration
+    And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"
+    And OpenCode has later remembered model "givn-fixture/model-b" with reasoning mode "low" for session "session-b"
+    When OpenCode requests the shell command "git commit" for session "session-a" in message "message-1"
+    And OpenCode requests the shell command "git status" for session "session-a" without a call identifier
+    And OpenCode reports the shell command "git status" of session "session-a" as completed without a call identifier
+    And OpenCode requests the shell command "git log" for session "session-a" without a message identifier
+    And OpenCode creates the shell for "git commit"
+    And OpenCode creates the shell for "git status"
+    And OpenCode creates the shell for "git log"
+    Then the first shell environment identifies LLM "givn-fixture/model-a"
+    And the second shell environment identifies LLM "givn-fixture/model-b"
+    And the third shell environment identifies LLM "givn-fixture/model-b"
+
+  @givn.added
   Scenario: A rejected hook registration does not stop shell attribution
     Given an isolated OpenCode "V2" attribution integration
     And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"

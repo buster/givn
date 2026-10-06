@@ -121,6 +121,8 @@ const main = async () => {
     }
     // A request without a session omits the key, as a malformed payload would.
     if (action.session !== null && action.session !== undefined) event.sessionID = action.session
+    // A malformed payload may also omit the message or call identifier.
+    for (const field of action.omit ?? []) delete event[field]
     await fire("tool", "execute.before", event)
     return callID
   }
@@ -169,9 +171,10 @@ const main = async () => {
         await request(action)
         break
       case "complete": {
+        const omitted = action.omit ?? []
         const id = callIDs.get(callKey(action))
-        if (!id) throw new Error(`no request to complete: ${callKey(action)}`)
-        await fire("tool", "execute.after", {
+        if (!id && !omitted.includes("id")) throw new Error(`no request to complete: ${callKey(action)}`)
+        const event = {
           tool: "shell",
           sessionID: action.session,
           agent: "build",
@@ -180,7 +183,9 @@ const main = async () => {
           input: { command: action.command },
           status: "completed",
           result: {},
-        })
+        }
+        for (const field of omitted) delete event[field]
+        await fire("tool", "execute.after", event)
         break
       }
       case "absent":

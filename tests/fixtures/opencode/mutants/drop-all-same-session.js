@@ -123,6 +123,8 @@ export default {
           if (
             event.tool !== "shell" ||
             typeof event.sessionID !== "string" ||
+            typeof event.messageID !== "string" ||
+            typeof event.id !== "string" ||
             typeof event.input?.command !== "string"
           ) {
             return
@@ -141,7 +143,7 @@ export default {
       ctx.tool.hook(
         "execute.after",
         guarded((event) => {
-          if (event.tool !== "shell") return
+          if (event.tool !== "shell" || typeof event.id !== "string") return
           pendingShells = pendingShells.filter(
             (pending) =>
               pending.sessionID !== event.sessionID || pending.id !== event.id,

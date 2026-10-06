@@ -123,6 +123,8 @@ export default {
           if (
             event.tool !== "shell" ||
             typeof event.sessionID !== "string" ||
+            typeof event.messageID !== "string" ||
+            typeof event.id !== "string" ||
             typeof event.input?.command !== "string"
           ) {
             return

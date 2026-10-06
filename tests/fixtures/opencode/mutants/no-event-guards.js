@@ -136,7 +136,7 @@ export default {
       ctx.tool.hook(
         "execute.after",
         guarded((event) => {
-          if (event.tool !== "shell") return
+          if (event.tool !== "shell" || typeof event.id !== "string") return
           pendingShells = pendingShells.filter(
             (pending) =>
               pending.sessionID !== event.sessionID || pending.id !== event.id,
