@@ -96,16 +96,24 @@
                   GIVN_OPENCODE_MODULES = "${modules}/lib/node_modules";
                 };
               };
+            llvmTools = pkgs.rustc.llvmPackages.llvm;
           in
           pkgs.mkShell {
             packages = with pkgs; [
               cargo
+              cargo-llvm-cov
               clippy
               rustc
               rustfmt
+              llvmTools
             ] ++ opencode.packages;
-            shellHook = builtins.concatStringsSep "\n" (pkgs.lib.mapAttrsToList (name: value:
-              "export ${name}=${pkgs.lib.escapeShellArg value}") opencode.paths);
+            # cargo-llvm-cov finds no rustup llvm-tools component here, so it is told
+            # the matching LLVM tools of the Nix rustc (same LLVM version as rustc).
+            shellHook = builtins.concatStringsSep "\n" ((pkgs.lib.mapAttrsToList (name: value:
+              "export ${name}=${pkgs.lib.escapeShellArg value}") (opencode.paths // {
+                LLVM_COV = "${llvmTools}/bin/llvm-cov";
+                LLVM_PROFDATA = "${llvmTools}/bin/llvm-profdata";
+              })));
           };
       });
     };

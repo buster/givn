@@ -9,6 +9,15 @@
 set -eu
 runner=${GIVN_TEST_RUNNER:-nextest}
 
+# Same runtime admission and supervisor preparation as ./run-tests.sh: the
+# OpenCode real-runtime scenarios (delta E2E scope, permanent after archive)
+# fail with a named setup error without them. The spawned production `givn`
+# processes inherit the collision-safe LLVM_PROFILE_FILE that `cargo llvm-cov`
+# exports (a %p-%m pattern), so each is instrumented and flushed on exit.
+. ./tests/fixtures/opencode/prepare-runtime.sh
+prepare_opencode_admission
+prepare_opencode_supervisor
+
 non_e2e_path=${GIVN_COVERAGE_NON_E2E_PATH:-coverage/non-e2e-cobertura.xml}
 e2e_path=${GIVN_COVERAGE_E2E_PATH:-coverage/e2e-cobertura.xml}
 features_path=${GIVN_FEATURES:-givn/specs}
