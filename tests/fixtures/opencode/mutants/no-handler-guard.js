@@ -8,11 +8,25 @@ const DEFAULT_LOOKUP_TIMEOUT_MS = 2000
 // on a malformed payload, must not fail the command or the other hooks.
 const guarded = (handler) => handler
 
+// Each kind of registration failure is reported once per process.
+const reported = new Set()
+
+const report = (kind, error) => {
+  if (reported.has(kind)) return
+  reported.add(kind)
+  try {
+    console.warn(`givn-attribution: registering hook ${kind} failed: ${error?.message ?? error}`)
+  } catch {
+    // Diagnostics must never throw into OpenCode.
+  }
+}
+
 // A failing hook registration must not stop the remaining hooks from being registered.
-const attempt = async (action) => {
+const attempt = async (kind, action) => {
   try {
     return await action()
-  } catch {
+  } catch (error) {
+    report(kind, error)
     return undefined
   }
 }
@@ -96,7 +110,7 @@ export default {
   },
   async setup(ctx) {
     for (const kind of ["context", "compaction", "generate"]) {
-      await attempt(() =>
+      await attempt(`session.${kind}`, () =>
         ctx.session.hook(
           kind,
           guarded((event) => {
@@ -110,7 +124,7 @@ export default {
     // its session through the tool hooks, which run before shell creation.
     let pendingShells = []
 
-    await attempt(() =>
+    await attempt("tool.execute.before", () =>
       ctx.tool.hook(
         "execute.before",
         guarded((event) => {
@@ -135,7 +149,7 @@ export default {
       ),
     )
 
-    await attempt(() =>
+    await attempt("tool.execute.after", () =>
       ctx.tool.hook(
         "execute.after",
         guarded((event) => {
@@ -155,7 +169,7 @@ export default {
       return index < 0 ? undefined : pendingShells.splice(index, 1)[0]
     }
 
-    await attempt(() =>
+    await attempt("shell.create.before", () =>
       ctx.shell.hook(
         "create.before",
         guarded(async (event) => {

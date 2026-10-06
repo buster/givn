@@ -1073,3 +1073,33 @@ fn when_opencode_reports_completed_without_call_identifier(
         "omit": ["id"],
     }));
 }
+
+#[when("OpenCode sets up the integration a second time")]
+fn when_opencode_sets_up_again(world: &mut GivnWorld) {
+    characterization(world)
+        .actions
+        .push(serde_json::json!({"op": "setup-again"}));
+    replay(world);
+}
+
+#[then(
+    regex = r##"^the integration warns exactly once that the registration of "([^"]+)" failed$"##
+)]
+fn then_integration_warns_once(world: &mut GivnWorld, hook: String) {
+    let state = characterization(world);
+    let result = match state.outcome.as_ref().expect("the integration was set up") {
+        Ok(result) => result,
+        Err(error) => panic!("OpenCode setup failed: {error}"),
+    };
+    let matching: Vec<&String> = result
+        .warnings
+        .iter()
+        .filter(|warning| warning.contains(&hook))
+        .collect();
+    assert_eq!(
+        matching.len(),
+        1,
+        "expected exactly one warning naming {hook}, all warnings: {:?}",
+        result.warnings
+    );
+}

@@ -14,8 +14,23 @@ const guarded = (handler) => async (...args) => {
   }
 }
 
+// Each kind of registration failure is reported once per process.
+const reported = new Set()
+
+const report = (kind, error) => {
+  if (reported.has(kind)) return
+  reported.add(kind)
+  try {
+    console.warn(`givn-attribution: registering hook ${kind} failed: ${error?.message ?? error}`)
+  } catch {
+    // Diagnostics must never throw into OpenCode.
+  }
+}
+
 // A failing hook registration must not stop the remaining hooks from being registered.
-const attempt = async (action) => action()
+const attempt = async (kind, action) => {
+  return action()
+}
 
 const rememberModel = (sessionID, model, variant) => {
   if (!model && !variant) return
@@ -96,7 +111,7 @@ export default {
   },
   async setup(ctx) {
     for (const kind of ["context", "compaction", "generate"]) {
-      await attempt(() =>
+      await attempt(`session.${kind}`, () =>
         ctx.session.hook(
           kind,
           guarded((event) => {
@@ -110,7 +125,7 @@ export default {
     // its session through the tool hooks, which run before shell creation.
     let pendingShells = []
 
-    await attempt(() =>
+    await attempt("tool.execute.before", () =>
       ctx.tool.hook(
         "execute.before",
         guarded((event) => {
@@ -135,7 +150,7 @@ export default {
       ),
     )
 
-    await attempt(() =>
+    await attempt("tool.execute.after", () =>
       ctx.tool.hook(
         "execute.after",
         guarded((event) => {
@@ -155,7 +170,7 @@ export default {
       return index < 0 ? undefined : pendingShells.splice(index, 1)[0]
     }
 
-    await attempt(() =>
+    await attempt("shell.create.before", () =>
       ctx.shell.hook(
         "create.before",
         guarded(async (event) => {

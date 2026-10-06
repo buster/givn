@@ -29,6 +29,8 @@ pub struct Characterization {
     pub shells: Vec<Value>,
     /// Every event the harness fired: hook group, hook name, sorted payload keys.
     pub events: Vec<Value>,
+    /// Every `console.warn` message the plugin emitted.
+    pub warnings: Vec<String>,
 }
 
 /// Import `asset` in a fresh process and replay `actions` through its public hooks.
@@ -145,5 +147,11 @@ pub fn run_with(
             .as_array()
             .with_context(|| "harness result lists events")?
             .clone(),
+        warnings: parsed["warnings"]
+            .as_array()
+            .with_context(|| "harness result lists warnings")?
+            .iter()
+            .map(|warning| warning.as_str().unwrap_or_default().to_owned())
+            .collect(),
     })
 }

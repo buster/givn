@@ -45,6 +45,12 @@ const defaultResponse = (config) => {
   }
 }
 
+// The adapter reports through console.warn only; the harness records instead of printing.
+const warnings = []
+console.warn = (...parts) => {
+  warnings.push(parts.map(String).join(" "))
+}
+
 const main = async () => {
   const input = await readStdin()
   const { asset, generation, actions } = input
@@ -60,12 +66,14 @@ const main = async () => {
     hooks: {},
     shells: [],
     events: [],
+    warnings,
   }
   const defaultConfig = actions.find((action) => action.op === "default")
 
   let v1
   const registered = { session: {}, tool: {}, shell: {} }
   let cleanup
+  let setupAgain
   if (generation === "V1") {
     v1 = mod.default?.server ? await mod.default.server({}) : await mod.GivnAttributionPlugin({})
     result.hooks.v1 = Object.keys(v1).sort()
@@ -73,22 +81,26 @@ const main = async () => {
     const rejected = new Set(
       actions.filter((action) => action.op === "reject").map((action) => `${action.group}.${action.name}`),
     )
-    const register = (group) => ({
+    const register = (group, into) => ({
       hook: async (name, handler) => {
         if (rejected.has(`${group}.${name}`)) throw new Error(`registration rejected: ${group}.${name}`)
-        if (registered[group][name]) throw new Error(`duplicate ${group} hook ${name}`)
-        registered[group][name] = handler
+        if (into[group][name]) throw new Error(`duplicate ${group} hook ${name}`)
+        into[group][name] = handler
       },
     })
-    const ctx = {
-      session: register("session"),
-      tool: register("tool"),
-      shell: register("shell"),
+    const makeContext = (into) => {
+      const ctx = {
+        session: register("session", into),
+        tool: register("tool", into),
+        shell: register("shell", into),
+      }
+      if (defaultConfig && defaultConfig.mode !== "absent") {
+        ctx.model = { default: async () => defaultResponse(defaultConfig) }
+      }
+      return ctx
     }
-    if (defaultConfig && defaultConfig.mode !== "absent") {
-      ctx.model = { default: async () => defaultResponse(defaultConfig) }
-    }
-    cleanup = await mod.default.setup(ctx)
+    setupAgain = () => mod.default.setup(makeContext({ session: {}, tool: {}, shell: {} }))
+    cleanup = await mod.default.setup(makeContext(registered))
     result.hooks.v2 = {
       session: Object.keys(registered.session).sort(),
       tool: Object.keys(registered.tool).sort(),
@@ -154,6 +166,10 @@ const main = async () => {
     switch (action.op) {
       case "default":
       case "reject":
+        break
+      case "setup-again":
+        if (!setupAgain) throw new Error("setup-again needs a V2 integration")
+        await setupAgain()
         break
       case "remember":
         if (generation === "V1") {

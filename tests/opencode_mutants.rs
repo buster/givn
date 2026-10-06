@@ -81,6 +81,18 @@ const GENERATED: &[Generated] = &[
         replacement: "",
         title: "A shell request without a message or call identifier cannot keep or wipe other entries",
     },
+    Generated {
+        name: "no-registration-report.js",
+        anchor: "    report(kind, error)\n",
+        replacement: "",
+        title: "A rejected hook registration is reported once",
+    },
+    Generated {
+        name: "report-every-failure.js",
+        anchor: "  if (reported.has(kind)) return\n  reported.add(kind)\n",
+        replacement: "",
+        title: "A rejected hook registration is reported once",
+    },
 ];
 
 fn shipped_adapter() -> String {

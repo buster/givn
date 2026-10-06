@@ -204,6 +204,15 @@ Feature: Attribute commits
     And the shell environment identifies committer "LLM: givn-fixture/model-b via opencode"
 
   @givn.added
+  Scenario: A rejected hook registration is reported once
+    Given an isolated OpenCode "V2" attribution integration
+    And OpenCode rejects the registration of its "tool" hook "execute.before"
+    When OpenCode sets up the integration a second time
+    And OpenCode creates the shell for "git commit"
+    Then shell preparation succeeds
+    And the integration warns exactly once that the registration of "tool.execute.before" failed
+
+  @givn.added
   Scenario: A hung configured-default lookup does not stall shell creation
     Given an isolated OpenCode "V2" attribution integration
     And no model has been remembered
