@@ -752,7 +752,12 @@ fn given_opencode_default_lookup(world: &mut GivnWorld, lookup: String) {
     assert!(
         matches!(
             lookup.as_str(),
-            "absent" | "no model" | "model without identity" | "fails" | "hangs"
+            "absent"
+                | "no model"
+                | "model without identity"
+                | "fails"
+                | "throws synchronously"
+                | "hangs"
         ),
         "unsupported default lookup: {lookup}"
     );

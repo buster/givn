@@ -94,7 +94,14 @@ const main = async () => {
         tool: register("tool", into),
         shell: register("shell", into),
       }
-      if (defaultConfig && defaultConfig.mode !== "absent") {
+      if (defaultConfig && defaultConfig.mode === "throws synchronously") {
+        // A plain function: the exception escapes the call itself, not a returned promise.
+        ctx.model = {
+          default: () => {
+            throw new Error("configured default lookup threw synchronously")
+          },
+        }
+      } else if (defaultConfig && defaultConfig.mode !== "absent") {
         ctx.model = { default: async () => defaultResponse(defaultConfig) }
       }
       return ctx

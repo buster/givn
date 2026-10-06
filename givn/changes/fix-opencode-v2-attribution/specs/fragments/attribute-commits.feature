@@ -336,6 +336,7 @@ Feature: Attribute commits
       | V2         | no model                |
       | V2         | model without identity  |
       | V2         | fails                   |
+      | V2         | throws synchronously    |
 
   @givn.added
   Scenario Outline: OpenCode V2 remembers attribution during non-title model requests
