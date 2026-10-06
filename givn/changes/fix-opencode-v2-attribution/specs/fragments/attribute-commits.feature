@@ -118,7 +118,7 @@ Feature: Attribute commits
     And the shell environment identifies reasoning mode "low"
     And the shell environment identifies committer "LLM: givn-fixture/model-b via opencode"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A request from an older message of the same session is dropped
     Given an isolated OpenCode "V2" attribution integration
     And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"
