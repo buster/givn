@@ -154,7 +154,7 @@ Feature: Attribute commits
       | V2         | unknown session   |
       | V2         | no session        |
 
-  @givn.added @wip
+  @givn.added
   Scenario: The remembered model takes precedence over OpenCode V2's configured default
     Given an isolated OpenCode "V2" attribution integration
     And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"

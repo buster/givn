@@ -718,3 +718,17 @@ fn when_opencode_prepares_shell_with_context(world: &mut GivnWorld, context: Str
     }));
     replay(world);
 }
+
+#[given(
+    regex = r##"^OpenCode's configured default is model "([^"]+)" with reasoning mode "([^"]+)"$"##
+)]
+fn given_opencode_configured_default(world: &mut GivnWorld, model: String, reasoning: String) {
+    let (provider, model) = split_model(&model);
+    characterization(world).actions.push(serde_json::json!({
+        "op": "default",
+        "mode": "model",
+        "provider": provider,
+        "model": model,
+        "variant": reasoning,
+    }));
+}
