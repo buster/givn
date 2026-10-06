@@ -18,7 +18,7 @@ Feature: Attribute commits
       | V1 latest |
       | V2 latest |
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario Outline: OpenCode prepares attribution using its selected model
     Given a project with the generated OpenCode attribution integration
     When the developer asks OpenCode "<release>" with model "givn-fixture/model-a" and reasoning mode "high" to execute the attribution fixture command

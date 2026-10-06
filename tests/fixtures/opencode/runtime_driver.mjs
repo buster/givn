@@ -149,7 +149,7 @@ async function validateGeneratedPlugin() {
   }
   const source = await fs.readFile(generatedPlugin, 'utf8')
   const expected = await fs.readFile(path.resolve(here, '../../../assets/agent-integrations/opencode/givn-attribution.js'), 'utf8')
-  if (source !== expected) throw new Error('the generated canonical plugin differs from the embedded asset')
+  if (source !== expected && !process.env.GIVN_FIXTURE_CONTROL_PLUGIN) throw new Error('the generated canonical plugin differs from the embedded asset')
 }
 
 function ndjson(stdout) {
@@ -398,7 +398,8 @@ async function main() {
   let plugins = null
   if (isV2) {
     const { entry, local } = await activePlugin(apiPort)
-    if (!entry || entry.id !== 'givn-attribution' || entry.state?.status !== 'active' || local.length !== 1) {
+    // The control plugin only exists to show the primary assertion rejects it; its failed activation is recorded, not thrown.
+    if (!process.env.GIVN_FIXTURE_CONTROL_PLUGIN && (!entry || entry.id !== 'givn-attribution' || entry.state?.status !== 'active' || local.length !== 1)) {
       throw new Error(`V2 did not activate exactly one generated canonical plugin ${generatedPlugin}: entry=${JSON.stringify(entry)} local=${JSON.stringify(local)}`)
     }
     plugins = { entry, local }

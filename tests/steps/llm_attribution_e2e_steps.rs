@@ -74,10 +74,20 @@ pub(crate) fn run_release_and_record(
     extra_env: &[(&str, &str)],
 ) -> serde_json::Value {
     let root = world.env.as_ref().expect("project root").root();
-    assert_canonical_plugin(&root);
+    let mut extra_env = extra_env.to_vec();
+    // Negative control for the RED evidence: another module (for example the
+    // legacy V1-only plugin) stands in for the generated plugin, to show that
+    // the real-loader assertions reject it. Never set by the regular suites.
+    if let Some(control) = std::env::var_os("GIVN_OPENCODE_CONTROL_PLUGIN") {
+        std::fs::copy(control, root.join(".opencode/plugins/givn-attribution.js"))
+            .expect("install the control plugin");
+        extra_env.push(("GIVN_FIXTURE_CONTROL_PLUGIN", "1"));
+    } else {
+        assert_canonical_plugin(&root);
+    }
     assert_no_generation_warning(world);
     let evidence =
-        common::opencode_runtime::run_opencode_shell(&root, release, scenario, extra_env)
+        common::opencode_runtime::run_opencode_shell(&root, release, scenario, &extra_env)
             .unwrap_or_else(|error| panic!("{error:#}"));
     let title = world.scenario_title.clone().unwrap_or_default();
     let key = common::opencode_runtime::release_key(release).expect("release key");
