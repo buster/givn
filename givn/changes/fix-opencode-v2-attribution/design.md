@@ -119,6 +119,7 @@ Further rewrites need a new decision.
 | Stale pending shell requests (D3 refinement) | Resolved | Drop older same-session entries; residual quiet-session risk documented. |
 | Robustness of the V2 adapter (D3 robustness, 2026-10-06, user-approved scope of the review follow-ups) | Resolved | Every handler runs through `guarded` (a throwing or null-payload hook never fails a shell); every registration runs through `attempt`, so one rejected registration does not stop the others, and each failed kind is reported once with `console.warn` (never throwing); the configured-default lookup is bounded to 2 s with a timer cleared on settle; `execute.before` requires string `sessionID`, `messageID`, `id` and command, `execute.after` a string `id` (the latter is defence in depth); `create.before` stamps the unavailable defaults before its first await so an abandoned hook still leaves attribution unavailable. Attribution semantics are unchanged. |
 | Subagent E2E discrimination (D3 refinement, 2026-10-06) | Resolved as characterization | Kept as real-loader characterization; see "Subagent E2E scenario: what it proves". |
+| Review rework (2026-10-06, operator decisions F1, F3, F4, F5) | Resolved | Permanent selected-model scenario drives a real V1 floor run; fixture files untracked; contract-probe scenario kept `@e2e` by operator exception; three spec-only revisions reopened and proved with mutants; see "Third amendment". |
 
 No proposal question is carried; none is seed-sourced.
 
@@ -560,6 +561,50 @@ the scenario that proves the D3 link assumptions; the characterization harness
 reports the key names of every event it fires so the harness can be compared
 with the real runtime.
 
+### Third amendment (2026-10-06, review rework)
+
+After `givn review` returned `REVIEW: FAIL` (review.md, commit e9283bf8) and the
+operator decided F1, F3, F4 and F5, the design is amended as follows. Each item
+matches the code and `tasks.md` "Review rework".
+
+1. F1. The permanent `@e2e` scenario "OpenCode prepares attribution using its
+   selected model" is no longer Node-only: its shell step drives the real V1
+   floor CLI (see "Keep old permanent step text bindable"). The permanent E2E
+   count stays 91.
+2. F2. Coverage instrumentation works with the OpenCode runtimes (coverage
+   paragraph above). No scenario or decision changed.
+3. F3. The four fixture files that a historical revision committed at the
+   repository root (`opencode.json`, `node_modules`, `package.json`,
+   `attribution-fixture.mjs`) are untracked and ignored. Nothing depends on them:
+   every real-runtime fixture builds its project in a temporary root, and a
+   worktree without them ran `run-suite.sh --all`. The fixture-root guard now
+   also refuses a root whose physical parent lies inside the repository
+   checkout.
+4. F4. Operator override: the scenario "OpenCode V2 delivers the shell request
+   to the attribution adapter before shell creation" stays `@e2e`, with its
+   inventory and matrix rows. The review classed it as a test of an External
+   System assumption rather than a consumer action; the operator accepted it as
+   an E2E exception on 2026-10-06. This is a recorded exception, not a gate
+   bypass: no tag was removed and no row dropped.
+5. F5. The evidence exception above is unchanged: it still rejects spec-only
+   commits. The operator reopened the three tasks whose revisions (825dc86c,
+   ab92d52e, 3e9dbb8b) carried no test content. Each now has a second revision
+   with executable proof in `tests/opencode_mutants.rs`: generated mutants
+   `no-configured-default.js` and `inverted-stale-rule.js`, and the legacy
+   V1-only plugin as a control that must fail the no-addons initialization
+   scenario. `tasks.md` references both the original and the new revision.
+6. F8. Two adapter branches were unexercised. A new Example (`throws
+   synchronously`) of the "No usable model leaves attribution unavailable"
+   outline covers the synchronous-throw catch of `configuredDefault`; the new
+   scenario "A failing diagnostic channel does not stop hook registration"
+   covers the guard around `console.warn` and has a generated mutant
+   (`unguarded-diagnostics.js`) that fails it. Counts are 35 identities, 32
+   added, 3 modified, 9 E2E and 26 regular. The synchronous-throw catch is
+   defence in depth: `guarded` and the defaults-first stamp already produce the
+   same observable result, so a mutant without it survives (retained risk 11).
+7. F9. `tasks.md` records each scenario revision as `- [x] COMMIT: <hash>`
+   lines, the form the review integrity check reads.
+
 ### Verified runtime command and configuration shapes
 
 V2 `run --help` was checked locally at 2.0.22; `--server`, `--standalone`,
@@ -799,7 +844,10 @@ particular, the existing OpenCode selected-provider/model step records the
 requested public selection; its shell-preparation step now drives a real
 V1-floor CLI run against the same generated file and local provider twin,
 configuring the fixture's explicit requested provider/model alias and high
-variant. The arbitrary legacy session label is test selection state, not an
+variant (implemented 2026-10-06, review rework F1: `GIVN_FIXTURE_PRIMARY_MODEL`
+in `runtime_driver.mjs`, `run_release_and_record` in the step; the Node-only hook
+script and its output field are deleted, and a committed inert control plugin
+proves the scenario fails when nothing attributes). The arbitrary legacy session label is test selection state, not an
 attempt to manufacture OpenCode's runtime session ID. New delta step text uses
 the explicit release matrix. Both paths read the actual completed tool-result
 environment; neither uses the old Node-only hook invocation as E2E evidence.
@@ -823,13 +871,13 @@ undefined/pending-or-unimplemented failure, not a setup/network failure.
 Remove only temporary proof inputs afterward. This proves exact config, not
 an assumed Cucumber default. These probes were planned at design time; the implemented runner is exercised by the suite and recorded in `tasks.md`.
 
-The delta contains 34 scenario identities (recounted 2026-10-06 from both
-delta files after implementation): 31 added, 3 modified, none removed. Nine are
-E2E (seven outlines, the V2 subagent characterization scenario and the V2
-contract-probe scenario) and 25 are regular; the runner reports them as
-`25 tests run` (regular) and `9 tests run` (E2E) for the delta root. Expanded
-Examples are not recounted here. `attribute-commits.feature` has 26 identities
-(4 E2E, 22 regular) and `enable-commit-attribution.feature` has 8 (5 E2E, 3
+The delta contains 35 scenario identities (recounted 2026-10-06 from both
+delta files after the review rework): 32 added, 3 modified, none removed. Nine
+are E2E (seven outlines, the V2 subagent characterization scenario and the V2
+contract-probe scenario) and 26 are regular; the runner reports them as
+`26 tests run` (regular) and `9 tests run` (E2E) for the delta root. Expanded
+Examples are not recounted here. `attribute-commits.feature` has 27 identities
+(4 E2E, 23 regular) and `enable-commit-attribution.feature` has 8 (5 E2E, 3
 regular). Feature tags are `@givn.delta`, the change type and the capability;
 no delta scenario carries `@wip` any more (the tag was removed as each became
 green). The
@@ -884,6 +932,21 @@ before export; a non-zero `skills::targets` generation path and attribution
 stamper path are the expected production probes. External OpenCode/Node
 runtimes are not Givn production coverage targets. Do not substitute an
 un-instrumented installed global Givn during measured E2E runs.
+
+Implemented 2026-10-06 (review rework F2). `flake.nix` provisions
+`cargo-llvm-cov` and the LLVM tools that match the Nix `rustc` (`LLVM_COV`,
+`LLVM_PROFDATA` exported by the shell hook; the repository has no rustup).
+`measure-coverage.sh` sources `tests/fixtures/opencode/prepare-runtime.sh`, the
+same helper `run-tests.sh` uses, for the runtime admission, the physical
+`TMPDIR` and the plain (never instrumented) supervisor build exported as
+`GIVN_OPENCODE_SUPERVISOR`; the supervisor and the external OpenCode and Node
+runtimes are test infrastructure, not coverage targets. The instrumented `givn`
+processes the scenarios spawn inherit the `%p-%m` `LLVM_PROFILE_FILE` that
+`cargo llvm-cov` exports. Measured through the configured `givn/commands.yaml`
+commands on the permanent specs and, as the archive pass will, on the delta
+root: both scopes run, the reports differ, and `src/skills/targets.rs` and
+`src/cli/attribution.rs` are non-zero in the merged report (figures are in
+`tasks.md`).
 
 ## Scenario revision evidence exception
 
@@ -1093,6 +1156,13 @@ claimed repaired by this compatibility change.
 10. The `execute.after` id guard is defence in depth: with the `execute.before`
    guard in place no id-less entry exists, and a mutant without it survived,
    so no mutant is committed for it.
+
+11. The synchronous-throw `catch` in `configuredDefault` is defence in depth: a
+   default lookup that throws before returning a promise is also swallowed by
+   `guarded`, and the defaults-first stamp has already made the shell
+   unavailable-but-active, so a mutant without the `catch` survives. The new
+   Example exercises the branch (coverage), not its necessity; no mutant is
+   committed.
 
 ## Durable arc42 documentation handoff
 

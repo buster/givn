@@ -253,5 +253,20 @@ unaffected is superseded. Chapter 10's claim that runtime validation works
 through instrumented coverage is NOT corrected here: it is an open
 implementation finding recorded in `review.md`.
 
+### Third amendment — 2026-10-06 (review rework)
+
+After the review failure (review.md, e9283bf8) the documentation was updated
+for the implemented rework: 04 and 07 (the development shell provides
+`cargo-llvm-cov` and matching LLVM tools; `measure-coverage.sh` shares
+`prepare-runtime.sh` with `run-tests.sh`), 08 (coverage passes prepare the same
+runtime admission), 10 (coverage claim now implemented; counts 35/32/3, 26
+regular, 9 E2E; the new diagnostic-channel scenario mapped) and 11 (R-83). The
+permanent selected-model scenario now drives a real V1 floor run (design
+"Third amendment"). The contract-probe scenario stays `@e2e` by operator
+exception. Chapter 10's earlier "not corrected here: open implementation
+finding" statement about coverage is superseded: the finding is resolved. The
+reviewer must re-check this documentation. Chapters 01, 02, 03, 05, 06, 09 and
+12 are unaffected by the rework.
+
 ## Status
 STATUS: DONE

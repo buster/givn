@@ -496,7 +496,9 @@ uses `./run-tests.sh` and `./run-tests.sh --e2e` instead.
 
 For the OpenCode repair, those same commands validate the pinned runtime paths exported by the active
 development shell through the same POSIX-shell validator used by the suite
-wrapper and direct runtime fixtures. All Nix derivations and exports remain in
+wrapper and direct runtime fixtures; `measure-coverage.sh` prepares the same
+admission and supervisor through the shared `prepare-runtime.sh`, so the
+instrumented passes can run the OpenCode real-runtime scenarios. All Nix derivations and exports remain in
 `flake.nix`; test scripts do not invoke Nix or Fish. Preserve feature-root/tag
 selection, result scope and instrumented Givn paths; wrapper-private exports do
 not establish canonical-gate admission.

@@ -655,8 +655,49 @@ All amendments made after the verdict, listed for the re-check:
    `design.md`, `arc42.md`, `README.md`, `docs/arc42/README.md` and chapters
    05, 06, 07, 08, 10 and 11.
 
-Amended after implementation; re-check requested. The `DESIGN-REVIEW: PASS`
+### Third amendment after implementation (2026-10-06, review rework)
+
+Operator decisions of 2026-10-06 after `review.md` (commit e9283bf8,
+`REVIEW: FAIL`): F1 conform the permanent step to a real V1-floor run, F3
+untrack the four root fixture files, F4 keep the contract-probe scenario as
+`@e2e` (operator override; recorded in `design.md` "Third amendment" and
+`tasks.md`; no tag removed, no inventory or matrix row dropped), F5 reopen the
+three spec-only tasks. The scenario revision evidence exception is unchanged: it
+still rejects spec-only commits.
+
+Amendments (design.md "Third amendment"): 1 permanent selected-model step now
+drives a real V1 floor run (`GIVN_FIXTURE_PRIMARY_MODEL`; Node-only glue
+deleted; inert-plugin control proves it can fail); 2 coverage instrumentation
+(flake provisions `cargo-llvm-cov` and matching LLVM tools; `measure-coverage.sh`
+and `run-tests.sh` share `prepare-runtime.sh`); 3 root fixture files untracked
+and ignored, fixture-root guard refuses a root inside the checkout; 4
+contract-probe scenario kept `@e2e` by operator exception; 5 three reopened
+tasks with mutant/control proof revisions; 6 two F8 additions (an Example and a
+new scenario), counts 35/32/3, 9 E2E, 26 regular, retained risk 11 (the
+synchronous-throw catch is defence in depth); 7 `tasks.md` `- [x] COMMIT:` form.
+
+Re-check 2026-10-06 (third amendment): every item above was compared with the
+code after the last rework revision. (1) `GIVN_FIXTURE_PRIMARY_MODEL` is read in
+`runtime_driver.mjs` and set by `when_opencode_prepares_shell`; no
+`invoke-opencode-shell` script and no `javascript_string` remain in the E2E step
+file; permanent E2E count 91. (2) `run-tests.sh` and `measure-coverage.sh` each
+source `prepare-runtime.sh`; `flake.nix` lists `cargo-llvm-cov` and exports
+`LLVM_COV`/`LLVM_PROFDATA`. (3) `git ls-files` lists none of the four root
+paths, `.gitignore` carries the four entries, the guard string is present in
+`tests/common/opencode_runtime.rs`. (4) the contract-probe scenario carries
+`@givn.added @e2e`, its inventory row exists once in `fragment.md` and its
+matrix row in `design.md`. (5) `tests/opencode_mutants.rs` contains
+`no-configured-default.js`, `inverted-stale-rule.js` and `LEGACY_CONTROLS`;
+`tasks.md` names both the original and the new revision for all three tasks.
+(6) both delta files recounted: 27 + 8 = 35 identities, 3 `@givn.modified`, 9
+`@e2e`, 26 regular. (7) the integrity check reads the `- [x] COMMIT:` lines.
+No contradiction between the amended text and the code was found. A fresh-context
+design re-review by someone other than the implementer is still recommended
+before archive.
+
+Amended after implementation; re-check recorded above. The `DESIGN-REVIEW: PASS`
 marker below is kept because the workflow gate requires it (`src/state.rs`
-detects it); it was issued before these amendments and does not cover them.
+detects it); it was issued before the amendments and is kept only together with
+the dated re-check lines above.
 
 DESIGN-REVIEW: PASS

@@ -88,8 +88,12 @@ tests have run and pass (evidence in the change's `tasks.md`); the detailed life
 
 `tests/fixtures/opencode/resolve-runtime.sh` validates pinned runtime
 paths exported by the development shell defined only in `flake.nix`. It is used
-by the suite wrapper, direct `run-tests.sh`, and runtime fixtures used in
-cargo/nextest and coverage; the shell scripts never invoke Nix or Fish. Canonical
+by the suite wrapper, direct `run-tests.sh`, `measure-coverage.sh` (all three
+source `tests/fixtures/opencode/prepare-runtime.sh` for admission and the
+supervisor build) and runtime fixtures used in cargo/nextest and coverage; the
+shell scripts never invoke Nix or Fish. The development shell also provides
+`cargo-llvm-cov` and the LLVM tools matching its `rustc` (`LLVM_COV`,
+`LLVM_PROFDATA`). Canonical
 archive/self-dogfood commands require the development environment to be active
 but do not depend on wrapper-private runtime discovery or a globally installed
 OpenCode. Missing prerequisites and actual tool-selected shell diagnostics are
