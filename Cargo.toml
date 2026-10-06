@@ -49,6 +49,10 @@ harness = false
 name = "opencode_supervisor"
 harness = false
 
+# Meta-assertions: each committed mutant of the OpenCode adapter fails its scenario.
+[[test]]
+name = "opencode_mutants"
+
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
 

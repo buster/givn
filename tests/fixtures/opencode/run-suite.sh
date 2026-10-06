@@ -13,13 +13,14 @@ case "${1-}" in
     --regular|--e2e|--all) scope=${1#--}; shift ;;
     --setup-smoke) setup_smoke=1; scope=smoke; shift ;;
     --probes) scope=probes; shift ;;
+    --mutants) scope=mutants; shift ;;
     --name)
         [ "$#" -eq 2 ] || { echo 'usage: run-suite.sh --name <scenario title>' >&2; exit 2; }
         scenario_title=$2
         scope=name
         ;;
     '') ;;
-    *) echo 'usage: run-suite.sh [--regular|--e2e|--all|--setup-smoke|--probes|--name <scenario title>]' >&2; exit 2 ;;
+    *) echo 'usage: run-suite.sh [--regular|--e2e|--all|--setup-smoke|--probes|--mutants|--name <scenario title>]' >&2; exit 2 ;;
 esac
 
 GIVN_OPENCODE_ADMISSION_JSON=$(./tests/fixtures/opencode/resolve-runtime.sh --json)
@@ -56,6 +57,12 @@ if [ "$scope" = probes ]; then
     exit 0
 fi
 
+if [ "$scope" = mutants ]; then
+    # Each committed mutant of the adapter must fail the scenario that exists to catch it.
+    cargo test --locked --test opencode_mutants
+    exit 0
+fi
+
 run_scope() {
     root=$1
     tag=$2
@@ -76,6 +83,7 @@ elif [ "$scope" = name ]; then
 else
     run_scope givn/specs regular
     run_scope givn/changes/fix-opencode-v2-attribution/specs regular
+    cargo test --locked --test opencode_mutants
     run_scope givn/specs e2e
     run_scope givn/changes/fix-opencode-v2-attribution/specs e2e
 fi

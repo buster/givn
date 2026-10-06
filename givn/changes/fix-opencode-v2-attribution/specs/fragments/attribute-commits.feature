@@ -129,6 +129,17 @@ Feature: Attribute commits
     Then the shell environment identifies LLM "givn-fixture/model-b"
     And the shell environment identifies reasoning mode "low"
 
+  @givn.added
+  Scenario: Parallel shell requests in one message are all attributed
+    Given an isolated OpenCode "V2" attribution integration
+    And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"
+    And OpenCode has later remembered model "givn-fixture/model-b" with reasoning mode "low" for session "session-b"
+    When OpenCode requests the shell command "git status" for session "session-a" in message "message-1"
+    And OpenCode requests the shell command "git commit" for session "session-a" in message "message-1"
+    And OpenCode creates both shells
+    Then the first shell environment identifies LLM "givn-fixture/model-a"
+    And the second shell environment identifies LLM "givn-fixture/model-a"
+
   @givn.added @e2e
   Scenario: OpenCode V2 attributes a subagent's command to the subagent's model
     Given a project with the generated OpenCode attribution integration
