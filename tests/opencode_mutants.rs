@@ -428,3 +428,20 @@ fn should_fail_the_permanent_selected_model_scenario_when_the_plugin_does_not_at
         output.status
     );
 }
+
+/// (control file relative to the repository, scenario it must fail): the
+/// legacy V1-only plugin standing in for the generated file must fail every
+/// scenario that asserts compatible generated behavior across generations.
+const LEGACY_CONTROLS: &[(&str, &str)] = &[(
+    "tests/fixtures/opencode/prototype/givn-attribution_v1.js",
+    "Initialization without addons still enables compatible OpenCode attribution",
+)];
+
+#[test]
+fn should_fail_the_scenario_when_the_legacy_v1_only_plugin_is_the_generated_file() {
+    for (control, title) in LEGACY_CONTROLS {
+        let asset = repo().join(control);
+        assert!(asset.is_file(), "missing control {}", asset.display());
+        assert_mutant_fails_scenario(control, &asset, title);
+    }
+}
