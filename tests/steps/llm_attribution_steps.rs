@@ -853,3 +853,65 @@ fn when_opencode_runs_shell_command(world: &mut GivnWorld, command: String, sess
     }));
     replay(world);
 }
+
+#[when(regex = r##"^OpenCode requests the shell command "([^"]+)" for session "([^"]+)"$"##)]
+fn when_opencode_requests_shell_command(world: &mut GivnWorld, command: String, session: String) {
+    characterization(world).actions.push(serde_json::json!({
+        "op": "request",
+        "session": session,
+        "command": command,
+    }));
+}
+
+#[when("OpenCode creates both shells")]
+fn when_opencode_creates_both_shells(world: &mut GivnWorld) {
+    let state = characterization(world);
+    let commands: Vec<String> = state
+        .actions
+        .iter()
+        .filter(|action| action["op"] == "request")
+        .map(|action| action["command"].as_str().expect("command").to_owned())
+        .collect();
+    assert_eq!(commands.len(), 2, "expected exactly two pending requests");
+    for command in commands {
+        state
+            .actions
+            .push(serde_json::json!({"op": "create", "command": command}));
+    }
+    replay(world);
+}
+
+/// The environment of the shell created at `index`.
+fn characterized_shell_env_at(world: &GivnWorld, index: usize) -> &serde_json::Value {
+    let state = world
+        .opencode_characterization
+        .as_ref()
+        .expect("characterization state");
+    match state.outcome.as_ref().expect("shells were created") {
+        Ok(result) => result
+            .shells
+            .get(index)
+            .unwrap_or_else(|| panic!("shell {index} was not created")),
+        Err(error) => panic!("OpenCode shell preparation failed: {error}"),
+    }
+}
+
+fn assert_shell_llm(world: &GivnWorld, index: usize, expected: &str) {
+    let env = characterized_shell_env_at(world, index);
+    assert_eq!(
+        env.get("GIVN_ATTRIBUTION_LLM")
+            .and_then(serde_json::Value::as_str),
+        Some(expected),
+        "shell {index} environment: {env}"
+    );
+}
+
+#[then(regex = r##"^the first shell environment identifies LLM "([^"]+)"$"##)]
+fn then_first_shell_identifies_llm(world: &mut GivnWorld, expected: String) {
+    assert_shell_llm(world, 0, &expected);
+}
+
+#[then(regex = r##"^the second shell environment identifies LLM "([^"]+)"$"##)]
+fn then_second_shell_identifies_llm(world: &mut GivnWorld, expected: String) {
+    assert_shell_llm(world, 1, &expected);
+}

@@ -94,7 +94,7 @@ Feature: Attribute commits
       | V2         | main-session    | givn-fixture/model-a | high      |
       | V2         | child-session   | givn-fixture/model-b | low       |
 
-  @givn.added @wip
+  @givn.added
   Scenario: Identical shell commands from two OpenCode V2 sessions are attributed in the order issued
     Given an isolated OpenCode "V2" attribution integration
     And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"
