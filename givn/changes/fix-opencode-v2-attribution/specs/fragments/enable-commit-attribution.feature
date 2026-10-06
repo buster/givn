@@ -1,7 +1,7 @@
 @givn.delta @enable-commit-attribution
 Feature: Enable commit attribution
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario Outline: Consumer upgrades an existing project with attribution plumbing missing
     Given a clean initialized Git project with "<prior integration>" attribution plumbing recorded in its history
     When the consumer runs `givn upgrade`

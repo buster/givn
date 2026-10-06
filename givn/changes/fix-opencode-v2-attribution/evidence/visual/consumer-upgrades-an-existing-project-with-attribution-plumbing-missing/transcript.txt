@@ -1,0 +1,1607 @@
+# Scenario: Consumer upgrades an existing project with attribution plumbing missing
+# Captured terminal transcript: real givn CLI and real OpenCode CLI, assembled from 6 example shard(s).
+# Random temporary-path prefixes are redacted to <TMPDIR>; everything else is raw output.
+
+=== V1 floor (OpenCode 1.18.29) ===
+example: missing
+
+$ givn upgrade
+exit status: 0
+--- givn stdout ---
+  commit attribution: .githooks/commit-msg
+  Git activation: local commit-msg dispatcher installed
+  attribution integration: .opencode/plugins/givn-attribution.js
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced skill: givn-domain-modeling
+  synced skill: givn-dev-principles
+  synced command: /givn-propose
+  synced command: /givn-spec
+  synced command: /givn-design
+  synced command: /givn-tasks
+  synced command: /givn-implement
+  synced command: /givn-review
+  synced command: /givn-archive
+  synced command: /givn-explore
+  synced command: /givn-design-review
+  synced command: /givn-steps
+  synced command: /givn-reverse-engineer
+  synced command: /givn-characterize
+  synced command: /givn-ideation
+  synced command: /grill-me
+  synced command: /grill-with-docs
+  sync: rules: versioned
+  sync: 45 tracked rule(s) in the current revision:
+    - .claude/skills/givn-archive/SKILL.md
+    - .claude/skills/givn-characterize/SKILL.md
+    - .claude/skills/givn-design-review/SKILL.md
+    - .claude/skills/givn-design/SKILL.md
+    - .claude/skills/givn-dev-principles/SKILL.md
+    - .claude/skills/givn-domain-modeling/SKILL.md
+    - .claude/skills/givn-explore/SKILL.md
+    - .claude/skills/givn-ideation/SKILL.md
+    - .claude/skills/givn-implement/SKILL.md
+    - .claude/skills/givn-propose/SKILL.md
+    - .claude/skills/givn-reverse-engineer/SKILL.md
+    - .claude/skills/givn-review/SKILL.md
+    - .claude/skills/givn-spec/SKILL.md
+    - .claude/skills/givn-steps/SKILL.md
+    - .claude/skills/givn-tasks/SKILL.md
+    - .opencode/commands/givn-archive.md
+    - .opencode/commands/givn-characterize.md
+    - .opencode/commands/givn-design-review.md
+    - .opencode/commands/givn-design.md
+    - .opencode/commands/givn-explore.md
+    - .opencode/commands/givn-ideation.md
+    - .opencode/commands/givn-implement.md
+    - .opencode/commands/givn-propose.md
+    - .opencode/commands/givn-reverse-engineer.md
+    - .opencode/commands/givn-review.md
+    - .opencode/commands/givn-spec.md
+    - .opencode/commands/givn-steps.md
+    - .opencode/commands/givn-tasks.md
+    - .opencode/commands/grill-me.md
+    - .opencode/commands/grill-with-docs.md
+    - .opencode/skills/givn-archive/SKILL.md
+    - .opencode/skills/givn-characterize/SKILL.md
+    - .opencode/skills/givn-design-review/SKILL.md
+    - .opencode/skills/givn-design/SKILL.md
+    - .opencode/skills/givn-dev-principles/SKILL.md
+    - .opencode/skills/givn-domain-modeling/SKILL.md
+    - .opencode/skills/givn-explore/SKILL.md
+    - .opencode/skills/givn-ideation/SKILL.md
+    - .opencode/skills/givn-implement/SKILL.md
+    - .opencode/skills/givn-propose/SKILL.md
+    - .opencode/skills/givn-reverse-engineer/SKILL.md
+    - .opencode/skills/givn-review/SKILL.md
+    - .opencode/skills/givn-spec/SKILL.md
+    - .opencode/skills/givn-steps/SKILL.md
+    - .opencode/skills/givn-tasks/SKILL.md
+  sync: 53 reachable revision(s) still contain a rule:
+    - .claude/hooks/givn-attribution.sh: 2 revision(s)
+    - .claude/settings.local.json: 2 revision(s)
+    - .claude/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-tasks/SKILL.md: 1 revision(s)
+    - .githooks/commit-msg: 2 revision(s)
+    - .opencode/commands/givn-archive.md: 1 revision(s)
+    - .opencode/commands/givn-characterize.md: 1 revision(s)
+    - .opencode/commands/givn-design-review.md: 1 revision(s)
+    - .opencode/commands/givn-design.md: 1 revision(s)
+    - .opencode/commands/givn-explore.md: 1 revision(s)
+    - .opencode/commands/givn-ideation.md: 1 revision(s)
+    - .opencode/commands/givn-implement.md: 1 revision(s)
+    - .opencode/commands/givn-propose.md: 1 revision(s)
+    - .opencode/commands/givn-reverse-engineer.md: 1 revision(s)
+    - .opencode/commands/givn-review.md: 1 revision(s)
+    - .opencode/commands/givn-spec.md: 1 revision(s)
+    - .opencode/commands/givn-steps.md: 1 revision(s)
+    - .opencode/commands/givn-tasks.md: 1 revision(s)
+    - .opencode/commands/grill-me.md: 1 revision(s)
+    - .opencode/commands/grill-with-docs.md: 1 revision(s)
+    - .opencode/plugins/givn-attribution.js: 2 revision(s)
+    - .opencode/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-tasks/SKILL.md: 1 revision(s)
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+  upgrade: rules: versioned
+  upgrade: 45 tracked rule(s) in the current revision:
+    - .claude/skills/givn-archive/SKILL.md
+    - .claude/skills/givn-characterize/SKILL.md
+    - .claude/skills/givn-design-review/SKILL.md
+    - .claude/skills/givn-design/SKILL.md
+    - .claude/skills/givn-dev-principles/SKILL.md
+    - .claude/skills/givn-domain-modeling/SKILL.md
+    - .claude/skills/givn-explore/SKILL.md
+    - .claude/skills/givn-ideation/SKILL.md
+    - .claude/skills/givn-implement/SKILL.md
+    - .claude/skills/givn-propose/SKILL.md
+    - .claude/skills/givn-reverse-engineer/SKILL.md
+    - .claude/skills/givn-review/SKILL.md
+    - .claude/skills/givn-spec/SKILL.md
+    - .claude/skills/givn-steps/SKILL.md
+    - .claude/skills/givn-tasks/SKILL.md
+    - .opencode/commands/givn-archive.md
+    - .opencode/commands/givn-characterize.md
+    - .opencode/commands/givn-design-review.md
+    - .opencode/commands/givn-design.md
+    - .opencode/commands/givn-explore.md
+    - .opencode/commands/givn-ideation.md
+    - .opencode/commands/givn-implement.md
+    - .opencode/commands/givn-propose.md
+    - .opencode/commands/givn-reverse-engineer.md
+    - .opencode/commands/givn-review.md
+    - .opencode/commands/givn-spec.md
+    - .opencode/commands/givn-steps.md
+    - .opencode/commands/givn-tasks.md
+    - .opencode/commands/grill-me.md
+    - .opencode/commands/grill-with-docs.md
+    - .opencode/skills/givn-archive/SKILL.md
+    - .opencode/skills/givn-characterize/SKILL.md
+    - .opencode/skills/givn-design-review/SKILL.md
+    - .opencode/skills/givn-design/SKILL.md
+    - .opencode/skills/givn-dev-principles/SKILL.md
+    - .opencode/skills/givn-domain-modeling/SKILL.md
+    - .opencode/skills/givn-explore/SKILL.md
+    - .opencode/skills/givn-ideation/SKILL.md
+    - .opencode/skills/givn-implement/SKILL.md
+    - .opencode/skills/givn-propose/SKILL.md
+    - .opencode/skills/givn-reverse-engineer/SKILL.md
+    - .opencode/skills/givn-review/SKILL.md
+    - .opencode/skills/givn-spec/SKILL.md
+    - .opencode/skills/givn-steps/SKILL.md
+    - .opencode/skills/givn-tasks/SKILL.md
+  upgrade: 53 reachable revision(s) still contain a rule:
+    - .claude/hooks/givn-attribution.sh: 2 revision(s)
+    - .claude/settings.local.json: 2 revision(s)
+    - .claude/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-tasks/SKILL.md: 1 revision(s)
+    - .githooks/commit-msg: 2 revision(s)
+    - .opencode/commands/givn-archive.md: 1 revision(s)
+    - .opencode/commands/givn-characterize.md: 1 revision(s)
+    - .opencode/commands/givn-design-review.md: 1 revision(s)
+    - .opencode/commands/givn-design.md: 1 revision(s)
+    - .opencode/commands/givn-explore.md: 1 revision(s)
+    - .opencode/commands/givn-ideation.md: 1 revision(s)
+    - .opencode/commands/givn-implement.md: 1 revision(s)
+    - .opencode/commands/givn-propose.md: 1 revision(s)
+    - .opencode/commands/givn-reverse-engineer.md: 1 revision(s)
+    - .opencode/commands/givn-review.md: 1 revision(s)
+    - .opencode/commands/givn-spec.md: 1 revision(s)
+    - .opencode/commands/givn-steps.md: 1 revision(s)
+    - .opencode/commands/givn-tasks.md: 1 revision(s)
+    - .opencode/commands/grill-me.md: 1 revision(s)
+    - .opencode/commands/grill-with-docs.md: 1 revision(s)
+    - .opencode/plugins/givn-attribution.js: 2 revision(s)
+    - .opencode/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-tasks/SKILL.md: 1 revision(s)
+  upgrade: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+Refreshed commit attribution plumbing and managed Givn files for 0.8.0 in commit f1f576507ffe7562544d516374aa9cccd87805fb; no migration change was required.
+
+--- givn stderr ---
+
+$ /nix/store/lmbi32dk6x53sw1ya8673l0j7drrh1bp-opencode_v1_floor-1.18.29/bin/opencode run --format json --auto --model givn-fixture/model-a --variant high Run the attribution fixture command.
+exit status: 0
+--- opencode stdout (raw) ---
+{"type":"step_start","timestamp":1791297584805,"sessionID":"ses_eee58044cffeZC1jMkh1oSUs3l","part":{"id":"prt_111a7fe9c001QKxINvJhTswhI5","messageID":"msg_111a7fcc4001wb9oK9VJ3yUz7O","sessionID":"ses_eee58044cffeZC1jMkh1oSUs3l","type":"step-start"}}
+{"type":"tool_use","timestamp":1791297584914,"sessionID":"ses_eee58044cffeZC1jMkh1oSUs3l","part":{"type":"tool","tool":"bash","callID":"fixture-call-22e0cd22","state":{"status":"completed","input":{"command":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs"},"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":null}\n","metadata":{"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":null}\n","exit":0,"truncated":false},"title":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs","time":{"start":1791297584802,"end":1791297584907}},"id":"prt_111a7fe9e001V7dlMF3CQThfCV","sessionID":"ses_eee58044cffeZC1jMkh1oSUs3l","messageID":"msg_111a7fcc4001wb9oK9VJ3yUz7O"}}
+{"type":"step_finish","timestamp":1791297584914,"sessionID":"ses_eee58044cffeZC1jMkh1oSUs3l","part":{"id":"prt_111a7ff0d001a4MruKF7laU9dh","reason":"tool-calls","messageID":"msg_111a7fcc4001wb9oK9VJ3yUz7O","sessionID":"ses_eee58044cffeZC1jMkh1oSUs3l","type":"step-finish","tokens":{"input":0,"output":0,"reasoning":0,"cache":{"write":0,"read":0}},"cost":0}}
+{"type":"step_start","timestamp":1791297584928,"sessionID":"ses_eee58044cffeZC1jMkh1oSUs3l","part":{"id":"prt_111a7ff1a001NatZArJqhWysEy","messageID":"msg_111a7ff10001nj0Ac7umA0zmcP","sessionID":"ses_eee58044cffeZC1jMkh1oSUs3l","type":"step-start"}}
+{"type":"text","timestamp":1791297584928,"sessionID":"ses_eee58044cffeZC1jMkh1oSUs3l","part":{"id":"prt_111a7ff1b0017o5s9xkETamDJg","messageID":"msg_111a7ff10001nj0Ac7umA0zmcP","sessionID":"ses_eee58044cffeZC1jMkh1oSUs3l","type":"text","text":"Attribution fixture completed.","time":{"start":1791297584923,"end":1791297584924}}}
+{"type":"step_finish","timestamp":1791297584928,"sessionID":"ses_eee58044cffeZC1jMkh1oSUs3l","part":{"id":"prt_111a7ff1d001I5oTeZ5nUK3v1h","reason":"stop","messageID":"msg_111a7ff10001nj0Ac7umA0zmcP","sessionID":"ses_eee58044cffeZC1jMkh1oSUs3l","type":"step-finish","tokens":{"input":0,"output":0,"reasoning":0,"cache":{"write":0,"read":0}},"cost":0}}
+
+--- opencode stderr (raw) ---
+
+--- completed shell tool result ---
+GIVN_ATTRIBUTION_FIXTURE_RESULT {"GIVN_ATTRIBUTION_ACTIVE":"1","GIVN_ATTRIBUTION_LLM":"givn-fixture/model-a","GIVN_ATTRIBUTION_REASONING":"high","GIVN_ATTRIBUTION_HARNESS":"opencode","GIT_COMMITTER_NAME":"LLM: givn-fixture/model-a via opencode","OPENCODE_SESSION_ID":null}
+
+--- attribution environment ---
+{
+  "GIT_COMMITTER_NAME": "LLM: givn-fixture/model-a via opencode",
+  "GIVN_ATTRIBUTION_ACTIVE": "1",
+  "GIVN_ATTRIBUTION_HARNESS": "opencode",
+  "GIVN_ATTRIBUTION_LLM": "givn-fixture/model-a",
+  "GIVN_ATTRIBUTION_REASONING": "high"
+}
+
+=== V1 latest (OpenCode 1.18.34) ===
+example: missing
+
+$ givn upgrade
+exit status: 0
+--- givn stdout ---
+  commit attribution: .githooks/commit-msg
+  Git activation: local commit-msg dispatcher installed
+  attribution integration: .opencode/plugins/givn-attribution.js
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced skill: givn-domain-modeling
+  synced skill: givn-dev-principles
+  synced command: /givn-propose
+  synced command: /givn-spec
+  synced command: /givn-design
+  synced command: /givn-tasks
+  synced command: /givn-implement
+  synced command: /givn-review
+  synced command: /givn-archive
+  synced command: /givn-explore
+  synced command: /givn-design-review
+  synced command: /givn-steps
+  synced command: /givn-reverse-engineer
+  synced command: /givn-characterize
+  synced command: /givn-ideation
+  synced command: /grill-me
+  synced command: /grill-with-docs
+  sync: rules: versioned
+  sync: 45 tracked rule(s) in the current revision:
+    - .claude/skills/givn-archive/SKILL.md
+    - .claude/skills/givn-characterize/SKILL.md
+    - .claude/skills/givn-design-review/SKILL.md
+    - .claude/skills/givn-design/SKILL.md
+    - .claude/skills/givn-dev-principles/SKILL.md
+    - .claude/skills/givn-domain-modeling/SKILL.md
+    - .claude/skills/givn-explore/SKILL.md
+    - .claude/skills/givn-ideation/SKILL.md
+    - .claude/skills/givn-implement/SKILL.md
+    - .claude/skills/givn-propose/SKILL.md
+    - .claude/skills/givn-reverse-engineer/SKILL.md
+    - .claude/skills/givn-review/SKILL.md
+    - .claude/skills/givn-spec/SKILL.md
+    - .claude/skills/givn-steps/SKILL.md
+    - .claude/skills/givn-tasks/SKILL.md
+    - .opencode/commands/givn-archive.md
+    - .opencode/commands/givn-characterize.md
+    - .opencode/commands/givn-design-review.md
+    - .opencode/commands/givn-design.md
+    - .opencode/commands/givn-explore.md
+    - .opencode/commands/givn-ideation.md
+    - .opencode/commands/givn-implement.md
+    - .opencode/commands/givn-propose.md
+    - .opencode/commands/givn-reverse-engineer.md
+    - .opencode/commands/givn-review.md
+    - .opencode/commands/givn-spec.md
+    - .opencode/commands/givn-steps.md
+    - .opencode/commands/givn-tasks.md
+    - .opencode/commands/grill-me.md
+    - .opencode/commands/grill-with-docs.md
+    - .opencode/skills/givn-archive/SKILL.md
+    - .opencode/skills/givn-characterize/SKILL.md
+    - .opencode/skills/givn-design-review/SKILL.md
+    - .opencode/skills/givn-design/SKILL.md
+    - .opencode/skills/givn-dev-principles/SKILL.md
+    - .opencode/skills/givn-domain-modeling/SKILL.md
+    - .opencode/skills/givn-explore/SKILL.md
+    - .opencode/skills/givn-ideation/SKILL.md
+    - .opencode/skills/givn-implement/SKILL.md
+    - .opencode/skills/givn-propose/SKILL.md
+    - .opencode/skills/givn-reverse-engineer/SKILL.md
+    - .opencode/skills/givn-review/SKILL.md
+    - .opencode/skills/givn-spec/SKILL.md
+    - .opencode/skills/givn-steps/SKILL.md
+    - .opencode/skills/givn-tasks/SKILL.md
+  sync: 53 reachable revision(s) still contain a rule:
+    - .claude/hooks/givn-attribution.sh: 2 revision(s)
+    - .claude/settings.local.json: 2 revision(s)
+    - .claude/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-tasks/SKILL.md: 1 revision(s)
+    - .githooks/commit-msg: 2 revision(s)
+    - .opencode/commands/givn-archive.md: 1 revision(s)
+    - .opencode/commands/givn-characterize.md: 1 revision(s)
+    - .opencode/commands/givn-design-review.md: 1 revision(s)
+    - .opencode/commands/givn-design.md: 1 revision(s)
+    - .opencode/commands/givn-explore.md: 1 revision(s)
+    - .opencode/commands/givn-ideation.md: 1 revision(s)
+    - .opencode/commands/givn-implement.md: 1 revision(s)
+    - .opencode/commands/givn-propose.md: 1 revision(s)
+    - .opencode/commands/givn-reverse-engineer.md: 1 revision(s)
+    - .opencode/commands/givn-review.md: 1 revision(s)
+    - .opencode/commands/givn-spec.md: 1 revision(s)
+    - .opencode/commands/givn-steps.md: 1 revision(s)
+    - .opencode/commands/givn-tasks.md: 1 revision(s)
+    - .opencode/commands/grill-me.md: 1 revision(s)
+    - .opencode/commands/grill-with-docs.md: 1 revision(s)
+    - .opencode/plugins/givn-attribution.js: 2 revision(s)
+    - .opencode/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-tasks/SKILL.md: 1 revision(s)
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+  upgrade: rules: versioned
+  upgrade: 45 tracked rule(s) in the current revision:
+    - .claude/skills/givn-archive/SKILL.md
+    - .claude/skills/givn-characterize/SKILL.md
+    - .claude/skills/givn-design-review/SKILL.md
+    - .claude/skills/givn-design/SKILL.md
+    - .claude/skills/givn-dev-principles/SKILL.md
+    - .claude/skills/givn-domain-modeling/SKILL.md
+    - .claude/skills/givn-explore/SKILL.md
+    - .claude/skills/givn-ideation/SKILL.md
+    - .claude/skills/givn-implement/SKILL.md
+    - .claude/skills/givn-propose/SKILL.md
+    - .claude/skills/givn-reverse-engineer/SKILL.md
+    - .claude/skills/givn-review/SKILL.md
+    - .claude/skills/givn-spec/SKILL.md
+    - .claude/skills/givn-steps/SKILL.md
+    - .claude/skills/givn-tasks/SKILL.md
+    - .opencode/commands/givn-archive.md
+    - .opencode/commands/givn-characterize.md
+    - .opencode/commands/givn-design-review.md
+    - .opencode/commands/givn-design.md
+    - .opencode/commands/givn-explore.md
+    - .opencode/commands/givn-ideation.md
+    - .opencode/commands/givn-implement.md
+    - .opencode/commands/givn-propose.md
+    - .opencode/commands/givn-reverse-engineer.md
+    - .opencode/commands/givn-review.md
+    - .opencode/commands/givn-spec.md
+    - .opencode/commands/givn-steps.md
+    - .opencode/commands/givn-tasks.md
+    - .opencode/commands/grill-me.md
+    - .opencode/commands/grill-with-docs.md
+    - .opencode/skills/givn-archive/SKILL.md
+    - .opencode/skills/givn-characterize/SKILL.md
+    - .opencode/skills/givn-design-review/SKILL.md
+    - .opencode/skills/givn-design/SKILL.md
+    - .opencode/skills/givn-dev-principles/SKILL.md
+    - .opencode/skills/givn-domain-modeling/SKILL.md
+    - .opencode/skills/givn-explore/SKILL.md
+    - .opencode/skills/givn-ideation/SKILL.md
+    - .opencode/skills/givn-implement/SKILL.md
+    - .opencode/skills/givn-propose/SKILL.md
+    - .opencode/skills/givn-reverse-engineer/SKILL.md
+    - .opencode/skills/givn-review/SKILL.md
+    - .opencode/skills/givn-spec/SKILL.md
+    - .opencode/skills/givn-steps/SKILL.md
+    - .opencode/skills/givn-tasks/SKILL.md
+  upgrade: 53 reachable revision(s) still contain a rule:
+    - .claude/hooks/givn-attribution.sh: 2 revision(s)
+    - .claude/settings.local.json: 2 revision(s)
+    - .claude/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-tasks/SKILL.md: 1 revision(s)
+    - .githooks/commit-msg: 2 revision(s)
+    - .opencode/commands/givn-archive.md: 1 revision(s)
+    - .opencode/commands/givn-characterize.md: 1 revision(s)
+    - .opencode/commands/givn-design-review.md: 1 revision(s)
+    - .opencode/commands/givn-design.md: 1 revision(s)
+    - .opencode/commands/givn-explore.md: 1 revision(s)
+    - .opencode/commands/givn-ideation.md: 1 revision(s)
+    - .opencode/commands/givn-implement.md: 1 revision(s)
+    - .opencode/commands/givn-propose.md: 1 revision(s)
+    - .opencode/commands/givn-reverse-engineer.md: 1 revision(s)
+    - .opencode/commands/givn-review.md: 1 revision(s)
+    - .opencode/commands/givn-spec.md: 1 revision(s)
+    - .opencode/commands/givn-steps.md: 1 revision(s)
+    - .opencode/commands/givn-tasks.md: 1 revision(s)
+    - .opencode/commands/grill-me.md: 1 revision(s)
+    - .opencode/commands/grill-with-docs.md: 1 revision(s)
+    - .opencode/plugins/givn-attribution.js: 2 revision(s)
+    - .opencode/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-tasks/SKILL.md: 1 revision(s)
+  upgrade: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+Refreshed commit attribution plumbing and managed Givn files for 0.8.0 in commit b292c393a4330444a39ad97cc6668119b976ff22; no migration change was required.
+
+--- givn stderr ---
+
+$ /nix/store/52gifl7n6nzyn3yxy7dsff4d30gz9crx-opencode_v1_latest-1.18.34/bin/opencode run --format json --auto --model givn-fixture/model-a --variant high Run the attribution fixture command.
+exit status: 0
+--- opencode stdout (raw) ---
+{"type":"step_start","timestamp":1791297595295,"sessionID":"ses_eee57dbcdffeSpxd0o9YiDCalm","part":{"id":"prt_111a827960012qhPtA1vQTVd4C","messageID":"msg_111a82566001c5d3N3SevCm7XM","sessionID":"ses_eee57dbcdffeSpxd0o9YiDCalm","type":"step-start"}}
+{"type":"tool_use","timestamp":1791297595393,"sessionID":"ses_eee57dbcdffeSpxd0o9YiDCalm","part":{"type":"tool","tool":"bash","callID":"fixture-call-c37016f8","state":{"status":"completed","input":{"command":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs"},"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":null}\n","metadata":{"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":null}\n","exit":0,"truncated":false},"title":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs","time":{"start":1791297595292,"end":1791297595384}},"id":"prt_111a82798001cYJmX2H5amEVne","sessionID":"ses_eee57dbcdffeSpxd0o9YiDCalm","messageID":"msg_111a82566001c5d3N3SevCm7XM"}}
+{"type":"step_finish","timestamp":1791297595393,"sessionID":"ses_eee57dbcdffeSpxd0o9YiDCalm","part":{"id":"prt_111a827fa0018T7tj69odr1L07","reason":"tool-calls","messageID":"msg_111a82566001c5d3N3SevCm7XM","sessionID":"ses_eee57dbcdffeSpxd0o9YiDCalm","type":"step-finish","tokens":{"input":0,"output":0,"reasoning":0,"cache":{"write":0,"read":0}},"cost":0}}
+{"type":"step_start","timestamp":1791297595409,"sessionID":"ses_eee57dbcdffeSpxd0o9YiDCalm","part":{"id":"prt_111a82809001b1Q6ubwOKzadFQ","messageID":"msg_111a827ff001vYWMlJ7Wv2uSqs","sessionID":"ses_eee57dbcdffeSpxd0o9YiDCalm","type":"step-start"}}
+{"type":"text","timestamp":1791297595409,"sessionID":"ses_eee57dbcdffeSpxd0o9YiDCalm","part":{"id":"prt_111a8280a001RybEexToF8f7dW","messageID":"msg_111a827ff001vYWMlJ7Wv2uSqs","sessionID":"ses_eee57dbcdffeSpxd0o9YiDCalm","type":"text","text":"Attribution fixture completed.","time":{"start":1791297595402,"end":1791297595403}}}
+{"type":"step_finish","timestamp":1791297595409,"sessionID":"ses_eee57dbcdffeSpxd0o9YiDCalm","part":{"id":"prt_111a8280c001vPlD1BMTVT3PXi","reason":"stop","messageID":"msg_111a827ff001vYWMlJ7Wv2uSqs","sessionID":"ses_eee57dbcdffeSpxd0o9YiDCalm","type":"step-finish","tokens":{"input":0,"output":0,"reasoning":0,"cache":{"write":0,"read":0}},"cost":0}}
+
+--- opencode stderr (raw) ---
+
+--- completed shell tool result ---
+GIVN_ATTRIBUTION_FIXTURE_RESULT {"GIVN_ATTRIBUTION_ACTIVE":"1","GIVN_ATTRIBUTION_LLM":"givn-fixture/model-a","GIVN_ATTRIBUTION_REASONING":"high","GIVN_ATTRIBUTION_HARNESS":"opencode","GIT_COMMITTER_NAME":"LLM: givn-fixture/model-a via opencode","OPENCODE_SESSION_ID":null}
+
+--- attribution environment ---
+{
+  "GIT_COMMITTER_NAME": "LLM: givn-fixture/model-a via opencode",
+  "GIVN_ATTRIBUTION_ACTIVE": "1",
+  "GIVN_ATTRIBUTION_HARNESS": "opencode",
+  "GIVN_ATTRIBUTION_LLM": "givn-fixture/model-a",
+  "GIVN_ATTRIBUTION_REASONING": "high"
+}
+
+=== V2 latest (OpenCode opencode v2.0.22) ===
+example: missing
+
+$ givn upgrade
+exit status: 0
+--- givn stdout ---
+  commit attribution: .githooks/commit-msg
+  Git activation: local commit-msg dispatcher installed
+  attribution integration: .opencode/plugins/givn-attribution.js
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced skill: givn-domain-modeling
+  synced skill: givn-dev-principles
+  synced command: /givn-propose
+  synced command: /givn-spec
+  synced command: /givn-design
+  synced command: /givn-tasks
+  synced command: /givn-implement
+  synced command: /givn-review
+  synced command: /givn-archive
+  synced command: /givn-explore
+  synced command: /givn-design-review
+  synced command: /givn-steps
+  synced command: /givn-reverse-engineer
+  synced command: /givn-characterize
+  synced command: /givn-ideation
+  synced command: /grill-me
+  synced command: /grill-with-docs
+  sync: rules: versioned
+  sync: 45 tracked rule(s) in the current revision:
+    - .claude/skills/givn-archive/SKILL.md
+    - .claude/skills/givn-characterize/SKILL.md
+    - .claude/skills/givn-design-review/SKILL.md
+    - .claude/skills/givn-design/SKILL.md
+    - .claude/skills/givn-dev-principles/SKILL.md
+    - .claude/skills/givn-domain-modeling/SKILL.md
+    - .claude/skills/givn-explore/SKILL.md
+    - .claude/skills/givn-ideation/SKILL.md
+    - .claude/skills/givn-implement/SKILL.md
+    - .claude/skills/givn-propose/SKILL.md
+    - .claude/skills/givn-reverse-engineer/SKILL.md
+    - .claude/skills/givn-review/SKILL.md
+    - .claude/skills/givn-spec/SKILL.md
+    - .claude/skills/givn-steps/SKILL.md
+    - .claude/skills/givn-tasks/SKILL.md
+    - .opencode/commands/givn-archive.md
+    - .opencode/commands/givn-characterize.md
+    - .opencode/commands/givn-design-review.md
+    - .opencode/commands/givn-design.md
+    - .opencode/commands/givn-explore.md
+    - .opencode/commands/givn-ideation.md
+    - .opencode/commands/givn-implement.md
+    - .opencode/commands/givn-propose.md
+    - .opencode/commands/givn-reverse-engineer.md
+    - .opencode/commands/givn-review.md
+    - .opencode/commands/givn-spec.md
+    - .opencode/commands/givn-steps.md
+    - .opencode/commands/givn-tasks.md
+    - .opencode/commands/grill-me.md
+    - .opencode/commands/grill-with-docs.md
+    - .opencode/skills/givn-archive/SKILL.md
+    - .opencode/skills/givn-characterize/SKILL.md
+    - .opencode/skills/givn-design-review/SKILL.md
+    - .opencode/skills/givn-design/SKILL.md
+    - .opencode/skills/givn-dev-principles/SKILL.md
+    - .opencode/skills/givn-domain-modeling/SKILL.md
+    - .opencode/skills/givn-explore/SKILL.md
+    - .opencode/skills/givn-ideation/SKILL.md
+    - .opencode/skills/givn-implement/SKILL.md
+    - .opencode/skills/givn-propose/SKILL.md
+    - .opencode/skills/givn-reverse-engineer/SKILL.md
+    - .opencode/skills/givn-review/SKILL.md
+    - .opencode/skills/givn-spec/SKILL.md
+    - .opencode/skills/givn-steps/SKILL.md
+    - .opencode/skills/givn-tasks/SKILL.md
+  sync: 53 reachable revision(s) still contain a rule:
+    - .claude/hooks/givn-attribution.sh: 2 revision(s)
+    - .claude/settings.local.json: 2 revision(s)
+    - .claude/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-tasks/SKILL.md: 1 revision(s)
+    - .githooks/commit-msg: 2 revision(s)
+    - .opencode/commands/givn-archive.md: 1 revision(s)
+    - .opencode/commands/givn-characterize.md: 1 revision(s)
+    - .opencode/commands/givn-design-review.md: 1 revision(s)
+    - .opencode/commands/givn-design.md: 1 revision(s)
+    - .opencode/commands/givn-explore.md: 1 revision(s)
+    - .opencode/commands/givn-ideation.md: 1 revision(s)
+    - .opencode/commands/givn-implement.md: 1 revision(s)
+    - .opencode/commands/givn-propose.md: 1 revision(s)
+    - .opencode/commands/givn-reverse-engineer.md: 1 revision(s)
+    - .opencode/commands/givn-review.md: 1 revision(s)
+    - .opencode/commands/givn-spec.md: 1 revision(s)
+    - .opencode/commands/givn-steps.md: 1 revision(s)
+    - .opencode/commands/givn-tasks.md: 1 revision(s)
+    - .opencode/commands/grill-me.md: 1 revision(s)
+    - .opencode/commands/grill-with-docs.md: 1 revision(s)
+    - .opencode/plugins/givn-attribution.js: 2 revision(s)
+    - .opencode/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-tasks/SKILL.md: 1 revision(s)
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+  upgrade: rules: versioned
+  upgrade: 45 tracked rule(s) in the current revision:
+    - .claude/skills/givn-archive/SKILL.md
+    - .claude/skills/givn-characterize/SKILL.md
+    - .claude/skills/givn-design-review/SKILL.md
+    - .claude/skills/givn-design/SKILL.md
+    - .claude/skills/givn-dev-principles/SKILL.md
+    - .claude/skills/givn-domain-modeling/SKILL.md
+    - .claude/skills/givn-explore/SKILL.md
+    - .claude/skills/givn-ideation/SKILL.md
+    - .claude/skills/givn-implement/SKILL.md
+    - .claude/skills/givn-propose/SKILL.md
+    - .claude/skills/givn-reverse-engineer/SKILL.md
+    - .claude/skills/givn-review/SKILL.md
+    - .claude/skills/givn-spec/SKILL.md
+    - .claude/skills/givn-steps/SKILL.md
+    - .claude/skills/givn-tasks/SKILL.md
+    - .opencode/commands/givn-archive.md
+    - .opencode/commands/givn-characterize.md
+    - .opencode/commands/givn-design-review.md
+    - .opencode/commands/givn-design.md
+    - .opencode/commands/givn-explore.md
+    - .opencode/commands/givn-ideation.md
+    - .opencode/commands/givn-implement.md
+    - .opencode/commands/givn-propose.md
+    - .opencode/commands/givn-reverse-engineer.md
+    - .opencode/commands/givn-review.md
+    - .opencode/commands/givn-spec.md
+    - .opencode/commands/givn-steps.md
+    - .opencode/commands/givn-tasks.md
+    - .opencode/commands/grill-me.md
+    - .opencode/commands/grill-with-docs.md
+    - .opencode/skills/givn-archive/SKILL.md
+    - .opencode/skills/givn-characterize/SKILL.md
+    - .opencode/skills/givn-design-review/SKILL.md
+    - .opencode/skills/givn-design/SKILL.md
+    - .opencode/skills/givn-dev-principles/SKILL.md
+    - .opencode/skills/givn-domain-modeling/SKILL.md
+    - .opencode/skills/givn-explore/SKILL.md
+    - .opencode/skills/givn-ideation/SKILL.md
+    - .opencode/skills/givn-implement/SKILL.md
+    - .opencode/skills/givn-propose/SKILL.md
+    - .opencode/skills/givn-reverse-engineer/SKILL.md
+    - .opencode/skills/givn-review/SKILL.md
+    - .opencode/skills/givn-spec/SKILL.md
+    - .opencode/skills/givn-steps/SKILL.md
+    - .opencode/skills/givn-tasks/SKILL.md
+  upgrade: 53 reachable revision(s) still contain a rule:
+    - .claude/hooks/givn-attribution.sh: 2 revision(s)
+    - .claude/settings.local.json: 2 revision(s)
+    - .claude/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-tasks/SKILL.md: 1 revision(s)
+    - .githooks/commit-msg: 2 revision(s)
+    - .opencode/commands/givn-archive.md: 1 revision(s)
+    - .opencode/commands/givn-characterize.md: 1 revision(s)
+    - .opencode/commands/givn-design-review.md: 1 revision(s)
+    - .opencode/commands/givn-design.md: 1 revision(s)
+    - .opencode/commands/givn-explore.md: 1 revision(s)
+    - .opencode/commands/givn-ideation.md: 1 revision(s)
+    - .opencode/commands/givn-implement.md: 1 revision(s)
+    - .opencode/commands/givn-propose.md: 1 revision(s)
+    - .opencode/commands/givn-reverse-engineer.md: 1 revision(s)
+    - .opencode/commands/givn-review.md: 1 revision(s)
+    - .opencode/commands/givn-spec.md: 1 revision(s)
+    - .opencode/commands/givn-steps.md: 1 revision(s)
+    - .opencode/commands/givn-tasks.md: 1 revision(s)
+    - .opencode/commands/grill-me.md: 1 revision(s)
+    - .opencode/commands/grill-with-docs.md: 1 revision(s)
+    - .opencode/plugins/givn-attribution.js: 2 revision(s)
+    - .opencode/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-tasks/SKILL.md: 1 revision(s)
+  upgrade: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+Refreshed commit attribution plumbing and managed Givn files for 0.8.0 in commit c35b6861e65f06598585bf55ba51079eaf292db2; no migration change was required.
+
+--- givn stderr ---
+
+$ /nix/store/bdml7ssb6rx2cfydr1sl9abbp1pq2djv-opencode_v2_latest-2.0.22/bin/opencode run --server http://127.0.0.1:55500 --format json --auto --model givn-fixture/model-a#high Run the attribution fixture command.
+exit status: 0
+--- opencode stdout (raw) ---
+{"type":"step_start","timestamp":1791297604695,"sessionID":"ses_eee57b428ffe5053q7hk5ONqOv","part":{"id":"prt_111a84c57001d29zZfQ5u8nEBL","sessionID":"ses_eee57b428ffe5053q7hk5ONqOv","messageID":"msg_111a84c460013bRZQH3ovcNDBr","type":"step-start"}}
+{"type":"tool_use","timestamp":1791297604778,"sessionID":"ses_eee57b428ffe5053q7hk5ONqOv","part":{"partID":"prt_111a84c58001zgUVJR7QTclhBW","sessionID":"ses_eee57b428ffe5053q7hk5ONqOv","messageID":"msg_111a84c460013bRZQH3ovcNDBr","type":"tool","id":"fixture-call-61390a06","tool":"shell","state":{"status":"completed","input":{"command":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs"},"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":\"ses_eee57b428ffe5053q7hk5ONqOv\"}\n","title":"shell","metadata":{"metadata":{"status":"completed","truncated":false,"exit":0},"content":[{"type":"text","text":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":\"ses_eee57b428ffe5053q7hk5ONqOv\"}\n"}],"providerCall":{"executed":false},"providerResult":{"executed":false},"rawInput":"{\"command\":\"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs\"}"},"time":{"start":1791297604696,"end":1791297604778}}}}
+{"type":"step_finish","timestamp":1791297604779,"sessionID":"ses_eee57b428ffe5053q7hk5ONqOv","part":{"id":"prt_111a84cab0017PmGJe0lweXBfX","sessionID":"ses_eee57b428ffe5053q7hk5ONqOv","messageID":"msg_111a84c460013bRZQH3ovcNDBr","type":"step-finish","reason":"tool-calls","cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0,"write":0}}}}
+{"type":"text","timestamp":1791297604799,"sessionID":"ses_eee57b428ffe5053q7hk5ONqOv","part":{"id":"prt_111a84cb1001Pwp0D6K34CBInb_text-0","sessionID":"ses_eee57b428ffe5053q7hk5ONqOv","messageID":"msg_111a84cb1001Pwp0D6K34CBInb","type":"text","text":"Attribution fixture completed.","time":{"start":1791297604791,"end":1791297604799}}}
+
+--- opencode stderr (raw) ---
+
+--- completed shell tool result ---
+GIVN_ATTRIBUTION_FIXTURE_RESULT {"GIVN_ATTRIBUTION_ACTIVE":"1","GIVN_ATTRIBUTION_LLM":"givn-fixture/model-a","GIVN_ATTRIBUTION_REASONING":"high","GIVN_ATTRIBUTION_HARNESS":"opencode","GIT_COMMITTER_NAME":"LLM: givn-fixture/model-a via opencode","OPENCODE_SESSION_ID":"ses_eee57b428ffe5053q7hk5ONqOv"}
+
+--- attribution environment ---
+{
+  "GIT_COMMITTER_NAME": "LLM: givn-fixture/model-a via opencode",
+  "GIVN_ATTRIBUTION_ACTIVE": "1",
+  "GIVN_ATTRIBUTION_HARNESS": "opencode",
+  "GIVN_ATTRIBUTION_LLM": "givn-fixture/model-a",
+  "GIVN_ATTRIBUTION_REASONING": "high"
+}
+
+=== V1 floor (OpenCode 1.18.29) ===
+example: v1-only
+
+$ givn upgrade
+exit status: 0
+--- givn stdout ---
+  commit attribution: .githooks/commit-msg
+  Git activation: local commit-msg dispatcher installed
+  attribution integration: .opencode/plugins/givn-attribution.js
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced skill: givn-domain-modeling
+  synced skill: givn-dev-principles
+  synced command: /givn-propose
+  synced command: /givn-spec
+  synced command: /givn-design
+  synced command: /givn-tasks
+  synced command: /givn-implement
+  synced command: /givn-review
+  synced command: /givn-archive
+  synced command: /givn-explore
+  synced command: /givn-design-review
+  synced command: /givn-steps
+  synced command: /givn-reverse-engineer
+  synced command: /givn-characterize
+  synced command: /givn-ideation
+  synced command: /grill-me
+  synced command: /grill-with-docs
+  sync: rules: versioned
+  sync: 49 tracked rule(s) in the current revision:
+    - .claude/hooks/givn-attribution.sh
+    - .claude/settings.local.json
+    - .claude/skills/givn-archive/SKILL.md
+    - .claude/skills/givn-characterize/SKILL.md
+    - .claude/skills/givn-design-review/SKILL.md
+    - .claude/skills/givn-design/SKILL.md
+    - .claude/skills/givn-dev-principles/SKILL.md
+    - .claude/skills/givn-domain-modeling/SKILL.md
+    - .claude/skills/givn-explore/SKILL.md
+    - .claude/skills/givn-ideation/SKILL.md
+    - .claude/skills/givn-implement/SKILL.md
+    - .claude/skills/givn-propose/SKILL.md
+    - .claude/skills/givn-reverse-engineer/SKILL.md
+    - .claude/skills/givn-review/SKILL.md
+    - .claude/skills/givn-spec/SKILL.md
+    - .claude/skills/givn-steps/SKILL.md
+    - .claude/skills/givn-tasks/SKILL.md
+    - .githooks/commit-msg
+    - .opencode/commands/givn-archive.md
+    - .opencode/commands/givn-characterize.md
+    - .opencode/commands/givn-design-review.md
+    - .opencode/commands/givn-design.md
+    - .opencode/commands/givn-explore.md
+    - .opencode/commands/givn-ideation.md
+    - .opencode/commands/givn-implement.md
+    - .opencode/commands/givn-propose.md
+    - .opencode/commands/givn-reverse-engineer.md
+    - .opencode/commands/givn-review.md
+    - .opencode/commands/givn-spec.md
+    - .opencode/commands/givn-steps.md
+    - .opencode/commands/givn-tasks.md
+    - .opencode/commands/grill-me.md
+    - .opencode/commands/grill-with-docs.md
+    - .opencode/plugins/givn-attribution.js
+    - .opencode/skills/givn-archive/SKILL.md
+    - .opencode/skills/givn-characterize/SKILL.md
+    - .opencode/skills/givn-design-review/SKILL.md
+    - .opencode/skills/givn-design/SKILL.md
+    - .opencode/skills/givn-dev-principles/SKILL.md
+    - .opencode/skills/givn-domain-modeling/SKILL.md
+    - .opencode/skills/givn-explore/SKILL.md
+    - .opencode/skills/givn-ideation/SKILL.md
+    - .opencode/skills/givn-implement/SKILL.md
+    - .opencode/skills/givn-propose/SKILL.md
+    - .opencode/skills/givn-reverse-engineer/SKILL.md
+    - .opencode/skills/givn-review/SKILL.md
+    - .opencode/skills/givn-spec/SKILL.md
+    - .opencode/skills/givn-steps/SKILL.md
+    - .opencode/skills/givn-tasks/SKILL.md
+  sync: 50 reachable revision(s) still contain a rule:
+    - .claude/hooks/givn-attribution.sh: 1 revision(s)
+    - .claude/settings.local.json: 1 revision(s)
+    - .claude/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-tasks/SKILL.md: 1 revision(s)
+    - .githooks/commit-msg: 1 revision(s)
+    - .opencode/commands/givn-archive.md: 1 revision(s)
+    - .opencode/commands/givn-characterize.md: 1 revision(s)
+    - .opencode/commands/givn-design-review.md: 1 revision(s)
+    - .opencode/commands/givn-design.md: 1 revision(s)
+    - .opencode/commands/givn-explore.md: 1 revision(s)
+    - .opencode/commands/givn-ideation.md: 1 revision(s)
+    - .opencode/commands/givn-implement.md: 1 revision(s)
+    - .opencode/commands/givn-propose.md: 1 revision(s)
+    - .opencode/commands/givn-reverse-engineer.md: 1 revision(s)
+    - .opencode/commands/givn-review.md: 1 revision(s)
+    - .opencode/commands/givn-spec.md: 1 revision(s)
+    - .opencode/commands/givn-steps.md: 1 revision(s)
+    - .opencode/commands/givn-tasks.md: 1 revision(s)
+    - .opencode/commands/grill-me.md: 1 revision(s)
+    - .opencode/commands/grill-with-docs.md: 1 revision(s)
+    - .opencode/plugins/givn-attribution.js: 2 revision(s)
+    - .opencode/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-tasks/SKILL.md: 1 revision(s)
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+  upgrade: rules: versioned
+  upgrade: 49 tracked rule(s) in the current revision:
+    - .claude/hooks/givn-attribution.sh
+    - .claude/settings.local.json
+    - .claude/skills/givn-archive/SKILL.md
+    - .claude/skills/givn-characterize/SKILL.md
+    - .claude/skills/givn-design-review/SKILL.md
+    - .claude/skills/givn-design/SKILL.md
+    - .claude/skills/givn-dev-principles/SKILL.md
+    - .claude/skills/givn-domain-modeling/SKILL.md
+    - .claude/skills/givn-explore/SKILL.md
+    - .claude/skills/givn-ideation/SKILL.md
+    - .claude/skills/givn-implement/SKILL.md
+    - .claude/skills/givn-propose/SKILL.md
+    - .claude/skills/givn-reverse-engineer/SKILL.md
+    - .claude/skills/givn-review/SKILL.md
+    - .claude/skills/givn-spec/SKILL.md
+    - .claude/skills/givn-steps/SKILL.md
+    - .claude/skills/givn-tasks/SKILL.md
+    - .githooks/commit-msg
+    - .opencode/commands/givn-archive.md
+    - .opencode/commands/givn-characterize.md
+    - .opencode/commands/givn-design-review.md
+    - .opencode/commands/givn-design.md
+    - .opencode/commands/givn-explore.md
+    - .opencode/commands/givn-ideation.md
+    - .opencode/commands/givn-implement.md
+    - .opencode/commands/givn-propose.md
+    - .opencode/commands/givn-reverse-engineer.md
+    - .opencode/commands/givn-review.md
+    - .opencode/commands/givn-spec.md
+    - .opencode/commands/givn-steps.md
+    - .opencode/commands/givn-tasks.md
+    - .opencode/commands/grill-me.md
+    - .opencode/commands/grill-with-docs.md
+    - .opencode/plugins/givn-attribution.js
+    - .opencode/skills/givn-archive/SKILL.md
+    - .opencode/skills/givn-characterize/SKILL.md
+    - .opencode/skills/givn-design-review/SKILL.md
+    - .opencode/skills/givn-design/SKILL.md
+    - .opencode/skills/givn-dev-principles/SKILL.md
+    - .opencode/skills/givn-domain-modeling/SKILL.md
+    - .opencode/skills/givn-explore/SKILL.md
+    - .opencode/skills/givn-ideation/SKILL.md
+    - .opencode/skills/givn-implement/SKILL.md
+    - .opencode/skills/givn-propose/SKILL.md
+    - .opencode/skills/givn-reverse-engineer/SKILL.md
+    - .opencode/skills/givn-review/SKILL.md
+    - .opencode/skills/givn-spec/SKILL.md
+    - .opencode/skills/givn-steps/SKILL.md
+    - .opencode/skills/givn-tasks/SKILL.md
+  upgrade: 50 reachable revision(s) still contain a rule:
+    - .claude/hooks/givn-attribution.sh: 1 revision(s)
+    - .claude/settings.local.json: 1 revision(s)
+    - .claude/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-tasks/SKILL.md: 1 revision(s)
+    - .githooks/commit-msg: 1 revision(s)
+    - .opencode/commands/givn-archive.md: 1 revision(s)
+    - .opencode/commands/givn-characterize.md: 1 revision(s)
+    - .opencode/commands/givn-design-review.md: 1 revision(s)
+    - .opencode/commands/givn-design.md: 1 revision(s)
+    - .opencode/commands/givn-explore.md: 1 revision(s)
+    - .opencode/commands/givn-ideation.md: 1 revision(s)
+    - .opencode/commands/givn-implement.md: 1 revision(s)
+    - .opencode/commands/givn-propose.md: 1 revision(s)
+    - .opencode/commands/givn-reverse-engineer.md: 1 revision(s)
+    - .opencode/commands/givn-review.md: 1 revision(s)
+    - .opencode/commands/givn-spec.md: 1 revision(s)
+    - .opencode/commands/givn-steps.md: 1 revision(s)
+    - .opencode/commands/givn-tasks.md: 1 revision(s)
+    - .opencode/commands/grill-me.md: 1 revision(s)
+    - .opencode/commands/grill-with-docs.md: 1 revision(s)
+    - .opencode/plugins/givn-attribution.js: 2 revision(s)
+    - .opencode/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-tasks/SKILL.md: 1 revision(s)
+  upgrade: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+Refreshed commit attribution plumbing and managed Givn files for 0.8.0 in commit c2fc5b5136978041ac05eb242e38220371cb152d; no migration change was required.
+
+--- givn stderr ---
+
+$ /nix/store/lmbi32dk6x53sw1ya8673l0j7drrh1bp-opencode_v1_floor-1.18.29/bin/opencode run --format json --auto --model givn-fixture/model-a --variant high Run the attribution fixture command.
+exit status: 0
+--- opencode stdout (raw) ---
+{"type":"step_start","timestamp":1791297615115,"sessionID":"ses_eee578e16ffeDunvdyDI5vIwlD","part":{"id":"prt_111a87502001SVjawiuXz5rfnx","messageID":"msg_111a87307001LHOAnWSCxpa2I6","sessionID":"ses_eee578e16ffeDunvdyDI5vIwlD","type":"step-start"}}
+{"type":"tool_use","timestamp":1791297615220,"sessionID":"ses_eee578e16ffeDunvdyDI5vIwlD","part":{"type":"tool","tool":"bash","callID":"fixture-call-c8c7b936","state":{"status":"completed","input":{"command":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs"},"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":null}\n","metadata":{"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":null}\n","exit":0,"truncated":false},"title":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs","time":{"start":1791297615111,"end":1791297615212}},"id":"prt_111a87503001DdapTEcB39ie50","sessionID":"ses_eee578e16ffeDunvdyDI5vIwlD","messageID":"msg_111a87307001LHOAnWSCxpa2I6"}}
+{"type":"step_finish","timestamp":1791297615220,"sessionID":"ses_eee578e16ffeDunvdyDI5vIwlD","part":{"id":"prt_111a8756e001PLbmGdku5gAhI6","reason":"tool-calls","messageID":"msg_111a87307001LHOAnWSCxpa2I6","sessionID":"ses_eee578e16ffeDunvdyDI5vIwlD","type":"step-finish","tokens":{"input":0,"output":0,"reasoning":0,"cache":{"write":0,"read":0}},"cost":0}}
+{"type":"step_start","timestamp":1791297615250,"sessionID":"ses_eee578e16ffeDunvdyDI5vIwlD","part":{"id":"prt_111a875840013qG6QysV7Wackx","messageID":"msg_111a87571001JRawFijoADTo8F","sessionID":"ses_eee578e16ffeDunvdyDI5vIwlD","type":"step-start"}}
+{"type":"text","timestamp":1791297615250,"sessionID":"ses_eee578e16ffeDunvdyDI5vIwlD","part":{"id":"prt_111a87586001mCGywqmWAmNXm0","messageID":"msg_111a87571001JRawFijoADTo8F","sessionID":"ses_eee578e16ffeDunvdyDI5vIwlD","type":"text","text":"Attribution fixture completed.","time":{"start":1791297615238,"end":1791297615240}}}
+{"type":"step_finish","timestamp":1791297615250,"sessionID":"ses_eee578e16ffeDunvdyDI5vIwlD","part":{"id":"prt_111a87589001ygcYzCsWajG8DG","reason":"stop","messageID":"msg_111a87571001JRawFijoADTo8F","sessionID":"ses_eee578e16ffeDunvdyDI5vIwlD","type":"step-finish","tokens":{"input":0,"output":0,"reasoning":0,"cache":{"write":0,"read":0}},"cost":0}}
+
+--- opencode stderr (raw) ---
+
+--- completed shell tool result ---
+GIVN_ATTRIBUTION_FIXTURE_RESULT {"GIVN_ATTRIBUTION_ACTIVE":"1","GIVN_ATTRIBUTION_LLM":"givn-fixture/model-a","GIVN_ATTRIBUTION_REASONING":"high","GIVN_ATTRIBUTION_HARNESS":"opencode","GIT_COMMITTER_NAME":"LLM: givn-fixture/model-a via opencode","OPENCODE_SESSION_ID":null}
+
+--- attribution environment ---
+{
+  "GIT_COMMITTER_NAME": "LLM: givn-fixture/model-a via opencode",
+  "GIVN_ATTRIBUTION_ACTIVE": "1",
+  "GIVN_ATTRIBUTION_HARNESS": "opencode",
+  "GIVN_ATTRIBUTION_LLM": "givn-fixture/model-a",
+  "GIVN_ATTRIBUTION_REASONING": "high"
+}
+
+=== V1 latest (OpenCode 1.18.34) ===
+example: v1-only
+
+$ givn upgrade
+exit status: 0
+--- givn stdout ---
+  commit attribution: .githooks/commit-msg
+  Git activation: local commit-msg dispatcher installed
+  attribution integration: .opencode/plugins/givn-attribution.js
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced skill: givn-domain-modeling
+  synced skill: givn-dev-principles
+  synced command: /givn-propose
+  synced command: /givn-spec
+  synced command: /givn-design
+  synced command: /givn-tasks
+  synced command: /givn-implement
+  synced command: /givn-review
+  synced command: /givn-archive
+  synced command: /givn-explore
+  synced command: /givn-design-review
+  synced command: /givn-steps
+  synced command: /givn-reverse-engineer
+  synced command: /givn-characterize
+  synced command: /givn-ideation
+  synced command: /grill-me
+  synced command: /grill-with-docs
+  sync: rules: versioned
+  sync: 49 tracked rule(s) in the current revision:
+    - .claude/hooks/givn-attribution.sh
+    - .claude/settings.local.json
+    - .claude/skills/givn-archive/SKILL.md
+    - .claude/skills/givn-characterize/SKILL.md
+    - .claude/skills/givn-design-review/SKILL.md
+    - .claude/skills/givn-design/SKILL.md
+    - .claude/skills/givn-dev-principles/SKILL.md
+    - .claude/skills/givn-domain-modeling/SKILL.md
+    - .claude/skills/givn-explore/SKILL.md
+    - .claude/skills/givn-ideation/SKILL.md
+    - .claude/skills/givn-implement/SKILL.md
+    - .claude/skills/givn-propose/SKILL.md
+    - .claude/skills/givn-reverse-engineer/SKILL.md
+    - .claude/skills/givn-review/SKILL.md
+    - .claude/skills/givn-spec/SKILL.md
+    - .claude/skills/givn-steps/SKILL.md
+    - .claude/skills/givn-tasks/SKILL.md
+    - .githooks/commit-msg
+    - .opencode/commands/givn-archive.md
+    - .opencode/commands/givn-characterize.md
+    - .opencode/commands/givn-design-review.md
+    - .opencode/commands/givn-design.md
+    - .opencode/commands/givn-explore.md
+    - .opencode/commands/givn-ideation.md
+    - .opencode/commands/givn-implement.md
+    - .opencode/commands/givn-propose.md
+    - .opencode/commands/givn-reverse-engineer.md
+    - .opencode/commands/givn-review.md
+    - .opencode/commands/givn-spec.md
+    - .opencode/commands/givn-steps.md
+    - .opencode/commands/givn-tasks.md
+    - .opencode/commands/grill-me.md
+    - .opencode/commands/grill-with-docs.md
+    - .opencode/plugins/givn-attribution.js
+    - .opencode/skills/givn-archive/SKILL.md
+    - .opencode/skills/givn-characterize/SKILL.md
+    - .opencode/skills/givn-design-review/SKILL.md
+    - .opencode/skills/givn-design/SKILL.md
+    - .opencode/skills/givn-dev-principles/SKILL.md
+    - .opencode/skills/givn-domain-modeling/SKILL.md
+    - .opencode/skills/givn-explore/SKILL.md
+    - .opencode/skills/givn-ideation/SKILL.md
+    - .opencode/skills/givn-implement/SKILL.md
+    - .opencode/skills/givn-propose/SKILL.md
+    - .opencode/skills/givn-reverse-engineer/SKILL.md
+    - .opencode/skills/givn-review/SKILL.md
+    - .opencode/skills/givn-spec/SKILL.md
+    - .opencode/skills/givn-steps/SKILL.md
+    - .opencode/skills/givn-tasks/SKILL.md
+  sync: 50 reachable revision(s) still contain a rule:
+    - .claude/hooks/givn-attribution.sh: 1 revision(s)
+    - .claude/settings.local.json: 1 revision(s)
+    - .claude/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-tasks/SKILL.md: 1 revision(s)
+    - .githooks/commit-msg: 1 revision(s)
+    - .opencode/commands/givn-archive.md: 1 revision(s)
+    - .opencode/commands/givn-characterize.md: 1 revision(s)
+    - .opencode/commands/givn-design-review.md: 1 revision(s)
+    - .opencode/commands/givn-design.md: 1 revision(s)
+    - .opencode/commands/givn-explore.md: 1 revision(s)
+    - .opencode/commands/givn-ideation.md: 1 revision(s)
+    - .opencode/commands/givn-implement.md: 1 revision(s)
+    - .opencode/commands/givn-propose.md: 1 revision(s)
+    - .opencode/commands/givn-reverse-engineer.md: 1 revision(s)
+    - .opencode/commands/givn-review.md: 1 revision(s)
+    - .opencode/commands/givn-spec.md: 1 revision(s)
+    - .opencode/commands/givn-steps.md: 1 revision(s)
+    - .opencode/commands/givn-tasks.md: 1 revision(s)
+    - .opencode/commands/grill-me.md: 1 revision(s)
+    - .opencode/commands/grill-with-docs.md: 1 revision(s)
+    - .opencode/plugins/givn-attribution.js: 2 revision(s)
+    - .opencode/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-tasks/SKILL.md: 1 revision(s)
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+  upgrade: rules: versioned
+  upgrade: 49 tracked rule(s) in the current revision:
+    - .claude/hooks/givn-attribution.sh
+    - .claude/settings.local.json
+    - .claude/skills/givn-archive/SKILL.md
+    - .claude/skills/givn-characterize/SKILL.md
+    - .claude/skills/givn-design-review/SKILL.md
+    - .claude/skills/givn-design/SKILL.md
+    - .claude/skills/givn-dev-principles/SKILL.md
+    - .claude/skills/givn-domain-modeling/SKILL.md
+    - .claude/skills/givn-explore/SKILL.md
+    - .claude/skills/givn-ideation/SKILL.md
+    - .claude/skills/givn-implement/SKILL.md
+    - .claude/skills/givn-propose/SKILL.md
+    - .claude/skills/givn-reverse-engineer/SKILL.md
+    - .claude/skills/givn-review/SKILL.md
+    - .claude/skills/givn-spec/SKILL.md
+    - .claude/skills/givn-steps/SKILL.md
+    - .claude/skills/givn-tasks/SKILL.md
+    - .githooks/commit-msg
+    - .opencode/commands/givn-archive.md
+    - .opencode/commands/givn-characterize.md
+    - .opencode/commands/givn-design-review.md
+    - .opencode/commands/givn-design.md
+    - .opencode/commands/givn-explore.md
+    - .opencode/commands/givn-ideation.md
+    - .opencode/commands/givn-implement.md
+    - .opencode/commands/givn-propose.md
+    - .opencode/commands/givn-reverse-engineer.md
+    - .opencode/commands/givn-review.md
+    - .opencode/commands/givn-spec.md
+    - .opencode/commands/givn-steps.md
+    - .opencode/commands/givn-tasks.md
+    - .opencode/commands/grill-me.md
+    - .opencode/commands/grill-with-docs.md
+    - .opencode/plugins/givn-attribution.js
+    - .opencode/skills/givn-archive/SKILL.md
+    - .opencode/skills/givn-characterize/SKILL.md
+    - .opencode/skills/givn-design-review/SKILL.md
+    - .opencode/skills/givn-design/SKILL.md
+    - .opencode/skills/givn-dev-principles/SKILL.md
+    - .opencode/skills/givn-domain-modeling/SKILL.md
+    - .opencode/skills/givn-explore/SKILL.md
+    - .opencode/skills/givn-ideation/SKILL.md
+    - .opencode/skills/givn-implement/SKILL.md
+    - .opencode/skills/givn-propose/SKILL.md
+    - .opencode/skills/givn-reverse-engineer/SKILL.md
+    - .opencode/skills/givn-review/SKILL.md
+    - .opencode/skills/givn-spec/SKILL.md
+    - .opencode/skills/givn-steps/SKILL.md
+    - .opencode/skills/givn-tasks/SKILL.md
+  upgrade: 50 reachable revision(s) still contain a rule:
+    - .claude/hooks/givn-attribution.sh: 1 revision(s)
+    - .claude/settings.local.json: 1 revision(s)
+    - .claude/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-tasks/SKILL.md: 1 revision(s)
+    - .githooks/commit-msg: 1 revision(s)
+    - .opencode/commands/givn-archive.md: 1 revision(s)
+    - .opencode/commands/givn-characterize.md: 1 revision(s)
+    - .opencode/commands/givn-design-review.md: 1 revision(s)
+    - .opencode/commands/givn-design.md: 1 revision(s)
+    - .opencode/commands/givn-explore.md: 1 revision(s)
+    - .opencode/commands/givn-ideation.md: 1 revision(s)
+    - .opencode/commands/givn-implement.md: 1 revision(s)
+    - .opencode/commands/givn-propose.md: 1 revision(s)
+    - .opencode/commands/givn-reverse-engineer.md: 1 revision(s)
+    - .opencode/commands/givn-review.md: 1 revision(s)
+    - .opencode/commands/givn-spec.md: 1 revision(s)
+    - .opencode/commands/givn-steps.md: 1 revision(s)
+    - .opencode/commands/givn-tasks.md: 1 revision(s)
+    - .opencode/commands/grill-me.md: 1 revision(s)
+    - .opencode/commands/grill-with-docs.md: 1 revision(s)
+    - .opencode/plugins/givn-attribution.js: 2 revision(s)
+    - .opencode/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-tasks/SKILL.md: 1 revision(s)
+  upgrade: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+Refreshed commit attribution plumbing and managed Givn files for 0.8.0 in commit bbb9dd55b11103ef0cddbba62d54ab874f3d1ab8; no migration change was required.
+
+--- givn stderr ---
+
+$ /nix/store/52gifl7n6nzyn3yxy7dsff4d30gz9crx-opencode_v1_latest-1.18.34/bin/opencode run --format json --auto --model givn-fixture/model-a --variant high Run the attribution fixture command.
+exit status: 0
+--- opencode stdout (raw) ---
+{"type":"step_start","timestamp":1791297625598,"sessionID":"ses_eee57654bffeaPFA4cdzlf8B1k","part":{"id":"prt_111a89df4001qF8TlXopkcl2S1","messageID":"msg_111a89be3001f4IiXypl8PMRFs","sessionID":"ses_eee57654bffeaPFA4cdzlf8B1k","type":"step-start"}}
+{"type":"tool_use","timestamp":1791297625696,"sessionID":"ses_eee57654bffeaPFA4cdzlf8B1k","part":{"type":"tool","tool":"bash","callID":"fixture-call-41b03766","state":{"status":"completed","input":{"command":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs"},"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":null}\n","metadata":{"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":null}\n","exit":0,"truncated":false},"title":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs","time":{"start":1791297625593,"end":1791297625687}},"id":"prt_111a89df60014FhqTdN8GjfcI3","sessionID":"ses_eee57654bffeaPFA4cdzlf8B1k","messageID":"msg_111a89be3001f4IiXypl8PMRFs"}}
+{"type":"step_finish","timestamp":1791297625696,"sessionID":"ses_eee57654bffeaPFA4cdzlf8B1k","part":{"id":"prt_111a89e59001nHSXrOAKGB10SD","reason":"tool-calls","messageID":"msg_111a89be3001f4IiXypl8PMRFs","sessionID":"ses_eee57654bffeaPFA4cdzlf8B1k","type":"step-finish","tokens":{"input":0,"output":0,"reasoning":0,"cache":{"write":0,"read":0}},"cost":0}}
+{"type":"step_start","timestamp":1791297625712,"sessionID":"ses_eee57654bffeaPFA4cdzlf8B1k","part":{"id":"prt_111a89e68001ZLY0l2AYxexcP4","messageID":"msg_111a89e5e001Cw3CFlHlm3Le5b","sessionID":"ses_eee57654bffeaPFA4cdzlf8B1k","type":"step-start"}}
+{"type":"text","timestamp":1791297625712,"sessionID":"ses_eee57654bffeaPFA4cdzlf8B1k","part":{"id":"prt_111a89e690015OlSCCDQOzcDRz","messageID":"msg_111a89e5e001Cw3CFlHlm3Le5b","sessionID":"ses_eee57654bffeaPFA4cdzlf8B1k","type":"text","text":"Attribution fixture completed.","time":{"start":1791297625705,"end":1791297625706}}}
+{"type":"step_finish","timestamp":1791297625712,"sessionID":"ses_eee57654bffeaPFA4cdzlf8B1k","part":{"id":"prt_111a89e6b001RA81jSzYE9i35E","reason":"stop","messageID":"msg_111a89e5e001Cw3CFlHlm3Le5b","sessionID":"ses_eee57654bffeaPFA4cdzlf8B1k","type":"step-finish","tokens":{"input":0,"output":0,"reasoning":0,"cache":{"write":0,"read":0}},"cost":0}}
+
+--- opencode stderr (raw) ---
+
+--- completed shell tool result ---
+GIVN_ATTRIBUTION_FIXTURE_RESULT {"GIVN_ATTRIBUTION_ACTIVE":"1","GIVN_ATTRIBUTION_LLM":"givn-fixture/model-a","GIVN_ATTRIBUTION_REASONING":"high","GIVN_ATTRIBUTION_HARNESS":"opencode","GIT_COMMITTER_NAME":"LLM: givn-fixture/model-a via opencode","OPENCODE_SESSION_ID":null}
+
+--- attribution environment ---
+{
+  "GIT_COMMITTER_NAME": "LLM: givn-fixture/model-a via opencode",
+  "GIVN_ATTRIBUTION_ACTIVE": "1",
+  "GIVN_ATTRIBUTION_HARNESS": "opencode",
+  "GIVN_ATTRIBUTION_LLM": "givn-fixture/model-a",
+  "GIVN_ATTRIBUTION_REASONING": "high"
+}
+
+=== V2 latest (OpenCode opencode v2.0.22) ===
+example: v1-only
+
+$ givn upgrade
+exit status: 0
+--- givn stdout ---
+  commit attribution: .githooks/commit-msg
+  Git activation: local commit-msg dispatcher installed
+  attribution integration: .opencode/plugins/givn-attribution.js
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced skill: givn-domain-modeling
+  synced skill: givn-dev-principles
+  synced command: /givn-propose
+  synced command: /givn-spec
+  synced command: /givn-design
+  synced command: /givn-tasks
+  synced command: /givn-implement
+  synced command: /givn-review
+  synced command: /givn-archive
+  synced command: /givn-explore
+  synced command: /givn-design-review
+  synced command: /givn-steps
+  synced command: /givn-reverse-engineer
+  synced command: /givn-characterize
+  synced command: /givn-ideation
+  synced command: /grill-me
+  synced command: /grill-with-docs
+  sync: rules: versioned
+  sync: 49 tracked rule(s) in the current revision:
+    - .claude/hooks/givn-attribution.sh
+    - .claude/settings.local.json
+    - .claude/skills/givn-archive/SKILL.md
+    - .claude/skills/givn-characterize/SKILL.md
+    - .claude/skills/givn-design-review/SKILL.md
+    - .claude/skills/givn-design/SKILL.md
+    - .claude/skills/givn-dev-principles/SKILL.md
+    - .claude/skills/givn-domain-modeling/SKILL.md
+    - .claude/skills/givn-explore/SKILL.md
+    - .claude/skills/givn-ideation/SKILL.md
+    - .claude/skills/givn-implement/SKILL.md
+    - .claude/skills/givn-propose/SKILL.md
+    - .claude/skills/givn-reverse-engineer/SKILL.md
+    - .claude/skills/givn-review/SKILL.md
+    - .claude/skills/givn-spec/SKILL.md
+    - .claude/skills/givn-steps/SKILL.md
+    - .claude/skills/givn-tasks/SKILL.md
+    - .githooks/commit-msg
+    - .opencode/commands/givn-archive.md
+    - .opencode/commands/givn-characterize.md
+    - .opencode/commands/givn-design-review.md
+    - .opencode/commands/givn-design.md
+    - .opencode/commands/givn-explore.md
+    - .opencode/commands/givn-ideation.md
+    - .opencode/commands/givn-implement.md
+    - .opencode/commands/givn-propose.md
+    - .opencode/commands/givn-reverse-engineer.md
+    - .opencode/commands/givn-review.md
+    - .opencode/commands/givn-spec.md
+    - .opencode/commands/givn-steps.md
+    - .opencode/commands/givn-tasks.md
+    - .opencode/commands/grill-me.md
+    - .opencode/commands/grill-with-docs.md
+    - .opencode/plugins/givn-attribution.js
+    - .opencode/skills/givn-archive/SKILL.md
+    - .opencode/skills/givn-characterize/SKILL.md
+    - .opencode/skills/givn-design-review/SKILL.md
+    - .opencode/skills/givn-design/SKILL.md
+    - .opencode/skills/givn-dev-principles/SKILL.md
+    - .opencode/skills/givn-domain-modeling/SKILL.md
+    - .opencode/skills/givn-explore/SKILL.md
+    - .opencode/skills/givn-ideation/SKILL.md
+    - .opencode/skills/givn-implement/SKILL.md
+    - .opencode/skills/givn-propose/SKILL.md
+    - .opencode/skills/givn-reverse-engineer/SKILL.md
+    - .opencode/skills/givn-review/SKILL.md
+    - .opencode/skills/givn-spec/SKILL.md
+    - .opencode/skills/givn-steps/SKILL.md
+    - .opencode/skills/givn-tasks/SKILL.md
+  sync: 50 reachable revision(s) still contain a rule:
+    - .claude/hooks/givn-attribution.sh: 1 revision(s)
+    - .claude/settings.local.json: 1 revision(s)
+    - .claude/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-tasks/SKILL.md: 1 revision(s)
+    - .githooks/commit-msg: 1 revision(s)
+    - .opencode/commands/givn-archive.md: 1 revision(s)
+    - .opencode/commands/givn-characterize.md: 1 revision(s)
+    - .opencode/commands/givn-design-review.md: 1 revision(s)
+    - .opencode/commands/givn-design.md: 1 revision(s)
+    - .opencode/commands/givn-explore.md: 1 revision(s)
+    - .opencode/commands/givn-ideation.md: 1 revision(s)
+    - .opencode/commands/givn-implement.md: 1 revision(s)
+    - .opencode/commands/givn-propose.md: 1 revision(s)
+    - .opencode/commands/givn-reverse-engineer.md: 1 revision(s)
+    - .opencode/commands/givn-review.md: 1 revision(s)
+    - .opencode/commands/givn-spec.md: 1 revision(s)
+    - .opencode/commands/givn-steps.md: 1 revision(s)
+    - .opencode/commands/givn-tasks.md: 1 revision(s)
+    - .opencode/commands/grill-me.md: 1 revision(s)
+    - .opencode/commands/grill-with-docs.md: 1 revision(s)
+    - .opencode/plugins/givn-attribution.js: 2 revision(s)
+    - .opencode/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-tasks/SKILL.md: 1 revision(s)
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+  upgrade: rules: versioned
+  upgrade: 49 tracked rule(s) in the current revision:
+    - .claude/hooks/givn-attribution.sh
+    - .claude/settings.local.json
+    - .claude/skills/givn-archive/SKILL.md
+    - .claude/skills/givn-characterize/SKILL.md
+    - .claude/skills/givn-design-review/SKILL.md
+    - .claude/skills/givn-design/SKILL.md
+    - .claude/skills/givn-dev-principles/SKILL.md
+    - .claude/skills/givn-domain-modeling/SKILL.md
+    - .claude/skills/givn-explore/SKILL.md
+    - .claude/skills/givn-ideation/SKILL.md
+    - .claude/skills/givn-implement/SKILL.md
+    - .claude/skills/givn-propose/SKILL.md
+    - .claude/skills/givn-reverse-engineer/SKILL.md
+    - .claude/skills/givn-review/SKILL.md
+    - .claude/skills/givn-spec/SKILL.md
+    - .claude/skills/givn-steps/SKILL.md
+    - .claude/skills/givn-tasks/SKILL.md
+    - .githooks/commit-msg
+    - .opencode/commands/givn-archive.md
+    - .opencode/commands/givn-characterize.md
+    - .opencode/commands/givn-design-review.md
+    - .opencode/commands/givn-design.md
+    - .opencode/commands/givn-explore.md
+    - .opencode/commands/givn-ideation.md
+    - .opencode/commands/givn-implement.md
+    - .opencode/commands/givn-propose.md
+    - .opencode/commands/givn-reverse-engineer.md
+    - .opencode/commands/givn-review.md
+    - .opencode/commands/givn-spec.md
+    - .opencode/commands/givn-steps.md
+    - .opencode/commands/givn-tasks.md
+    - .opencode/commands/grill-me.md
+    - .opencode/commands/grill-with-docs.md
+    - .opencode/plugins/givn-attribution.js
+    - .opencode/skills/givn-archive/SKILL.md
+    - .opencode/skills/givn-characterize/SKILL.md
+    - .opencode/skills/givn-design-review/SKILL.md
+    - .opencode/skills/givn-design/SKILL.md
+    - .opencode/skills/givn-dev-principles/SKILL.md
+    - .opencode/skills/givn-domain-modeling/SKILL.md
+    - .opencode/skills/givn-explore/SKILL.md
+    - .opencode/skills/givn-ideation/SKILL.md
+    - .opencode/skills/givn-implement/SKILL.md
+    - .opencode/skills/givn-propose/SKILL.md
+    - .opencode/skills/givn-reverse-engineer/SKILL.md
+    - .opencode/skills/givn-review/SKILL.md
+    - .opencode/skills/givn-spec/SKILL.md
+    - .opencode/skills/givn-steps/SKILL.md
+    - .opencode/skills/givn-tasks/SKILL.md
+  upgrade: 50 reachable revision(s) still contain a rule:
+    - .claude/hooks/givn-attribution.sh: 1 revision(s)
+    - .claude/settings.local.json: 1 revision(s)
+    - .claude/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-tasks/SKILL.md: 1 revision(s)
+    - .githooks/commit-msg: 1 revision(s)
+    - .opencode/commands/givn-archive.md: 1 revision(s)
+    - .opencode/commands/givn-characterize.md: 1 revision(s)
+    - .opencode/commands/givn-design-review.md: 1 revision(s)
+    - .opencode/commands/givn-design.md: 1 revision(s)
+    - .opencode/commands/givn-explore.md: 1 revision(s)
+    - .opencode/commands/givn-ideation.md: 1 revision(s)
+    - .opencode/commands/givn-implement.md: 1 revision(s)
+    - .opencode/commands/givn-propose.md: 1 revision(s)
+    - .opencode/commands/givn-reverse-engineer.md: 1 revision(s)
+    - .opencode/commands/givn-review.md: 1 revision(s)
+    - .opencode/commands/givn-spec.md: 1 revision(s)
+    - .opencode/commands/givn-steps.md: 1 revision(s)
+    - .opencode/commands/givn-tasks.md: 1 revision(s)
+    - .opencode/commands/grill-me.md: 1 revision(s)
+    - .opencode/commands/grill-with-docs.md: 1 revision(s)
+    - .opencode/plugins/givn-attribution.js: 2 revision(s)
+    - .opencode/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-tasks/SKILL.md: 1 revision(s)
+  upgrade: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+Refreshed commit attribution plumbing and managed Givn files for 0.8.0 in commit acb7a3feb992ecc0ff14e40533b5e809533f80eb; no migration change was required.
+
+--- givn stderr ---
+
+$ /nix/store/bdml7ssb6rx2cfydr1sl9abbp1pq2djv-opencode_v2_latest-2.0.22/bin/opencode run --server http://127.0.0.1:55537 --format json --auto --model givn-fixture/model-a#high Run the attribution fixture command.
+exit status: 0
+--- opencode stdout (raw) ---
+{"type":"step_start","timestamp":1791297634813,"sessionID":"ses_eee573e7effe6sJe8ZFIEP7WpN","part":{"id":"prt_111a8c1fd001rz8JLoYWkUpSah","sessionID":"ses_eee573e7effe6sJe8ZFIEP7WpN","messageID":"msg_111a8c1ed001v8yZ8BQQOkRsmy","type":"step-start"}}
+{"type":"tool_use","timestamp":1791297634898,"sessionID":"ses_eee573e7effe6sJe8ZFIEP7WpN","part":{"partID":"prt_111a8c1fe0011OgquhTX5mfmv3","sessionID":"ses_eee573e7effe6sJe8ZFIEP7WpN","messageID":"msg_111a8c1ed001v8yZ8BQQOkRsmy","type":"tool","id":"fixture-call-2d883269","tool":"shell","state":{"status":"completed","input":{"command":"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs"},"output":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":\"ses_eee573e7effe6sJe8ZFIEP7WpN\"}\n","title":"shell","metadata":{"metadata":{"status":"completed","truncated":false,"exit":0},"content":[{"type":"text","text":"GIVN_ATTRIBUTION_FIXTURE_RESULT {\"GIVN_ATTRIBUTION_ACTIVE\":\"1\",\"GIVN_ATTRIBUTION_LLM\":\"givn-fixture/model-a\",\"GIVN_ATTRIBUTION_REASONING\":\"high\",\"GIVN_ATTRIBUTION_HARNESS\":\"opencode\",\"GIT_COMMITTER_NAME\":\"LLM: givn-fixture/model-a via opencode\",\"OPENCODE_SESSION_ID\":\"ses_eee573e7effe6sJe8ZFIEP7WpN\"}\n"}],"providerCall":{"executed":false},"providerResult":{"executed":false},"rawInput":"{\"command\":\"/nix/store/7cr3l1m9yyng2hscs8lj4x4bj0hm7908-nodejs-24.21.0/bin/node attribution-fixture.mjs\"}"},"time":{"start":1791297634814,"end":1791297634898}}}}
+{"type":"step_finish","timestamp":1791297634900,"sessionID":"ses_eee573e7effe6sJe8ZFIEP7WpN","part":{"id":"prt_111a8c254001hUcMq3aH64SU7d","sessionID":"ses_eee573e7effe6sJe8ZFIEP7WpN","messageID":"msg_111a8c1ed001v8yZ8BQQOkRsmy","type":"step-finish","reason":"tool-calls","cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0,"write":0}}}}
+{"type":"text","timestamp":1791297634918,"sessionID":"ses_eee573e7effe6sJe8ZFIEP7WpN","part":{"id":"prt_111a8c259001m2ZT8rjcPEbJEB_text-0","sessionID":"ses_eee573e7effe6sJe8ZFIEP7WpN","messageID":"msg_111a8c259001m2ZT8rjcPEbJEB","type":"text","text":"Attribution fixture completed.","time":{"start":1791297634911,"end":1791297634918}}}
+
+--- opencode stderr (raw) ---
+
+--- completed shell tool result ---
+GIVN_ATTRIBUTION_FIXTURE_RESULT {"GIVN_ATTRIBUTION_ACTIVE":"1","GIVN_ATTRIBUTION_LLM":"givn-fixture/model-a","GIVN_ATTRIBUTION_REASONING":"high","GIVN_ATTRIBUTION_HARNESS":"opencode","GIT_COMMITTER_NAME":"LLM: givn-fixture/model-a via opencode","OPENCODE_SESSION_ID":"ses_eee573e7effe6sJe8ZFIEP7WpN"}
+
+--- attribution environment ---
+{
+  "GIT_COMMITTER_NAME": "LLM: givn-fixture/model-a via opencode",
+  "GIVN_ATTRIBUTION_ACTIVE": "1",
+  "GIVN_ATTRIBUTION_HARNESS": "opencode",
+  "GIVN_ATTRIBUTION_LLM": "givn-fixture/model-a",
+  "GIVN_ATTRIBUTION_REASONING": "high"
+}
