@@ -87,11 +87,19 @@ const main = async () => {
     }
   }
 
+  // The runtime fires an event whether or not a plugin registered for it, so a
+  // plugin without that hook (the immutable prototype has no tool hooks)
+  // simply is not called.
+  const fire = async (group, name, event) => {
+    const handler = registered[group][name]
+    if (handler) await handler(event)
+  }
+
   let counter = 0
   const request = async (action) => {
     counter += 1
     const callID = action.id ?? `call-${counter}`
-    await registered.tool["execute.before"]({
+    await fire("tool", "execute.before", {
       tool: "shell",
       sessionID: action.session,
       agent: "build",
@@ -109,7 +117,7 @@ const main = async () => {
       shell: "/bin/sh",
       env: { ...initialEnv },
     }
-    await registered.shell["create.before"](event)
+    await fire("shell", "create.before", event)
     result.shells.push({ op, env: event.env })
   }
 
@@ -123,7 +131,7 @@ const main = async () => {
           if (action.variant !== undefined && action.variant !== null) payload.variant = action.variant
           await v1["chat.message"](payload, {})
         } else {
-          await registered.session[action.request ?? "context"]({
+          await fire("session", action.request ?? "context", {
             sessionID: action.session,
             model: modelPayload(action, true),
           })
@@ -144,7 +152,7 @@ const main = async () => {
         } else if (action.session) {
           const callID = await request(action)
           await create(action, "run")
-          await registered.tool["execute.after"]({
+          await fire("tool", "execute.after", {
             tool: "shell",
             sessionID: action.session,
             agent: "build",

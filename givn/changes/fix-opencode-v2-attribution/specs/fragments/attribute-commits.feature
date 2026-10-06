@@ -49,7 +49,7 @@ Feature: Attribute commits
       | V2         | id         |
       | V2         | modelID    |
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: A remembered session model takes precedence over a later model from another session
     Given an isolated OpenCode "<generation>" attribution integration
     And OpenCode has remembered model "givn-fixture/model-a" with reasoning mode "high" for session "session-a"

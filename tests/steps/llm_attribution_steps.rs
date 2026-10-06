@@ -656,3 +656,29 @@ fn when_opencode_prepares_shell_for_session(world: &mut GivnWorld, session: Stri
     }));
     replay(world);
 }
+
+/// Split `provider/model` at the first slash.
+fn split_model(identity: &str) -> (&str, &str) {
+    identity
+        .split_once('/')
+        .unwrap_or_else(|| panic!("model identity lacks a provider: {identity}"))
+}
+
+#[given(
+    regex = r##"^OpenCode has (?:later )?remembered model "([^"]+)" with reasoning mode "([^"]+)" for session "([^"]+)"$"##
+)]
+fn given_opencode_remembered_model(
+    world: &mut GivnWorld,
+    model: String,
+    reasoning: String,
+    session: String,
+) {
+    let (provider, model) = split_model(&model);
+    characterization(world).actions.push(serde_json::json!({
+        "op": "remember",
+        "session": session,
+        "provider": provider,
+        "model": model,
+        "variant": reasoning,
+    }));
+}
