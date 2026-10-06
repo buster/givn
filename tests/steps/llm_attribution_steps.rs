@@ -856,11 +856,20 @@ fn when_opencode_runs_shell_command(world: &mut GivnWorld, command: String, sess
 
 #[when(regex = r##"^OpenCode requests the shell command "([^"]+)" for session "([^"]+)"$"##)]
 fn when_opencode_requests_shell_command(world: &mut GivnWorld, command: String, session: String) {
-    characterization(world).actions.push(serde_json::json!({
+    push_request(world, command, session, None);
+}
+
+/// Announce a shell command through the tool `execute.before` hook only.
+fn push_request(world: &mut GivnWorld, command: String, session: String, message: Option<String>) {
+    let mut action = serde_json::json!({
         "op": "request",
         "session": session,
         "command": command,
-    }));
+    });
+    if let Some(message) = message {
+        action["message"] = message.into();
+    }
+    characterization(world).actions.push(action);
 }
 
 #[when("OpenCode creates both shells")]
@@ -914,4 +923,44 @@ fn then_first_shell_identifies_llm(world: &mut GivnWorld, expected: String) {
 #[then(regex = r##"^the second shell environment identifies LLM "([^"]+)"$"##)]
 fn then_second_shell_identifies_llm(world: &mut GivnWorld, expected: String) {
     assert_shell_llm(world, 1, &expected);
+}
+
+#[given(
+    regex = r##"^OpenCode requested the shell command "([^"]+)" for session "([^"]+)" in message "([^"]+)" and that request never reached shell creation$"##
+)]
+fn given_opencode_requested_blocked_command(
+    world: &mut GivnWorld,
+    command: String,
+    session: String,
+    message: String,
+) {
+    // The request is only announced; no shell is created for it.
+    push_request(world, command, session, Some(message));
+    assert!(
+        !characterization(world)
+            .actions
+            .iter()
+            .any(|action| action["op"] == "create"),
+        "a shell was created for the blocked request"
+    );
+}
+
+#[when(
+    regex = r##"^OpenCode requests the shell command "([^"]+)" for session "([^"]+)" in message "([^"]+)"$"##
+)]
+fn when_opencode_requests_shell_command_in_message(
+    world: &mut GivnWorld,
+    command: String,
+    session: String,
+    message: String,
+) {
+    push_request(world, command, session, Some(message));
+}
+
+#[when(regex = r##"^OpenCode creates the shell for "([^"]+)"$"##)]
+fn when_opencode_creates_shell_for(world: &mut GivnWorld, command: String) {
+    characterization(world)
+        .actions
+        .push(serde_json::json!({"op": "create", "command": command}));
+    replay(world);
 }

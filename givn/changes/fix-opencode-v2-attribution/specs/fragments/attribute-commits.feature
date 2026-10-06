@@ -105,7 +105,7 @@ Feature: Attribute commits
     Then the first shell environment identifies LLM "givn-fixture/model-a"
     And the second shell environment identifies LLM "givn-fixture/model-b"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A blocked shell request does not label a later identical command from another session
     Given an isolated OpenCode "V2" attribution integration
     And OpenCode has remembered model "givn-fixture/model-b" with reasoning mode "low" for session "session-b"
