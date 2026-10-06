@@ -153,3 +153,27 @@ fn then_generated_integration_matches_supplied_behavior(world: &mut GivnWorld) {
         );
     }
 }
+
+#[given(regex = r##"^an initialized project selecting "([^"]+)" without addons$"##)]
+fn given_initialized_project_selecting_without_addons(world: &mut GivnWorld, targets: String) {
+    let env = common::make_bare_root();
+    assert!(git(&env.root(), &["init", "--quiet"]).status.success());
+    let init = common::run_givn(&env, &["init", "--agents", &targets, "--no-addons"]);
+    assert!(
+        init.status.success(),
+        "givn init failed: {}",
+        String::from_utf8_lossy(&init.stderr)
+    );
+    world.env = Some(env);
+}
+
+#[then("no OpenCode attribution integration exists")]
+fn then_no_opencode_integration(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    let plugin = env.path(".opencode/plugins/givn-attribution.js");
+    assert!(
+        !plugin.exists(),
+        "unexpected OpenCode attribution integration at {}",
+        plugin.display()
+    );
+}

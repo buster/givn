@@ -95,7 +95,7 @@ Feature: Enable commit attribution
     And stdout contains "addons:  disabled (--no-addons)"
     And the generated OpenCode attribution integration matches the supplied attribution behavior across supported generations
 
-  @givn.added @wip
+  @givn.added
   Scenario: Synchronization without the OpenCode target does not install its attribution integration
     Given an initialized project selecting "claude" without addons
     When the consumer runs `givn skills sync`
