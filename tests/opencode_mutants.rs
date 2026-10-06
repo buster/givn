@@ -64,6 +64,12 @@ struct Generated {
 
 const GENERATED: &[Generated] = &[
     Generated {
+        name: "no-configured-default.js",
+        anchor: "    if (!model?.modelID) model = await configuredDefault(ctx)\n",
+        replacement: "",
+        title: "OpenCode V2 uses its configured default when no model has been remembered",
+    },
+    Generated {
         name: "no-defaults-first.js",
         anchor: "          stamp(event.env, undefined)\n",
         replacement: "",
