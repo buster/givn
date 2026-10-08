@@ -134,7 +134,20 @@ standing. See
 
 ## License
 
-Licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE) at your option.
+GPL-3.0-or-later. See [LICENSE](LICENSE).
+
+As a special exception under section 7 of the GNU General Public License,
+version 3, text that givn generates, writes, or emits — the managed blocks
+it maintains in files such as `AGENTS.md` and `README.md`, the generated
+rules (skills, commands, plugins, hooks), the instruction text it prints,
+and the scaffolds it instantiates such as `commands.yaml` and the `run`
+block — is not subject to the conditions of this license. You may use,
+modify, and distribute that text under terms of your choice, and it does
+not affect the license of the project it appears in. The exception covers
+givn's output, not givn itself. It does not apply when that text, or a
+modified version of it, is used as the rules, skills, or instructions of
+another spec-driven workflow tool; in that use, the text remains subject
+to the conditions of this license.
 
 <!-- givn:begin:coverage -->
 ## Coverage
