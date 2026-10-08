@@ -79,7 +79,7 @@ fn license_section_names(world: &mut GivnWorld) {
         .as_ref()
         .expect("README.md not read yet");
     assert!(
-        content.contains("MIT") || content.contains("Apache"),
+        content.contains("GPL-3.0-or-later"),
         "README.md license section should name a specific license"
     );
 }
@@ -111,7 +111,7 @@ fn license_field_valid_spdx(world: &mut GivnWorld) {
     let value = license_line.split('=').nth(1).unwrap_or("").trim();
     // A valid SPDX expression contains at least one operator or valid id
     assert!(
-        value.contains("MIT") || value.contains("Apache") || value.contains("BSD"),
+        value.contains("GPL-3.0-or-later"),
         "license field does not look like a valid SPDX expression: {}",
         value
     );
@@ -136,7 +136,7 @@ fn license_section_same_as_cargo(world: &mut GivnWorld) {
         .unwrap_or_default();
     // Check that README mentions the same license identifiers
     assert!(
-        readme.contains("MIT") || readme.contains("Apache-2.0"),
+        readme.contains("GPL-3.0-or-later"),
         "README should reference the same license as Cargo.toml ({})",
         cargo_license
     );

@@ -1,9 +1,9 @@
 Feature: Choose Project License
 
-  Scenario: Cargo.toml declares dual MIT OR Apache-2.0 license
+  Scenario: Cargo.toml declares GPL-3.0-or-later license
     Given  a project root containing the givn source checkout
     When  the user reads Cargo.toml
-    Then  the license field is "MIT OR Apache-2.0"
+    Then  the license field is "GPL-3.0-or-later"
     And  the license field is no longer "TBD"
 
   Scenario: README.md declares the project license

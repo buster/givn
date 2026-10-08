@@ -34,8 +34,7 @@
             description = "A single-binary, Gherkin-first spec-driven workflow tool";
             homepage = "https://github.com/buster/givn";
             license = with pkgs.lib.licenses; [
-              mit
-              asl20
+              gpl3Plus
             ];
             mainProgram = "givn";
           };
