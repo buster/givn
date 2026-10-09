@@ -128,9 +128,9 @@ carries the subagent's model.
            Summary [   0.563s] 1 test run: 1 passed, 2 skipped
       ```
 
-- [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR; release note as the
+- [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR; release note as the
       message subject, scenario title in the body; record the hash:
-      `COMMIT: <hash>`
+      `COMMIT: 50b08405147a425741366f480a8ba4e7e6859932`
 
 ## Scenario: OpenCode prepares attribution using its selected model (@e2e)
 
@@ -139,33 +139,49 @@ model for a session before a shell execution; Givn exposes the model identity,
 reasoning mode, harness, and committer identity through the attribution
 environment without changing the Git-side protocol or blocking the shell.
 
-- [ ] E2E RED: remove `@wip` from this scenario only; rewrite the generated
+- [x] E2E RED: remove `@wip` from this scenario only; rewrite the generated
       driver to the V2 lifecycle with the not-implemented stub where
       assertions are pending; run the change E2E scope and paste the non-zero
-      output:
+      output. Run with `main`'s V1 asset temporarily restored (the pre-change
+      production state), which is the genuine RED for the port:
 
       ```text
       GIVN_FEATURES=givn/changes/support-opencode-2/specs ./run-tests.sh --e2e
-      <paste output>
+          Scenario: OpenCode prepares attribution using its selected model
+          ✔ When OpenCode supplies the selected provider "openai" and model "gpt-5.6-luna" for session "session-1"
+          ✘ And OpenCode prepares the environment for a shell in session "session-1"
+          Matched: tests/steps/llm_attribution_e2e_steps.rs:55:1
+          Step panicked. Captured output: OpenCode shell hook failed: ... SyntaxError: The requested module '/tmp/.tmp0Lz5KK/.opencode/plugins/givn-attribution.js' does not provide an export named 'default' (Node.js v20.19.2)
+          1 feature / 1 scenario (1 failed) / 3 steps (2 passed, 1 failed)
+          1 test run: 0 passed, 1 failed, 2 skipped
+          error: test run failed
       ```
 
-- [ ] E2E GREEN: the generated integration loads through the V2 plugin
+- [x] E2E GREEN: the generated integration loads through the V2 plugin
       lifecycle; the given step also asserts the generated temporary-project
       file equals the embedded asset; the driver replays the session, tool,
       and shell events and asserts LLM, reasoning mode, harness, and committer
-      environment values; list every production file created or modified; run
-      the change E2E scope and paste the passing output:
+      environment values. Production files: the V2-only
+      `assets/agent-integrations/opencode/givn-attribution.js` plus its
+      `.opencode/plugins/givn-attribution.js` dogfood copy and the
+      `tests/steps/llm_attribution_e2e_steps.rs` driver landed in the earlier
+      scenario commits because the unavailable scenario needs them; this
+      scenario re-verifies them against the file `givn init` generates. Run
+      and paste the passing output:
 
       ```text
       GIVN_FEATURES=givn/changes/support-opencode-2/specs ./run-tests.sh --e2e
-      <paste output>
+          PASS [   0.562s] (1/1) givn::features_runner fragments/attribute-commits.feature::OpenCode prepares attribution using its selected model
+          Summary [   0.562s] 1 test run: 1 passed, 2 skipped
       ```
 
-- [ ] E2E REFACTOR: clean up without changing behaviour; re-run the change E2E
+- [x] E2E REFACTOR: clean up without changing behaviour; re-run the change E2E
       scope and paste the passing output:
 
       ```text
-      <paste output>
+      GIVN_FEATURES=givn/changes/support-opencode-2/specs ./run-tests.sh --e2e
+          PASS [   0.563s] (1/1) givn::features_runner fragments/attribute-commits.feature::OpenCode prepares attribution using its selected model
+          Summary [   0.563s] 1 test run: 1 passed, 2 skipped
       ```
 
 - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR; release note as the
