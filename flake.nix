@@ -103,6 +103,7 @@
               cargo
               cargo-llvm-cov
               clippy
+              git-cliff
               rustc
               rustfmt
               llvmTools
