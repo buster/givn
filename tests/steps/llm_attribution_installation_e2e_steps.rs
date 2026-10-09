@@ -220,7 +220,7 @@ fn then_managed_commit_contains_refreshed_plumbing(world: &mut GivnWorld) {
     for path in &changed {
         assert!(
             ["givn/config.yaml", "givn/commands.yaml", ".gitignore"].contains(path)
-                || [".opencode/", ".claude/", ".githooks/"]
+                || [".opencode/", ".claude/", ".githooks/", ".omp/"]
                     .iter()
                     .any(|prefix| path.starts_with(prefix)),
             "the managed upgrade revision touched an unmanaged path: {path}"
