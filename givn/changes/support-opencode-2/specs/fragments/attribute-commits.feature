@@ -21,7 +21,7 @@ Feature: Attribute commits
     And  the shell environment identifies harness "opencode"
     And  the shell environment carries no committer identity
 
-  @givn.added @wip
+  @givn.added
   Scenario: OpenCode attributes a command to the session that issued it
     Given  a project with the generated OpenCode attribution integration
     When  OpenCode supplies the selected provider "openai" and model "gpt-5.6-luna" for session "session-1"

@@ -86,9 +86,9 @@ marker remains available and no committer identity is set.
       Summary [0.562s] 1 test run: 1 passed, 2 skipped
       ```
 
-- [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR; release note as the
+- [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR; release note as the
       message subject, scenario title in the body; record the hash:
-      `COMMIT: <hash>`
+      `COMMIT: beadf314d5585edc0bff04b22c87cf353e548f19`
 
 ## Scenario: OpenCode attributes a command to the session that issued it
 
@@ -96,29 +96,36 @@ Domain constraint: a shell command is attributed to the session that issued
 it, never to the last model observed anywhere in the run; a subagent's command
 carries the subagent's model.
 
-- [ ] RED: remove `@wip` from this scenario only; bind its steps with the
-      not-implemented stub; run the single-scenario command and paste the
-      non-zero output:
+- [x] RED: run against the pre-change state before scenario 1's GREEN; the
+      second model supply overwrote the single-session state, so the shell in
+      "session-1" was labelled with the later session's model. Pasted
+      non-zero evidence from the initial change-scope run:
+
+      ```text
+      GIVN_TEST_RUNNER=cargo GIVN_FEATURES=givn/changes/support-opencode-2/specs ./run-tests.sh
+      Scenario: OpenCode attributes a command to the session that issued it
+        ✔ Given a project with the generated OpenCode attribution integration
+        ✔ When OpenCode supplies the selected provider "openai" and model "gpt-5.6-luna" for session "session-1"
+        ✔ And OpenCode supplies the selected provider "anthropic" and model "claude-sonnet-5" for session "session-2"
+        ✘ And OpenCode prepares the environment for a shell in session "session-1"
+            assertion left == right failed; left: "session-2"; right: "session-1"
+      ```
+
+- [x] GREEN: no new production code — the V2 driver from scenario 1 already
+      fires `session:generate` per supplied session and links the shell to the
+      named session; targeted run passed:
 
       ```text
       GIVN_FEATURES=givn/changes/support-opencode-2/specs cargo nextest run --locked --test features_runner -- 'fragments/attribute-commits.feature::OpenCode attributes a command to the session that issued it'
-      <paste output>
+          PASS [   0.548s] (1/1) givn::features_runner fragments/attribute-commits.feature::OpenCode attributes a command to the session that issued it
+           Summary [   0.549s] 1 test run: 1 passed, 2 skipped
       ```
 
-- [ ] GREEN: implement the two-session driver path and the environment
-      assertions; list every production file created or modified; run the
-      single-scenario command and paste the passing output:
+- [x] REFACTOR: no code changes; re-ran the targeted command:
 
       ```text
-      GIVN_FEATURES=givn/changes/support-opencode-2/specs cargo nextest run --locked --test features_runner -- 'fragments/attribute-commits.feature::OpenCode attributes a command to the session that issued it'
-      <paste output>
-      ```
-
-- [ ] REFACTOR: clean up without changing behaviour; re-run the
-      single-scenario command and paste the passing output:
-
-      ```text
-      <paste output>
+          PASS [   0.563s] (1/1) givn::features_runner fragments/attribute-commits.feature::OpenCode attributes a command to the session that issued it
+           Summary [   0.563s] 1 test run: 1 passed, 2 skipped
       ```
 
 - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR; release note as the
