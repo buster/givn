@@ -25,8 +25,9 @@ fn given_generated_opencode_integration(world: &mut GivnWorld) {
         include_str!("../../.opencode/plugins/givn-attribution.js"),
         "checked-in OpenCode integration must match the embedded asset"
     );
-    let generated = std::fs::read_to_string(env.root().join(".opencode/plugins/givn-attribution.js"))
-        .expect("read generated OpenCode integration");
+    let generated =
+        std::fs::read_to_string(env.root().join(".opencode/plugins/givn-attribution.js"))
+            .expect("read generated OpenCode integration");
     assert_eq!(
         include_str!("../../assets/agent-integrations/opencode/givn-attribution.js"),
         generated,
