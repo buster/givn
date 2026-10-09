@@ -1,107 +1,198 @@
 const sessions = new Map()
 let lastModel = null
 const UNAVAILABLE = "unavailable"
+// A hung configured-default lookup must not stall shell creation.
+const DEFAULT_LOOKUP_TIMEOUT_MS = 2000
+
+// Attribution is best effort and never blocks: a hook that throws, for example
+// on a malformed payload, must not fail the command or the other hooks.
+const guarded = (handler) => async (...args) => {
+  try {
+    await handler(...args)
+  } catch {
+    // Ignored on purpose; the shell is created without this attribution step.
+  }
+}
+
+// Each kind of registration failure is reported once per process.
+const reported = new Set()
+
+const report = (kind, error) => {
+  if (reported.has(kind)) return
+  reported.add(kind)
+  try {
+    console.warn(`givn-attribution: registering hook ${kind} failed: ${error?.message ?? error}`)
+  } catch {
+    // Diagnostics must never throw into OpenCode.
+  }
+}
+
+// A failing hook registration must not stop the remaining hooks from being registered.
+const attempt = async (kind, action) => {
+  try {
+    return await action()
+  } catch (error) {
+    report(kind, error)
+    return undefined
+  }
+}
 
 const rememberModel = (sessionID, model, variant) => {
   if (!model && !variant) return
   const current = sessionID ? sessions.get(sessionID) ?? {} : {}
-  const modelID = model?.id ?? model?.modelID ?? current.modelID
-  const providerID = model?.providerID ?? current.providerID
-  const resolvedVariant = variant ?? model?.variant ?? current.variant
-
   const record = {
-    providerID,
-    modelID,
-    variant: resolvedVariant,
+    providerID: model?.providerID ?? current.providerID,
+    modelID: model?.id ?? model?.modelID ?? current.modelID,
+    variant: variant ?? model?.variant ?? current.variant,
   }
 
-  if (sessionID) {
-    sessions.set(sessionID, record)
-  }
-  if (record.modelID) {
-    lastModel = record
+  if (sessionID) sessions.set(sessionID, record)
+  if (record.modelID) lastModel = record
+}
+
+const stamp = (env, model) => {
+  if (!env || typeof env !== "object") return
+
+  env.GIVN_ATTRIBUTION_ACTIVE = "1"
+  env.GIVN_ATTRIBUTION_LLM = UNAVAILABLE
+  env.GIVN_ATTRIBUTION_REASONING = UNAVAILABLE
+  env.GIVN_ATTRIBUTION_HARNESS = "opencode"
+
+  if (!model?.modelID) return
+
+  const identity = model.providerID
+    ? `${model.providerID}/${model.modelID}`
+    : model.modelID
+  env.GIVN_ATTRIBUTION_LLM = identity
+  env.GIT_COMMITTER_NAME = `LLM: ${identity} via opencode`
+  if (model.variant) env.GIVN_ATTRIBUTION_REASONING = model.variant
+}
+
+// OpenCode V1: shell.env receives the issuing session, subagent child sessions included.
+export const GivnAttributionPlugin = async () => {
+  return {
+    "chat.message": guarded(async (input) => {
+      rememberModel(input.sessionID, input.model, input.variant)
+    }),
+    "chat.params": guarded(async (input) => {
+      rememberModel(input.sessionID, input.model)
+    }),
+    "shell.env": guarded(async (input, output) => {
+      stamp(output.env, sessions.get(input.sessionID) ?? lastModel)
+    }),
   }
 }
 
-export const GivnAttributionPlugin = async () => {
-  return {
-    "chat.message": async (input) => {
-      rememberModel(input.sessionID, input.model, input.variant)
-    },
-    "chat.params": async (input) => {
-      rememberModel(input.sessionID, input.model)
-    },
-    "shell.env": async (input, output) => {
-      output.env.GIVN_ATTRIBUTION_ACTIVE = "1"
-      output.env.GIVN_ATTRIBUTION_LLM = UNAVAILABLE
-      output.env.GIVN_ATTRIBUTION_REASONING = UNAVAILABLE
-      output.env.GIVN_ATTRIBUTION_HARNESS = "opencode"
+const withTimeout = (promise) =>
+  new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(undefined), DEFAULT_LOOKUP_TIMEOUT_MS)
+    const settle = (value) => {
+      clearTimeout(timer)
+      resolve(value)
+    }
+    promise.then(settle, () => settle(undefined))
+  })
 
-      const model = sessions.get(input.sessionID) ?? lastModel
-      if (!model?.modelID) return
-
-      const identity = model.providerID
-        ? `${model.providerID}/${model.modelID}`
-        : model.modelID
-      output.env.GIVN_ATTRIBUTION_LLM = identity
-      output.env.GIT_COMMITTER_NAME = `LLM: ${identity} via opencode`
-      if (model.variant) output.env.GIVN_ATTRIBUTION_REASONING = model.variant
-    },
+const configuredDefault = async (ctx) => {
+  if (!ctx.model?.default) return undefined
+  try {
+    const response = await withTimeout(Promise.resolve(ctx.model.default()))
+    const model = response?.data
+    if (!model) return undefined
+    return {
+      providerID: model.providerID,
+      modelID: model.id ?? model.modelID,
+      variant: model.variant,
+    }
+  } catch {
+    return undefined
   }
 }
 
 export default {
   id: "givn-attribution",
+  async server() {
+    return GivnAttributionPlugin()
+  },
   async setup(ctx) {
-    await ctx.session.hook("context", (event) => {
-      rememberModel(event.sessionID, event.model, event.model?.variant)
-    })
+    for (const kind of ["context", "compaction", "generate"]) {
+      await attempt(`session.${kind}`, () =>
+        ctx.session.hook(
+          kind,
+          guarded((event) => {
+            rememberModel(event.sessionID, event.model, event.model?.variant)
+          }),
+        ),
+      )
+    }
 
-    await ctx.session.hook("compaction", (event) => {
-      rememberModel(event.sessionID, event.model, event.model?.variant)
-    })
+    // OpenCode V2: the shell hook carries no session, so a command is linked to
+    // its session through the tool hooks, which run before shell creation.
+    let pendingShells = []
 
-    await ctx.session.hook("generate", (event) => {
-      rememberModel(event.sessionID, event.model, event.model?.variant)
-    })
-
-    await ctx.shell.hook("create.before", async (event) => {
-      event.env.GIVN_ATTRIBUTION_ACTIVE = "1"
-      event.env.GIVN_ATTRIBUTION_LLM = UNAVAILABLE
-      event.env.GIVN_ATTRIBUTION_REASONING = UNAVAILABLE
-      event.env.GIVN_ATTRIBUTION_HARNESS = "opencode"
-
-      const sessionID = event.env.OPENCODE_SESSION_ID
-      let model = sessionID ? sessions.get(sessionID) : undefined
-      if (!model?.modelID) {
-        model = lastModel
-      }
-
-      if (!model?.modelID && ctx.model?.default) {
-        try {
-          const defaultModel = await ctx.model.default()
-          if (defaultModel) {
-            model = {
-              providerID: defaultModel.providerID,
-              modelID: defaultModel.id ?? defaultModel.modelID,
-              variant: defaultModel.variant,
-            }
+    await attempt("tool.execute.before", () =>
+      ctx.tool.hook(
+        "execute.before",
+        guarded((event) => {
+          if (
+            event.tool !== "shell" ||
+            typeof event.sessionID !== "string" ||
+            typeof event.messageID !== "string" ||
+            typeof event.id !== "string" ||
+            typeof event.input?.command !== "string"
+          ) {
+            return
           }
-        } catch {
-          // ignore fallback error
-        }
-      }
+          // A request from an older message of the same session never reached shell
+          // creation (vetoed, denied, or aborted); it must not label a later command.
+          pendingShells = pendingShells.filter(
+            (pending) =>
+              pending.sessionID !== event.sessionID ||
+              pending.messageID === event.messageID,
+          )
+          pendingShells.push(event)
+        }),
+      ),
+    )
 
-      if (!model?.modelID) return
+    await attempt("tool.execute.after", () =>
+      ctx.tool.hook(
+        "execute.after",
+        guarded((event) => {
+          if (event.tool !== "shell" || typeof event.id !== "string") return
+          pendingShells = pendingShells.filter(
+            (pending) =>
+              pending.sessionID !== event.sessionID || pending.id !== event.id,
+          )
+        }),
+      ),
+    )
 
-      const identity = model.providerID
-        ? `${model.providerID}/${model.modelID}`
-        : model.modelID
-      event.env.GIVN_ATTRIBUTION_LLM = identity
-      event.env.GIT_COMMITTER_NAME = `LLM: ${identity} via opencode`
-      if (model.variant) {
-        event.env.GIVN_ATTRIBUTION_REASONING = model.variant
-      }
-    })
+    const claimShell = (command) => {
+      const index = pendingShells.findIndex(
+        (pending) => pending.input?.command === command,
+      )
+      return index < 0 ? undefined : pendingShells.splice(index, 1)[0]
+    }
+
+    await attempt("shell.create.before", () =>
+      ctx.shell.hook(
+        "create.before",
+        guarded(async (event) => {
+          // The runtime may abandon this hook while the default lookup is pending, so
+          // the unavailable defaults are written before the first await.
+          stamp(event.env, undefined)
+          const linked = claimShell(event.command)
+          let model = linked ? sessions.get(linked.sessionID) : undefined
+          if (!model?.modelID) model = lastModel
+          if (!model?.modelID) model = await configuredDefault(ctx)
+          stamp(event.env, model)
+        }),
+      ),
+    )
+
+    return () => {
+      pendingShells = []
+    }
   },
 }
