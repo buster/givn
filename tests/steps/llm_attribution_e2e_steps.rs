@@ -25,6 +25,13 @@ fn given_generated_opencode_integration(world: &mut GivnWorld) {
         include_str!("../../.opencode/plugins/givn-attribution.js"),
         "checked-in OpenCode integration must match the embedded asset"
     );
+    let generated = std::fs::read_to_string(env.root().join(".opencode/plugins/givn-attribution.js"))
+        .expect("read generated OpenCode integration");
+    assert_eq!(
+        include_str!("../../assets/agent-integrations/opencode/givn-attribution.js"),
+        generated,
+        "the generated OpenCode integration must match the embedded asset"
+    );
     std::fs::write(env.path("package.json"), r#"{"type":"module"}"#)
         .expect("write JavaScript module configuration");
     world.env = Some(env);
@@ -39,44 +46,52 @@ fn when_opencode_supplies_selected_model(
     model: String,
     session: String,
 ) {
-    world.opencode_plugin = Some(OpencodePluginState {
-        provider,
-        model,
-        session,
-        output: None,
-    });
+    let state = world
+        .opencode_plugin
+        .get_or_insert_with(OpencodePluginState::default);
+    state.supplies.push((provider, model, session));
 }
 
 #[when(regex = r##"^OpenCode prepares the environment for a shell in session "([^"]+)"$"##)]
 fn when_opencode_prepares_shell(world: &mut GivnWorld, session: String) {
+    let root = world.env.as_ref().expect("project root").root();
     let state = world
         .opencode_plugin
-        .as_ref()
-        .expect("OpenCode plugin state");
-    assert_eq!(state.session, session);
-    let root = world.env.as_ref().expect("project root").root();
-    let plugin_state = world
-        .opencode_plugin
-        .as_ref()
-        .expect("OpenCode plugin state");
-    let script = format!(
-        "import {{ GivnAttributionPlugin }} from {};
- const hooks = await GivnAttributionPlugin();
- await hooks['chat.message']({{ sessionID: {}, model: {{ providerID: {}, modelID: {} }}, variant: 'high' }}, {{}});
-await hooks['chat.params']({{ sessionID: {}, model: {{ providerID: {}, modelID: {} }}, agent: 'build', provider: {{}}, message: {{}} }}, {{}});
- const output = {{ env: {{}} }};
-await hooks['shell.env']({{ sessionID: {} }}, output);
-console.log(JSON.stringify(output.env));
+        .get_or_insert_with(OpencodePluginState::default);
+    state.session = session;
+
+    let mut script = format!(
+        "import plugin from {};
+const handlers = new Map();
+const ctx = {{
+  session: {{ hook: (kind, handler) => handlers.set(`session:${{kind}}`, handler) }},
+  tool: {{ hook: (kind, handler) => handlers.set(`tool:${{kind}}`, handler) }},
+  shell: {{ hook: (kind, handler) => handlers.set(`shell:${{kind}}`, handler) }},
+  model: {{ default: async () => ({{ data: undefined }}) }},
+}};
+await plugin.setup(ctx);
+const fire = (key, event) => handlers.get(key)(event);
 ",
         javascript_string(&root.join(".opencode/plugins/givn-attribution.js")),
-        javascript_string_value(&session),
-        javascript_string_value(&plugin_state.provider),
-        javascript_string_value(&plugin_state.model),
-        javascript_string_value(&session),
-        javascript_string_value(&plugin_state.provider),
-        javascript_string_value(&plugin_state.model),
-        javascript_string_value(&session),
     );
+    for (provider, model, supplied_session) in &state.supplies {
+        script.push_str(&format!(
+            "await fire('session:generate', {{ sessionID: {}, model: {{ providerID: {}, id: {}, variant: 'high' }} }});\n",
+            javascript_string_value(supplied_session),
+            javascript_string_value(provider),
+            javascript_string_value(model),
+        ));
+    }
+    script.push_str(&format!(
+        "const command = 'git commit -m test';
+await fire('tool:execute.before', {{ tool: 'shell', sessionID: {}, messageID: 'message-1', id: 'call-1', input: {{ command }} }});
+const shellEvent = {{ command, env: {{}} }};
+await fire('shell:create.before', shellEvent);
+console.log(JSON.stringify(shellEvent.env));
+",
+        javascript_string_value(&state.session),
+    ));
+
     let script_path = root.join("invoke-opencode-shell.mjs");
     std::fs::write(&script_path, script).expect("write OpenCode shell script");
     let output = Command::new("node")
@@ -90,11 +105,7 @@ console.log(JSON.stringify(output.env));
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)
     );
-    world
-        .opencode_plugin
-        .as_mut()
-        .expect("OpenCode plugin state")
-        .output = Some(output);
+    state.output = Some(output);
 }
 
 #[then(regex = r##"^the shell environment identifies LLM "([^"]+)"$"##)]
@@ -117,10 +128,25 @@ fn then_opencode_shell_identifies_committer(world: &mut GivnWorld, expected: Str
     assert_opencode_env(world, "GIT_COMMITTER_NAME", &expected);
 }
 
-#[derive(Debug)]
+#[then(regex = r##"^the shell environment carries no committer identity$"##)]
+fn then_opencode_shell_carries_no_committer_identity(world: &mut GivnWorld) {
+    let state = world
+        .opencode_plugin
+        .as_ref()
+        .expect("OpenCode plugin state");
+    let output = state.output.as_ref().expect("OpenCode shell output");
+    let env: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("parse OpenCode shell environment");
+    assert!(
+        env.get("GIT_COMMITTER_NAME").is_none(),
+        "shell environment must not carry a committer identity: {:?}",
+        env.get("GIT_COMMITTER_NAME")
+    );
+}
+
+#[derive(Debug, Default)]
 pub(crate) struct OpencodePluginState {
-    provider: String,
-    model: String,
+    supplies: Vec<(String, String, String)>,
     session: String,
     output: Option<Output>,
 }
