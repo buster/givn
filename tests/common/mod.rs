@@ -389,19 +389,26 @@ pub fn run_init_in_terminal(env: &TestEnv, keys: &[u8]) -> Output {
 
     let transcript = env.path(".terminal-transcript.txt");
     let bin = env!("CARGO_BIN_EXE_givn");
-    let mut child = Command::new("script")
-        .args([
-            "-qec",
-            &format!("{bin} init"),
-            &transcript.to_string_lossy(),
-        ])
+    let mut command = Command::new("script");
+    #[cfg(target_os = "macos")]
+    command
+        .args(["-q", "-e"])
+        .arg(&transcript)
+        .arg(bin)
+        .arg("init");
+    #[cfg(not(target_os = "macos"))]
+    command
+        .arg("-qec")
+        .arg(format!("{bin} init"))
+        .arg(&transcript);
+    let mut child = command
         .current_dir(env.root())
         .env_remove("GIVN_FEATURES")
         .stdin(Stdio::piped())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
-        .expect("spawn `script` (util-linux) to drive the terminal prompt");
+        .expect("spawn platform `script` to drive the terminal prompt");
     child
         .stdin
         .take()
