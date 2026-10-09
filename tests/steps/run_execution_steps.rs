@@ -104,7 +104,7 @@ fn inproc_start_stays_ready(world: &mut GivnWorld) {
 fn probe_against_silent_port(world: &mut GivnWorld) {
     let port = support::reserve_free_port();
     let handle = std::thread::spawn(move || {
-        givn::cli::run::probe_until_ready(port, "/healthz", Duration::from_secs(5))
+        givn::cli::run::probe_until_ready(port, "/healthz", Duration::from_secs(10))
     });
     world.run_probe = Some(super::ProbeJob { port, handle });
 }
