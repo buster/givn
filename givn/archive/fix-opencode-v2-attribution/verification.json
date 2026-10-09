@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "fix-opencode-v2-attribution",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
-  "started_at_unix": 1791523248,
-  "finished_at_unix": null
+  "status": "proven",
+  "candidate_revision": "e4c21693a7af81bcd019df58817ad43b81dc7ea4",
+  "tested_revision": "e4c21693a7af81bcd019df58817ad43b81dc7ea4",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 118,
+      "passed": 118,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 257.915348708
+    },
+    "regular": {
+      "status": "passed",
+      "total": 654,
+      "passed": 654,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 541.779844
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 8179,
+    "line_valid": 10178,
+    "line_percent": 80
+  },
+  "started_at_unix": 1791528599,
+  "finished_at_unix": 1791529576
 }
