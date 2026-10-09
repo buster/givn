@@ -597,6 +597,10 @@ fn assert_opencode_env(world: &GivnWorld, name: &str, expected: &str) {
     );
 }
 
+fn javascript_string(path: &std::path::Path) -> String {
+    serde_json::to_string(&path.to_string_lossy()).expect("encode JavaScript string")
+}
+
 fn javascript_string_value(value: &str) -> String {
     serde_json::to_string(value).expect("encode JavaScript string")
 }
