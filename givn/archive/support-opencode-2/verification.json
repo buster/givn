@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "support-opencode-2",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "f885f4a2c94114345d7b76c42a45c2f532a73275",
+  "tested_revision": "f885f4a2c94114345d7b76c42a45c2f532a73275",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 93,
+      "passed": 93,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 11.915778503
+    },
+    "regular": {
+      "status": "passed",
+      "total": 605,
+      "passed": 605,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 50.454976574
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 8200,
+    "line_valid": 10239,
+    "line_percent": 80
+  },
   "started_at_unix": 1791552541,
-  "finished_at_unix": null
+  "finished_at_unix": 1791552694
 }
