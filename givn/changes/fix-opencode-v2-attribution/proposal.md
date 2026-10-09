@@ -34,8 +34,8 @@ Routing this completed draft on 2026-10-04 with `givn spec route --change fix-op
 
 | Proposed capability | Route's recommendation | Decision | Rationale for deviation |
 |---|---|---|---|
-| Attribute commits across supported OpenCode generations | `EXTEND apply-a-managed-upgrade` | `EXTEND attribute-commits` | Existing support behavior already owns initialization of shared attribution and OpenCode shell attribution. Compatibility and retained fallback variants extend that contract; OpenCode is a harness, not a new actor goal. The recommendation's lexical evidence does not supersede that ownership. |
-| Enable compatible attribution during regeneration | `EXTEND apply-a-managed-upgrade` | `EXTEND enable-commit-attribution` | Existing support behavior owns installation reports and managed-upgrade retrofit. Skill synchronization, target addition, and addon toggles refresh the same attribution behavior; they do not justify a channel-shaped capability or duplicate placement in including use cases. Managed-upgrade behavior outside attribution is unchanged. |
+| attribute-commits | `EXTEND apply-a-managed-upgrade` | `NEW in fragments` | The capability lives in the reusable support fragment; the routing check resolves only use-case-owned capabilities, so fragment deltas record `NEW in fragments`. Existing support behavior already owns initialization of shared attribution and OpenCode shell attribution. Compatibility and retained fallback variants extend that contract; OpenCode is a harness, not a new actor goal. |
+| enable-commit-attribution | `EXTEND apply-a-managed-upgrade` | `NEW in fragments` | Same fragment rule; the capability lives under the support fragment. Existing support behavior owns installation reports and managed-upgrade retrofit. Skill synchronization, target addition, and addon toggles refresh the same attribution behavior; they do not justify a channel-shaped capability or duplicate placement in including use cases. |
 
 ## Out of Scope
 
