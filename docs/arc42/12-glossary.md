@@ -11,6 +11,7 @@
 | **Commit attribution** | The best-effort LLM and harness identification visible through a revision's committer identity and message trailers; on Git through the hook, on Fossil through `givn commit`. |
 | **Harness** | The agent runtime that executes project commands, such as OpenCode, Claude Code, or omp. Anti-term: agent target. |
 | **Reasoning mode** | The harness-reported effort or thinking variant active when a commit is created. |
+| **Issuing session** | The agent-runtime session whose shell request created a command; the command is attributed to that session's remembered model, not to the last model observed anywhere in the run. |
 | **Attribution trailer** | The managed `Co-Authored-By` message trailer containing the commit-attribution context; on Git it is a commit message, on Fossil a check-in comment. |
 | **Managed co-author attribution** | The Givn-owned `Co-Authored-By` trailer formatted as `<model>/<reasoning>@<harness> with Givn <version>`; ordinary human co-author trailers remain user-owned. |
 | **Committer identity** | The Git name and email stored as the commit creator; an agent integration may provide the name while Git supplies the configured email fallback. Fossil records its own user and has no equivalent override. |

@@ -2,7 +2,7 @@
 
 Feature: Attribute commits
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: OpenCode prepares attribution using its selected model
     Given  a project with the generated OpenCode attribution integration
     When  OpenCode supplies the selected provider "openai" and model "gpt-5.6-luna" for session "session-1"

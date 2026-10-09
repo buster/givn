@@ -62,13 +62,17 @@ The commit flow is:
 Model and harness changes update only the next agent shell's process-scoped
 values. No model selection is written to project configuration.
 
-The OpenCode path is ordered as follows: `chat.message` may receive the
-selected model and variant, then `chat.params` receives the selected model
-under its required `model` object and caches its provider/model identity by
-session; OpenCode then invokes `shell.env` for a shell execution; the plugin
-looks up the same session and returns the existing Givn environment protocol.
-If the payload has no usable model, the harness marker remains available and
-the missing attribution fields retain their best-effort fallback behavior.
+The OpenCode 2 path is ordered as follows: the plugin registers for the
+session lifecycle events (`context`, `compaction`, `generate`) and remembers
+the selected provider, model identity, and reasoning variant per session;
+`tool.execute.before` links each shell request to its issuing session and
+`tool.execute.after` retires it; when OpenCode creates the shell,
+`shell.create.before` stamps the existing Givn environment protocol with the
+issuing session's remembered model. When the session has no remembered model,
+the plugin falls back to the last observed model, then to OpenCode's
+configured default, and leaves the missing attribution fields unavailable. The
+harness marker remains available and no shell is blocked, delayed, or
+altered.
 
 The Claude path is ordered as follows: Claude invokes the generated
 PreToolUse Bash hook with a Bash command and `transcript_path`; the Givn

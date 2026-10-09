@@ -51,6 +51,15 @@ The source policy and generated guidance are not changed by the planning
 artifacts; implementation and fresh-context verification remain to be proved.
 No new ADR or runtime question gate is introduced.
 
+The `support-opencode-2` change moves the generated OpenCode attribution
+integration to the OpenCode 2 plugin contract, with session-scoped model
+observation, an issuing-session link for shell commands, and best-effort
+unavailable fallbacks. Durable facts live in chapters 2 (TC-29), 6.1a, 10
+(Q-78), 11 (R-50), and 12 (Issuing session). No ADR is introduced: the
+compatibility window and the
+session-link choice are single-component, one-change-reversible integration
+decisions owned by the change's proposal, design, and specs.
+
 Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
 register](adr/README.md) for status, relationships, evidence, reserved IDs, and
 historical records.
