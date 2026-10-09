@@ -311,7 +311,7 @@ async function startServer(readiness, version) {
     server = await spawnSandboxed(executable, ['serve', '--hostname', '127.0.0.1', '--port', String(apiPort)], { cwd: project, env: { ...childEnvironment, ...proxyEnvironment(readiness), OPENCODE_SERVER_PASSWORD: SERVER_PASSWORD }, stdio: ['ignore', 'pipe', 'pipe'] }, [readiness.port, readiness.proxyPort, apiPort])
     server.stdout.on('data', (part) => serverOutput.push(part))
     server.stderr.on('data', (part) => serverOutput.push(part))
-    const until = Date.now() + 15_000
+    const until = Date.now() + 30_000
     let info
     while (Date.now() < until && !info) {
       if (server.exitCode !== null) break
@@ -321,7 +321,10 @@ async function startServer(readiness, version) {
       } catch {}
       if (!info) await new Promise((resolve) => setTimeout(resolve, 50))
     }
-    if (server.exitCode !== null && attempt < 3) continue // bind collision: retry on a new port
+    if ((server.exitCode !== null || !info) && attempt < 3) {
+      try { server.kill() } catch {}
+      continue // bind collision or slow startup: retry on a new port
+    }
     const tmpRoot = path.resolve(root, 'tmp', 'opencode')
     const reportedTmp = info?.paths?.tmp ? path.resolve(info.paths.tmp) : ''
     const expectedVersion = version.replace(/^opencode v?/, '')
