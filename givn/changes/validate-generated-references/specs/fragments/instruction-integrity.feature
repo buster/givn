@@ -21,7 +21,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     When  the user runs `givn skills sync`
     Then  every guidance reference resolves in the consumer project or is owned by a named creation step
 
-  @givn.added @wip
+  @givn.added
   Scenario: The printed instructions reference only resolvable files
     Given  a Givn project with an active change
     When  the author requests every instruction Givn prints
