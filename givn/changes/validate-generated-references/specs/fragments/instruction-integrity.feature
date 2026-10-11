@@ -2,7 +2,7 @@
 
 Feature: Instruction and skill guidance remains complete and machine-readable
 
-  @givn.added @wip
+  @givn.added
   Scenario: The characterization guidance requests the reverse review from Givn
     Given  a givn project with all agent skill targets enabled
     When  the user runs `givn skills sync`

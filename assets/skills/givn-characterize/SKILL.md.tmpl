@@ -60,7 +60,7 @@ When verify fails and infrastructure is sound:
 
 After all tasks are checked, a review subagent:
 - Reads the `givn-review` skill for shared coverage mechanics.
-- Applies reverse-mode rules (from `review-reverse.md`):
+- Applies reverse-mode rules (`givn instructions review-reverse`):
   - Runs coverage (record the number, classify gaps).
   - Dead code → flag as `@givn.removed` candidate (do NOT delete).
   - Missing test → flag as `@givn.added` candidate (do NOT add during review).

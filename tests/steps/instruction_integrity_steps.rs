@@ -1739,6 +1739,25 @@ fn guidance_keeps_decision_mandatory(world: &mut GivnWorld) {
 
 // --- validate-generated-references: consumer-view reference check ----------
 
+fn env(world: &GivnWorld) -> &crate::common::TestEnv {
+    world.env.as_ref().expect("project fixture is missing")
+}
+
+fn configured_skill_content(world: &GivnWorld, skill: &str) -> Vec<(std::path::PathBuf, String)> {
+    let root = env(world).root();
+    let targets = givn::config::overlay::load_skills_targets(&root)
+        .expect("load configured skills targets");
+    targets
+        .into_iter()
+        .map(|target| {
+            let path = root.join(format!(".{target}/skills/{skill}/SKILL.md"));
+            let content = std::fs::read_to_string(&path)
+                .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+            (path, content)
+        })
+        .collect()
+}
+
 #[when("the author requests every instruction Givn prints")]
 fn author_requests_every_printed_instruction(_world: &mut GivnWorld) {
     unimplemented!()
@@ -1779,11 +1798,41 @@ fn printed_reference_check_fails_naming(_world: &mut GivnWorld, _path: String) {
 }
 
 #[then("the generated givn-characterize guidance requests `givn instructions review-reverse`")]
-fn characterize_guidance_requests_reverse_review(_world: &mut GivnWorld) {
-    unimplemented!()
+fn characterize_guidance_requests_reverse_review(world: &mut GivnWorld) {
+    let files = configured_skill_content(world, "givn-characterize");
+    assert!(
+        !files.is_empty(),
+        "no configured agent target carries the givn-characterize skill"
+    );
+    for (path, content) in files {
+        assert!(
+            content.contains("givn instructions review-reverse"),
+            "{} does not request the reverse review through the Givn CLI",
+            path.display()
+        );
+    }
 }
 
 #[then("the generated givn-characterize command requests `givn instructions review-reverse`")]
-fn characterize_command_requests_reverse_review(_world: &mut GivnWorld) {
-    unimplemented!()
+fn characterize_command_requests_reverse_review(world: &mut GivnWorld) {
+    let root = env(world).root();
+    let mut checked = 0;
+    for target in ["opencode", "omp"] {
+        let path = root.join(format!(".{target}/commands/givn-characterize.md"));
+        if !path.exists() {
+            continue;
+        }
+        let content = std::fs::read_to_string(&path)
+            .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+        assert!(
+            content.contains("givn instructions review-reverse"),
+            "{} does not request the reverse review through the Givn CLI",
+            path.display()
+        );
+        checked += 1;
+    }
+    assert!(
+        checked > 0,
+        "no command-owning target carries givn-characterize"
+    );
 }
