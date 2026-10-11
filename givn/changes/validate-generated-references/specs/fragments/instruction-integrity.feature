@@ -34,7 +34,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     When  the user runs `givn skills sync`
     Then  the installed reference check fails and names "givn/reference-that-resolves-nowhere.md"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A printed reference that resolves nowhere fails the check
     Given  a Givn project with an active change
     And  a specs instruction override that names the missing file "givn/reference-that-resolves-nowhere.md"

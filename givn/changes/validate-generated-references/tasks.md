@@ -164,20 +164,20 @@
 
 ## Task 6 — An undeclared reference in an installed skill fails the check (`instruction-integrity`)
 
-- [ ] RED — remove `@wip` from this scenario only; run; expect non-zero
+- [x] RED — remove `@wip` from this scenario only; run; expect non-zero
   (stub panic on the skill-override Given).
   - Command: `GIVN_FEATURES=givn/changes/validate-generated-references/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::An undeclared reference in an installed skill fails the check"`
-  - Output: _(paste)_
-- [ ] GREEN — implement the skill-override Given (valid frontmatter plus
+  - Output: `exit=101` — `✘ And a givn-ideation skill override that names the missing file "givn/reference-that-resolves-nowhere.md"` → `Step panicked. Captured output: not implemented`; `1 scenario (1 failed)`.
+- [x] GREEN — implement the skill-override Given (valid frontmatter plus
   one backticked dead reference) and the installed-failure Then; re-run;
   expect zero.
   - Files: `tests/steps/instruction_integrity_steps.rs`.
-  - Output: _(paste)_
-- [ ] REFACTOR — re-run; expect zero.
-  - Output: _(paste)_
-- [ ] COMMIT — `feat(instruction-integrity): <release note>` with the
+  - Output: `exit=0` — `1 scenario (1 passed)`, `4 steps (4 passed)`.
+- [x] REFACTOR — re-run; expect zero.
+  - Output: `exit=0` — `1 scenario (1 passed)`, `4 steps (4 passed)`.
+- [x] COMMIT — `feat(instruction-integrity): <release note>` with the
   scenario title in the body.
-  - Hash: _(paste)_
+  - Hash: `394ada3e`
 
 ## Task 7 — A printed reference that resolves nowhere fails the check (`instruction-integrity`)
 
