@@ -432,7 +432,8 @@ fn body_demonstrates_genus_failure(world: &mut GivnWorld) {
 fn body_no_longer_chooses_alone(world: &mut GivnWorld) {
     let content = skill_template(world);
     assert!(
-        !content.contains("Propose it and justify it") && content.contains("do not choose it alone"),
+        !content.contains("Propose it and justify it")
+            && content.contains("do not choose it alone"),
         "body still tells the agent to choose and justify the name alone"
     );
 }
