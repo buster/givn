@@ -55,21 +55,21 @@
 
 ## Task 1 — The ideation guidance carries the persona schema (`generate-ideation-guidance`)
 
-- [ ] RED — remove `@wip` from this scenario only; run the single-scenario
+- [x] RED — remove `@wip` from this scenario only; run the single-scenario
   command; expect non-zero (the capitalization assertions fail today).
   - Command: `GIVN_FEATURES=givn/changes/validate-generated-references/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance carries the persona schema"`
-  - Output: _(paste)_
-- [ ] GREEN — replace the pointer paragraph in
+  - Output: `exit=101` — `✘ Then the generated givn-ideation guidance contains "Stable core"` → `Step panicked. Captured output: givn-ideation guidance missing "Stable core"`; `1 scenario (1 failed)`.
+- [x] GREEN — replace the pointer paragraph in
   `assets/skills/givn-ideation/SKILL.md.tmpl` with the inline schema block
   from `design.md`; re-run; expect zero.
   - Files: `assets/skills/givn-ideation/SKILL.md.tmpl`.
-  - Output: _(paste)_
-- [ ] REFACTOR — re-run; expect zero.
-  - Output: _(paste)_
-- [ ] COMMIT — one commit for RED+GREEN+REFACTOR;
+  - Output: `exit=0` — all 8 assertions pass ("Stable core" through "Topic stances"); `1 scenario (1 passed)`, `10 steps (10 passed)`.
+- [x] REFACTOR — re-run; expect zero.
+  - Output: `exit=0` — `1 scenario (1 passed)`, `10 steps (10 passed)`.
+- [x] COMMIT — one commit for RED+GREEN+REFACTOR;
   `feat(generate-ideation-guidance): <release note>` with the scenario title
   in the body.
-  - Hash: _(paste)_
+  - Hash: `6224ef7f`
 
 ## Task 2 — The characterization guidance requests the reverse review from Givn (`instruction-integrity`)
 
