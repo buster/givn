@@ -24,7 +24,7 @@ Gather the authoritative material:
 {{#if addons.arc42}}
 - `docs/arc42/` (if the arc42 addon is enabled)
 {{/if}}
-- Any ADRs under `docs/adr/` or the project's decisions log
+- Any architecture decision records or the project's decisions log
 - `givn/config.yaml` (verify.command, features_path, addons, extras)
 
 ### 2. Cross-check, one question at a time

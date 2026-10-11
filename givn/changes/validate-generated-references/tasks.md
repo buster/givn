@@ -73,23 +73,23 @@
 
 ## Task 2 — The characterization guidance requests the reverse review from Givn (`instruction-integrity`)
 
-- [ ] RED — remove `@wip` from this scenario only; run; expect non-zero
+- [x] RED — remove `@wip` from this scenario only; run; expect non-zero
   (stub panic).
   - Command: `GIVN_FEATURES=givn/changes/validate-generated-references/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::The characterization guidance requests the reverse review from Givn"`
-  - Output: _(paste)_
-- [ ] GREEN — implement the two Then steps; edit
+  - Output: `exit=101` — `✘ Then the generated givn-characterize guidance requests \`givn instructions review-reverse\`` → `Step panicked. Captured output: not implemented`; `1 scenario (1 failed)`.
+- [x] GREEN — implement the two Then steps; edit
   `assets/skills/givn-characterize/SKILL.md.tmpl` (one occurrence) and
   `assets/commands/givn-characterize.md` (two occurrences) to
   `` `givn instructions review-reverse` ``; re-run; expect zero.
   - Files: `tests/steps/instruction_integrity_steps.rs`,
     `assets/skills/givn-characterize/SKILL.md.tmpl`,
     `assets/commands/givn-characterize.md`.
-  - Output: _(paste)_
-- [ ] REFACTOR — re-run; expect zero.
-  - Output: _(paste)_
-- [ ] COMMIT — `feat(instruction-integrity): <release note>` with the
+  - Output: `exit=0` — both assertions pass; `1 scenario (1 passed)`, `4 steps (4 passed)`.
+- [x] REFACTOR — re-run; expect zero.
+  - Output: `exit=0` — `1 scenario (1 passed)`, `4 steps (4 passed)`.
+- [x] COMMIT — `feat(instruction-integrity): <release note>` with the
   scenario title in the body.
-  - Hash: _(paste)_
+  - Hash: `e9d34960`
 
 ## Task 3 — The generated guidance references resolve with the default configuration (`instruction-integrity`)
 
