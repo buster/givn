@@ -86,7 +86,9 @@ Term record: crystallizing terms are kept in `givn/ideation/<topic-id>/domain-te
 Each entry records the term, its status (`candidate`, `confirmed`, or
 `rejected`), a one-sentence definition, a contrast, its first use, and the
 recorded collision check; a `confirmed` term has passed the term introduction
-test and a recorded search-before-coin check. The canonical schema lives in
+test, carries a recorded search-before-coin check, and carries the user's
+verified name — asked immediately when the name fails, otherwise at the
+phase's term check. The canonical schema lives in
 the `givn-ideation` skill and the test in the `givn-domain-modeling` skill;
 this document does not duplicate either.
 
