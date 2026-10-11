@@ -95,7 +95,10 @@ const WORKFLOW_CREATED: &[(&[&str], &[&[&str]])] = &[
 
 /// Locations the guidance itself defines and a project creates while
 /// following it.
-const RULE_OWNED: &[&[&str]] = &[&["docs", "design", "**"]];
+const RULE_OWNED: &[&[&str]] = &[
+    &["docs", "design", "**"],
+    &["docs", "arc42", "adr", "**"],
+];
 
 /// Every installed guidance file for the project's configured agent targets:
 /// `<target>/skills/*/SKILL.md` and `<target>/commands/*.md`.

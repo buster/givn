@@ -125,20 +125,20 @@
 
 ## Task 4 — The generated guidance references resolve without addons (`instruction-integrity`)
 
-- [ ] RED — remove `@wip` from this scenario only; run; expect non-zero: in
+- [x] RED — remove `@wip` from this scenario only; run; expect non-zero: in
   an opencode-only project `.agents/skills/givn-steps/SKILL.md` does not
   exist and the by-name resolution rule is not implemented yet.
   - Command: `GIVN_FEATURES=givn/changes/validate-generated-references/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::The generated guidance references resolve without addons"`
-  - Output: _(paste)_
-- [ ] GREEN — add the agent-target skill-file resolution rule (resolve the
+  - Output: `exit=101` — two findings: `.opencode/commands/givn-characterize.md:98` and `.opencode/commands/givn-implement.md:103`, both `.agents/skills/givn-steps/SKILL.md`; `1 scenario (1 failed)`.
+- [x] GREEN — add the agent-target skill-file resolution rule (resolve the
   skill by name across the configured targets); re-run; expect zero.
   - Files: `tests/common/reference_check.rs`.
-  - Output: _(paste)_
-- [ ] REFACTOR — re-run; expect zero.
-  - Output: _(paste)_
-- [ ] COMMIT — `feat(instruction-integrity): <release note>` with the
+  - Output: `exit=0` — `1 scenario (1 passed)`, `3 steps (3 passed)`.
+- [x] REFACTOR — re-run; expect zero.
+  - Output: `exit=0` — `1 scenario (1 passed)`, `3 steps (3 passed)`.
+- [x] COMMIT — `feat(instruction-integrity): <release note>` with the
   scenario title in the body.
-  - Hash: _(paste)_
+  - Hash: `debeb675`
 
 ## Task 5 — The printed instructions reference only resolvable files (`instruction-integrity`)
 

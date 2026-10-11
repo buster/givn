@@ -1759,8 +1759,45 @@ fn configured_skill_content(world: &GivnWorld, skill: &str) -> Vec<(std::path::P
 }
 
 #[when("the author requests every instruction Givn prints")]
-fn author_requests_every_printed_instruction(_world: &mut GivnWorld) {
-    unimplemented!()
+fn author_requests_every_printed_instruction(world: &mut GivnWorld) {
+    const EXTRA_INSTRUCTIONS: &[&str] = &["review-reverse", "specs-reverse", "tasks-reverse", "dialog"];
+    let env = env(world);
+    let graph = crate::common::run_givn(env, &["graph", "--json"]);
+    assert!(
+        graph.status.success(),
+        "givn graph --json failed: {}",
+        String::from_utf8_lossy(&graph.stderr)
+    );
+    let graph_json: serde_json::Value =
+        serde_json::from_slice(&graph.stdout).expect("parse givn graph --json");
+    let mut ids: Vec<String> = graph_json["artifacts"]
+        .as_array()
+        .expect("graph JSON carries an artifacts array")
+        .iter()
+        .map(|artifact| {
+            artifact["id"]
+                .as_str()
+                .expect("artifact entry carries an id")
+                .to_string()
+        })
+        .collect();
+    ids.extend(EXTRA_INSTRUCTIONS.iter().map(|id| id.to_string()));
+
+    let mut corpus = String::new();
+    for id in ids {
+        let output = crate::common::run_givn(
+            env,
+            &["instructions", &id, "--change", "instruction-integrity"],
+        );
+        assert!(
+            output.status.success(),
+            "givn instructions {id} failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        corpus.push_str(&format!("\n### instructions/{id}\n\n"));
+        corpus.push_str(&String::from_utf8_lossy(&output.stdout));
+    }
+    world.additional_output = Some(corpus);
 }
 
 #[then(
@@ -1784,8 +1821,22 @@ fn installed_guidance_references_resolve(world: &mut GivnWorld) {
 #[then(
     "every printed guidance reference resolves in the consumer project or is owned by a named creation step"
 )]
-fn printed_guidance_references_resolve(_world: &mut GivnWorld) {
-    unimplemented!()
+fn printed_guidance_references_resolve(world: &mut GivnWorld) {
+    let root = env(world).root();
+    let text = world
+        .additional_output
+        .clone()
+        .expect("printed instructions were not collected");
+    let sources = vec![crate::common::reference_check::GuidanceSource {
+        label: "printed instructions".to_string(),
+        text,
+    }];
+    let findings = crate::common::reference_check::unresolved_references(&root, &sources);
+    assert!(
+        findings.is_empty(),
+        "unresolved printed guidance references:\n{}",
+        crate::common::reference_check::describe(&findings)
+    );
 }
 
 #[given(regex = r##"^a givn-ideation skill override that names the missing file "([^"]+)"$"##)]

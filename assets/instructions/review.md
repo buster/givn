@@ -213,8 +213,7 @@ Record the disposition for every confirmed Persona; when none is confirmed, reco
 ### Use-case scope rejection criteria
 
 A review fails when any of these holds. Each criterion names the observable
-document section that proves it; the durable reference is
-`docs/use-case-model.md`.
+document section that proves it.
 
 - **Goal conjunction** — `## Goal` joins two verb phrases, or
   `## Success guarantee` names two outcomes.
