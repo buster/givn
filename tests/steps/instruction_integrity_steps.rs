@@ -1745,8 +1745,8 @@ fn env(world: &GivnWorld) -> &crate::common::TestEnv {
 
 fn configured_skill_content(world: &GivnWorld, skill: &str) -> Vec<(std::path::PathBuf, String)> {
     let root = env(world).root();
-    let targets = givn::config::overlay::load_skills_targets(&root)
-        .expect("load configured skills targets");
+    let targets =
+        givn::config::overlay::load_skills_targets(&root).expect("load configured skills targets");
     targets
         .into_iter()
         .map(|target| {
@@ -1760,7 +1760,8 @@ fn configured_skill_content(world: &GivnWorld, skill: &str) -> Vec<(std::path::P
 
 #[when("the author requests every instruction Givn prints")]
 fn author_requests_every_printed_instruction(world: &mut GivnWorld) {
-    const EXTRA_INSTRUCTIONS: &[&str] = &["review-reverse", "specs-reverse", "tasks-reverse", "dialog"];
+    const EXTRA_INSTRUCTIONS: &[&str] =
+        &["review-reverse", "specs-reverse", "tasks-reverse", "dialog"];
     let env = env(world);
     let graph = crate::common::run_givn(env, &["graph", "--json"]);
     assert!(
