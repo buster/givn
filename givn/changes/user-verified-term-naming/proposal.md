@@ -169,10 +169,10 @@ the generic list.
 
 ## Capability Routing
 
-| Proposed capability | Decision | Rationale |
-|---|---|---|
-| `generate-ideation-guidance` | `EXTEND generate-ideation-guidance` | Route reports no signal. The capability is declared in `givn/specs/fragments/fragment.md`; this change adds the user-verification gate, the phase term check, and the command guardrail line to the generated ideation guidance it owns, so the delta lives under `specs/fragments/` per the fragment convention. |
-| `guide-domain-modeling` | `EXTEND guide-domain-modeling` | Route reports no signal. The capability owns the generated domain-modeling guidance; this change replaces the challenge bullet's remedy with the naming dialog, so the delta lives under `specs/fragments/` per the fragment convention. |
+| Proposed capability | Route's recommendation | Decision | Rationale |
+|---|---|---|---|
+| `generate-ideation-guidance` | no signal | `NEW in fragments` | Fragment capability declared in `givn/specs/fragments/fragment.md`; fragment capabilities carry no use-case directory, so the routing decision names the fragment, and the delta lives under `specs/fragments/`. This change adds the user-verification gate, the phase term check, and the command guardrail line to the generated ideation guidance it owns. |
+| `guide-domain-modeling` | no signal | `NEW in fragments` | Fragment capability declared in `givn/specs/fragments/fragment.md`; fragment capabilities carry no use-case directory, so the routing decision names the fragment, and the delta lives under `specs/fragments/`. This change replaces the challenge bullet's remedy with the naming dialog in the generated domain-modeling guidance it owns. |
 
 ## Out of Scope
 

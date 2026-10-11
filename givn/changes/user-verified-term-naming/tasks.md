@@ -254,4 +254,4 @@ assertion `Genus + differentia` etc. remain intact.
       full-suite count (paste both). Evidence: `90 tests run: 90 passed,
       501 skipped` (7.453s, exit 0) — 90 < 591.
 - [x] Review artifact complete and signed off.
-- [ ] Archive the change.
+- [x] Archive the change.
