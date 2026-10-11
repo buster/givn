@@ -15,7 +15,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     When  the user runs `givn skills sync`
     Then  every guidance reference resolves in the consumer project or is owned by a named creation step
 
-  @givn.added @wip
+  @givn.added
   Scenario: The generated guidance references resolve without addons
     Given  a project root with givn/ initialised without addons
     When  the user runs `givn skills sync`

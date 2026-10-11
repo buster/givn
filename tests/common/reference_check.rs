@@ -34,6 +34,9 @@ const CANDIDATE_ROOTS: &[&str] = &[
     ".omp",
 ];
 
+/// Known agent target directory names (with leading dot).
+const AGENT_TARGETS: &[&str] = &[".opencode", ".agents", ".claude", ".omp"];
+
 /// Locations a named creation step produces during the lifecycle. Each row
 /// is a root segment template plus the leaves the step emits under it; `**`
 /// matches zero or more remaining segments.
@@ -225,7 +228,37 @@ fn resolves(project_root: &Path, raw: &str) -> bool {
     if project_root.join(&candidate).exists() {
         return true;
     }
+    if let Some(skill) = skill_reference(&candidate) {
+        return resolves_skill_by_name(project_root, skill);
+    }
     matches_workflow_created(&candidate) || matches_rule_owned(&candidate)
+}
+
+/// `<target>/skills/<skill>/SKILL.md` for a known agent target.
+fn skill_reference(candidate: &str) -> Option<&str> {
+    let segments: Vec<&str> = candidate.split('/').collect();
+    if segments.len() == 4
+        && AGENT_TARGETS.contains(&segments[0])
+        && segments[1] == "skills"
+        && segments[3] == "SKILL.md"
+    {
+        Some(segments[2])
+    } else {
+        None
+    }
+}
+
+/// The guidance says "or your harness's equivalent path": a skill file
+/// resolves when any configured target carries that skill.
+fn resolves_skill_by_name(project_root: &Path, skill: &str) -> bool {
+    let Ok(targets) = givn::config::overlay::load_skills_targets(project_root) else {
+        return false;
+    };
+    targets.iter().any(|target| {
+        project_root
+            .join(format!(".{target}/skills/{skill}/SKILL.md"))
+            .is_file()
+    })
 }
 
 /// A candidate that begins with a glob name is resolved through its longest
