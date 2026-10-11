@@ -194,8 +194,8 @@ All tasks checked → proceed to Phase 2.
 
 ### 7. Collect review instructions
 
-Read `assets/instructions/review-reverse.md` in full (passed to the review
-subagent).
+Read the reverse-review instruction (`givn instructions review-reverse`) in
+full (passed to the review subagent).
 
 ```sh
 givn instructions review --change <id>
@@ -216,7 +216,7 @@ Read the givn-review skill in full (coverage gate, gap classification,
 sign-off).
 
 ## Reverse-mode overlay
-<paste full content of assets/instructions/review-reverse.md>
+<paste the full content of `givn instructions review-reverse`>
 
 Overlays gap classification: dead code → flag @givn.removed, do NOT delete.
 Missing test → flag @givn.added, do NOT add during review. Hard to test →
