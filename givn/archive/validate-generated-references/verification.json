@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "change": "validate-generated-references",
+  "status": "pending",
+  "candidate_revision": null,
+  "tested_revision": null,
+  "scopes": {},
+  "coverage": null,
+  "started_at_unix": 1791754346,
+  "finished_at_unix": null
+}

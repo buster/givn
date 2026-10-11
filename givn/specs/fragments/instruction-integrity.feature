@@ -205,3 +205,35 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     Then  the response preserves the active change identity and next required artifact
     And  the response includes the same universal effective-dialog loading obligation in its guidance
     And  the response does not embed a second complete dialog policy
+  Scenario: The characterization guidance requests the reverse review from Givn
+    Given  a givn project with all agent skill targets enabled
+    When  the user runs `givn skills sync`
+    Then  the generated givn-characterize guidance requests `givn instructions review-reverse`
+    And  the generated givn-characterize command requests `givn instructions review-reverse`
+
+  Scenario: The generated guidance references resolve with the default configuration
+    Given  a givn project with all agent skill targets enabled
+    When  the user runs `givn skills sync`
+    Then  every guidance reference resolves in the consumer project or is owned by a named creation step
+
+  Scenario: The generated guidance references resolve without addons
+    Given  a project root with givn/ initialised without addons
+    When  the user runs `givn skills sync`
+    Then  every guidance reference resolves in the consumer project or is owned by a named creation step
+
+  Scenario: The printed instructions reference only resolvable files
+    Given  a Givn project with an active change
+    When  the author requests every instruction Givn prints
+    Then  every printed guidance reference resolves in the consumer project or is owned by a named creation step
+
+  Scenario: An undeclared reference in an installed skill fails the check
+    Given  a givn project with all agent skill targets enabled
+    And  a givn-ideation skill override that names the missing file "givn/reference-that-resolves-nowhere.md"
+    When  the user runs `givn skills sync`
+    Then  the installed reference check fails and names "givn/reference-that-resolves-nowhere.md"
+
+  Scenario: A printed reference that resolves nowhere fails the check
+    Given  a Givn project with an active change
+    And  a specs instruction override that names the missing file "givn/reference-that-resolves-nowhere.md"
+    When  the author requests the specs instructions through the Givn CLI
+    Then  the printed reference check fails and names "givn/reference-that-resolves-nowhere.md"
