@@ -167,6 +167,15 @@ Status is `candidate`, `confirmed`, or `rejected`:
 Escape `|` as `\|` inside the Collision check cell and prefer hit-count
 commands without pipelines, so the recorded command stays inside its column.
 
+The user verifies every new core term before it is used:
+
+- When a coined term is generic, overloaded, cannot fill its genus slot, or
+  has competing candidates, ask the naming question immediately.
+- Confirm all makes them `confirmed`; a term named for revisit gets its
+  naming dialog, one at a time, before confirmation; the other terms stand
+  and nothing else re-opens. A name the user supplies
+  is collision-checked like any other; a replaced name becomes an anti-term.
+
 Use-case drafts use the same identity and contract vocabulary as permanent
 specifications. Each `use-cases/<uc-id>.md` uses this stable schema:
 
