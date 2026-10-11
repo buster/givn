@@ -701,8 +701,10 @@ The ideation term record (`givn/ideation/<topic-id>/domain-terms.md`) uses a
 fixed entry schema: term, status (`candidate`, `confirmed`, `rejected`),
 one-sentence definition, contrast ("X, not Y"), first use (file:line), and the
 collision check. A `candidate` needs only the definition and first use; a
-`confirmed` term requires the term introduction test and a recorded
-search-before-coin check; a `rejected` term keeps its definition and reason.
+`confirmed` term requires the term introduction test, a recorded
+search-before-coin check, and the user's verified name (asked immediately when
+the name fails, otherwise at the phase's term check); a `rejected` term keeps
+its definition and reason.
 
 The search-before-coin procedure is executed and recorded before `confirmed`:
 grep the durable glossary for the term and its synonyms; grep every sibling
