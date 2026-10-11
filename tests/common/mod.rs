@@ -10,6 +10,8 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 use tempfile::TempDir;
 
+pub mod reference_check;
+
 /// The version-control fixture the project root emulates.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BackendKind {

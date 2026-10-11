@@ -1766,8 +1766,19 @@ fn author_requests_every_printed_instruction(_world: &mut GivnWorld) {
 #[then(
     "every guidance reference resolves in the consumer project or is owned by a named creation step"
 )]
-fn installed_guidance_references_resolve(_world: &mut GivnWorld) {
-    unimplemented!()
+fn installed_guidance_references_resolve(world: &mut GivnWorld) {
+    let root = env(world).root();
+    let sources = crate::common::reference_check::installed_guidance(&root);
+    assert!(
+        !sources.is_empty(),
+        "the fixture has no installed guidance to check"
+    );
+    let findings = crate::common::reference_check::unresolved_references(&root, &sources);
+    assert!(
+        findings.is_empty(),
+        "unresolved guidance references:\n{}",
+        crate::common::reference_check::describe(&findings)
+    );
 }
 
 #[then(
