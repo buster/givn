@@ -95,6 +95,7 @@ graph TD
 | Q-94 | Configurability | A project synchronizes guidance beside human instructions and a project-owned dialog override. | The target refreshes only managed guidance, preserves human content and override precedence, and does not inject a bundled full policy into a project replacement. |
 | Q-95 | Question quality | A project-familiar reader evaluates an unseen decision question after the policy is delivered. | Review distinguishes the displayed subject, brief sourced context, answer consequences and material change costs from mere formatting; an invalid option or unnecessary fact-finding question is a defect. This is reviewed evidence, not a binary compliance guarantee. |
 | Q-96 | Commit attribution | An omp session with a current model prepares a Bash command that creates a revision. | The generated `pre` hook returns the command with attribution exports so the resulting Git committer and message identify the session model, thinking level, and the `omp` harness; a command that creates no revision is returned unchanged, and an unknown model yields `unavailable`. |
+| Q-97 | Guidance integrity | A consumer project receives generated guidance. | Every file reference the guidance carries resolves in the project or is owned by a named creation step; the acceptance suite fails the first reference that resolves nowhere. |
 
 ## 10.3 Verification Signals
 
@@ -105,6 +106,10 @@ graph TD
 - For the pending dialog-policy contract, deterministic checks exercise
   delivered CLI/generated documents, source-link integrity, override precedence,
   and human-content preservation. They do not prove arbitrary question meaning.
+- The generated-guidance reference check (Q-97) walks a temporary project's
+  installed skills, commands, and printed instructions and fails any rooted
+  reference that the project neither has nor can create through a named
+  creation step.
 - Fresh-context exercises on unseen decisions record concrete judgments and
   dispositions in ordinary review evidence, without adding model dependencies,
   online test services, numerical score guarantees, or runtime chat interception.

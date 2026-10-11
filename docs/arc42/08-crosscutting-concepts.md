@@ -229,6 +229,14 @@ proposal) as its message subject, with the scenario title in the message body.
 The rule is guidance only — `givn commit` neither composes nor validates the
 subject.
 
+Generated guidance is written for the consumer project. Every file reference
+it carries must resolve in the project that receives it: a file the project
+has, a location a named creation step creates, a project-owned destination
+the guidance itself defines, or a skill resolved by name across the
+configured agent targets. A reference into the Givn distribution (`assets/…`,
+a repository-only document) is a defect; the acceptance suite grades every
+generated skill, command, and printed instruction against this rule.
+
 `AGENTS.md` is user-owned outside givn-managed fenced blocks. The sync path may
 create or replace the unconditional `givn-project` block and, when enabled, the
 `absolute-mode` block. It does not rewrite surrounding user content. The pending
@@ -750,10 +758,10 @@ A persona is a stable identity, not a topic stance. A new persona exists only
 when it differs from an existing one in at least one of three disjunctive
 criteria: authority boundary (what it may do or decide), evaluation capability
 (what it can judge), or own vocabulary (terms it uses or refuses). The
-`assets/templates/persona.md` schema carries a stable core (role, authority
+ideation guidance carries the persona schema: a stable core (role, authority
 boundary, evaluation capability, own vocabulary, success criterion) and an
-append-only running record; topic-specific demands go into a dated topic
-stances appendix, never into the stable core.
+append-only running record with a dated topic-stances appendix; topic-specific
+demands never enter the stable core.
 
 Reuse comes first: inventory `givn/personas/` and every sibling topic's
 `personas/` against the stakeholder types, match by ID or record a
