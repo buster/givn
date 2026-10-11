@@ -42,6 +42,8 @@
 | **Release revision** | The repository revision the release preparation records, carrying the version bump and the release section; the annotated version tag points at it. Anti-term: version commit. |
 | **Disposition** | A review entry for a deterministic overlap finding involving a change delta. |
 | **Fingerprint** | A deterministic masked assertion sequence plus best-effort facts: exit code, `contains` polarity, table values, `[DONE]`, and TTY mention. |
+| **Consumer project** | A project that uses Givn to manage its own lifecycle, as opposed to the Givn repository that builds the tool. Generated guidance and printed instructions are written for it. Anti-term: downstream project. |
+| **Generated guidance** | The skills, slash commands, and instruction text Givn writes into or prints for a consumer project's authoring agents. It is the rendered output, not the templates and canonical assets in the Givn repository. |
 | **Generated skill** | A skill file written from a skill template into an agent target directory when `givn skills sync` runs. |
 | **Givn rule** | A file Givn generates into a project: a skill, slash command, plugin, hook, or attribution plumbing. Preferred noun for what earlier text called generated Givn integrations. |
 | **Rules policy** | The `rules:` scalar in `givn/config.yaml`: `local-only` (default; rules stay out of the repository) or `versioned` (rules are repository content). An absent key resolves to `local-only` for new and existing projects; an unrecognized value warns and continues as `local-only`. |
