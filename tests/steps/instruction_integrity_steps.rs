@@ -1840,8 +1840,13 @@ fn printed_guidance_references_resolve(world: &mut GivnWorld) {
 }
 
 #[given(regex = r##"^a givn-ideation skill override that names the missing file "([^"]+)"$"##)]
-fn givn_ideation_skill_override_with_missing_file(_world: &mut GivnWorld, _path: String) {
-    unimplemented!()
+fn givn_ideation_skill_override_with_missing_file(world: &mut GivnWorld, path: String) {
+    let dir = env(world).root().join("givn/skills/givn-ideation");
+    std::fs::create_dir_all(&dir).expect("create the skill override directory");
+    let template = format!(
+        "---\nname: givn-ideation\ndescription: fixture override\n---\n\n# givn-ideation\n\nSee `{path}` for details.\n"
+    );
+    std::fs::write(dir.join("SKILL.md.tmpl"), template).expect("write the skill override");
 }
 
 #[given(regex = r##"^a specs instruction override that names the missing file "([^"]+)"$"##)]
@@ -1850,8 +1855,15 @@ fn specs_instruction_override_with_missing_file(_world: &mut GivnWorld, _path: S
 }
 
 #[then(regex = r##"^the installed reference check fails and names "([^"]+)"$"##)]
-fn installed_reference_check_fails_naming(_world: &mut GivnWorld, _path: String) {
-    unimplemented!()
+fn installed_reference_check_fails_naming(world: &mut GivnWorld, path: String) {
+    let root = env(world).root();
+    let sources = crate::common::reference_check::installed_guidance(&root);
+    let findings = crate::common::reference_check::unresolved_references(&root, &sources);
+    assert!(
+        findings.iter().any(|finding| finding.reference == path),
+        "expected a finding for {path}; got:\n{}",
+        crate::common::reference_check::describe(&findings)
+    );
 }
 
 #[then(regex = r##"^the printed reference check fails and names "([^"]+)"$"##)]

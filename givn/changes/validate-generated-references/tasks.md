@@ -142,11 +142,11 @@
 
 ## Task 5 — The printed instructions reference only resolvable files (`instruction-integrity`)
 
-- [ ] RED — remove `@wip` from this scenario only; run; expect non-zero
+- [x] RED — remove `@wip` from this scenario only; run; expect non-zero
   (stub panic on the printed-corpus When step).
   - Command: `GIVN_FEATURES=givn/changes/validate-generated-references/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::The printed instructions reference only resolvable files"`
-  - Output: _(paste)_
-- [ ] GREEN — implement the When step (manifest artifacts from
+  - Output: `exit=101` — `✘ When the author requests every instruction Givn prints` → `Step panicked. Captured output: not implemented`; `1 scenario (1 failed)`.
+- [x] GREEN — implement the When step (manifest artifacts from
   `givn graph --json` plus `review-reverse`, `specs-reverse`,
   `tasks-reverse`, `dialog`) and the printed Then step; add the
   `docs/arc42/adr` rule-owned rows; drop the `docs/use-case-model.md`
@@ -155,12 +155,12 @@
   - Files: `tests/steps/instruction_integrity_steps.rs`,
     `tests/common/reference_check.rs`, `assets/instructions/specs.md`,
     `assets/instructions/review.md`.
-  - Output: _(paste)_
-- [ ] REFACTOR — re-run; expect zero.
-  - Output: _(paste)_
-- [ ] COMMIT — `feat(instruction-integrity): <release note>` with the
+  - Output: `exit=0` — `1 scenario (1 passed)`, `3 steps (3 passed)`.
+- [x] REFACTOR — re-run; expect zero.
+  - Output: `exit=0` — `1 scenario (1 passed)`, `3 steps (3 passed)`.
+- [x] COMMIT — `feat(instruction-integrity): <release note>` with the
   scenario title in the body.
-  - Hash: _(paste)_
+  - Hash: `d0b83eb7`
 
 ## Task 6 — An undeclared reference in an installed skill fails the check (`instruction-integrity`)
 
