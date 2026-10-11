@@ -95,10 +95,7 @@ const WORKFLOW_CREATED: &[(&[&str], &[&[&str]])] = &[
 
 /// Locations the guidance itself defines and a project creates while
 /// following it.
-const RULE_OWNED: &[&[&str]] = &[
-    &["docs", "design", "**"],
-    &["docs", "arc42", "adr", "**"],
-];
+const RULE_OWNED: &[&[&str]] = &[&["docs", "design", "**"], &["docs", "arc42", "adr", "**"]];
 
 /// Every installed guidance file for the project's configured agent targets:
 /// `<target>/skills/*/SKILL.md` and `<target>/commands/*.md`.
@@ -277,8 +274,11 @@ fn glob_free(candidate: &str) -> String {
 fn matches_workflow_created(candidate: &str) -> bool {
     let segments: Vec<&str> = candidate.split('/').collect();
     WORKFLOW_CREATED.iter().any(|(root, leaves)| {
-        root_segments_match(root, &segments)
-            .is_some_and(|matched| leaves.iter().any(|leaf| leaf_matches(leaf, &segments[matched..])))
+        root_segments_match(root, &segments).is_some_and(|matched| {
+            leaves
+                .iter()
+                .any(|leaf| leaf_matches(leaf, &segments[matched..]))
+        })
     })
 }
 
