@@ -25,20 +25,33 @@
 
 ## Setup task — strict mode and skeletons
 
-- [ ] **S1. Prove strict mode and create the step skeletons.**
+- [x] **S1. Prove strict mode and create the step skeletons.**
   - Runner config: none required — `./run-tests.sh` already drives
     `tests/features_runner.rs` with `.fail_on_skipped()`, and
     `givn/commands.yaml` already sets `verify.command: ./run-tests.sh`.
   - Skeletons: add nine new steps in
     `tests/steps/instruction_integrity_steps.rs` (one When, two regex
-    Givens, six Thens) with `unimplemented!()` bodies; create
-    `tests/common/reference_check.rs` (`GuidanceSource`, `Finding`,
-    `installed_guidance`, `unresolved_references`) with `unimplemented!()`
-    bodies and register it from `tests/common/mod.rs`.
+    Givens, six Thens) with `unimplemented!()` bodies. The shared
+    classifier module `tests/common/reference_check.rs` is created in
+    Task 3, its first consumer.
   - Proof-of-strictness (stub panic must fail the run):
     `GIVN_FEATURES=givn/changes/validate-generated-references/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::The characterization guidance requests the reverse review from Givn"`
   - Expected: non-zero exit.
-  - Captured output: _(paste)_
+  - Captured output:
+    ```
+    exit=101
+    Feature: Instruction and skill guidance remains complete and machine-readable
+      Scenario: The characterization guidance requests the reverse review from Givn
+       ✔  Given a givn project with all agent skill targets enabled
+       ✔  When the user runs `givn skills sync`
+       ✘  Then the generated givn-characterize guidance requests `givn instructions review-reverse`
+          Step panicked. Captured output: not implemented
+    [Summary]
+    1 feature
+    1 scenario (1 failed)
+    3 steps (2 passed, 1 failed)
+    error: test failed, to rerun pass `--test features_runner`
+    ```
 
 ## Task 1 — The ideation guidance carries the persona schema (`generate-ideation-guidance`)
 

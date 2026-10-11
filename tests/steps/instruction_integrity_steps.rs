@@ -1736,3 +1736,54 @@ fn guidance_keeps_decision_mandatory(world: &mut GivnWorld) {
         "guidance does not keep the recorded decision mandatory"
     );
 }
+
+// --- validate-generated-references: consumer-view reference check ----------
+
+#[when("the author requests every instruction Givn prints")]
+fn author_requests_every_printed_instruction(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then(
+    "every guidance reference resolves in the consumer project or is owned by a named creation step"
+)]
+fn installed_guidance_references_resolve(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then(
+    "every printed guidance reference resolves in the consumer project or is owned by a named creation step"
+)]
+fn printed_guidance_references_resolve(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[given(regex = r##"^a givn-ideation skill override that names the missing file "([^"]+)"$"##)]
+fn givn_ideation_skill_override_with_missing_file(_world: &mut GivnWorld, _path: String) {
+    unimplemented!()
+}
+
+#[given(regex = r##"^a specs instruction override that names the missing file "([^"]+)"$"##)]
+fn specs_instruction_override_with_missing_file(_world: &mut GivnWorld, _path: String) {
+    unimplemented!()
+}
+
+#[then(regex = r##"^the installed reference check fails and names "([^"]+)"$"##)]
+fn installed_reference_check_fails_naming(_world: &mut GivnWorld, _path: String) {
+    unimplemented!()
+}
+
+#[then(regex = r##"^the printed reference check fails and names "([^"]+)"$"##)]
+fn printed_reference_check_fails_naming(_world: &mut GivnWorld, _path: String) {
+    unimplemented!()
+}
+
+#[then("the generated givn-characterize guidance requests `givn instructions review-reverse`")]
+fn characterize_guidance_requests_reverse_review(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the generated givn-characterize command requests `givn instructions review-reverse`")]
+fn characterize_command_requests_reverse_review(_world: &mut GivnWorld) {
+    unimplemented!()
+}
