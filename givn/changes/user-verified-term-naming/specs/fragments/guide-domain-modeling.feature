@@ -12,7 +12,7 @@ Feature: Guide domain modeling
     And the body states what each candidate evokes and any collision it carries
     And the body accepts the user's own name
 
-  @givn.added @wip
+  @givn.added
   Scenario: The challenge bullet shows a naming question with candidates and a collision
     Given the domain-modeling skill template is inspected
     When an agent reads the skill body
