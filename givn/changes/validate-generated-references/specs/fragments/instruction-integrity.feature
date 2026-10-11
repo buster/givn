@@ -27,7 +27,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     When  the author requests every instruction Givn prints
     Then  every printed guidance reference resolves in the consumer project or is owned by a named creation step
 
-  @givn.added @wip
+  @givn.added
   Scenario: An undeclared reference in an installed skill fails the check
     Given  a givn project with all agent skill targets enabled
     And  a givn-ideation skill override that names the missing file "givn/reference-that-resolves-nowhere.md"
