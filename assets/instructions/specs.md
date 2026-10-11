@@ -72,11 +72,10 @@ are not copied into every including use case.
 ### Capability placement
 
 Before recording a `NEW in <usecase-id>` capability, apply the placement
-test: which actor goal does completing this capability advance? Channel is
-never an answer — a browser or CLI variant of an action
-lives under the action's goal. Capability names are goal-shaped, never
-component- or channel-shaped (no server, backend, store, service, panel,
-browser, or CLI names).
+test: which actor goal does completing this capability advance? Channel is never an answer —
+a browser or CLI variant of an action lives under the action's goal.
+Capability names are goal-shaped, never component- or channel-shaped (no
+server, backend, store, service, panel, browser, or CLI names).
 
 Each normalized inventory entry MUST have exactly one matching `@e2e` scenario
 in the capability's `.feature` file. If an entry has no corresponding scenario, the
