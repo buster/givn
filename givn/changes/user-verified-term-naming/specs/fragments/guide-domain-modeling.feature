@@ -2,7 +2,7 @@
 
 Feature: Guide domain modeling
 
-  @givn.added @wip
+  @givn.added
   Scenario: The challenge bullet hands the name choice to the user
     Given the domain-modeling skill template is inspected
     When an agent reads the skill body

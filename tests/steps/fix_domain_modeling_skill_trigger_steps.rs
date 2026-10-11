@@ -427,3 +427,44 @@ fn body_demonstrates_genus_failure(world: &mut GivnWorld) {
         "body does not demonstrate the genus-slot failure"
     );
 }
+
+#[then("the body no longer tells the agent to choose the name alone")]
+fn body_no_longer_chooses_alone(world: &mut GivnWorld) {
+    let content = skill_template(world);
+    assert!(
+        !content.contains("Propose it and justify it") && content.contains("do not choose it alone"),
+        "body still tells the agent to choose and justify the name alone"
+    );
+}
+
+#[then("the body describes the concept before proposing names")]
+fn body_describes_concept_first(world: &mut GivnWorld) {
+    assert!(
+        skill_template(world).contains("the concept in one sentence"),
+        "body does not describe the concept before proposing names"
+    );
+}
+
+#[then("the body offers up to three candidate names")]
+fn body_offers_candidate_names(world: &mut GivnWorld) {
+    assert!(
+        skill_template(world).contains("up to three candidate names"),
+        "body does not offer up to three candidate names"
+    );
+}
+
+#[then("the body states what each candidate evokes and any collision it carries")]
+fn body_states_candidate_collisions(world: &mut GivnWorld) {
+    assert!(
+        skill_template(world).contains("any collision it carries"),
+        "body does not state what each candidate evokes and any collision it carries"
+    );
+}
+
+#[then("the body accepts the user's own name")]
+fn body_accepts_own_name(world: &mut GivnWorld) {
+    assert!(
+        skill_template(world).contains("accept the user's own name"),
+        "body does not accept the user's own name"
+    );
+}
