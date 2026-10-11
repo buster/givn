@@ -22,7 +22,7 @@ Gather the authoritative material:
 - `givn/changes/<id>/design.md`
 - `givn/changes/<id>/tasks.md`
 - `docs/arc42/` (if the arc42 addon is enabled)
-- Any ADRs under `docs/adr/` or the project's decisions log
+- Any architecture decision records or the project's decisions log
 - `givn/config.yaml` (verify.command, features_path, addons, extras)
 
 ### 2. Cross-check, one question at a time

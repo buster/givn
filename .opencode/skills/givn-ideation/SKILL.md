@@ -78,11 +78,37 @@ conjunctive:
 The three adapter-implementer-shaped files collapse to one persona with three stance blocks: they share the authority (ship an adapter against a port) and the evaluation (the conformance suite), so they are one persona segment, not three. Topic-specific demands go into a dated `## Topic stances` appendix,
 never into Role, Interests, or Goals.
 
-Persona files use the schema in `assets/templates/persona.md`: a stable core
-(role, authority boundary, evaluation capability, own vocabulary, success
-criterion) and an append-only running record of dated entries per review or
-topic stance. A reused persona's topic-local file contains a header line plus
-new record entries only — never a biography copy:
+Persona files use this schema — a stable core, an append-only running
+record of dated entries per review or topic stance, and a dated
+topic-stances appendix:
+
+```markdown
+# Persona: <name>
+
+## Stable core
+
+- Role: <one line>
+- Authority boundary: <what it may do or decide>
+- Evaluation capability: <what it can judge>
+- Own vocabulary: <terms it uses or refuses>
+- Success criterion: <what success means for it>
+
+## Running record
+
+Dated entries per review or topic stance; append-only, never rewriting
+earlier entries.
+
+- <YYYY-MM-DD> — <entry>
+
+## Topic stances
+
+Topic-specific demands, dated, never in the stable core.
+
+- <YYYY-MM-DD> — <topic>: <stance>
+```
+
+A reused persona's topic-local file contains a header line plus new record
+entries only — never a biography copy:
 
 ```text
 Reuse: <persona-id>, base <short-hash or date>; this file adds record entries only
@@ -333,8 +359,7 @@ Cut the event chain into use cases.
 > true if the system is rebuilt with different technology.
 
 A sequence of events that culminates in value is a use case. Size each one
-with these falsifiable rules; the durable reference with the worked example is
-`docs/use-case-model.md`:
+with these falsifiable rules:
 
 1. **One goal, one primary actor.** The goal is one active-verb phrase naming
    the primary actor's outcome. Falsification: an "and" joining two verb
