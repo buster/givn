@@ -1850,8 +1850,13 @@ fn givn_ideation_skill_override_with_missing_file(world: &mut GivnWorld, path: S
 }
 
 #[given(regex = r##"^a specs instruction override that names the missing file "([^"]+)"$"##)]
-fn specs_instruction_override_with_missing_file(_world: &mut GivnWorld, _path: String) {
-    unimplemented!()
+fn specs_instruction_override_with_missing_file(world: &mut GivnWorld, path: String) {
+    crate::common::write_override(
+        env(world),
+        "specs",
+        "instructions.md",
+        &format!("# Specs override\n\nSee `{path}` for details.\n"),
+    );
 }
 
 #[then(regex = r##"^the installed reference check fails and names "([^"]+)"$"##)]
@@ -1867,8 +1872,22 @@ fn installed_reference_check_fails_naming(world: &mut GivnWorld, path: String) {
 }
 
 #[then(regex = r##"^the printed reference check fails and names "([^"]+)"$"##)]
-fn printed_reference_check_fails_naming(_world: &mut GivnWorld, _path: String) {
-    unimplemented!()
+fn printed_reference_check_fails_naming(world: &mut GivnWorld, path: String) {
+    let root = env(world).root();
+    let output = world
+        .last_output
+        .as_ref()
+        .expect("no CLI output was captured");
+    let sources = vec![crate::common::reference_check::GuidanceSource {
+        label: "instructions/specs".to_string(),
+        text: String::from_utf8_lossy(&output.stdout).into_owned(),
+    }];
+    let findings = crate::common::reference_check::unresolved_references(&root, &sources);
+    assert!(
+        findings.iter().any(|finding| finding.reference == path),
+        "expected a finding for {path}; got:\n{}",
+        crate::common::reference_check::describe(&findings)
+    );
 }
 
 #[then("the generated givn-characterize guidance requests `givn instructions review-reverse`")]
