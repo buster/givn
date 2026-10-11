@@ -91,8 +91,8 @@ Route reported no signal (the top candidates tied). The decisions:
 
 | Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
 |---|---|---|---|
-| Guidance references resolve in the consumer project | none — route reported no signal | `EXTEND instruction-integrity` | The property extends the same actor goal as the capability's existing scenarios: generated guidance remains complete and trustworthy for its reader. A dead reference is an incomplete instruction; a separate capability would give one goal two contracts. |
-| The ideation guidance carries the persona schema inline | none — route reported no signal | `EXTEND generate-ideation-guidance` | The capability already owns the ideation guidance's embedded schemas — the phase ladder, the term schema, the seed schema, and the scoping rules. The persona schema is the same kind of content and fixes the pointer that broke the observed session. |
+| `instruction-integrity` | none — route reported no signal | `NEW in fragments` | The capability lives in the reusable `support` fragment (`givn/specs/fragments/fragment.md`); fragment capabilities carry no use-case directory, so the delta lives under `specs/fragments/`. The consumer-view reference check extends the same actor goal as the capability's existing scenarios: generated guidance remains complete and trustworthy for its reader. |
+| `generate-ideation-guidance` | none — route reported no signal | `NEW in fragments` | Same fragment rule. The capability already owns the ideation guidance's embedded schemas — the phase ladder, the term schema, the seed schema, and the scoping rules; the persona schema is the same kind of content and fixes the pointer that broke the observed session. |
 
 ## Out of Scope
 

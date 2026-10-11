@@ -23,6 +23,10 @@
   real `givn` subprocesses, and every referenced `@e2e` title exists in the
   permanent specs.
 
+- [x] Planning artifacts committed. COMMIT: `a1632433` — proposal, delta
+  specs, design, design-review, arc42-docs, and the task breakdown committed
+  together after design-review sign-off.
+
 ## Setup task — strict mode and skeletons
 
 - [x] **S1. Prove strict mode and create the step skeletons.**
@@ -66,10 +70,8 @@
   - Output: `exit=0` — all 8 assertions pass ("Stable core" through "Topic stances"); `1 scenario (1 passed)`, `10 steps (10 passed)`.
 - [x] REFACTOR — re-run; expect zero.
   - Output: `exit=0` — `1 scenario (1 passed)`, `10 steps (10 passed)`.
-- [x] COMMIT — one commit for RED+GREEN+REFACTOR;
-  `feat(generate-ideation-guidance): <release note>` with the scenario title
-  in the body.
-  - Hash: `6224ef7f`
+- [x] COMMIT: `6224ef7f` -- `feat(generate-ideation-guidance): <release note>`
+  with the scenario title in the body.
 
 ## Task 2 — The characterization guidance requests the reverse review from Givn (`instruction-integrity`)
 
@@ -87,9 +89,8 @@
   - Output: `exit=0` — both assertions pass; `1 scenario (1 passed)`, `4 steps (4 passed)`.
 - [x] REFACTOR — re-run; expect zero.
   - Output: `exit=0` — `1 scenario (1 passed)`, `4 steps (4 passed)`.
-- [x] COMMIT — `feat(instruction-integrity): <release note>` with the
-  scenario title in the body.
-  - Hash: `e9d34960`
+- [x] COMMIT: `e9d34960` -- `feat(instruction-integrity): <release note>`
+  with the scenario title in the body.
 
 ## Task 3 — The generated guidance references resolve with the default configuration (`instruction-integrity`)
 
@@ -119,9 +120,8 @@
   - Output: `exit=0` — the directory walk was split into
     `collect_skill_files`/`collect_command_files`/`push_source`;
     `1 scenario (1 passed)`, `3 steps (3 passed)`.
-- [x] COMMIT — `feat(instruction-integrity): <release note>` with the
-  scenario title in the body.
-  - Hash: `054825cf`
+- [x] COMMIT: `054825cf` -- `feat(instruction-integrity): <release note>`
+  with the scenario title in the body.
 
 ## Task 4 — The generated guidance references resolve without addons (`instruction-integrity`)
 
@@ -136,9 +136,8 @@
   - Output: `exit=0` — `1 scenario (1 passed)`, `3 steps (3 passed)`.
 - [x] REFACTOR — re-run; expect zero.
   - Output: `exit=0` — `1 scenario (1 passed)`, `3 steps (3 passed)`.
-- [x] COMMIT — `feat(instruction-integrity): <release note>` with the
-  scenario title in the body.
-  - Hash: `debeb675`
+- [x] COMMIT: `debeb675` -- `feat(instruction-integrity): <release note>`
+  with the scenario title in the body.
 
 ## Task 5 — The printed instructions reference only resolvable files (`instruction-integrity`)
 
@@ -158,9 +157,8 @@
   - Output: `exit=0` — `1 scenario (1 passed)`, `3 steps (3 passed)`.
 - [x] REFACTOR — re-run; expect zero.
   - Output: `exit=0` — `1 scenario (1 passed)`, `3 steps (3 passed)`.
-- [x] COMMIT — `feat(instruction-integrity): <release note>` with the
-  scenario title in the body.
-  - Hash: `d0b83eb7`
+- [x] COMMIT: `d0b83eb7` -- `feat(instruction-integrity): <release note>`
+  with the scenario title in the body.
 
 ## Task 6 — An undeclared reference in an installed skill fails the check (`instruction-integrity`)
 
@@ -175,9 +173,8 @@
   - Output: `exit=0` — `1 scenario (1 passed)`, `4 steps (4 passed)`.
 - [x] REFACTOR — re-run; expect zero.
   - Output: `exit=0` — `1 scenario (1 passed)`, `4 steps (4 passed)`.
-- [x] COMMIT — `feat(instruction-integrity): <release note>` with the
-  scenario title in the body.
-  - Hash: `394ada3e`
+- [x] COMMIT: `394ada3e` -- `feat(instruction-integrity): <release note>`
+  with the scenario title in the body.
 
 ## Task 7 — A printed reference that resolves nowhere fails the check (`instruction-integrity`)
 
@@ -191,22 +188,32 @@
   - Output: `exit=0` — `1 scenario (1 passed)`, `4 steps (4 passed)`.
 - [x] REFACTOR — re-run; expect zero.
   - Output: `exit=0` — `1 scenario (1 passed)`, `4 steps (4 passed)`.
-- [x] COMMIT — `feat(instruction-integrity): <release note>` with the
-  scenario title in the body.
-  - Hash: `511ea8f1`
+- [x] COMMIT: `511ea8f1` -- `feat(instruction-integrity): <release note>`
+  with the scenario title in the body.
 
 ## Final verification
 
-- [ ] **F1. Change scope green.** Run
+- [x] **F1. Change scope green.** Run
   `GIVN_FEATURES=givn/changes/validate-generated-references/specs ./run-tests.sh`
   and paste the summary (zero exit).
-  - Output: _(paste)_
-- [ ] **F2. Full suites green.** Run `./run-tests.sh` and
+  - Output: `exit=0` — `7 tests run: 7 passed, 0 skipped` (re-run after the
+    regression fix: same result).
+- [x] **F2. Full suites green.** Run `./run-tests.sh` and
   `./run-tests.sh --e2e`; paste both summaries (zero exit each).
-  - Output: _(paste)_
-- [ ] **F3. No empty step bodies.** Grep every touched step file for `{}`,
+  - Output: regular suite `exit=0` — `598 tests run: 598 passed, 0 skipped`.
+    E2E suite `exit=0` — `90 tests run: 90 passed, 508 skipped` (the 508 are
+    the non-e2e scenarios filtered by the runner's tag expression, not
+    unrunnable tests; 90 < 598 proves the filter is a strict subset).
+    Note: the first full run failed
+    `fragments/instruction-integrity.feature::The specs guidance carries the
+    capability placement test` because the specs-instruction reflow split the
+    literal "Channel is never an answer"; fixed in `98ae9173` by keeping the
+    sentence on one line.
+- [x] **F3. No empty step bodies.** Grep every touched step file for `{}`,
   bare `return`, and `unimplemented!()`; zero hits.
-  - Output: _(paste)_
-- [ ] **F4. Commit count.** One commit per scenario (7) plus the planning
+  - Output: `grep -n 'unimplemented!\|todo!\|{}' tests/steps/instruction_integrity_steps.rs` finds only format-string placeholders in panic/assert messages; `return;` count in that file is 0. The three guard `return;` statements live in the non-step helper `tests/common/reference_check.rs` (`collect_skill_files`, `collect_command_files`, `push_source`) and are real logic, not empty bodies.
+- [x] **F4. Commit count.** One commit per scenario (7) plus the planning
   commit; list the hashes.
-  - Output: _(paste)_
+  - Output: planning `a1632433`; Task 1 `6224ef7f`; Task 2 `e9d34960`;
+    Task 3 `054825cf`; Task 4 `debeb675`; Task 5 `d0b83eb7`;
+    Task 6 `394ada3e`; Task 7 `511ea8f1`; regression fix `98ae9173`.
