@@ -93,11 +93,11 @@
 
 ## Task 3 — The generated guidance references resolve with the default configuration (`instruction-integrity`)
 
-- [ ] RED — remove `@wip` from this scenario only; run; expect non-zero
+- [x] RED — remove `@wip` from this scenario only; run; expect non-zero
   (stub panic).
   - Command: `GIVN_FEATURES=givn/changes/validate-generated-references/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::The generated guidance references resolve with the default configuration"`
-  - Output: _(paste)_
-- [ ] GREEN — implement the classifier (`tests/common/reference_check.rs`)
+  - Output: `exit=101` — `✘ Then every guidance reference resolves …` → `Step panicked. Captured output: not implemented`; `1 scenario (1 failed)`.
+- [x] GREEN — implement the classifier (`tests/common/reference_check.rs`)
   and the installed-corpus Then step: extraction, trailing-slash
   normalization, exists class, workflow-created table, rule-owned table
   (`docs/design` only in this task), findings. Land the remaining
@@ -110,12 +110,18 @@
     `assets/skills/givn-ideation/SKILL.md.tmpl`,
     `assets/skills/givn-spec/SKILL.md.tmpl`,
     `assets/commands/grill-with-docs.md`.
-  - Output: _(paste)_
-- [ ] REFACTOR — re-run; expect zero.
-  - Output: _(paste)_
-- [ ] COMMIT — `feat(instruction-integrity): <release note>` with the
+  - Output: first GREEN run failed on four findings — `givn/personas/` in
+    the ideation guidance of `.agents`, `.claude`, and `.opencode`, plus the
+    `.opencode` command — because the bare directory candidate had no table
+    leaf; `givn/personas` gained its empty leaf. Re-run: `exit=0`,
+    `1 scenario (1 passed)`, `3 steps (3 passed)`.
+- [x] REFACTOR — re-run; expect zero.
+  - Output: `exit=0` — the directory walk was split into
+    `collect_skill_files`/`collect_command_files`/`push_source`;
+    `1 scenario (1 passed)`, `3 steps (3 passed)`.
+- [x] COMMIT — `feat(instruction-integrity): <release note>` with the
   scenario title in the body.
-  - Hash: _(paste)_
+  - Hash: `054825cf`
 
 ## Task 4 — The generated guidance references resolve without addons (`instruction-integrity`)
 
