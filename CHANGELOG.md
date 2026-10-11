@@ -6,6 +6,16 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.8.4] - 2026-10-09
+
+### Features
+
+- **initialize-a-project:** Givn installs the workflow skills, the workflow commands, and a commit attribution hook for the omp coding agent when omp is a selected agent target.
+
+- **license:** Relicense givn under GPL-3.0-or-later with an output exception
+
+- **attribute-commits:** OpenCode 2 sessions attribute their commits to the model that produced them.
+
 ## [0.8.3] - 2026-10-05
 
 ### Bug Fixes
@@ -300,3 +310,5 @@ The master-branch baseline for the 0.3.0 migration. See the repository history
 for the complete 0.2.0 feature set.
 
 [0.8.3]: https://github.com/buster/givn/compare/v0.8.0...v0.8.3
+
+[0.8.4]: https://github.com/buster/givn/compare/v0.8.3...v0.8.4
