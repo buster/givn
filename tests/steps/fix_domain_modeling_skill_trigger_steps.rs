@@ -468,3 +468,31 @@ fn body_accepts_own_name(world: &mut GivnWorld) {
         "body does not accept the user's own name"
     );
 }
+
+// --- user-verified-term-naming: naming-question example steps ---------------
+
+#[then(regex = r#"^the body shows the naming question for "([^"]+)"$"#)]
+fn body_shows_naming_question(world: &mut GivnWorld, term: String) {
+    let content = skill_template(world);
+    assert!(
+        content.contains(term.as_str()) && content.contains("Candidates:"),
+        "body does not show the naming question with its candidate names"
+    );
+}
+
+#[then(regex = r#"^the body shows the colliding candidate "([^"]+)"$"#)]
+fn body_shows_colliding_candidate(world: &mut GivnWorld, candidate: String) {
+    let content = skill_template(world);
+    assert!(
+        content.contains(candidate.as_str()) && content.contains("collides"),
+        "body does not show the candidate and its collision"
+    );
+}
+
+#[then("the body asks which name the record should use")]
+fn body_asks_which_name(world: &mut GivnWorld) {
+    assert!(
+        skill_template(world).contains("should the record use, or what is yours"),
+        "body does not ask which name the record should use"
+    );
+}
