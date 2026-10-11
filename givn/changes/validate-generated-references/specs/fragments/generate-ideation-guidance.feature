@@ -2,7 +2,7 @@
 
 Feature: Generate ideation guidance
 
-  @givn.added @wip
+  @givn.added
   Scenario: The ideation guidance carries the persona schema
     Given  a givn project with all agent skill targets enabled
     When  the user runs `givn skills sync`
