@@ -157,12 +157,27 @@ Status is `candidate`, `confirmed`, or `rejected`:
 
 - `candidate` — the definition and first use are sufficient.
 - `confirmed` — requires a genus-and-differentia definition, a contrast pair,
-  and one concrete domain sentence plus a recorded collision check.
+  one concrete domain sentence, the user's verified name, and a
+  recorded collision check.
   The full term introduction test lives in `givn-domain-modeling`.
 - `rejected` — keeps the definition and the rejection reason; never deleted.
 
 Escape `|` as `\|` inside the Collision check cell and prefer hit-count
 commands without pipelines, so the recorded command stays inside its column.
+
+The user verifies every new core term before it is used:
+
+- When a coined term is generic, overloaded, cannot fill its genus slot, or
+  has competing candidates, ask the naming question immediately.
+- Every other new core term — a new aggregate root, a use-case goal noun, or
+  an event name introducing a noun — rides the phase's closing checkpoint as
+  one question. It reads: "Term check — <phase>: <N> new core terms.
+  Confirm all, or name the terms to revisit." Each row gives the term, its
+  one-sentence description, and the recorded collision check.
+- Confirm all makes them `confirmed`; a term named for revisit gets its
+  naming dialog, one at a time, before confirmation; the other terms stand
+  and nothing else re-opens. A name the user supplies
+  is collision-checked like any other; a replaced name becomes an anti-term.
 
 Use-case drafts use the same identity and contract vocabulary as permanent
 specifications. Each `use-cases/<uc-id>.md` uses this stable schema:

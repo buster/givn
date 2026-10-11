@@ -37,9 +37,13 @@ two or invent either one.
 
 - **Challenge generic or overloaded terms.** When conversation or the specs use
   a word that could mean many things ("list", "item", "user", "trip"), force a
-  precise domain noun. Propose it and justify it. Example utterance: "You
-  wrote 'list' - do you mean the shared shopping list, or the array backing
-  the store?"
+  precise domain noun. When the name matters, do not choose it alone: describe
+  the concept in one sentence, propose up to three candidate names with what
+  each evokes and any collision it carries, and accept the user's own name.
+  Example: "You wrote 'list'. The concept is 'the set of items one household
+  plans to buy together'. Candidates: ShoppingList (the household's shared
+  plan), Basket (short, but collides with the store's checkout basket). Which
+  name should the record use, or what is yours?"
 - **Name aggregates with domain nouns.** Every consistency boundary gets a
   domain noun as its root (`ShoppingList`, not `List`). If the natural name is
   a framework word, the naming is wrong.

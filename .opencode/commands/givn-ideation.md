@@ -53,6 +53,8 @@ Frame → Event Storming → Use Case Definition → Use Case Elaboration → Ha
 - Never write givn change artifacts — change seeds only, at handoff.
 - Handoff never starts a change — the user runs the normal proposal flow.
 - Never invent a persona the user has not confirmed.
+- The user verifies every new core term — by the phase term check or the
+  term's naming dialog — before the canvas, use cases, or seeds rely on it.
 - Reuse before minting: inventory the project personas and every sibling
   topic's personas, then match by ID or record a one-sentence justification
   naming the distinguishing criterion (authority boundary, evaluation
