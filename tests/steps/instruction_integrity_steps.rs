@@ -1981,8 +1981,8 @@ fn characterize_guidance_requests_reverse_review(world: &mut GivnWorld) {
 #[then("the generated givn-characterize command requests `givn instructions review-reverse`")]
 fn characterize_command_requests_reverse_review(world: &mut GivnWorld) {
     let root = env(world).root();
-    let targets = givn::config::overlay::load_skills_targets(&root)
-        .expect("load configured skills targets");
+    let targets =
+        givn::config::overlay::load_skills_targets(&root).expect("load configured skills targets");
     let mut checked = 0;
     for name in targets {
         let Some(target) = AgentTarget::from_name(&name) else {
