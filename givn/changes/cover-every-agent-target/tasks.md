@@ -18,20 +18,28 @@
   `instruction-integrity` rows map to the design's matrix with real CLI
   subprocesses; the delta adds no consumer action.
 
-- [x] Planning artifacts committed. COMMIT: `_(filled after planning)_` —
+- [x] Planning artifacts committed. COMMIT: `f1818b73` —
   proposal, delta specs, design, design-review, arc42-docs, and the task
   breakdown committed together after design-review sign-off.
 
 ## Setup task — strict mode
 
-- [ ] **S1. Prove strict mode on this change's delta.**
+- [x] **S1. Prove strict mode on this change's delta.**
   - Runner config: none required — `./run-tests.sh` drives
     `tests/features_runner.rs` with `.fail_on_skipped()`.
   - Proof: the delta's three scenarios carry `@wip` and their new steps are
     undefined; run the change scope:
     `GIVN_FEATURES=givn/changes/cover-every-agent-target/specs ./run-tests.sh`
   - Expected: non-zero exit (undefined steps fail under strict mode).
-  - Captured output: _(paste)_
+  - Captured output:
+    ```
+    exit=100
+    Summary [0.458s] 3 tests run: 0 passed, 3 failed, 0 skipped
+        FAIL (1/3) fragments/instruction-integrity.feature::A configured target without synchronized guidance fails the check
+        FAIL (2/3) fragments/instruction-integrity.feature::The characterization guidance requests the reverse review from Givn
+        FAIL (3/3) fragments/instruction-integrity.feature::The generated guidance references resolve with the default configuration
+    error: test run failed
+    ```
 
 ## Task 1 — The characterization guidance requests the reverse review from Givn (`instruction-integrity`, modified)
 

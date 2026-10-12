@@ -71,7 +71,12 @@ fn e2e_stdout(world: &GivnWorld) -> String {
 #[given("a Givn project with all agent skill targets and optional guidance enabled")]
 fn project_all_targets_with_optional_guidance(world: &mut GivnWorld) {
     let env = crate::common::make_bare_root();
-    let output = crate::common::run_givn(&env, &["init", "--agents", "opencode,agents,claude"]);
+    let selection = givn::skills::targets::AgentTarget::ALL
+        .iter()
+        .map(|target| target.name())
+        .collect::<Vec<_>>()
+        .join(",");
+    let output = crate::common::run_givn(&env, &["init", "--agents", selection.as_str()]);
     assert!(
         output.status.success(),
         "init with all targets and addons failed: {}",
@@ -90,8 +95,10 @@ fn consumer_synchronizes_agent_guidance(world: &mut GivnWorld) {
     "every emitted skill and command requires the effective dialog policy before its context asks a user-facing question"
 )]
 fn emitted_entries_require_policy(world: &mut GivnWorld) {
+    let targets = givn::config::overlay::load_skills_targets(&fixture(world).root())
+        .expect("load configured skills targets");
     for skill in ALL_SKILL_FAMILIES {
-        for target in ["opencode", "agents", "claude"] {
+        for target in &targets {
             let rel = format!(".{target}/skills/{skill}/SKILL.md");
             let content = delivered(&rel, world);
             assert!(

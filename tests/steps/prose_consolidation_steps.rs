@@ -1,6 +1,7 @@
 use std::fs;
 
 use cucumber::{given, then, when};
+use givn::skills::targets::AgentTarget;
 
 // --- decision-ready questions: delegated question preparation ---------------
 
@@ -91,7 +92,12 @@ const MANAGED_HANDOFF_REFERENCE: &str =
 #[given("a Givn project with all agent skill targets selected")]
 fn project_with_all_skill_targets(world: &mut GivnWorld) {
     let env = crate::common::make_bare_root();
-    let output = crate::common::run_givn(&env, &["init", "--agents", "opencode,agents,claude"]);
+    let selection = AgentTarget::ALL
+        .iter()
+        .map(|target| target.name())
+        .collect::<Vec<_>>()
+        .join(",");
+    let output = crate::common::run_givn(&env, &["init", "--agents", selection.as_str()]);
     assert!(
         output.status.success(),
         "init with all targets failed: {}",
@@ -141,7 +147,9 @@ fn replacement_sources_unchanged(world: &mut GivnWorld) {
 )]
 fn skill_consumers_receive_replacement(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("replacement fixture is missing");
-    for target in ["opencode", "agents", "claude"] {
+    let targets = givn::config::overlay::load_skills_targets(&env.root())
+        .expect("load configured skills targets");
+    for target in targets {
         let rel = format!(".{target}/skills/givn-propose/SKILL.md");
         let delivered =
             std::fs::read_to_string(env.path(&rel)).unwrap_or_else(|e| panic!("{rel}: {e}"));
@@ -313,7 +321,12 @@ fn generated_skill_content(world: &GivnWorld, skill: &str) -> String {
 #[given("a givn project with all agent skill targets enabled")]
 fn project_with_all_targets(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    let output = common::run_givn_with_stdin(&env, &["init"], "opencode, .agents, .claude\n");
+    let selection = AgentTarget::ALL
+        .iter()
+        .map(|target| target.name())
+        .collect::<Vec<_>>()
+        .join(", ");
+    let output = common::run_givn_with_stdin(&env, &["init"], &format!("{selection}\n"));
     assert!(output.status.success(), "givn init failed: {:?}", output);
     world.env = Some(env);
 }

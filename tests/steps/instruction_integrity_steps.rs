@@ -5,6 +5,7 @@
 
 use crate::steps::GivnWorld;
 use cucumber::{given, then, when};
+use givn::skills::targets::AgentTarget;
 
 fn policy(world: &GivnWorld) -> &str {
     world
@@ -1042,9 +1043,14 @@ pub(crate) const CORE_COMMANDS: [&str; 13] = CORE_SKILL_FAMILIES;
 #[given("a Givn project with all agent skill targets selected and every optional addon disabled")]
 fn project_with_all_targets_and_no_addons(world: &mut GivnWorld) {
     let env = crate::common::make_bare_root();
+    let selection = AgentTarget::ALL
+        .iter()
+        .map(|target| target.name())
+        .collect::<Vec<_>>()
+        .join(",");
     let output = crate::common::run_givn(
         &env,
-        &["init", "--no-addons", "--agents", "opencode,agents,claude"],
+        &["init", "--no-addons", "--agents", selection.as_str()],
     );
     assert!(
         output.status.success(),
@@ -1065,8 +1071,10 @@ fn author_synchronizes_selected_guidance(world: &mut GivnWorld) {
 )]
 fn core_entries_require_dialog_policy(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("sync fixture is missing");
+    let targets = givn::config::overlay::load_skills_targets(&env.root())
+        .expect("load configured skills targets");
     for skill in CORE_SKILL_FAMILIES {
-        for target in ["opencode", "agents", "claude"] {
+        for target in &targets {
             let rel = format!(".{target}/skills/{skill}/SKILL.md");
             let content = std::fs::read_to_string(env.path(&rel))
                 .unwrap_or_else(|e| panic!("{rel} missing after sync: {e}"));
@@ -1140,8 +1148,13 @@ fn selected_targets_and_addons_unchanged(world: &mut GivnWorld) {
         .filter(|line| !line.trim_start().starts_with('#'))
         .collect::<Vec<_>>()
         .join("\n");
+    let expected = AgentTarget::ALL
+        .iter()
+        .map(|target| target.name())
+        .collect::<Vec<_>>()
+        .join(", ");
     assert!(
-        active.contains("targets: [opencode, agents, claude]"),
+        active.contains(&format!("targets: [{expected}]")),
         "selected targets changed after sync: {active}"
     );
     for addon in [
@@ -1910,12 +1923,17 @@ fn characterize_guidance_requests_reverse_review(world: &mut GivnWorld) {
 #[then("the generated givn-characterize command requests `givn instructions review-reverse`")]
 fn characterize_command_requests_reverse_review(world: &mut GivnWorld) {
     let root = env(world).root();
+    let targets = givn::config::overlay::load_skills_targets(&root)
+        .expect("load configured skills targets");
     let mut checked = 0;
-    for target in ["opencode", "omp"] {
-        let path = root.join(format!(".{target}/commands/givn-characterize.md"));
-        if !path.exists() {
+    for name in targets {
+        let Some(target) = AgentTarget::from_name(&name) else {
+            continue;
+        };
+        if !target.owns_commands() {
             continue;
         }
+        let path = root.join(format!(".{name}/commands/givn-characterize.md"));
         let content = std::fs::read_to_string(&path)
             .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
         assert!(
@@ -1929,4 +1947,24 @@ fn characterize_command_requests_reverse_review(world: &mut GivnWorld) {
         checked > 0,
         "no command-owning target carries givn-characterize"
     );
+}
+
+#[then("every command-owning agent target receives the givn-characterize command")]
+fn every_command_owning_target_receives_characterize(world: &mut GivnWorld) {
+    let root = env(world).root();
+    for target in AgentTarget::ALL
+        .iter()
+        .filter(|target| target.owns_commands())
+    {
+        let path = root
+            .join(target.dir())
+            .join("commands/givn-characterize.md");
+        let content = std::fs::read_to_string(&path)
+            .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+        assert!(
+            content.contains("givn instructions review-reverse"),
+            "{} does not request the reverse review through the Givn CLI",
+            path.display()
+        );
+    }
 }
