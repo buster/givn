@@ -1935,6 +1935,33 @@ fn printed_reference_check_fails_naming(world: &mut GivnWorld, path: String) {
     );
 }
 
+#[when(regex = r##"^the skills of the agent target "([^"]+)" are removed$"##)]
+fn skills_of_agent_target_are_removed(world: &mut GivnWorld, target: String) {
+    assert!(
+        AgentTarget::from_name(&target).is_some(),
+        "unknown agent target '{target}'"
+    );
+    let dir = env(world).root().join(&target).join("skills");
+    std::fs::remove_dir_all(&dir)
+        .unwrap_or_else(|error| panic!("remove {}: {error}", dir.display()));
+}
+
+#[then(regex = r##"^the configured-target check fails and names the agent target "([^"]+)"$"##)]
+fn configured_target_check_fails_naming(world: &mut GivnWorld, target: String) {
+    assert!(
+        AgentTarget::from_name(&target).is_some(),
+        "unknown agent target '{target}'"
+    );
+    let root = env(world).root();
+    let sources = crate::common::reference_check::installed_guidance(&root);
+    let uncovered = crate::common::reference_check::uncovered_targets(&root, &sources);
+    assert!(
+        uncovered.contains(&target),
+        "expected uncovered target {target}; got: {}",
+        uncovered.join(", ")
+    );
+}
+
 #[then("the generated givn-characterize guidance requests `givn instructions review-reverse`")]
 fn characterize_guidance_requests_reverse_review(world: &mut GivnWorld) {
     let files = configured_skill_content(world, "givn-characterize");
