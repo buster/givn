@@ -1830,6 +1830,37 @@ fn installed_guidance_references_resolve(world: &mut GivnWorld) {
         "unresolved guidance references:\n{}",
         crate::common::reference_check::describe(&findings)
     );
+    let uncovered = crate::common::reference_check::uncovered_targets(&root, &sources);
+    assert!(
+        uncovered.is_empty(),
+        "configured targets without synchronized guidance: {}",
+        uncovered.join(", ")
+    );
+}
+
+#[then("every agent target Givn supports is covered by the synchronized guidance")]
+fn every_agent_target_is_covered(world: &mut GivnWorld) {
+    let root = env(world).root();
+    let sources = crate::common::reference_check::installed_guidance(&root);
+    let mut missing = Vec::new();
+    for target in AgentTarget::ALL {
+        if !crate::common::reference_check::recognizes_target_dir(target.dir()) {
+            missing.push(format!("{} (not recognized by the check)", target.dir()));
+            continue;
+        }
+        let prefix = format!("{}/", target.dir());
+        if !sources
+            .iter()
+            .any(|source| source.label.starts_with(&prefix))
+        {
+            missing.push(format!("{} (no synchronized guidance)", target.dir()));
+        }
+    }
+    assert!(
+        missing.is_empty(),
+        "agent targets not covered by the synchronized guidance: {}",
+        missing.join(", ")
+    );
 }
 
 #[then(

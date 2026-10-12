@@ -43,11 +43,11 @@
 
 ## Task 1 — The characterization guidance requests the reverse review from Givn (`instruction-integrity`, modified)
 
-- [ ] RED — remove `@wip` from this scenario only; run the single-scenario
+- [x] RED — remove `@wip` from this scenario only; run the single-scenario
   command; expect non-zero (the new Then step is undefined).
   - Command: `GIVN_FEATURES=givn/changes/cover-every-agent-target/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::The characterization guidance requests the reverse review from Givn"`
-  - Output: _(paste)_
-- [ ] GREEN — one atomic step (the fixture edits and the derived expectation
+  - Output: `exit=101` — `✘ And every command-owning agent target receives the givn-characterize command` → `Step doesn't match any function`; `1 scenario (1 failed)`.
+- [x] GREEN — one atomic step (the fixture edits and the derived expectation
   must land together, or the permanent addon-free scenario fails): derive all
   four "all targets" fixtures from `AgentTarget::ALL`
   (`prose_consolidation_steps.rs` prompt and `--agents`,
@@ -61,10 +61,12 @@
   - Files: `tests/steps/prose_consolidation_steps.rs`,
     `tests/steps/prose_consolidation_e2e_steps.rs`,
     `tests/steps/instruction_integrity_steps.rs`.
-  - Output: _(paste RED already above; paste GREEN single-scenario and full-suite summaries)_
-- [ ] REFACTOR — re-run; expect zero.
-  - Output: _(paste)_
-- [ ] COMMIT: `_(filled)_` -- `feat(instruction-integrity): <release note>`
+  - Output: scenario `exit=0` — `1 scenario (1 passed)`, `5 steps (5 passed)`.
+    Full suite `exit=0` — `605 tests run: 605 passed, 0 skipped`. E2E suite
+    `exit=0` — `90 tests run: 90 passed, 515 skipped`.
+- [x] REFACTOR — re-run; expect zero.
+  - Output: `exit=0` — `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] COMMIT: `8dfa6373` -- `feat(instruction-integrity): <release note>`
   with the scenario title in the body.
 
 ## Task 2 — The generated guidance references resolve with the default configuration (`instruction-integrity`, modified)
