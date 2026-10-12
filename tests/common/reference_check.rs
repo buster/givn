@@ -169,7 +169,8 @@ pub fn unresolved_references(project_root: &Path, sources: &[GuidanceSource]) ->
     findings
 }
 
-/// Configured targets that contributed no installed guidance.
+/// Configured targets (directory form, e.g. `.claude`) that contributed no
+/// installed guidance.
 pub fn uncovered_targets(project_root: &Path, sources: &[GuidanceSource]) -> Vec<String> {
     let targets = givn::config::overlay::load_skills_targets(project_root)
         .expect("load configured skills targets");
@@ -180,6 +181,7 @@ pub fn uncovered_targets(project_root: &Path, sources: &[GuidanceSource]) -> Vec
                 .iter()
                 .any(|source| source.label.starts_with(&format!(".{target}/")))
         })
+        .map(|target| format!(".{target}"))
         .collect()
 }
 

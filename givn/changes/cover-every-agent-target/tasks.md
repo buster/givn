@@ -71,11 +71,11 @@
 
 ## Task 2 — The generated guidance references resolve with the default configuration (`instruction-integrity`, modified)
 
-- [ ] RED — remove `@wip` from this scenario only; run; expect non-zero (the
+- [x] RED — remove `@wip` from this scenario only; run; expect non-zero (the
   new coverage step is undefined).
   - Command: `GIVN_FEATURES=givn/changes/cover-every-agent-target/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::The generated guidance references resolve with the default configuration"`
-  - Output: _(paste)_
-- [ ] GREEN — derive recognition from production
+  - Output: `exit=101` — `✘ And every agent target Givn supports is covered by the synchronized guidance` → `Step doesn't match any function`; `1 scenario (1 failed)`.
+- [x] GREEN — derive recognition from production
   (`recognizes_target_dir` over `AgentTarget::ALL`, delete `AGENT_TARGETS`),
   add `uncovered_targets`, strengthen the installed positive Then
   (`installed_guidance_references_resolve`) to assert no configured target is
@@ -83,10 +83,12 @@
   the synchronized guidance" with the coupling guard. Re-run; expect zero.
   - Files: `tests/common/reference_check.rs`,
     `tests/steps/instruction_integrity_steps.rs`.
-  - Output: _(paste)_
-- [ ] REFACTOR — re-run; expect zero.
-  - Output: _(paste)_
-- [ ] COMMIT: `_(filled)_` -- `feat(instruction-integrity): <release note>`
+  - Output: `exit=0` — `1 scenario (1 passed)`, `4 steps (4 passed)`. The
+    permanent no-addons scenario (opencode-only fixture) also passes with the
+    strengthened positive: `1 scenario (1 passed)`, `3 steps (3 passed)`.
+- [x] REFACTOR — re-run; expect zero.
+  - Output: `exit=0` — `1 scenario (1 passed)`, `4 steps (4 passed)`.
+- [x] COMMIT: `3caeae8a` -- `feat(instruction-integrity): <release note>`
   with the scenario title in the body.
 
 ## Task 3 — A configured target without synchronized guidance fails the check (`instruction-integrity`, added)

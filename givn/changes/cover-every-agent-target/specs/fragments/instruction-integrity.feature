@@ -17,7 +17,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     Then  every guidance reference resolves in the consumer project or is owned by a named creation step
     And  every agent target Givn supports is covered by the synchronized guidance
 
-  @givn.added @wip
+  @givn.added
   Scenario: A configured target without synchronized guidance fails the check
     Given  a givn project with all agent skill targets enabled
     When  the skills of the agent target ".claude" are removed
