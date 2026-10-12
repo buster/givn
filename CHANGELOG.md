@@ -6,6 +6,21 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.8.5] - 2026-10-12
+
+### Bug Fixes
+
+- **instruction-integrity:** Generated guidance only sends its reader to files the consumer project has or that a named creation step creates — the persona schema travels inline, reverse review is requested from Givn itself, and Givn rejects any guidance reference that resolves nowhere.
+
+
+### Features
+
+- **generate-ideation-guidance:** Givn asks the user to verify every newly coined domain term — failed names immediately, with the concept's description and concrete candidate names, the rest at the phase's term check — before any canvas, use case, or change seed relies on it.
+
+- **generate-ideation-guidance:** Generated guidance only sends its reader to files the consumer project has or that a named creation step creates — the persona schema travels inline, reverse review is requested from Givn itself, and Givn rejects any guidance reference that resolves nowhere.
+
+- **instruction-integrity:** Givn's guidance reference check now follows the production agent-target list, so a harness added to Givn is covered automatically and a configured target without synchronized guidance fails the check instead of passing silently.
+
 ## [0.8.4] - 2026-10-09
 
 ### Features
@@ -312,3 +327,5 @@ for the complete 0.2.0 feature set.
 [0.8.3]: https://github.com/buster/givn/compare/v0.8.0...v0.8.3
 
 [0.8.4]: https://github.com/buster/givn/compare/v0.8.3...v0.8.4
+
+[0.8.5]: https://github.com/buster/givn/compare/v0.8.4...v0.8.5
