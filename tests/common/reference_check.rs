@@ -23,19 +23,15 @@ pub struct Finding {
     pub line: usize,
 }
 
-/// The top-level directories the check grades.
-const CANDIDATE_ROOTS: &[&str] = &[
-    "givn",
-    "docs",
-    "assets",
-    ".opencode",
-    ".agents",
-    ".claude",
-    ".omp",
-];
+/// The Givn-owned directories the check grades besides agent targets.
+const CANDIDATE_ROOTS: &[&str] = &["givn", "docs", "assets"];
 
-/// Known agent target directory names (with leading dot).
-const AGENT_TARGETS: &[&str] = &[".opencode", ".agents", ".claude", ".omp"];
+/// Whether a first path segment names a production agent target directory.
+pub fn recognizes_target_dir(segment: &str) -> bool {
+    givn::skills::targets::AgentTarget::ALL
+        .iter()
+        .any(|target| target.display() == segment)
+}
 
 /// Locations a named creation step produces during the lifecycle. Each row
 /// is a root segment template plus the leaves the step emits under it; `**`
@@ -173,6 +169,20 @@ pub fn unresolved_references(project_root: &Path, sources: &[GuidanceSource]) ->
     findings
 }
 
+/// Configured targets that contributed no installed guidance.
+pub fn uncovered_targets(project_root: &Path, sources: &[GuidanceSource]) -> Vec<String> {
+    let targets = givn::config::overlay::load_skills_targets(project_root)
+        .expect("load configured skills targets");
+    targets
+        .into_iter()
+        .filter(|target| {
+            !sources
+                .iter()
+                .any(|source| source.label.starts_with(&format!(".{target}/")))
+        })
+        .collect()
+}
+
 /// A printable report for assertion messages.
 pub fn describe(findings: &[Finding]) -> String {
     findings
@@ -216,7 +226,7 @@ fn is_candidate(span: &str) -> bool {
         return false;
     }
     let first = span.split('/').next().unwrap_or_default();
-    CANDIDATE_ROOTS.contains(&first)
+    CANDIDATE_ROOTS.contains(&first) || recognizes_target_dir(first)
 }
 
 fn resolves(project_root: &Path, raw: &str) -> bool {
@@ -234,11 +244,11 @@ fn resolves(project_root: &Path, raw: &str) -> bool {
     matches_workflow_created(&candidate) || matches_rule_owned(&candidate)
 }
 
-/// `<target>/skills/<skill>/SKILL.md` for a known agent target.
+/// `<target>/skills/<skill>/SKILL.md` for a production agent target.
 fn skill_reference(candidate: &str) -> Option<&str> {
     let segments: Vec<&str> = candidate.split('/').collect();
     if segments.len() == 4
-        && AGENT_TARGETS.contains(&segments[0])
+        && recognizes_target_dir(segments[0])
         && segments[1] == "skills"
         && segments[3] == "SKILL.md"
     {

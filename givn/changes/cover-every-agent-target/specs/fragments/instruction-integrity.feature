@@ -10,7 +10,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  the generated givn-characterize command requests `givn instructions review-reverse`
     And  every command-owning agent target receives the givn-characterize command
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The generated guidance references resolve with the default configuration
     Given  a givn project with all agent skill targets enabled
     When  the user runs `givn skills sync`
