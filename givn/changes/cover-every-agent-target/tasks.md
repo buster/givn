@@ -93,33 +93,41 @@
 
 ## Task 3 — A configured target without synchronized guidance fails the check (`instruction-integrity`, added)
 
-- [ ] RED — remove `@wip` from this scenario only; run; expect non-zero (both
+- [x] RED — remove `@wip` from this scenario only; run; expect non-zero (both
   new steps are undefined).
   - Command: `GIVN_FEATURES=givn/changes/cover-every-agent-target/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::A configured target without synchronized guidance fails the check"`
-  - Output: _(paste)_
-- [ ] GREEN — implement "the skills of the agent target `<target>` are
+  - Output: `exit=101` — `✘ When the skills of the agent target ".claude" are removed` → `Step doesn't match any function`; `1 scenario (1 failed)`.
+- [x] GREEN — implement "the skills of the agent target `<target>` are
   removed" (validate via `AgentTarget::from_name`, then remove the skills
   directory) and "the configured-target check fails and names the agent
   target `<target>`" (via `uncovered_targets`). Re-run; expect zero.
-  - Files: `tests/steps/instruction_integrity_steps.rs`.
-  - Output: _(paste)_
-- [ ] REFACTOR — re-run; expect zero.
-  - Output: _(paste)_
-- [ ] COMMIT: `_(filled)_` -- `feat(instruction-integrity): <release note>`
+  - Files: `tests/steps/instruction_integrity_steps.rs`,
+    `tests/common/reference_check.rs` (the helper now returns the directory
+    form, e.g. `.claude`, matching the scenario wording).
+  - Output: first run failed on the name form (`expected .claude; got:
+    claude`); the helper now returns `.claude`. Re-run: `exit=0` —
+    `1 scenario (1 passed)`, `3 steps (3 passed)`.
+- [x] REFACTOR — re-run; expect zero.
+  - Output: `exit=0` — `1 scenario (1 passed)`, `3 steps (3 passed)`.
+- [x] COMMIT: `9cd93e96` -- `feat(instruction-integrity): <release note>`
   with the scenario title in the body.
 
 ## Final verification
 
-- [ ] **F1. Change scope green.** Run
+- [x] **F1. Change scope green.** Run
   `GIVN_FEATURES=givn/changes/cover-every-agent-target/specs ./run-tests.sh`
   and paste the summary (zero exit).
-  - Output: _(paste)_
-- [ ] **F2. Full suites green.** Run `./run-tests.sh` and
+  - Output: `exit=0` — `3 tests run: 3 passed, 0 skipped`.
+- [x] **F2. Full suites green.** Run `./run-tests.sh` and
   `./run-tests.sh --e2e`; paste both summaries (zero exit each).
-  - Output: _(paste)_
-- [ ] **F3. No empty step bodies.** Grep every touched step file for `{}`,
+  - Output: regular `exit=0` — `605 tests run: 605 passed, 0 skipped`;
+    e2e `exit=0` — `90 tests run: 90 passed, 515 skipped`.
+- [x] **F3. No empty step bodies.** Grep every touched step file for `{}`,
   bare `return`, and `unimplemented!()`; zero hits.
-  - Output: _(paste)_
-- [ ] **F4. Commit count.** One commit per scenario (3) plus the planning
+  - Output: no `unimplemented!()`/`todo!()` in the four touched files; no
+    bare `return;` in any of them; the only `{}` hits are format-string
+    placeholders in panic messages.
+- [x] **F4. Commit count.** One commit per scenario (3) plus the planning
   commit; list the hashes.
-  - Output: _(paste)_
+  - Output: planning `f1818b73`; Task 1 `8dfa6373`; Task 2 `3caeae8a`;
+    Task 3 `9cd93e96`.
