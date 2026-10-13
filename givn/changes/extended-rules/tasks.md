@@ -6777,7 +6777,7 @@ reverse-specific content remains in the instruction.
       - [x] GREEN: delta `specs/fragments/guide-domain-modeling.feature` (same-title re-point), reused
             the existing generic guidance-direction step; transcript committed:
             `evidence/visual/an-agent-synchronizes-skills-and-the-domain-skill-is-routed/transcript.txt`
-      - [x] COMMIT: `ab5c0f2b` -- test(e2e): re-point the routed domain-skill scenario to the served instruction
+      - [x] COMMIT: `163062eb` -- test(e2e): re-point the routed domain-skill scenario to the served instruction
 
 - [x] `review-architecture-documentation`: Generated review guidance stays aligned after skill sync — `@e2e` tag restored
       Fabrication-audit correction (tag integrity): the repair had re-pointed the permanent `@e2e`
@@ -6790,7 +6790,7 @@ reverse-specific content remains in the instruction.
       Transcript: `evidence/visual/generated-review-guidance-stays-aligned-after-skill-sync/transcript.txt`
       (records the real `givn skills sync`, the generated skill carrying no Arc42 section, and the served
       review instruction carrying it).
-      - [x] COMMIT: `c1d5e6f7` -- fix(review-architecture-documentation): restore the e2e tag on the re-pointed scenario
+      - [x] COMMIT: `163062eb` -- fix(review-architecture-documentation): restore the e2e tag on the re-pointed scenario
 
 - [x] Check-gate repairs: Capability Routing rows and contract-bullet parsing
       `givn check review` reported the two new fragment capabilities absent from the proposal's
@@ -6801,4 +6801,4 @@ reverse-specific content remains in the instruction.
             `specs/initialize-project/usecase.md`, `specs/upgrade-a-project/usecase.md`: list-section
             bullets unwrapped (one item per line for Actors/Preconditions/Capabilities/Extensions/
             Rules/Examples/Personas).
-      - [x] COMMIT: `d9e0f1a2` -- fix(extended-rules): declare the fragment routing decisions and unwrap the contract bullets
+      - [x] COMMIT: `163062eb` -- fix(extended-rules): declare the fragment routing decisions and unwrap the contract bullets
