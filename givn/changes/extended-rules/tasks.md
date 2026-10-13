@@ -4933,10 +4933,10 @@ sections in the same feature order.
             ```
       - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
-            <pending>
+            f7fbad01 — test(e2e): <release note>; body: Scenario: The generated implementation guidance shares the release note
             ```
 
-- [ ] prose-consolidation: Generated guidance points to the canonical E2E policy
+- [x] prose-consolidation: Generated guidance points to the canonical E2E policy
       Design constraints:
         - Real `givn skills sync` with all agent targets and optional guidance enabled; the primary assertion is on the emitted files and the served instructions, not on asset source text.
         - Served-content seam: `assets/instructions/specs.md` carries the canonical interaction and E2E policy (including the `# User Interaction Inventory:` policy and the terminal-transcript rule); the emitted skills and commands direct to their instructions and keep the dialog-policy obligation.
@@ -4945,23 +4945,94 @@ sections in the same feature order.
         - E2E steps: `tests/steps/prose_consolidation_e2e_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/prose-consolidation.feature::Generated guidance points to the canonical E2E policy"`
-      - [ ] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/prose-consolidation.feature::Generated guidance points to the canonical E2E policy"
+            (the new binding `the served specs instruction carries the canonical
+             interaction and E2E policy` was written with its real assertion in
+             tests/steps/prose_consolidation_e2e_steps.rs; first run:)
+            Feature: prose-consolidation
+              Scenario: Generated guidance points to the canonical E2E policy
+               ✔  Given a Givn project with all agent skill targets and optional guidance enabled
+               ✔  When the consumer synchronizes the selected agent guidance through the Givn CLI
+               ✔  Then every emitted skill and command requires the effective dialog policy before its context asks a user-facing question
+               ✔  And direct skill invocation has the same obligation as session-start invocation
+               ✔  And reference skills do not narrow the obligation to one workflow phase
+               ✔  And the generated givn-spec guidance directs the author to the specs instruction
+               ✔  And the served specs instruction carries the canonical interaction and E2E policy
+               ✔  And detailed dialog rules and worked examples remain in the effective dialog instructions rather than competing generated copies
+               ✔  And the synchronization result reports the selected guidance successfully
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            9 steps (9 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the canonical interaction and E2E
+            policy already lives in `assets/instructions/specs.md` and is served
+            by the existing path (delivered by the earlier instruction-integrity
+            slices); the emitted files carry the dialog obligation and their
+            directions. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "commits a captured transcript" → "commits a
+               captured terminal record" in assets/instructions/specs.md; same
+               scoped command)
+            Feature: prose-consolidation
+              Scenario: Generated guidance points to the canonical E2E policy
+               ✔  … (6 passed)
+               ✘  And the served specs instruction carries the canonical interaction and E2E policy
+                  Step panicked. Captured output: the served specs instruction is
+                  missing the canonical interaction/E2E policy marker "captured
+                  transcript": # Instruction: specs
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            7 steps (6 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/specs.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
             ```
+            none — assertion migration only. The scenario's one new binding
+            (`tests/steps/prose_consolidation_e2e_steps.rs`, written at RED with
+            its real assertion) reads the served specs instruction through the
+            shared `served_instruction` helper with the real CLI; the canonical
+            interaction and E2E policy content was delivered by the earlier
+            instruction-integrity slices in `assets/instructions/specs.md`.
             ```
             Evidence transcript path (design.md §Visual Design Contract):
             ```
+            givn/changes/extended-rules/evidence/visual/generated-guidance-points-to-the-canonical-e2e-policy/transcript.txt
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: prose-consolidation
+              Scenario: Generated guidance points to the canonical E2E policy
+               ✔  Given a Givn project with all agent skill targets and optional guidance enabled
+               ✔  When the consumer synchronizes the selected agent guidance through the Givn CLI
+               ✔  Then every emitted skill and command requires the effective dialog policy before its context asks a user-facing question
+               ✔  And direct skill invocation has the same obligation as session-start invocation
+               ✔  And reference skills do not narrow the obligation to one workflow phase
+               ✔  And the generated givn-spec guidance directs the author to the specs instruction
+               ✔  And the served specs instruction carries the canonical interaction and E2E policy
+               ✔  And detailed dialog rules and worked examples remain in the effective dialog instructions rather than competing generated copies
+               ✔  And the synchronization result reports the selected guidance successfully
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            9 steps (9 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.21s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 9 steps (9 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
+            <pending>
             ```
 
 - [ ] visual-design-contract: Synchronized guidance defines the contract approval and capture mechanics

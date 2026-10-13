@@ -157,6 +157,23 @@ fn guidance_preserves_canonical_references(world: &mut GivnWorld) {
     }
 }
 
+#[then("the served specs instruction carries the canonical interaction and E2E policy")]
+fn served_specs_carries_canonical_policy(world: &mut GivnWorld) {
+    let content =
+        crate::steps::serve_extended_rules_steps::served_instruction(fixture(world), "specs");
+    for marker in [
+        "## User Interaction Inventory",
+        "the named real interface",
+        "captured transcript",
+    ] {
+        assert!(
+            content.contains(marker),
+            "the served specs instruction is missing the canonical interaction/E2E \
+             policy marker {marker:?}: {content}"
+        );
+    }
+}
+
 #[then(
     "detailed dialog rules and worked examples remain in the effective dialog instructions rather than competing generated copies"
 )]
