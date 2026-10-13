@@ -4576,7 +4576,7 @@ sections in the same feature order.
         - Step file: `tests/steps/run_upgrade_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "upgrade-a-project/apply-a-managed-upgrade.feature::A project-owned replacement stays byte-for-byte across an upgrade"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
             $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "upgrade-a-project/apply-a-managed-upgrade.feature::A project-owned replacement stays byte-for-byte across an upgrade"
             Feature: Managed upgrade and legacy project migration
@@ -4627,7 +4627,7 @@ sections in the same feature order.
             the scoped command passed again. No production switch, exception,
             fake success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
             none — the cascade-visible replacement is outside the managed
             allowlist and the upgrade leaves it authoritative (R-74 unchanged).
@@ -4652,14 +4652,15 @@ sections in the same feature order.
             1 scenario (1 passed)
             6 steps (6 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
             $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.35s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(apply-a-managed-upgrade): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(apply-a-managed-upgrade): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            b23428d2 — feat(apply-a-managed-upgrade): <release note>; body: Scenario: A project-owned replacement stays byte-for-byte across an upgrade
             ```
 
 - [ ] visual-review-gate: Synchronized review guidance carries the visual block
@@ -4671,15 +4672,58 @@ sections in the same feature order.
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "verify-change/visual-review-gate.feature::Synchronized review guidance carries the visual block"`
       - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "verify-change/visual-review-gate.feature::Synchronized review guidance carries the visual block"
+            Feature: Visual Review Gate
+              Scenario: Synchronized review guidance carries the visual block
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the generated givn-review guidance directs the reviewer to the review instruction
+               ✔  And the served review instruction contains "VISUAL-REVIEW: PASS"
+               ✔  And the served review instruction contains "confirmed Persona"
+               ✘  And the served review instruction contains "no pixel-level"
+                  Step panicked. Captured output: the served review instruction is missing "no pixel-level": # Instruction: review
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            6 steps (5 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED — the served review instruction carries the visual
+            block, but the rule text reads "No pixel-level or coordinate
+            findings" (capital N), so the asserted phrase "no pixel-level" is
+            absent. The no-change sync fixture also needed the shared
+            served-instruction helper to carry a change context for artifact
+            ids without an active change (the CLI authorizes the context by
+            shape; artifact instructions are not change-specific).
             ```
       - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            assets/instructions/review.md — the visual-block bullet reworded
+            so the served rule carries "no pixel-level" while keeping the
+            contract-rule/Persona-goal requirement and the "2px off" example.
+            tests/steps/serve_extended_rules_steps.rs — the served-instruction
+            helper resolves a manifest artifact id for the no-change sync
+            fixture (single active change when present, else the requested id).
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after the production edit)
+            Feature: Visual Review Gate
+              Scenario: Synchronized review guidance carries the visual block
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the generated givn-review guidance directs the reviewer to the review instruction
+               ✔  And the served review instruction contains "VISUAL-REVIEW: PASS"
+               ✔  And the served review instruction contains "confirmed Persona"
+               ✔  And the served review instruction contains "no pixel-level"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
             ```
       - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.34s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
       - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(visual-review-gate): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```

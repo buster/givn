@@ -2,7 +2,7 @@
 
 Feature: Visual Review Gate
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Synchronized review guidance carries the visual block
     Given a givn project with all agent skill targets enabled
     When the user runs `givn skills sync`

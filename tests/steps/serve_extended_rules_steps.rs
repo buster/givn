@@ -24,11 +24,11 @@ const MANIFEST_ARTIFACT_IDS: [&str; 6] = [
     "review",
 ];
 
-/// The fixture's single active change id.
-fn active_change_id(env: &common::TestEnv) -> String {
+/// The fixture's single active change id, when exactly one exists.
+fn single_active_change(env: &common::TestEnv) -> Option<String> {
     let dir = env.path("givn/changes");
     let mut ids: Vec<String> = std::fs::read_dir(&dir)
-        .unwrap_or_else(|error| panic!("read changes dir {}: {error}", dir.display()))
+        .ok()?
         .filter_map(|entry| {
             let entry = entry.ok()?;
             if entry.path().is_dir() {
@@ -39,21 +39,29 @@ fn active_change_id(env: &common::TestEnv) -> String {
         })
         .collect();
     ids.sort();
-    assert_eq!(
-        ids.len(),
-        1,
-        "expected exactly one active change in the fixture, got {ids:?}"
-    );
-    ids.remove(0)
+    (ids.len() == 1).then(|| ids.remove(0))
+}
+
+/// The fixture's single active change id, requiring exactly one.
+fn active_change_id(env: &common::TestEnv) -> String {
+    single_active_change(env).unwrap_or_else(|| {
+        panic!(
+            "expected exactly one active change in the fixture under {}",
+            env.path("givn/changes").display()
+        )
+    })
 }
 
 /// Run `givn instructions <id>` in the fixture and return its stdout. Manifest
-/// artifact ids get `--change <active>`; policy and step ids do not.
+/// artifact ids get a `--change` context: the fixture's single active change
+/// when one exists, otherwise the requested id itself — artifact instructions
+/// are not change-specific and the CLI validates the context by shape, which
+/// the no-change sync fixtures (the all-targets fixture) rely on.
 pub(crate) fn served_instruction(env: &common::TestEnv, id: &str) -> String {
     let mut args = vec!["instructions", id];
     let change;
     if MANIFEST_ARTIFACT_IDS.contains(&id) {
-        change = active_change_id(env);
+        change = single_active_change(env).unwrap_or_else(|| id.to_string());
         args.push("--change");
         args.push(change.as_str());
     }
