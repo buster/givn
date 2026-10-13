@@ -137,38 +137,6 @@ when clean.
   </example>
 </coverage-boundary-examples>
 
-{{#if addons.arc42}}
-## Arc42 implementation conformance
-
-Run this mandatory check before coverage classification.
-Read the durable `docs/arc42/` chapters and the change-level `arc42.md`, then
-independently derive the affected chapters and architecture facts from the
-completed implementation, `design.md`, and `tasks.md`. For every chapter or
-fact named by either assessment, compare the durable source, Arc42 claim,
-design treatment, task mapping, and implementation evidence in review.md's
-**Arc42 implementation conformance** table.
-
-This check catches both stale Arc42 documentation and design, task, or
-implementation drift from documented facts. Every omission or contradiction is
-a finding. Fix the affected artifact and repeat the comparison; if design.md
-changes, re-run design-review. Record `ARC42 CONFORMANCE: CLEAN` only when all
-rows match. Do not write `REVIEW: PASS` while an Arc42 finding remains.
-{{/if}}
-
-{{#if addons.arc42}}
-{{#if addons.domain_modeling}}
-## Ubiquitous language conformance
-
-Before sign-off, run this mandatory
-check: confirm that the specs, design, and code reuse the durable glossary's
-exact terms — the ubiquitous language is used consistently everywhere and
-recorded in the project's arc42 glossary. Every spec or design term the
-glossary does not hold, or any inconsistent reuse, is a finding: fix the
-affected artifact and record the resolved term in `docs/arc42/12-glossary.md`.
-Do not write `REVIEW: PASS` while a ubiquitous-language finding remains.
-{{/if}}
-{{/if}}
-
 ## Visual review (conditional)
 
 The visual review gate — the evidence rules, the vision review per confirmed
