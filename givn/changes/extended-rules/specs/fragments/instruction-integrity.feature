@@ -18,7 +18,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  the returned guidance rejects a channel as an answer
     And  the returned guidance requires goal-shaped capability names
 
-  @givn.added @wip
+  @givn.added
   Scenario: Every instruction id named by generated guidance resolves through the Givn CLI
     Given a givn project with all agent skill targets enabled and an active change
     When the user runs `givn skills sync`

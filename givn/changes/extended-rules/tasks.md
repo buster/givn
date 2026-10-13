@@ -3385,27 +3385,65 @@ sections in the same feature order.
             27a50a60 — feat(instruction-integrity): <release note>; body: Scenario: Retrieval guidance distinguishes build capabilities
             ```
 
-- [ ] instruction-integrity: The specs guidance carries the capability placement test
+- [x] instruction-integrity: The specs guidance carries the capability placement test
       Design constraints:
         - Served-content seam: `assets/instructions/specs.md` carries the capability placement test from the canonical policy.
         - Assertions: the returned guidance carries the placement test; rejects a channel as an answer; requires goal-shaped capability names.
         - Step file: `tests/steps/instruction_integrity_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::The specs guidance carries the capability placement test"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::The specs guidance carries the capability placement test"
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: The specs guidance carries the capability placement test
+               ✔  Given a Givn project with an active change
+               ✔  When the author requests the specs instructions through the Givn CLI
+               ✘  Then the returned guidance carries the placement test
+                  Step panicked. Captured output: returned guidance does not carry the
+                  capability placement test: # Instruction: specs ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                 EXIT=101
+            OLD_PRODUCT_RED — the served `assets/instructions/specs.md` broke the
+            phrase across a line wrap ("apply the placement\ntest:"), so the
+            served guidance carries the placement test only as two words on
+            separate lines. The literal assertion discriminates; no calibration
+            was needed.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            assets/instructions/specs.md — reflowed the capability-placement
+              sentence so the served content carries "placement test"
+              contiguously ("apply the placement test:\nwhich actor goal …").
+            tests/steps/instruction_integrity_steps.rs — the three real Then
+              steps reading the served stdout.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after the reflow)
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: The specs guidance carries the capability placement test
+               ✔  Given a Givn project with an active change
+               ✔  When the author requests the specs instructions through the Givn CLI
+               ✔  Then the returned guidance carries the placement test
+               ✔  And the returned guidance rejects a channel as an answer
+               ✔  And the returned guidance requires goal-shaped capability names
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                           EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.43s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-integrity): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-integrity): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            c495df8d — feat(instruction-integrity): <release note>; body: Scenario: The specs guidance carries the capability placement test
             ```
 
 - [ ] instruction-integrity: Every instruction id named by generated guidance resolves through the Givn CLI

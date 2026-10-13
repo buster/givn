@@ -444,6 +444,115 @@ fn returned_guidance_requires_goal_shaped_names(world: &mut GivnWorld) {
     );
 }
 
+// --- instruction-integrity: generated directions resolve through the CLI ----
+
+/// Every installed skill and command file for the project's configured
+/// targets, in deterministic order.
+fn installed_guidance_files(world: &GivnWorld) -> Vec<std::path::PathBuf> {
+    let root = env(world).root();
+    let targets =
+        givn::config::overlay::load_skills_targets(&root).expect("load configured skills targets");
+    let mut files = Vec::new();
+    for name in targets {
+        let Some(target) = AgentTarget::from_name(&name) else {
+            continue;
+        };
+        let skills_dir = root.join(target.dir()).join("skills");
+        if skills_dir.is_dir() {
+            let mut entries: Vec<std::path::PathBuf> = std::fs::read_dir(&skills_dir)
+                .unwrap_or_else(|error| panic!("read {}: {error}", skills_dir.display()))
+                .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+                .collect();
+            entries.sort();
+            for entry in entries {
+                let file = entry.join("SKILL.md");
+                if file.is_file() {
+                    files.push(file);
+                }
+            }
+        }
+        if target.owns_commands() {
+            let commands_dir = root.join(target.dir()).join("commands");
+            if commands_dir.is_dir() {
+                let mut entries: Vec<std::path::PathBuf> = std::fs::read_dir(&commands_dir)
+                    .unwrap_or_else(|error| panic!("read {}: {error}", commands_dir.display()))
+                    .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+                    .filter(|path| path.extension().is_some_and(|ext| ext == "md"))
+                    .collect();
+                entries.sort();
+                files.extend(entries);
+            }
+        }
+    }
+    files
+}
+
+/// Every instruction id named by a `givn instructions <id>` direction in
+/// `content`, in occurrence order.
+fn named_instruction_ids(content: &str) -> Vec<String> {
+    const NEEDLE: &str = "givn instructions ";
+    let mut ids = Vec::new();
+    let mut rest = content;
+    while let Some(position) = rest.find(NEEDLE) {
+        let after = &rest[position + NEEDLE.len()..];
+        let token: String = after
+            .chars()
+            .take_while(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || *c == '-')
+            .collect();
+        if token.chars().next().is_some_and(|c| c.is_ascii_lowercase()) {
+            ids.push(token);
+        }
+        rest = after;
+    }
+    ids
+}
+
+#[then("every generated skill and command names a served instruction")]
+fn every_generated_file_names_instruction(world: &mut GivnWorld) {
+    let files = installed_guidance_files(world);
+    assert!(
+        !files.is_empty(),
+        "the fixture has no generated skills or commands to check"
+    );
+    for path in &files {
+        let content = std::fs::read_to_string(path)
+            .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+        let ids = named_instruction_ids(&content);
+        assert!(
+            !ids.is_empty(),
+            "{} names no served instruction (no `givn instructions <id>` direction)",
+            path.display()
+        );
+    }
+}
+
+#[then("every named instruction id resolves through the Givn CLI")]
+fn every_named_instruction_id_resolves(world: &mut GivnWorld) {
+    let files = installed_guidance_files(world);
+    let project = env(world);
+    let mut checked: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+    for path in &files {
+        let content = std::fs::read_to_string(path)
+            .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+        for id in named_instruction_ids(&content) {
+            if !checked.insert(id.clone()) {
+                continue;
+            }
+            let output = crate::common::run_givn(project, &["instructions", &id]);
+            assert!(
+                output.status.success(),
+                "`givn instructions {id}` (named by {}) failed: {}",
+                path.display(),
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+    }
+    assert!(
+        !checked.is_empty(),
+        "the generated guidance names no instruction ids at all"
+    );
+}
+
 // --- dialog-question-quality: dialog policy steps --------------------------
 
 fn cli_stdout(world: &GivnWorld) -> String {
