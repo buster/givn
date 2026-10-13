@@ -6704,5 +6704,18 @@ run command.
             ```
       - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-integrity): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
-            (recorded after the commit)
+            5d61b8ba — feat(instruction-integrity): <release note>; body: Scenario: Every generated skill and command directs to exactly one served instruction id
             ```
+
+### Repair 3 — tasks-reverse alignment (recorded decision, no new scenario)
+
+`assets/instructions/tasks-reverse.md` no longer points at the `givn-steps`
+skill and no longer restates the commit/release-note contract: shared step
+mechanics are served by `givn instructions steps`, and the commit contract has
+exactly one home (`givn instructions tasks --change <id>`). Only
+reverse-specific content remains in the instruction.
+
+- [x] COMMIT: small alignment fix in its own revision — no scenario loop (no delta scenario pins the removed wording). Record the revision identifier:
+      ```
+      (recorded after the commit)
+      ```
