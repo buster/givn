@@ -123,9 +123,6 @@ Mechanical check, before trusting anything else:
     design decision made silently by the tasks/implementation phase. Fix
     by conforming to design.md as reviewed, or by updating design.md and
     re-running design-review before accepting the deviation.
-{{#if addons.arc42}}
-    Reassess the affected arc42 chapters when the design.md fix is structural.
-{{/if}}
 12. Any finding from 1-11 is unfinished implementation, not a coverage gap.
     Uncheck the task, drive it through RED→GREEN→REFACTOR→COMMIT for real —
     fixing the real-interface obstacle per design.md, never by leaving the
@@ -133,22 +130,6 @@ Mechanical check, before trusting anything else:
     write REVIEW: PASS while any finding remains.
 
 Paste the result into review.md's Fabrication Audit section even when clean.
-
-{{#if addons.arc42}}
-### Arc42 implementation conformance
-Read the durable `docs/arc42/` chapters and the change-level `arc42.md`,
-independently derive the affected chapters and architecture facts,
-and compare each one against `design.md`, its mapped task(s) in `tasks.md`, and
-evidence from the completed implementation. Fill review.md's **Arc42
-implementation conformance** table.
-
-This is a fresh post-implementation check, not a copy of design-review. It
-must catch both stale Arc42 chapters and implementation drift from documented
-facts. Any omission or contradiction is a finding. Fix the affected artifact
-or implementation and repeat the comparison; if design.md changes, re-run
-design-review. Record `ARC42 CONFORMANCE: CLEAN` and continue only when every
-row matches. Do not write `REVIEW: PASS` with an unresolved Arc42 finding.
-{{/if}}
 
 ### Deterministic gate dispositions
 
