@@ -1022,27 +1022,74 @@ sections in the same feature order.
             1844715d — feat(instruction-extension): <release note>; body: Scenario: An extension extends a policy and a step instruction alike
             ```
 
-- [ ] generate-ideation-guidance: The ideation skill ships without any addon enabled
+- [x] generate-ideation-guidance: The ideation skill ships without any addon enabled
       Design constraints:
         - Content seam: the new canonical `assets/instructions/ideation.md` renders through `givn instructions ideation` (step id, no change context) with no addon enabled — the unconditional discipline renders, the addon-gated fragments are omitted; shared served-instruction step per Global constraints §Step-file ownership.
         - Generated seam: `assets/skills/givn-ideation/SKILL.md.tmpl` becomes the direction; real `givn skills sync` in a project root without addons.
         - Assertions: the served ideation instruction contains "Frame"; the generated givn-ideation guidance directs the ideator to the ideation instruction.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation skill ships without any addon enabled"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation skill ships without any addon enabled"
+            Feature: Generate ideation guidance
+              Scenario: The ideation skill ships without any addon enabled
+               ✔  Given a project root with givn/ initialised without addons
+               ✔  When the user runs `givn skills sync`
+               ✘  Then the served ideation instruction contains "Frame"
+                  Step panicked. Captured output: the served ideation instruction is missing "Frame": # Instruction: ideation
+                  ... (the minimal placeholder: intro plus the three Scope bullets)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: the served instruction is still the minimal
+            placeholder asset — it carries the scope bullets only, no "Frame"
+            section — and the generated givn-ideation skill still carries the
+            old discipline copy and names no `givn instructions ideation`
+            direction.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            assets/instructions/ideation.md (rewritten: the whole ideation discipline
+              moved out of the skill template — context and Frame, Personas, Topic
+              state, the question/term/seed/use-case schemas, Handoff, One question at
+              a time, Event Storming, Use Case Definition, Use Case Elaboration,
+              Quality reviews, What you must NOT do — with the domain_modeling and
+              arc42 gated fragments as `{{#if addons.<key>}}` blocks)
+            assets/skills/givn-ideation/SKILL.md.tmpl (direction: the discipline is
+              served by `givn instructions ideation`; rule copy removed, invocation
+              orchestration kept)
+            src/skills/render.rs (render_conditionals exposed; render_template delegates)
+            src/cli/instructions.rs (render the resolved instruction with the
+              project's enabled addons on the text and JSON paths, both the artifact
+              and the non-artifact fallback, before appending the extension)
+            tests/steps/prose_consolidation_steps.rs (generic direction step
+              `the generated givn-<file> guidance directs …`)
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after the production edits)
+            Feature: Generate ideation guidance
+              Scenario: The ideation skill ships without any addon enabled
+               ✔  Given a project root with givn/ initialised without addons
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the served ideation instruction contains "Frame"
+               ✔  And the generated givn-ideation guidance directs the ideator to the ideation instruction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.89s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            2d389d11 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation skill ships without any addon enabled
             ```
 
 - [ ] generate-ideation-guidance: The ideation guidance carries the phase ladder and the one-question rule

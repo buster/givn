@@ -8,7 +8,7 @@
 use std::fs;
 use std::process::Output;
 
-use cucumber::{then, when};
+use cucumber::{given, then, when};
 
 use crate::common;
 use crate::steps::GivnWorld;
@@ -64,6 +64,13 @@ pub(crate) fn served_instruction(env: &common::TestEnv, id: &str) -> String {
         String::from_utf8_lossy(&output.stderr)
     );
     String::from_utf8_lossy(&output.stdout).into_owned()
+}
+
+/// The default fixture for the ideation guidance scenarios: a Givn project
+/// with every addon enabled, so the addon-gated instruction fragments render.
+#[given("a Givn project")]
+fn givn_project(world: &mut GivnWorld) {
+    world.env = Some(common::make_init_root());
 }
 
 #[then(regex = r#"^the served ([a-z-]+) instruction contains "([^"]+)"$"#)]
