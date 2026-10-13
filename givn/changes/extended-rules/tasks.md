@@ -330,7 +330,7 @@ sections in the same feature order.
             ```
       - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(prose-consolidation): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
-            PENDING
+            1eb811fc — feat(prose-consolidation): <release note>; body: Scenario: The propose and archive commands carry the seed stamping instructions
             ```
 
 - [ ] visual-design-contract: Synchronized authoring guidance carries the classification, driver, and persona rules
