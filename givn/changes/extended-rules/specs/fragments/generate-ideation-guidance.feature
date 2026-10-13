@@ -223,7 +223,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "never an aggregate"
     And  the served ideation instruction contains "Name the kind"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The event storming review checks canvas coverage, legality, agreement, and rendering
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
