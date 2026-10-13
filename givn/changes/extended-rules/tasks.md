@@ -5138,10 +5138,10 @@ sections in the same feature order.
             ```
       - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
-            <pending>
+            b04de934 — test(e2e): <release note>; body: Scenario: Synchronized guidance defines the contract approval and capture mechanics
             ```
 
-- [ ] instruction-extension: A developer records an extension and it governs the next guidance request
+- [x] instruction-extension: A developer records an extension and it governs the next guidance request
       Design constraints:
         - The e2e action is configuration maintenance plus a real guidance request (design-review finding 2): the fixture writes the project's rule into the `extensions:` map of `givn/config.yaml` (no recording command exists — D2), then a real `givn instructions proposal --change <active>` subprocess runs.
         - Primary assertion on the real subprocess stdout: the served content carries the project's rule in the marked extension section; the built-in proposal rules stay unchanged (they are unmodified by the extension and still appear).
@@ -5150,23 +5150,89 @@ sections in the same feature order.
         - E2E steps: `tests/steps/instruction_extension_e2e_steps.rs` (real CLI).
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::A developer records an extension and it governs the next guidance request"`
-      - [ ] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::A developer records an extension and it governs the next guidance request"
+            (the two e2e bindings were written at RED with their real
+             assertions in tests/steps/instruction_extension_e2e_steps.rs: the
+             recording Given captures the built-in served content through a real
+             `givn instructions proposal` subprocess, then writes the rule into
+             the `extensions:` map; the "stay unchanged" Then compares the served
+             prefix. First run:)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A developer records an extension and it governs the next guidance request
+               ✔  Given a Givn project with an active change
+               ✔  And the developer records the rule "Keep proposals under 500 words" for the proposal instruction in the project's configuration
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the served content carries the project's rule in the marked extension section
+               ✔  And the built-in proposal rules stay unchanged
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the extension map is read on every
+            request and appended under the marked section by the earlier
+            instruction-extension slices; the built-in rules are the unchanged
+            prefix. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission in the delivered behavior):
+            $ (temporarily prepended "TEMP-CALIBRATION-LEADING-LINE" before the
+               content in src/config/extensions.rs::append so the built-in rules
+               are no longer the served prefix; same scoped command)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A developer records an extension and it governs the next guidance request
+               ✔  … (4 passed)
+               ✘  And the built-in proposal rules stay unchanged
+                  Step panicked. Captured output: the served content does not keep
+                  the built-in proposal rules as its unchanged prefix:
+                  TEMP-CALIBRATION-LEADING-LINE …
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the new
+            assertion discriminates (it reads the real subprocess stdout, not
+            "it ran"); the edit was restored immediately
+            (`git checkout -- src/config/extensions.rs`) and the scoped command
+            passed again. No production switch, exception, fake success, or
+            source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
             ```
+            none — the recording Given writes the project-owned `extensions:` map
+            and the request path was delivered by the earlier
+            instruction-extension slices (src/config/extensions.rs::load/append
+            and src/cli/instructions.rs); this scenario binds the real-CLI
+            recording fixture and the built-in-prefix control in
+            tests/steps/instruction_extension_e2e_steps.rs.
             ```
             Evidence transcript path (design.md §Visual Design Contract):
             ```
+            givn/changes/extended-rules/evidence/visual/a-developer-records-an-extension-and-it-governs-the-next-guidance-request/transcript.txt
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the edit)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A developer records an extension and it governs the next guidance request
+               ✔  Given a Givn project with an active change
+               ✔  And the developer records the rule "Keep proposals under 500 words" for the proposal instruction in the project's configuration
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the served content carries the project's rule in the marked extension section
+               ✔  And the built-in proposal rules stay unchanged
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.82s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
+            <pending>
             ```
 
 - [ ] instruction-extension: An upgrade preserves the extension and the next request serves it

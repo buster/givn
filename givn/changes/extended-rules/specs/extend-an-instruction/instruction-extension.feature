@@ -2,7 +2,7 @@
 
 Feature: A project extends an instruction's built-in rules
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: A developer records an extension and it governs the next guidance request
     Given a Givn project with an active change
     And the developer records the rule "Keep proposals under 500 words" for the proposal instruction in the project's configuration
