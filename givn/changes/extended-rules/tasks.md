@@ -265,36 +265,72 @@ sections in the same feature order.
       tests/steps/instruction_extension_steps.rs; registered in
       tests/steps/mod.rs. No runner or config edit was needed.
       ```
-      - [ ] COMMIT: commit the runner/config edit only if it actually changed
+      - [x] COMMIT: commit the runner/config edit only if it actually changed
             (expected: none — strict mode and the commands already exist) plus the
             new step-module skeletons and their `mod.rs` registration. Record the
             revision identifier:
             ```
+            748a10f3  test(extended-rules): strict-mode proof and step skeletons
             ```
 
 ## Scenario tasks (non-@e2e, in .feature order)
 
-- [ ] prose-consolidation: The propose and archive commands carry the seed stamping instructions
+- [x] prose-consolidation: The propose and archive commands carry the seed stamping instructions
       Design constraints:
         - Served-content seam: `givn instructions proposal --change <active>` reads `assets/instructions/proposal.md` and must contain "proposed by"; `givn instructions archive --change <active>` reads the new `assets/instructions/archive.md` and must contain "implemented in" — the seed-stamping instructions move into the served instruction assets.
         - Generated seam: `assets/commands/givn-propose.md` and `assets/commands/givn-archive.md` are rewritten to the direction (trigger metadata + invocation orchestration + the call), carrying no rule copy; the direction assertions use the generic direction steps in `tests/steps/prose_consolidation_steps.rs`.
         - Assertions: the served proposal instruction contains "proposed by"; the served archive instruction contains "implemented in"; the generated givn-propose command directs the author to the proposal instruction; the generated givn-archive command directs the archivist to the archive instruction.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/prose-consolidation.feature::The propose and archive commands carry the seed stamping instructions"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/prose-consolidation.feature::The propose and archive commands carry the seed stamping instructions"
+            Feature: prose-consolidation
+              Scenario: The propose and archive commands carry the seed stamping instructions
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the served proposal instruction contains "proposed by"
+               ✘  And the served archive instruction contains "implemented in"
+                  Step panicked. Captured output: givn instructions archive failed: error: unknown artifact 'archive'. Known artifacts: proposal, specs, design, design-review, tasks, review, arc42-docs
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: the `archive` instruction id does not exist yet; the CLI refuses it.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            assets/instructions/archive.md (new: archive rules — gate, seed stamping, guardrails)
+            assets/commands/givn-archive.md (orchestration + direction to `givn instructions archive`)
+            assets/commands/givn-propose.md (artifact-specific rules section removed; direction names `givn instructions proposal`)
+            tests/steps/serve_extended_rules_steps.rs (served_instruction helper + contains/does-not-contain steps)
+            tests/steps/prose_consolidation_steps.rs (given with active change; direction step)
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after the production edits)
+            Feature: prose-consolidation
+              Scenario: The propose and archive commands carry the seed stamping instructions
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the served proposal instruction contains "proposed by"
+               ✔  And the served archive instruction contains "implemented in"
+               ✔  And the generated givn-propose command directs the author to the proposal instruction
+               ✔  And the generated givn-archive command directs the archivist to the archive instruction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 13.31s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(prose-consolidation): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(prose-consolidation): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            PENDING
             ```
 
 - [ ] visual-design-contract: Synchronized authoring guidance carries the classification, driver, and persona rules

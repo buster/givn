@@ -331,6 +331,37 @@ fn project_with_all_targets(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
+#[given("a givn project with all agent skill targets enabled and an active change")]
+fn project_with_all_targets_and_active_change(world: &mut GivnWorld) {
+    project_with_all_targets(world);
+    let env = world.env.as_ref().expect("init created the fixture");
+    let output = common::run_givn(env, &["new", "add-user-auth"]);
+    assert!(
+        output.status.success(),
+        "givn new add-user-auth failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[then(
+    regex = r"^the generated givn-([a-z-]+) command directs the [a-z]+ to the ([a-z-]+) instruction$"
+)]
+fn generated_command_directs_to_instruction(
+    world: &mut GivnWorld,
+    command: String,
+    instruction: String,
+) {
+    let path = env(world).path(&format!(".opencode/commands/givn-{command}.md"));
+    let content = fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read generated command {}: {error}", path.display()));
+    let needle = format!("givn instructions {instruction}");
+    assert!(
+        content.contains(&needle),
+        "givn-{command} does not direct to the {instruction} instruction \
+         (missing {needle:?}): {content}"
+    );
+}
+
 #[given(regex = r##"^a project override for specs instructions containing "([^"]+)"$"##)]
 fn specs_instruction_override(world: &mut GivnWorld, text: String) {
     common::write_override(env(world), "specs", "instructions.md", &text);
