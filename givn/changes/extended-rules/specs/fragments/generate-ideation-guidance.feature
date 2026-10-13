@@ -115,7 +115,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "never an extension"
     And  the served ideation instruction contains "never to a capability inside another goal"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation guidance carries the persona identity criteria and the reuse protocol
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
