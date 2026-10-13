@@ -2,7 +2,7 @@
 
 Feature: Visual Design Contract
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Synchronized guidance defines the contract approval and capture mechanics
     Given a givn project with all agent skill targets enabled
     When the user runs `givn skills sync`

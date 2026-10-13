@@ -5032,10 +5032,10 @@ sections in the same feature order.
             ```
       - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
-            <pending>
+            9ed3878e — test(e2e): <release note>; body: Scenario: Generated guidance points to the canonical E2E policy
             ```
 
-- [ ] visual-design-contract: Synchronized guidance defines the contract approval and capture mechanics
+- [x] visual-design-contract: Synchronized guidance defines the contract approval and capture mechanics
       Design constraints:
         - Real `givn skills sync` with all agent targets enabled; the primary assertion is on the served instructions, not on generated copies.
         - Served-content seam: `assets/instructions/design-review.md` carries the contract approval mechanics and `assets/instructions/steps.md` (new asset) carries the capture mechanics; the generated givn-design-review and givn-steps files carry the direction only.
@@ -5044,23 +5044,101 @@ sections in the same feature order.
         - E2E steps: existing per-capability files (`tests/steps/prose_consolidation_e2e_steps.rs` for the sync; `tests/steps/visual_design_contract_steps.rs` for the served-content steps).
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/visual-design-contract.feature::Synchronized guidance defines the contract approval and capture mechanics"`
-      - [ ] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/visual-design-contract.feature::Synchronized guidance defines the contract approval and capture mechanics"
+            (every binding already exists: the generic direction step for the
+             givn-design-review/givn-steps guidance, the shared served-instruction
+             content step for design-review, and the shared served-instruction step
+             for steps; the visual step files add no content bindings. First run:)
+            Feature: Visual Design Contract
+              Scenario: Synchronized guidance defines the contract approval and capture mechanics
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the generated givn-design-review guidance directs the reviewer to the design-review instruction
+               ✔  And the served design-review instruction contains "Visual Design Contract"
+               ✔  And the served design-review instruction contains "propose"
+               ✔  And the served design-review instruction contains "user approves"
+               ✔  And the served design-review instruction contains "rendered options"
+               ✔  And the generated givn-steps guidance directs the step writer to the steps instruction
+               ✔  And the served steps instruction contains "evidence/visual"
+               ✔  And the served steps instruction contains "final-state"
+               ✔  And the served steps instruction contains "animations are frozen"
+               ✔  And the served steps instruction contains "reports/"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            12 steps (12 passed)                                         EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the contract approval mechanics
+            already live in `assets/instructions/design-review.md`, and the
+            capture mechanics landed in `assets/instructions/steps.md` with the
+            change-release-note scenario's steps-asset move (the first scenario
+            that needed the `givn instructions steps` direction); every step
+            binding already exists. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "animations are frozen" → "motion is frozen" in
+               assets/instructions/steps.md; same scoped command)
+            Feature: Visual Design Contract
+              Scenario: Synchronized guidance defines the contract approval and capture mechanics
+               ✔  … (7 passed)
+               ✘  And the served steps instruction contains "animations are frozen"
+                  Step panicked. Captured output: the served steps instruction is
+                  missing "animations are frozen": # Instruction: steps
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            12 steps (11 passed, 1 failed)                                EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/steps.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
             ```
+            none — assertion migration only. The served design-review and steps
+            instructions already carry the contract approval and capture
+            mechanics (the steps asset moved with the change-release-note
+            scenario's slice); the generated givn-design-review and givn-steps
+            files already carry the direction only. No new content binding was
+            needed — the visual step files keep their existing eject and fixture
+            steps.
             ```
             Evidence transcript path (design.md §Visual Design Contract):
             ```
+            givn/changes/extended-rules/evidence/visual/synchronized-guidance-defines-the-contract-approval-and-capture-mechanics/transcript.txt
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Visual Design Contract
+              Scenario: Synchronized guidance defines the contract approval and capture mechanics
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the generated givn-design-review guidance directs the reviewer to the design-review instruction
+               ✔  And the served design-review instruction contains "Visual Design Contract"
+               ✔  And the served design-review instruction contains "propose"
+               ✔  And the served design-review instruction contains "user approves"
+               ✔  And the served design-review instruction contains "rendered options"
+               ✔  And the generated givn-steps guidance directs the step writer to the steps instruction
+               ✔  And the served steps instruction contains "evidence/visual"
+               ✔  And the served steps instruction contains "final-state"
+               ✔  And the served steps instruction contains "animations are frozen"
+               ✔  And the served steps instruction contains "reports/"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            12 steps (12 passed)                                         EXIT=0
             ```
-      - [ ] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 12 steps (12 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
+            <pending>
             ```
 
 - [ ] instruction-extension: A developer records an extension and it governs the next guidance request
