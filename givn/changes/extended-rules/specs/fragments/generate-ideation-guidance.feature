@@ -298,7 +298,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "append-only"
     And  the served ideation instruction contains "Topic stances"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The generated ideation files direct the agent to the ideation instruction
     Given  a givn project with all agent skill targets enabled
     When  the user runs `givn skills sync`
