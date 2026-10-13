@@ -3977,15 +3977,71 @@ sections in the same feature order.
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The built-in rules are served alone when no extension exists"`
       - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The built-in rules are served alone when no extension exists"
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: The built-in rules are served alone when no extension exists
+               ✔  Given a Givn project with an active change
+               ✔  When the agent requests the specs instructions through the Givn CLI
+               ✔  Then the served content carries the built-in specs rules
+               ✔  And the served content carries no extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the built-in serving path already
+            delivers the specs rules alone when no extension exists; this is
+            the recorded ORACLE_RED case. The first binding attempt hit an
+            ambiguous step match: the pre-existing literal binding
+            `the agent requests the specs instructions through the Givn CLI`
+            in `tests/steps/fix_domain_modeling_skill_trigger_steps.rs` owns
+            that sentence, so the shared request regex was narrowed to the ids
+            this delta serves (proposal|dialog|ideation|explore) — a comment in
+            `serve_extended_rules_steps.rs` records why.
+            ORACLE_RED calibration (controlled omission of the delivered excerpt):
+            $ (temporarily rewrote "Primary assertion rule:" → "Primary assertion criterion:" in assets/instructions/specs.md; same scoped command)
+               ✔  Given a Givn project with an active change
+               ✔  When the agent requests the specs instructions through the Givn CLI
+               ✘  Then the served content carries the built-in specs rules
+                  Step panicked. Captured output: the served specs content is missing the built-in specs rules ("Primary assertion rule"): # Instruction: specs
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/specs.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
             ```
       - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — assertion migration and binding only. The built-in serving
+            path (resolve → render → print) already delivers the specs rules
+            alone; this scenario adds the built-in specs assertion in
+            tests/steps/serve_extended_rules_steps.rs and generalizes the
+            no-extension-section assertion to the requested served content, so
+            the `specs` request is covered without a duplicate ambiguous
+            binding.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: The built-in rules are served alone when no extension exists
+               ✔  Given a Givn project with an active change
+               ✔  When the agent requests the specs instructions through the Givn CLI
+               ✔  Then the served content carries the built-in specs rules
+               ✔  And the served content carries no extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
             ```
       - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.18s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
       - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(serve-extended-rules): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
