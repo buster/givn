@@ -3968,7 +3968,7 @@ sections in the same feature order.
             506d92c5 — feat(initialize-a-project): <release note>; body: Scenario: The project-start block renders its resident rules from the tasks instruction
             ```
 
-- [ ] serve-extended-rules: The built-in rules are served alone when no extension exists
+- [x] serve-extended-rules: The built-in rules are served alone when no extension exists
       Design constraints:
         - Seams: `src/config/extensions.rs::load` yields empty for an absent `extensions:` key; `append` is a no-op without rules; `src/cli/instructions.rs` is the only caller of the serve path.
         - Assertions: `givn instructions specs --change <active>` serves the built-in specs rules; the served content carries no extension section.
@@ -4048,7 +4048,7 @@ sections in the same feature order.
             d3738387 — feat(serve-extended-rules): <release note>; body: Scenario: The built-in rules are served alone when no extension exists
             ```
 
-- [ ] serve-extended-rules: The extension adds to the built-in rules without replacing or reordering them
+- [x] serve-extended-rules: The extension adds to the built-in rules without replacing or reordering them
       Design constraints:
         - Append seam: `src/cli/instructions.rs` renders the built-in rules, then appends the project's extension under the marked `## Project extension` section (heading is the acceptance marker; rule order follows config order).
         - Contradiction fixture: the extension records "Never write a release note" while the built-in release-note rule stays; both appear — rules are extended, never overridden, suppressed, or reordered, and no semantic conflict detection exists (R-79).
@@ -4138,7 +4138,7 @@ sections in the same feature order.
             62458919 — feat(serve-extended-rules): <release note>; body: Scenario: The extension adds to the built-in rules without replacing or reordering them
             ```
 
-- [ ] serve-extended-rules: The machine-readable path carries the same extended content as the text path
+- [x] serve-extended-rules: The machine-readable path carries the same extended content as the text path
       Design constraints:
         - JSON contract (arc42 §8.3b): `id`, `generates`, `requires`, `skill_to_load` are unchanged; the `instruction` field carries the same rendered-and-extended text as the text path, extension included.
         - Assertions: the response identifies the artifact and its generated paths and prerequisites; the response carries the same instruction content as the text path; the response carries the project's rule in the marked extension section.
@@ -4222,7 +4222,7 @@ sections in the same feature order.
             caa573f5 — feat(serve-extended-rules): <release note>; body: Scenario: The machine-readable path carries the same extended content as the text path
             ```
 
-- [ ] serve-extended-rules: The extension applies on top of a project-owned replacement
+- [x] serve-extended-rules: The extension applies on top of a project-owned replacement
       Design constraints:
         - D4: the project's whole-facet replacement is the effective base and the marked extension section is appended to it; the replacement file itself is never modified or injected (R-74 unchanged); `src/config/cascade.rs::resolve_instruction` keeps its signature and order (project override, embedded, addon); `src/cli/eject.rs` keeps materializing raw assets.
         - Assertions: the served proposal content carries the replacement text; the served content carries the project's rule in the marked extension section after it.
@@ -4308,7 +4308,7 @@ sections in the same feature order.
             b2f92a4e — feat(serve-extended-rules): <release note>; body: Scenario: The extension applies on top of a project-owned replacement
             ```
 
-- [ ] serve-extended-rules: A guidance request changes nothing in the project
+- [x] serve-extended-rules: A guidance request changes nothing in the project
       Design constraints:
         - No render cache and no new command surface: `givn instructions` resolves, renders, appends, and prints on every call; the extension map is read from `givn/config.yaml` on every call; nothing is written.
         - Assertion: after requesting the instructions for every served step, a project snapshot shows no changed file (the request path must not mutate configuration, generated files, or state).
@@ -4385,7 +4385,7 @@ sections in the same feature order.
             4022aa3d — feat(serve-extended-rules): <release note>; body: Scenario: A guidance request changes nothing in the project
             ```
 
-- [ ] apply-a-managed-upgrade: An upgrade reconciles full-copy guidance to the direction
+- [x] apply-a-managed-upgrade: An upgrade reconciles full-copy guidance to the direction
       Design constraints:
         - Existing managed-path synchronization renders the rewritten assets; ignored managed paths are force-staged only through the calculated allowlist; the fixture is a committed project root with a tracked full-copy `.opencode/skills/givn-propose/SKILL.md`.
         - Assertions: the command exits 0; the revision shows `.opencode/skills/givn-propose/SKILL.md` rewritten to the direction (the rules now arrive only through `givn instructions`).
@@ -4470,7 +4470,7 @@ sections in the same feature order.
             ab5584b2 — feat(apply-a-managed-upgrade): <release note>; body: Scenario: An upgrade reconciles full-copy guidance to the direction
             ```
 
-- [ ] apply-a-managed-upgrade: An upgrade leaves the project's extensions untouched
+- [x] apply-a-managed-upgrade: An upgrade leaves the project's extensions untouched
       Design constraints:
         - The `extensions:` key is user-owned configuration outside the allowlist; the managed revision never stages, merges, or rewrites it.
         - Assertions: the command exits 0; the upgrade revision carries no extension content; the recorded extension is unchanged (byte-for-byte).
@@ -4569,7 +4569,7 @@ sections in the same feature order.
             329f2756 — feat(apply-a-managed-upgrade): <release note>; body: Scenario: An upgrade leaves the project's extensions untouched
             ```
 
-- [ ] apply-a-managed-upgrade: A project-owned replacement stays byte-for-byte across an upgrade
+- [x] apply-a-managed-upgrade: A project-owned replacement stays byte-for-byte across an upgrade
       Design constraints:
         - The project's whole-facet replacement stays authoritative; the upgrade never modifies it or injects text into it (R-74 unchanged).
         - Assertions: the command exits 0; the project-owned replacement is byte-for-byte unchanged; the upgrade revision carries no injected text for the replacement.
@@ -4663,14 +4663,14 @@ sections in the same feature order.
             b23428d2 — feat(apply-a-managed-upgrade): <release note>; body: Scenario: A project-owned replacement stays byte-for-byte across an upgrade
             ```
 
-- [ ] visual-review-gate: Synchronized review guidance carries the visual block
+- [x] visual-review-gate: Synchronized review guidance carries the visual block
       Design constraints:
         - Served-content seam: `assets/instructions/review.md` carries the visual block; the generated givn-review file carries the direction only.
         - Assertions: the generated givn-review guidance directs the reviewer to the review instruction; the served review instruction contains "VISUAL-REVIEW: PASS", "confirmed Persona", "no pixel-level".
         - Step file: `tests/steps/visual_review_gate_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "verify-change/visual-review-gate.feature::Synchronized review guidance carries the visual block"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
             $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "verify-change/visual-review-gate.feature::Synchronized review guidance carries the visual block"
             Feature: Visual Review Gate
@@ -4694,7 +4694,7 @@ sections in the same feature order.
             ids without an active change (the CLI authorizes the context by
             shape; artifact instructions are not change-specific).
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
             assets/instructions/review.md — the visual-block bullet reworded
             so the served rule carries "no pixel-level" while keeping the
@@ -4719,21 +4719,22 @@ sections in the same feature order.
             1 scenario (1 passed)
             6 steps (6 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
             $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.34s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(visual-review-gate): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(visual-review-gate): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            cfd7bbee — feat(visual-review-gate): <release note>; body: Scenario: Synchronized review guidance carries the visual block
             ```
 
 ---
 
 ## E2E setup (after all non-@e2e scenarios are GREEN)
 
-- [ ] Setup: e2e step skeletons, e2e strict-mode proof, `verify.e2e_command` isolation proof, and local runnability
+- [x] Setup: e2e step skeletons, e2e strict-mode proof, `verify.e2e_command` isolation proof, and local runnability
       Design constraints:
         - E2E step files, separate from the regular steps, per `design.md` §E2E
           smoke test infrastructure ("Step locations"): create
@@ -4784,13 +4785,68 @@ sections in the same feature order.
            `cargo run --locked -- instructions` in a temporary initialized
            project) → exits 0 and prints guidance, proving the e2e runner
            reaches the real CLI.
+      ```text
+      PROOF OF E2E STRICTNESS (non-zero exits required; raw output):
+      Probe 1 — undefined step:
+      $ GIVN_FEATURES=givn/changes/extended-rules/probe-e2e ./run-tests.sh --e2e
+        FAIL [   0.381s] (1/1) givn::features_runner probe.feature::Probe with an undefined step
+      stdout: Step doesn't match any function
+      [Summary] 1 feature / 1 scenario (1 failed) / 1 step (1 failed)
+      error: test run failed                                            EXIT=100
+
+      Probe 2 — the step bound with an `unimplemented!()` stub in
+      tests/steps/instruction_extension_e2e_steps.rs:
+      $ (same command after the temporary binding)
+        FAIL [   0.379s] (1/1) givn::features_runner probe.feature::Probe with an undefined step
+      stdout: Matched: tests/steps/instruction_extension_e2e_steps.rs:13:1
+              Step panicked. Captured output: not implemented
+      error: test run failed                                            EXIT=100
+
+      Probe feature and temporary binding removed immediately
+      (probe-e2e/ deleted); re-listing below shows 68 units and no probe
+      title.
+
+      PROOF OF ISOLATION:
+      $ rg -n "command:|e2e_command:" givn/commands.yaml
+      3:  command: "./run-tests.sh"
+      4:  e2e_command: "./run-tests.sh --e2e"
+      verify.command = `./run-tests.sh`; verify.e2e_command =
+      `./run-tests.sh --e2e` — the two strings differ; no config edit was
+      needed.
+
+      $ GIVN_FEATURES=givn/changes/extended-rules/specs GIVN_CUCUMBER_TAGS='' \
+          cargo nextest list --locked --test features_runner | wc -l       → 68 units
+      $ ... GIVN_CUCUMBER_TAGS='@e2e'     ... | wc -l                      → 12 units
+      $ ... GIVN_CUCUMBER_TAGS='not @e2e' ... | wc -l                      → 56 units
+      The e2e count (12) is strictly smaller than the full count (68); the
+      `@e2e` scoping uses the runner's own tag-filter mechanism.
+
+      SMOKE OF THE REAL BOUNDARY (temporary initialized project; the
+      compiled `target/debug/givn` binary the harness spawns):
+      $ target/debug/givn init --agents opencode    → INIT_EXIT=0
+        (skills and commands installed: synced skill: givn-propose …)
+      $ target/debug/givn instructions               → INSTRUCTIONS_EXIT=0
+        givn — from Given to done. ... Status: No changes exist yet.
+        Next: run `givn new <change-id>` to start one, or `/givn-propose …
+      The e2e runner reaches the real CLI.
+
+      LOCAL RUNNABILITY: no docker-compose, no isolated network, no digital
+      twin — every changed action is a real CLI subprocess (or a real PTY for
+      interactive init); the only local preparation is the script's existing
+      `cargo build --locked --test ready_fixture`; nothing to start or stop. A
+      temporary project directory plus the compiled givn binary is the whole
+      environment.
+
+      Skeletons created: tests/steps/serve_extended_rules_e2e_steps.rs,
+      tests/steps/instruction_extension_e2e_steps.rs; both registered in
+      tests/steps/mod.rs.
       ```
-      ```
-      - [ ] COMMIT: commit the two e2e step-module skeletons and their `mod.rs`
+      - [x] COMMIT: commit the two e2e step-module skeletons and their `mod.rs`
             registration; the e2e run commands are already the configured
             `givn/commands.yaml` values (edit only if the recorded values
             differed). Record the revision identifier:
             ```
+            <pending-commit-hash>
             ```
 
 ---
