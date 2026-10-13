@@ -1873,26 +1873,81 @@ sections in the same feature order.
             da3bd6d7 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the persona identity criteria and the reuse protocol
             ```
 
-- [ ] generate-ideation-guidance: The ideation guidance keeps the confirmed persona behaviors
+- [x] generate-ideation-guidance: The ideation guidance keeps the confirmed persona behaviors
       Design constraints:
         - Content seam: `assets/instructions/ideation.md` keeps the confirmed persona behaviors (reuse/inventory/arbitration boundaries).
         - Assertions (served ideation instruction): contains "stakeholder type", "persona segment", "persona promotion", "every artifact that affects", "at most three", "never auto-promote", "confirms every persona", "arbitrates", "inventory", "match", "separate from Actors".
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance keeps the confirmed persona behaviors"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance keeps the confirmed persona behaviors"
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance keeps the confirmed persona behaviors
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "stakeholder type"
+               ✔  And the served ideation instruction contains "persona segment"
+               ✔  And the served ideation instruction contains "persona promotion"
+               ✔  And the served ideation instruction contains "every artifact that affects"
+               ✔  And the served ideation instruction contains "at most three"
+               ✔  And the served ideation instruction contains "never auto-promote"
+               ✔  And the served ideation instruction contains "confirms every persona"
+               ✔  And the served ideation instruction contains "arbitrates"
+               ✔  And the served ideation instruction contains "inventory"
+               ✔  And the served ideation instruction contains "match"
+               ✘  And the served ideation instruction contains "separate from Actors"
+                  Step panicked. Captured output: the served ideation instruction is missing "separate from Actors": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            13 steps (12 passed, 1 failed)                                EXIT=101
+            OLD_PRODUCT_RED: the served ideation instruction never carried the
+            persona/actor separation rule — it still lived as a rule copy in
+            `assets/commands/givn-ideation.md` ("Keep confirmed Persona IDs
+            separate from Actors").
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            assets/instructions/ideation.md (one Personas-section bullet:
+            "Confirmed persona IDs stay separate from Actors: Actors appear in
+            Gherkin; persona biographies remain human-reviewed Markdown under
+            `givn/personas/`." — the rule copy moved out of the command seam
+            into the served instruction)
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after the production edit)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance keeps the confirmed persona behaviors
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "stakeholder type"
+               ✔  And the served ideation instruction contains "persona segment"
+               ✔  And the served ideation instruction contains "persona promotion"
+               ✔  And the served ideation instruction contains "every artifact that affects"
+               ✔  And the served ideation instruction contains "at most three"
+               ✔  And the served ideation instruction contains "never auto-promote"
+               ✔  And the served ideation instruction contains "confirms every persona"
+               ✔  And the served ideation instruction contains "arbitrates"
+               ✔  And the served ideation instruction contains "inventory"
+               ✔  And the served ideation instruction contains "match"
+               ✔  And the served ideation instruction contains "separate from Actors"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            13 steps (13 passed)                                         EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 13 steps (13 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            ad36aa18 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance keeps the confirmed persona behaviors
             ```
 
 - [ ] generate-ideation-guidance: The ideation guidance carries the open-question qualifier rule
