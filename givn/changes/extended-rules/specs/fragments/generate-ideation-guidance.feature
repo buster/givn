@@ -256,7 +256,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "ask the naming question immediately"
     And  the served ideation instruction contains "is collision-checked like any other"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation guidance asks the term check before a phase closes
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
