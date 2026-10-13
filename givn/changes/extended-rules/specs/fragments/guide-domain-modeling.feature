@@ -2,7 +2,7 @@
 
 Feature: Guide domain modeling
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The skill body is an active discipline
     Given a Givn project
     Then the served domain-modeling instruction contains "Challenge generic or overloaded terms"

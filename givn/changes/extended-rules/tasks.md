@@ -6089,3 +6089,118 @@ run command.
             ```
             9ca8c848 — feat(review-architecture-documentation): <release note>; body: Scenario: Generated review guidance stays aligned after skill sync
             ```
+
+- [x] guide-domain-modeling: The design-review skill checks that the ubiquitous language is followed
+      Design constraints:
+        - Same-title `@givn.modified` delta replacement of the permanent `givn/specs/fragments/guide-domain-modeling.feature` scenario: it re-points the removed design-review skill copy at the served design-review instruction.
+        - `assets/instructions/design-review.md` gains the Ubiquitous-language branch as an `addons.domain_modeling` + `addons.arc42` conditional block (mirroring the served review instruction).
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The design-review skill checks that the ubiquitous language is followed"`
+      - [x] RED: bound the scenario (all steps reused), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The design-review skill checks that the ubiquitous language is followed"
+              Scenario: The design-review skill checks that the ubiquitous language is followed
+               ✔  Given a project root with givn/ initialised
+               ✔  And an existing change named "design-review-ubiquitous-language"
+               ✘  Then the served design-review instruction contains "ubiquitous language is used consistently"
+                  Step panicked. Captured output: the served design-review instruction is missing "ubiquitous language is used consistently": # Instruction: design-review
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: the served design-review instruction never carried
+            the ubiquitous-language check — it lived only in the skill template
+            copy the delta removes.
+            ```
+      - [x] GREEN: added the Ubiquitous-language branch to `assets/instructions/design-review.md` as a `domain_modeling` + `arc42` conditional block. Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the served-instruction edit)
+              Scenario: The design-review skill checks that the ubiquitous language is followed
+               ✔  Given a project root with givn/ initialised
+               ✔  And an existing change named "design-review-ubiquitous-language"
+               ✔  Then the served design-review instruction contains "ubiquitous language is used consistently"
+               ✔  And the served design-review instruction contains "arc42 glossary"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            ```
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(guide-domain-modeling): <shared release note>`, scenario title in the message body. Record the revision identifier:
+            ```
+            97889222 — feat(guide-domain-modeling): <release note>; body: Scenario: The design-review skill checks that the ubiquitous language is followed
+            ```
+
+- [x] guide-domain-modeling: The review skill checks that the ubiquitous language is followed
+      Design constraints:
+        - Same-title `@givn.modified` delta replacement of the permanent `givn/specs/fragments/guide-domain-modeling.feature` scenario: it re-points the removed review skill copy at the served review instruction, which already carried the ubiquitous-language section.
+        - No production change: assertion migration only.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The review skill checks that the ubiquitous language is followed"`
+      - [x] RED: bound the scenario (all steps reused), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The review skill checks that the ubiquitous language is followed"
+              Scenario: The review skill checks that the ubiquitous language is followed
+               ✔  Given a project root with givn/ initialised
+               ✔  And an existing change named "review-ubiquitous-language"
+               ✔  Then the served review instruction contains "ubiquitous language is used consistently everywhere"
+               ✔  And the served review instruction contains "arc42 glossary"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the served review instruction already
+            carries the ubiquitous-language section (assets/instructions/review.md
+            lines 160-172), delivered with the match-guidance migration. This is
+            the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "used consistently everywhere" → "used consistently
+               now and then" in assets/instructions/review.md; same scoped command)
+              Scenario: The review skill checks that the ubiquitous language is followed
+               ✔  Given a project root with givn/ initialised
+               ✔  And an existing change named "review-ubiquitous-language"
+               ✘  Then the served review instruction contains "ubiquitous language is used consistently everywhere"
+                  Step panicked. Captured output: the served review instruction is missing "ubiquitous language is used consistently everywhere": # Instruction: review
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/review.md`) and the scoped
+            command passed again. No production switch, exception, fake success,
+            or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — assertion migration only: the served review instruction
+            already carried the ubiquitous-language section; the delta scenario
+            re-points the removed generated copy at it.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+              Scenario: The review skill checks that the ubiquitous language is followed
+               ✔  Given a project root with givn/ initialised
+               ✔  And an existing change named "review-ubiquitous-language"
+               ✔  Then the served review instruction contains "ubiquitous language is used consistently everywhere"
+               ✔  And the served review instruction contains "arc42 glossary"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ git status --short  (only the delta feature file modified — no leftover calibration edit)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            ```
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(guide-domain-modeling): <shared release note>`, scenario title in the message body. Record the revision identifier:
+            ```
+            6ae4cdd0 — feat(guide-domain-modeling): <release note>; body: Scenario: The review skill checks that the ubiquitous language is followed
+            ```
