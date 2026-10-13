@@ -39,7 +39,7 @@ Feature: Guide domain modeling
     And the served domain-modeling instruction contains "Substrate"
     And the served domain-modeling instruction contains "has no referent"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The challenge bullet hands the name choice to the user
     Given a Givn project
     Then the served domain-modeling instruction contains "do not choose it alone"
