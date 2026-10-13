@@ -105,7 +105,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "Implementation independence"
     And  the served ideation instruction contains "Relationship semantics"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation guidance carries the authoring requirements and the handoff mapping
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
