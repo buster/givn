@@ -128,6 +128,60 @@ fn consumer_synchronizes_skills(world: &mut GivnWorld) {
     support::sync(world);
 }
 
+// --- Then: served-section presence/absence ----------------------------------
+
+/// Serve an artifact instruction in the fixture. The Given fixtures for these
+/// addon scenarios are synced projects without a change; the request path
+/// needs a change context, so a single active change is created first when the
+/// fixture has none.
+fn served_artifact_instruction(world: &GivnWorld, id: &str) -> String {
+    let env = support::env(world);
+    let changes = env.path("givn/changes");
+    let has_change = std::fs::read_dir(&changes)
+        .map(|entries| entries.flatten().any(|entry| entry.path().is_dir()))
+        .unwrap_or(false);
+    if !has_change {
+        let output = crate::common::run_givn(env, &["new", "addon-condition"]);
+        assert!(
+            output.status.success(),
+            "create the served-instruction change failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    crate::steps::serve_extended_rules_steps::served_instruction(env, id)
+}
+
+#[then("the served review instruction omits the Arc42 implementation conformance section")]
+fn served_review_instruction_omits_arc42(world: &mut GivnWorld) {
+    let content = served_artifact_instruction(world, "review");
+    assert!(
+        !content.contains("Arc42 implementation conformance"),
+        "the served review instruction carries the Arc42 section:\n{content}"
+    );
+}
+
+#[then("the generated review skill carries no Arc42 implementation conformance section")]
+fn review_skill_carries_no_arc42(world: &mut GivnWorld) {
+    review_skill_no_arc42(world);
+}
+
+#[then("the generated review command carries no Arc42 implementation conformance section")]
+fn review_command_carries_no_arc42(world: &mut GivnWorld) {
+    review_command_no_arc42(world);
+}
+
+#[then("the generated review skill directs the reviewer to the review instruction")]
+fn generated_review_skill_directs_to_instruction(world: &mut GivnWorld) {
+    let texts = support::skill_texts(world, "givn-review");
+    assert!(!texts.is_empty(), "no generated review skill was found");
+    for text in &texts {
+        assert!(
+            text.contains("givn instructions review"),
+            "the generated review skill does not direct the reviewer to the review instruction:\n{text}"
+        );
+    }
+}
+
 // --- Then: section presence/absence -----------------------------------------
 
 #[then("the generated review skill contains no Arc42 implementation conformance section")]

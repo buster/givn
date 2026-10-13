@@ -3529,27 +3529,68 @@ sections in the same feature order.
             1bab5e74 — feat(instruction-integrity): <release note>; body: Scenario: Every instruction id named by generated guidance resolves through the Givn CLI
             ```
 
-- [ ] instruction-integrity: Every generated direction is invokable in its documented context
+- [x] instruction-integrity: Every generated direction is invokable in its documented context
       Design constraints:
         - Graded two-class rule: a direction to an artifact instruction carries a resolvable change context (the named `--change` or the project's single active change); a direction to a policy or step instruction carries no change context and resolves without one; a syntactically resolvable id that cannot be invoked in its documented context is a defect.
         - Fail-closed guard analogous to the Q-97 file-reference check; `resolve_instruction` keeps its signature and order; assertion runs through the real CLI per context, not through source text.
         - Step file: `tests/steps/instruction_integrity_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::Every generated direction is invokable in its documented context"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::Every generated direction is invokable in its documented context"
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: Every generated direction is invokable in its documented context
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✘  Then every direction to an artifact instruction names the change context it needs
+                  Step panicked. Captured output: /tmp/.tmpi9JTcL/.opencode/commands/givn-design-review.md:
+                  the direction to artifact instruction `arc42-docs` names no change context:
+                  chapter-selection table (`givn instructions arc42-docs`) yourself against
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                 EXIT=101
+            OLD_PRODUCT_RED — the design-review command template directs its
+            reader to the artifact instruction `arc42-docs` without a change
+            context, while every other artifact direction names `--change`.
+            The assertion reads the generated files after a real sync through
+            the real CLI classification (`givn graph --json`), not source text.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            assets/commands/givn-design-review.md — the arc42-docs direction now
+              names the change context: `givn instructions arc42-docs --change <id>`.
+            tests/steps/instruction_integrity_steps.rs — the three real Then steps
+              (parse every `givn instructions <id>` direction line; classify the
+              id against `givn graph --json` artifacts; assert the change-context
+              class per direction; resolve every id through the real CLI with the
+              named change or the project's single active change).
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after the template fix)
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: Every generated direction is invokable in its documented context
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then every direction to an artifact instruction names the change context it needs
+               ✔  And every direction to a policy or step instruction names no change context
+               ✔  And every named instruction id resolves in the context the direction names
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                           EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.45s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-integrity): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-integrity): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            2c233573 — feat(instruction-integrity): <release note>; body: Scenario: Every generated direction is invokable in its documented context
             ```
 
 - [ ] match-guidance-to-enabled-addons: Review guidance omits the Arc42 section when the Arc42 addon is disabled

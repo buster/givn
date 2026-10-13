@@ -117,15 +117,12 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
 
 Record the result even when clean: "0 empty step bodies found across N files."
 
-## Arc42 implementation conformance (conditional)
+{{#if addons.arc42}}
+## Arc42 implementation conformance
 
 Run this block after the fabrication audit and before coverage classification.
 
-If `addons.arc42` is disabled in `givn/config.yaml`, write exactly:
-`N/A when the arc42 addon is disabled` and continue. Do not invent an Arc42
-finding for a project that has opted out.
-
-If the addon is enabled, the check is mandatory. It catches both directions of
+The check is mandatory. It catches both directions of
 drift: durable architecture documentation that is stale or missing a completed
 change, and architecture facts that the change's design, tasks, or completed
 implementation ignores or contradicts.
@@ -154,6 +151,11 @@ implementation ignores or contradicts.
    every row matches and all five sign-off checks in the template are checked.
    Do not write `REVIEW: PASS`
    while this block contains an unresolved finding.
+
+{{else}}
+The architecture conformance check is `N/A when the arc42 addon is disabled`;
+continue with the coverage classification.
+{{/if}}
 
 ## Coverage
 
