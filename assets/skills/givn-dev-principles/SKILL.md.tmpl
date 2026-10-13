@@ -9,29 +9,19 @@ description: Apply the team's engineering principles whenever code is read or wr
 
 Apply the team's engineering principles while implementing change `{{CHANGE_ID}}`.
 
+**Rules**: the principles and anti-patterns — correctness first, the TDD-loop
+match, boring-when-called-for, no avoidable allocation, fix at the source, and
+peer coordination — are served by `givn instructions dev-principles`. Load it
+and follow it; this file owns the invocation orchestration only.
+
 ## Context
 
+- Change: `givn/changes/{{CHANGE_ID}}/`
 - Tasks: `givn/changes/{{CHANGE_ID}}/tasks.md`
 - Design: `givn/changes/{{CHANGE_ID}}/design.md`
 - Verify command: `{{VERIFY_COMMAND}}`
 
-## Principles
+## Invocation
 
-- **Correctness first, then the next maintainer.** Optimise for the reader six
-  months out, not for cleverness today.
-- **Match the TDD loop.** RED (real failing test) -> GREEN (minimum code) ->
-  REFACTOR (no behaviour change). Never skip RED; never suppress a test to pass.
-- **Boring when called for.** Prefer established patterns in the repo over new
-  abstractions. A second convention beside an existing one is prohibited.
-- **No avoidable allocation or computation.** Consider what code compiles to.
-- **Fix problems at the source.** Remove obsolete code — no leftover aliases,
-  re-exports, or commented-out scaffolding.
-- **You are not alone.** Treat unexpected changes as someone else's work and
-  adapt; coordinate before editing a file a peer may own.
-
-## Anti-patterns
-
-- Inventing a generic abstraction to serve one call site.
-- Suppressing a warning or special-casing an input instead of fixing the cause.
-- Expanding scope "while you're at it" — retries, telemetry, or validation the
-  change does not require.
+1. Run `givn instructions dev-principles` and follow it.
+2. Apply the principles whenever code is read or written during this change.

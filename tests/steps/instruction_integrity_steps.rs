@@ -810,6 +810,107 @@ fn ids_resolve_in_named_context(world: &mut GivnWorld) {
     );
 }
 
+/// The one instruction id an installed guidance file owns, from the design's
+/// generated-file-to-instruction mapping (`design.md` §Generated guidance
+/// carries a direction).
+fn own_instruction_id(path: &std::path::Path) -> String {
+    let stem = if path.file_name().is_some_and(|name| name == "SKILL.md") {
+        path.parent()
+            .and_then(|parent| parent.file_name())
+            .and_then(|name| name.to_str())
+            .unwrap_or_else(|| panic!("skill file {} has no directory name", path.display()))
+            .to_string()
+    } else {
+        path.file_stem()
+            .and_then(|name| name.to_str())
+            .unwrap_or_else(|| panic!("guidance file {} has no file stem", path.display()))
+            .to_string()
+    };
+    let key = stem.strip_prefix("givn-").unwrap_or(&stem);
+    let id = match key {
+        "propose" => "proposal",
+        "spec" => "specs",
+        "design" => "design",
+        "design-review" => "design-review",
+        "tasks" => "tasks",
+        "implement" => "tasks",
+        "review" => "review",
+        "archive" => "archive",
+        "explore" => "explore",
+        "ideation" => "ideation",
+        "steps" => "steps",
+        "reverse-engineer" => "reverse-engineer",
+        "characterize" => "characterize",
+        "domain-modeling" => "domain-modeling",
+        "dev-principles" => "dev-principles",
+        "grill-me" => "grill-me",
+        "grill-with-docs" => "grill-with-docs",
+        other => panic!(
+            "generated guidance file {} has no instruction id in the design's mapping (name `{other}`)",
+            path.display()
+        ),
+    };
+    id.to_string()
+}
+
+#[then("every generated skill and command directs to exactly one served instruction id")]
+fn every_generated_file_directs_to_own_instruction(world: &mut GivnWorld) {
+    let files = installed_guidance_files(world);
+    assert!(
+        !files.is_empty(),
+        "the fixture has no generated skills or commands to check"
+    );
+    let artifacts = artifact_ids(world);
+    let active_change = single_active_change(world);
+    let project = env(world);
+    let mut missing: Vec<String> = Vec::new();
+    let mut unresolved: Vec<String> = Vec::new();
+    let mut checked: std::collections::BTreeSet<(String, Option<String>)> =
+        std::collections::BTreeSet::new();
+    for path in &files {
+        let content = std::fs::read_to_string(path)
+            .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+        let own = own_instruction_id(path);
+        let needle = format!("givn instructions {own}");
+        if !content.contains(&needle) {
+            missing.push(format!("{} does not name {needle:?}", path.display()));
+        }
+        for id in named_instruction_ids(&content) {
+            let context = if artifacts.contains(&id) {
+                Some(active_change.clone())
+            } else {
+                None
+            };
+            if !checked.insert((id.clone(), context.clone())) {
+                continue;
+            }
+            let mut args = vec!["instructions", id.as_str()];
+            if let Some(change) = context.as_deref() {
+                args.push("--change");
+                args.push(change);
+            }
+            let output = crate::common::run_givn(project, &args);
+            if !output.status.success() {
+                unresolved.push(format!(
+                    "`givn instructions {id}` (named by {}) failed: {}",
+                    path.display(),
+                    String::from_utf8_lossy(&output.stderr)
+                ));
+            }
+        }
+    }
+    assert!(
+        missing.is_empty(),
+        "generated guidance files do not direct to their own served instruction:\n{}",
+        missing.join("\n")
+    );
+    assert!(
+        unresolved.is_empty(),
+        "named instruction ids do not resolve:\n{}",
+        unresolved.join("\n")
+    );
+}
+
 // --- dialog-question-quality: dialog policy steps --------------------------
 
 fn cli_stdout(world: &GivnWorld) -> String {

@@ -6204,3 +6204,505 @@ run command.
             ```
             6ae4cdd0 — feat(guide-domain-modeling): <release note>; body: Scenario: The review skill checks that the ubiquitous language is followed
             ```
+
+- [x] guide-domain-modeling: The skill body is an active discipline
+      Design constraints:
+        - Same-title `@givn.modified` delta replacement of the permanent `givn/specs/fragments/guide-domain-modeling.feature` scenario: it re-points the skill-template body assertions at the new served `domain-modeling` instruction.
+        - `assets/instructions/domain-modeling.md` carries the whole discipline moved out of `assets/skills/givn-domain-modeling/SKILL.md.tmpl`; the skill keeps trigger metadata (including "maintaining the project's arc42 glossary", which the permanent e2e routing scenario reads from the generated skill) and invocation orchestration plus the direction.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The skill body is an active discipline"`
+      - [x] RED: bound the scenario (all steps reused), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The skill body is an active discipline"
+              Scenario: The skill body is an active discipline
+               ✔  Given a Givn project
+               ✘  Then the served domain-modeling instruction contains "Challenge generic or overloaded terms"
+                  Step panicked. Captured output: givn instructions domain-modeling failed: error: unknown artifact 'domain-modeling'. Known artifacts: proposal, specs, design, design-review, tasks, review, arc42-docs
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (1 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: the `domain-modeling` instruction id does not exist
+            yet; the CLI refuses it because the design-named asset was never
+            created.
+            ```
+      - [x] GREEN: created `assets/instructions/domain-modeling.md` with the discipline moved out of the skill body and rewrote `assets/skills/givn-domain-modeling/SKILL.md.tmpl` to trigger metadata + orchestration + the direction `givn instructions domain-modeling`. Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after creating the asset and rewriting the skill)
+              Scenario: The skill body is an active discipline
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "Challenge generic or overloaded terms"
+               ✔  And the served domain-modeling instruction contains "Name aggregates with domain nouns"
+               ✔  And the served domain-modeling instruction contains "the glossary inline"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            ```
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(guide-domain-modeling): <shared release note>`, scenario title in the message body. Record the revision identifier:
+            ```
+            2bdd47a0 — feat(guide-domain-modeling): <release note>; body: Scenario: The skill body is an active discipline
+            ```
+
+- [x] guide-domain-modeling: Lifecycle guidance describes the domain, not the givn change
+      Design constraints:
+        - Same-title `@givn.modified` delta replacement re-pointing the lifecycle assertions at the served `domain-modeling` instruction.
+        - No production change: the discipline slice (including the Lifecycle events bullet) was delivered by the previous scenario's edit.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::Lifecycle guidance describes the domain, not the givn change"`
+      - [x] RED: bound the scenario (all steps reused), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::Lifecycle guidance describes the domain, not the givn change"
+              Scenario: Lifecycle guidance describes the domain, not the givn change
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "the *domain's own*"
+               ✔  And the served domain-modeling instruction contains "trip reset"
+               ✔  And the served domain-modeling instruction does not contain "created -> planned -> implemented -> archived"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the Lifecycle events bullet moved with
+            the previous scenario's discipline slice. This is the recorded
+            ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "the *domain's own*" → "the domain's own" in
+               assets/instructions/domain-modeling.md; same scoped command)
+              Scenario: Lifecycle guidance describes the domain, not the givn change
+               ✔  Given a Givn project
+               ✘  Then the served domain-modeling instruction contains "the *domain's own*"
+                  Step panicked. Captured output: the served domain-modeling instruction is missing "the *domain's own*": # Instruction: domain-modeling
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (1 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/domain-modeling.md`) and the
+            scoped command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the lifecycle content was delivered by the previous scenario's
+            slice (`assets/instructions/domain-modeling.md`); this scenario binds
+            the served-content assertions.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+              Scenario: Lifecycle guidance describes the domain, not the givn change
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "the *domain's own*"
+               ✔  And the served domain-modeling instruction contains "trip reset"
+               ✔  And the served domain-modeling instruction does not contain "created -> planned -> implemented -> archived"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            ```
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(guide-domain-modeling): <shared release note>`, scenario title in the message body. Record the revision identifier:
+            ```
+            b61058d3 — feat(guide-domain-modeling): <release note>; body: Scenario: Lifecycle guidance describes the domain, not the givn change
+            ```
+
+- [x] guide-domain-modeling: The ubiquitous language is recorded in the project's arc42 glossary
+      Design constraints:
+        - Same-title `@givn.modified` delta replacement re-pointing the glossary-maintenance assertions at the served `domain-modeling` instruction.
+        - No production change: the Glossary maintenance section moved with the discipline slice.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The ubiquitous language is recorded in the project's arc42 glossary"`
+      - [x] RED: bound the scenario (all steps reused), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The ubiquitous language is recorded in the project's arc42 glossary"
+              Scenario: The ubiquitous language is recorded in the project's arc42 glossary
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "maintaining the project's arc42 glossary"
+               ✔  And the served domain-modeling instruction does not contain "domain.md"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            3 steps (3 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the Glossary maintenance section moved
+            with the discipline slice. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "maintaining the project's arc42 glossary" →
+               "maintaining the project glossary"; same scoped command)
+              Scenario: The ubiquitous language is recorded in the project's arc42 glossary
+               ✔  Given a Givn project
+               ✘  Then the served domain-modeling instruction contains "maintaining the project's arc42 glossary"
+                  Step panicked. Captured output: the served domain-modeling instruction is missing "maintaining the project's arc42 glossary": # Instruction: domain-modeling
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (1 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately and the
+            scoped command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the glossary content was delivered by the discipline slice;
+            this scenario binds the served-content assertions.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+              Scenario: The ubiquitous language is recorded in the project's arc42 glossary
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "maintaining the project's arc42 glossary"
+               ✔  And the served domain-modeling instruction does not contain "domain.md"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            3 steps (3 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 3 steps (3 passed)  EXIT=0
+            ```
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(guide-domain-modeling): <shared release note>`, scenario title in the message body. Record the revision identifier:
+            ```
+            9311f7a2 — feat(guide-domain-modeling): <release note>; body: Scenario: The ubiquitous language is recorded in the project's arc42 glossary
+            ```
+
+- [x] guide-domain-modeling: The skill requires the arc42 glossary for domain modeling
+      Design constraints:
+        - Same-title `@givn.modified` delta replacement re-pointing the arc42-requirement assertions at the served `domain-modeling` instruction.
+        - No production change: the Requirements section moved with the discipline slice.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The skill requires the arc42 glossary for domain modeling"`
+      - [x] RED: bound the scenario (all steps reused), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The skill requires the arc42 glossary for domain modeling"
+              Scenario: The skill requires the arc42 glossary for domain modeling
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "Requires the arc42 addon"
+               ✔  And the served domain-modeling instruction contains "enable it first when the glossary is missing"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            3 steps (3 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the Requirements section moved with the
+            discipline slice. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "Requires the arc42 addon" → "Requires the
+               arc42 guidance"; same scoped command)
+              Scenario: The skill requires the arc42 glossary for domain modeling
+               ✔  Given a Givn project
+               ✘  Then the served domain-modeling instruction contains "Requires the arc42 addon"
+                  Step panicked. Captured output: the served domain-modeling instruction is missing "Requires the arc42 addon": # Instruction: domain-modeling
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (1 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately and the
+            scoped command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the arc42-requirement content was delivered by the discipline
+            slice; this scenario binds the served-content assertions.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+              Scenario: The skill requires the arc42 glossary for domain modeling
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "Requires the arc42 addon"
+               ✔  And the served domain-modeling instruction contains "enable it first when the glossary is missing"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            3 steps (3 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 3 steps (3 passed)  EXIT=0
+            ```
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(guide-domain-modeling): <shared release note>`, scenario title in the message body. Record the revision identifier:
+            ```
+            b237a687 — feat(guide-domain-modeling): <release note>; body: Scenario: The skill requires the arc42 glossary for domain modeling
+            ```
+
+- [x] guide-domain-modeling: The domain-modeling guidance carries the term introduction test
+      Design constraints:
+        - Same-title `@givn.modified` delta replacement re-pointing the term-introduction assertions at the served `domain-modeling` instruction.
+        - No production change: the Term introduction test moved with the discipline slice.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The domain-modeling guidance carries the term introduction test"`
+      - [x] RED: bound the scenario (all steps reused), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The domain-modeling guidance carries the term introduction test"
+              Scenario: The domain-modeling guidance carries the term introduction test
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "Genus + differentia"
+               ✔  And the served domain-modeling instruction contains "is a `<kind>` that"
+               ✔  And the served domain-modeling instruction contains "Contrast pair"
+               ✔  And the served domain-modeling instruction contains "not `<near neighbour>`"
+               ✔  And the served domain-modeling instruction contains "concrete domain sentence"
+               ✔  And the served domain-modeling instruction contains "Substrate"
+               ✔  And the served domain-modeling instruction contains "has no referent"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            8 steps (8 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the Term introduction test moved with
+            the discipline slice. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "Genus + differentia" → "Genus plus
+               differentia"; same scoped command)
+              Scenario: The domain-modeling guidance carries the term introduction test
+               ✔  Given a Givn project
+               ✘  Then the served domain-modeling instruction contains "Genus + differentia"
+                  Step panicked. Captured output: the served domain-modeling instruction is missing "Genus + differentia": # Instruction: domain-modeling
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (1 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately and the
+            scoped command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the term-introduction content was delivered by the discipline
+            slice; this scenario binds the served-content assertions.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+              Scenario: The domain-modeling guidance carries the term introduction test
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "Genus + differentia"
+               ✔  And the served domain-modeling instruction contains "is a `<kind>` that"
+               ✔  And the served domain-modeling instruction contains "Contrast pair"
+               ✔  And the served domain-modeling instruction contains "not `<near neighbour>`"
+               ✔  And the served domain-modeling instruction contains "concrete domain sentence"
+               ✔  And the served domain-modeling instruction contains "Substrate"
+               ✔  And the served domain-modeling instruction contains "has no referent"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            8 steps (8 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 8 steps (8 passed)  EXIT=0
+            ```
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(guide-domain-modeling): <shared release note>`, scenario title in the message body. Record the revision identifier:
+            ```
+            9d482d40 — feat(guide-domain-modeling): <release note>; body: Scenario: The domain-modeling guidance carries the term introduction test
+            ```
+
+- [x] guide-domain-modeling: The challenge bullet hands the name choice to the user
+      Design constraints:
+        - Same-title `@givn.modified` delta replacement re-pointing the naming-choice assertions at the served `domain-modeling` instruction.
+        - No production change: the challenge bullet moved with the discipline slice.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The challenge bullet hands the name choice to the user"`
+      - [x] RED: bound the scenario (all steps reused), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The challenge bullet hands the name choice to the user"
+              Scenario: The challenge bullet hands the name choice to the user
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "do not choose it alone"
+               ✔  And the served domain-modeling instruction does not contain "Propose it and justify it"
+               ✔  And the served domain-modeling instruction contains "the concept in one sentence"
+               ✔  And the served domain-modeling instruction contains "up to three candidate names"
+               ✔  And the served domain-modeling instruction contains "any collision it carries"
+               ✔  And the served domain-modeling instruction contains "accept the user's own name"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            7 steps (7 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the challenge bullet moved with the
+            discipline slice. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "do not choose it alone" → "choose it together";
+               same scoped command)
+              Scenario: The challenge bullet hands the name choice to the user
+               ✔  Given a Givn project
+               ✘  Then the served domain-modeling instruction contains "do not choose it alone"
+                  Step panicked. Captured output: the served domain-modeling instruction is missing "do not choose it alone": # Instruction: domain-modeling
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (1 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately and the
+            scoped command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the naming-choice content was delivered by the discipline
+            slice; this scenario binds the served-content assertions.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+              Scenario: The challenge bullet hands the name choice to the user
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "do not choose it alone"
+               ✔  And the served domain-modeling instruction does not contain "Propose it and justify it"
+               ✔  And the served domain-modeling instruction contains "the concept in one sentence"
+               ✔  And the served domain-modeling instruction contains "up to three candidate names"
+               ✔  And the served domain-modeling instruction contains "any collision it carries"
+               ✔  And the served domain-modeling instruction contains "accept the user's own name"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            7 steps (7 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 7 steps (7 passed)  EXIT=0
+            ```
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(guide-domain-modeling): <shared release note>`, scenario title in the message body. Record the revision identifier:
+            ```
+            9fa8c37f — feat(guide-domain-modeling): <release note>; body: Scenario: The challenge bullet hands the name choice to the user
+            ```
+
+- [x] guide-domain-modeling: The challenge bullet shows a naming question with candidates and a collision
+      Design constraints:
+        - Same-title `@givn.modified` delta replacement re-pointing the naming-question example assertions at the served `domain-modeling` instruction.
+        - No production change: the naming-question example moved with the discipline slice.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The challenge bullet shows a naming question with candidates and a collision"`
+      - [x] RED: bound the scenario (all steps reused), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The challenge bullet shows a naming question with candidates and a collision"
+              Scenario: The challenge bullet shows a naming question with candidates and a collision
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "ShoppingList"
+               ✔  And the served domain-modeling instruction contains "Candidates:"
+               ✔  And the served domain-modeling instruction contains "Basket"
+               ✔  And the served domain-modeling instruction contains "collides"
+               ✔  And the served domain-modeling instruction contains "should the record use, or what is yours"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the naming-question example moved with
+            the discipline slice. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "ShoppingList" → "ShoppingPlan" in
+               assets/instructions/domain-modeling.md; same scoped command)
+              Scenario: The challenge bullet shows a naming question with candidates and a collision
+               ✔  Given a Givn project
+               ✘  Then the served domain-modeling instruction contains "ShoppingList"
+                  Step panicked. Captured output: the served domain-modeling instruction is missing "ShoppingList": # Instruction: domain-modeling
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (1 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately and the
+            scoped command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the naming-question example was delivered by the discipline
+            slice; this scenario binds the served-content assertions.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+              Scenario: The challenge bullet shows a naming question with candidates and a collision
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "ShoppingList"
+               ✔  And the served domain-modeling instruction contains "Candidates:"
+               ✔  And the served domain-modeling instruction contains "Basket"
+               ✔  And the served domain-modeling instruction contains "collides"
+               ✔  And the served domain-modeling instruction contains "should the record use, or what is yours"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
+            ```
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(guide-domain-modeling): <shared release note>`, scenario title in the message body. Record the revision identifier:
+            ```
+            d0f574cb — feat(guide-domain-modeling): <release note>; body: Scenario: The challenge bullet shows a naming question with candidates and a collision
+            ```
+
+- [x] instruction-integrity: Every generated skill and command directs to exactly one served instruction id
+      Design constraints:
+        - Design D3: every generated skill and command directs to exactly one served instruction id; artifact-aligned steps keep their existing ids, `givn-implement` directs to the tasks instruction, and the remaining steps receive the new instruction assets (`reverse-engineer`, `characterize`, `dev-principles`, `grill-me`, `grill-with-docs`; `domain-modeling` was delivered by the earlier re-point slice).
+        - The new step lives in `tests/steps/instruction_integrity_steps.rs` (design.md §Step definitions) and grades every installed skill and command across the configured targets: it names its own expected id per the design mapping, and every named id resolves through the real CLI (`--change` for manifest artifact ids).
+        - Addon-gated fragments move into the assets (`grill-with-docs`'s `docs/arc42` line, the archive README gate); generated files keep trigger metadata, invocation orchestration, the dialog obligation, and the direction.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::Every generated skill and command directs to exactly one served instruction id"`
+      - [x] RED: bound the new step with its real assertion, removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::Every generated skill and command directs to exactly one served instruction id"
+              Scenario: Every generated skill and command directs to exactly one served instruction id
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the command succeeds
+               [step panic] generated guidance files do not direct to their own served instruction:
+               .opencode/skills/givn-archive/SKILL.md does not name "givn instructions archive"
+               .opencode/skills/givn-characterize/SKILL.md does not name "givn instructions characterize"
+               .opencode/skills/givn-dev-principles/SKILL.md does not name "givn instructions dev-principles"
+               .opencode/skills/givn-explore/SKILL.md does not name "givn instructions explore"
+               .opencode/skills/givn-reverse-engineer/SKILL.md does not name "givn instructions reverse-engineer"
+               .opencode/commands/givn-characterize.md does not name "givn instructions characterize"
+               .opencode/commands/givn-explore.md does not name "givn instructions explore"
+               .opencode/commands/givn-reverse-engineer.md does not name "givn instructions reverse-engineer"
+               .opencode/commands/grill-me.md does not name "givn instructions grill-me"
+               .opencode/commands/grill-with-docs.md does not name "givn instructions grill-with-docs"
+               (the same five skills repeat for .agents, .claude, and .omp; the .omp commands
+               repeat the command failures)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: ten generated sources (eleven files, minus the
+            domain-modeling skill already fixed by the re-point slice) name no own
+            served instruction: the five new instruction assets do not exist and
+            the generated files carry the old rule copies instead of a direction.
+            ```
+      - [x] GREEN: created `assets/instructions/characterize.md`, `dev-principles.md`, `grill-me.md`, `grill-with-docs.md`, `reverse-engineer.md` by moving the discipline out of the corresponding skills/commands; rewrote the eleven generated files to the direction (`givn instructions <own-id>`, plus orchestration, trigger metadata, and the dialog obligation); moved the archive README gate into `assets/instructions/archive.md` as an addon-gated block; kept the generated archive skill's coverage README example (the permanent coverage guidance scenarios pin it) and the characterize files' `givn instructions review-reverse` epilogue reference. Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the production edits)
+              Scenario: Every generated skill and command directs to exactly one served instruction id
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the command succeeds
+               ✔  And every generated skill and command directs to exactly one served instruction id
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0, and the full non-@e2e delta scope stays green. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.54s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs ./run-tests.sh --non-e2e
+            Summary [   4.880s] 67 tests run: 67 passed, 12 skipped
+            ```
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-integrity): <shared release note>`, scenario title in the message body. Record the revision identifier:
+            ```
+            (recorded after the commit)
+            ```

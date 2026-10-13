@@ -32,6 +32,16 @@ On success the command has run the suite, merged the delta `.feature` files
 into `givn/specs/` with every `@givn.*` tag stripped, and moved the change
 directory to `givn/archive/<id>/`.
 
+{{#if addons.readme}}
+## README completeness gate
+
+With the readme addon enabled, the README must carry no
+`<!-- givn:todo: ... -->` open placeholders, no scaffold remnants, no damaged
+managed block, and must not be missing or marker-less. A blocked archive names
+every unfinished section — fill each one with real content before re-attempting.
+`givn readme check` reports the same findings any time.
+{{/if}}
+
 ## Seed stamping
 
 When the proposal's Use-Case Context records an originating change seed, set

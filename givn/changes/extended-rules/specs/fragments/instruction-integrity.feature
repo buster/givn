@@ -33,7 +33,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And every direction to a policy or step instruction names no change context
     And every named instruction id resolves in the context the direction names
 
-  @givn.added @wip
+  @givn.added
   Scenario: Every generated skill and command directs to exactly one served instruction id
     Given a givn project with all agent skill targets enabled and an active change
     When the user runs `givn skills sync`

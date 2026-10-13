@@ -7,50 +7,16 @@ existing documentation and specs.
 
 **Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
 
-Unlike `/grill-me`, this command **must cite a source** for each challenge: a
-line in the proposal, a spec scenario, the design doc, an architecture chapter,
-or an ADR. If no source backs a concern, drop it.
+**Rules**: the sourcing discipline — the cite-a-source rule, the source
+inventory, the question-by-question cross-check, the drift-flagging rule, and
+the output contract — is served by `givn instructions grill-with-docs`. Load
+it and follow it; this file owns the invocation orchestration only.
 
 ## Steps
 
-### 1. Inventory the sources
-
-Gather the authoritative material:
-
-- `givn/changes/<id>/proposal.md`
-- `givn/changes/<id>/specs/**/*.feature`
-- `givn/changes/<id>/design.md`
-- `givn/changes/<id>/tasks.md`
-{{#if addons.arc42}}
-- `docs/arc42/` (if the arc42 addon is enabled)
-{{/if}}
-- Any architecture decision records or the project's decisions log
-- `givn/config.yaml` (verify.command, features_path, addons, extras)
-
-### 2. Cross-check question by question
-
-Follow the canonical dialog policy (`givn instructions dialog`): name
-artifacts in domain language, and give every option its meaning, gain, cost,
-and a concrete example. For each plan element, ask: which source supports it,
-and which source contradicts it? Pose one question, cite the source, wait.
-Examples:
-
-- "tasks.md says the flow is write-config -> set_extras -> sync, but design.md
-  pitfall #4 warns about --force wiping the flag. Is the ordering covered?"
-- "The spec asserts `extras: true`, but config.yaml.tmpl ships it commented.
-  Which step uncomments it?"
-
-### 3. Flag drift
-
-Call out anywhere the plan disagrees with a cited source. Force a resolution:
-update the plan, update the source, or record an explicit decision.
-
-### 4. Record
-
-List each challenge with its citation, the resolution, and any open question
-that needs a human decision before implementation.
-
-## Output
-
-A sourced list of contradictions and drift findings. Every line must name where
-it came from. Unresolved drift blocks implementation.
+1. Gather the authoritative sources (the inventory is in the served
+   instruction).
+2. Run `givn instructions grill-with-docs` and conduct the grill as it
+   defines: one sourced question at a time, waiting for each answer.
+3. Report the sourced list of contradictions and drift findings; unresolved
+   drift blocks implementation.
