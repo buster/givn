@@ -395,6 +395,9 @@ fn response_carries_the_project_rule_in_the_extension_section(world: &mut GivnWo
 
 // --- serve-extended-rules: project-owned replacement ------------------------
 
+/// The distinctive marker of the project-owned replacement text.
+pub(crate) const REPLACEMENT_MARKER: &str = "REPLACEMENT-MARKER";
+
 /// The project-owned replacement of the proposal instruction facet.
 pub(crate) const PROJECT_REPLACEMENT_TEXT: &str = "\
 # Instruction: proposal (project-owned replacement)
