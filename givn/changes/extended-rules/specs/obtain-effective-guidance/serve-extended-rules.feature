@@ -28,7 +28,7 @@ Feature: The served instruction carries the built-in rules and the project's ext
     And the built-in rules appear before the marked extension section
     And the contradicting project rule appears beside the built-in release-note rule
 
-  @givn.added @wip
+  @givn.added
   Scenario: The machine-readable path carries the same extended content as the text path
     Given a Givn project with an active change
     And the project records an extension for the proposal instruction
