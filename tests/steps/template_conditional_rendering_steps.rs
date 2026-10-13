@@ -130,30 +130,9 @@ fn consumer_synchronizes_skills(world: &mut GivnWorld) {
 
 // --- Then: served-section presence/absence ----------------------------------
 
-/// Serve an artifact instruction in the fixture. The Given fixtures for these
-/// addon scenarios are synced projects without a change; the request path
-/// needs a change context, so a single active change is created first when the
-/// fixture has none.
-fn served_artifact_instruction(world: &GivnWorld, id: &str) -> String {
-    let env = support::env(world);
-    let changes = env.path("givn/changes");
-    let has_change = std::fs::read_dir(&changes)
-        .map(|entries| entries.flatten().any(|entry| entry.path().is_dir()))
-        .unwrap_or(false);
-    if !has_change {
-        let output = crate::common::run_givn(env, &["new", "addon-condition"]);
-        assert!(
-            output.status.success(),
-            "create the served-instruction change failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-    }
-    crate::steps::serve_extended_rules_steps::served_instruction(env, id)
-}
-
 #[then("the served review instruction omits the Arc42 implementation conformance section")]
 fn served_review_instruction_omits_arc42(world: &mut GivnWorld) {
-    let content = served_artifact_instruction(world, "review");
+    let content = support::served_artifact_instruction(world, "review");
     assert!(
         !content.contains("Arc42 implementation conformance"),
         "the served review instruction carries the Arc42 section:\n{content}"
@@ -304,7 +283,7 @@ fn design_review_command_has_arc42(world: &mut GivnWorld) {
 
 #[then("the served design-review instruction omits the Architecture documentation (arc42) branch")]
 fn served_design_review_instruction_omits_arc42(world: &mut GivnWorld) {
-    let content = served_artifact_instruction(world, "design-review");
+    let content = support::served_artifact_instruction(world, "design-review");
     assert!(
         !content.contains("Architecture documentation (arc42)"),
         "the served design-review instruction carries the arc42 branch:\n{content}"

@@ -17,7 +17,7 @@ Feature: Match guidance to enabled addons
     And the generated design-review skill carries no Architecture documentation (arc42) branch
     And the generated design-review command carries no Architecture documentation (arc42) check
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: A consumer synchronizes skills and the generated guidance omits disabled-addon sections
     Given a Givn project with the arc42, domain-modeling, and coverage addons disabled and the skills synchronized
     When a consumer synchronizes skills through the Givn CLI
