@@ -62,7 +62,9 @@ evidence lives under `evidence/visual/<scenario-slug>/<viewport>.png` — or
 
 The black-box-first policy — served by
 `givn instructions design --change <id>` — applies to every internal step or
-test that remains.
+test that remains. Prefer reused real-interface steps. For an internal step or
+test that remains, record **which case this test covers that the E2E does not**;
+otherwise remove the duplicate and extend the E2E scenario.
 
 ## Step reuse
 

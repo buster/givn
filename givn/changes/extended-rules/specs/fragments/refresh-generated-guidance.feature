@@ -2,7 +2,7 @@
 
 Feature: Refresh generated guidance
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Synchronized guidance explains how to resolve the deterministic gates
     Given a givn project with all agent skill targets enabled
     When the user runs `givn skills sync`
