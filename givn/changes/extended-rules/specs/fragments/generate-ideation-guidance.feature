@@ -154,7 +154,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "must not be presented as unconditional"
     And  the served ideation instruction contains "removes the qualifier"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation guidance carries the live-question standard
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
