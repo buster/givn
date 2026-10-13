@@ -2341,26 +2341,87 @@ sections in the same feature order.
             6e250dde — feat(generate-ideation-guidance): <release note>; body: Scenario: Handoff cuts change seeds by deliverable guarantee
             ```
 
-- [ ] generate-ideation-guidance: The ideation command guardrails carry the same conduct rules
+- [x] generate-ideation-guidance: The ideation command guardrails carry the same conduct rules
       Design constraints:
         - Content seam: `assets/commands/givn-ideation.md` keeps invocation orchestration and the direction only; the conduct rules are read from the served instruction.
         - Assertions (served ideation instruction): contains "deliverable guarantee", "never asked again".
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation command guardrails carry the same conduct rules"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation command guardrails carry the same conduct rules
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "deliverable guarantee"
+               ✔  And the served ideation instruction contains "never asked again"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the conduct rules the command's old
+            guardrails copied already sit in the served instruction (moved with
+            the first scenario's slice); this scenario binds them on the served
+            surface. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "deliverable guarantee" → "delivery
+               guarantee" in assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation command guardrails carry the same conduct rules
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✘  Then the served ideation instruction contains "deliverable guarantee"
+                  Step panicked. Captured output: the served ideation instruction is missing "deliverable guarantee": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                 EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            assets/commands/givn-ideation.md (rewritten to invocation
+            orchestration plus the direction: the **Rules** paragraph points to
+            `givn instructions ideation`, the steps run `givn status` and
+            `givn instructions ideation`, and the Stance/Guardrails rule copies
+            — full option treatment, never asked again, term verification,
+            reuse-before-minting, persona/actor separation, seed cutting, the
+            frame confirmation, and the canvas/aggregate rules — are gone; the
+            served instruction is their single home)
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after the command rewrite)
+            Feature: Generate ideation guidance
+              Scenario: The ideation command guardrails carry the same conduct rules
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "deliverable guarantee"
+               ✔  And the served ideation instruction contains "never asked again"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
+            Coupled regression check (scoped, same delta):
+            $ ...--exact "fragments/generate-ideation-guidance.feature::The ideation
+               skill ships without any addon enabled"
+            → 1 scenario (1 passed), 4 steps (4 passed)                   EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            0e416600 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation command guardrails carry the same conduct rules
             ```
 
 - [ ] generate-ideation-guidance: The ideation guidance requires a canvas with distinguishable element kinds
