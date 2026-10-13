@@ -372,6 +372,51 @@ fn guidance_keeps_deterministic_toolchain(world: &mut GivnWorld) {
     }
 }
 
+// --- instruction-integrity: served specs guidance through the CLI -----------
+
+#[then("the returned guidance does not mention engine-backed retrieval commands")]
+fn returned_guidance_omits_engine_commands(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    for command in [
+        "givn spec index",
+        "givn spec search",
+        "givn spec explore",
+        "givn spec review",
+    ] {
+        assert!(
+            !output.contains(command),
+            "returned guidance still mentions engine-backed retrieval command `{command}`: {output}"
+        );
+    }
+}
+
+#[then("the returned guidance does not offer advisory or blocking retrieval paths")]
+fn returned_guidance_omits_retrieval_paths(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    for marker in [
+        "retrieval-unavailable",
+        "Retrieval-aware authoring",
+        "BGE_TOKEN_CAP",
+        "NLI_TOKEN_CAP",
+    ] {
+        assert!(
+            !output.contains(marker),
+            "returned guidance still offers a retrieval path via `{marker}`: {output}"
+        );
+    }
+}
+
+#[then("the returned guidance keeps the deterministic spec toolchain wording")]
+fn returned_guidance_keeps_deterministic_toolchain(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    for marker in ["@givn.delta", "givn lint", "givn/changes/"] {
+        assert!(
+            output.contains(marker),
+            "returned guidance lost the deterministic toolchain wording `{marker}`: {output}"
+        );
+    }
+}
+
 // --- dialog-question-quality: dialog policy steps --------------------------
 
 fn cli_stdout(world: &GivnWorld) -> String {
