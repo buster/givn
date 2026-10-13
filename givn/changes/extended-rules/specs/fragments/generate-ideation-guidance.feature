@@ -172,7 +172,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "only when a new fork"
     And  the served ideation instruction contains "share one direction are one question"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The frame is confirmed once and later phase boundaries report
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
