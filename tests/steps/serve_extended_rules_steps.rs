@@ -134,6 +134,46 @@ pub(crate) fn marked_extension_section<'a>(id: &str, content: &'a str) -> (&'a s
     (&content[at..], at)
 }
 
+/// The exact bytes of the extension block a recording step wrote, for the
+/// byte-for-byte preservation comparison across an upgrade.
+pub(crate) fn record_extension_block(env: &common::TestEnv, block: &str) {
+    let dir = extension_fixture_dir(env);
+    fs::create_dir_all(&dir).unwrap_or_else(|error| panic!("create {}: {error}", dir.display()));
+    fs::write(dir.join("extension-block"), block).expect("record the extension block");
+}
+
+/// The recorded extension block bytes.
+pub(crate) fn recorded_extension_block(env: &common::TestEnv) -> String {
+    let path = extension_fixture_dir(env).join("extension-block");
+    fs::read_to_string(&path).expect("the fixture recorded the extension block")
+}
+
+/// The active `extensions:` block of the project's config as text.
+pub(crate) fn config_extension_block(env: &common::TestEnv) -> String {
+    let config = fs::read_to_string(env.path("givn/config.yaml")).expect("read givn/config.yaml");
+    let mut block: Vec<&str> = Vec::new();
+    let mut inside = false;
+    for line in config.lines() {
+        if !inside {
+            if line == "extensions:" {
+                inside = true;
+                block.push(line);
+            }
+            continue;
+        }
+        if line.starts_with(' ') || line.starts_with('\t') {
+            block.push(line);
+        } else {
+            break;
+        }
+    }
+    assert!(
+        !block.is_empty(),
+        "the project config carries no active extensions block:\n{config}"
+    );
+    format!("{}\n", block.join("\n"))
+}
+
 #[given("the project records an extension for the proposal instruction")]
 fn project_records_proposal_extension(world: &mut GivnWorld) {
     let env = world
@@ -141,18 +181,34 @@ fn project_records_proposal_extension(world: &mut GivnWorld) {
         .as_ref()
         .expect("a project root is required first");
     // Capture the built-in served content before the extension exists, so the
-    // ordering assertions compare against the same request path.
-    let builtin = request_instruction(env, "proposal");
-    assert!(
-        builtin.status.success(),
-        "givn instructions proposal failed: {}",
-        String::from_utf8_lossy(&builtin.stderr)
-    );
-    record_builtin_content(env, "proposal", &builtin.stdout);
+    // ordering assertions compare against the same request path. Only the
+    // fixtures with a change context resolve an artifact instruction; the
+    // upgrade fixtures carry no change and need no capture.
+    let changes_dir = env.path("givn/changes");
+    let single_change = fs::read_dir(&changes_dir)
+        .map(|entries| {
+            entries
+                .filter_map(|entry| entry.ok())
+                .filter(|entry| entry.path().is_dir())
+                .count()
+        })
+        .unwrap_or(0)
+        == 1;
+    if single_change {
+        let builtin = request_instruction(env, "proposal");
+        assert!(
+            builtin.status.success(),
+            "givn instructions proposal failed: {}",
+            String::from_utf8_lossy(&builtin.stderr)
+        );
+        record_builtin_content(env, "proposal", &builtin.stdout);
+    }
+    let block = format!("extensions:\n  proposal:\n    - {RECORDED_EXTENSION_RULE}\n");
     crate::steps::instruction_extension_steps::write_extensions(
         env,
         &format!("  proposal:\n    - {RECORDED_EXTENSION_RULE}\n"),
     );
+    record_extension_block(env, &block);
     record_expected_rule(env, "proposal", RECORDED_EXTENSION_RULE);
     // The upgrade scenarios need a clean checkout; the fixture's own state
     // directory travels with the fixture commit.

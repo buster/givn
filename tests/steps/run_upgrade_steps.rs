@@ -111,6 +111,36 @@ fn revision_shows_rewritten_to_the_direction(world: &mut GivnWorld, path: String
     );
 }
 
+#[then("the upgrade revision carries no extension content")]
+fn upgrade_revision_carries_no_extension_content(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let rule = crate::steps::serve_extended_rules_steps::expected_rule(env, "proposal");
+    // The no-context diff carries exactly the added and removed lines; the
+    // user-owned extension block is neither.
+    let diff = git_ok(env, &["show", "-U0", "--format=", "HEAD"]);
+    assert!(
+        !diff.contains(&rule),
+        "the upgrade revision carries the extension content {rule:?}:\n{diff}"
+    );
+}
+
+#[then("the recorded extension is unchanged")]
+fn recorded_extension_is_unchanged(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let recorded = crate::steps::serve_extended_rules_steps::recorded_extension_block(env);
+    let current = crate::steps::serve_extended_rules_steps::config_extension_block(env);
+    assert_eq!(
+        recorded, current,
+        "the recorded extension block changed across the upgrade"
+    );
+}
+
 #[given(regex = r"^a commands file without a run declaration:$")]
 fn commands_file_without_run_declaration(world: &mut GivnWorld, step: &cucumber::gherkin::Step) {
     let doc = step
