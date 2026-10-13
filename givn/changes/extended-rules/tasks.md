@@ -880,27 +880,82 @@ sections in the same feature order.
             a5d744b9 — feat(instruction-extension): <release note>; body: Scenario: A whitespace-only rule entry is skipped with a warning
             ```
 
-- [ ] instruction-extension: A repeated instruction key keeps the last entry
+- [x] instruction-extension: A repeated instruction key keeps the last entry
       Design constraints:
         - `src/config/overlay.rs` reads `extensions` as an ordered entry list (a small private wrapper carrying raw `serde_yaml_ng::Value`s) instead of a duplicate-checked `Value` mapping, because the pinned parser rejects duplicate keys inside a `Value` mapping; a repeated instruction key keeps its last occurrence (recorded behavior).
         - Assertions: the served content carries the rule from the last entry; the served content does not carry the rule from the earlier entry.
         - Step file: `tests/steps/instruction_extension_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::A repeated instruction key keeps the last entry"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::A repeated instruction key keeps the last entry"
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A repeated instruction key keeps the last entry
+               ✔  Given a Givn project with an active change
+               ✔  And the project's configuration carries two extension entries for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the served content carries the rule from the last entry
+               ✔  And the served content does not carry the rule from the earlier entry
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the lenient entry-list read (duplicate
+            keys parse; the last occurrence replaces the earlier one) is delivered
+            by the coupled earlier scenario's edit in `src/config/overlay.rs`.
+            ORACLE_RED calibration (controlled omission from the delivered behavior):
+            $ (temporarily reversed the wrapper to keep the FIRST occurrence instead
+               of the last; same scoped command)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A repeated instruction key keeps the last entry
+               ✔  Given a Givn project with an active change
+               ✔  And the project's configuration carries two extension entries for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✘  Then the served content carries the rule from the last entry
+                  Step panicked. Captured output: the served proposal extension section is missing the last entry's rule "Keep proposals under 900 words"
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            With first-wins, exactly the last-entry assertion fails, so it
+            discriminates; last-wins was restored immediately (the file is
+            byte-identical to the committed state) and the scoped command passed
+            again. No production switch, exception, fake success, or source-text
+            test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the repeated-key behavior was delivered by the earlier
+            scenarios' serving path (`src/config/overlay.rs::ExtensionEntries`
+            replaces a repeated instruction key with its last occurrence; the
+            duplicate keys never reach a `serde_yaml_ng::Value` mapping). This
+            scenario binds the last-entry and earlier-entry-absent assertions.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring last-wins)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A repeated instruction key keeps the last entry
+               ✔  Given a Givn project with an active change
+               ✔  And the project's configuration carries two extension entries for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the served content carries the rule from the last entry
+               ✔  And the served content does not carry the rule from the earlier entry
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.96s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            e8231e5f — feat(instruction-extension): <release note>; body: Scenario: A repeated instruction key keeps the last entry
             ```
 
 - [ ] instruction-extension: An extension extends a policy and a step instruction alike

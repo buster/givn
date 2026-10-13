@@ -68,7 +68,7 @@ Feature: A project extends an instruction's built-in rules
     Then the served content carries the rule from the last entry
     And the served content does not carry the rule from the earlier entry
 
-  @givn.added @wip
+  @givn.added
   Scenario: An extension extends a policy and a step instruction alike
     Given a Givn project with an active change
     When the project's configuration records a rule for the dialog policy and for the ideation step
