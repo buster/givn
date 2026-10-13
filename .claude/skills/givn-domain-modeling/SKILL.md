@@ -13,26 +13,4 @@ description: >-
 
 **Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
 
-Establish and enforce the domain language for change `<change-id>`. This is an
-active discipline, not a one-shot step: challenge fuzzy terms the moment they
-appear and keep the project's glossary current as the language crystallises.
-The design and the specs must use exactly the vocabulary in the glossary.
-
-**Rules**: the domain-modeling discipline — the use-case vocabulary contract,
-the active enforcement rules, the arc42 glossary maintenance, the term
-introduction test, and the naming-question format — is served by
-`givn instructions domain-modeling`. Load it and follow it; this file owns the
-invocation orchestration only.
-
-## Context
-
-- Change: `givn/changes/<change-id>/`
-- Proposal: `givn/changes/<change-id>/proposal.md`
-- Specs: `givn/changes/<change-id>/specs/`
-- Glossary: `docs/arc42/12-glossary.md` (maintained there)
-
-## Invocation
-
-1. Run `givn instructions domain-modeling` and follow it.
-2. Apply the discipline from the first domain noun — while naming or
-   discussing domain concepts and during every workflow step of a change.
+Establish and enforce one domain vocabulary for the change. The rules for this step are served by `givn instructions domain-modeling` — load the instruction and follow it. This file triggers the step and carries no rules of its own.
