@@ -43,7 +43,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "docs/ideation/"
     And  the served ideation instruction contains "Handoff never starts a change"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The explore guidance points to ideation for structured domain work
     Given  a Givn project
     When  the agent requests the explore instructions through the Givn CLI
