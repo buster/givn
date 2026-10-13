@@ -2680,26 +2680,69 @@ sections in the same feature order.
             da56b3c2 — feat(generate-ideation-guidance): <release note>; body: Scenario: The event storming review checks canvas coverage, legality, agreement, and rendering
             ```
 
-- [ ] generate-ideation-guidance: The ideation command guardrails require the canvas and legal aggregates
+- [x] generate-ideation-guidance: The ideation command guardrails require the canvas and legal aggregates
       Design constraints:
         - Content seam: `assets/commands/givn-ideation.md` orchestration references the canvas/aggregate checks now served by the instruction.
         - Assertions (served ideation instruction): contains "rendered mermaid canvas naming every event", "every aggregate is a declared", "never a record or a specification".
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation command guardrails require the canvas and legal aggregates"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation command guardrails require the canvas and legal aggregates"
+            Feature: Generate ideation guidance
+              Scenario: The ideation command guardrails require the canvas and legal aggregates
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✘  Then the served ideation instruction contains "rendered mermaid canvas naming every event"
+                  Step panicked. Captured output: the served ideation instruction is missing "rendered mermaid canvas naming every event": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                 EXIT=101
+            OLD_PRODUCT_RED: the served instruction carries the canvas and
+            aggregate rules in skill-shaped bullets, but the command guardrail
+            summary — the rendered canvas naming every element and the declared
+            consistency boundary — never moved into the served instruction; the
+            request succeeds and the excerpt is absent.
+            No new step bindings were needed: the scenario reuses the shared
+            `Given a Givn project` fixture, the agent-request step, and the
+            served-instruction content step from
+            `tests/steps/serve_extended_rules_steps.rs`.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            assets/instructions/ideation.md (Event Storming: the "Draw the
+            canvas" bullet gains the relocated guardrail sentence "The event
+            storming ships a rendered mermaid canvas naming every event,
+            command, aggregate, and actor."; the aggregate bullet now states
+            "every aggregate is a declared consistency boundary — ... — never
+            a record or a specification")
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after the instruction edit)
+            Feature: Generate ideation guidance
+              Scenario: The ideation command guardrails require the canvas and legal aggregates
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "rendered mermaid canvas naming every event"
+               ✔  And the served ideation instruction contains "every aggregate is a declared"
+               ✔  And the served ideation instruction contains "never a record or a specification"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                           EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            d78e99f4 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation command guardrails require the canvas and legal aggregates
             ```
 
 - [ ] generate-ideation-guidance: The ideation guidance binds every confirmed term to the user's verified name
