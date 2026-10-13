@@ -30,14 +30,16 @@ Feature: Visual Design Contract
   Scenario: Synchronized guidance defines the contract approval and capture mechanics
     Given  a givn project with all agent skill targets enabled
     When  the user runs `givn skills sync`
-    Then  the generated givn-design-review guidance contains "Visual Design Contract"
-    And  the generated givn-design-review guidance contains "propose"
-    And  the generated givn-design-review guidance contains "user approves"
-    And  the generated givn-design-review guidance contains "rendered options"
-    And  the generated givn-steps guidance contains "evidence/visual"
-    And  the generated givn-steps guidance contains "final-state"
-    And  the generated givn-steps guidance contains "animations are frozen"
-    And  the generated givn-steps guidance contains "reports/"
+    Then  the generated givn-design-review guidance directs the reviewer to the design-review instruction
+    And  the served design-review instruction contains "Visual Design Contract"
+    And  the served design-review instruction contains "propose"
+    And  the served design-review instruction contains "user approves"
+    And  the served design-review instruction contains "rendered options"
+    And  the generated givn-steps guidance directs the step writer to the steps instruction
+    And  the served steps instruction contains "evidence/visual"
+    And  the served steps instruction contains "final-state"
+    And  the served steps instruction contains "animations are frozen"
+    And  the served steps instruction contains "reports/"
 
   Scenario: Design-review guidance requires an approved contract
     Given  a givn project
@@ -148,9 +150,9 @@ Feature: Visual Design Contract
     And  the ejected design-review template contains "Evidence"
 
   Scenario: Synchronized authoring guidance carries the classification, driver, and persona rules
-    Given  a givn project with all agent skill targets enabled
+    Given  a givn project with all agent skill targets enabled and an active change
     When  the user runs `givn skills sync`
-    Then  the generated givn-design guidance contains "renders HTML, CSS, or JavaScript in a browser"
-    And  the generated givn-design guidance contains "default browser driver"
-    And  the generated givn-design-review guidance contains "opposite classification"
-    And  the generated givn-propose guidance contains "operator confirmation"
+    Then  the served design instruction contains "renders HTML, CSS, or JavaScript in a browser"
+    And  the served design instruction contains "default browser driver"
+    And  the served design-review instruction contains "opposite classification"
+    And  the served proposal instruction contains "operator confirmation"
