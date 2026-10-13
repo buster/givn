@@ -162,7 +162,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "the decision it blocks"
     And  the served ideation instruction contains "context that forces it"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation guidance stops questions at decided directions
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
