@@ -9,34 +9,38 @@ fn coverage_project(world: &mut GivnWorld) {
 }
 
 #[then(
-    "the archive guidance shows a README coverage example with a badge, report link, non-E2E and E2E totals, and reproduction commands"
+    "the served coverage guidance shows a README coverage example with a badge, report link, non-E2E and E2E totals, and reproduction commands"
 )]
-fn archive_guidance_has_example(world: &mut GivnWorld) {
+fn served_guidance_has_example(world: &mut GivnWorld) {
     let env = world
         .env
         .as_ref()
         .expect("a project root is required first");
-    let archive_skill = std::fs::read_to_string(env.path(".opencode/skills/givn-archive/SKILL.md"))
-        .expect("read generated archive skill");
+    let output = common::run_givn(env, &["instructions", "coverage"]);
     assert!(
-        archive_skill.contains("## Coverage"),
-        "archive skill missing '## Coverage' section"
+        output.status.success(),
+        "givn instructions coverage failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let guidance = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        guidance.contains("## Coverage"),
+        "coverage guidance missing '## Coverage' section"
     );
     assert!(
-        archive_skill.contains("img.shields.io"),
-        "archive skill missing coverage badge"
+        guidance.contains("img.shields.io"),
+        "coverage guidance missing coverage badge"
     );
     assert!(
-        archive_skill.contains("coverage/cobertura-coverage.xml"),
-        "archive skill missing report link"
+        guidance.contains("coverage/cobertura-coverage.xml"),
+        "coverage guidance missing report link"
     );
     assert!(
-        archive_skill.contains("non-E2E") && archive_skill.contains("E2E runs"),
-        "archive skill missing non-E2E and E2E totals"
+        guidance.contains("non-E2E") && guidance.contains("E2E runs"),
+        "coverage guidance missing non-E2E and E2E totals"
     );
     assert!(
-        archive_skill.contains("measure-coverage.sh")
-            && archive_skill.contains("merge-coverages.sh"),
-        "archive skill missing reproduction commands"
+        guidance.contains("measure-coverage.sh") && guidance.contains("merge-coverages.sh"),
+        "coverage guidance missing reproduction commands"
     );
 }

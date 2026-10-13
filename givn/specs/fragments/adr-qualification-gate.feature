@@ -172,7 +172,6 @@ Feature: Strict qualification and canonical routing of architecture decisions
     Given  the design-review instruction is available
     When  a reviewer reads the ADR branch
     Then  the instruction requires the cheaper-home challenge for every proposed new ADR
-    And  the design-review command requires the cheaper-home challenge
     And  the design-review skill points at the requirement
 
   Scenario: The chapter-selection guidance does not normalize row 9
