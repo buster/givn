@@ -247,7 +247,7 @@ Feature: Generate ideation guidance
     When  the agent requests the ideation instructions through the Givn CLI
     Then  the served ideation instruction contains "the user's verified name"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation guidance asks the naming question as soon as a name fails
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
