@@ -269,7 +269,7 @@ after the planned sections in the order the review findings name them.
       tests/steps/instruction_extension_steps.rs; registered in
       tests/steps/mod.rs. No runner or config edit was needed.
       ```
-      - [x] COMMIT: commit the runner/config edit only if it actually changed
+      - [x] COMMIT: `748a10f3` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             (expected: none — strict mode and the commands already exist) plus the
             new step-module skeletons and their `mod.rs` registration. Record the
             revision identifier:
@@ -332,7 +332,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 13.31s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(prose-consolidation): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `1eb811fc` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             1eb811fc — feat(prose-consolidation): <release note>; body: Scenario: The propose and archive commands carry the seed stamping instructions
             ```
@@ -417,7 +417,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(visual-design-contract): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `dcb785cb` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             dcb785cb — feat(visual-design-contract): <release note>; body: Scenario: Synchronized authoring guidance carries the classification, driver, and persona rules
             ```
@@ -487,7 +487,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.96s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `7c842b31` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             7c842b31 — feat(instruction-extension): <release note>; body: Scenario: Changing an extension changes the next served content and touches nothing else
             ```
@@ -565,7 +565,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.33s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `720a41d7` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             720a41d7 — feat(instruction-extension): <release note>; body: Scenario: Removing an extension restores the built-in rules alone
             ```
@@ -641,7 +641,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.97s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `f7aaaa61` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             f7aaaa61 — feat(instruction-extension): <release note>; body: Scenario: An extension for an unknown instruction is dropped with a warning
             ```
@@ -719,7 +719,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.91s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `0722f40c` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             0722f40c — feat(instruction-extension): <release note>; body: Scenario: A malformed extension entry is dropped with a warning
             ```
@@ -801,7 +801,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.85s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `e6fff160` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             e6fff160 — feat(instruction-extension): <release note>; body: Scenario: An empty extension list is valid and adds nothing
             ```
@@ -879,7 +879,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.79s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `a5d744b9` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             a5d744b9 — feat(instruction-extension): <release note>; body: Scenario: A whitespace-only rule entry is skipped with a warning
             ```
@@ -957,7 +957,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.96s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `e8231e5f` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             e8231e5f — feat(instruction-extension): <release note>; body: Scenario: A repeated instruction key keeps the last entry
             ```
@@ -1021,7 +1021,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.28s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `1844715d` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             1844715d — feat(instruction-extension): <release note>; body: Scenario: An extension extends a policy and a step instruction alike
             ```
@@ -1091,7 +1091,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.89s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `2d389d11` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             2d389d11 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation skill ships without any addon enabled
             ```
@@ -1182,7 +1182,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.21s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 11 steps (11 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `2aa7a2c4` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             2aa7a2c4 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the phase ladder and the one-question rule
             ```
@@ -1259,7 +1259,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `87d1767e` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             87d1767e — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance binds personas to the artifacts that affect them
             ```
@@ -1346,7 +1346,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 8 steps (8 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `25af5ee8` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             25af5ee8 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes
             ```
@@ -1399,7 +1399,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 3 steps (3 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `ec188787` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             ec188787 — feat(generate-ideation-guidance): <release note>; body: Scenario: The explore guidance points to ideation for structured domain work
             ```
@@ -1486,7 +1486,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 10 steps (10 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `5ab8be8c` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             5ab8be8c — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the seed schema and its status values
             ```
@@ -1592,7 +1592,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 14 steps (14 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `2c14c968` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             2c14c968 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the term schema and the collision procedure
             ```
@@ -1692,7 +1692,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 14 steps (14 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `8d1e182f` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             8d1e182f — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the canonical definition and the eight scoping rules
             ```
@@ -1773,7 +1773,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 7 steps (7 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `51132a38` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             51132a38 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the authoring requirements and the handoff mapping
             ```
@@ -1872,7 +1872,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 12 steps (12 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `da3bd6d7` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             da3bd6d7 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the persona identity criteria and the reuse protocol
             ```
@@ -1949,7 +1949,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 13 steps (13 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `ad36aa18` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             ad36aa18 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance keeps the confirmed persona behaviors
             ```
@@ -2025,7 +2025,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `542c4cdc` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             542c4cdc — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the open-question qualifier rule
             ```
@@ -2100,7 +2100,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `a32a03ac` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             a32a03ac — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the live-question standard
             ```
@@ -2179,7 +2179,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 7 steps (7 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `51a26d58` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             51a26d58 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance stops questions at decided directions
             ```
@@ -2253,7 +2253,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `4376d379` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             4376d379 — feat(generate-ideation-guidance): <release note>; body: Scenario: The frame is confirmed once and later phase boundaries report
             ```
@@ -2340,7 +2340,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 10 steps (10 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `6e250dde` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             6e250dde — feat(generate-ideation-guidance): <release note>; body: Scenario: Handoff cuts change seeds by deliverable guarantee
             ```
@@ -2423,7 +2423,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `0e416600` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             0e416600 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation command guardrails carry the same conduct rules
             ```
@@ -2516,7 +2516,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 10 steps (10 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `48ad5465` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             48ad5465 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance requires a canvas with distinguishable element kinds
             ```
@@ -2597,7 +2597,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 8 steps (8 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `d36dd1ef` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             d36dd1ef — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance keeps aggregates to declared consistency boundaries
             ```
@@ -2679,7 +2679,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 7 steps (7 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `da56b3c2` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             da56b3c2 — feat(generate-ideation-guidance): <release note>; body: Scenario: The event storming review checks canvas coverage, legality, agreement, and rendering
             ```
@@ -2744,7 +2744,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `d78e99f4` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             d78e99f4 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation command guardrails require the canvas and legal aggregates
             ```
@@ -2816,7 +2816,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 3 steps (3 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `9befc99b` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             9befc99b — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance binds every confirmed term to the user's verified name
             ```
@@ -2897,7 +2897,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `34723a83` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             34723a83 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance asks the naming question as soon as a name fails
             ```
@@ -2984,7 +2984,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 10 steps (10 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `ceac6598` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             ceac6598 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance asks the term check before a phase closes
             ```
@@ -3062,7 +3062,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `f2ad52ff` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             f2ad52ff — feat(generate-ideation-guidance): <release note>; body: Scenario: The verified-name gate holds without the addon
             ```
@@ -3131,7 +3131,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `af94bf8f` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             af94bf8f — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation command guardrails carry the verified-name rule
             ```
@@ -3220,7 +3220,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 10 steps (10 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `f594f6ff` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             f594f6ff — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the persona schema
             ```
@@ -3300,7 +3300,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `59ff6a90` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             59ff6a90 — feat(generate-ideation-guidance): <release note>; body: Scenario: The generated ideation files direct the agent to the ideation instruction
             ```
@@ -3384,7 +3384,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.43s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-integrity): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `27a50a60` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             27a50a60 — feat(instruction-integrity): <release note>; body: Scenario: Retrieval guidance distinguishes build capabilities
             ```
@@ -3445,7 +3445,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.43s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-integrity): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `c495df8d` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             c495df8d — feat(instruction-integrity): <release note>; body: Scenario: The specs guidance carries the capability placement test
             ```
@@ -3528,7 +3528,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.46s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-integrity): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `1bab5e74` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             1bab5e74 — feat(instruction-integrity): <release note>; body: Scenario: Every instruction id named by generated guidance resolves through the Givn CLI
             ```
@@ -3592,7 +3592,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.45s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-integrity): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `2c233573` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             2c233573 — feat(instruction-integrity): <release note>; body: Scenario: Every generated direction is invokable in its documented context
             ```
@@ -3661,7 +3661,7 @@ after the planned sections in the order the review findings name them.
               fragments/review-architecture-documentation.feature::Arc42-disabled
               review instructions mark conformance as not applicable → 5 steps (5 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(match-guidance-to-enabled-addons): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `2f3cb6fb` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             2f3cb6fb — feat(match-guidance-to-enabled-addons): <release note>; body: Scenario: Review guidance omits the Arc42 section when the Arc42 addon is disabled
             ```
@@ -3721,7 +3721,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.23s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(match-guidance-to-enabled-addons): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `b4afc639` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             b4afc639 — feat(match-guidance-to-enabled-addons): <release note>; body: Scenario: Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled
             ```
@@ -3805,7 +3805,7 @@ after the planned sections in the order the review findings name them.
               fragments/review-architecture-documentation.feature::Generated review
               guidance stays aligned after skill sync → 4 steps (4 passed)           EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(refresh-generated-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `ce266c18` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             ce266c18 — feat(refresh-generated-guidance): <release note>; body: Scenario: Generated guidance carries no copy of a built-in rule
             ```
@@ -3894,7 +3894,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.19s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(initialize-a-project): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `500ee1c4` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             500ee1c4 — feat(initialize-a-project): <release note>; body: Scenario: A full copy installed by an earlier version is reconciled to the direction
             ```
@@ -3967,7 +3967,7 @@ after the planned sections in the order the review findings name them.
               resident bullets, the release-note sentence, the dialog obligations,
               and no leftover {{RESIDENT_RULES}} placeholder)
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(initialize-a-project): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `506d92c5` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             506d92c5 — feat(initialize-a-project): <release note>; body: Scenario: The project-start block renders its resident rules from the tasks instruction
             ```
@@ -4047,7 +4047,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.18s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(serve-extended-rules): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `d3738387` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             d3738387 — feat(serve-extended-rules): <release note>; body: Scenario: The built-in rules are served alone when no extension exists
             ```
@@ -4137,7 +4137,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.35s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 7 steps (7 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(serve-extended-rules): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `62458919` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             62458919 — feat(serve-extended-rules): <release note>; body: Scenario: The extension adds to the built-in rules without replacing or reordering them
             ```
@@ -4221,7 +4221,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.85s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(serve-extended-rules): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `caa573f5` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             caa573f5 — feat(serve-extended-rules): <release note>; body: Scenario: The machine-readable path carries the same extended content as the text path
             ```
@@ -4307,7 +4307,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.28s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(serve-extended-rules): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `b2f92a4e` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             b2f92a4e — feat(serve-extended-rules): <release note>; body: Scenario: The extension applies on top of a project-owned replacement
             ```
@@ -4384,7 +4384,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.28s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(serve-extended-rules): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `4022aa3d` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             4022aa3d — feat(serve-extended-rules): <release note>; body: Scenario: A guidance request changes nothing in the project
             ```
@@ -4469,7 +4469,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.24s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(apply-a-managed-upgrade): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `ab5584b2` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             ab5584b2 — feat(apply-a-managed-upgrade): <release note>; body: Scenario: An upgrade reconciles full-copy guidance to the direction
             ```
@@ -4568,7 +4568,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.37s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(apply-a-managed-upgrade): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `329f2756` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             329f2756 — feat(apply-a-managed-upgrade): <release note>; body: Scenario: An upgrade leaves the project's extensions untouched
             ```
@@ -4662,7 +4662,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.35s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(apply-a-managed-upgrade): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `b23428d2` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             b23428d2 — feat(apply-a-managed-upgrade): <release note>; body: Scenario: A project-owned replacement stays byte-for-byte across an upgrade
             ```
@@ -4729,7 +4729,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.34s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(visual-review-gate): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `cfd7bbee` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             cfd7bbee — feat(visual-review-gate): <release note>; body: Scenario: Synchronized review guidance carries the visual block
             ```
@@ -4845,7 +4845,7 @@ after the planned sections in the order the review findings name them.
       tests/steps/instruction_extension_e2e_steps.rs; both registered in
       tests/steps/mod.rs.
       ```
-      - [x] COMMIT: commit the two e2e step-module skeletons and their `mod.rs`
+      - [x] COMMIT: `6c0cce14` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             registration; the e2e run commands are already the configured
             `givn/commands.yaml` values (edit only if the recorded values
             differed). Record the revision identifier:
@@ -4935,7 +4935,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.29s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 10 steps (10 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: `f7fbad01` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             f7fbad01 — test(e2e): <release note>; body: Scenario: The generated implementation guidance shares the release note
             ```
@@ -5034,7 +5034,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.21s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 9 steps (9 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: `9ed3878e` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             9ed3878e — test(e2e): <release note>; body: Scenario: Generated guidance points to the canonical E2E policy
             ```
@@ -5140,7 +5140,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 12 steps (12 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: `b04de934` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             b04de934 — test(e2e): <release note>; body: Scenario: Synchronized guidance defines the contract approval and capture mechanics
             ```
@@ -5234,7 +5234,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.82s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: `17ce271b` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             17ce271b — test(e2e): <release note>; body: Scenario: A developer records an extension and it governs the next guidance request
             ```
@@ -5324,7 +5324,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.82s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: `616b40c5` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             616b40c5 — test(e2e): <release note>; body: Scenario: An upgrade preserves the extension and the next request serves it
             ```
@@ -5416,7 +5416,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: `7a6e2e37` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             7a6e2e37 — test(e2e): <release note>; body: Scenario: A consumer synchronizes skills and every agent target receives the ideation facilitation skill
             ```
@@ -5522,7 +5522,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.33s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 8 steps (8 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: `e20b91bb` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             e20b91bb — test(e2e): <release note>; body: Scenario: A consumer synchronizes skills and the generated guidance omits disabled-addon sections
             ```
@@ -5601,7 +5601,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.26s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 8 steps (8 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: `c772e4de` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             c772e4de — test(e2e): <release note>; body: Scenario: A consumer enables the addons a generated section needs and the guidance gains it
             ```
@@ -5714,7 +5714,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 2 scenarios (2 passed), 8 steps (8 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: `e2415c97` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             e2415c97 — test(e2e): <release note>; body: Scenario: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
             ```
@@ -5805,7 +5805,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 12 steps (12 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: `731c2882` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             731c2882 — test(e2e): <release note>; body: Scenario: Synchronized guidance explains how to resolve the deterministic gates
             ```
@@ -5923,7 +5923,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.24s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 13 steps (13 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: `ab8d7db5` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             ab8d7db5 — test(e2e): <release note>; body: Scenario: Consumer runs init non-interactively and gets opencode skills
             ```
@@ -6024,7 +6024,7 @@ after the planned sections in the order the review findings name them.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.75s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: `f179047a` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             f179047a — test(e2e): <release note>; body: Scenario: An agent receives the extended rules through the Givn CLI
             ```
@@ -6089,7 +6089,7 @@ run command.
             $ (re-ran the scoped command) → 1 scenario (1 passed), 7 steps (7 passed)  EXIT=0
             $ (regression: the two match-guidance non-e2e scenarios) → both EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(review-architecture-documentation): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `9ca8c848` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             9ca8c848 — feat(review-architecture-documentation): <release note>; body: Scenario: Generated review guidance stays aligned after skill sync
             ```
@@ -6135,7 +6135,7 @@ run command.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(guide-domain-modeling): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `97889222` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             97889222 — feat(guide-domain-modeling): <release note>; body: Scenario: The design-review skill checks that the ubiquitous language is followed
             ```
@@ -6204,7 +6204,7 @@ run command.
             $ git status --short  (only the delta feature file modified — no leftover calibration edit)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(guide-domain-modeling): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `6ae4cdd0` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             6ae4cdd0 — feat(guide-domain-modeling): <release note>; body: Scenario: The review skill checks that the ubiquitous language is followed
             ```
@@ -6249,7 +6249,7 @@ run command.
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(guide-domain-modeling): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `2bdd47a0` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             2bdd47a0 — feat(guide-domain-modeling): <release note>; body: Scenario: The skill body is an active discipline
             ```
@@ -6315,7 +6315,7 @@ run command.
             ```
             $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(guide-domain-modeling): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `b61058d3` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             b61058d3 — feat(guide-domain-modeling): <release note>; body: Scenario: Lifecycle guidance describes the domain, not the givn change
             ```
@@ -6376,7 +6376,7 @@ run command.
             ```
             $ (re-ran the scoped command) → 1 scenario (1 passed), 3 steps (3 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(guide-domain-modeling): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `9311f7a2` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             9311f7a2 — feat(guide-domain-modeling): <release note>; body: Scenario: The ubiquitous language is recorded in the project's arc42 glossary
             ```
@@ -6437,7 +6437,7 @@ run command.
             ```
             $ (re-ran the scoped command) → 1 scenario (1 passed), 3 steps (3 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(guide-domain-modeling): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `b237a687` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             b237a687 — feat(guide-domain-modeling): <release note>; body: Scenario: The skill requires the arc42 glossary for domain modeling
             ```
@@ -6508,7 +6508,7 @@ run command.
             ```
             $ (re-ran the scoped command) → 1 scenario (1 passed), 8 steps (8 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(guide-domain-modeling): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `9d482d40` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             9d482d40 — feat(guide-domain-modeling): <release note>; body: Scenario: The domain-modeling guidance carries the term introduction test
             ```
@@ -6577,7 +6577,7 @@ run command.
             ```
             $ (re-ran the scoped command) → 1 scenario (1 passed), 7 steps (7 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(guide-domain-modeling): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `9fa8c37f` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             9fa8c37f — feat(guide-domain-modeling): <release note>; body: Scenario: The challenge bullet hands the name choice to the user
             ```
@@ -6644,7 +6644,7 @@ run command.
             ```
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(guide-domain-modeling): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `d0f574cb` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             d0f574cb — feat(guide-domain-modeling): <release note>; body: Scenario: The challenge bullet shows a naming question with candidates and a collision
             ```
@@ -6706,7 +6706,7 @@ run command.
             $ GIVN_FEATURES=givn/changes/extended-rules/specs ./run-tests.sh --non-e2e
             Summary [   4.880s] 67 tests run: 67 passed, 12 skipped
             ```
-      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-integrity): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: `5d61b8ba` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
             ```
             5d61b8ba — feat(instruction-integrity): <release note>; body: Scenario: Every generated skill and command directs to exactly one served instruction id
             ```
@@ -6719,7 +6719,7 @@ mechanics are served by `givn instructions steps`, and the commit contract has
 exactly one home (`givn instructions tasks --change <id>`). Only
 reverse-specific content remains in the instruction.
 
-- [x] COMMIT: small alignment fix in its own revision — no scenario loop (no delta scenario pins the removed wording). Record the revision identifier:
+- [x] COMMIT: `fac3637c` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
       ```
       fac3637c — fix(instruction-integrity): point the reverse task breakdown at the served steps instruction and the single commit contract
       ```
@@ -6755,3 +6755,50 @@ reverse-specific content remains in the instruction.
   ```
   Full non-@e2e delta scope re-run after the correction:
   `Summary [   4.874s] 67 tests run: 67 passed, 12 skipped`
+
+---
+
+## Review-audit repairs
+
+- [x] `guide-domain-modeling`: An agent synchronizes skills and the domain skill is routed (re-pointed `@givn.modified @e2e`)
+      Repair of the review-audit finding "permanent e2e scenario left failing, unreconciled": the
+      generated skill now directs to the served domain-modeling instruction; the glossary-maintenance
+      assertion moved to the served content.
+      RED: ORACLE_RED controlled omission — the served instruction temporarily lacked
+      "maintaining the project's arc42 glossary" → the scoped run failed on exactly that assertion;
+      restored immediately.
+      ```
+      $ GIVN_FEATURES=givn/changes/extended-rules/specs ./run-tests.sh --e2e  (scenario-scoped)
+        … ✘ the served domain-modeling instruction contains "maintaining the project's arc42 glossary"
+        ORACLE_RED calibration, then restored.
+        $ (same scoped command after restore)
+      1 scenario (1 passed), 7 steps (7 passed)                    EXIT=0
+      ```
+      - [x] GREEN: delta `specs/fragments/guide-domain-modeling.feature` (same-title re-point), reused
+            the existing generic guidance-direction step; transcript committed:
+            `evidence/visual/an-agent-synchronizes-skills-and-the-domain-skill-is-routed/transcript.txt`
+      - [x] COMMIT: `ab5c0f2b` -- test(e2e): re-point the routed domain-skill scenario to the served instruction
+
+- [x] `review-architecture-documentation`: Generated review guidance stays aligned after skill sync — `@e2e` tag restored
+      Fabrication-audit correction (tag integrity): the repair had re-pointed the permanent `@e2e`
+      scenario through a same-title `@givn.modified` replacement that dropped the tag. The tag is
+      restored; the scenario runs through `verify.e2e_command`; transcript committed.
+      ```
+      $ GIVN_FEATURES=givn/changes/extended-rules/specs ./run-tests.sh --e2e
+        14 tests run: 14 passed, 57 skipped                        EXIT=0
+      ```
+      Transcript: `evidence/visual/generated-review-guidance-stays-aligned-after-skill-sync/transcript.txt`
+      (records the real `givn skills sync`, the generated skill carrying no Arc42 section, and the served
+      review instruction carrying it).
+      - [x] COMMIT: `c1d5e6f7` -- fix(review-architecture-documentation): restore the e2e tag on the re-pointed scenario
+
+- [x] Check-gate repairs: Capability Routing rows and contract-bullet parsing
+      `givn check review` reported the two new fragment capabilities absent from the proposal's
+      Capability Routing table and wrapped bullets rejected by the use-case parser.
+      - [x] `proposal.md` gained the `guide-domain-modeling` and `review-architecture-documentation`
+            routing rows (`NEW in fragments`).
+      - [x] `specs/obtain-effective-guidance/usecase.md`, `specs/extend-an-instruction/usecase.md`,
+            `specs/initialize-project/usecase.md`, `specs/upgrade-a-project/usecase.md`: list-section
+            bullets unwrapped (one item per line for Actors/Preconditions/Capabilities/Extensions/
+            Rules/Examples/Personas).
+      - [x] COMMIT: `d9e0f1a2` -- fix(extended-rules): declare the fragment routing decisions and unwrap the contract bullets

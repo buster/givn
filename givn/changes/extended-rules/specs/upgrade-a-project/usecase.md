@@ -59,12 +59,8 @@ The maintainer upgrades Givn.
 - Fossil: the same project receives the allowlist-only check-in `c8d9e0f1a2b3...`; a migration-bearing upgrade adds the plan check-in.
 - Dirty project: `givn upgrade` refuses before writing, naming the dirty paths.
 - No SCM: `givn upgrade` refuses by name before writing.
-- Direction: a project whose installed guidance carries full copies receives a
-  revision whose diff shows the direction; the rules now arrive only through
-  `givn instructions`.
-- Extensions present: the same project records "Keep proposals under 500
-  words"; after the upgrade the extension is untouched and the next request
-  serves it beside the improved built-in rules.
+- Direction: a project whose installed guidance carries full copies receives a revision whose diff shows the direction; the rules now arrive only through `givn instructions`.
+- Extensions present: the same project records "Keep proposals under 500 words"; after the upgrade the extension is untouched and the next request serves it beside the improved built-in rules.
 
 ## Minimal guarantee
 

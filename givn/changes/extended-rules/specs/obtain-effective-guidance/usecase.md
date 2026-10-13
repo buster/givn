@@ -24,8 +24,7 @@ the same id manually.
 ## Preconditions
 
 - The project is initialized as a Givn project.
-- For an artifact instruction, exactly one change context resolves: the
-  explicit `--change`, or the single active change.
+- For an artifact instruction, exactly one change context resolves: the explicit `--change`, or the single active change.
 
 ## Main flow
 
@@ -54,35 +53,20 @@ the same id manually.
 
 ## Rules
 
-- The served content is the extended rule: the built-in rules resolved from
-  the canonical asset (or the project's replacement of the instruction
-  facet) plus the
-  project's extension when one exists.
+- The served content is the extended rule: the built-in rules resolved from the canonical asset (or the project's replacement of the instruction facet) plus the project's extension when one exists.
 - An extension never overrides, suppresses, or reorders the built-in rules.
-- The text path and the machine-readable path carry the same effective
-  content, extensions included.
-- Improved built-in rules are served at the next request after an upgrade; no
-  project action and no synchronization is needed.
-- A request never mutates project state: it resolves configuration and
-  content and prints. A rejected configuration entry warns and is skipped;
-  the request still succeeds and serves the built-in rules alone for it.
-- The unknown-id refusal, the change-context rules, and the machine contract
-  shape are unchanged.
-- The built-in rules stay technology-agnostic; project-specific guidance
-  arrives only through the extension.
+- The text path and the machine-readable path carry the same effective content, extensions included.
+- Improved built-in rules are served at the next request after an upgrade; no project action and no synchronization is needed.
+- A request never mutates project state: it resolves configuration and content and prints. A rejected configuration entry warns and is skipped; the request still succeeds and serves the built-in rules alone for it.
+- The unknown-id refusal, the change-context rules, and the machine contract shape are unchanged.
+- The built-in rules stay technology-agnostic; project-specific guidance arrives only through the extension.
 
 ## Examples
 
-- An extension exists: the project records "Keep proposals under 500 words"
-  for the proposal instruction. The agent runs `givn instructions proposal
-  --change add-user-auth` and receives the built-in proposal rules followed
-  by the marked section carrying the project's line.
-- No extension exists: `givn instructions specs --change add-user-auth`
-  serves the built-in rules alone.
-- Unknown id: `givn instructions propozal` exits non-zero with the
-  unknown-artifact error naming the known ids; no project state changes.
-- Machine-readable: an agent requests the same proposal id with `--json` and
-  finds the project's line inside `instruction`.
+- An extension exists: the project records "Keep proposals under 500 words" for the proposal instruction. The agent runs `givn instructions proposal --change add-user-auth` and receives the built-in proposal rules followed by the marked section carrying the project's line.
+- No extension exists: `givn instructions specs --change add-user-auth` serves the built-in rules alone.
+- Unknown id: `givn instructions propozal` exits non-zero with the unknown-artifact error naming the known ids; no project state changes.
+- Machine-readable: an agent requests the same proposal id with `--json` and finds the project's line inside `instruction`.
 
 ## Minimal guarantee
 
