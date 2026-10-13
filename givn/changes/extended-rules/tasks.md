@@ -3063,26 +3063,73 @@ sections in the same feature order.
             f2ad52ff — feat(generate-ideation-guidance): <release note>; body: Scenario: The verified-name gate holds without the addon
             ```
 
-- [ ] generate-ideation-guidance: The ideation command guardrails carry the verified-name rule
+- [x] generate-ideation-guidance: The ideation command guardrails carry the verified-name rule
       Design constraints:
         - Content seam: `assets/commands/givn-ideation.md` orchestration points at the phase term check, which the served instruction now owns.
         - Assertions (served ideation instruction): contains "verifies every new core term", "phase term check", "naming dialog", "before the canvas, use cases, or seeds rely on it".
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation command guardrails carry the verified-name rule"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation command guardrails carry the verified-name rule"
+            Feature: Generate ideation guidance
+              Scenario: The ideation command guardrails carry the verified-name rule
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "verifies every new core term"
+               ✘  And the served ideation instruction contains "phase term check"
+                  Step panicked. Captured output: the served ideation instruction is missing "phase term check": # Instruction: ideation
+                  ... (full served content omitted; category line follows)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            6 steps (5 passed, 1 failed)                                 EXIT=101
+            OLD_PRODUCT_RED: the command's old guardrail sentence — the phase
+            term check and the "before the canvas, use cases, or seeds" ordering
+            — was dropped when the guardrail copies left the command; the served
+            instruction carries the verification bullets but not the named check
+            or the ordering clause, and the request succeeds with the excerpt
+            absent.
+            No new step bindings were needed: the scenario reuses the shared
+            fixture, request, and served-content steps.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            assets/instructions/ideation.md (the phase checkpoint bullet now
+            names the "phase term check"; a closing sentence relocates the
+            command guardrail — "The verified name reaches the phase term check
+            or the term's naming dialog, before the canvas, use cases, or seeds
+            rely on it.")
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after the instruction edit)
+            Feature: Generate ideation guidance
+              Scenario: The ideation command guardrails carry the verified-name rule
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "verifies every new core term"
+               ✔  And the served ideation instruction contains "phase term check"
+               ✔  And the served ideation instruction contains "naming dialog"
+               ✔  And the served ideation instruction contains "before the canvas, use cases, or seeds rely on it"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                           EXIT=0
+            Neighbor sanity: the earlier committed scenarios sharing the edited
+            paragraph stayed green — verified-name binding (3 steps), term check
+            before a phase closes (10 steps), verified-name gate without the
+            addon (4 steps).
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            af94bf8f — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation command guardrails carry the verified-name rule
             ```
 
 - [ ] generate-ideation-guidance: The ideation guidance carries the persona schema

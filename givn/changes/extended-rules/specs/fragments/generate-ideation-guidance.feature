@@ -285,7 +285,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "naming dialog"
     And  the served ideation instruction contains "before the canvas, use cases, or seeds rely on it"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation guidance carries the persona schema
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
