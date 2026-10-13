@@ -27,7 +27,7 @@ Feature: initialize-a-project
     And the file ".opencode/skills/givn-propose/SKILL.md" directs the author to the proposal instruction
     And the file ".opencode/skills/givn-propose/SKILL.md" carries no built-in rule text
 
-  @givn.added @wip
+  @givn.added
   Scenario: The project-start block renders its resident rules from the tasks instruction
     Given a Givn project with an active change
     When the user runs `givn skills sync`

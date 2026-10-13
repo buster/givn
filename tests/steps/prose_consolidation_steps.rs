@@ -190,6 +190,64 @@ fn managed_guidance_references_policy(world: &mut GivnWorld) {
     );
 }
 
+// --- initialize-a-project: resident rules in the project-start block --------
+
+const RESIDENT_RULES_BEGIN: &str = "<!-- givn:resident-rules:begin -->";
+const RESIDENT_RULES_END: &str = "<!-- givn:resident-rules:end -->";
+
+/// The managed project-start block of the fixture's AGENTS.md.
+fn project_start_block(world: &GivnWorld) -> String {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let agents = fs::read_to_string(env.path("AGENTS.md")).expect("read AGENTS.md");
+    let start = agents
+        .find("<!-- givn:begin:givn-project -->")
+        .expect("managed block start missing");
+    let end = agents
+        .find("<!-- givn:end:givn-project -->")
+        .expect("managed block end missing");
+    agents[start..end].to_string()
+}
+
+#[then("the project-start block carries the resident rules section of the tasks instruction")]
+fn project_start_block_carries_resident_rules(world: &mut GivnWorld) {
+    let served = {
+        let env = world
+            .env
+            .as_ref()
+            .expect("a project root is required first");
+        crate::steps::serve_extended_rules_steps::served_instruction(env, "tasks")
+    };
+    let begin = served.find(RESIDENT_RULES_BEGIN).unwrap_or_else(|| {
+        panic!("the served tasks instruction is missing the {RESIDENT_RULES_BEGIN} marker")
+    });
+    let end = served.find(RESIDENT_RULES_END).unwrap_or_else(|| {
+        panic!("the served tasks instruction is missing the {RESIDENT_RULES_END} marker")
+    });
+    let section = served[begin + RESIDENT_RULES_BEGIN.len()..end].trim();
+    assert!(
+        !section.is_empty(),
+        "the resident rules section of the tasks instruction is empty"
+    );
+    let block = project_start_block(world);
+    assert!(
+        block.contains(section),
+        "the project-start block does not carry the resident rules section of the tasks instruction:\
+         \nblock:\n{block}\nsection:\n{section}"
+    );
+}
+
+#[then("the project-start block requires the effective dialog policy")]
+fn project_start_block_requires_dialog_policy(world: &mut GivnWorld) {
+    let block = project_start_block(world);
+    assert!(
+        block.contains("effective dialog policy") && block.contains("givn instructions dialog"),
+        "the project-start block does not require the effective dialog policy:\n{block}"
+    );
+}
+
 #[given("a Givn project with delegated authoring and review guidance enabled")]
 fn project_with_delegated_guidance(world: &mut GivnWorld) {
     let env = crate::common::make_bare_root();

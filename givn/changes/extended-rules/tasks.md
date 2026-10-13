@@ -3806,27 +3806,93 @@ sections in the same feature order.
             ce266c18 — feat(refresh-generated-guidance): <release note>; body: Scenario: Generated guidance carries no copy of a built-in rule
             ```
 
-- [ ] initialize-a-project: A full copy installed by an earlier version is reconciled to the direction
+- [x] initialize-a-project: A full copy installed by an earlier version is reconciled to the direction
       Design constraints:
         - Fixture seam: a new fixture in `tests/steps/init_agent_target_selection_steps.rs` installs a full-copy `.opencode/skills/givn-propose/SKILL.md` as written by an earlier version (rule text, no direction).
         - Reconciliation is the existing overwrite: the sync render path (`src/skills/render.rs`, `src/skills/targets.rs::sync`) is untouched; the next real `givn skills sync` rewrites the managed file.
         - Assertions: exit 0; the file directs the author to the proposal instruction; the file carries no built-in rule text.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "initialize-project/initialize-a-project.feature::A full copy installed by an earlier version is reconciled to the direction"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "initialize-project/initialize-a-project.feature::A full copy installed by an earlier version is reconciled to the direction"
+            Feature: initialize-a-project
+              Scenario: A full copy installed by an earlier version is reconciled to the direction
+               ✔  Given a project root with givn/ initialised
+               ✔  And a full-copy givn-propose skill installed by an earlier version
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the command exits 0
+               ✔  And the file ".opencode/skills/givn-propose/SKILL.md" directs the author to the proposal instruction
+               ✔  And the file ".opencode/skills/givn-propose/SKILL.md" carries no built-in rule text
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the reconciliation is the existing
+            managed-path overwrite (the sync render path is untouched by this
+            change), so the fixture's earlier-version copy is already rewritten
+            by the real sync. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration 1 (controlled omission of the delivered direction):
+            $ (temporarily rewrote "givn instructions proposal --change" →
+               "givn instructions the-proposal --change" in
+               assets/skills/givn-propose/SKILL.md.tmpl; same scoped command)
+            Feature: initialize-a-project
+              Scenario: A full copy installed by an earlier version is reconciled to the direction
+               ✔  Given a project root with givn/ initialised
+               ✔  And a full-copy givn-propose skill installed by an earlier version
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the command exits 0
+               ✘  And the file ".opencode/skills/givn-propose/SKILL.md" directs the author to the proposal instruction
+                  Step panicked. Captured output: .opencode/skills/givn-propose/SKILL.md
+                  does not direct the author to the proposal instruction: ---
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                 EXIT=101
+            ORACLE_RED calibration 2 (representative rule copy reinserted):
+            $ (temporarily appended "The revision carries the release note as its
+               message subject." to the template; same scoped command)
+            ✘  And the file ".opencode/skills/givn-propose/SKILL.md" carries no built-in rule text
+               Step panicked. Captured output: .opencode/skills/givn-propose/SKILL.md still
+               carries the built-in rule marker "carries the release note as its message subject"
+            5 steps (4 passed, 1 failed)                                 EXIT=101
+            Each omission makes exactly the matching assertion fail, so both
+            assertions discriminate; the excerpt was restored immediately
+            (`git checkout -- assets/skills/givn-propose/SKILL.md.tmpl`) and the
+            scoped command passed again. No production switch, exception, fake
+            success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — reconciliation is the existing sync overwrite. This scenario
+            adds the earlier-version full-copy fixture and the two real file
+            assertions in tests/steps/init_agent_target_selection_steps.rs.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the template)
+            Feature: initialize-a-project
+              Scenario: A full copy installed by an earlier version is reconciled to the direction
+               ✔  Given a project root with givn/ initialised
+               ✔  And a full-copy givn-propose skill installed by an earlier version
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the command exits 0
+               ✔  And the file ".opencode/skills/givn-propose/SKILL.md" directs the author to the proposal instruction
+               ✔  And the file ".opencode/skills/givn-propose/SKILL.md" carries no built-in rule text
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                           EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.19s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(initialize-a-project): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(initialize-a-project): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            500ee1c4 — feat(initialize-a-project): <release note>; body: Scenario: A full copy installed by an earlier version is reconciled to the direction
             ```
 
 - [ ] initialize-a-project: The project-start block renders its resident rules from the tasks instruction
