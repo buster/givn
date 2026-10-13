@@ -56,8 +56,8 @@ fn active_project(world: &mut GivnWorld) {
 }
 
 /// Append an `extensions:` block (the caller supplies the indented body) to
-/// the project's config.
-fn write_extensions(env: &common::TestEnv, body: &str) {
+/// the project's config. Shared with the serve-extended-rules fixtures.
+pub(crate) fn write_extensions(env: &common::TestEnv, body: &str) {
     let path = env.path("givn/config.yaml");
     let mut config = fs::read_to_string(&path).expect("read givn/config.yaml");
     if !config.ends_with('\n') {
@@ -82,8 +82,9 @@ fn remove_extensions(env: &common::TestEnv) {
     fs::write(&path, kept).expect("write givn/config.yaml");
 }
 
-/// Replace the appended `extensions:` block with a new one.
-fn replace_extensions(env: &common::TestEnv, body: &str) {
+/// Replace the appended `extensions:` block with a new one. Shared with the
+/// serve-extended-rules fixtures.
+pub(crate) fn replace_extensions(env: &common::TestEnv, body: &str) {
     remove_extensions(env);
     write_extensions(env, body);
 }

@@ -3975,7 +3975,7 @@ sections in the same feature order.
         - Step file: `tests/steps/serve_extended_rules_steps.rs` (shared served-instruction step beside `served_instruction(env, id)`).
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The built-in rules are served alone when no extension exists"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
             $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The built-in rules are served alone when no extension exists"
             Feature: The served instruction carries the built-in rules and the project's extension
@@ -4013,7 +4013,7 @@ sections in the same feature order.
             command passed again. No production switch, exception, fake
             success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
             none — assertion migration and binding only. The built-in serving
             path (resolve → render → print) already delivers the specs rules
@@ -4037,14 +4037,15 @@ sections in the same feature order.
             1 scenario (1 passed)
             4 steps (4 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
             $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.18s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(serve-extended-rules): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(serve-extended-rules): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            d3738387 — feat(serve-extended-rules): <release note>; body: Scenario: The built-in rules are served alone when no extension exists
             ```
 
 - [ ] serve-extended-rules: The extension adds to the built-in rules without replacing or reordering them
@@ -4056,15 +4057,81 @@ sections in the same feature order.
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The extension adds to the built-in rules without replacing or reordering them"`
       - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The extension adds to the built-in rules without replacing or reordering them"
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: The extension adds to the built-in rules without replacing or reordering them
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  And the extension carries the rule "Never write a release note"
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then every built-in rule of the proposal instruction remains in the served content
+               ✔  And the built-in rules appear before the marked extension section
+               ✔  And the contradicting project rule appears beside the built-in release-note rule
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            7 steps (7 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the append mechanism is delivered by
+            the earlier instruction-extension scenarios; the extension is
+            appended after the unmodified built-in content, so this is the
+            recorded ORACLE_RED case. The first binding run exposed a
+            fixture-comparison flaw, not a product gap: the text path appends a
+            trailing `Skill to load now:` line, so the prefix comparison now
+            normalizes that routing line on both captures.
+            ORACLE_RED calibration (controlled omission of the delivered excerpt):
+            $ (temporarily rewrote "carries the release note as its message subject" → "carries the release note in its message subject" in assets/instructions/proposal.md; same scoped command)
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  And the extension carries the rule "Never write a release note"
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then every built-in rule of the proposal instruction remains in the served content
+               ✔  And the built-in rules appear before the marked extension section
+               ✘  And the contradicting project rule appears beside the built-in release-note rule
+                  Step panicked. Captured output: the served proposal content is missing the built-in release-note rule ("carries the release note as its message subject") beside "Never write a release note": # Instruction: proposal
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            7 steps (6 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/proposal.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
             ```
       - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the serving path and the marked append section are
+            delivered by the earlier instruction-extension scenarios. This
+            scenario adds the shared recording step (built-in capture, the
+            `extensions:` block, the expected-rule record), the
+            `the extension carries the rule` step, and the three ordering /
+            contradiction assertions in
+            tests/steps/serve_extended_rules_steps.rs; the write/replace
+            helpers in tests/steps/instruction_extension_steps.rs become
+            `pub(crate)` for reuse.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: The extension adds to the built-in rules without replacing or reordering them
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  And the extension carries the rule "Never write a release note"
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then every built-in rule of the proposal instruction remains in the served content
+               ✔  And the built-in rules appear before the marked extension section
+               ✔  And the contradicting project rule appears beside the built-in release-note rule
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            7 steps (7 passed)                                            EXIT=0
             ```
       - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.35s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 7 steps (7 passed)  EXIT=0
             ```
       - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(serve-extended-rules): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
