@@ -12,10 +12,16 @@ use cucumber::{given, then, when};
 
 use crate::common;
 use crate::steps::GivnWorld;
-use crate::steps::serve_extended_rules_steps::{expected_rule, record_expected_rule};
+use crate::steps::serve_extended_rules_steps::{
+    expected_rule, extension_fixture_dir, record_expected_rule,
+};
 
 /// The rule the fixture records for the proposal instruction.
 const RECORDED_PROPOSAL_RULE: &str = "Keep proposals under 500 words";
+
+/// The fixture file that records the installed-guidance bytes before a
+/// removal, for the byte-for-byte comparison.
+const GUIDANCE_SNAPSHOT: &str = "guidance-before";
 
 fn env(world: &GivnWorld) -> &common::TestEnv {
     world
@@ -103,6 +109,29 @@ fn guidance_files(env: &common::TestEnv) -> Vec<PathBuf> {
     files
 }
 
+/// Write a fixture state file (creating the state directory).
+fn write_state(env: &common::TestEnv, name: &str, bytes: &[u8]) {
+    let dir = extension_fixture_dir(env);
+    fs::create_dir_all(&dir).unwrap_or_else(|error| panic!("create {}: {error}", dir.display()));
+    fs::write(dir.join(name), bytes).unwrap_or_else(|error| panic!("record {name}: {error}"));
+}
+
+/// The exact bytes of every installed guidance file, with deterministic
+/// ordering, for the byte-for-byte comparison.
+fn guidance_snapshot(env: &common::TestEnv) -> Vec<u8> {
+    let mut snapshot = Vec::new();
+    for path in guidance_files(env) {
+        let relative = path
+            .strip_prefix(env.root())
+            .expect("guidance file under the project root");
+        snapshot.extend_from_slice(relative.to_string_lossy().as_bytes());
+        snapshot.push(0);
+        snapshot.extend_from_slice(&fs::read(&path).expect("read guidance file"));
+        snapshot.push(0);
+    }
+    snapshot
+}
+
 #[given("a Givn project with an active change and an extension for the proposal instruction")]
 fn project_with_recorded_proposal_extension(world: &mut GivnWorld) {
     active_project(world);
@@ -112,6 +141,7 @@ fn project_with_recorded_proposal_extension(world: &mut GivnWorld) {
         &format!("  proposal:\n    - {RECORDED_PROPOSAL_RULE}\n"),
     );
     record_expected_rule(env, "proposal", RECORDED_PROPOSAL_RULE);
+    write_state(env, GUIDANCE_SNAPSHOT, &guidance_snapshot(env));
 }
 
 #[when(
@@ -121,6 +151,12 @@ fn developer_changes_proposal_extension(world: &mut GivnWorld, rule: String) {
     let env = env(world);
     replace_extensions(env, &format!("  proposal:\n    - {rule}\n"));
     record_expected_rule(env, "proposal", &rule);
+}
+
+#[when("the developer removes the project's extension for the proposal instruction")]
+fn developer_removes_proposal_extension(world: &mut GivnWorld) {
+    let env = env(world);
+    remove_extensions(env);
 }
 
 #[then("no installed guidance file carries the changed rule")]
@@ -151,5 +187,17 @@ fn no_revision_carries_the_changed_rule(world: &mut GivnWorld) {
     assert!(
         found.is_empty(),
         "a revision carries the extension rule {rule:?}: {found}"
+    );
+}
+
+#[then("the installed guidance is unchanged")]
+fn installed_guidance_is_unchanged(world: &mut GivnWorld) {
+    let env = env(world);
+    let before = fs::read(extension_fixture_dir(env).join(GUIDANCE_SNAPSHOT))
+        .expect("the Given recorded the installed guidance snapshot");
+    let after = guidance_snapshot(env);
+    assert_eq!(
+        before, after,
+        "the installed guidance is not byte-for-byte the pre-removal snapshot"
     );
 }

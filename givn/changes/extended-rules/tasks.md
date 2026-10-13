@@ -418,27 +418,74 @@ sections in the same feature order.
             dcb785cb — feat(visual-design-contract): <release note>; body: Scenario: Synchronized authoring guidance carries the classification, driver, and persona rules
             ```
 
-- [ ] instruction-extension: Changing an extension changes the next served content and touches nothing else
+- [x] instruction-extension: Changing an extension changes the next served content and touches nothing else
       Design constraints:
         - Extension source: the project-owned `extensions:` map in `givn/config.yaml`; `src/config/extensions.rs::load` reads it on every request (no render cache, nothing written); the change is a fixture edit, not a command.
         - Assertions: the served proposal content carries "Keep proposals under 300 words"; no installed guidance file carries the changed rule; no revision carries the changed rule — check the generated files and the repository history, not the config file.
         - Step file: `tests/steps/instruction_extension_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::Changing an extension changes the next served content and touches nothing else"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::Changing an extension changes the next served content and touches nothing else"
+            Feature: A project extends an instruction's built-in rules
+              Scenario: Changing an extension changes the next served content and touches nothing else
+               ✔  Given a Givn project with an active change and an extension for the proposal instruction
+               ✔  When the developer changes the project's extension for the proposal instruction to the rule "Keep proposals under 300 words"
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✘  Then the served content carries the changed rule
+                  Step panicked. Captured output: the served proposal content carries no marked extension section: # Instruction: proposal
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: the product ignores the project's extension map
+            entirely — `givn instructions proposal` succeeds but serves the
+            built-in rules alone, so the changed rule is absent and no
+            `## Project extension` section exists.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            src/config/extensions.rs (new: load — validate + warn per rejected entry;
+              append — the marked ## Project extension section)
+            src/config/overlay.rs (OverlayDoc gains the lenient `extensions` entry
+              list: raw values in document order, repeated key last-wins, duplicate
+              keys and malformed values never fail a command)
+            src/config/mod.rs (register the new module)
+            src/cli/instructions.rs (append the project's rules on the text and JSON
+              serve paths, both the artifact and the non-artifact fallback)
+            assets/config.yaml.tmpl (documents `extensions:` in the managed comment
+              scaffold so new and upgraded projects see the key)
+            tests/steps/serve_extended_rules_steps.rs (request/record fixtures plus
+              the changed-rule assertion)
+            tests/steps/instruction_extension_steps.rs (fixture, change, and
+              no-file/no-revision assertions)
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after the production edits)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: Changing an extension changes the next served content and touches nothing else
+               ✔  Given a Givn project with an active change and an extension for the proposal instruction
+               ✔  When the developer changes the project's extension for the proposal instruction to the rule "Keep proposals under 300 words"
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the served content carries the changed rule
+               ✔  And no installed guidance file carries the changed rule
+               ✔  And no revision carries the changed rule
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.96s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            7c842b31 — feat(instruction-extension): <release note>; body: Scenario: Changing an extension changes the next served content and touches nothing else
             ```
 
 - [ ] instruction-extension: Removing an extension restores the built-in rules alone

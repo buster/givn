@@ -19,7 +19,7 @@ Feature: A project extends an instruction's built-in rules
     And no installed guidance file carries the changed rule
     And no revision carries the changed rule
 
-  @givn.added @wip
+  @givn.added
   Scenario: Removing an extension restores the built-in rules alone
     Given a Givn project with an active change and an extension for the proposal instruction
     When the developer removes the project's extension for the proposal instruction
