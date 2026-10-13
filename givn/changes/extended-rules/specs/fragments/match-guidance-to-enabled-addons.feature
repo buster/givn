@@ -2,7 +2,7 @@
 
 Feature: Match guidance to enabled addons
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Review guidance omits the Arc42 section when the Arc42 addon is disabled
     Given a Givn project with the arc42 addon disabled and the skills synchronized
     Then the served review instruction omits the Arc42 implementation conformance section
