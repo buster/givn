@@ -2,7 +2,7 @@
 
 Feature: prose-consolidation
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Generated guidance points to the canonical E2E policy
     Given  a Givn project with all agent skill targets and optional guidance enabled
     When  the consumer synchronizes the selected agent guidance through the Givn CLI
