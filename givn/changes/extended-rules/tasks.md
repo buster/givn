@@ -192,7 +192,7 @@ sections in the same feature order.
 
 ## Strict-mode proof and runner setup (do first)
 
-- [ ] Setup: confirm the Gherkin runner and its strict mode, create the step-definition skeleton, and record `verify.command`
+- [x] Setup: confirm the Gherkin runner and its strict mode, create the step-definition skeleton, and record `verify.command`
       Design constraints:
         - Runner: `tests/features_runner.rs` executes the `.feature` files for both
           scopes — the permanent `givn/specs/` (`./run-tests.sh`) and this change's
@@ -234,6 +234,36 @@ sections in the same feature order.
         3. Remove the probe file and the temporary binding immediately; re-run the
            discovery listing to confirm 68 units and no probe title.
       ```
+      $ sed -n '55p;64,65p;151p' tests/features_runner.rs
+        .fail_on_skipped()
+    if stats.failed > 0 || stats.skipped > 0 {
+        std::process::exit(1);
+        .fail_on_skipped()
+      $ rg -n "command:|e2e_command:" givn/commands.yaml
+      2:  command: "./run-tests.sh"
+      3:  e2e_command: "./run-tests.sh --e2e"
+
+      Discovery (GIVN_FEATURES=givn/changes/extended-rules/specs):
+      $ GIVN_CUCUMBER_TAGS=''        cargo nextest list --locked --test features_runner → 68 units
+      $ GIVN_CUCUMBER_TAGS='not @e2e' cargo nextest list --locked --test features_runner → 56 units
+      $ GIVN_CUCUMBER_TAGS='@e2e'      cargo nextest list --locked --test features_runner → 12 units
+
+      Probe 1 — undefined step (non-zero required):
+      $ GIVN_FEATURES=givn/changes/extended-rules/probe cargo test --locked --test features_runner -- --exact "probe.feature::Probe with an undefined step"
+            Step doesn't match any function
+        1 scenario (1 failed), 1 step (1 failed)
+        error: test failed, to rerun pass `--test features_runner`        EXIT=101
+
+      Probe 2 — `unimplemented!()` stub (non-zero required):
+      $ (same command after binding the step with unimplemented!())
+            Step panicked. Captured output: not implemented
+        1 scenario (1 failed), 1 step (1 failed)
+        error: test failed, to rerun pass `--test features_runner`        EXIT=101
+
+      Probes removed; re-listing: 68 units, no probe title.
+      Skeletons created: tests/steps/serve_extended_rules_steps.rs,
+      tests/steps/instruction_extension_steps.rs; registered in
+      tests/steps/mod.rs. No runner or config edit was needed.
       ```
       - [ ] COMMIT: commit the runner/config edit only if it actually changed
             (expected: none — strict mode and the commands already exist) plus the
