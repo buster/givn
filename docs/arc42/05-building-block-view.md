@@ -49,7 +49,7 @@ flowchart TD
 | `main.rs` | Parse `clap` commands, dispatch, and map results to process exit. |
 | `cli::init` | Create `givn/{specs,changes,archive}`, write config and commands scaffolds, enable addons unless `--no-addons`, prompt agent targets, and sync outputs. |
 | `cli::new` | Validate change id, create a change directory, scaffold proposal unless skipped, and write `.givn-skip` when requested. |
-| `cli::instructions` | Resolve effective artifact instructions and non-artifact policy instructions with optional JSON metadata; provide context-aware generic guidance without an artifact id. |
+| `cli::instructions` | Resolve effective artifact instructions and non-artifact policy and step instructions with optional JSON metadata; render addon-conditional sections against the effective addon flags; append the project's extension under the marked section; provide context-aware generic guidance without an artifact id. |
 | `cli::lint` | Parse features, report WIP/PENDING, run the default tree-wide overlap scan with exit precedence 1, 3, 2, 0, report advisory change-seed status findings and dangling persona references, and classify every finding as `advisory`, `finding`, or `blocking` in the rendered and JSON output. |
 | `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks; named review also runs the overlap gate. Review executes `integrity` and the run-declaration check; scenario execution belongs to the archive verification. `givn check rules` reports tracked and reachable-history rules and exits non-zero on a violation. |
 | `cli::rewrite_history` | The explicit, opt-in history rewrite: refuses under `versioned` and on Fossil, requires a clean checkout and confirmation, purges generated rules from reachable history through `git-filter-repo` while keeping every file, re-scans, and reports the new revision plus the force-push boundary. |
@@ -59,7 +59,7 @@ flowchart TD
 | `cli::commit` | Create one attributed revision through the selected backend: stage the named paths (or, under the `local-only` policy, every pending project path except `AGENTS.md` and the strict rules), stamp the managed attribution trailer when context is active, and commit; refuse a project without a backend by name. |
 | `cli::readme` | Scaffold the README from the marked template with the development and run managed blocks, run the deterministic completeness check behind `givn readme check`, and refresh the development and run managed blocks from the effective command file at archive time. |
 | `cli::addons` | Toggle addon flags; Arc42 enable scaffolds fixed `docs/arc42/` files without overwriting existing files. |
-| `cli::skills` | Synchronize the selected skill targets, their commands, and their attribution integrations. |
+| `cli::skills` | Synchronize the selected skill targets, their commands, and their attribution integrations; refresh the project-start block with its resident rules rendered from the canonical tasks instruction. |
 | `cli::attribution` | Stamp commit messages from optional runtime attribution, format Claude Bash hook responses, and install the checked-in Git hook with a local dispatcher. |
 | `cli::upgrade` | Refresh managed config comments, preserve uncommented overrides, backfill the `run:` scaffold into `givn/commands.yaml` when the key is absent, and dispatch the exact legacy migration preparation route. |
 | `cli::migration` | Load the release migration catalog, resolve ordered bundle paths, preflight the selected backend state through the SCM seam (a dirty checkout or a missing backend is refused before any write), calculate the managed-path allowlist (including `givn/commands.yaml` for the run backfill), create managed/migration revisions on the selected backend, and write the aggregate maintenance plan. |
@@ -69,6 +69,7 @@ flowchart TD
 | `config::manifest` | Define artifact, apply, verify, coverage, addon, hook, and run-declaration data structures. |
 | `config::overlay` | Apply `givn/config.yaml` and then `givn/commands.yaml`, expand Arc42, and validate graph references/cycles. |
 | `config::cascade` | Resolve project override assets before embedded core or addon assets. |
+| `config::extensions` | Load the `extensions:` map from `givn/config.yaml`, warn and drop an unknown instruction id or a malformed entry, and render the marked project-extension section appended to the served instruction. |
 | `skills::rules` | Resolve the generated-rules policy, write the file-precise ignore entries in both destinations, transition tracked rules to local-only without deleting files, and report tracked and reachable-history occurrences. |
 | `gherkin::parse` | Parse feature files, collect WIP and E2E tags, and recursively collect `.feature` paths. |
 | `gherkin::usecase_md` | Parse strict `usecase.md` and `fragment.md` documents, identities, goal levels, interactions, Personas, and typed relationships. |
