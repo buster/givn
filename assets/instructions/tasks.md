@@ -57,6 +57,25 @@ at every phase, not just RED. Unimplemented steps use:
 A step body is exempt only once it has a real assertion (GREEN) or performs
 a real reused setup action. Reuse is never an excuse for a new step to be empty.
 
+## Resident rules (project-start block)
+
+The managed project-start block (`AGENTS.md`) renders the section between the
+`givn:resident-rules` markers verbatim; it is part of this served instruction,
+so the text has exactly one home.
+
+<!-- givn:resident-rules:begin -->
+- Tick off each task in `tasks.md` immediately after completing it —
+  an unchecked box means that scenario is not done. Never batch-check
+  boxes at the end.
+- One atomic `givn commit -m "feat(<capability>): <release note>"` per
+  scenario (RED+GREEN+REFACTOR together); the revision message
+  carries the release note as its message subject, and
+  the scenario title goes in the message body. It works on Git and Fossil. A
+  raw Git commit is stamped by the hook, a raw Fossil check-in is not. No
+  commit, or a commit touching only the spec, means the work is not done.
+  Record the revision identifier in tasks.md.
+<!-- givn:resident-rules:end -->
+
 ## TDD loop — non-@e2e scenarios (in .feature order)
 
 ```
