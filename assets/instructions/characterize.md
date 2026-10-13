@@ -57,7 +57,9 @@ When verify fails and infrastructure is sound:
 After all tasks are checked, a review subagent:
 
 - Applies reverse-mode rules (`givn instructions review-reverse`):
-  - Runs coverage (record the number, classify gaps).
+  - Classifies coverage gaps from the most recent measured evidence — the
+    archive verification receipt or the merged report — plus static
+    inspection; review does not re-run an instrumented pass.
   - Dead code → flag as `@givn.removed` candidate (do NOT delete).
   - Missing test → flag as `@givn.added` candidate (do NOT add during review).
   - Confirms behaviour-preservation invariant (all characterization tests

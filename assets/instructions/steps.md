@@ -14,6 +14,11 @@ The `.feature` file is the sole source of scenario identity. Step text is
 the contract; step definitions are shared glue the runner binds to
 scenarios. Never maintain a parallel hand-written test file.
 
+When prose — a design note, a task description, or the implementation context
+around you — disagrees with the `.feature` file, the `.feature` file is the
+executable authority: fix the prose, never silently reinterpret or weaken the
+scenario.
+
 ## Step definition locations
 
 One file per capability — never a single file for the whole change. A

@@ -7,6 +7,17 @@ This review runs after design is complete — the full planning layer exists
 not started. Its purpose is to catch scope, architecture, and testability
 problems now, when changing a decision costs a markdown edit, not a rewrite.
 
+## Mandatory, non-skippable, fresh context
+
+Never skip this step. Never run it as a continuation of the session that wrote
+the design, and never spawn it from the designing context — a model grilling
+its own just-written plan confirms its own assumptions instead of finding
+blind spots. Spawn both subagents via the Task tool into a genuinely fresh
+context. If the harness lets you choose a model or reasoning-effort tier for
+the grilling subagent, choose the most capable one available and set
+reasoning/thinking effort to high — a fast tier that rubber-stamps is worse
+than no review, because it creates false confidence.
+
 **Two phases, both required:**
 
 ### 1. Grilling — relentless interrogation of the plan
@@ -25,6 +36,18 @@ Required branches — cover every one (or explicitly record "no issue found"):
   but absent from the spec? Error paths? Boundary conditions?
 - **Testability** — can every scenario actually fail in RED with no production
   code? Do the Then-steps assert concrete observable values, not just "it ran"?
+  Does the design name a concrete strict-mode mechanism, a not-implemented stub
+  pattern, and a single-scenario run command? Missing or vague on any of the
+  three is a finding — it is the root cause of fabricated changes.
+- **E2E fidelity** — read the spec instruction served by
+  `givn instructions specs --change <id>` and verify its normalized action
+  scope, interface type, real driver, and primary-assertion rules are applied
+  without redefinition. A silent redefinition, an HTTP/fetch plan for a
+  browser UI, or duplicate coverage of one action is a finding.
+- **Interaction Coverage** — the interaction inventory lives in the owning
+  use-case document (`usecase.md` §Interactions), never in a `.feature` comment
+  block. Every inventory entry must appear as a row in the design's
+  Interaction Coverage Matrix; an entry without a matching row is a finding.
 - **Risk** — what is the single most likely way this plan fails during
   implementation? What is the mitigation?
 - **Use-case and Persona context** — confirm use-case identity, contract,
@@ -114,6 +137,11 @@ After all questions are answered, a hardening subagent applies decisions:
 - Update `design.md` if any tech decisions changed.
 - Add missing scenarios to `specs/**/*.feature` with `@givn.added @wip` if any
   were identified; run `givn lint --change <id>` to confirm exit 0 or 2.
+- **Never remove `@e2e` tags** from any scenario. If the e2e infrastructure is
+  not buildable yet, record a tracked open question in `design-review.md` with
+  a concrete date or condition for resolving it — never a tag removal. An
+  `@e2e` scenario with an unconfigured runner is an unenforced gap; tag
+  removal only hides it.
 - Do not write `tasks.md` — that is the next artifact.
 - Do not change the proposal unless grilling revealed a fundamental scope
   mismatch and the user decided to fix it — flag that as a blocker instead.
