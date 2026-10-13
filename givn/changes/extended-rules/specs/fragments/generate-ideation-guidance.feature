@@ -2,7 +2,7 @@
 
 Feature: Generate ideation guidance
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation skill ships without any addon enabled
     Given  a project root with givn/ initialised without addons
     When  the user runs `givn skills sync`

@@ -958,27 +958,68 @@ sections in the same feature order.
             e8231e5f — feat(instruction-extension): <release note>; body: Scenario: A repeated instruction key keeps the last entry
             ```
 
-- [ ] instruction-extension: An extension extends a policy and a step instruction alike
+- [x] instruction-extension: An extension extends a policy and a step instruction alike
       Design constraints:
         - The map's ids may name a policy instruction (`dialog`) and a step instruction (`ideation`); both resolve through the non-artifact fallback and require no change context.
         - Assertions: each served content carries its project's rule under the marked `## Project extension` section; the built-in rules stay unmodified (extension adds, never overrides, suppresses, or reorders).
         - Step file: `tests/steps/instruction_extension_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::An extension extends a policy and a step instruction alike"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::An extension extends a policy and a step instruction alike"
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An extension extends a policy and a step instruction alike
+               ✔  Given a Givn project with an active change
+               ✔  When the project's configuration records a rule for the dialog policy and for the ideation step
+               ✔  And the agent requests the dialog policy through the Givn CLI
+               ✔  And the agent requests the ideation instructions through the Givn CLI
+               ✘  Then each served content carries its project's rule in the marked extension section
+                  Step panicked. Captured output: the served ideation content carries no marked extension section:
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: the `ideation` step instruction does not exist yet,
+            so `givn instructions ideation` is refused with the unknown-artifact
+            error; the served ideation content is empty and carries no extension
+            section. (The `dialog` policy request already serves its extension.)
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            assets/instructions/ideation.md (new canonical step-instruction asset:
+              the minimum content that makes the id resolve through the non-artifact
+              fallback and serve; the full ideation discipline migration is owned by
+              the generate-ideation-guidance scenarios, whose content assertions
+              bind each excerpt as it moves out of the givn-ideation skill template)
+            tests/steps/serve_extended_rules_steps.rs (recorded-served-ids fixture
+              plus the each-served-content assertion)
+            tests/steps/instruction_extension_steps.rs (policy-and-step fixture step)
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after creating assets/instructions/ideation.md)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An extension extends a policy and a step instruction alike
+               ✔  Given a Givn project with an active change
+               ✔  When the project's configuration records a rule for the dialog policy and for the ideation step
+               ✔  And the agent requests the dialog policy through the Givn CLI
+               ✔  And the agent requests the ideation instructions through the Givn CLI
+               ✔  Then each served content carries its project's rule in the marked extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.28s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            1844715d — feat(instruction-extension): <release note>; body: Scenario: An extension extends a policy and a step instruction alike
             ```
 
 - [ ] generate-ideation-guidance: The ideation skill ships without any addon enabled

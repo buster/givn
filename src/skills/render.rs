@@ -41,9 +41,18 @@ pub fn render_template(
     ctx: &SkillContext<'_>,
     addons: &[(&str, bool)],
 ) -> Result<String> {
-    let lines: Vec<&str> = template.lines().collect();
-    let resolved = render_lines(&lines, addons)?;
+    let resolved = render_conditionals(template, addons)?;
     Ok(substitute_vars(&resolved, ctx))
+}
+
+/// Resolve `{{#if addons.<name>}}` … `{{else}}` … `{{/if}}` blocks against
+/// `addons` and return the selected branches. Fail-closed: an unknown addon
+/// name or an unbalanced conditional is an error. This is the request-path
+/// entry point — the served instruction carries the same conditional format
+/// as the skill templates, without the context-variable substitution step.
+pub fn render_conditionals(template: &str, addons: &[(&str, bool)]) -> Result<String> {
+    let lines: Vec<&str> = template.lines().collect();
+    render_lines(&lines, addons)
 }
 
 /// Replace the four template variables. Plain string substitution, same as the
