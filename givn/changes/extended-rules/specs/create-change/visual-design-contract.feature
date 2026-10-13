@@ -17,7 +17,7 @@ Feature: Visual Design Contract
     And the served steps instruction contains "animations are frozen"
     And the served steps instruction contains "reports/"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Synchronized authoring guidance carries the classification, driver, and persona rules
     Given a givn project with all agent skill targets enabled and an active change
     When the user runs `givn skills sync`
