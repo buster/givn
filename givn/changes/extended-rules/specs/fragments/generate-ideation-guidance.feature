@@ -23,7 +23,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "In practice:"
     And  the served ideation instruction contains "Rejected:"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation guidance binds personas to the artifacts that affect them
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
