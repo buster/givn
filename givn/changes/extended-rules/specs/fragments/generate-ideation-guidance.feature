@@ -212,7 +212,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "drawn as a rendered mermaid canvas"
     And  the served ideation instruction contains "aggregate (the consistency boundary the command changes)"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation guidance keeps aggregates to declared consistency boundaries
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
