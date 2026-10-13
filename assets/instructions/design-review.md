@@ -63,8 +63,8 @@ Required branches — cover every one (or explicitly record "no issue found"):
   is supporting evidence only. This policy is authoring guidance, not runtime
   enforcement, and this artifact must not duplicate the complete procedure or
   verdict schema.
-- **Architecture documentation (arc42)** — N/A if the arc42 addon is not
-  enabled (`addons.arc42` in `givn/config.yaml`). Otherwise, do not just
+{{#if addons.arc42}}
+- **Architecture documentation (arc42)** — do not just
   audit what `arc42.md` claims — independently re-derive the expected
   chapter set first, then diff against the claim:
   1. Read proposal.md/specs/design.md yourself and walk all 12 rows of the
@@ -97,6 +97,7 @@ content violates the diagram policy — treat this as a
   `arc42.md`'s `STATUS: DONE` is a self-report from the same agent that
   wrote the docs — not verification; treat any mismatch, including a
   missing row, as a finding.
+{{/if}}
 
 If a question can be answered by exploring the existing codebase, explore it
 and record the finding — do not burden the user with it.

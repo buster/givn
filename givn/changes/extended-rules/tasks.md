@@ -3593,27 +3593,73 @@ sections in the same feature order.
             2c233573 — feat(instruction-integrity): <release note>; body: Scenario: Every generated direction is invokable in its documented context
             ```
 
-- [ ] match-guidance-to-enabled-addons: Review guidance omits the Arc42 section when the Arc42 addon is disabled
+- [x] match-guidance-to-enabled-addons: Review guidance omits the Arc42 section when the Arc42 addon is disabled
       Design constraints:
         - Condition seam: the Arc42 implementation conformance section moves out of the review skill/command templates into `assets/instructions/review.md` wrapped in `{{#if addons.arc42}}`; `src/skills/render.rs` gains `render_conditionals` (the existing `render_lines` semantics: fail-closed on an unknown addon key or an unbalanced conditional); `src/cli/instructions.rs` renders with the project's enabled addons before printing.
         - Assertions: the served review instruction omits the Arc42 implementation conformance section; the generated review skill and command carry no Arc42 section; the generated review skill directs the reviewer to the review instruction.
         - Step file: `tests/steps/template_conditional_rendering_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::Review guidance omits the Arc42 section when the Arc42 addon is disabled"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::Review guidance omits the Arc42 section when the Arc42 addon is disabled"
+            Feature: Match guidance to enabled addons
+              Scenario: Review guidance omits the Arc42 section when the Arc42 addon is disabled
+               ✔  Given a Givn project with the arc42 addon disabled and the skills synchronized
+               ✘  Then the served review instruction omits the Arc42 implementation conformance section
+                  Step panicked. Captured output: the served review instruction carries the Arc42 section:
+                  # Instruction: review ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (1 passed, 1 failed)                                 EXIT=101
+            OLD_PRODUCT_RED — `assets/instructions/review.md` serves the Arc42
+            implementation conformance section unconditionally, with a prose N/A
+            clause instead of a conditional block. Every step is bound with a
+            real assertion; the served-content step is the one that fails.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            assets/instructions/review.md — the Arc42 implementation conformance
+              section is now a `{{#if addons.arc42}}` block; the disabled case
+              carries the `{{else}}` note with the N/A sentence (the permanent
+              `Arc42-disabled review instructions mark conformance as not
+              applicable` scenario requires that literal on the served surface,
+              so it is kept as the else branch instead of being deleted).
+            tests/steps/template_conditional_rendering_steps.rs — new real steps:
+              `the served review instruction omits …` (creates the fixture's
+              single active change when absent, then uses the shared
+              `served_instruction` helper), the two `carries no …` bindings
+              (delegating to the existing assertions), and
+              `the generated review skill directs …`.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after the conditional edit)
+            Feature: Match guidance to enabled addons
+              Scenario: Review guidance omits the Arc42 section when the Arc42 addon is disabled
+               ✔  Given a Givn project with the arc42 addon disabled and the skills synchronized
+               ✔  Then the served review instruction omits the Arc42 implementation conformance section
+               ✔  And the generated review skill carries no Arc42 implementation conformance section
+               ✔  And the generated review command carries no Arc42 implementation conformance section
+               ✔  And the generated review skill directs the reviewer to the review instruction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                           EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.24s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
+            $ (also re-ran the permanent N/A scenario to guard the kept else branch)
+              fragments/review-architecture-documentation.feature::Arc42-disabled
+              review instructions mark conformance as not applicable → 5 steps (5 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(match-guidance-to-enabled-addons): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(match-guidance-to-enabled-addons): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            2f3cb6fb — feat(match-guidance-to-enabled-addons): <release note>; body: Scenario: Review guidance omits the Arc42 section when the Arc42 addon is disabled
             ```
 
 - [ ] match-guidance-to-enabled-addons: Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled

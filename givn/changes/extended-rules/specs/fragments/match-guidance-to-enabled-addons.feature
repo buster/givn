@@ -10,7 +10,7 @@ Feature: Match guidance to enabled addons
     And the generated review command carries no Arc42 implementation conformance section
     And the generated review skill directs the reviewer to the review instruction
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled
     Given a Givn project with the arc42 addon disabled and the skills synchronized
     Then the served design-review instruction omits the Architecture documentation (arc42) branch
