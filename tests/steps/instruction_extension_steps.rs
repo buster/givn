@@ -159,6 +159,26 @@ fn developer_removes_proposal_extension(world: &mut GivnWorld) {
     remove_extensions(env);
 }
 
+#[when(regex = r#"^the project's configuration names the unknown instruction "([^"]+)"$"#)]
+fn configuration_names_the_unknown_instruction(world: &mut GivnWorld, id: String) {
+    let env = env(world);
+    write_extensions(
+        env,
+        &format!("  {id}:\n    - Keep proposals under 250 words\n"),
+    );
+}
+
+#[then(regex = r#"^a warning names the unknown instruction "([^"]+)"$"#)]
+fn warning_names_the_unknown_instruction(world: &mut GivnWorld, id: String) {
+    let env = env(world);
+    let warning = format!("warning: ignoring extension for unknown instruction '{id}'");
+    let stderr = crate::steps::serve_extended_rules_steps::recorded_stderr(env, "proposal");
+    assert!(
+        stderr.contains(&warning),
+        "no warning names the unknown instruction in the request stderr: {stderr:?}"
+    );
+}
+
 #[then("no installed guidance file carries the changed rule")]
 fn no_installed_guidance_file_carries_the_changed_rule(world: &mut GivnWorld) {
     let env = env(world);

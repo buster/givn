@@ -156,6 +156,15 @@ pub(crate) fn recorded_stdout(env: &common::TestEnv, id: &str) -> String {
         .unwrap_or_else(|error| panic!("no served output recorded for {id}: {error}"))
 }
 
+/// The recorded served stderr of `id`.
+pub(crate) fn recorded_stderr(env: &common::TestEnv, id: &str) -> String {
+    let path = extension_fixture_dir(env)
+        .join("served")
+        .join(format!("{id}.stderr"));
+    fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("no served stderr recorded for {id}: {error}"))
+}
+
 /// The marked extension section of a served content, panicking when the
 /// section is absent.
 pub(crate) fn extension_section<'a>(id: &str, content: &'a str) -> &'a str {
