@@ -10,7 +10,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  the returned guidance does not offer advisory or blocking retrieval paths
     And  the returned guidance keeps the deterministic spec toolchain wording
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The specs guidance carries the capability placement test
     Given  a Givn project with an active change
     When  the author requests the specs instructions through the Givn CLI

@@ -3301,27 +3301,88 @@ sections in the same feature order.
             59ff6a90 — feat(generate-ideation-guidance): <release note>; body: Scenario: The generated ideation files direct the agent to the ideation instruction
             ```
 
-- [ ] instruction-integrity: Retrieval guidance distinguishes build capabilities
+- [x] instruction-integrity: Retrieval guidance distinguishes build capabilities
       Design constraints:
         - Served-content seam: `givn instructions specs --change <active>` reads `assets/instructions/specs.md`; the deterministic spec toolchain wording stays, and engine-backed retrieval commands are never named.
         - Assertions: the returned guidance does not mention engine-backed retrieval commands; does not offer advisory or blocking retrieval paths; keeps the deterministic spec toolchain wording.
         - Step file: `tests/steps/instruction_integrity_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::Retrieval guidance distinguishes build capabilities"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::Retrieval guidance distinguishes build capabilities"
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: Retrieval guidance distinguishes build capabilities
+               ✔  Given a Givn project with an active change
+               ✔  When the author requests the specs instructions through the Givn CLI
+               ✔  Then the returned guidance does not mention engine-backed retrieval commands
+               ✔  And the returned guidance does not offer advisory or blocking retrieval paths
+               ✔  And the returned guidance keeps the deterministic spec toolchain wording
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the served specs asset was already
+            rewritten by the permanent instruction-integrity work
+            (d67d88d6, 98ae9173) and the new Then steps read the real served
+            stdout, so the bound assertions already pass. This is the recorded
+            ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote every "givn lint" → "givn-lint" in
+               assets/instructions/specs.md; same scoped command)
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: Retrieval guidance distinguishes build capabilities
+               ✔  Given a Givn project with an active change
+               ✔  When the author requests the specs instructions through the Givn CLI
+               ✔  Then the returned guidance does not mention engine-backed retrieval commands
+               ✔  And the returned guidance does not offer advisory or blocking retrieval paths
+               ✘  And the returned guidance keeps the deterministic spec toolchain wording
+                  Step panicked. Captured output: returned guidance lost the
+                  deterministic toolchain wording `givn lint`: # Instruction: specs ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                 EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/specs.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the served specs content was delivered by the permanent
+            instruction-integrity work; this scenario binds three real Then
+            steps against the served stdout in
+            tests/steps/instruction_integrity_steps.rs (reusing the
+            `a Givn project with an active change` fixture and the
+            `the author requests the specs instructions through the Givn CLI`
+            step).
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: Retrieval guidance distinguishes build capabilities
+               ✔  Given a Givn project with an active change
+               ✔  When the author requests the specs instructions through the Givn CLI
+               ✔  Then the returned guidance does not mention engine-backed retrieval commands
+               ✔  And the returned guidance does not offer advisory or blocking retrieval paths
+               ✔  And the returned guidance keeps the deterministic spec toolchain wording
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                           EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.43s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-integrity): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-integrity): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            27a50a60 — feat(instruction-integrity): <release note>; body: Scenario: Retrieval guidance distinguishes build capabilities
             ```
 
 - [ ] instruction-integrity: The specs guidance carries the capability placement test
