@@ -196,7 +196,7 @@ The user verifies every new core term before it is used:
 - When a coined term is generic, overloaded, cannot fill its genus slot, or
   has competing candidates, ask the naming question immediately.
 - Every other new core term — a new aggregate root, a use-case goal noun, or
-  an event name introducing a noun — rides the phase's closing checkpoint as
+  an event name introducing a noun — rides the phase term check as
   one question. It reads: "Term check — <phase>: <N> new core terms.
   Confirm all, or name the terms to revisit." Each row gives the term, its
   one-sentence description, and the recorded collision check.
@@ -204,6 +204,9 @@ The user verifies every new core term before it is used:
   naming dialog, one at a time, before confirmation; the other terms stand
   and nothing else re-opens. A name the user supplies
   is collision-checked like any other; a replaced name becomes an anti-term.
+
+The verified name reaches the phase term check or the term's naming dialog,
+before the canvas, use cases, or seeds rely on it.
 
 Use-case drafts use the same identity and contract vocabulary as permanent
 specifications. Each `use-cases/<uc-id>.md` uses this stable schema:

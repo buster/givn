@@ -2985,26 +2985,82 @@ sections in the same feature order.
             ceac6598 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance asks the term check before a phase closes
             ```
 
-- [ ] generate-ideation-guidance: The verified-name gate holds without the addon
+- [x] generate-ideation-guidance: The verified-name gate holds without the addon
       Design constraints:
         - Content seam: the verified-name gate and the phase term check must sit OUTSIDE every `{{#if addons.*}}` block in `assets/instructions/ideation.md` — the fixture initializes `givn/` without addons and still receives them.
         - Assertions (served ideation instruction): contains "the user's verified name", "Term check — <phase>".
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The verified-name gate holds without the addon"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The verified-name gate holds without the addon
+               ✔  Given a project root with givn/ initialised without addons
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "the user's verified name"
+               ✔  And the served ideation instruction contains "Term check — <phase>"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the verified-name gate and the phase
+            term check already sit outside every addon-conditional block, so the
+            no-addon fixture receives them; this scenario binds the no-addon
+            delivery as the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily wrapped the whole term-verification paragraph in
+               `{{#if addons.domain_modeling}}` … `{{/if}}` in
+               assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The verified-name gate holds without the addon
+               ✔  Given a project root with givn/ initialised without addons
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "the user's verified name"
+               ✘  And the served ideation instruction contains "Term check — <phase>"
+                  Step panicked. Captured output: the served ideation instruction is missing "Term check — <phase>": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                 EXIT=101
+            With the paragraph temporarily addon-gated, the no-addon fixture loses
+            the phase term check and exactly the matching assertion fails, so the
+            assertion discriminates on the no-addon path; the excerpt was
+            restored immediately (`git checkout -- assets/instructions/ideation.md`)
+            and the scoped command passed again. No production switch, exception,
+            fake success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the gate and the term check are delivered by the earlier
+            slices and sit outside every addon block
+            (`assets/instructions/ideation.md`); this scenario binds the
+            no-addon served-content assertions on the shared fixture and step.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The verified-name gate holds without the addon
+               ✔  Given a project root with givn/ initialised without addons
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "the user's verified name"
+               ✔  And the served ideation instruction contains "Term check — <phase>"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            f2ad52ff — feat(generate-ideation-guidance): <release note>; body: Scenario: The verified-name gate holds without the addon
             ```
 
 - [ ] generate-ideation-guidance: The ideation command guardrails carry the verified-name rule
