@@ -49,7 +49,7 @@ Feature: Generate ideation guidance
     When  the agent requests the explore instructions through the Givn CLI
     Then  the served explore instruction contains "givn-ideation"
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: A consumer synchronizes skills and every agent target receives the ideation facilitation skill
     Given  a givn project with all agent skill targets enabled
     When  the user runs `givn skills sync`
