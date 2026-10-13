@@ -6732,7 +6732,11 @@ reverse-specific content remains in the instruction.
   migration) had dropped it, so the obligation was restored in the two
   skills, the two commands' delegated prompt blocks, and the ideation skill —
   the obligation is part of the generated files' orchestration, not a rule
-  copy of the served instructions.
+  copy of the served instructions. Revision identifier:
+
+  ```
+  632c2962 — fix(instruction-integrity): keep the delegated-dialog obligation in the generated delegation prompts
+  ```
 
   Evidence (scoped, permanent scope):
   ```
