@@ -9,43 +9,16 @@ description: Archive a completed givn change — runs gate hooks, merges delta s
 
 Archive change `<change-id>`.
 
+**Rules**: the archive rules — the gate, the seed-stamping rule, and the
+guardrails — are served by `givn instructions archive`. Load it and follow it;
+this file owns the invocation orchestration only.
+
 ## Context
 
 - Change: `givn/changes/<change-id>/`
 - Archive target: `givn/archive/<change-id>/`
 - Permanent specs: `givn/specs/`
 - Test runner: `./run-tests.sh`
-
-## Use-case archive behavior
-
-A specs artifact owns both feature deltas and use-case documents. Archive a new
-use case atomically with its capabilities; a replacement must carry a base
-revision and must be rejected before mutation when stale. Preserve accepted
-Persona references and migration evidence. A feature-only change does not need
-to replace a use-case document.
-
-## Archive gate
-
-`givn archive` automatically checks:
-
-1. All `apply.requires` artifacts exist (tasks.md, review.md by default).
-2. All tasks checked (`[x]`) — each with evidence and commit hash
-   filled in. A mass check-in via `sed` or other text replacement is
-   not completion; the review fabrication audit and component diff will
-   catch it and block archive anyway.
-3. `review.md` contains `REVIEW: PASS`.
-4. Hooks of all `apply.requires` artifacts pass (runs `./run-tests.sh`).
-5. **README completeness gate**: with the readme addon enabled, the README
-   must carry no `<!-- givn:todo: ... -->` open placeholders, no scaffold
-   remnants, no damaged managed block, and must not be missing or
-   marker-less. A blocked archive names every unfinished section — fill each
-   one with real content before re-attempting. `givn readme check` reports
-   the same findings any time.
-
-If any gate fails, the archive is refused with a clear error. Do **not**
-bypass a gate failure by mass-checking boxes — go back, genuinely
-complete each task (RED→GREEN→REFACTOR→COMMIT with evidence), then
-re-attempt archive.
 
 ## Steps
 
@@ -59,16 +32,18 @@ re-attempt archive.
    givn check review --change <change-id>
    ```
 
-3. Archive:
+3. Run `givn instructions archive` and apply it, then archive:
    ```
    givn archive --change <change-id>
    ```
 
-This will:
-- Run the gate hooks (test suite must be GREEN).
-- Merge delta `.feature` files into `givn/specs/` (strips `@givn.*` tags;
-  preserves `@e2e` tags — they are not `@givn.*` tags).
-- Move `givn/changes/<change-id>/` to `givn/archive/<change-id>/`.
+   On success the command has run the gate hooks, merged the delta
+   `.feature` files into `givn/specs/` (stripping `@givn.*` tags and
+   preserving `@e2e` tags), and moved the change directory to
+   `givn/archive/<change-id>/`.
+
+4. Apply the seed-stamping rule served by `givn instructions archive` and
+   report the regression-check result even when the archive succeeded.
 
 ## Post-archive: README update
 

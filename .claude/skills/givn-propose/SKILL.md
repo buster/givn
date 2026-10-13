@@ -38,9 +38,8 @@ A change with a user-visible surface (a browser interface, a terminal interface,
 
 Fill in the proposal template sections:
 1. **Release note** — one complete, user-facing sentence naming what the
-   change does. Every revision the change records
-   carries the release note as its message subject, and
-   the scenario title goes in the message body.
+   change does, written per the served proposal instruction. The commit
+   contract lives in `givn instructions tasks --change <change-id>`.
 2. **Problem / Opportunity** — what is wrong or missing?
 3. **Proposed Solution** — what should the system do?
 4. **Out of Scope** — what is not changing?

@@ -3,9 +3,9 @@ name: givn-domain-modeling
 description: >-
   Establish and enforce one domain vocabulary for a givn change. Active from
   the first domain noun: challenge generic or overloaded terms (e.g. "list",
-  "item"), name every aggregate with a domain noun, and record the agreed
-  vocabulary in the project's arc42 glossary so specs, design, and code never
-  drift. Load this during every workflow step of a change
+  "item"), name every aggregate with a domain noun, and keep maintaining the
+  project's arc42 glossary so specs, design, and code never drift. Load this
+  during every workflow step of a change
   — whenever you are naming or discussing domain concepts, or when spec and code terms disagree.
 ---
 
@@ -18,102 +18,21 @@ active discipline, not a one-shot step: challenge fuzzy terms the moment they
 appear and keep the project's glossary current as the language crystallises.
 The design and the specs must use exactly the vocabulary in the glossary.
 
+**Rules**: the domain-modeling discipline — the use-case vocabulary contract,
+the active enforcement rules, the arc42 glossary maintenance, the term
+introduction test, and the naming-question format — is served by
+`givn instructions domain-modeling`. Load it and follow it; this file owns the
+invocation orchestration only.
+
 ## Context
 
+- Change: `givn/changes/<change-id>/`
 - Proposal: `givn/changes/<change-id>/proposal.md`
 - Specs: `givn/changes/<change-id>/specs/`
-- Glossary: `docs/arc42/12-glossary.md` (maintained here)
-- Design (next): `givn/changes/<change-id>/design.md`
+- Glossary: `docs/arc42/12-glossary.md` (maintained there)
 
-## Use-case vocabulary
+## Invocation
 
-The selected use-case `usecase.md` is the domain contract shared by ideation,
-proposal, specs, design, implementation, review, and archive. Keep its stable
-ID and exact terms throughout the change. Treat confirmed Personas as
-stakeholder review lenses and Actors as interaction roles; do not collapse the
-two or invent either one.
-
-## Active discipline
-
-- **Challenge generic or overloaded terms.** When conversation or the specs use
-  a word that could mean many things ("list", "item", "user", "trip"), force a
-  precise domain noun. When the name matters, do not choose it alone: describe
-  the concept in one sentence, propose up to three candidate names with what
-  each evokes and any collision it carries, and accept the user's own name.
-  Example: "You wrote 'list'. The concept is 'the set of items one household
-  plans to buy together'. Candidates: ShoppingList (the household's shared
-  plan), Basket (short, but collides with the store's checkout basket). Which
-  name should the record use, or what is yours?"
-- **Name aggregates with domain nouns.** Every consistency boundary gets a
-  domain noun as its root (`ShoppingList`, not `List`). If the natural name is
-  a framework word, the naming is wrong.
-- **Probe edge-case scenarios.** Stress-test a term by inventing a concrete
-  scenario that forces the boundary explicit (offline add, two phones, trip
-  reset, reconnect).
-- **Cross-reference with code.** Where code names exist, check they match the
-  agreed terms. On disagreement, flag and resolve it here - do not leave spec
-  and code diverging.
-- **Update the glossary inline.** Capture a resolved term immediately, before
-  moving on. Do not batch it to the end.
-
-## Requirements
-
-Requires the arc42 addon - enable it first when the glossary is missing
-(`givn addons enable arc42`) and make sure `docs/arc42/12-glossary.md` exists
-before recording terms. Domain modeling is not pointed at projects that skip
-the glossary.
-
-## Glossary maintenance
-
-The ubiquitous language lives in the durable arc42 glossary
-(`docs/arc42/12-glossary.md`), not in a per-change file: maintaining the project's arc42 glossary inline is the enforcement surface, and specs, design, and code must reuse its exact terms.
-
-Record in the glossary:
-
-- **Ubiquitous language** - the agreed terms, each with its definition, the
-  spec wording that uses it, the code symbol, and the Anti-terms (rejected
-  synonyms).
-- **Aggregates / boundaries** - which entities form a consistency boundary,
-  the root of each, and which are independent.
-- **Invariants** - rules that must always hold, each marked with the
-  enforcement site (data model, command, gate).
-- **Lifecycle events** - the *domain's own* state transitions, what the user
-  observes. (Shopping list example: open / item added / item marked bought /
-  item hidden for this trip / trip reset.)
-
-## Term introduction test
-
-A term may become `confirmed` in the term record (`domain-terms.md` in the
-`givn-ideation` skill) only when all three exist:
-
-1. **Genus + differentia** — "a `<Term>` is a `<kind>` that `<distinguishes
-   it>`". Example: "a Port is the interface contract at which one
-   implementation can be replaced".
-2. **Contrast pair** — "`Term`, not `<near neighbour>`" with the distinction.
-   Example: "Port, not Boundary — a boundary is a limit that must not be
-   crossed".
-3. **One concrete domain sentence** using the term.
-
-If the genus slot cannot be filled, the term is not ready. Example failure:
-"a Substrate is a kind of ___" has no referent, so the underlying concepts
-must be named separately.
-
-Generic words never qualify on their own: `list`, `item`, `data`, `record`,
-`entity`, `node`, `object`, `manager`, `service`, `handler`, `container`.
-Name the domain noun and give its contrast pair.
-
-## Rules
-
-- Stay in domain language. No class names, DB schemas, or framework types
-  (except inside the `Code symbol` column).
-- Derive everything from the proposal and specs; do not invent new behaviour.
-- If a term is ambiguous, pick the interpretation the proposal supports and
-  flag it. Do not leave it open for the design to guess.
-- No generic nouns where a domain noun exists. `List` is a framework word;
-  `ShoppingList`, `Entry` are domain words. Rename.
-- One verb per action. List the rejected synonyms explicitly in the
-  anti-terms column.
-- Keep it short - one page that the design, the lint gate, and the review all
-  build on.
-
-
+1. Run `givn instructions domain-modeling` and follow it.
+2. Apply the discipline from the first domain noun — while naming or
+   discussing domain concepts and during every workflow step of a change.

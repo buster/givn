@@ -89,11 +89,9 @@ design.md, so everything needed must be in the task.
                 Paste output.
       REFACTOR: Clean up. Re-run targeting this scenario → still PASSES.
                 Paste output.
-      COMMIT:   One commit for RED+GREEN+REFACTOR, e.g.
-                "feat(<capability>): <release note>". The message
-                carries the release note as its message subject, and
-                the scenario title goes in the message body. Record
-                the hash.
+      COMMIT:   One commit for RED+GREEN+REFACTOR, following the
+                commit contract served by `givn instructions tasks --change <id>`.
+                Record the hash.
 ```
 
 **After all non-@e2e scenarios: e2e setup + one task per @e2e scenario.**
@@ -128,10 +126,9 @@ not a second E2E policy.
                 assertions driving the actual interface. List files
                 touched. Run targeting this scenario → PASSES. Paste evidence.
       REFACTOR: Clean up. Re-run → still PASSES. Paste evidence.
-      COMMIT:   One commit, e.g. "test(e2e): <release note>". The message
-                carries the release note as its message subject, and
-                the scenario title goes in the message body. Record
-                the hash.
+      COMMIT:   One commit, following the commit contract served by
+                `givn instructions tasks --change <id>`. Record the
+                hash.
 ```
 
 **Rules:**

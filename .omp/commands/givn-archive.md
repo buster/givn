@@ -10,6 +10,10 @@ Archive a completed givn change.
 from conversation context, or auto-select if only one active change exists. If
 ambiguous, list changes and ask.
 
+**Rules**: the archive rules — the gate, the seed-stamping rule, and the
+guardrails — are served by `givn instructions archive`. Load it and follow it;
+this file owns the invocation orchestration only.
+
 ---
 
 ## Steps
@@ -22,24 +26,15 @@ givn status --change <id> --json
 
 Identify the active change. Announce: "Using change: <id>".
 
-From the JSON, check:
-- `artifacts` where `id == "tasks"`: if `status != "done"`, warn and confirm.
-- `artifacts` where `id == "review"`: if `status != "done"`, stop — direct
-  the user to `/givn-review` first.
-- `all_required_done`: if false, list what is missing and stop.
+Apply the pre-flight checks from the served archive instruction: tasks done,
+`REVIEW: PASS` present, `all_required_done`, and the spec lint:
 
-**Review:**
-Check that `givn/changes/<id>/review.md` exists and contains `REVIEW: PASS`.
-If absent, stop and direct the user to `/givn-review` first.
-
-**Spec lint:**
 ```sh
 givn lint
 ```
-- Exit 1 (parse error): STOP — fix syntax errors before archiving.
-- Exit 2 (@wip remaining): STOP — all `@wip` tags must be removed before
-  archiving. The spec must be fully implemented.
-- Exit 0: proceed.
+
+Stop and report when a check fails; fix parse errors and remaining `@wip`
+scenarios before retrying.
 
 ### 2. Run the archive command
 
@@ -47,35 +42,23 @@ givn lint
 givn archive --change <id>
 ```
 
-`givn archive` automatically enforces the gate:
-1. All `apply.requires` artifacts exist (tasks.md, review.md by default).
-2. All tasks checked (`[x]`).
-3. `review.md` contains `REVIEW: PASS`.
-4. Post hooks of all `apply.requires` artifacts pass — this runs the test suite.
-   The suite **must be GREEN** for the archive to proceed.
+Report any gate error and stop.
 
-If any gate check fails, `givn archive` exits non-zero with a clear error.
-Report the error to the user and stop.
+### 3. Apply the archive instruction and verify the result
 
-### 3. Verify the result
+On success, `givn archive` has run the suite, merged the delta `.feature`
+files, and moved the change to `givn/archive/<id>/`.
 
-On success, `givn archive` will have:
-- Run the test suite via the configured hooks (final GREEN confirmation).
-- Merged delta `.feature` files into `givn/specs/` (stripped `@givn.*` tags).
-- Moved `givn/changes/<id>/` to `givn/archive/<id>/`.
+Then apply the seed-stamping rule from `givn instructions archive` (set the
+recorded seed's status, or record "no seed" explicitly), and run the
+regression check:
 
-Then update the originating change seed, if the proposal's Use-Case Context
-records one: set its status line to `Status: implemented in <change-id>` — or
-`Status: withdrawn` with a one-line reason when the change was abandoned.
-Leave the rest of the seed unchanged. When the proposal records no seed,
-record "no seed" explicitly in your summary.
-
-Run a regression check against the permanent specs:
 ```sh
 givn lint
 ```
-Exit 0 = permanent specs are clean. Exit non-zero = report to user (the archive
-completed, but a problem in the permanent specs needs attention).
+
+Exit 0 = permanent specs are clean. Exit non-zero = report to the user (the
+archive completed, but a problem in the permanent specs needs attention).
 
 ### 4. Show summary
 
@@ -119,10 +102,6 @@ givn lint → clean (permanent specs well-formed).
 
 ## Guardrails
 
-- NEVER archive with `@wip` scenarios remaining — the spec must be fully
-  implemented and GREEN.
-- NEVER archive without `REVIEW: PASS` in review.md.
-- Do not bypass `givn archive` by moving files manually — the `.feature` merge
-  pipeline must run.
-- If the archive command fails, fix the gate failure rather than working around it.
+- Follow the rules served by `givn instructions archive`; fix gate failures
+  rather than working around them, and never move files manually.
 - Report the regression check result even if the archive succeeded.
