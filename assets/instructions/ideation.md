@@ -325,11 +325,13 @@ Model the domain as a chain of past-tense domain events.
   show every event, command, aggregate, and actor, with the kinds
   distinguishable (per-node kind markers or a legend). The event storming
   ships a rendered mermaid canvas naming every event, command, aggregate,
-  and actor. A command sits between the actor that issues it and the
-  aggregate it changes; the aggregate emits its events.
+  and actor. A command sits between
+  the actor that issues it and the aggregate it changes; the aggregate
+  emits its events.
 - Aggregates are given, not minted: every aggregate is a declared
-  consistency boundary — a domain-noun root that receives commands and
-  emits events under one invariant — never a record or a specification.
+  consistency boundary. An aggregate is
+  a domain-noun root that receives commands and emits events under one
+  invariant — never a record or a specification.
   Reuse the aggregates the project already declares
 {{#if addons.arc42}}
   (the arc42 glossary's "Aggregates / boundaries"); a new aggregate is
