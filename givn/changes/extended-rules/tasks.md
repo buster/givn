@@ -1400,26 +1400,91 @@ sections in the same feature order.
             ec188787 — feat(generate-ideation-guidance): <release note>; body: Scenario: The explore guidance points to ideation for structured domain work
             ```
 
-- [ ] generate-ideation-guidance: The ideation guidance carries the seed schema and its status values
+- [x] generate-ideation-guidance: The ideation guidance carries the seed schema and its status values
       Design constraints:
         - Content seam: `assets/instructions/ideation.md` carries the change-seed schema and its status values.
         - Assertions (served ideation instruction): contains "change seed", "Status: ready", "proposed by", "implemented in", "superseded by", "withdrawn", "Accepted decisions", "Suggested start".
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance carries the seed schema and its status values"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the seed schema and its status values
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "change seed"
+               ✔  And the served ideation instruction contains "Status: ready"
+               ✔  And the served ideation instruction contains "proposed by"
+               ✔  And the served ideation instruction contains "implemented in"
+               ✔  And the served ideation instruction contains "superseded by"
+               ✔  And the served ideation instruction contains "withdrawn"
+               ✔  And the served ideation instruction contains "Accepted decisions"
+               ✔  And the served ideation instruction contains "Suggested start"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            10 steps (10 passed)                                         EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the seed schema and status lines were
+            delivered by the first scenario's slice (the Handoff section and the
+            seed template moved into the served asset). This is the recorded
+            ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "Status: ready" → "Status: pending" in
+               assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the seed schema and its status values
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "change seed"
+               ✘  And the served ideation instruction contains "Status: ready"
+                  Step panicked. Captured output: the served ideation instruction is missing "Status: ready": # Instruction: ideation
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the Handoff and seed-schema content moved with the first
+            scenario's slice (`assets/instructions/ideation.md`); this scenario
+            binds the schema-field and status-value assertions.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the seed schema and its status values
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "change seed"
+               ✔  And the served ideation instruction contains "Status: ready"
+               ✔  And the served ideation instruction contains "proposed by"
+               ✔  And the served ideation instruction contains "implemented in"
+               ✔  And the served ideation instruction contains "superseded by"
+               ✔  And the served ideation instruction contains "withdrawn"
+               ✔  And the served ideation instruction contains "Accepted decisions"
+               ✔  And the served ideation instruction contains "Suggested start"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            10 steps (10 passed)                                         EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 10 steps (10 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            5ab8be8c — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the seed schema and its status values
             ```
 
 - [ ] generate-ideation-guidance: The ideation guidance carries the term schema and the collision procedure
