@@ -7,27 +7,6 @@ description: Work a vague idea into change-ready use cases through a structured,
 
 **Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
 
-**Delegated contexts:** a fresh delegated context does not inherit the parent's loaded policy. Pass the obligation explicitly — for every user-facing question, follow the effective policy from `givn instructions dialog`; load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
+Work the vague idea at hand into change-ready use cases. The rules for this step are served by `givn instructions ideation` — load the instruction and follow it. This file triggers the step and carries no rules of its own.
 
-Work a vague idea into change-ready use cases through a structured,
-multi-session domain exploration. This is the artifact-producing alternative
-to `givn-explore`; the outcome is topic state and change seeds, one per future
-givn change.
-
-**Input**: an optional topic id after `/givn-ideation`. A topic id names one
-ideation effort; without one, derive it from the user's description and
-confirm it with the user.
-
-**Rules**: the ideation discipline — the phase ladder, the one-question rule,
-the persona rules, the topic state, the term and seed schemas, the handoff
-rules, and the event-storming and use-case rules — is served by
-`givn instructions ideation`. Load it and follow it; this file owns the
-invocation orchestration only.
-
-## Invocation
-
-1. Read the topic state before the session; create the topic for a new idea
-   and confirm its id with the user.
-2. Run `givn instructions ideation` and follow it.
-3. Never write givn change artifacts or code — the outcome is topic state and
-   change seeds, and Handoff never starts a change.
+When you hand work to a fresh context, pass the obligation explicitly: for every user-facing question, follow the effective policy from `givn instructions dialog` — this fresh context does not inherit the parent's loaded policy, so load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
