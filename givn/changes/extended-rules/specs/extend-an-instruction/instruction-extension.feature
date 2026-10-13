@@ -52,7 +52,7 @@ Feature: A project extends an instruction's built-in rules
     And the served content carries the built-in proposal rules
     And the served content carries no extension section
 
-  @givn.added @wip
+  @givn.added
   Scenario: A whitespace-only rule entry is skipped with a warning
     Given a Givn project with an active change
     And the project's configuration carries a whitespace-only rule for the proposal instruction

@@ -720,27 +720,86 @@ sections in the same feature order.
             0722f40c — feat(instruction-extension): <release note>; body: Scenario: A malformed extension entry is dropped with a warning
             ```
 
-- [ ] instruction-extension: An empty extension list is valid and adds nothing
+- [x] instruction-extension: An empty extension list is valid and adds nothing
       Design constraints:
         - An empty list — like a list whose entries were all skipped — is valid and adds nothing; it is not a rejection and produces no warning.
         - Assertions: the command exits 0; the served content carries the built-in proposal rules; the served content carries no extension section.
         - Step file: `tests/steps/instruction_extension_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::An empty extension list is valid and adds nothing"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::An empty extension list is valid and adds nothing"
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An empty extension list is valid and adds nothing
+               ✔  Given a Givn project with an active change
+               ✔  And the project's configuration carries an empty extension list for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the command exits 0
+               ✔  And the served content carries the built-in proposal rules
+               ✔  And the served content carries no extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — an empty list adds nothing by
+            construction (`extensions::append` returns the content unchanged when
+            no rule remains), delivered by the coupled earlier scenario's edit.
+            ORACLE_RED calibration (controlled omission from the delivered output):
+            $ (temporarily omitted the empty-list guard in
+               src/config/extensions.rs::append so the marked section was appended
+               even with no rules; same scoped command)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An empty extension list is valid and adds nothing
+               ✔  Given a Givn project with an active change
+               ✔  And the project's configuration carries an empty extension list for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the command exits 0
+               ✔  And the served content carries the built-in proposal rules
+               ✘  And the served content carries no extension section
+                  Step panicked. Captured output: the served proposal content carries an extension section
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            6 steps (5 passed, 1 failed)                                  EXIT=101
+            With the guard omitted, the section appears and exactly the last
+            assertion fails, so it discriminates; the guard was restored
+            immediately (the file is byte-identical to the committed state) and
+            the scoped command passed again. No production switch, exception,
+            fake success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the empty-list behavior was delivered by the earlier scenarios'
+            serving path (`extensions::append` adds nothing when no rule remains);
+            this scenario binds the exit-0, built-in-rules, and no-section
+            controls.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the empty-list guard)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An empty extension list is valid and adds nothing
+               ✔  Given a Givn project with an active change
+               ✔  And the project's configuration carries an empty extension list for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the command exits 0
+               ✔  And the served content carries the built-in proposal rules
+               ✔  And the served content carries no extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.85s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            e6fff160 — feat(instruction-extension): <release note>; body: Scenario: An empty extension list is valid and adds nothing
             ```
 
 - [ ] instruction-extension: A whitespace-only rule entry is skipped with a warning
