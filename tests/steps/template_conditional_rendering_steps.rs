@@ -302,6 +302,25 @@ fn design_review_command_has_arc42(world: &mut GivnWorld) {
     );
 }
 
+#[then("the served design-review instruction omits the Architecture documentation (arc42) branch")]
+fn served_design_review_instruction_omits_arc42(world: &mut GivnWorld) {
+    let content = served_artifact_instruction(world, "design-review");
+    assert!(
+        !content.contains("Architecture documentation (arc42)"),
+        "the served design-review instruction carries the arc42 branch:\n{content}"
+    );
+}
+
+#[then("the generated design-review skill carries no Architecture documentation (arc42) branch")]
+fn design_review_skill_carries_no_arc42(world: &mut GivnWorld) {
+    design_review_skill_no_arc42(world);
+}
+
+#[then("the generated design-review command carries no Architecture documentation (arc42) check")]
+fn design_review_command_carries_no_arc42(world: &mut GivnWorld) {
+    design_review_command_no_arc42(world);
+}
+
 // --- Then: domain-modeling skill generation ---------------------------------
 
 #[then("no generated domain-modeling skill exists")]
