@@ -141,6 +141,42 @@ fn recorded_extension_is_unchanged(world: &mut GivnWorld) {
     );
 }
 
+#[then("the project-owned replacement is byte-for-byte unchanged")]
+fn project_owned_replacement_is_byte_for_byte_unchanged(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let recorded = crate::steps::serve_extended_rules_steps::recorded_replacement(env, "proposal");
+    let path = env.path("givn/artifacts/proposal/instructions.md");
+    let current = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+    assert_eq!(
+        recorded, current,
+        "the project-owned replacement is not byte-for-byte unchanged"
+    );
+}
+
+#[then("the upgrade revision carries no injected text for the replacement")]
+fn upgrade_revision_carries_no_injected_text_for_the_replacement(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let changed = git_ok(env, &["show", "--name-only", "--format=", "HEAD"]);
+    assert!(
+        !changed
+            .lines()
+            .any(|line| line.trim() == "givn/artifacts/proposal/instructions.md"),
+        "the upgrade revision touches the project-owned replacement:\n{changed}"
+    );
+    let diff = git_ok(env, &["show", "-U0", "--format=", "HEAD"]);
+    assert!(
+        !diff.contains(crate::steps::serve_extended_rules_steps::REPLACEMENT_MARKER),
+        "the upgrade revision injected text for the replacement:\n{diff}"
+    );
+}
+
 #[given(regex = r"^a commands file without a run declaration:$")]
 fn commands_file_without_run_declaration(world: &mut GivnWorld, step: &cucumber::gherkin::Step) {
     let doc = step

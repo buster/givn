@@ -19,7 +19,7 @@ Feature: Managed upgrade and legacy project migration
     And the upgrade revision carries no extension content
     And the recorded extension is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: A project-owned replacement stays byte-for-byte across an upgrade
     Given a committed project root with givn/ initialised
     And a project-owned replacement for the proposal instruction

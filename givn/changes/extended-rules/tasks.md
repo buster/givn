@@ -4477,7 +4477,7 @@ sections in the same feature order.
         - Step file: `tests/steps/run_upgrade_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade leaves the project's extensions untouched"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
             $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade leaves the project's extensions untouched"
             Feature: Managed upgrade and legacy project migration
@@ -4533,7 +4533,7 @@ sections in the same feature order.
             the scoped command passed again. No production switch, exception,
             fake success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
             none — the `extensions:` block is user-owned configuration
             outside the allowlist; the upgrade preserves it while refreshing
@@ -4558,14 +4558,15 @@ sections in the same feature order.
             1 scenario (1 passed)
             6 steps (6 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
             $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.37s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(apply-a-managed-upgrade): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(apply-a-managed-upgrade): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            329f2756 — feat(apply-a-managed-upgrade): <release note>; body: Scenario: An upgrade leaves the project's extensions untouched
             ```
 
 - [ ] apply-a-managed-upgrade: A project-owned replacement stays byte-for-byte across an upgrade
@@ -4577,15 +4578,85 @@ sections in the same feature order.
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "upgrade-a-project/apply-a-managed-upgrade.feature::A project-owned replacement stays byte-for-byte across an upgrade"`
       - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "upgrade-a-project/apply-a-managed-upgrade.feature::A project-owned replacement stays byte-for-byte across an upgrade"
+            Feature: Managed upgrade and legacy project migration
+              Scenario: A project-owned replacement stays byte-for-byte across an upgrade
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And a project-owned replacement for the proposal instruction
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✔  And the project-owned replacement is byte-for-byte unchanged
+               ✔  And the upgrade revision carries no injected text for the replacement
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the replacement lives under
+            `givn/artifacts/`, outside the managed allowlist, so the upgrade
+            neither touches the file nor stages it; this is the recorded
+            ORACLE_RED case.
+            ORACLE_RED calibration 1 (controlled omission in the isolated fixture):
+            $ (temporarily recorded replacement bytes that do not match what the
+               fixture writes; same scoped command)
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And a project-owned replacement for the proposal instruction
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✘  And the project-owned replacement is byte-for-byte unchanged
+                  Step panicked. Captured output: assertion `left == right` failed: the project-owned replacement is not byte-for-byte unchanged
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                  EXIT=101
+            ORACLE_RED calibration 2 (controlled omission from the delivered revision):
+            $ (temporarily set the replacement marker needle to a line the upgrade
+               revision does add; same scoped command)
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And a project-owned replacement for the proposal instruction
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✔  And the project-owned replacement is byte-for-byte unchanged
+               ✘  And the upgrade revision carries no injected text for the replacement
+                  Step panicked. Captured output: the upgrade revision injected text for the replacement:
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            6 steps (5 passed, 1 failed)                                  EXIT=101
+            Each omission makes exactly the matching assertion fail, so both
+            assertions discriminate; the fixture was restored immediately and
+            the scoped command passed again. No production switch, exception,
+            fake success, or source-text test.
             ```
       - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the cascade-visible replacement is outside the managed
+            allowlist and the upgrade leaves it authoritative (R-74 unchanged).
+            This scenario reuses the shared replacement fixture (written and
+            committed by the serve-extended-rules step) and adds the
+            byte-for-byte comparison and the revision-injection check in
+            tests/steps/run_upgrade_steps.rs.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the fixture)
+            Feature: Managed upgrade and legacy project migration
+              Scenario: A project-owned replacement stays byte-for-byte across an upgrade
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And a project-owned replacement for the proposal instruction
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✔  And the project-owned replacement is byte-for-byte unchanged
+               ✔  And the upgrade revision carries no injected text for the replacement
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
             ```
       - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.35s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
       - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(apply-a-managed-upgrade): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
