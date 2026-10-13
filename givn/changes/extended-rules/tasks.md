@@ -4846,14 +4846,14 @@ sections in the same feature order.
             `givn/commands.yaml` values (edit only if the recorded values
             differed). Record the revision identifier:
             ```
-            <pending-commit-hash>
+            6c0cce14 — test(extended-rules): e2e step skeletons, strict-mode and isolation proof
             ```
 
 ---
 
 ## E2E Smoke Tests
 
-- [ ] change-release-note: The generated implementation guidance shares the release note
+- [x] change-release-note: The generated implementation guidance shares the release note
       Design constraints:
         - Real `givn skills sync` with all agent targets enabled; the primary assertion is on the real sync output plus the served tasks instruction (`givn instructions tasks --change <active>`), never on asset source text.
         - Served-content seam: the commit and release-note contract has exactly one home — `assets/instructions/tasks.md` — and the block's obligations come from the same asset; the generated givn-steps, givn-implement, and givn-tasks files carry the direction only.
@@ -4862,23 +4862,78 @@ sections in the same feature order.
         - E2E steps: existing per-capability file (`tests/steps/prose_consolidation_e2e_steps.rs`); direction steps per `tests/steps/prose_consolidation_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/change-release-note.feature::The generated implementation guidance shares the release note"`
-      - [ ] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/change-release-note.feature::The generated implementation guidance shares the release note"
+            (first run: the two-word actor sentences were unbound — "Step doesn't
+             match any function" for `directs the step writer…`; the generic
+             direction regex in tests/steps/prose_consolidation_steps.rs was
+             broadened to accept a one- or two-word actor at RED, then:)
+            Feature: Change release note
+              Scenario: The generated implementation guidance shares the release note
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the command exits 0
+               ✘  And the generated givn-steps guidance directs the step writer to the steps instruction
+                  Step panicked. Captured output: givn-steps guidance does not direct to the
+                  steps instruction (missing "givn instructions steps"): ---
+                  name: givn-steps (…delivered givn-steps content follows, abridged…)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: the generated givn-steps guidance carries no
+            `givn instructions steps` direction; the skill body still holds the
+            rule copy.
             ```
-      - [ ] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
             ```
+            assets/instructions/steps.md (new: the canonical steps instruction — the
+              whole step-writing discipline moved out of the givn-steps skill/command:
+              the executable-spec rule, definition locations, immutable @e2e tags,
+              reuse, the no-empty-body rule, the canonical E2E policy, capture
+              mechanics, prefer-the-real-interface, the RED→GREEN→REFACTOR→COMMIT
+              loop, coverage measurement, distinctions, guardrails)
+            assets/skills/givn-steps/SKILL.md.tmpl (direction: run `givn instructions
+              steps` and follow it; rule copy removed, invocation orchestration kept)
+            assets/commands/givn-steps.md (pointer to the served steps instruction;
+              rule copy removed)
+            tests/steps/prose_consolidation_steps.rs (the generic direction step
+              accepts a one- or two-word actor: "the step writer", "the task author")
             ```
             Evidence transcript path (design.md §Visual Design Contract):
             ```
+            givn/changes/extended-rules/evidence/visual/the-generated-implementation-guidance-shares-the-release-note/transcript.txt
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after the production edits)
+            Feature: Change release note
+              Scenario: The generated implementation guidance shares the release note
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the command exits 0
+               ✔  And the generated givn-steps guidance directs the step writer to the steps instruction
+               ✔  And the generated givn-implement guidance directs the implementer to the tasks instruction
+               ✔  And the generated givn-tasks guidance directs the task author to the tasks instruction
+               ✔  And the served tasks instruction contains "carries the release note as its message subject"
+               ✔  And the served tasks instruction contains "the scenario title goes in the message body"
+               ✔  And generated guidance does not contain "message references the scenario title"
+               ✔  And the file "AGENTS.md" contains "carries the release note as its message subject"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            10 steps (10 passed)                                          EXIT=0
             ```
-      - [ ] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.29s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 10 steps (10 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
+            <pending>
             ```
 
 - [ ] prose-consolidation: Generated guidance points to the canonical E2E policy
