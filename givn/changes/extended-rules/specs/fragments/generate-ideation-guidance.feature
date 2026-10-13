@@ -32,7 +32,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "persona promotion"
     And  the served ideation instruction contains "every artifact that affects"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI

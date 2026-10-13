@@ -1183,26 +1183,81 @@ sections in the same feature order.
             2aa7a2c4 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the phase ladder and the one-question rule
             ```
 
-- [ ] generate-ideation-guidance: The ideation guidance binds personas to the artifacts that affect them
+- [x] generate-ideation-guidance: The ideation guidance binds personas to the artifacts that affect them
       Design constraints:
         - Content seam: `assets/instructions/ideation.md` keeps the persona-to-artifact binding rule.
         - Assertions (served ideation instruction): contains "stakeholder type", "persona segment", "persona promotion", "every artifact that affects".
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance binds personas to the artifacts that affect them"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance binds personas to the artifacts that affect them
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "stakeholder type"
+               ✔  And the served ideation instruction contains "persona segment"
+               ✔  And the served ideation instruction contains "persona promotion"
+               ✔  And the served ideation instruction contains "every artifact that affects"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the whole discipline (Personas section
+            included) was delivered by the first scenario's slice. This is the
+            recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "stakeholder type" → "stakeholder group" in
+               assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance binds personas to the artifacts that affect them
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✘  Then the served ideation instruction contains "stakeholder type"
+                  Step panicked. Captured output: the served ideation instruction is missing "stakeholder type": # Instruction: ideation
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the Personas section moved with the first scenario's slice
+            (`assets/instructions/ideation.md`); this scenario binds the
+            persona-to-artifact binding assertions on the served surface.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance binds personas to the artifacts that affect them
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "stakeholder type"
+               ✔  And the served ideation instruction contains "persona segment"
+               ✔  And the served ideation instruction contains "persona promotion"
+               ✔  And the served ideation instruction contains "every artifact that affects"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                           EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            87d1767e — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance binds personas to the artifacts that affect them
             ```
 
 - [ ] generate-ideation-guidance: The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes
