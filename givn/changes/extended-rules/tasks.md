@@ -5712,10 +5712,10 @@ sections in the same feature order.
             ```
       - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
-            <pending>
+            e2415c97 — test(e2e): <release note>; body: Scenario: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
             ```
 
-- [ ] refresh-generated-guidance: Synchronized guidance explains how to resolve the deterministic gates
+- [x] refresh-generated-guidance: Synchronized guidance explains how to resolve the deterministic gates
       Design constraints:
         - Real `givn skills sync` with all agent targets enabled; primary assertions on the real stdout and the served instructions, never on asset source text.
         - Served-content seam: the deterministic gate rules move into `assets/instructions/review.md`, `assets/instructions/design.md`, and the new `assets/instructions/steps.md`; the generated givn-review, givn-design, and givn-steps files carry the direction only.
@@ -5724,23 +5724,86 @@ sections in the same feature order.
         - E2E steps: `tests/steps/prose_consolidation_e2e_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/refresh-generated-guidance.feature::Synchronized guidance explains how to resolve the deterministic gates"`
-      - [ ] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/refresh-generated-guidance.feature::Synchronized guidance explains how to resolve the deterministic gates"
+            (every sentence already binds: the all-targets fixture, the real
+             `givn skills sync` When, the generic direction and served-content
+             steps, and the generated-guidance scan. No new binding was
+             needed. First run:)
+            Feature: Refresh generated guidance
+              Scenario: Synchronized guidance explains how to resolve the deterministic gates
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then stdout contains "Syncing skills and agent commands..."
+               ✔  And the generated givn-review guidance directs the reviewer to the review instruction
+               ✔  And the generated givn-design guidance directs the designer to the design instruction
+               ✔  And the generated givn-steps guidance directs the step writer to the steps instruction
+               ✔  And the served review instruction contains "Overlap dispositions"
+               ✔  And the served review instruction contains "split-or-keep"
+               ✔  And the served review instruction contains "removed+added"
+               ✔  And the served design instruction contains "Black-Box-First"
+               ✘  And the served steps instruction contains "which case this test covers"
+                  Step failed:
+                  Defined: givn/changes/extended-rules/specs/fragments/refresh-generated-guidance.feature:17:5
+                  Matched: tests/steps/serve_extended_rules_steps.rs:84:1
+                  Step panicked. Captured output: the served steps instruction is missing "which case this test covers": # Instruction: steps
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            11 steps (10 passed, 1 failed)                              EXIT=101
+            OLD_PRODUCT_RED — the step-writing dedup gate (`which case this
+            test covers that the E2E does not`) left the generated givn-steps
+            files when the direction landed, and its new home
+            `assets/instructions/steps.md` does not carry it yet. The failing
+            assertion is exactly the served steps instruction's missing rule;
+            the review and design instructions already serve their gates.
             ```
-      - [ ] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
             ```
+            assets/instructions/steps.md — the "Prefer the real interface"
+            section regains the dedup gate rule moved out of the givn-steps
+            skill/command files: record which case the internal test covers that
+            the E2E does not, otherwise remove the duplicate and extend the E2E
+            scenario. Served by `givn instructions steps`; the generated files
+            keep carrying the direction only.
             ```
             Evidence transcript path (design.md §Visual Design Contract):
             ```
+            givn/changes/extended-rules/evidence/visual/synchronized-guidance-explains-how-to-resolve-the-deterministic-gates/transcript.txt
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/refresh-generated-guidance.feature::Synchronized guidance explains how to resolve the deterministic gates"
+            Feature: Refresh generated guidance
+              Scenario: Synchronized guidance explains how to resolve the deterministic gates
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then stdout contains "Syncing skills and agent commands..."
+               ✔  And the generated givn-review guidance directs the reviewer to the review instruction
+               ✔  And the generated givn-design guidance directs the designer to the design instruction
+               ✔  And the generated givn-steps guidance directs the step writer to the steps instruction
+               ✔  And the served review instruction contains "Overlap dispositions"
+               ✔  And the served review instruction contains "split-or-keep"
+               ✔  And the served review instruction contains "removed+added"
+               ✔  And the served design instruction contains "Black-Box-First"
+               ✔  And the served steps instruction contains "which case this test covers"
+               ✔  And generated guidance does not contain "Run `givn spec index`"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            12 steps (12 passed)                                        EXIT=0
             ```
-      - [ ] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 12 steps (12 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
+            <pending>
             ```
 
 - [ ] initialize-a-project: Consumer runs init non-interactively and gets opencode skills
