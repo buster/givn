@@ -28,7 +28,7 @@ Feature: Match guidance to enabled addons
     And no generated domain-modeling skill exists
     And no generated skill or command mentions any disabled addon
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: A consumer enables the addons a generated section needs and the guidance gains it
     Given a Givn project with the arc42 and domain-modeling addons disabled and the skills synchronized
     When a consumer enables the arc42 and domain-modeling addons through the Givn CLI
