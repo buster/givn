@@ -320,12 +320,14 @@ Model the domain as a chain of past-tense domain events.
   reacts, what the actor reads (read model).
 - Draw the canvas: one or more mermaid diagrams in `eventstorming.md` that
   show every event, command, aggregate, and actor, with the kinds
-  distinguishable (per-node kind markers or a legend). A command sits between
-  the actor that issues it and the aggregate it changes; the aggregate emits
-  its events.
-- Aggregates are given, not minted. An aggregate is a consistency boundary:
-  a domain-noun root that receives commands and emits events under one
-  invariant. Reuse the aggregates the project already declares
+  distinguishable (per-node kind markers or a legend). The event storming
+  ships a rendered mermaid canvas naming every event, command, aggregate,
+  and actor. A command sits between the actor that issues it and the
+  aggregate it changes; the aggregate emits its events.
+- Aggregates are given, not minted: every aggregate is a declared
+  consistency boundary — a domain-noun root that receives commands and
+  emits events under one invariant — never a record or a specification.
+  Reuse the aggregates the project already declares
 {{#if addons.arc42}}
   (the arc42 glossary's "Aggregates / boundaries"); a new aggregate is
 {{else}}
