@@ -191,3 +191,20 @@ fn served_content_carries_the_changed_rule(world: &mut GivnWorld) {
         "the served proposal extension section is missing {rule:?}: {content}"
     );
 }
+
+#[then("the served content is the built-in rules alone")]
+fn served_content_is_the_builtin_rules_alone(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let content = recorded_stdout(env, "proposal");
+    assert!(
+        !content.contains(EXTENSION_SECTION_MARKER),
+        "the served proposal content carries an extension section: {content}"
+    );
+    assert!(
+        content.contains("proposed by"),
+        "the served proposal content is missing the built-in proposal rules: {content}"
+    );
+}
