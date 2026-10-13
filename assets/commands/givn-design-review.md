@@ -120,7 +120,7 @@ Read all of these in full before forming any questions:
   a question for the user.
 {{#if addons.arc42}}
 - Before opening `arc42.md`, walk all 12 rows of the arc42-docs instruction's
-  chapter-selection table (`givn instructions arc42-docs`) yourself against
+  chapter-selection table (`givn instructions arc42-docs --change <id>`) yourself against
   proposal.md/specs/design.md, and form your own Yes/No per row. Only after
   that, open `givn/changes/<id>/arc42.md` and every chapter file under
   fixed `docs/arc42/` path that the marker file claims to have touched. This is
