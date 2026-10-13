@@ -5,7 +5,10 @@
 //! shared served-instruction content step and the `served_instruction` helper
 //! live here.
 
-use cucumber::then;
+use std::fs;
+use std::process::Output;
+
+use cucumber::{then, when};
 
 use crate::common;
 use crate::steps::GivnWorld;
@@ -86,5 +89,105 @@ fn served_instruction_does_not_contain(world: &mut GivnWorld, id: String, text: 
     assert!(
         !content.contains(&text),
         "the served {id} instruction must not contain {text:?}: {content}"
+    );
+}
+
+// --- instruction-extension serving fixtures ---------------------------------
+
+/// Fixture directory the instruction-extension steps use to record the
+/// expected rules and the raw guidance outputs.
+pub(crate) const EXTENSION_FIXTURE_DIR: &str = ".givn-extension-fixture";
+
+/// The marked section the served extension appends.
+pub(crate) const EXTENSION_SECTION_MARKER: &str = "## Project extension";
+
+pub(crate) fn extension_fixture_dir(env: &common::TestEnv) -> std::path::PathBuf {
+    env.path(EXTENSION_FIXTURE_DIR)
+}
+
+/// Record the rule the extension scenarios expect the served content of `id`
+/// to carry in the marked extension section.
+pub(crate) fn record_expected_rule(env: &common::TestEnv, id: &str, rule: &str) {
+    let dir = extension_fixture_dir(env).join("rules");
+    fs::create_dir_all(&dir).unwrap_or_else(|error| panic!("create {}: {error}", dir.display()));
+    fs::write(dir.join(id), format!("{rule}\n"))
+        .unwrap_or_else(|error| panic!("record the expected rule for {id}: {error}"));
+}
+
+/// The rule recorded for `id` by a fixture step.
+pub(crate) fn expected_rule(env: &common::TestEnv, id: &str) -> String {
+    let path = extension_fixture_dir(env).join("rules").join(id);
+    fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("no expected rule recorded for {id}: {error}"))
+        .trim()
+        .to_string()
+}
+
+/// Run `givn instructions <id>` — with `--change <active>` for manifest
+/// artifact ids — and record stdout, stderr, and the exit code for the
+/// instruction-extension assertions.
+pub(crate) fn request_instruction(env: &common::TestEnv, id: &str) -> Output {
+    let mut args = vec!["instructions", id];
+    let change;
+    if MANIFEST_ARTIFACT_IDS.contains(&id) {
+        change = active_change_id(env);
+        args.push("--change");
+        args.push(change.as_str());
+    }
+    let output = common::run_givn(env, &args);
+    let dir = extension_fixture_dir(env).join("served");
+    fs::create_dir_all(&dir).unwrap_or_else(|error| panic!("create {}: {error}", dir.display()));
+    fs::write(dir.join(format!("{id}.stdout")), &output.stdout).expect("record served stdout");
+    fs::write(dir.join(format!("{id}.stderr")), &output.stderr).expect("record served stderr");
+    fs::write(
+        dir.join(format!("{id}.status")),
+        output.status.code().unwrap_or(-1).to_string(),
+    )
+    .expect("record served status");
+    output
+}
+
+/// The recorded served stdout of `id`.
+pub(crate) fn recorded_stdout(env: &common::TestEnv, id: &str) -> String {
+    let path = extension_fixture_dir(env)
+        .join("served")
+        .join(format!("{id}.stdout"));
+    fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("no served output recorded for {id}: {error}"))
+}
+
+/// The marked extension section of a served content, panicking when the
+/// section is absent.
+pub(crate) fn extension_section<'a>(id: &str, content: &'a str) -> &'a str {
+    content
+        .split_once(EXTENSION_SECTION_MARKER)
+        .unwrap_or_else(|| {
+            panic!("the served {id} content carries no marked extension section: {content}")
+        })
+        .1
+}
+
+#[when(regex = r"^the agent requests the ([a-z-]+) (?:instructions|policy) through the Givn CLI$")]
+fn agent_requests_instruction(world: &mut GivnWorld, id: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let output = request_instruction(env, &id);
+    world.last_output = Some(output);
+}
+
+#[then("the served content carries the changed rule")]
+fn served_content_carries_the_changed_rule(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let rule = expected_rule(env, "proposal");
+    let content = recorded_stdout(env, "proposal");
+    let section = extension_section("proposal", &content);
+    assert!(
+        section.contains(&rule),
+        "the served proposal extension section is missing {rule:?}: {content}"
     );
 }

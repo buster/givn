@@ -10,7 +10,7 @@ Feature: A project extends an instruction's built-in rules
     Then the served content carries the project's rule in the marked extension section
     And the built-in proposal rules stay unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: Changing an extension changes the next served content and touches nothing else
     Given a Givn project with an active change and an extension for the proposal instruction
     When the developer changes the project's extension for the proposal instruction to the rule "Keep proposals under 300 words"

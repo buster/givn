@@ -365,29 +365,112 @@ fn arc42_artifact() -> Artifact {
 
 /// Lenient overlay document — only fields that are explicitly overridden need to be present.
 #[derive(Debug, serde::Deserialize)]
-struct OverlayDoc {
+pub(crate) struct OverlayDoc {
     #[serde(default)]
-    artifacts: Vec<OverlayArtifact>,
-    verify: Option<Verify>,
-    run: Option<Run>,
-    coverage: Option<Coverage>,
-    apply: Option<Apply>,
-    addons: Option<Addons>,
-    extras: Option<bool>,
+    pub(crate) artifacts: Vec<OverlayArtifact>,
+    pub(crate) verify: Option<Verify>,
+    pub(crate) run: Option<Run>,
+    pub(crate) coverage: Option<Coverage>,
+    pub(crate) apply: Option<Apply>,
+    pub(crate) addons: Option<Addons>,
+    pub(crate) extras: Option<bool>,
     /// Agent targets for skill/command generation (`skills.targets`).
     /// Ignored by the manifest itself; consumed by `load_skills_targets`.
-    skills: Option<Skills>,
+    pub(crate) skills: Option<Skills>,
     /// Generated-rules policy scalar (`rules:`). Consumed by
     /// `load_rules_policy`; ignored by the manifest itself.
-    rules: Option<String>,
+    pub(crate) rules: Option<String>,
+    /// Project-owned instruction extensions (`extensions:`). Consumed by
+    /// `config::extensions::load`; ignored by the manifest itself.
+    pub(crate) extensions: Option<ExtensionEntries>,
     /// Ignored during overlay processing (used for version tracking).
     #[allow(dead_code)]
-    givn_config_version: Option<String>,
+    pub(crate) givn_config_version: Option<String>,
+}
+
+/// Lenient `extensions:` entry list from `givn/config.yaml`.
+///
+/// The pinned YAML parser rejects duplicate keys inside a
+/// `serde_yaml_ng::Value` mapping, so the map is read as an entry list of raw
+/// values in document order. A repeated instruction key keeps its last
+/// occurrence (recorded behavior). Every other shape parses leniently: the
+/// serving path validates the entries and warns at request time, so no
+/// command fails because of a bad extension entry.
+#[derive(Debug, Default)]
+pub(crate) struct ExtensionEntries {
+    /// `(instruction id, raw value)` pairs in document order, a repeated
+    /// key keeping its last occurrence.
+    pub(crate) entries: Vec<(String, serde_yaml_ng::Value)>,
+}
+
+impl<'de> serde::Deserialize<'de> for ExtensionEntries {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct EntriesVisitor;
+
+        impl<'de> serde::de::Visitor<'de> for EntriesVisitor {
+            type Value = ExtensionEntries;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("a map of instruction id to rule list")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<ExtensionEntries, A::Error>
+            where
+                A: serde::de::MapAccess<'de>,
+            {
+                let mut entries: Vec<(String, serde_yaml_ng::Value)> = Vec::new();
+                while let Some(key) = map.next_key::<String>()? {
+                    let value = map.next_value::<serde_yaml_ng::Value>()?;
+                    entries.retain(|(existing, _)| existing != &key);
+                    entries.push((key, value));
+                }
+                Ok(ExtensionEntries { entries })
+            }
+
+            // A `extensions:` value that is not a map is ignored here and
+            // reported by the serving path; the command keeps working.
+            fn visit_seq<A>(self, _seq: A) -> Result<ExtensionEntries, A::Error>
+            where
+                A: serde::de::SeqAccess<'de>,
+            {
+                Ok(ExtensionEntries::default())
+            }
+
+            fn visit_bool<E: serde::de::Error>(self, _value: bool) -> Result<ExtensionEntries, E> {
+                Ok(ExtensionEntries::default())
+            }
+
+            fn visit_i64<E: serde::de::Error>(self, _value: i64) -> Result<ExtensionEntries, E> {
+                Ok(ExtensionEntries::default())
+            }
+
+            fn visit_u64<E: serde::de::Error>(self, _value: u64) -> Result<ExtensionEntries, E> {
+                Ok(ExtensionEntries::default())
+            }
+
+            fn visit_f64<E: serde::de::Error>(self, _value: f64) -> Result<ExtensionEntries, E> {
+                Ok(ExtensionEntries::default())
+            }
+
+            fn visit_str<E: serde::de::Error>(self, _value: &str) -> Result<ExtensionEntries, E> {
+                Ok(ExtensionEntries::default())
+            }
+
+            fn visit_unit<E: serde::de::Error>(self) -> Result<ExtensionEntries, E> {
+                Ok(ExtensionEntries::default())
+            }
+        }
+
+        deserializer.deserialize_any(EntriesVisitor)
+    }
 }
 
 /// The `skills:` block of `givn/config.yaml`.
 #[derive(Debug, serde::Deserialize)]
-struct Skills {
+pub(crate) struct Skills {
     /// Canonical agent target names: `opencode`, `agents`, `claude`.
     #[serde(default)]
     targets: Vec<String>,
@@ -396,7 +479,7 @@ struct Skills {
 /// Overlay artifact patch — same fields as `Artifact` but all are optional/defaulted
 /// so the user only has to specify what they want to change.
 #[derive(Debug, serde::Deserialize)]
-struct OverlayArtifact {
+pub(crate) struct OverlayArtifact {
     id: String,
     #[serde(default)]
     generates: Vec<String>,

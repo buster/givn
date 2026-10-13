@@ -333,27 +333,89 @@ sections in the same feature order.
             1eb811fc — feat(prose-consolidation): <release note>; body: Scenario: The propose and archive commands carry the seed stamping instructions
             ```
 
-- [ ] visual-design-contract: Synchronized authoring guidance carries the classification, driver, and persona rules
+- [x] visual-design-contract: Synchronized authoring guidance carries the classification, driver, and persona rules
       Design constraints:
         - Served-content seams: `assets/instructions/design.md` carries "renders HTML, CSS, or JavaScript in a browser" and "default browser driver"; `assets/instructions/design-review.md` carries "opposite classification"; `assets/instructions/proposal.md` carries "operator confirmation" — requested with the artifact change context.
         - Real `givn skills sync` first; every content assertion reads the served instruction, never a generated copy; the generated files only carry the direction.
         - Step files: `tests/steps/prose_consolidation_steps.rs` (shared served-content and direction steps) and `tests/steps/visual_design_contract_steps.rs` (capability-specific steps) per design.md §Step definitions.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/visual-design-contract.feature::Synchronized authoring guidance carries the classification, driver, and persona rules"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/visual-design-contract.feature::Synchronized authoring guidance carries the classification, driver, and persona rules"
+            Feature: Visual Design Contract
+              Scenario: Synchronized authoring guidance carries the classification, driver, and persona rules
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the served design instruction contains "renders HTML, CSS, or JavaScript in a browser"
+               ✔  And the served design instruction contains "default browser driver"
+               ✔  And the served design-review instruction contains "opposite classification"
+               ✔  And the served proposal instruction contains "operator confirmation"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            BASELINE_GREEN — assertion migration: every step binding already exists
+            (the shared `Given a givn project with all agent skill targets enabled and
+            an active change` from the prose-consolidation task, the generic sync When,
+            and the shared served-instruction content steps), and the served design,
+            design-review, and proposal instructions already carry the rules the old
+            scenario read from the generated copies. This is the recorded
+            ORACLE_RED case: the old contract already passes.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "opposite classification" → "opposite categorization" in assets/instructions/design-review.md; same scoped command)
+            Feature: Visual Design Contract
+              Scenario: Synchronized authoring guidance carries the classification, driver, and persona rules
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the served design instruction contains "renders HTML, CSS, or JavaScript in a browser"
+               ✔  And the served design instruction contains "default browser driver"
+               ✘  And the served design-review instruction contains "opposite classification"
+                  Step panicked. Captured output: the served design-review instruction is missing "opposite classification"
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)
+            1 step failed                                                     EXIT=101
+            The omission makes exactly the matching assertion fail, so the assertion
+            discriminates; the excerpt was restored immediately (`git checkout --
+            assets/instructions/design-review.md`) and the scoped command passed
+            again. No production switch, exception, fake success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — assertion migration only. The delta scenario re-points the
+            permanent scenario's generated-copy assertions at the served
+            instructions (`assets/instructions/design.md`, `design-review.md`,
+            `proposal.md`), which already carry the classification, driver, and
+            persona rules; the generated-file direction rewrites are delivered by
+            the scenarios whose own assertions name those directions.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Visual Design Contract
+              Scenario: Synchronized authoring guidance carries the classification, driver, and persona rules
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the served design instruction contains "renders HTML, CSS, or JavaScript in a browser"
+               ✔  And the served design instruction contains "default browser driver"
+               ✔  And the served design-review instruction contains "opposite classification"
+               ✔  And the served proposal instruction contains "operator confirmation"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(visual-design-contract): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(visual-design-contract): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            dcb785cb — feat(visual-design-contract): <release note>; body: Scenario: Synchronized authoring guidance carries the classification, driver, and persona rules
             ```
 
 - [ ] instruction-extension: Changing an extension changes the next served content and touches nothing else
