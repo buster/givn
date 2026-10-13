@@ -2,7 +2,7 @@
 
 Feature: Change release note
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: The generated implementation guidance shares the release note
     Given a givn project with all agent skill targets enabled and an active change
     When the user runs `givn skills sync`

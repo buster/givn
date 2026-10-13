@@ -421,11 +421,12 @@ fn generated_command_directs_to_instruction(
 }
 
 #[then(
-    regex = r"^the generated givn-([a-z-]+) guidance directs the [a-z]+ to the ([a-z-]+) instruction$"
+    regex = r"^the generated givn-([a-z-]+) guidance directs the ([a-z]+(?: [a-z]+)?) to the ([a-z-]+) instruction$"
 )]
 fn generated_guidance_directs_to_instruction(
     world: &mut GivnWorld,
     skill: String,
+    _actor: String,
     instruction: String,
 ) {
     let content = generated_skill_content(world, &skill);
