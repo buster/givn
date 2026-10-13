@@ -5414,10 +5414,10 @@ sections in the same feature order.
             ```
       - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
-            <pending>
+            7a6e2e37 — test(e2e): <release note>; body: Scenario: A consumer synchronizes skills and every agent target receives the ideation facilitation skill
             ```
 
-- [ ] match-guidance-to-enabled-addons: A consumer synchronizes skills and the generated guidance omits disabled-addon sections
+- [x] match-guidance-to-enabled-addons: A consumer synchronizes skills and the generated guidance omits disabled-addon sections
       Design constraints:
         - Real `givn skills sync` with the arc42, domain-modeling, and coverage addons disabled; primary assertions on the served review instruction and the generated files.
         - Condition seam: `{{#if addons.*}}` blocks in `assets/instructions/review.md`; `render_conditionals` at request time; disabled-addon files (the domain-modeling skill) are removed by the existing reconciliation (`reconcile_addon_artifacts`).
@@ -5426,23 +5426,101 @@ sections in the same feature order.
         - E2E steps: `tests/steps/template_conditional_rendering_e2e_steps.rs` (real addon toggles/sync) and `tests/steps/template_conditional_rendering_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::A consumer synchronizes skills and the generated guidance omits disabled-addon sections"`
-      - [ ] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::A consumer synchronizes skills and the generated guidance omits disabled-addon sections"
+            (bindings: the served-instruction omission step and the
+             generated-review-skill omission step are new and live in the
+             capability's e2e file; the served-instruction helper moved from
+             the regular steps file to the shared support module so both files
+             use one implementation; the other six sentences reuse existing
+             steps. First run:)
+            Feature: Match guidance to enabled addons
+              Scenario: A consumer synchronizes skills and the generated guidance omits disabled-addon sections
+               ✔  Given a Givn project with the arc42, domain-modeling, and coverage addons disabled and the skills synchronized
+               ✔  When a consumer synchronizes skills through the Givn CLI
+               ✔  Then the served review instruction omits the Arc42 implementation conformance section
+               ✔  And the served review instruction omits the Ubiquitous language conformance section
+               ✔  And the generated review skill carries no Arc42 implementation conformance section
+               ✔  And the generated review skill carries no Ubiquitous language conformance section
+               ✔  And no generated domain-modeling skill exists
+               ✔  And no generated skill or command mentions any disabled addon
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            8 steps (8 passed)                                          EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the disabled-addon selection already
+            renders on the current product: the `{{#if addons.arc42}}` block in
+            `assets/instructions/review.md` and the conditional templates drop
+            the sections, and `reconcile_addon_artifacts` removes the
+            domain-modeling skill. All eight steps hold, so this is the
+            recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily removed the `{{#if addons.arc42}}`/`{{else}}`/`{{/if}}`
+               selection around the Arc42 implementation conformance block in
+               `assets/instructions/review.md`, delivering it unconditionally;
+               same scoped command)
+            Feature: Match guidance to enabled addons
+              Scenario: A consumer synchronizes skills and the generated guidance omits disabled-addon sections
+               ✔  Given a Givn project with the arc42, domain-modeling, and coverage addons disabled and the skills synchronized
+               ✔  When a consumer synchronizes skills through the Givn CLI
+               ✘  Then the served review instruction omits the Arc42 implementation conformance section
+                  Step failed:
+                  Defined: givn/changes/extended-rules/specs/fragments/match-guidance-to-enabled-addons.feature:24:5
+                  Matched: tests/steps/template_conditional_rendering_steps.rs:133:1
+                  Step panicked. Captured output: the served review instruction carries the Arc42 section:
+                  # Instruction: review
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/review.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
             ```
+            none — the underlying behaviour was delivered by the earlier
+            match-guidance-to-enabled-addons slices: `assets/instructions/review.md`
+            carries the `{{#if addons.arc42}}` condition, the templates gate
+            their addon sections with the same directives, and the existing
+            reconciliation removes the disabled addon skill. The scenario's
+            production change is empty; only step bindings were added.
             ```
             Evidence transcript path (design.md §Visual Design Contract):
             ```
+            givn/changes/extended-rules/evidence/visual/a-consumer-synchronizes-skills-and-the-generated-guidance-omits-disabled-addon-sections/transcript.txt
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::A consumer synchronizes skills and the generated guidance omits disabled-addon sections"
+            Feature: Match guidance to enabled addons
+              Scenario: A consumer synchronizes skills and the generated guidance omits disabled-addon sections
+               ✔  Given a Givn project with the arc42, domain-modeling, and coverage addons disabled and the skills synchronized
+               ✔  When a consumer synchronizes skills through the Givn CLI
+               ✔  Then the served review instruction omits the Arc42 implementation conformance section
+               ✔  And the served review instruction omits the Ubiquitous language conformance section
+               ✔  And the generated review skill carries no Arc42 implementation conformance section
+               ✔  And the generated review skill carries no Ubiquitous language conformance section
+               ✔  And no generated domain-modeling skill exists
+               ✔  And no generated skill or command mentions any disabled addon
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            8 steps (8 passed)                                          EXIT=0
             ```
-      - [ ] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.33s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 8 steps (8 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
+            <pending>
             ```
 
 - [ ] match-guidance-to-enabled-addons: A consumer enables the addons a generated section needs and the guidance gains it

@@ -7,6 +7,7 @@ use std::path::PathBuf;
 
 use crate::common::{TestEnv, run_givn};
 use crate::steps::GivnWorld;
+use crate::steps::serve_extended_rules_steps;
 
 /// The fixture project root, panicking if none was set.
 pub fn env(world: &GivnWorld) -> &TestEnv {
@@ -20,6 +21,26 @@ pub fn env(world: &GivnWorld) -> &TestEnv {
 pub fn sync(world: &mut GivnWorld) {
     let out = run_givn(env(world), &["skills", "sync"]);
     world.last_output = Some(out);
+}
+
+/// Serve an artifact instruction in the fixture. The addon scenarios are
+/// synced projects without a change; the request path needs a change context,
+/// so a single active change is created first when the fixture has none.
+pub fn served_artifact_instruction(world: &GivnWorld, id: &str) -> String {
+    let env = env(world);
+    let changes = env.path("givn/changes");
+    let has_change = std::fs::read_dir(&changes)
+        .map(|entries| entries.flatten().any(|entry| entry.path().is_dir()))
+        .unwrap_or(false);
+    if !has_change {
+        let output = run_givn(env, &["new", "addon-condition"]);
+        assert!(
+            output.status.success(),
+            "create the served-instruction change failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    serve_extended_rules_steps::served_instruction(env, id)
 }
 
 /// Set an addon's enabled flag directly in the fixture's `givn/config.yaml`
