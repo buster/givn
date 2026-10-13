@@ -48,34 +48,21 @@ not carry (a house convention, a domain rule, a local constraint).
 
 ## Rules
 
-- The extension adds project-specific rules; it never changes steps, order,
-  gates, or the artifact list — the built-in flow is not configurable.
+- The extension adds project-specific rules; it never changes steps, order, gates, or the artifact list — the built-in flow is not configurable.
 - It never overrides, replaces, suppresses, or reorders the built-in rules.
-- It lives in project-owned configuration; it never enters generated files,
-  the managed revision, or the published clean-history surface.
-- Givn validates the entry when it resolves guidance; a rejected entry warns
-  and is skipped, and the request succeeds with the built-in rules alone.
-- It is effective at the next request: no synchronization, upgrade, or
-  restart is needed.
+- It lives in project-owned configuration; it never enters generated files, the managed revision, or the published clean-history surface.
+- Givn validates the entry when it resolves guidance; a rejected entry warns and is skipped, and the request succeeds with the built-in rules alone.
+- It is effective at the next request: no synchronization, upgrade, or restart is needed.
 - It belongs to the project: every upgrade leaves it untouched.
-- Project-, technology-, and domain-specific guidance enters only through
-  extensions; the built-in rules stay technology-agnostic.
+- Project-, technology-, and domain-specific guidance enters only through extensions; the built-in rules stay technology-agnostic.
 
 ## Examples
 
-- Record: the developer adds "Keep proposals under 500 words" to the
-  `extensions:` map for the proposal instruction; the next `givn instructions
-  proposal` serves the built-in rules plus that line.
-- Change: the developer edits the line to "Keep proposals under 300 words";
-  the next request serves the new text; nothing else changes.
-- Remove: the developer deletes the entry; the served content is the built-in
-  rules alone.
-- Unknown target: the map names `propozal`; the next guidance request warns,
-  skips the entry, and serves the built-in rules alone; the map stays
-  unchanged.
-- Contradiction: the developer records "Never write a release note" while the
-  built-in proposal rules require one; the served content carries both; the
-  project resolves its own contradiction.
+- Record: the developer adds "Keep proposals under 500 words" to the `extensions:` map for the proposal instruction; the next `givn instructions proposal` serves the built-in rules plus that line.
+- Change: the developer edits the line to "Keep proposals under 300 words"; the next request serves the new text; nothing else changes.
+- Remove: the developer deletes the entry; the served content is the built-in rules alone.
+- Unknown target: the map names `propozal`; the next guidance request warns, skips the entry, and serves the built-in rules alone; the map stays unchanged.
+- Contradiction: the developer records "Never write a release note" while the built-in proposal rules require one; the served content carries both; the project resolves its own contradiction.
 
 ## Minimal guarantee
 

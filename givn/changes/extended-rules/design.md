@@ -280,7 +280,7 @@ extensions:
 | `assets/config.yaml.tmpl` | Documents `extensions:` in the comment scaffold. |
 | `givn/changes/extended-rules/specs/**` | The delta features and narrative replacements (already authored). |
 | `tests/steps/serve_extended_rules_steps.rs` (new) | Extension recording/serving steps plus the shared served-instruction content step (`the served <id> instruction contains/does not contain …`). |
-| `tests/steps/serve_extended_rules_e2e_steps.rs` (new) | The serving `@e2e` steps (real CLI). |
+| `tests/steps/serve_extended_rules_e2e_steps.rs` (new) | Doc-only module skeleton; the serving `@e2e` assertions reuse the capability e2e files that drive the real CLI (`instruction_extension_e2e_steps.rs`, `initialize_a_project_e2e_steps.rs`, `template_conditional_rendering_e2e_steps.rs`, `prose_consolidation_e2e_steps.rs`). |
 | `tests/steps/instruction_extension_steps.rs` (new) | Record/change/remove/reject steps. |
 | `tests/steps/instruction_extension_e2e_steps.rs` (new) | The recording and upgrade `@e2e` steps (real CLI). |
 | `tests/steps/prose_consolidation_steps.rs` | Generic direction steps (`the generated <file> guidance directs …`), `the project-start block carries the resident rules section…`, updated generic content steps. |
@@ -404,7 +404,7 @@ distinct from Personas, which are review lenses:
   live under `reports/visual/` and are not review evidence. `givn check
   review` requires one non-empty transcript per delta `@e2e` scenario under
   this contract.
-- Expected evidence set — one transcript per delta `@e2e` scenario (12):
+- Expected evidence set — one transcript per delta `@e2e` scenario (14):
   - "An agent receives the extended rules through the Givn CLI"
     (`obtain-effective-guidance/serve-extended-rules.feature`)
   - "A developer records an extension and it governs the next guidance
@@ -432,6 +432,10 @@ distinct from Personas, which are review lenses:
     (`create-change/change-release-note.feature`)
   - "Synchronized guidance defines the contract approval and capture
     mechanics" (`create-change/visual-design-contract.feature`)
+  - "Generated review guidance stays aligned after skill sync"
+    (`fragments/review-architecture-documentation.feature`)
+  - "An agent synchronizes skills and the domain skill is routed"
+    (`fragments/guide-domain-modeling.feature`)
 - Motion: not applicable.
 
 ## Interaction Coverage Matrix
@@ -546,7 +550,7 @@ New production surfaces, all small:
   marked-section rendering.
 - `givn::skills::render::render_conditionals` — the existing conditional
   renderer, exposed for the request path.
-- `src/cli/project_hint.rs`'s `resident_rules_section(asset: &str) -> Result<&str>`
+- `src/cli/project_hint.rs`'s `resident_rules(tasks: &str) -> Result<&str>`
   — marker extraction with a fail-closed error.
 - `src/config/overlay.rs`'s private entry-list wrapper for `extensions:` —
   deserialization only, keeping duplicate keys from failing every command.

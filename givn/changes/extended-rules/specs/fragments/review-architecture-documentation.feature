@@ -2,7 +2,7 @@
 
 Feature: Review architecture documentation
 
-  @givn.modified
+  @givn.modified @e2e
   Scenario: Generated review guidance stays aligned after skill sync
     Given a project root with givn/ initialised
     And an existing change named "review-alignment"

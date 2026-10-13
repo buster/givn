@@ -106,6 +106,8 @@ three-column table would not be parseable).
 | `refresh-generated-guidance` | none — route reported no signal | `NEW in fragments` | Fragment capability of the `support` fragment; generated guidance loses its rule content. |
 | `match-guidance-to-enabled-addons` | none — route reported no signal | `NEW in fragments` | Fragment capability of the `support` fragment; addon conditions select the served instruction's content. |
 | `generate-ideation-guidance` | none — route reported no signal | `NEW in fragments` | Fragment capability of the `support` fragment; the ideation step gains a served instruction. |
+| `guide-domain-modeling` | none — route reported no signal | `NEW in fragments` | Fragment capability of the `support` fragment; the domain-modeling rules move to the served instruction and the generated skill directs. |
+| `review-architecture-documentation` | none — route reported no signal | `NEW in fragments` | Fragment capability of the `support` fragment; the review-alignment assertions move to the served review instruction. |
 | `prose-consolidation` | none — route reported no signal | `EXTEND prose-consolidation` | Existing capability (create-change); its content assertions move to the served instruction. |
 | `change-release-note` | none — route reported no signal | `EXTEND change-release-note` | Existing capability (create-change); the shared release note is asserted on the served implementation instruction. |
 | `visual-design-contract` | none — route reported no signal | `EXTEND visual-design-contract` | Existing capability (create-change); the design, design-review, and steps assertions move to the served instructions. |

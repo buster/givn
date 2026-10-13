@@ -62,29 +62,15 @@ integrations.
 - Generated guidance may name only commands that work in the active project.
 - The installation report names what was installed, what was skipped, and why.
 - Optional addons are enabled or disabled by explicit user decision.
-- A generated file carries trigger metadata, invocation-specific
-  orchestration, and the direction to the served instruction only — subagent
-  boundaries, stop conditions, reporting; rule content comes from the
-  guidance request.
-- Every direction names an instruction id that resolves in the same Givn
-  version or a later one.
-- Reconciliation never overwrites a project-owned replacement and never
-  injects text into it.
-- The managed project-start block requires the effective dialog policy
-  independently of optional addons and preserves human-authored instructions
-  outside that block.
-- The managed project-start block renders its task-checkoff and
-  commit-message obligations from the canonical source that `givn
-  instructions` serves; the block's text and the served instruction cannot
-  disagree.
-- Resynchronization refreshes the managed policy obligation without
-  duplicating the block or changing the selected agent targets.
-- Fresh delegated contexts receive the obligation explicitly; the presenting
-  agent remains responsible for user-facing questions.
-- Setup changes no workflow behavior: same targets, same files, same
-  commands.
-- The generated content stays technology-agnostic; project-specific guidance
-  arrives only through extensions.
+- A generated file carries trigger metadata, invocation-specific orchestration, and the direction to the served instruction only — subagent boundaries, stop conditions, reporting; rule content comes from the guidance request.
+- Every direction names an instruction id that resolves in the same Givn version or a later one.
+- Reconciliation never overwrites a project-owned replacement and never injects text into it.
+- The managed project-start block requires the effective dialog policy independently of optional addons and preserves human-authored instructions outside that block.
+- The managed project-start block renders its task-checkoff and commit-message obligations from the canonical source that `givn instructions` serves; the block's text and the served instruction cannot disagree.
+- Resynchronization refreshes the managed policy obligation without duplicating the block or changing the selected agent targets.
+- Fresh delegated contexts receive the obligation explicitly; the presenting agent remains responsible for user-facing questions.
+- Setup changes no workflow behavior: same targets, same files, same commands.
+- The generated content stays technology-agnostic; project-specific guidance arrives only through extensions.
 
 ## Examples
 
@@ -93,11 +79,8 @@ integrations.
 - No SCM: `givn init` exits 0 with a warning that archive and managed upgrade are unavailable; skills are generated; a later `givn archive` refuses by name.
 - Addon-free initialization still installs the managed dialog obligation beside existing human-authored project instructions; resynchronization updates only the managed block.
 - No agent target: the interactive prompt opens with `.opencode` marked; a confirmation that marks nothing prints an error naming the requirement and shows the list again. A scripted `givn init` without `--agents`, an empty answer, or an unknown-only value exits non-zero, names `.opencode`, `.agents`, `.claude`, and leaves the project unchanged.
-- Direction: `givn init` writes `.opencode/skills/givn-propose/SKILL.md` as a
-  file that names `givn instructions proposal`; the rules arrive only when the
-  agent pulls them.
-- Existing full copy: a file from an earlier version that carries the rules is
-  rewritten to carry the direction on the next `givn skills sync`.
+- Direction: `givn init` writes `.opencode/skills/givn-propose/SKILL.md` as a file that names `givn instructions proposal`; the rules arrive only when the agent pulls them.
+- Existing full copy: a file from an earlier version that carries the rules is rewritten to carry the direction on the next `givn skills sync`.
 
 ## Minimal guarantee
 
