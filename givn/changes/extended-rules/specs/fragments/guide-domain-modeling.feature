@@ -16,7 +16,7 @@ Feature: Guide domain modeling
     And the served domain-modeling instruction contains "trip reset"
     And the served domain-modeling instruction does not contain "created -> planned -> implemented -> archived"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ubiquitous language is recorded in the project's arc42 glossary
     Given a Givn project
     Then the served domain-modeling instruction contains "maintaining the project's arc42 glossary"
