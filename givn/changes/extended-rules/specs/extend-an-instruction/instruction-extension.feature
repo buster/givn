@@ -35,7 +35,7 @@ Feature: A project extends an instruction's built-in rules
     Then a warning names the unknown instruction "propozal"
     And the served content is the built-in rules alone
 
-  @givn.added @wip
+  @givn.added
   Scenario: A malformed extension entry is dropped with a warning
     Given a Givn project with an active change
     When the project's configuration carries a malformed extension entry for the proposal instruction
