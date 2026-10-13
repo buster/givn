@@ -269,7 +269,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "the other terms stand"
     And  the served ideation instruction contains "a replaced name becomes an anti-term"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The verified-name gate holds without the addon
     Given  a project root with givn/ initialised without addons
     When  the agent requests the ideation instructions through the Givn CLI
