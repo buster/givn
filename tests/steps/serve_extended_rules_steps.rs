@@ -391,6 +391,124 @@ fn served_content_carries_the_replacement_text(world: &mut GivnWorld) {
     );
 }
 
+// --- serve-extended-rules: the request path never mutates --------------------
+
+/// Every project file as (relative path, bytes), excluding the version-control
+/// store and the fixture's own state directory. Sorted by path.
+pub(crate) fn project_files(env: &common::TestEnv) -> Vec<(String, Vec<u8>)> {
+    let mut files = Vec::new();
+    collect_project_files(&env.root(), &env.root(), &mut files);
+    files.sort_by(|a, b| a.0.cmp(&b.0));
+    files
+}
+
+fn collect_project_files(
+    root: &std::path::Path,
+    dir: &std::path::Path,
+    out: &mut Vec<(String, Vec<u8>)>,
+) {
+    let mut entries: Vec<std::path::PathBuf> = fs::read_dir(dir)
+        .unwrap_or_else(|error| panic!("read {}: {error}", dir.display()))
+        .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+        .collect();
+    entries.sort();
+    for path in entries {
+        if path.is_dir() {
+            let name = path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or_default();
+            if name == ".git" || path == root.join(EXTENSION_FIXTURE_DIR) {
+                continue;
+            }
+            collect_project_files(root, &path, out);
+        } else {
+            let relative = path
+                .strip_prefix(root)
+                .expect("project file under the project root");
+            out.push((
+                relative.to_string_lossy().into_owned(),
+                fs::read(&path).unwrap_or_default(),
+            ));
+        }
+    }
+}
+
+#[when("the agent requests the instructions for every served step")]
+fn agent_requests_every_served_step(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    // The no-mutation witness is taken before the first request; the fixture's
+    // own state directory is excluded so the witness itself never counts.
+    let snapshot = serde_json::to_vec(&project_files(env)).expect("serialize the project snapshot");
+    fs::write(
+        extension_fixture_dir(env).join("project-snapshot"),
+        snapshot,
+    )
+    .expect("record the pre-request project snapshot");
+
+    // Every instruction asset the binary serves in this Givn version, so the
+    // request path is exercised across the whole served corpus.
+    let assets_dir = common::repo_path("assets/instructions");
+    let mut ids: Vec<String> = fs::read_dir(&assets_dir)
+        .unwrap_or_else(|error| panic!("read {}: {error}", assets_dir.display()))
+        .filter_map(|entry| {
+            let entry = entry.ok()?;
+            let name = entry.file_name().to_string_lossy().into_owned();
+            name.strip_suffix(".md").map(str::to_string)
+        })
+        .collect();
+    ids.sort();
+    assert!(!ids.is_empty(), "no served instruction assets found");
+
+    for id in &ids {
+        let mut args = vec!["instructions", id.as_str()];
+        let change;
+        if MANIFEST_ARTIFACT_IDS.contains(&id.as_str()) {
+            change = active_change_id(env);
+            args.push("--change");
+            args.push(change.as_str());
+        }
+        let output = common::run_givn(env, &args);
+        assert!(
+            output.status.success(),
+            "givn instructions {id} failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+}
+
+#[then("no project file changed")]
+fn no_project_file_changed(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let raw = fs::read(extension_fixture_dir(env).join("project-snapshot"))
+        .expect("the request step records the pre-request snapshot");
+    let before: Vec<(String, Vec<u8>)> =
+        serde_json::from_slice(&raw).expect("the recorded snapshot is valid");
+    let after = project_files(env);
+    let mut changed: Vec<String> = Vec::new();
+    for (path, bytes) in &before {
+        match after.iter().find(|(other, _)| other == path) {
+            Some((_, other_bytes)) if other_bytes == bytes => {}
+            _ => changed.push(path.clone()),
+        }
+    }
+    for (path, _) in &after {
+        if !before.iter().any(|(other, _)| other == path) {
+            changed.push(path.clone());
+        }
+    }
+    assert!(
+        changed.is_empty(),
+        "the request path changed project files: {changed:?}"
+    );
+}
+
 // --- instruction-extension serving fixtures ---------------------------------
 
 /// Fixture directory the instruction-extension steps use to record the

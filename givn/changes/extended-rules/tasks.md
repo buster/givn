@@ -4228,7 +4228,7 @@ sections in the same feature order.
         - Assertions: the served proposal content carries the replacement text; the served content carries the project's rule in the marked extension section after it.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The extension applies on top of a project-owned replacement"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
             $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The extension applies on top of a project-owned replacement"
             Feature: The served instruction carries the built-in rules and the project's extension
@@ -4272,7 +4272,7 @@ sections in the same feature order.
             and the scoped command passed again. No production switch,
             exception, fake success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
             none — the cascade resolves the project-owned replacement as the
             effective base (signature and order unchanged) and the marked
@@ -4297,14 +4297,15 @@ sections in the same feature order.
             1 scenario (1 passed)
             6 steps (6 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
             $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.28s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(serve-extended-rules): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(serve-extended-rules): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            b2f92a4e — feat(serve-extended-rules): <release note>; body: Scenario: The extension applies on top of a project-owned replacement
             ```
 
 - [ ] serve-extended-rules: A guidance request changes nothing in the project
@@ -4315,15 +4316,69 @@ sections in the same feature order.
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::A guidance request changes nothing in the project"`
       - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::A guidance request changes nothing in the project"
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: A guidance request changes nothing in the project
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the instructions for every served step
+               ✔  Then no project file changed
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the request path already resolves,
+            renders, appends, and prints without writing (delivered by the
+            earlier instruction-extension scenarios); this is the recorded
+            ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission in the isolated fixture):
+            $ (temporarily made the request step write a probe project file after
+               the requests, simulating a mutating request path; same scoped
+               command)
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: A guidance request changes nothing in the project
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the instructions for every served step
+               ✘  Then no project file changed
+                  Step panicked. Captured output: the request path changed project files: ["mutation-probe.txt"]
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            The simulated mutation makes exactly the matching assertion fail, so
+            the assertion discriminates; the probe write was removed immediately
+            and the scoped command passed again. No production switch,
+            exception, fake success, or source-text test.
             ```
       - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the request path writes nothing (no render cache, no new
+            command surface; the extension map is read per call). This scenario
+            adds the every-served-step request step (the instruction assets the
+            binary serves in this version, so later assets are covered too) and
+            the project-file snapshot comparison in
+            tests/steps/serve_extended_rules_steps.rs.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after removing the probe write)
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: A guidance request changes nothing in the project
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the instructions for every served step
+               ✔  Then no project file changed
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
             ```
       - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.28s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
       - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(serve-extended-rules): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
