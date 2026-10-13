@@ -24,15 +24,15 @@ it and follow it; this file owns the invocation orchestration only.
 ### 1. Discovery phase — explore and propose a capability
 
 Spawn a discovery subagent (fall back to describing the pattern in prose if
-the Task tool is not available to you) with a self-contained prompt that:
+the Task tool is not available to you) with a self-contained prompt:
 
-- Passes the dialog obligation explicitly (a fresh context does not inherit
-  the parent's loaded policy).
-- Tells the subagent to run `givn instructions reverse-engineer` and follow
-  its discovery rules.
-- Asks for up to 3 candidate capabilities, ranked by suitability, each with
-  its name, black-box boundary, brief description, estimated scenario count,
-  suspected bugs, and codebase findings — returned as JSON only.
+```
+You are a discovery agent for a givn reverse-engineering change.
+
+For every user-facing question, follow the effective policy from `givn instructions dialog`: this fresh context does not inherit the parent's loaded policy, so load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
+
+Run `givn instructions reverse-engineer` and follow its discovery rules: explore the codebase and return up to 3 candidate capabilities, ranked by suitability, each with its name, black-box boundary, brief description, estimated scenario count, suspected bugs, and codebase findings — as JSON only.
+```
 
 ### 2. Present discovery results interactively
 

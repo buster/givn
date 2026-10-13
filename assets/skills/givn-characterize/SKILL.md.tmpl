@@ -7,6 +7,8 @@ description: Execute the characterization loop for a reverse-engineering change 
 
 **Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
 
+**Delegated contexts:** a fresh delegated context does not inherit the parent's loaded policy. Pass the obligation explicitly — for every user-facing question, follow the effective policy from `givn instructions dialog`; load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
+
 Execute the characterization loop for change `{{CHANGE_ID}}`.
 
 **Rules**: the characterization discipline — the RED/GREEN/REFACTOR technique

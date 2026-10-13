@@ -55,11 +55,17 @@ suspected bugs), `verify.command`/`verify.e2e_command`.
 ### 5. Loop: one characterization subagent per task
 
 For each unchecked task, in order: spawn a characterization subagent with a
-self-contained prompt that passes the dialog obligation explicitly, names the
-task and scenario, and tells the subagent to run
-`givn instructions characterize` and follow it (including the shared step
-mechanics from `givn instructions steps`). Wait for it to finish, then move to
-the next task.
+self-contained prompt:
+
+```
+You are a characterization agent executing one task of the reverse-engineering change '<id>'.
+
+For every user-facing question, follow the effective policy from `givn instructions dialog`: this fresh context does not inherit the parent's loaded policy, so load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
+
+Run `givn instructions characterize` and follow it (shared step mechanics: `givn instructions steps`). The task, its Seam block if any, and the scenario under characterization are pasted below.
+```
+
+Wait for it to finish, then move to the next task.
 
 ### 6. Reverse review epilogue
 

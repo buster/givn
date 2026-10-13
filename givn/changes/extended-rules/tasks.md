@@ -16,9 +16,10 @@ verbatim from `proposal.md` §Release note):**
 > synchronization and upgrades never fight.
 
 **Delta inventory (verified against every delta `.feature` under
-`givn/changes/extended-rules/specs/`):** 68 executable scenarios in 12
-features = 25 `@givn.added` + 43 `@givn.modified` + 0 `@givn.removed`;
-12 `@e2e` + 56 regular. Per feature (scenarios / added / modified / e2e):
+`givn/changes/extended-rules/specs/`):** 79 executable scenarios in 14
+features = 26 `@givn.added` + 53 `@givn.modified` + 0 `@givn.removed`;
+12 `@e2e` + 67 regular. The 11 repair scenarios the review findings added
+(2026-10-13) are included. Per feature (scenarios / added / modified / e2e):
 
 | Feature | Scenarios | Added | Modified | E2E |
 |---|---|---|---|---|
@@ -27,14 +28,16 @@ features = 25 `@givn.added` + 43 `@givn.modified` + 0 `@givn.removed`;
 | `create-change/visual-design-contract.feature` | 2 | 0 | 2 | 1 |
 | `extend-an-instruction/instruction-extension.feature` | 10 | 10 | 0 | 2 |
 | `fragments/generate-ideation-guidance.feature` | 29 | 1 | 28 | 1 |
-| `fragments/instruction-integrity.feature` | 4 | 2 | 2 | 0 |
+| `fragments/guide-domain-modeling.feature` | 9 | 0 | 9 | 0 |
+| `fragments/instruction-integrity.feature` | 5 | 3 | 2 | 0 |
 | `fragments/match-guidance-to-enabled-addons.feature` | 5 | 0 | 5 | 3 |
 | `fragments/refresh-generated-guidance.feature` | 2 | 1 | 1 | 1 |
+| `fragments/review-architecture-documentation.feature` | 1 | 0 | 1 | 0 |
 | `initialize-project/initialize-a-project.feature` | 3 | 2 | 1 | 1 |
 | `obtain-effective-guidance/serve-extended-rules.feature` | 6 | 6 | 0 | 1 |
 | `upgrade-a-project/apply-a-managed-upgrade.feature` | 3 | 3 | 0 | 0 |
 | `verify-change/visual-review-gate.feature` | 1 | 0 | 1 | 0 |
-| **Total** | **68** | **25** | **43** | **12** |
+| **Total** | **79** | **26** | **53** | **12** |
 
 The 12 `@e2e` titles (interaction-coverage-verified against `design.md`'s
 Interaction Coverage Matrix, which matches the `## Interactions` tables of the
@@ -58,9 +61,10 @@ change carries no separate `# User Interaction Inventory:` comments inside
 **Work order (recorded choice):** `design.md` names no implementation
 sequencing section, so per the canonical tasks instruction this file follows
 `.feature` order — features alphabetically by path (the delta-inventory order
-above), scenarios in their in-file order. Two groups: the 56 non-`@e2e`
+above), scenarios in their in-file order. Two groups: the 67 non-`@e2e`
 scenario sections, then the E2E setup task, then the 12 `@e2e` scenario
-sections in the same feature order.
+sections in the same feature order. The repair scenarios (2026-10-13) run
+after the planned sections in the order the review findings name them.
 
 ---
 
@@ -6717,5 +6721,33 @@ reverse-specific content remains in the instruction.
 
 - [x] COMMIT: small alignment fix in its own revision — no scenario loop (no delta scenario pins the removed wording). Record the revision identifier:
       ```
-      (recorded after the commit)
+      fac3637c — fix(instruction-integrity): point the reverse task breakdown at the served steps instruction and the single commit contract
       ```
+
+  Post-commit correction (Repair 2, discovered by the permanent-suite check):
+  `givn/specs/create-change/prose-consolidation.feature`'s "Delegated question
+  preparation carries the policy without assuming inherited context" pins the
+  delegated-dialog obligation on the generated delegation prompts. The
+  characterize/reverse-engineer rewrites (and the earlier ideation-skill
+  migration) had dropped it, so the obligation was restored in the two
+  skills, the two commands' delegated prompt blocks, and the ideation skill —
+  the obligation is part of the generated files' orchestration, not a rule
+  copy of the served instructions.
+
+  Evidence (scoped, permanent scope):
+  ```
+  $ GIVN_FEATURES=givn/specs cargo test --locked --test features_runner -- --exact "create-change/prose-consolidation.feature::Delegated question preparation carries the policy without assuming inherited context"
+    Scenario: Delegated question preparation carries the policy without assuming inherited context
+     ✔  Given a Givn project with delegated authoring and review guidance enabled
+     ✔  When the author reads the synchronized delegation instructions
+     ✔  Then every question-preparing delegation explicitly requires the effective dialog policy in the fresh context
+     ✔  And the delegation instructions do not assume the parent's loaded policy is inherited
+     ✔  And the presenting agent remains responsible for the question before it reaches the person
+     ✔  And a question-tool recommendation or option label does not replace context and answer consequences
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  6 steps (6 passed)                                            EXIT=0
+  ```
+  Full non-@e2e delta scope re-run after the correction:
+  `Summary [   4.874s] 67 tests run: 67 passed, 12 skipped`
