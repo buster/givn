@@ -39,7 +39,7 @@ Feature: Match guidance to enabled addons
     And the generated review skill directs the reviewer to the review instruction
     And the generated review command directs the reviewer to the review instruction
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario Outline: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
     Given a Givn project with the domain-modeling and arc42 addons enabled and the skills synchronized
     When a consumer disables the <addon> addon through the Givn CLI
