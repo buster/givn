@@ -5803,10 +5803,10 @@ sections in the same feature order.
             ```
       - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
-            <pending>
+            731c2882 — test(e2e): <release note>; body: Scenario: Synchronized guidance explains how to resolve the deterministic gates
             ```
 
-- [ ] initialize-a-project: Consumer runs init non-interactively and gets opencode skills
+- [x] initialize-a-project: Consumer runs init non-interactively and gets opencode skills
       Design constraints:
         - Real `givn init --no-addons --agents opencode` in a root without `givn/` that contains human-authored agent instructions to preserve; primary assertions on the real stdout and the generated files.
         - Seam: the refreshed project-start block renders `{{RESIDENT_RULES}}` from `assets/instructions/tasks.md` through `src/cli/project_hint.rs`; the generated givn-propose file is the direction; the dialog obligation stays as today.
@@ -5815,23 +5815,113 @@ sections in the same feature order.
         - E2E steps: `tests/steps/initialize_a_project_e2e_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "initialize-project/initialize-a-project.feature::Consumer runs init non-interactively and gets opencode skills"`
-      - [ ] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "initialize-project/initialize-a-project.feature::Consumer runs init non-interactively and gets opencode skills"
+            (bindings: only the installed-guidance direction step is new and
+             lives in the capability's e2e file; the When reuses the existing
+             generic `the consumer runs \`givn init ...\`` step, which spawns
+             the real CLI, and every other sentence already binds. First run:)
+            Feature: initialize-a-project
+              Scenario: Consumer runs init non-interactively and gets opencode skills
+               ✔  Given a project root without a givn/ directory
+               ✔  And the root contains human-authored agent instructions to preserve
+               ✔  When the consumer runs `givn init --no-addons --agents opencode`
+               ✔  Then the command exits 0
+               ✔  And the initialization report names opencode and states that optional addons are disabled
+               ✔  And the file ".opencode/skills/givn-propose/SKILL.md" exists
+               ✔  And the installed givn-propose guidance directs the author to the proposal instruction
+               ✔  And the directory ".claude/skills/givn-propose" does not exist
+               ✔  And the generated project-start guidance requires the effective dialog policy before every context's first user-facing question
+               ✔  And the obligation covers questions outside named skills and requires explicit handoff to delegated agents
+               ✔  And the project-start guidance contains a policy reference rather than the worked dialog examples
+               ✔  And the human-authored agent instructions remain unchanged
+               ✔  And no optional tone addon is required for the obligation
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            13 steps (13 passed)                                        EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the direction in the givn-propose
+            template, the refreshed project-start block rendered from
+            `assets/instructions/tasks.md`, and the preserved human bytes all
+            already hold on the current product. All steps pass, so this is
+            the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily removed the direction line
+               `- Instructions: run \`givn instructions proposal --change {{CHANGE_ID}}\``
+               from assets/skills/givn-propose/SKILL.md.tmpl; same scoped command)
+            Feature: initialize-a-project
+              Scenario: Consumer runs init non-interactively and gets opencode skills
+               ✔  Given a project root without a givn/ directory
+               ✔  And the root contains human-authored agent instructions to preserve
+               ✔  When the consumer runs `givn init --no-addons --agents opencode`
+               ✔  Then the command exits 0
+               ✔  And the initialization report names opencode and states that optional addons are disabled
+               ✔  And the file ".opencode/skills/givn-propose/SKILL.md" exists
+               ✘  And the installed givn-propose guidance directs the author to the proposal instruction
+                  Step failed:
+                  Defined: givn/changes/extended-rules/specs/initialize-project/initialize-a-project.feature:13:5
+                  Matched: tests/steps/initialize_a_project_e2e_steps.rs:115:1
+                  Step panicked. Captured output: the installed givn-propose guidance does not direct the author to the proposal instruction:
+                  ---
+                  name: givn-propose
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            7 steps (6 passed, 1 failed)                                EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/skills/givn-propose/SKILL.md.tmpl`) and
+            the scoped command passed again. No production switch, exception,
+            fake success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
             ```
+            none — the underlying behaviour was delivered by the earlier
+            initialize-a-project slices: the project-start block renders its
+            resident rules from `assets/instructions/tasks.md` through
+            `src/cli/project_hint.rs`, the givn-propose template carries the
+            direction, and `givn init --no-addons --agents opencode` preserves
+            the human AGENTS.md bytes and installs only .opencode. Only the
+            `@wip` removal and the installed-guidance binding were needed.
             ```
             Evidence transcript path (design.md §Visual Design Contract):
             ```
+            givn/changes/extended-rules/evidence/visual/consumer-runs-init-non-interactively-and-gets-opencode-skills/transcript.txt
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "initialize-project/initialize-a-project.feature::Consumer runs init non-interactively and gets opencode skills"
+            Feature: initialize-a-project
+              Scenario: Consumer runs init non-interactively and gets opencode skills
+               ✔  Given a project root without a givn/ directory
+               ✔  And the root contains human-authored agent instructions to preserve
+               ✔  When the consumer runs `givn init --no-addons --agents opencode`
+               ✔  Then the command exits 0
+               ✔  And the initialization report names opencode and states that optional addons are disabled
+               ✔  And the file ".opencode/skills/givn-propose/SKILL.md" exists
+               ✔  And the installed givn-propose guidance directs the author to the proposal instruction
+               ✔  And the directory ".claude/skills/givn-propose" does not exist
+               ✔  And the generated project-start guidance requires the effective dialog policy before every context's first user-facing question
+               ✔  And the obligation covers questions outside named skills and requires explicit handoff to delegated agents
+               ✔  And the project-start guidance contains a policy reference rather than the worked dialog examples
+               ✔  And the human-authored agent instructions remain unchanged
+               ✔  And no optional tone addon is required for the obligation
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            13 steps (13 passed)                                        EXIT=0
             ```
-      - [ ] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.24s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 13 steps (13 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
+            <pending>
             ```
 
 - [ ] serve-extended-rules: An agent receives the extended rules through the Givn CLI
