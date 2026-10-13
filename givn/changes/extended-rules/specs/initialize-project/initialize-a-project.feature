@@ -18,7 +18,7 @@ Feature: initialize-a-project
     And  the human-authored agent instructions remain unchanged
     And  no optional tone addon is required for the obligation
 
-  @givn.added @wip
+  @givn.added
   Scenario: A full copy installed by an earlier version is reconciled to the direction
     Given a project root with givn/ initialised
     And a full-copy givn-propose skill installed by an earlier version

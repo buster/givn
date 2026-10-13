@@ -3722,26 +3722,88 @@ sections in the same feature order.
             b4afc639 — feat(match-guidance-to-enabled-addons): <release note>; body: Scenario: Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled
             ```
 
-- [ ] refresh-generated-guidance: Generated guidance carries no copy of a built-in rule
+- [x] refresh-generated-guidance: Generated guidance carries no copy of a built-in rule
       Design constraints:
         - Real `givn skills sync` with all targets enabled; every generated skill and command carries trigger metadata and a direction, and none copies the built-in rules of its instruction.
         - No-duplication step (design.md §Step definitions, lives in `tests/steps/instruction_integrity_steps.rs`): the file names `givn instructions <id>`, and NONE of the representative marker list appears — "Artifact-specific rules", "carries the release note as its message subject", "Overlap dispositions", "Black-Box-First", "the user's verified name", "VISUAL-REVIEW: PASS", "one question at a time"; the list samples rules owned by different instruction assets so a copy reappearing anywhere is caught.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/refresh-generated-guidance.feature::Generated guidance carries no copy of a built-in rule"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/refresh-generated-guidance.feature::Generated guidance carries no copy of a built-in rule"
+            Feature: Refresh generated guidance
+              Scenario: Generated guidance carries no copy of a built-in rule
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then every generated skill and command carries trigger metadata and a direction
+               ✘  And no generated skill or command copies the built-in rules of its instruction
+                  Step panicked. Captured output: /tmp/.tmpzGVk9q/.opencode/skills/givn-design/SKILL.md
+                  still copies the built-in rule marker "Black-Box-First":
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                 EXIT=101
+            OLD_PRODUCT_RED — the generated templates still carry the built-in
+            rule copies (the check walks every installed skill and command of
+            the configured targets and asserts the representative marker list).
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            assets/skills/givn-design/SKILL.md.tmpl, givn-design-review/SKILL.md.tmpl,
+              givn-implement/SKILL.md.tmpl, givn-propose/SKILL.md.tmpl,
+              givn-review/SKILL.md.tmpl, givn-steps/SKILL.md.tmpl,
+              givn-tasks/SKILL.md.tmpl
+            assets/commands/givn-characterize.md, givn-design.md, givn-implement.md,
+              givn-reverse-engineer.md, givn-review.md, givn-steps.md,
+              givn-tasks.md, grill-me.md, grill-with-docs.md
+              — every representative marker copy removed from all 30 template
+              files; each affected file now points at the served instruction
+              that owns the rule (commit contract → `givn instructions tasks
+              --change …`, black-box-first → `givn instructions design
+              --change …`, gate dispositions and the visual verdict →
+              `givn instructions review --change …`; the one-question
+              discipline stays with the dialog policy).
+            tests/steps/instruction_integrity_steps.rs — the two real steps
+              (frontmatter trigger metadata + a named direction per installed
+              file; the seven-marker representative copy scan).
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after the template edits)
+            Feature: Refresh generated guidance
+              Scenario: Generated guidance carries no copy of a built-in rule
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then every generated skill and command carries trigger metadata and a direction
+               ✔  And no generated skill or command copies the built-in rules of its instruction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.52s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            $ (direction guards re-run after the new pointers)
+              fragments/instruction-integrity.feature::Every instruction id named by
+              generated guidance resolves through the Givn CLI → 4 steps (4 passed)  EXIT=0
+              fragments/instruction-integrity.feature::Every generated direction is
+              invokable in its documented context → 5 steps (5 passed)               EXIT=0
+              (the first wrapped `givn instructions tasks --change` line breaks were
+              unwrapped so the direction holds the change context on one line)
+            $ (permanent guards for the kept orchestration text)
+              create-change/prose-consolidation.feature::Generated guidance names the
+              commit path that works on every backend → 3 steps (3 passed)           EXIT=0
+              initialize-project/initialize-a-project.feature::Fossil initialization
+              names the supported attribution path without Git plumbing → 7 steps (7 passed)  EXIT=0
+              fragments/review-architecture-documentation.feature::Generated review
+              guidance stays aligned after skill sync → 4 steps (4 passed)           EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(refresh-generated-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(refresh-generated-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            ce266c18 — feat(refresh-generated-guidance): <release note>; body: Scenario: Generated guidance carries no copy of a built-in rule
             ```
 
 - [ ] initialize-a-project: A full copy installed by an earlier version is reconciled to the direction
