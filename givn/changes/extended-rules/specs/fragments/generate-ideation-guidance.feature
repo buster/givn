@@ -233,7 +233,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "the lines and the picture naming the"
     And  the served ideation instruction contains "a canvas that renders"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation command guardrails require the canvas and legal aggregates
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
