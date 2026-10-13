@@ -50,6 +50,20 @@ the seed's status line to `Status: implemented in <change-id>` — or
 Leave the rest of the seed unchanged. When the proposal records no seed,
 record "no seed" explicitly in the summary.
 
+{{#if addons.readme}}
+## Post-archive README update
+
+After a successful archive, bring the README up to the current project state:
+
+- Replace a remaining `{{PROJECT_NAME}}` scaffold placeholder with the real
+  project name from `Cargo.toml`, `package.json`, or the project directory
+  name.
+{{#if addons.coverage}}
+- The coverage badge and `## Coverage` summary managed blocks are updated by
+  the archive gate itself — verify them after the run, never hand-edit them.
+{{/if}}
+{{/if}}
+
 ## Distinctions
 
 - `givn lint` is static: it never runs tests.

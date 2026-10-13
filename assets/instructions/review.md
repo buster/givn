@@ -3,6 +3,14 @@
 Completeness-based coverage review. Goal: every uncovered region is
 deliberately classified and resolved. No percentage threshold.
 
+## Preconditions
+
+- **Tasks must be done.** If `givn status --change <id>` shows unchecked
+  tasks, warn the user and confirm before proceeding.
+- **Never change production code to force a pass.** A failing test is a
+  finding to classify or remediate through the loop, not an edit made to turn
+  the suite green.
+
 ## Step 0 (mandatory, first): fabrication audit
 
 A change can reach review with every task checked off, the runner exiting
@@ -87,11 +95,13 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
     corrected decision and re-run design-review (and reassess the arc42
     chapter table if the change is structural) before the task can be
     considered done — never to silently keep the deviation.
-11. **Interaction coverage verification** — cross-reference the spec's
-    User Interaction Inventory against the design's Interaction Coverage
-    Matrix and the actual `.feature` file + step definitions:
-    a. Read the spec `.feature` file and extract the `# User Interaction
-       Inventory:` comment block. List every entry.
+11. **Interaction coverage verification** — cross-reference the interaction
+    inventory in the owning use-case document against the design's
+    Interaction Coverage Matrix and the actual `.feature` file + step
+    definitions:
+    a. Read the owning `givn/specs/<usecase-id>/usecase.md` and list every
+       entry of its `## Interactions` section — the inventory lives there,
+       never in a `.feature` comment block.
     b. Read the design's `Interaction Coverage Matrix` table. Confirm
        every inventory entry appears as a row. Flag missing or extra rows
        as a finding — every interaction must be mapped, no unmapped
@@ -294,6 +304,23 @@ are review evidence, not score thresholds. An overlap finding is
 advisory evidence until its disposition is recorded; the recorded disposition,
 not the finding's presence, is the completed verification evidence.
 
+{{#if addons.readme}}
+## README impact decision
+
+The review must record the machine-checkable README impact decision — the
+review gate refuses sign-off without it:
+
+- `README-IMPACT: none` — this change did not touch the project's public face.
+- `README-IMPACT: updated - <comma-separated sections>` — the named README
+  sections (Description, Quick start, Prerequisites, Usage, Configuration,
+  Contributing, License) were refreshed to match this change.
+
+A user-visible change (a command, a flag, configuration, or output a consumer
+observes) requires the named sections to be actually edited in the README —
+declaring them updated is not editing them. An open placeholder in the README
+blocks the archive gate regardless of this line.
+
+{{/if}}
 ## Sign-off checklist
 
 - Fabrication audit: clean (or all findings remediated).
@@ -324,12 +351,45 @@ not the finding's presence, is the completed verification evidence.
 - Implementation (commands, file layout, framework/driver) matches what
   design.md explicitly named — any deviation was resolved by updating
   design.md and re-running design-review, never left as a silent shortcut.
-- Interaction coverage verified: every spec inventory entry maps to a
+- Interaction coverage verified: every use-case inventory entry maps to a
   design matrix row, an existing `@e2e` scenario, and step definitions
   using the promised driving mechanism — no mismatches.
 - No finding was excused with a classification outside the three buckets
   (no "acceptable for now," "future scope," "sufficient for current scope,"
   or similar invented exception anywhere in this report).
+
+## Step orchestration (orchestrator spot-check)
+
+**Audience: the agent orchestrating the review step, not the review author.**
+Before accepting a reported `REVIEW: PASS`, independently re-check a sample
+rather than trusting the subagent's report:
+
+1. Grep two or three step definition files yourself for empty bodies (or all
+   when fewer than five) and confirm any "0 findings" claim.
+2. Confirm two or three checked-off tasks have revisions touching production
+   code, via `git show --stat <hash>`.
+3. Read every `@e2e` scenario's step definitions and confirm each has a
+   real-interface assertion — not repository-only, and for a browser-UI
+   capability actually driven through a real browser, never HTTP/fetch.
+4. Confirm the normalized action scope: no capability has more than one
+   `@e2e` scenario for the same action.
+5. Confirm which file(s) `verify.e2e_command` invokes, then search the tree
+   (including untracked files) for a parallel e2e implementation the report
+   did not mention. A report that never names the exact invoked file(s) or
+   never mentions the parallel-implementation check is incomplete — reject it.
+6. Read both `verify.command` and `verify.e2e_command` from
+   `givn/config.yaml` yourself. Identical strings are never a passable state —
+   reject `REVIEW: PASS` outright. A report without both scoped scenario
+   counts (e2e strictly smaller, or an explicit "all scenarios are @e2e") is
+   incomplete.
+7. Spot-check one command, file-layout, or framework/driver decision
+   `design.md` names against what was actually built. A mismatch not backed by
+   an updated `design.md` plus a re-run design-review rejects PASS.
+8. Scan `review.md` itself for invented exception language ("acceptable for
+   now," "future scope," "sufficient for current scope," or similar) — any
+   such phrase rejects `REVIEW: PASS` regardless of what it excuses.
+9. Any contradiction: reject `REVIEW: PASS` and re-run the review subagent
+   with the discrepancy named.
 
 ## Result
 
