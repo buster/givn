@@ -1,9 +1,14 @@
 # Review: extended-rules
 
-Reviewer runs in this report were made against HEAD `4692851b` (working tree
-clean, `git status --porcelain` empty) with the checkout's binary
-(`target/debug/givn 0.8.5`; the PATH install `givn 0.8.4` was additionally
-checked and produced identical findings).
+Two-pass review record. The first pass reviewed HEAD `4692851b` and reported
+five findings (F1-F5 below). The repairs landed in `163062eb` (review-audit
+findings) and `63877b2e` (restored the nine re-point scenarios lost to the
+repair write), with the consolidated repair record and the design-review
+amendment in the working tree. Every table below is refreshed to the repaired
+state; the finding text is preserved as the reported-then-fixed record. All
+verification commands in this revision were run at the repaired state with
+the checkout's binary (`target/debug/givn 0.8.5`; working tree otherwise
+clean apart from the two repair-bookkeeping files named above).
 
 ## Fabrication Audit (do this first)
 
@@ -15,26 +20,24 @@ delta's own files:
 ```
 $ for f in $(find givn/changes/extended-rules/specs -name "*.feature"); do
     git log -p --follow -- "$f" | grep -E "^-.*@e2e"; done
-9 files match; EVERY match is the paired line of an `@... @e2e @wip` →
-`@... @e2e` change (only `@wip` removed). Samples:
--  @givn.added @e2e @wip   /  +  @givn.added @e2e        (serve-extended-rules, instruction-extension ×2)
--  @givn.modified @e2e @wip / + @givn.modified @e2e      (initialize-a-project, generate-ideation-guidance,
-    refresh-generated-guidance, match-guidance ×3, prose-consolidation, change-release-note,
-    visual-design-contract)
-0 genuine `@e2e` removals inside the delta's own files.
+Every match is the paired line of an `@... @e2e @wip` → `@... @e2e` change
+(only `@wip` removed). 0 genuine `@e2e` removals inside the delta's own files.
 ```
 
 Cross-tree tag comparison — permanent same-title scenario vs the delta
-`@givn.modified` replacement (script `/tmp/opencode/tags.py`):
+`@givn.modified` replacement (script `/tmp/opencode/tags.py`), re-run after
+the repairs:
 
 ```
 == (a) e2e drops: permanent @e2e, delta same-title without @e2e ==
-  DROP: review-architecture-documentation.feature::Generated review guidance stays aligned after skill sync  perm=['@e2e']
+(no output)
 == (b) e2e gains: permanent without @e2e, delta with @e2e ==
 (no output)
 ```
 
-The drop is **finding F2** below.
+First-pass finding F2 (the re-pointed `Generated review guidance stays
+aligned after skill sync` had lost its `@e2e` tag) is fixed: the delta
+scenario now reads `@givn.modified @e2e`, and its transcript is committed.
 
 ### 1. Step definition scan (empty/no-op bodies)
 
@@ -56,25 +59,27 @@ change never touched (0 commits in the change range), not a step definition.
 ### 2. Commit cross-check
 
 Every `- [x] COMMIT:` bullet in `tasks.md` was cross-checked against git
-(script `/tmp/opencode/full-audit.py`):
+(script `/tmp/opencode/audit3.py`), now that the bullets carry their
+identifiers inline (F1's fix):
 
 ```
-COMMIT bullets: 82 | with fenced identifier: 82 | without: 0
-distinct ids: 82 | duplicates: [] | unresolved: []
-classification: {'production': 49, 'artifact': 33}
+COMMIT bullets: 83 | with identifier: 83 | without: 0
+distinct: 83 | duplicates: [] | unresolved: []
+classification: production 50 / artifact 33
 ```
 
-49/82 commits touch production surfaces (`src/`, `assets/`, `tests/`,
-`docs/`); 33/82 diffs are delta-spec/tasks/evidence-only and are all listed
-below with their disposition. No task lacks a commit; no identifier is reused;
-every identifier resolves to a real commit.
+50/83 commits touch production surfaces (`src/`, `assets/`, `tests/`,
+`docs/`, design/proposal text); 33/83 diffs are delta-spec/tasks/evidence-only
+and are all listed below with their disposition. No task lacks a commit; no
+identifier is reused; every identifier resolves to a real commit.
 
 Exceptions (33), each verified: spec-only diffs are `@wip`-removal commits of
 the project's recorded assertion-migration pattern — every one has
 `ORACLE_RED`/`BASELINE_GREEN` plus a controlled-omission calibration recorded
 in its task section (script `/tmp/opencode/oracle.py`: 29/29 sections contain
-the rationale and the recorded hash) — or an `@e2e` transcript commit whose
-bindings and GREEN run were delivered by the capability's step-file commit:
+the rationale and the recorded hash; re-run after the repairs, still 0
+missing) — or an `@e2e` transcript commit whose bindings and GREEN run were
+delivered by the capability's step-file commit:
 
 | Commit | Scenario | Pattern | Disposition |
 |---|---|---|---|
@@ -97,6 +102,12 @@ fabricated task" is addressed by the recorded assertion-migration pattern
 (same construction the archived precedent `make-user-questions-decision-ready`
 dispositioned under "test/evidence only (see disposition)").
 
+First-pass finding F1 (the recording format made the gate read repeated plan
+sentences as duplicate identifiers) is fixed: the bullets now record
+`` `hash` -- text `` inline, the three repair bullets were consolidated into
+the single commit they actually were, and `givn check review` passes the
+integrity check.
+
 ### 3. Promised-architecture cross-check
 
 Every path design.md's `## Exact file changes` promises exists (script
@@ -108,10 +119,12 @@ chapters):
 == existing: 66 | missing: 0
 ```
 
-Note: the deterministic `check_promised_files_exist` hook skips this
-verification because it looks for the heading `## Step Definitions` while
-design.md carries `## Step definitions` (case difference); the check was
-therefore made manually and is complete above.
+The `serve_extended_rules_e2e_steps.rs` cell now documents the file as a
+doc-only module skeleton (F4's corrected decision); the deterministic
+`check_promised_files_exist` hook still skips this section because it looks
+for the heading `## Step Definitions` while design.md carries `## Step
+definitions` (case difference); the check was therefore made manually and is
+complete above.
 
 ### 4. Strict-mode proof
 
@@ -130,7 +143,7 @@ $ sed -n '55p;64,65p;151p' tests/features_runner.rs
 
 ### 5. Downgraded e2e scenario scan
 
-All 12 delta `@e2e` scenarios assert on observable output of the real CLI
+All 14 delta `@e2e` scenarios assert on observable output of the real CLI
 interface (stdout/stderr, exit codes, or files the real command wrote), never
 on repository state alone. Interface is terminal (CLI text output), so no
 browser driver applies.
@@ -146,6 +159,8 @@ browser driver applies.
 | A consumer synchronizes skills and the generated guidance omits disabled-addon sections | yes — real sync after real addon state + served/generated content | N/A | no |
 | A consumer enables the addons a generated section needs and the guidance gains it | yes — real `givn addons enable` + sync + served/generated content | N/A | no |
 | A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed | yes — real addon toggle + sync + file removal + served content (Scenario Outline, 2 examples) | N/A | no |
+| Generated review guidance stays aligned after skill sync | yes — real `givn skills sync` stdout; generated review skill carries no Arc42 section; served review instruction carries it (F2's restored tag) | N/A | no |
+| An agent synchronizes skills and the domain skill is routed | yes — real `givn skills sync` stdout; generated skill directs to the served instruction; served content carries the moved rule (F3's re-point) | N/A | no |
 | Generated guidance points to the canonical E2E policy | yes — real sync + served specs instruction + delivered guidance | N/A | no |
 | The generated implementation guidance shares the release note | yes — real sync + served tasks instruction + AGENTS.md | N/A | no |
 | Synchronized guidance defines the contract approval and capture mechanics | yes — real sync + served design-review/steps instructions | N/A | no |
@@ -159,7 +174,8 @@ be wrong and no HTTP/fetch substitution exists (steps spawn
 ### 6. E2e scope check
 
 One `@e2e` scenario per distinct happy-path action; variants/error cases stay
-regular.
+regular. 14 delta `@e2e` scenarios (delta inventory: 80 scenarios = 26 added
++ 54 modified + 0 removed; 66 non-`@e2e` + 14 `@e2e`).
 
 | Capability | @e2e scenario count (delta) | Distinct actions? | Over-produced? |
 |---|---|---|---|
@@ -169,6 +185,8 @@ regular.
 | generate-ideation-guidance | 1 | yes — sync delivers the ideation guidance | no |
 | refresh-generated-guidance | 1 | yes — sync explains gate resolution | no |
 | match-guidance-to-enabled-addons | 3 | yes — one per addon-state transition (disabled baseline, enable, disable); preserved 1:1 from the permanent e2e set | no |
+| guide-domain-modeling | 1 | yes — sync routes the generated domain skill to the served instruction (same-title re-point of the permanent e2e scenario; F3's fix) | no |
+| review-architecture-documentation | 1 | yes — sync keeps the generated review guidance aligned with the served instruction (permanent e2e tag restored; F2's fix) | no |
 | prose-consolidation | 1 | yes — sync + E2E policy | no |
 | change-release-note | 1 | yes — sync + release note | no |
 | visual-design-contract | 1 | yes — sync + capture mechanics | no |
@@ -185,12 +203,14 @@ $ grep -n "command:" givn/commands.yaml
 
 `./run-tests.sh --e2e` runs `GIVN_CUCUMBER_TAGS='@e2e' cargo nextest run
 --test features_runner` (tag filter in the runner itself, `run-tests.sh`
-lines 76-78). Tree search (`git status` clean; `find tests`):
+lines 76-78). Tree search (`git status`; `find tests`):
 
 | Capability | File(s) verify.e2e_command invokes | Other implementation found? (incl. untracked) | Stronger one used instead? |
 |---|---|---|---|
-| serve-extended-rules | `tests/steps/serve_extended_rules_steps.rs` (shared real-CLI steps) + pre-existing `instruction_integrity_e2e_steps.rs` Given; `serve_extended_rules_e2e_steps.rs` is a registered doc-only module (0 bindings, see F4) | no — no parallel/untracked binding exists; `tests/features_runner.rs` is the only runner | N/A |
+| serve-extended-rules | `tests/steps/serve_extended_rules_steps.rs` (shared real-CLI steps) + pre-existing `instruction_integrity_e2e_steps.rs` Given; `serve_extended_rules_e2e_steps.rs` is the doc-only module design.md now documents | no — no parallel/untracked binding exists; `tests/features_runner.rs` is the only runner | N/A |
 | instruction-extension | `instruction_extension_e2e_steps.rs` (+ `run_upgrade_steps.rs`, shared served step) | no | N/A |
+| guide-domain-modeling | `fix_domain_modeling_skill_trigger_e2e_steps.rs` fixtures + shared generic direction step in `prose_consolidation_steps.rs` + shared served-content step | no | N/A |
+| review-architecture-documentation | shared sync/direction steps in `prose_consolidation_steps.rs` + shared served-content step | no | N/A |
 | all other delta e2e | existing per-capability `*_e2e_steps.rs` / `*_steps.rs` files named in design.md | no | N/A |
 
 ### 8. Local environment check
@@ -202,7 +222,7 @@ compiled binary and temporary project directories. Confirmed:
 ```
 $ cargo run --locked --quiet -- instructions        → guidance printed        EXIT=0
 $ GIVN_FEATURES=givn/changes/extended-rules/specs ./run-tests.sh
-  Summary [5.914s] 79 tests run: 79 passed, 0 skipped                        EXIT=0
+  Summary [5.826s] 80 tests run: 80 passed, 0 skipped                        EXIT=0
 ```
 
 ### 9. E2e isolation check
@@ -214,18 +234,22 @@ authority and will record the merged per-scope counts.
 
 | `verify.command` value | `verify.e2e_command` value | Identical? | Regular scope scenario count | E2e scope scenario count | E2e count strictly smaller (or all scenarios @e2e)? |
 |---|---|---|---|---|---|
-| `./run-tests.sh` | `./run-tests.sh --e2e` | no | measured delta: 79 nextest units / 67 `not @e2e` / 80 cucumber scenarios (one Outline has two examples); receipt pending | measured delta: 12; receipt pending | yes — 12 < 67 < 79; the "all scenarios @e2e" exception does not apply |
+| `./run-tests.sh` | `./run-tests.sh --e2e` | no | measured delta: 80 nextest units / 66 `not @e2e` / 81 cucumber scenarios (one Outline has two examples); receipt pending | measured delta: 14; receipt pending | yes — 14 < 66 < 80; the "all scenarios @e2e" exception does not apply |
 
 ### 10. Design.md conformance check
+
+Re-verified after the F4 corrections; `design-review.md` carries the
+post-review correction and stands at `DESIGN-REVIEW: PASS`.
 
 | Decision (from design.md) | design.md says | Actually built | Matches? | If not: was design.md updated + design-review re-run? |
 |---|---|---|---|---|
 | `verify.e2e_command` | `./run-tests.sh --e2e` | same (commands.yaml line 4) | yes | N/A |
 | Runner / framework | nextest via `./run-tests.sh`; cucumber 0.23.0, gherkin 0.16 per Cargo.lock; strict `.fail_on_skipped()` | same (verified in source/Cargo.lock) | yes | N/A |
-| Production seams | `render_conditionals` exposed in `src/skills/render.rs`; render+append in `src/cli/instructions.rs`; new `src/config/extensions.rs` (`load` line 18, `append` line 70); `src/config/overlay.rs` lenient entry list (line 385); `src/cli/project_hint.rs` marker extraction | all present at the named paths (instructions.rs lines 51-52/92-93 render then append, line 121 load; project_hint.rs consts lines 14-15) | yes | N/A |
+| Production seams | `render_conditionals` exposed in `src/skills/render.rs`; render+append in `src/cli/instructions.rs`; new `src/config/extensions.rs` (`load` line 18, `append` line 70); `src/config/overlay.rs` lenient entry list (line 385); `src/cli/project_hint.rs` marker extraction via `resident_rules(tasks: &str)` | all present at the named paths (instructions.rs lines 51-52/92-93 render then append, line 121 load; project_hint.rs consts lines 14-15) | yes | N/A — F4(b) fixed: design.md now names `resident_rules(tasks: &str)` |
 | Asset rewrite set | 15 `assets/skills/*/SKILL.md.tmpl`, 15 `assets/commands/*.md`, new `assets/instructions/{archive,explore,ideation,steps,reverse-engineer,characterize,domain-modeling,dev-principles,grill-me,grill-with-docs}.md`, `review/design-review/tasks`, `tasks-reverse`, `agents-project-hint.md`, `config.yaml.tmpl` | all 66 promised paths exist; delta scenarios verify the served content and the no-copy bound | yes | N/A |
-| Step-definition file layout | `serve-extended-rules` → `serve_extended_rules_steps.rs` **and** `serve_extended_rules_e2e_steps.rs` ("The serving `@e2e` steps (real CLI)"); `instruction-extension` → both extension files | extension files match; `serve_extended_rules_e2e_steps.rs` is a 5-line doc-only skeleton with 0 bindings — the serving e2e scenario binds through the shared real-CLI steps in `serve_extended_rules_steps.rs` + pre-existing steps; driving mechanism is unchanged real CLI, so no downgrade, but the design cell is stale | no | **F4** — design.md not updated |
-| `## Internal Primitives` | `extensions::{load, append}`, `render_conditionals`, `resident_rules_section(asset: &str)`, overlay entry-list wrapper | first three exist (`load`, `append`, `render_conditionals` exact); project_hint's private fn is `resident_rules(tasks: &str)`, not `resident_rules_section(asset: &str)` | no (name/signature) | **F4** — design.md not updated |
+| Step-definition file layout | `serve-extended-rules` → `serve_extended_rules_steps.rs` and `serve_extended_rules_e2e_steps.rs` (the latter a doc-only module skeleton; the serving `@e2e` assertions reuse the capability e2e files); `instruction-extension` → both extension files; `guide-domain-modeling`/`review-architecture-documentation` reuse their existing per-capability files | matches: the e2e skeleton is registered and doc-only; the new/restored e2e scenarios bind through shared real-CLI steps and pre-existing fixtures, verified by the green e2e scope | yes | N/A — F4(a) fixed: design.md now documents the doc-only module |
+| Visual evidence set | 14 terminal transcripts, one per delta `@e2e` scenario | 14 non-empty transcripts committed (12 original + 2 repair) | yes | N/A |
+| `## Internal Primitives` | `extensions::{load, append}`, `render_conditionals`, `resident_rules(tasks: &str)`, overlay entry-list wrapper | all four present with the named shapes | yes | N/A |
 | arc42 chapters 08/10 | wording per `arc42.md` | present (08 §8.3a/8.3b/8.7; 10 Q-97/§10.3) | yes | N/A |
 
 ### 11. Interaction coverage verification
@@ -235,7 +259,7 @@ separate inventory comments in `.feature` files): four
 `specs/*/usecase.md` `## Interactions` tables + `specs/fragments/fragment.md`
 = 13 entries, matched against design.md's Interaction Coverage Matrix and the
 built step definitions. All delta and permanent e2e scenarios named below
-executed green at HEAD (no failures involve them).
+executed green at the repaired HEAD.
 
 | Inventory entry | Matrix row exists? | @e2e scenario exists? (title) | Promised driving mechanism | Actual driving mechanism (from step defs) | Match? |
 |---|---|---|---|---|---|
@@ -253,89 +277,67 @@ executed green at HEAD (no failures involve them).
 | instruction-integrity (support fragment): resolve an instruction and expose the machine contract | yes | An agent requests machine-readable artifact guidance (permanent, green) | real `givn instructions specs --change … --json` subprocess | `instruction_integrity_e2e_steps.rs` real subprocess | yes |
 | instruction-integrity (support fragment): request normal session-start instructions | yes | Author starts a session with the universal dialog obligation (permanent, green) | real `givn instructions` subprocess without an id | `instruction_integrity_e2e_steps.rs` real subprocess | yes |
 
-### Fabrication-audit findings (instruction steps 0-11)
+### Fabrication-audit findings — reported (first pass at `4692851b`), repaired, verified
 
-- **F1 — `givn check review` fails on the revision-identifier recording
-  format.** `givn check review --change extended-rules` exits 1 with 65
-  `[integrity]` findings: each repeated `- [x] COMMIT:` plan sentence is read
-  as a duplicate revision identifier, because the unique identifier is
-  recorded in the fenced block below the bullet. The check extracts the
-  identifier from the bullet itself (`src/integrity_hook.rs:459-470`,
-  split on `--`). The underlying contract holds (82/82 identifiers unique and
-  resolvable, section 2); the representation does not satisfy the gate.
-  Evidence: `target/debug/givn check review --change extended-rules` → 65
-  findings, `EXIT=1`; PATH `givn 0.8.4` identical. Diagnostic: in a scratch
-  copy with the COMMIT bullets mechanically re-recorded as
-  `- [x] COMMIT: <id> -- <text>` plus this review.md, the same check reports
-  `✓ integrity passed / ✓ run declaration passed / ✓ overlap dispositions
-  passed` and then F5's routing findings. Fix required: re-record the
-  identifiers inline in `tasks.md` (or change the check) — outside this
-  review's permitted edits.
-- **F2 — planned `@e2e` coverage removed on a delta replacement (step 0).**
-  The permanent `givn/specs/fragments/review-architecture-documentation.feature`
-  scenario "Generated review guidance stays aligned after skill sync" is
-  `@e2e`; its same-title delta replacement
-  (`givn/changes/extended-rules/specs/fragments/review-architecture-documentation.feature`,
-  introduced by repair commit `9ca8c848`) carries no `@e2e` tag, so the merge
-  drops the interaction from the e2e scope and no transcript is required.
-  The replacement still drives the real CLI, so the driver is not weaker —
-  but tag removal is a fabrication-audit finding; the delta inventory even
-  records it as 0 e2e. Fix: restore `@e2e` on the delta scenario and commit
-  its transcript at the design's evidence path (or update design.md and
-  re-run design-review) — a spec/evidence change, outside this review's
-  permitted edits.
-- **F3 — one permanent `@e2e` scenario is left failing with no delta
-  replacement.** Measured at HEAD: permanent full scope `606 run: 562 passed,
-  44 failed`; non-`@e2e` `516 run: 479 passed, 37 failed` (all 37 carry a
-  same-title delta `@givn.modified`; claim verified); `@e2e` scope `90 run:
-  83 passed, 7 failed`. Six of the seven e2e failures are reconciled by
-  delta replacements (five `@e2e`, one via F2); the seventh —
-  `givn/specs/fragments/guide-domain-modeling.feature::An agent synchronizes
-  skills and the domain skill is routed` — has no same-title delta scenario,
-  so the merged permanent suite stays red after archive. Failure:
-  `the generated skill instructs maintaining the project's arc42 glossary`
-  (the content moved to the served instruction). Fix: add the same-title
-  `@givn.modified @e2e` delta scenario re-pointing the assertions to the
-  served instruction and commit its transcript — a spec/evidence change,
-  outside this review's permitted edits. Classified bucket 2 (missing test
-  coverage) below.
-- **F4 — design.md cells stale vs as-built (step 10).** (a)
-  `tests/steps/serve_extended_rules_e2e_steps.rs` is described as "The serving
-  `@e2e` steps (real CLI)" but contains 0 bindings (doc-only skeleton); the
-  serving e2e scenario's steps are shared in
-  `serve_extended_rules_steps.rs` + pre-existing files. (b) §Internal
-  Primitives names `resident_rules_section(asset: &str) -> Result<&str>`, but
-  the as-built private fn is `resident_rules(tasks: &str) -> Result<&str>`.
-  Both are silent deviations from reviewed design text; the fix is an
-  explicit design.md update plus a design-review re-run (or conforming the
-  code), outside this review's permitted edits.
-- **F5 — routing consistency fails (surfaces once F1 is repaired).** In the
-  scratch diagnostic (F1's format repaired, this review.md present) the gate
-  continues after the overlap gate and reports:
+- **F1 — `givn check review` failed on the revision-identifier recording
+  format.** Reported: 65 `[integrity]` findings; repeated `- [x] COMMIT:` plan
+  sentences were read as duplicate identifiers because the unique identifier
+  sat in the fence below. The underlying contract held (identifiers unique and
+  resolvable). **Repaired** in `163062eb`: the bullets were re-recorded as
+  `` `hash` -- text `` inline; the three repair bullets were then consolidated
+  into the single commit they actually were (working-tree repair record).
+  **Verified:** `givn check review --change extended-rules` → `✓ integrity
+  passed / ✓ run declaration passed / ✓ overlap dispositions passed`,
+  `EXIT=0`; 83/83 bullets carry a unique resolvable identifier.
+- **F2 — planned `@e2e` coverage was removed on a delta replacement.**
+  Reported: the permanent `@e2e` scenario "Generated review guidance stays
+  aligned after skill sync" was replaced by a same-title delta scenario
+  without `@e2e`. **Repaired** in `163062eb`: the delta scenario carries
+  `@givn.modified @e2e` and its transcript is committed
+  (`evidence/visual/generated-review-guidance-stays-aligned-after-skill-sync/transcript.txt`,
+  21144 B). **Verified:** the cross-tree tag comparison shows no drops and no
+  gains; the scenario ran green in the e2e scope.
+- **F3 — one permanent `@e2e` scenario was left failing with no delta
+  replacement.** Reported: `An agent synchronizes skills and the domain skill
+  is routed` failed (the generated skill no longer instructs maintaining the
+  arc42 glossary — the content moved to the served instruction) and appeared
+  nowhere in the delta. **Repaired** in `163062eb` with the file-write restore
+  follow-up `63877b2e` (the repair write had accidentally dropped the nine
+  sibling re-point scenarios; both are part of the consolidated record): the
+  delta now carries the same-title `@givn.modified @e2e` re-point plus
+  transcript
+  (`evidence/visual/an-agent-synchronizes-skills-and-the-domain-skill-is-routed/transcript.txt`,
+  7219 B). **Verified:** the supersession script reports 0 permanent failures
+  without a same-title delta modification (37 non-`@e2e` + 7 `@e2e`, all
+  superseded).
+- **F4 — design.md cells were stale vs as-built.** Reported: (a) the
+  `serve_extended_rules_e2e_steps.rs` cell claimed it carried the serving
+  `@e2e` steps while the file is a doc-only skeleton; (b) §Internal Primitives
+  named `resident_rules_section(asset: &str)` while the built function is
+  `resident_rules(tasks: &str)`. **Repaired** in `163062eb`: the cell now
+  documents the doc-only module and the reuse of the capability e2e files;
+  the primitive is named as built; the evidence set was corrected to 14.
+  `design-review.md` carries the post-review correction (working tree) and
+  stands at `DESIGN-REVIEW: PASS`.
+- **F5 — routing consistency failed once F1 was repaired.** Reported:
+  `guide-domain-modeling` and `review-architecture-documentation` were absent
+  from the proposal's Capability Routing table, and wrapped bullets failed the
+  use-case list parser in `specs/obtain-effective-guidance/usecase.md`
+  (`## Preconditions`) and `specs/extend-an-instruction/usecase.md`
+  (`## Rules`). **Repaired** in `163062eb`: the proposal declares both
+  capabilities (`NEW in fragments`), and the four contract files' list
+  sections are unwrapped (one item per line). **Verified:** `givn check
+  review` reaches and passes the routing check (`EXIT=0`).
 
-  ```
-  error: capability routing decisions do not match the built delta:
-    delta capability 'guide-domain-modeling' is not declared in the Capability Routing table
-    decision NEW in extend-an-instruction: usecase.md failed to parse: section '## Rules' must contain one rule per bullet
-    delta capability 'review-architecture-documentation' is not declared in the Capability Routing table
-    decision NEW in obtain-effective-guidance: usecase.md failed to parse: section '## Preconditions' must contain one precondition per bullet
-  ```
-
-  Causes: (a) the two repair-added capabilities (`guide-domain-modeling`,
-  `review-architecture-documentation`) have delta scenarios but no row in
-  `proposal.md`'s Capability Routing table; (b) the check's list parser
-  (`src/gherkin/usecase_md.rs:322`) requires one bullet per line, and
-  `specs/obtain-effective-guidance/usecase.md` `## Preconditions` and
-  `specs/extend-an-instruction/usecase.md` `## Rules` carry wrapped bullets.
-  Fix: add the two routing rows and un-wrap the parse-failing bullets —
-  artifact edits outside this review's permitted edits.
+No finding from the first pass remains open; no new finding was raised in this
+pass.
 
 ## Use-Case And Persona Conformance
 
 | Contract | Evidence | Pass? |
 |---|---|---|
 | Owning use-case guarantees and rules preserved | `specs/*/usecase.md` guarantees are realized by the served-and-extended path (`serve-extended-rules`, `instruction-extension`), the direction-only assets and reconciled block (`initialize-project`), the unchanged allowlist (`upgrade-a-project`), and the re-pointed assertion migrations; delta scenarios for each rule are green | yes |
-| Capability ownership and typed relationships preserved | capability tables unchanged: `obtain-effective-guidance` → serve-extended-rules; `extend-an-instruction` → instruction-extension; fragment `support` keeps the touched capabilities; no `Extends` added | yes |
+| Capability ownership and typed relationships preserved | capability tables unchanged: `obtain-effective-guidance` → serve-extended-rules; `extend-an-instruction` → instruction-extension; fragment `support` keeps the touched capabilities (now including the two declared routing rows); no `Extends` added | yes |
 | Confirmed Persona-relevant outcomes preserved | `developer--primary-user` keeps extension ownership across sync/upgrade and its target choices; `agent--technical-role` reaches deterministic served content on both paths; `givn-maintainer--owner` keeps one canonical asset per rule (no-copy step + served-content scenarios) | yes |
 | Actors remain distinct from Persona biographies | Gherkin actors stay `the user`/`the agent`/`the developer`/`the consumer`; Personas appear only as review lenses | yes |
 | Migration ledger and coverage evidence complete, if applicable | no migration ledger applies (assets, CLI serve path, acceptance suite); coverage receipt arrives with the archive | yes |
@@ -346,7 +348,7 @@ PERSONAS: givn-maintainer--owner
 
 ## Deferred mandatory checks
 
-None deferred. Strictness proofs, scenario executions, the 12 E2E
+None deferred. Strictness proofs, scenario executions, the 14 E2E
 transcripts, and the Persona/visual judgement were performed or recorded, not
 waived. No `DEFERRAL:` line is present.
 
@@ -364,7 +366,7 @@ Interface: terminal (design.md `## Visual Design Contract`, `Interface:
 terminal`). Opposite classification tested: a rendered page is a Web UI and
 does not hold — nothing renders HTML, CSS, or JavaScript in a browser; the
 evidence is CLI text/JSON output and written Markdown. Evidence kind: one
-committed final transcript per delta `@e2e` scenario (12/12 present,
+committed final transcript per delta `@e2e` scenario (14/14 present,
 non-empty, each records scenario title, exact argv, cwd disposition, exit
 code, and raw stdout/stderr).
 
@@ -379,15 +381,17 @@ code, and raw stdout/stderr).
 | A consumer synchronizes skills and the generated guidance omits disabled-addon sections | terminal | `…/a-consumer-synchronizes-skills-and-the-generated-guidance-omits-disabled-addon-sections/transcript.txt` (19359 B) | yes |
 | A consumer enables the addons a generated section needs and the guidance gains it | terminal | `…/a-consumer-enables-the-addons-a-generated-section-needs-and-the-guidance-gains-it/transcript.txt` (31698 B) | yes |
 | A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed | terminal | `…/a-consumer-disables-an-addon-the-domain-modeling-skill-needs-and-the-generated-domain-skill-is-removed/transcript.txt` (40084 B) | yes |
+| Generated review guidance stays aligned after skill sync | terminal | `…/generated-review-guidance-stays-aligned-after-skill-sync/transcript.txt` (21144 B) | yes |
+| An agent synchronizes skills and the domain skill is routed | terminal | `…/an-agent-synchronizes-skills-and-the-domain-skill-is-routed/transcript.txt` (7219 B) | yes |
 | Generated guidance points to the canonical E2E policy | terminal | `…/generated-guidance-points-to-the-canonical-e2e-policy/transcript.txt` (5178 B) | yes |
 | The generated implementation guidance shares the release note | terminal | `…/the-generated-implementation-guidance-shares-the-release-note/transcript.txt` (6838 B) | yes |
 | Synchronized guidance defines the contract approval and capture mechanics | terminal | `…/synchronized-guidance-defines-the-contract-approval-and-capture-mechanics/transcript.txt` (5389 B) | yes |
 
 | confirmed persona | Goal | Finding | Disposition |
 |---|---|---|---|
-| developer--primary-user | keep rules that survive sync/upgrade; keep targets and human text | fresh-context lens: PASS (12/12 transcripts show extension recording/serving, upgrade survival, init block rendering, target re-sync); 4 non-blocking observations recorded by that run, none naming a contract rule or a failed goal | non-blocking; no change required |
-| agent--technical-role | deterministic, complete content on both paths; invokable directions | fresh-context lens: PASS (12/12; determinism, direction invokability, and exit codes shown; `--json` parity and refusal paths are graded by non-e2e scenarios under the canonical variant rule) | non-blocking; no change required |
-| givn-maintainer--owner | one canonical asset per rule; honest evidence | fresh-context lens: PASS (12/12; the earlier withheld findings are repaired — six missing assets created, eleven files given directions, template copies removed, tasks-reverse aligned; the no-copy bound is the design's representative-marker list) | non-blocking; no change required |
+| developer--primary-user | keep rules that survive sync/upgrade; keep targets and human text | fresh-context lens: PASS (12 transcripts then in scope showed extension recording/serving, upgrade survival, init block rendering, target re-sync; 4 non-blocking observations recorded by that run, none naming a contract rule or a failed goal). The two repair transcripts added for the restored/re-pointed scenarios were checked for the same goals (sync output, generated guidance, served content) and show them | non-blocking; no change required |
+| agent--technical-role | deterministic, complete content on both paths; invokable directions | fresh-context lens: PASS (12 transcripts; determinism, direction invokability, and exit codes shown; `--json` parity and refusal paths are graded by non-e2e scenarios under the canonical variant rule). The added transcripts show the direction invokability and exit codes for the two repaired scenarios | non-blocking; no change required |
+| givn-maintainer--owner | one canonical asset per rule; honest evidence | fresh-context lens: PASS (12 transcripts; the earlier withheld findings are repaired — six missing assets created, eleven files given directions, template copies removed, tasks-reverse aligned; the no-copy bound is the design's representative-marker list). The repair round closed F1-F5 with committed evidence | non-blocking; no change required |
 
 **Baseline (terminal):** the transcripts show labeled command output, real
 exit codes, no internal-identifier-only labels, no duplicated visible
@@ -406,9 +410,9 @@ records and no `@givn.retired` tag.
 ## Arc42 implementation conformance
 
 Independently re-derived from the completed change; the durable chapters were
-read at HEAD. Slug mapping verified (every chapter named below maps to a real
-`docs/arc42/<slug>.md` file; the deterministic hook also passed in the
-scratch diagnostic: `✓ integrity passed`).
+read at the repaired state. Slug mapping verified (every chapter named below
+maps to a real `docs/arc42/<slug>.md` file; the deterministic hook passes:
+`✓ integrity passed`).
 
 | Arc42 chapter or architectural fact | Durable-doc source | `arc42.md` claim | `design.md` treatment | `tasks.md` treatment | Completed implementation evidence | Match? / finding |
 |---|---|---|---|---|---|---|
@@ -449,7 +453,7 @@ percentages. No instrumented pass was run in review.
 | `src/skills/render.rs::render_conditionals` | exposed fn | covered by inspection | exercised by addon-condition and served-content scenarios (`template_conditional_rendering_steps.rs`, `serve_extended_rules_steps.rs`) |
 | `src/cli/instructions.rs` render+append (text and JSON paths) | amended | covered by inspection | exercised by the serve-extended-rules feature and every served-instruction assertion |
 | `src/cli/project_hint.rs` marker extraction + `{{RESIDENT_RULES}}` | amended | covered by inspection | exercised by "The project-start block renders its resident rules from the tasks instruction" and the init e2e block assertions |
-| Permanent `@e2e` scenario "An agent synchronizes skills and the domain skill is routed" | n/a — missing delta re-point | **2. missing test coverage** | F3 — add the same-title `@givn.modified @e2e` delta scenario re-pointing the assertions to the served instruction (blocked outside this review's permitted edits) |
+| Permanent `@e2e` scenario "An agent synchronizes skills and the domain skill is routed" | n/a — was missing delta re-point | **2. missing test coverage → resolved** | the delta now carries the same-title `@givn.modified @e2e` re-point with transcript (F3's fix); permanent failure superseded |
 | No dead code, no hard-to-test regions, no redundant unit tests | — | — | nothing deleted or added by review; the delta removes no unit test |
 
 ## Scenario execution evidence
@@ -458,27 +462,28 @@ percentages. No instrumented pass was run in review.
 unproven candidate — no receipt yet (the archive runs and records the merged
 full suite; this review does not run the full-suite authority).
 
-Measured at HEAD 4692851b:
-  delta scope, this runner:
+Measured at the repaired HEAD (working tree above 63877b2e), this runner:
+  delta scope:
     GIVN_FEATURES=givn/changes/extended-rules/specs cargo nextest run --locked --test features_runner --no-fail-fast
-      Summary [5.809s] 79 tests run: 79 passed, 0 skipped                     EXIT=0
+      Summary [5.826s] 80 tests run: 80 passed, 0 skipped                     EXIT=0
     GIVN_FEATURES=givn/changes/extended-rules/specs ./run-tests.sh
-      Summary [5.914s] 79 tests run: 79 passed, 0 skipped                     EXIT=0
+      Summary [5.826s] 80 tests run: 80 passed, 0 skipped                     EXIT=0
     GIVN_FEATURES=givn/changes/extended-rules/specs ./run-tests.sh --e2e
-      Summary [1.221s] 12 tests run: 12 passed, 67 skipped                    EXIT=0
+      Summary [1.306s] 14 tests run: 14 passed, 66 skipped                    EXIT=0
     givn check tasks --change extended-rules
-      14 features / 80 scenarios (80 passed) / 512 steps (512 passed)         EXIT=0
+      14 features / 81 scenarios (81 passed) / 519 steps (519 passed)         EXIT=0
       (the single-process count includes the two examples of the addon Outline)
-  delta unit counts:  GIVN_CUCUMBER_TAGS='' → 79; '@e2e' → 12; 'not @e2e' → 67
+  delta unit counts:  GIVN_CUCUMBER_TAGS='' → 80; '@e2e' → 14; 'not @e2e' → 66
 
   permanent pre-archive state (the delta is not yet merged; failures are
-  reconciled by same-title delta modifications at archive):
+  reconciled by same-title delta modifications at archive; the repair commits
+  touch only the change tree, so the corpus is unchanged):
     full scope:     606 run: 562 passed, 44 failed, 0 skipped
-    non-@e2e scope: 516 run: 479 passed, 37 failed (all 37 superseded by
-                    same-title delta @givn.modified scenarios — verified)
-    @e2e scope:      90 run:  83 passed,  7 failed
-                    (5 superseded by delta @e2e modifications; 1 superseded
-                    by a non-@e2e modification — F2; 1 not superseded — F3)
+    non-@e2e scope: 516 run: 479 passed, 37 failed — all 37 superseded by
+                    same-title delta @givn.modified scenarios (verified)
+    @e2e scope:      90 run:  83 passed,  7 failed — all 7 superseded by
+                    same-title delta @e2e modifications (verified; F2/F3
+                    closed the two that were not)
 ```
 
 **Receipt status:** unproven — candidate not yet archived.
@@ -534,57 +539,50 @@ count 0), so no split-or-keep row is required.
 
 ## Sign-off
 
-- [ ] Fabrication audit: NOT clean — F2 (removed `@e2e` coverage on a delta
-      replacement), F3 (a permanent `@e2e` scenario failing with no delta
-      replacement), F4 (stale design.md cells) remain unresolved; 0 empty
-      step bodies; all commits verified (82/82 identifiers unique and
-      resolvable; 49 production + 33 dispositioned spec/evidence commits);
-      all promised components exist; no downgraded e2e scenario; no
-      HTTP/fetch substitution; no over-produced e2e scope.
+- [x] Fabrication audit: CLEAN after repairs — 0 empty step bodies; all
+      commits verified (83/83 identifiers unique and resolvable; 50
+      production + 33 dispositioned spec/evidence commits); all promised
+      components exist; no downgraded e2e scenario; no HTTP/fetch
+      substitution; no over-produced e2e scope; no unresolved finding from
+      the first pass (F1-F5 repaired and verified).
 - [x] Scenario execution evidence recorded per scope (pre-archive runs above;
       the archive receipt will carry the authoritative measured result).
 - [x] Every coverage gap is classified and resolved (or justified) from
-      static inspection; no measured receipt exists yet (F3 = bucket 2).
+      static inspection; no measured receipt exists yet; F3's gap is resolved
+      by the delta re-point.
 - [x] No `@wip` tags remain in the delta spec (`givn check tasks` passed;
-      80/80 scenarios green).
+      81/81 scenarios green).
 - [x] The delta spec contains no implementation-layer detail beyond the
       deliberate CLI/command names the interaction policy requires.
 - [x] Local run command starts the declared product cleanly; no service stack
       is involved (`cargo run -- instructions` exit 0; delta suite exit 0).
 - [x] The exact file(s) `verify.e2e_command` invokes were identified and read;
-      the tree (including untracked files; `git status` clean) was searched
-      for a second/parallel e2e implementation before accepting it.
+      the tree (including untracked files; `git status` shows only the two
+      repair-bookkeeping edits) was searched for a second/parallel e2e
+      implementation before accepting it.
 - [x] `verify.e2e_command` is not identical to `verify.command`; measured
-      counts prove real isolation (12 e2e < 67 non-e2e < 79 full); the
+      counts prove real isolation (14 e2e < 66 non-e2e < 80 full); the
       archive receipt will confirm the merged scopes.
-- [ ] Implementation (commands, file layout, framework/driver) matches
-      design.md as reviewed — F4: two design.md cells (`serve_extended_rules_e2e_steps.rs`
-      contents; `resident_rules_section` name) are stale vs as-built; the fix
-      needs a design.md update + design-review re-run, not a silent shortcut.
+- [x] Implementation (commands, file layout, framework/driver) matches
+      design.md as reviewed; the previously stale cells were corrected in
+      design.md with the post-review correction in design-review.md
+      (`DESIGN-REVIEW: PASS`), not left as silent shortcuts.
 - [x] Interaction coverage verified: every spec inventory entry maps to a
       design matrix row, an existing `@e2e` scenario, and step definitions
       using the promised driving mechanism — no mismatches.
-- [x] design.md's `## Internal Primitives` section was reviewed against the
-      tree: `extensions::{load, append}` and `render_conditionals` match; the
-      `resident_rules_section` naming difference is recorded under F4.
+- [x] design.md's `## Internal Primitives` section accurately lists every
+      internal structure this change introduces (`extensions::{load, append}`,
+      `render_conditionals`, `resident_rules(tasks: &str)`, the overlay
+      entry-list wrapper).
 - [x] arc42 slug-mapping verified: every arc42 chapter slug in arc42.md maps
-      to a real `docs/arc42/<slug>.md` file; the hook passed the scratch
-      integrity run.
+      to a real `docs/arc42/<slug>.md` file; the integrity hook passes.
 - [x] No finding anywhere in this report is excused with a classification
       outside the three buckets (no "acceptable for now," "future scope,"
       "sufficient for current scope," or similar invented exception).
 
-Open findings block sign-off: F1 (the `givn check review` gate exits 1 on the
-`tasks.md` revision-identifier recording format), F2, F3, F4, and F5 (the
-routing gate's findings, latent behind F1). Each requires a change outside
-this review's permitted edits (`tasks.md`, `proposal.md`, `specs/`,
-`design.md`/design-review, or evidence). Remediation: re-record the COMMIT
-identifiers inline (F1); restore `@e2e` and commit the transcript (F2); add
-the same-title `@givn.modified @e2e` delta scenario for "An agent synchronizes
-skills and the domain skill is routed" and commit its transcript (F3); update
-the two design.md cells and re-run design-review (F4); add the two Capability
-Routing rows and un-wrap the failing usecase bullets (F5). After the repairs,
-re-run the review gate; no mandatory check was deferred and no operator
-decision is required for any of these repairs.
+All first-pass findings (F1-F5) are repaired and verified; no finding remains
+open. Mandatory checks: `givn check review --change extended-rules` →
+`✓ integrity passed / ✓ run declaration passed / ✓ overlap dispositions
+passed` (net delta 26 added / 54 modified / 0 removed), `EXIT=0`.
 
-REVIEW: FAIL
+REVIEW: PASS

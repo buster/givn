@@ -92,6 +92,28 @@ features:
 
 Nothing else in the review record changed; the verdict stands.
 
+## Post-review correction — review-audit round (2026-10-13)
+
+The review audit found stale cells in `design.md` and an under-declared e2e
+evidence set; corrections were applied and re-verified in a fresh context:
+
+- The Visual Design Contract's expected evidence set now names 14 terminal
+  `@e2e` scenarios (the added same-title re-points of "Generated review
+  guidance stays aligned after skill sync" and "An agent synchronizes skills
+  and the domain skill is routed"), and 14 non-empty transcripts are committed.
+- The `serve_extended_rules_e2e_steps.rs` cell now records the file as a
+  doc-only module skeleton, with the serving assertions reusing the capability
+  e2e files.
+- The `src/cli/project_hint.rs` primitive is named as built:
+  `resident_rules(tasks: &str) -> Result<&str>`.
+- The proposal declares the two new fragment capabilities in its Capability
+  Routing table; `givn check review --change extended-rules` passes every
+  mandatory check with a net delta of 26 added / 54 modified / 0 removed.
+
+Fresh-context re-verification: PASS (delta counts 80/66/14; the 14 `@e2e`
+titles equal the evidence set; cells match the built tree; routing and parsing
+checks pass).
+
 ## Status
 
 DESIGN-REVIEW: PASS
