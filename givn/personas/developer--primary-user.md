@@ -45,3 +45,10 @@
   clone or second machine to restore the local workflow.
 - 2026-09-23 — local-only-integrations (reviewer interest): untracking and
   ignoring must be explicit and reviewable, never a silent mutation.
+- 2026-10-13 — rules-through-instructions: demands extensions in
+  project-owned configuration, added to the guidance, without owning whole
+  files.
+- 2026-10-13 — rules-through-instructions: demands that `givn skills sync`
+  and `givn upgrade` never conflict with extensions.
+- 2026-10-13 — rules-through-instructions: expects the workflow of a fresh
+  clone or second machine to stay recoverable as under local-only.
