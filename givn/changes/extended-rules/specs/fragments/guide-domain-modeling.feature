@@ -28,7 +28,7 @@ Feature: Guide domain modeling
     Then the served domain-modeling instruction contains "Requires the arc42 addon"
     And the served domain-modeling instruction contains "enable it first when the glossary is missing"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The domain-modeling guidance carries the term introduction test
     Given a Givn project
     Then the served domain-modeling instruction contains "Genus + differentia"
