@@ -642,27 +642,82 @@ sections in the same feature order.
             f7aaaa61 — feat(instruction-extension): <release note>; body: Scenario: An extension for an unknown instruction is dropped with a warning
             ```
 
-- [ ] instruction-extension: A malformed extension entry is dropped with a warning
+- [x] instruction-extension: A malformed extension entry is dropped with a warning
       Design constraints:
         - A value that is not a list, or a list element that is not a string, warns `warning: ignoring malformed extension for '<id>': …` and is skipped; one warning line per rejected entry, in config document order.
         - Assertions: a warning names the malformed entry; the served content is the built-in rules alone; nothing is mutated.
         - Step file: `tests/steps/instruction_extension_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::A malformed extension entry is dropped with a warning"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::A malformed extension entry is dropped with a warning"
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A malformed extension entry is dropped with a warning
+               ✔  Given a Givn project with an active change
+               ✔  When the project's configuration carries a malformed extension entry for the proposal instruction
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✔  Then a warning names the malformed entry
+               ✔  And the served content is the built-in rules alone
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the malformed-entry validation is
+            delivered by the coupled earlier scenario's edit (`extensions::load`
+            warns and skips a value that is not a rule list).
+            ORACLE_RED calibration (controlled omission from the delivered output):
+            $ (temporarily suppressed the malformed-entry warning emission in
+               src/config/extensions.rs; same scoped command)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A malformed extension entry is dropped with a warning
+               ✔  Given a Givn project with an active change
+               ✔  When the project's configuration carries a malformed extension entry for the proposal instruction
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✘  Then a warning names the malformed entry
+                  Step panicked. Captured output: no malformed-extension warning in the request stderr: ""
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            With the warning omitted, the assertion fails on the same fixture, so
+            it discriminates; the emission was restored immediately (the file is
+            byte-identical to the committed state) and the scoped command passed
+            again. No production switch, exception, fake success, or source-text
+            test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the validation was delivered by the earlier scenarios' serving
+            path (`src/config/extensions.rs::load` warns
+            `warning: ignoring malformed extension for '<id>': expected a list of
+            rule strings` and skips the entry); this scenario binds the warning
+            assertion and the built-in-alone control.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the warning emission)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A malformed extension entry is dropped with a warning
+               ✔  Given a Givn project with an active change
+               ✔  When the project's configuration carries a malformed extension entry for the proposal instruction
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✔  Then a warning names the malformed entry
+               ✔  And the served content is the built-in rules alone
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.91s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            0722f40c — feat(instruction-extension): <release note>; body: Scenario: A malformed extension entry is dropped with a warning
             ```
 
 - [ ] instruction-extension: An empty extension list is valid and adds nothing
