@@ -4144,7 +4144,7 @@ sections in the same feature order.
         - Assertions: the response identifies the artifact and its generated paths and prerequisites; the response carries the same instruction content as the text path; the response carries the project's rule in the marked extension section.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The machine-readable path carries the same extended content as the text path"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
             $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The machine-readable path carries the same extended content as the text path"
             Feature: The served instruction carries the built-in rules and the project's extension
@@ -4186,7 +4186,7 @@ sections in the same feature order.
             passed again. No production switch, exception, fake success, or
             source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
             none — the JSON path already appends the extension (delivered by
             the earlier instruction-extension scenarios; arc42 §8.3b shape
@@ -4211,14 +4211,15 @@ sections in the same feature order.
             1 scenario (1 passed)
             6 steps (6 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
             $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.85s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(serve-extended-rules): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(serve-extended-rules): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            caa573f5 — feat(serve-extended-rules): <release note>; body: Scenario: The machine-readable path carries the same extended content as the text path
             ```
 
 - [ ] serve-extended-rules: The extension applies on top of a project-owned replacement
@@ -4229,15 +4230,78 @@ sections in the same feature order.
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The extension applies on top of a project-owned replacement"`
       - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The extension applies on top of a project-owned replacement"
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: The extension applies on top of a project-owned replacement
+               ✔  Given a Givn project with an active change
+               ✔  And a project-owned replacement for the proposal instruction
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the served content carries the replacement text
+               ✔  And the served content carries the project's rule in the marked extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the cascade already resolves the
+            project-owned replacement as the effective base and the serve path
+            appends the marked extension section to it (D4 delivered by the
+            earlier instruction-extension scenarios); this is the recorded
+            ORACLE_RED case. The first binding run failed with a missing
+            binding for the shared text assertion
+            `the served content carries the project's rule in the marked
+            extension section` (design.md §Step definitions names it; its only
+            earlier use was @wip), which is now bound with the real assertion.
+            ORACLE_RED calibration (controlled omission in the isolated fixture):
+            $ (temporarily made the replacement fixture record bytes that do not
+               match what it writes; same scoped command)
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: The extension applies on top of a project-owned replacement
+               ✔  Given a Givn project with an active change
+               ✔  And a project-owned replacement for the proposal instruction
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✘  Then the served content carries the replacement text
+                  Step panicked. Captured output: the served proposal content does not carry the project-owned replacement: # Instruction: proposal (project-owned replacement)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the real recording was restored immediately
+            and the scoped command passed again. No production switch,
+            exception, fake success, or source-text test.
             ```
       - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the cascade resolves the project-owned replacement as the
+            effective base (signature and order unchanged) and the marked
+            extension section appends to it. This scenario adds the
+            replacement fixture and its two real assertions in
+            tests/steps/serve_extended_rules_steps.rs, plus the shared text
+            assertion binding named by design.md §Step definitions.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the real recording)
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: The extension applies on top of a project-owned replacement
+               ✔  Given a Givn project with an active change
+               ✔  And a project-owned replacement for the proposal instruction
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the served content carries the replacement text
+               ✔  And the served content carries the project's rule in the marked extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
             ```
       - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.28s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
       - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(serve-extended-rules): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
