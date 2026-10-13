@@ -49,7 +49,7 @@ Feature: Guide domain modeling
     And the served domain-modeling instruction contains "any collision it carries"
     And the served domain-modeling instruction contains "accept the user's own name"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The challenge bullet shows a naming question with candidates and a collision
     Given a Givn project
     Then the served domain-modeling instruction contains "ShoppingList"
