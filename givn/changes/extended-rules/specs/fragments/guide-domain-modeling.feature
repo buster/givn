@@ -65,7 +65,7 @@ Feature: Guide domain modeling
     Then the served design-review instruction contains "ubiquitous language is used consistently"
     And the served design-review instruction contains "arc42 glossary"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The review skill checks that the ubiquitous language is followed
     Given a project root with givn/ initialised
     And an existing change named "review-ubiquitous-language"
