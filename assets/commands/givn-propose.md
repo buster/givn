@@ -113,122 +113,19 @@ For each artifact:
 
 ## Instructions per artifact
 
-<for each artifact, paste the full output of: givn instructions <id> --change <id>>
+Follow each artifact's own served instruction — it owns that artifact's rules;
+this command only orchestrates the transition:
 
-## Artifact-specific rules
+- `givn instructions proposal --change <id>` — the proposal: WHAT and WHY in
+  domain language, the release note, and the capability-routing decision.
+- `givn instructions specs --change <id>` — the delta `.feature` files, their
+  tags, and the interaction inventory.
+- `givn instructions design --change <id>` — the HOW layer.
+- Any custom artifact between `design` and `design-review`/`tasks`:
+  `givn instructions <artifact-id> --change <id>`.
 
-**proposal** (proposal.md):
-- WHAT and WHY in domain language — no implementation detail.
-- Observable behaviour only. No class names, routes, DB schemas, step mechanics.
-- **Release note (required)**: the proposal carries one complete, user-facing
-  sentence naming what the change does. Every revision the change records
-  carries the release note as its message subject, and the scenario title
-  goes in the message body.
-- Think about: who benefits, what changes from the user's perspective, what
-  constraints or risks exist.
-- **Capability Routing (mandatory, before specs)**: after drafting the
-   proposal, run `givn spec route --change <id>` and fill in the proposal's
-   `## Capability Routing` table — one row per capability the change touches,
-   recording route's recommendation and the decision (`EXTEND <capability>` or
-   `NEW in <usecase-id>`). Deviations from route are allowed but must carry a
-   rationale in the table. When route reports no signal, omit the
-   recommendation and record the decision with its rationale directly; the
-   recorded decision stays mandatory either way. The specs step reads this
-   table, not the proposal's prose; `givn check review` compares the recorded
-   decision against the delta that was actually authored.
-- **Use-case context**: when a stable use-case ID or ideation change seed is
-  available, read its `usecase.md` and record the ID, source topic, and
-  confirmed affected Persona IDs. Do not invent Personas or copy Persona
-  biographies into the proposal.
-- **Seed stamping**: when the change originates from an ideation change seed,
-  read the seed, record its path in the proposal's Use-Case Context, and set
-  the seed's status line to `Status: proposed by <change-id>`. Leave the rest
-  of the seed unchanged.
-- **Question disposition**: for an ideation-sourced change, disposition every
-  intersecting seed question in the proposal before specs — answered (with
-  its source), carried (with an owner and the deciding artifact), or out of
-  scope (with a reason). An undispositioned intersecting question blocks the
-  specs step; the rule is advisory without an ideation source. "Resolved in
-  `design.md`" alone is not a disposition. Number the open questions `D1`,
-  `D2`, … so the design ledger can resolve each one.
-
-**specs** (specs/**/*.feature):
-- One .feature file per capability under its use-case ID:
-  `givn/changes/<id>/specs/<usecase-id>/<capability>.feature` (mirrors the
-  permanent layout `givn/specs/<usecase-id>/<capability>.feature`). The owner
-  for an existing capability is wherever its `usecase.md` declares it; a new
-  capability's owner comes from the Capability Routing decision.
-- Tags: `@givn.delta @<capability>` on Feature; `@givn.added` + `@wip` on
-  each Scenario (use `@givn.modified` or `@givn.removed` where appropriate).
-  Tags go on the line **before** `Scenario:`, never inside the scenario body.
-  <example caption="Correct tag placement">
-  @givn.added @wip
-  Scenario: Observable outcome when something happens
-    Given some context
-    When an action occurs
-    Then an observable result is visible
-  </example>
-- Scenarios assert observable behaviour in Given/When/Then domain language.
-- Read `givn instructions specs --change <id>` for the canonical interaction
-  inventory and E2E policy before proposing scenarios. The spec phase owns the
-  exact inventory, tags, and real-interface scenarios; this command only
-  orchestrates the proposal-to-spec transition.
-- After writing, validate: run `givn lint --change <id>`
-  Exit 0 or 2 = correct. Exit 1 = parse error — fix before continuing.
-- Think about: what are the key observable behaviours? What are the edge cases?
-  What existing behaviour might be affected? What does the real user interaction
-  look like end-to-end?
-
-**design** (design.md):
-- HOW layer: technology decisions, architecture impact, step def locations
-  (one file per capability, name the exact files), data model changes.
-  Justify non-obvious choices.
-- **Version freshness (mandatory)**: never write a version number for a
-  language, runtime, framework, library, database, or container image from
-  memory — training data has an unknown cutoff and a remembered "current"
-  version may now be outdated or end-of-life. For every versioned choice,
-  either (a) state "latest" or the ecosystem's LTS explicitly as the
-  resolution strategy (tasks.md then pins whatever that resolves to at
-  setup time), or (b) if you have a web search or similar tool available,
-  use it now to check the current version and record it with a note of
-  what was checked (e.g. "checked npmjs.com/package/playwright"). Do not
-  write a bare specific version number with neither a lookup note nor a
-  "latest/LTS" designation — that is an unverified guess, not a decision.
-- **Test runner**: pick one fitting the tech stack, document the command. If
-  `verify.command` is still `"givn missing-testrunner"`, set it now.
-- **Strict mode (mandatory)**: most runners treat undefined/pending steps as
-  neither pass nor hard failure by default; some (notably cucumber-jvm with
-  an empty step body) report an outright PASS for a step that does nothing.
-  Document explicitly: the strict-mode flag/config for the chosen runner
-  (`cucumber-rs`: `.fail_on_skipped()`; `cucumber-js`/`cucumber-jvm` CLI:
-  `--strict`; `cucumber-jvm` JUnit Platform Suite: no native flag — enforce
-  via never-empty bodies plus a plugin/listener failing on UNDEFINED/
-  PENDING; `behave`: steps must `raise`), the not-implemented stub for the
-  language (Java `PendingException`, Python `NotImplementedError`, Rust
-  `unimplemented!()`, JS `return "pending"` or `throw new Error(...)`), and
-  the single-scenario run command.
-- **Local runnability & digital twins (mandatory)**: a local run command
-  that starts the entire system + every dependency in one step (e.g.
-  `docker-compose up`), in an isolated network; a named digital twin
-  (fake/stub/emulator, same isolated network) for every external/
-  third-party dependency — no scenario may depend on a live third-party
-  service; and any foreseeable real-interface obstacle (browser session/
-  cookie persistence, auth redirects) named with its concrete fix.
-  "The interface had a technical problem so we tested the database
-  instead" is never acceptable — that obstacle must be designed away here.
-- **E2E smoke test infrastructure**: read the canonical specs policy and
-  document its technical consequences in design.md (runner, step location,
-  infrastructure, driver, and matrix). Do not restate the policy here.
-- Think about: simplest architecture that delivers the proposal, tradeoffs,
-  affected existing code, whether the runner can actually be forced to fail
-  on an unimplemented step or whether step-body discipline must carry that
-  weight, and what could go wrong when actually driving the real interface.
-
-**Any custom artifact between here and `design-review`/`tasks` (whichever
-comes first in the sequence)**:
-- Follow the instruction returned by `givn instructions <id>`.
-- Write to the path in `generates`.
-- Think before writing.
+Pass the full served output for every artifact to the architect subagent as
+described above; the served instruction, not this file, carries the rules.
 
 ## Stop after `design`
 

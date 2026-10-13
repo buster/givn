@@ -14,7 +14,7 @@ Feature: prose-consolidation
     And  detailed dialog rules and worked examples remain in the effective dialog instructions rather than competing generated copies
     And  the synchronization result reports the selected guidance successfully
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The propose and archive commands carry the seed stamping instructions
     Given a givn project with all agent skill targets enabled and an active change
     When the user runs `givn skills sync`
