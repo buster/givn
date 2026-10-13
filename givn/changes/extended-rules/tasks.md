@@ -1593,26 +1593,104 @@ sections in the same feature order.
             2c14c968 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the term schema and the collision procedure
             ```
 
-- [ ] generate-ideation-guidance: The ideation guidance carries the canonical definition and the eight scoping rules
+- [x] generate-ideation-guidance: The ideation guidance carries the canonical definition and the eight scoping rules
       Design constraints:
         - Content seam: `assets/instructions/ideation.md` carries the canonical use-case definition and the eight scoping rules.
         - Assertions (served ideation instruction): contains "contract between one primary actor and the system", "One goal, one primary actor", "Goal-shaped, never component-shaped", "Level discipline", "promotion rule", "three or more distinct actor goals", "Placement test", "Mutation containment", "Extension discipline", "Precondition and flow consistency", "Implementation independence", "Relationship semantics".
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance carries the canonical definition and the eight scoping rules"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the canonical definition and the eight scoping rules
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "contract between one primary actor and the system"
+               ✔  And the served ideation instruction contains "One goal, one primary actor"
+               ✔  And the served ideation instruction contains "Goal-shaped, never component-shaped"
+               ✔  And the served ideation instruction contains "Level discipline"
+               ✔  And the served ideation instruction contains "promotion rule"
+               ✔  And the served ideation instruction contains "three or more distinct actor goals"
+               ✔  And the served ideation instruction contains "Placement test"
+               ✔  And the served ideation instruction contains "Mutation containment"
+               ✔  And the served ideation instruction contains "Extension discipline"
+               ✔  And the served ideation instruction contains "Precondition and flow consistency"
+               ✔  And the served ideation instruction contains "Implementation independence"
+               ✔  And the served ideation instruction contains "Relationship semantics"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            14 steps (14 passed)                                         EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the Use Case Definition section
+            (canonical definition and the eight rules) moved with the first
+            scenario's slice. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "Mutation containment" → "Mutation boundaries"
+               in assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the canonical definition and the eight scoping rules
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "contract between one primary actor and the system"
+               ✔  And the served ideation instruction contains "One goal, one primary actor"
+               ✔  And the served ideation instruction contains "Goal-shaped, never component-shaped"
+               ✔  And the served ideation instruction contains "Level discipline"
+               ✔  And the served ideation instruction contains "promotion rule"
+               ✔  And the served ideation instruction contains "three or more distinct actor goals"
+               ✔  And the served ideation instruction contains "Placement test"
+               ✘  And the served ideation instruction contains "Mutation containment"
+                  Step panicked. Captured output: the served ideation instruction is missing "Mutation containment": # Instruction: ideation
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            10 steps (9 passed, 1 failed)                                 EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the Use Case Definition section moved with the first scenario's
+            slice (`assets/instructions/ideation.md`); this scenario binds the
+            canonical-definition and scoping-rule assertions.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the canonical definition and the eight scoping rules
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "contract between one primary actor and the system"
+               ✔  And the served ideation instruction contains "One goal, one primary actor"
+               ✔  And the served ideation instruction contains "Goal-shaped, never component-shaped"
+               ✔  And the served ideation instruction contains "Level discipline"
+               ✔  And the served ideation instruction contains "promotion rule"
+               ✔  And the served ideation instruction contains "three or more distinct actor goals"
+               ✔  And the served ideation instruction contains "Placement test"
+               ✔  And the served ideation instruction contains "Mutation containment"
+               ✔  And the served ideation instruction contains "Extension discipline"
+               ✔  And the served ideation instruction contains "Precondition and flow consistency"
+               ✔  And the served ideation instruction contains "Implementation independence"
+               ✔  And the served ideation instruction contains "Relationship semantics"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            14 steps (14 passed)                                         EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 14 steps (14 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            8d1e182f — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the canonical definition and the eight scoping rules
             ```
 
 - [ ] generate-ideation-guidance: The ideation guidance carries the authoring requirements and the handoff mapping
