@@ -80,9 +80,8 @@ For each non-@e2e scenario:
   REFACTOR: Clean up without changing behaviour.
             Run: ./run-tests.sh, targeting this scenario only → still
               PASSES. Paste the output as evidence.
-  COMMIT:   One atomic commit for RED+GREEN+REFACTOR. The message
-              carries the release note as its message subject, and
-              the scenario title goes in the message body.
+  COMMIT:   One atomic commit for RED+GREEN+REFACTOR, following the
+              commit contract served by `givn instructions tasks --change <change-id>`.
               Record the commit hash.
 Then move to the next scenario.
 ```
@@ -117,9 +116,8 @@ For each @e2e scenario:
             Run: verify.e2e_command, targeting this scenario only →
               scenario PASSES. Paste evidence.
   REFACTOR: Clean up e2e code. Runner still PASSES. Paste evidence.
-  COMMIT:   One atomic commit. The message
-              carries the release note as its message subject, and
-              the scenario title goes in the message body.
+  COMMIT:   One atomic commit for RED+GREEN+REFACTOR, following the
+              commit contract served by `givn instructions tasks --change <change-id>`.
               Record the commit hash.
 Then move to the next @e2e scenario.
 ```

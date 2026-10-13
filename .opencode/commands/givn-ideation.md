@@ -6,43 +6,37 @@ Work a vague idea into change-ready use cases.
 
 **Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
 
-**Never write givn change artifacts or code during ideation.** The outcome is
-topic state and change seeds, produced at handoff.
-
 **Input**: The argument after `/givn-ideation` is an optional topic id. A
 topic id names one ideation effort; without one, derive it from the user's
 description and confirm it with the user.
 
----
-
-## Stance
-
-- Every question carries the full option treatment; a direction already decided is never asked again.
-- Follow the canonical dialog policy (`givn instructions dialog`): every
-  question answerable standalone, every option with its meaning, gain, cost,
-  and a concrete example.
-- The user confirms every persona, every recorded decision, every update.
-- Findings from reviews and personas are advisory; the user arbitrates.
-- Park unknowns in the open question log instead of debating them.
+**Rules**: the ideation discipline — the phase ladder, the one-question rule,
+the persona rules, the topic state, the term and seed schemas, the handoff
+rules, and the event-storming and use-case rules — is served by
+`givn instructions ideation`. Load it and follow it; this file owns the
+invocation orchestration only.
 
 ---
 
-## givn awareness
+## Steps
 
-Check for context at the start:
+### 1. Check for context
 
 ```sh
 givn status
 ```
 
-Resume an existing topic by reading its state first (see the skill's topic
-state layout); otherwise start a new topic.
+Resume an existing topic by reading its state first (the topic state layout
+is in the served instruction); otherwise start a new topic and confirm its
+id with the user.
 
----
+### 2. Run the served instruction
 
-## Full phases
+```sh
+givn instructions ideation
+```
 
-Read the `givn-ideation` skill in full and follow it. The phases:
+Follow it for every phase. The phases run in order:
 
 Frame → Event Storming → Use Case Definition → Use Case Elaboration → Handoff
 
@@ -50,27 +44,5 @@ Frame → Event Storming → Use Case Definition → Use Case Elaboration → Ha
 
 ## Guardrails
 
-- Never write givn change artifacts — change seeds only, at handoff.
-- Handoff never starts a change — the user runs the normal proposal flow.
-- Never invent a persona the user has not confirmed.
-- The user verifies every new core term — by the phase term check or the
-  term's naming dialog — before the canvas, use cases, or seeds rely on it.
-- Reuse before minting: inventory the project personas and every sibling
-  topic's personas, then match by ID or record a one-sentence justification
-  naming the distinguishing criterion (authority boundary, evaluation
-  capability, or own vocabulary). A reused topic file is record-only.
-- Draft use cases with the permanent `usecase.md` schema and stable kebab-case
-  use-case IDs. The same ID must survive topic state, change seed, change-side
-  `usecase.md`, and permanent archive.
-- Keep confirmed Persona IDs separate from Actors. Actors appear in Gherkin;
-  Persona biographies remain human-reviewed Markdown under `givn/personas/`.
-- Handoff presents the use-case mapping, Persona promotion decisions, source
-  topic, open questions, and change seeds for explicit confirmation. It never
-  silently promotes a Persona or performs Handoff as a side effect.
-- Handoff writes every change seed with `Status: ready` and the seed schema
-  from the `givn-ideation` skill.
-- Cut seeds by deliverable guarantee; a confirmed rule must stay true.
-- The Frame is confirmed once; later phase boundaries report and proceed.
-- The event storming ships a rendered mermaid canvas naming every event,
-  command, aggregate, and actor — and every aggregate is a declared
-  consistency boundary, never a record or a specification.
+- Follow the rules served by `givn instructions ideation`; where this file
+  and the served instruction disagree, the served instruction wins.

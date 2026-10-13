@@ -137,62 +137,21 @@ when clean.
   </example>
 </coverage-boundary-examples>
 
-## Arc42 implementation conformance
-
-Run this mandatory check before coverage classification.
-Read the durable `docs/arc42/` chapters and the change-level `arc42.md`, then
-independently derive the affected chapters and architecture facts from the
-completed implementation, `design.md`, and `tasks.md`. For every chapter or
-fact named by either assessment, compare the durable source, Arc42 claim,
-design treatment, task mapping, and implementation evidence in review.md's
-**Arc42 implementation conformance** table.
-
-This check catches both stale Arc42 documentation and design, task, or
-implementation drift from documented facts. Every omission or contradiction is
-a finding. Fix the affected artifact and repeat the comparison; if design.md
-changes, re-run design-review. Record `ARC42 CONFORMANCE: CLEAN` only when all
-rows match. Do not write `REVIEW: PASS` while an Arc42 finding remains.
-
-## Ubiquitous language conformance
-
-Before sign-off, run this mandatory
-check: confirm that the specs, design, and code reuse the durable glossary's
-exact terms — the ubiquitous language is used consistently everywhere and
-recorded in the project's arc42 glossary. Every spec or design term the
-glossary does not hold, or any inconsistent reuse, is a finding: fix the
-affected artifact and record the resolved term in `docs/arc42/12-glossary.md`.
-Do not write `REVIEW: PASS` while a ubiquitous-language finding remains.
-
 ## Visual review (conditional)
 
-Run this block when the change's design declares a visual interface (a
-`## Visual Design Contract` section whose `Interface:` is not `none`).
-
-- Confirm the evidence is complete: every delta `@e2e` scenario has one
-  committed final-state screenshot per contract viewport, or a transcript for
-  a terminal interface.
-- Spawn one fresh-context vision subagent per confirmed Persona. The subagent
-  sees the committed screenshots and judges whether that Persona can reach
-  its goal with what is shown. Record every finding with a disposition; never
-  invent a Persona.
-- The vision review names the state screenshots the review saw for each declared UI state.
-- Every finding names a contract rule or a failed Persona goal: no pixel-level
-  or coordinate finding is accepted.
-- A style improvement inside the contract updates the contract; it is not a
-  review failure. Without a vision-capable harness, record
-  `VISUAL-REVIEW: UNVERIFIED` and require a human sign-off.
-- End the block with `VISUAL-REVIEW: PASS` only when the evidence is complete,
-  the baseline holds, and every Persona finding is dispositioned.
+The visual review gate — the evidence rules, the vision review per confirmed
+Persona, and the `VISUAL-REVIEW` verdict — is served by
+`givn instructions review --change <change-id>`. Follow it when the change's
+design declares a visual interface (a `## Visual Design Contract` section whose
+`Interface:` is not `none`).
 
 **Delegated contexts:** a fresh delegated context does not inherit the parent's loaded policy. Pass the obligation explicitly — for every user-facing question, follow the effective policy from `givn instructions dialog`; load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
 
 ## Deterministic gate dispositions
 
-Before sign-off, inspect the deterministic overlap findings. Complete the
-**Overlap dispositions** table for every shape match, add a **split-or-keep**
-decision for every long scenario, and explain every removed+added pair as
-supersession or unrelated work. Do not use scores as a substitute for a human
-disposition.
+The deterministic gate dispositions for the change are served by
+`givn instructions review --change <change-id>`; record them in `review.md`
+before sign-off.
 
 ## README impact decision (readme addon enabled)
 

@@ -123,7 +123,6 @@ Mechanical check, before trusting anything else:
     design decision made silently by the tasks/implementation phase. Fix
     by conforming to design.md as reviewed, or by updating design.md and
     re-running design-review before accepting the deviation.
-    Reassess the affected arc42 chapters when the design.md fix is structural.
 12. Any finding from 1-11 is unfinished implementation, not a coverage gap.
     Uncheck the task, drive it through RED→GREEN→REFACTOR→COMMIT for real —
     fixing the real-interface obstacle per design.md, never by leaving the
@@ -132,28 +131,11 @@ Mechanical check, before trusting anything else:
 
 Paste the result into review.md's Fabrication Audit section even when clean.
 
-### Arc42 implementation conformance
-Read the durable `docs/arc42/` chapters and the change-level `arc42.md`,
-independently derive the affected chapters and architecture facts,
-and compare each one against `design.md`, its mapped task(s) in `tasks.md`, and
-evidence from the completed implementation. Fill review.md's **Arc42
-implementation conformance** table.
-
-This is a fresh post-implementation check, not a copy of design-review. It
-must catch both stale Arc42 chapters and implementation drift from documented
-facts. Any omission or contradiction is a finding. Fix the affected artifact
-or implementation and repeat the comparison; if design.md changes, re-run
-design-review. Record `ARC42 CONFORMANCE: CLEAN` and continue only when every
-row matches. Do not write `REVIEW: PASS` with an unresolved Arc42 finding.
-
 ### Deterministic gate dispositions
 
-Complete the **Overlap dispositions** table for every shape match (section
-heading exactly `## Overlap dispositions`; the Decision column must be one
-of `duplicate`, `variant`, or `boundary` — an empty or unrecognised word
-does not clear the finding), add a **split-or-keep** decision (section
-heading exactly `## Split-or-keep`) for every long scenario, and explain
-every removed+added pair as supersession or unrelated work before sign-off.
+The deterministic gate dispositions for the change are served by
+`givn instructions review --change <id>`; record them in `review.md` before
+sign-off.
 
 ### 2. Confirm all tests pass
 Run <verify.command> and <verify.e2e_command>. All scenarios GREEN, no @wip.
