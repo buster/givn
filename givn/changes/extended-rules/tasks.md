@@ -1092,26 +1092,95 @@ sections in the same feature order.
             2d389d11 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation skill ships without any addon enabled
             ```
 
-- [ ] generate-ideation-guidance: The ideation guidance carries the phase ladder and the one-question rule
+- [x] generate-ideation-guidance: The ideation guidance carries the phase ladder and the one-question rule
       Design constraints:
         - Content seam: `assets/instructions/ideation.md` carries the whole ideation discipline (moved out of the skill template); the dialog obligation stays a direction, so "givn instructions dialog" appears.
         - Assertions (served ideation instruction): contains "Event Storming", "Use Case Definition", "Use Case Elaboration", "Handoff", "one question at a time", "quality review", "givn instructions dialog", "In practice:", "Rejected:".
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance carries the phase ladder and the one-question rule"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ (same scoped command after binding the shared `Given a Givn project`
+               fixture and removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the phase ladder and the one-question rule
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "Event Storming"
+               ✔  And the served ideation instruction contains "Use Case Definition"
+               ✔  And the served ideation instruction contains "Use Case Elaboration"
+               ✔  And the served ideation instruction contains "Handoff"
+               ✔  And the served ideation instruction contains "one question at a time"
+               ✔  And the served ideation instruction contains "quality review"
+               ✔  And the served ideation instruction contains "givn instructions dialog"
+               ✔  And the served ideation instruction contains "In practice:"
+               ✔  And the served ideation instruction contains "Rejected:"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            11 steps (11 passed)                                         EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the previous scenario's slice moved
+            the whole discipline into the served asset, so the new assertions
+            already pass. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "Event Storming" → "Eventstorming" in
+               assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the phase ladder and the one-question rule
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✘  Then the served ideation instruction contains "Event Storming"
+                  Step panicked. Captured output: the served ideation instruction is missing "Event Storming": # Instruction: ideation
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the content was delivered by the previous scenario's slice
+            (`assets/instructions/ideation.md` carries the phase ladder, the One
+            question at a time section, Quality reviews, the dialog direction, and
+            the In practice/Rejected schemas). This scenario binds the served-content
+            assertions and adds the shared `Given a Givn project` fixture
+            (tests/steps/serve_extended_rules_steps.rs).
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the phase ladder and the one-question rule
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "Event Storming"
+               ✔  And the served ideation instruction contains "Use Case Definition"
+               ✔  And the served ideation instruction contains "Use Case Elaboration"
+               ✔  And the served ideation instruction contains "Handoff"
+               ✔  And the served ideation instruction contains "one question at a time"
+               ✔  And the served ideation instruction contains "quality review"
+               ✔  And the served ideation instruction contains "givn instructions dialog"
+               ✔  And the served ideation instruction contains "In practice:"
+               ✔  And the served ideation instruction contains "Rejected:"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            11 steps (11 passed)                                         EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.21s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 11 steps (11 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            2aa7a2c4 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the phase ladder and the one-question rule
             ```
 
 - [ ] generate-ideation-guidance: The ideation guidance binds personas to the artifacts that affect them
