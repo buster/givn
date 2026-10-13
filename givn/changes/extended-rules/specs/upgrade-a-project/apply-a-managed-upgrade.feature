@@ -2,7 +2,7 @@
 
 Feature: Managed upgrade and legacy project migration
 
-  @givn.added @wip
+  @givn.added
   Scenario: An upgrade reconciles full-copy guidance to the direction
     Given a committed project root with givn/ initialised
     And a tracked full-copy generated rule at ".opencode/skills/givn-propose/SKILL.md"
