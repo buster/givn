@@ -9,7 +9,7 @@ Feature: Guide domain modeling
     And the served domain-modeling instruction contains "Name aggregates with domain nouns"
     And the served domain-modeling instruction contains "the glossary inline"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Lifecycle guidance describes the domain, not the givn change
     Given a Givn project
     Then the served domain-modeling instruction contains "the *domain's own*"
