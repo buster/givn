@@ -60,7 +60,7 @@ Feature: A project extends an instruction's built-in rules
     Then a warning names the malformed extension for the proposal instruction
     And the served content is the built-in rules alone
 
-  @givn.added @wip
+  @givn.added
   Scenario: A repeated instruction key keeps the last entry
     Given a Givn project with an active change
     And the project's configuration carries two extension entries for the proposal instruction

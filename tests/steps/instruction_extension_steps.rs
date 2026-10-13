@@ -19,6 +19,12 @@ use crate::steps::serve_extended_rules_steps::{
 /// The rule the fixture records for the proposal instruction.
 const RECORDED_PROPOSAL_RULE: &str = "Keep proposals under 500 words";
 
+/// The earlier of the two rules a repeated instruction key carries.
+const EARLIER_PROPOSAL_RULE: &str = "Keep proposals under 700 words";
+
+/// The last of the two rules a repeated instruction key carries.
+const LAST_PROPOSAL_RULE: &str = "Keep proposals under 900 words";
+
 /// The fixture file that records the installed-guidance bytes before a
 /// removal, for the byte-for-byte comparison.
 const GUIDANCE_SNAPSHOT: &str = "guidance-before";
@@ -186,6 +192,23 @@ fn configuration_carries_empty_extension_list(world: &mut GivnWorld) {
 fn configuration_carries_whitespace_only_rule(world: &mut GivnWorld) {
     let env = env(world);
     write_extensions(env, "  proposal:\n    - \"   \"\n");
+}
+
+#[given("the project's configuration carries two extension entries for the proposal instruction")]
+fn configuration_carries_two_extension_entries(world: &mut GivnWorld) {
+    let env = env(world);
+    write_extensions(
+        env,
+        &format!(
+            "  proposal:\n    - {EARLIER_PROPOSAL_RULE}\n  proposal:\n    - {LAST_PROPOSAL_RULE}\n"
+        ),
+    );
+    record_expected_rule(env, "proposal", LAST_PROPOSAL_RULE);
+    crate::steps::serve_extended_rules_steps::record_excluded_rule(
+        env,
+        "proposal",
+        EARLIER_PROPOSAL_RULE,
+    );
 }
 
 #[then(regex = r#"^a warning names the unknown instruction "([^"]+)"$"#)]

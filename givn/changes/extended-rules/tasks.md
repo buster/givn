@@ -802,27 +802,82 @@ sections in the same feature order.
             e6fff160 — feat(instruction-extension): <release note>; body: Scenario: An empty extension list is valid and adds nothing
             ```
 
-- [ ] instruction-extension: A whitespace-only rule entry is skipped with a warning
+- [x] instruction-extension: A whitespace-only rule entry is skipped with a warning
       Design constraints:
         - A rule that is empty or whitespace-only after trimming is skipped with the malformed warning naming the proposal instruction; every rejection is deterministic, one warning line per rejected entry.
         - Assertions: a warning names the malformed extension for the proposal instruction; the served content is the built-in rules alone.
         - Step file: `tests/steps/instruction_extension_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::A whitespace-only rule entry is skipped with a warning"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::A whitespace-only rule entry is skipped with a warning"
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A whitespace-only rule entry is skipped with a warning
+               ✔  Given a Givn project with an active change
+               ✔  And the project's configuration carries a whitespace-only rule for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then a warning names the malformed extension for the proposal instruction
+               ✔  And the served content is the built-in rules alone
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the trim-and-warn validation is delivered
+            by the coupled earlier scenario's edit (`extensions::load` warns and
+            skips an element that is empty after trimming).
+            ORACLE_RED calibration (controlled omission from the delivered output):
+            $ (temporarily suppressed the element-level malformed warning emission in
+               src/config/extensions.rs; same scoped command)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A whitespace-only rule entry is skipped with a warning
+               ✔  Given a Givn project with an active change
+               ✔  And the project's configuration carries a whitespace-only rule for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✘  Then a warning names the malformed extension for the proposal instruction
+                  Step panicked. Captured output: no malformed-extension warning in the request stderr: ""
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            With the warning omitted, the assertion fails on the same fixture, so
+            it discriminates; the emission was restored immediately (the file is
+            byte-identical to the committed state) and the scoped command passed
+            again. No production switch, exception, fake success, or source-text
+            test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the whitespace-only validation was delivered by the earlier
+            scenarios' serving path (`extensions::load` trims every rule and warns
+            `warning: ignoring malformed extension for '<id>': a rule must be a
+            non-empty string` for an empty result); this scenario binds the warning
+            assertion and the built-in-alone control.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the warning emission)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A whitespace-only rule entry is skipped with a warning
+               ✔  Given a Givn project with an active change
+               ✔  And the project's configuration carries a whitespace-only rule for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then a warning names the malformed extension for the proposal instruction
+               ✔  And the served content is the built-in rules alone
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.79s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            a5d744b9 — feat(instruction-extension): <release note>; body: Scenario: A whitespace-only rule entry is skipped with a warning
             ```
 
 - [ ] instruction-extension: A repeated instruction key keeps the last entry
