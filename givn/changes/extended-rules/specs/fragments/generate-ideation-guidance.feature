@@ -146,7 +146,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "match"
     And  the served ideation instruction contains "separate from Actors"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation guidance carries the open-question qualifier rule
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
