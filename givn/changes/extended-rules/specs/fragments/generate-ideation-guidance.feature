@@ -199,7 +199,7 @@ Feature: Generate ideation guidance
     Then  the served ideation instruction contains "deliverable guarantee"
     And  the served ideation instruction contains "never asked again"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation guidance requires a canvas with distinguishable element kinds
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
