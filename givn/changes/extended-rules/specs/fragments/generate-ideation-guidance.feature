@@ -179,7 +179,7 @@ Feature: Generate ideation guidance
     Then  the served ideation instruction contains "Confirm the Frame"
     And  the served ideation instruction contains "report what was recorded and proceed"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Handoff cuts change seeds by deliverable guarantee
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
