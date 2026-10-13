@@ -1347,26 +1347,57 @@ sections in the same feature order.
             25af5ee8 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes
             ```
 
-- [ ] generate-ideation-guidance: The explore guidance points to ideation for structured domain work
+- [x] generate-ideation-guidance: The explore guidance points to ideation for structured domain work
       Design constraints:
         - Content seam: the new canonical `assets/instructions/explore.md` carries the explore discipline and the direction to ideation.
         - Assertion: the served explore instruction (step id, no change context) contains "givn-ideation".
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The explore guidance points to ideation for structured domain work"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The explore guidance points to ideation for structured domain work"
+            Feature: Generate ideation guidance
+              Scenario: The explore guidance points to ideation for structured domain work
+               ✔  Given a Givn project
+               ✔  When the agent requests the explore instructions through the Givn CLI
+               ✘  Then the served explore instruction contains "givn-ideation"
+                  Step panicked. Captured output: givn instructions explore failed: error: unknown artifact 'explore'. Known artifacts: proposal, specs, design, design-review, tasks, review, arc42-docs
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (2 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: the `explore` instruction id does not exist yet;
+            the CLI refuses it, so the served content cannot be asserted.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            assets/instructions/explore.md (new canonical step-instruction asset:
+              the explore discipline moved out of the givn-explore skill — the
+              stance, what you might do, the must-nots, the transitioning-out table,
+              and the explicit `/givn-ideation` direction for structured domain work)
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after creating assets/instructions/explore.md)
+            Feature: Generate ideation guidance
+              Scenario: The explore guidance points to ideation for structured domain work
+               ✔  Given a Givn project
+               ✔  When the agent requests the explore instructions through the Givn CLI
+               ✔  Then the served explore instruction contains "givn-ideation"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            3 steps (3 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 3 steps (3 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            ec188787 — feat(generate-ideation-guidance): <release note>; body: Scenario: The explore guidance points to ideation for structured domain work
             ```
 
 - [ ] generate-ideation-guidance: The ideation guidance carries the seed schema and its status values
