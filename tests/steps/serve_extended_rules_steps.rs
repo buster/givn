@@ -174,6 +174,27 @@ pub(crate) fn recorded_stdout(env: &common::TestEnv, id: &str) -> String {
         .unwrap_or_else(|error| panic!("no served output recorded for {id}: {error}"))
 }
 
+/// The instruction ids with a recorded served output, in id order.
+pub(crate) fn recorded_served_ids(env: &common::TestEnv) -> Vec<String> {
+    let dir = extension_fixture_dir(env).join("served");
+    let mut ids: Vec<String> = fs::read_dir(&dir)
+        .unwrap_or_else(|error| {
+            panic!(
+                "no guidance request was recorded ({}): {error}",
+                dir.display()
+            )
+        })
+        .filter_map(|entry| {
+            let entry = entry.ok()?;
+            let name = entry.file_name().to_string_lossy().into_owned();
+            name.strip_suffix(".stdout").map(str::to_string)
+        })
+        .collect();
+    ids.sort();
+    assert!(!ids.is_empty(), "no guidance request was recorded");
+    ids
+}
+
 /// The recorded served stderr of `id`.
 pub(crate) fn recorded_stderr(env: &common::TestEnv, id: &str) -> String {
     let path = extension_fixture_dir(env)
@@ -289,4 +310,26 @@ fn served_content_does_not_carry_the_earlier_entry_rule(world: &mut GivnWorld) {
         !content.contains(&rule),
         "the served proposal content carries the earlier entry's rule {rule:?}: {content}"
     );
+}
+
+#[then("each served content carries its project's rule in the marked extension section")]
+fn each_served_content_carries_its_project_rule(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let ids = recorded_served_ids(env);
+    assert!(
+        ids.len() > 1,
+        "expected more than one served content, got {ids:?}"
+    );
+    for id in ids {
+        let rule = expected_rule(env, &id);
+        let content = recorded_stdout(env, &id);
+        let section = extension_section(&id, &content);
+        assert!(
+            section.contains(&rule),
+            "the served {id} extension section is missing {rule:?}: {content}"
+        );
+    }
 }

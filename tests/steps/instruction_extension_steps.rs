@@ -25,6 +25,12 @@ const EARLIER_PROPOSAL_RULE: &str = "Keep proposals under 700 words";
 /// The last of the two rules a repeated instruction key carries.
 const LAST_PROPOSAL_RULE: &str = "Keep proposals under 900 words";
 
+/// The rule the fixture records for the dialog policy.
+const DIALOG_RULE: &str = "Answer in the project's glossary terms";
+
+/// The rule the fixture records for the ideation step.
+const IDEATION_RULE: &str = "Prefer a mermaid canvas over prose for a new domain";
+
 /// The fixture file that records the installed-guidance bytes before a
 /// removal, for the byte-for-byte comparison.
 const GUIDANCE_SNAPSHOT: &str = "guidance-before";
@@ -209,6 +215,19 @@ fn configuration_carries_two_extension_entries(world: &mut GivnWorld) {
         "proposal",
         EARLIER_PROPOSAL_RULE,
     );
+}
+
+#[when(
+    "the project's configuration records a rule for the dialog policy and for the ideation step"
+)]
+fn configuration_records_policy_and_step_rules(world: &mut GivnWorld) {
+    let env = env(world);
+    write_extensions(
+        env,
+        &format!("  dialog:\n    - {DIALOG_RULE}\n  ideation:\n    - {IDEATION_RULE}\n"),
+    );
+    record_expected_rule(env, "dialog", DIALOG_RULE);
+    record_expected_rule(env, "ideation", IDEATION_RULE);
 }
 
 #[then(regex = r#"^a warning names the unknown instruction "([^"]+)"$"#)]
