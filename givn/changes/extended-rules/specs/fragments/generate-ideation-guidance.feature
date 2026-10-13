@@ -130,7 +130,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "one persona with three stance blocks"
     And  the served ideation instruction contains "record entries only"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation guidance keeps the confirmed persona behaviors
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI

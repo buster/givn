@@ -119,6 +119,8 @@ New: <persona-id> — <distinguishing criterion>
 - Cap: at most three persona segments per stakeholder type, about ten in
   total.
 - Findings are advisory; the user arbitrates.
+- Confirmed persona IDs stay separate from Actors: Actors appear in Gherkin;
+  persona biographies remain human-reviewed Markdown under `givn/personas/`.
 - At handoff, persona promotion appends the validated persona's record
   entries into the project-level persona collection with a user-confirmed
   merged diff; the topic file stays as historical record. Repeated promotion
