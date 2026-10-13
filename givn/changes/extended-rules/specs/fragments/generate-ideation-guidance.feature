@@ -9,7 +9,7 @@ Feature: Generate ideation guidance
     Then  the served ideation instruction contains "Frame"
     And  the generated givn-ideation guidance directs the ideator to the ideation instruction
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation guidance carries the phase ladder and the one-question rule
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
