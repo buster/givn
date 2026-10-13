@@ -2,7 +2,7 @@
 
 Feature: initialize-a-project
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Consumer runs init non-interactively and gets opencode skills
     Given  a project root without a givn/ directory
     And  the root contains human-authored agent instructions to preserve
