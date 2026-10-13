@@ -4314,7 +4314,7 @@ sections in the same feature order.
         - Assertion: after requesting the instructions for every served step, a project snapshot shows no changed file (the request path must not mutate configuration, generated files, or state).
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::A guidance request changes nothing in the project"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
             $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::A guidance request changes nothing in the project"
             Feature: The served instruction carries the built-in rules and the project's extension
@@ -4351,7 +4351,7 @@ sections in the same feature order.
             and the scoped command passed again. No production switch,
             exception, fake success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
             none — the request path writes nothing (no render cache, no new
             command surface; the extension map is read per call). This scenario
@@ -4374,14 +4374,15 @@ sections in the same feature order.
             1 scenario (1 passed)
             4 steps (4 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
             $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.28s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(serve-extended-rules): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(serve-extended-rules): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            4022aa3d — feat(serve-extended-rules): <release note>; body: Scenario: A guidance request changes nothing in the project
             ```
 
 - [ ] apply-a-managed-upgrade: An upgrade reconciles full-copy guidance to the direction
@@ -4393,15 +4394,76 @@ sections in the same feature order.
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade reconciles full-copy guidance to the direction"`
       - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade reconciles full-copy guidance to the direction"
+            Feature: Managed upgrade and legacy project migration
+              Scenario: An upgrade reconciles full-copy guidance to the direction
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And a tracked full-copy generated rule at ".opencode/skills/givn-propose/SKILL.md"
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✔  And the revision shows ".opencode/skills/givn-propose/SKILL.md" rewritten to the direction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the managed-path synchronization
+            already renders the rewritten asset and force-stages it through the
+            calculated allowlist (the fixture models a project that tracks its
+            generated rules: `rules: versioned`, so the rewrite is repository
+            content rather than a local-only removal — the permanent
+            "A local-only upgrade publishes rule removals" scenario owns the
+            other policy). This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission of the delivered direction):
+            $ (temporarily rewrote "givn instructions proposal --change" →
+               "givn instructions the-proposal --change" in
+               assets/skills/givn-propose/SKILL.md.tmpl; same scoped command)
+            Feature: Managed upgrade and legacy project migration
+              Scenario: An upgrade reconciles full-copy guidance to the direction
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And a tracked full-copy generated rule at ".opencode/skills/givn-propose/SKILL.md"
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✘  And the revision shows ".opencode/skills/givn-propose/SKILL.md" rewritten to the direction
+                  Step panicked. Captured output: .opencode/skills/givn-propose/SKILL.md is not rewritten to the direction: ---
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the template was restored immediately
+            (`git checkout -- assets/skills/givn-propose/SKILL.md.tmpl`) and the
+            scoped command passed again. No production switch, exception, fake
+            success, or source-text test.
             ```
       - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the upgrade sync rewrites the tracked full copy to the
+            direction and stages it through the calculated allowlist. This
+            scenario adds the tracked-full-copy fixture (earlier-version copy,
+            versioned policy, committed) and the revision assertion in
+            tests/steps/run_upgrade_steps.rs; the revision content is read at
+            HEAD, not from the working tree.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the template)
+            Feature: Managed upgrade and legacy project migration
+              Scenario: An upgrade reconciles full-copy guidance to the direction
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And a tracked full-copy generated rule at ".opencode/skills/givn-propose/SKILL.md"
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✔  And the revision shows ".opencode/skills/givn-propose/SKILL.md" rewritten to the direction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
             ```
       - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.24s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
       - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(apply-a-managed-upgrade): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
