@@ -5232,10 +5232,10 @@ sections in the same feature order.
             ```
       - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
-            <pending>
+            17ce271b — test(e2e): <release note>; body: Scenario: A developer records an extension and it governs the next guidance request
             ```
 
-- [ ] instruction-extension: An upgrade preserves the extension and the next request serves it
+- [x] instruction-extension: An upgrade preserves the extension and the next request serves it
       Design constraints:
         - Fixture: a committed Givn project with an active change and a recorded extension for the proposal instruction; a real `givn upgrade` subprocess runs first, then a real `givn instructions proposal` subprocess.
         - Primary assertion on the real subprocesses: the upgrade revision carries no extension content (the `extensions:` key is user-owned config outside the allowlist); the served content carries the project's rule beside the current built-in rules.
@@ -5243,23 +5243,86 @@ sections in the same feature order.
         - E2E steps: `tests/steps/instruction_extension_e2e_steps.rs` (real CLI).
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::An upgrade preserves the extension and the next request serves it"`
-      - [ ] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::An upgrade preserves the extension and the next request serves it"
+            (the e2e bindings were written at RED with their real assertions in
+             tests/steps/instruction_extension_e2e_steps.rs: the committed-project
+             Given, the real `givn upgrade` When, and the rule-beside-built-ins
+             Then; the revision assertion reuses the existing
+             `the upgrade revision carries no extension content` step. First run:)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An upgrade preserves the extension and the next request serves it
+               ✔  Given a committed Givn project with an active change and an extension for the proposal instruction
+               ✔  When the consumer upgrades the project through the Givn CLI
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the upgrade revision carries no extension content
+               ✔  And the served content carries the project's rule beside the current built-in rules
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the managed upgrade path and the
+            extension serving were delivered by the earlier
+            instruction-extension/apply-a-managed-upgrade slices (the extension is
+            user-owned config outside the allowlist; the request appends it). This
+            is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission in the delivered behavior):
+            $ (temporarily made src/config/extensions.rs::append return the content
+               unchanged; same scoped command)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An upgrade preserves the extension and the next request serves it
+               ✔  … (4 passed)
+               ✘  And the served content carries the project's rule beside the current built-in rules
+                  Step panicked. Captured output: the served proposal content carries
+                  no marked extension section: # Instruction: proposal
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the new
+            assertion discriminates (it reads the real subprocess stdout); the
+            edit was restored immediately
+            (`git checkout -- src/config/extensions.rs`) and the scoped command
+            passed again. No production switch, exception, fake success, or
+            source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
             ```
+            none — the managed-upgrade path and the extension serving were
+            delivered by the earlier slices; this scenario binds the committed
+            fixture and the real `givn upgrade` subprocess plus the
+            rule-beside-built-ins assertion in
+            tests/steps/instruction_extension_e2e_steps.rs.
             ```
             Evidence transcript path (design.md §Visual Design Contract):
             ```
+            givn/changes/extended-rules/evidence/visual/an-upgrade-preserves-the-extension-and-the-next-request-serves-it/transcript.txt
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the edit)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An upgrade preserves the extension and the next request serves it
+               ✔  Given a committed Givn project with an active change and an extension for the proposal instruction
+               ✔  When the consumer upgrades the project through the Givn CLI
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the upgrade revision carries no extension content
+               ✔  And the served content carries the project's rule beside the current built-in rules
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.82s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
+            <pending>
             ```
 
 - [ ] generate-ideation-guidance: A consumer synchronizes skills and every agent target receives the ideation facilitation skill
