@@ -5322,10 +5322,10 @@ sections in the same feature order.
             ```
       - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
-            <pending>
+            616b40c5 — test(e2e): <release note>; body: Scenario: An upgrade preserves the extension and the next request serves it
             ```
 
-- [ ] generate-ideation-guidance: A consumer synchronizes skills and every agent target receives the ideation facilitation skill
+- [x] generate-ideation-guidance: A consumer synchronizes skills and every agent target receives the ideation facilitation skill
       Design constraints:
         - Real `givn skills sync` with all agent targets enabled; the primary assertion is on the real sync stdout plus the served ideation instruction.
         - Served-content seam: `assets/instructions/ideation.md` (new) carries the ideation discipline; `assets/skills/givn-ideation/SKILL.md.tmpl` and `assets/commands/givn-ideation.md` carry the direction only.
@@ -5334,23 +5334,87 @@ sections in the same feature order.
         - E2E steps: existing per-capability files (`tests/steps/prose_consolidation_e2e_steps.rs` for the sync; the shared served-instruction step per Global constraints §Step-file ownership).
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::A consumer synchronizes skills and every agent target receives the ideation facilitation skill"`
-      - [ ] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::A consumer synchronizes skills and every agent target receives the ideation facilitation skill"
+            (every binding already exists: the all-targets fixture and the real
+             `givn skills sync` When, the stdout assertions, the shared
+             served-instruction content step for ideation, and the generic
+             command-direction step. No new binding was needed. First run:)
+            Feature: Generate ideation guidance
+              Scenario: A consumer synchronizes skills and every agent target receives the ideation facilitation skill
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then stdout contains "Syncing skills and agent commands..."
+               ✔  And stdout contains "synced skill: givn-ideation"
+               ✔  And the served ideation instruction contains "Frame"
+               ✔  And the generated givn-ideation command directs the ideator to the ideation instruction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the whole ideation discipline moved
+            into `assets/instructions/ideation.md` with the earlier
+            generate-ideation-guidance slices, and the generated givn-ideation
+            files already carry the direction. All steps reused. This is the
+            recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote every "Frame" → "Framing" in
+               assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: A consumer synchronizes skills and every agent target receives the ideation facilitation skill
+               ✔  … (3 passed)
+               ✘  And the served ideation instruction contains "Frame"
+                  Step panicked. Captured output: the served ideation instruction
+                  is missing "Frame": # Instruction: ideation
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            6 steps (5 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
             ```
+            none — all steps reused: the sync path rewrites the generated
+            givn-ideation files, and the served ideation instruction was
+            delivered by the earlier generate-ideation-guidance slices
+            (assets/instructions/ideation.md plus the direction in
+            assets/skills/givn-ideation/SKILL.md.tmpl and
+            assets/commands/givn-ideation.md).
             ```
             Evidence transcript path (design.md §Visual Design Contract):
             ```
+            givn/changes/extended-rules/evidence/visual/a-consumer-synchronizes-skills-and-every-agent-target-receives-the-ideation-facilitation-skill/transcript.txt
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: A consumer synchronizes skills and every agent target receives the ideation facilitation skill
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then stdout contains "Syncing skills and agent commands..."
+               ✔  And stdout contains "synced skill: givn-ideation"
+               ✔  And the served ideation instruction contains "Frame"
+               ✔  And the generated givn-ideation command directs the ideator to the ideation instruction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
+            <pending>
             ```
 
 - [ ] match-guidance-to-enabled-addons: A consumer synchronizes skills and the generated guidance omits disabled-addon sections
