@@ -11,7 +11,7 @@ Feature: The served instruction carries the built-in rules and the project's ext
     And the served content carries the built-in proposal rules
     And the served content carries the project's rule in the marked extension section
 
-  @givn.added @wip
+  @givn.added
   Scenario: The built-in rules are served alone when no extension exists
     Given a Givn project with an active change
     When the agent requests the specs instructions through the Givn CLI

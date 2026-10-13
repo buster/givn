@@ -222,7 +222,15 @@ pub(crate) fn extension_section<'a>(id: &str, content: &'a str) -> &'a str {
         .1
 }
 
-#[when(regex = r"^the agent requests the ([a-z-]+) (?:instructions|policy) through the Givn CLI$")]
+// The alternation lists exactly the ids this delta's generic serving step is
+// asked for. Two pre-existing literal bindings own the `specs`
+// (`fix_domain_modeling_skill_trigger_steps.rs`) and `design`
+// (`fix_domain_modeling_skill_trigger_e2e_steps.rs`) sentences; a broad
+// `([a-z-]+)` pattern would make every `specs` request an ambiguous step match,
+// and Rust's regex crate has no negative lookahead.
+#[when(
+    regex = r"^the agent requests the (proposal|dialog|ideation|explore) (?:instructions|policy) through the Givn CLI$"
+)]
 fn agent_requests_instruction(world: &mut GivnWorld, id: String) {
     let env = world
         .env
@@ -277,16 +285,60 @@ fn served_content_carries_the_builtin_proposal_rules(world: &mut GivnWorld) {
     );
 }
 
+/// Built-in rule marker of the specs instruction: the canonical policy line
+/// the served specs content carries.
+const BUILTIN_SPECS_RULE: &str = "Primary assertion rule";
+
+#[then("the served content carries the built-in specs rules")]
+fn served_content_carries_the_builtin_specs_rules(world: &mut GivnWorld) {
+    // The specs request is bound by the pre-existing specific step
+    // (`fix_domain_modeling_skill_trigger_steps.rs`), which captures the
+    // output in `last_output`; the fixture recordings are not written for it.
+    let output = world
+        .last_output
+        .as_ref()
+        .expect("the specs instructions were not requested first");
+    assert!(
+        output.status.success(),
+        "the specs instructions request failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let content = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        content.contains(BUILTIN_SPECS_RULE),
+        "the served specs content is missing the built-in specs rules \
+         ({BUILTIN_SPECS_RULE:?}): {content}"
+    );
+}
+
 #[then("the served content carries no extension section")]
 fn served_content_carries_no_extension_section(world: &mut GivnWorld) {
     let env = world
         .env
         .as_ref()
         .expect("a project root is required first");
-    let content = recorded_stdout(env, "proposal");
+    let mut checked = false;
+    if let Some(output) = world.last_output.as_ref() {
+        let content = String::from_utf8_lossy(&output.stdout);
+        assert!(
+            !content.contains(EXTENSION_SECTION_MARKER),
+            "the served content carries an extension section: {content}"
+        );
+        checked = true;
+    }
+    if extension_fixture_dir(env).join("served").exists() {
+        for id in recorded_served_ids(env) {
+            let content = recorded_stdout(env, &id);
+            assert!(
+                !content.contains(EXTENSION_SECTION_MARKER),
+                "the served {id} content carries an extension section: {content}"
+            );
+            checked = true;
+        }
+    }
     assert!(
-        !content.contains(EXTENSION_SECTION_MARKER),
-        "the served proposal content carries an extension section: {content}"
+        checked,
+        "no served content was requested for this assertion"
     );
 }
 
