@@ -157,6 +157,20 @@ The architecture conformance check is `N/A when the arc42 addon is disabled`;
 continue with the coverage classification.
 {{/if}}
 
+{{#if addons.domain_modeling}}
+{{#if addons.arc42}}
+## Ubiquitous language conformance
+
+Before sign-off, run this mandatory
+check: confirm that the specs, design, and code reuse the durable glossary's
+exact terms — the ubiquitous language is used consistently everywhere and
+recorded in the project's arc42 glossary. Every spec or design term the
+glossary does not hold, or any inconsistent reuse, is a finding: fix the
+affected artifact and record the resolved term in `docs/arc42/12-glossary.md`.
+Do not write `REVIEW: PASS` while a ubiquitous-language finding remains.
+{{/if}}
+{{/if}}
+
 ## Coverage
 
 Coverage is measured once by the archive against the committed candidate and
