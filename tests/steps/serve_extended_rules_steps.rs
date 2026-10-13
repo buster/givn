@@ -99,6 +99,146 @@ fn served_instruction_does_not_contain(world: &mut GivnWorld, id: String, text: 
     );
 }
 
+// --- serve-extended-rules: extension recording and ordering assertions ------
+
+/// Default rule the recording fixture writes for the proposal instruction.
+pub(crate) const RECORDED_EXTENSION_RULE: &str = "Keep proposals under 500 words";
+
+/// The built-in release-note rule of the proposal instruction: the marker the
+/// contradiction scenario asserts beside the project's rule.
+pub(crate) const BUILTIN_RELEASE_NOTE_RULE: &str =
+    "carries the release note as its message subject";
+
+/// Record the built-in served content of `id` before an extension exists, for
+/// the ordering assertions.
+pub(crate) fn record_builtin_content(env: &common::TestEnv, id: &str, content: &[u8]) {
+    let dir = extension_fixture_dir(env).join("builtin");
+    fs::create_dir_all(&dir).unwrap_or_else(|error| panic!("create {}: {error}", dir.display()));
+    fs::write(dir.join(id), content)
+        .unwrap_or_else(|error| panic!("record the built-in content of {id}: {error}"));
+}
+
+/// The recorded built-in served content of `id`.
+pub(crate) fn recorded_builtin_content(env: &common::TestEnv, id: &str) -> String {
+    let path = extension_fixture_dir(env).join("builtin").join(id);
+    fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("no built-in content recorded for {id}: {error}"))
+}
+
+/// The `## Project extension` section of a served content, panicking when the
+/// section is absent (the shared helper used by the serving assertions).
+pub(crate) fn marked_extension_section<'a>(id: &str, content: &'a str) -> (&'a str, usize) {
+    let at = content.find(EXTENSION_SECTION_MARKER).unwrap_or_else(|| {
+        panic!("the served {id} content carries no marked extension section: {content}")
+    });
+    (&content[at..], at)
+}
+
+#[given("the project records an extension for the proposal instruction")]
+fn project_records_proposal_extension(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    // Capture the built-in served content before the extension exists, so the
+    // ordering assertions compare against the same request path.
+    let builtin = request_instruction(env, "proposal");
+    assert!(
+        builtin.status.success(),
+        "givn instructions proposal failed: {}",
+        String::from_utf8_lossy(&builtin.stderr)
+    );
+    record_builtin_content(env, "proposal", &builtin.stdout);
+    crate::steps::instruction_extension_steps::write_extensions(
+        env,
+        &format!("  proposal:\n    - {RECORDED_EXTENSION_RULE}\n"),
+    );
+    record_expected_rule(env, "proposal", RECORDED_EXTENSION_RULE);
+    // The upgrade scenarios need a clean checkout; the fixture's own state
+    // directory travels with the fixture commit.
+    common::commit_fixture(env);
+}
+
+#[given(regex = r#"^the extension carries the rule "([^"]+)"$"#)]
+fn extension_carries_the_rule(world: &mut GivnWorld, rule: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::instruction_extension_steps::replace_extensions(
+        env,
+        &format!("  proposal:\n    - {rule}\n"),
+    );
+    record_expected_rule(env, "proposal", &rule);
+}
+
+/// The served text with the trailing skill-routing line removed: both the
+/// built-in capture and the extended request carry it, and it is not rule
+/// content.
+pub(crate) fn without_skill_route(content: &str) -> String {
+    let mut lines: Vec<&str> = content.lines().collect();
+    if lines
+        .last()
+        .is_some_and(|line| line.starts_with("Skill to load now:"))
+    {
+        lines.pop();
+    }
+    lines.join("\n")
+}
+
+#[then("every built-in rule of the proposal instruction remains in the served content")]
+fn every_builtin_rule_remains(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let builtin = without_skill_route(&recorded_builtin_content(env, "proposal"));
+    let content = without_skill_route(&recorded_stdout(env, "proposal"));
+    assert!(
+        content.starts_with(&builtin),
+        "the served proposal content no longer carries every built-in rule \
+         (the built-in content is not the served prefix): {content}"
+    );
+}
+
+#[then("the built-in rules appear before the marked extension section")]
+fn builtin_rules_appear_before_the_extension_section(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let builtin = without_skill_route(&recorded_builtin_content(env, "proposal"));
+    let content = without_skill_route(&recorded_stdout(env, "proposal"));
+    let (_, marker_at) = marked_extension_section("proposal", &content);
+    let builtin_at = content.find(&builtin).unwrap_or_else(|| {
+        panic!("the served proposal content does not carry the built-in rules: {content}")
+    });
+    assert!(
+        builtin_at < marker_at,
+        "the built-in rules appear after the marked extension section: {content}"
+    );
+}
+
+#[then("the contradicting project rule appears beside the built-in release-note rule")]
+fn contradicting_rule_appears_beside_the_builtin_release_note_rule(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let rule = expected_rule(env, "proposal");
+    let content = recorded_stdout(env, "proposal");
+    let (section, _) = marked_extension_section("proposal", &content);
+    assert!(
+        section.contains(&rule),
+        "the served proposal extension section is missing {rule:?}: {content}"
+    );
+    assert!(
+        content.contains(BUILTIN_RELEASE_NOTE_RULE),
+        "the served proposal content is missing the built-in release-note rule \
+         ({BUILTIN_RELEASE_NOTE_RULE:?}) beside {rule:?}: {content}"
+    );
+}
+
 // --- instruction-extension serving fixtures ---------------------------------
 
 /// Fixture directory the instruction-extension steps use to record the
