@@ -176,6 +176,12 @@ fn configuration_carries_malformed_extension_entry(world: &mut GivnWorld) {
     write_extensions(env, "  proposal: not-a-list\n");
 }
 
+#[given("the project's configuration carries an empty extension list for the proposal instruction")]
+fn configuration_carries_empty_extension_list(world: &mut GivnWorld) {
+    let env = env(world);
+    write_extensions(env, "  proposal: []\n");
+}
+
 #[then(regex = r#"^a warning names the unknown instruction "([^"]+)"$"#)]
 fn warning_names_the_unknown_instruction(world: &mut GivnWorld, id: String) {
     let env = env(world);

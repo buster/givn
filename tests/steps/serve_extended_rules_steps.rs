@@ -217,3 +217,29 @@ fn served_content_is_the_builtin_rules_alone(world: &mut GivnWorld) {
         "the served proposal content is missing the built-in proposal rules: {content}"
     );
 }
+
+#[then("the served content carries the built-in proposal rules")]
+fn served_content_carries_the_builtin_proposal_rules(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let content = recorded_stdout(env, "proposal");
+    assert!(
+        content.contains("proposed by"),
+        "the served proposal content is missing the built-in proposal rules: {content}"
+    );
+}
+
+#[then("the served content carries no extension section")]
+fn served_content_carries_no_extension_section(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let content = recorded_stdout(env, "proposal");
+    assert!(
+        !content.contains(EXTENSION_SECTION_MARKER),
+        "the served proposal content carries an extension section: {content}"
+    );
+}

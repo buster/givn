@@ -43,7 +43,7 @@ Feature: A project extends an instruction's built-in rules
     Then a warning names the malformed entry
     And the served content is the built-in rules alone
 
-  @givn.added @wip
+  @givn.added
   Scenario: An empty extension list is valid and adds nothing
     Given a Givn project with an active change
     And the project's configuration carries an empty extension list for the proposal instruction
