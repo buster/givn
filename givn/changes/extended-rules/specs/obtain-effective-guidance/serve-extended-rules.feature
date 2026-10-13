@@ -37,7 +37,7 @@ Feature: The served instruction carries the built-in rules and the project's ext
     And the response carries the same instruction content as the text path
     And the response carries the project's rule in the marked extension section
 
-  @givn.added @wip
+  @givn.added
   Scenario: The extension applies on top of a project-owned replacement
     Given a Givn project with an active change
     And a project-owned replacement for the proposal instruction

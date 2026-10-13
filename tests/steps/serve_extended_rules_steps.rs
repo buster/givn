@@ -337,6 +337,60 @@ fn response_carries_the_project_rule_in_the_extension_section(world: &mut GivnWo
     );
 }
 
+// --- serve-extended-rules: project-owned replacement ------------------------
+
+/// The project-owned replacement of the proposal instruction facet.
+pub(crate) const PROJECT_REPLACEMENT_TEXT: &str = "\
+# Instruction: proposal (project-owned replacement)
+
+REPLACEMENT-MARKER: follow the house proposal template.
+";
+
+/// Record the exact bytes of the project-owned replacement of `id`.
+pub(crate) fn record_replacement(env: &common::TestEnv, id: &str, bytes: &[u8]) {
+    let dir = extension_fixture_dir(env).join("replacement");
+    fs::create_dir_all(&dir).unwrap_or_else(|error| panic!("create {}: {error}", dir.display()));
+    fs::write(dir.join(id), bytes)
+        .unwrap_or_else(|error| panic!("record the replacement of {id}: {error}"));
+}
+
+/// The recorded bytes of the project-owned replacement of `id`.
+pub(crate) fn recorded_replacement(env: &common::TestEnv, id: &str) -> String {
+    let path = extension_fixture_dir(env).join("replacement").join(id);
+    fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("no replacement recorded for {id}: {error}"))
+}
+
+#[given("a project-owned replacement for the proposal instruction")]
+fn project_owned_replacement_for_proposal(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let path = env.path("givn/artifacts/proposal/instructions.md");
+    fs::create_dir_all(path.parent().expect("replacement parent directory"))
+        .expect("create the replacement directory");
+    fs::write(&path, PROJECT_REPLACEMENT_TEXT).expect("write the project-owned replacement");
+    record_replacement(env, "proposal", PROJECT_REPLACEMENT_TEXT.as_bytes());
+    // The upgrade scenario needs the replacement committed to keep the
+    // checkout clean; a plain request fixture is unaffected by the commit.
+    common::commit_fixture(env);
+}
+
+#[then("the served content carries the replacement text")]
+fn served_content_carries_the_replacement_text(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let replacement = recorded_replacement(env, "proposal");
+    let content = recorded_stdout(env, "proposal");
+    assert!(
+        content.contains(replacement.trim_end()),
+        "the served proposal content does not carry the project-owned replacement: {content}"
+    );
+}
+
 // --- instruction-extension serving fixtures ---------------------------------
 
 /// Fixture directory the instruction-extension steps use to record the
@@ -476,6 +530,21 @@ fn agent_requests_instruction(world: &mut GivnWorld, id: String) {
         .expect("a project root is required first");
     let output = request_instruction(env, &id);
     world.last_output = Some(output);
+}
+
+#[then("the served content carries the project's rule in the marked extension section")]
+fn served_content_carries_the_project_rule_in_the_extension_section(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let rule = expected_rule(env, "proposal");
+    let content = recorded_stdout(env, "proposal");
+    let (section, _) = marked_extension_section("proposal", &content);
+    assert!(
+        section.contains(&rule),
+        "the served proposal extension section is missing {rule:?}: {content}"
+    );
 }
 
 #[then("the served content carries the changed rule")]
