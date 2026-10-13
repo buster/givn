@@ -239,6 +239,104 @@ fn contradicting_rule_appears_beside_the_builtin_release_note_rule(world: &mut G
     );
 }
 
+// --- serve-extended-rules: machine-readable serving --------------------------
+
+/// The parsed JSON response of the last `givn instructions --json` request.
+fn json_response(world: &GivnWorld) -> serde_json::Value {
+    let output = world
+        .last_output
+        .as_ref()
+        .expect("the JSON instructions request was not made");
+    assert!(
+        output.status.success(),
+        "givn instructions --json failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    serde_json::from_slice(&output.stdout).unwrap_or_else(|error| {
+        panic!(
+            "the instruction response is not JSON ({error}): {}",
+            String::from_utf8_lossy(&output.stdout)
+        )
+    })
+}
+
+#[when("the agent requests the proposal instructions as JSON through the Givn CLI")]
+fn agent_requests_proposal_as_json(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let change = active_change_id(env);
+    let output = common::run_givn(
+        env,
+        &[
+            "instructions",
+            "proposal",
+            "--change",
+            change.as_str(),
+            "--json",
+        ],
+    );
+    world.last_output = Some(output);
+}
+
+#[then("the response identifies the artifact and its generated paths and prerequisites")]
+fn response_identifies_the_artifact(world: &mut GivnWorld) {
+    let value = json_response(world);
+    assert_eq!(
+        value["id"], "proposal",
+        "the response does not identify the proposal artifact: {value}"
+    );
+    let generates = value["generates"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the response carries no generated paths array: {value}"));
+    assert!(
+        generates.iter().any(|path| path
+            .as_str()
+            .is_some_and(|path| path.ends_with("proposal.md"))),
+        "the response does not name the proposal path it generates: {value}"
+    );
+    assert!(
+        value["requires"].is_array(),
+        "the response carries no prerequisites array: {value}"
+    );
+}
+
+#[then("the response carries the same instruction content as the text path")]
+fn response_carries_the_same_instruction_content(world: &mut GivnWorld) {
+    let instruction = json_response(world)["instruction"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the response carries no instruction text"))
+        .to_string();
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let text = without_skill_route(&served_instruction(env, "proposal"));
+    assert_eq!(
+        text, instruction,
+        "the machine-readable instruction differs from the text path"
+    );
+}
+
+#[then("the response carries the project's rule in the marked extension section")]
+fn response_carries_the_project_rule_in_the_extension_section(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let value = json_response(world);
+    let instruction = value["instruction"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the response carries no instruction text"));
+    let (section, _) = marked_extension_section("proposal", instruction);
+    let rule = expected_rule(env, "proposal");
+    assert!(
+        section.contains(&rule),
+        "the response's extension section is missing {rule:?}: {instruction}"
+    );
+}
+
 // --- instruction-extension serving fixtures ---------------------------------
 
 /// Fixture directory the instruction-extension steps use to record the
