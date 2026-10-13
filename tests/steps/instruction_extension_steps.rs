@@ -168,6 +168,14 @@ fn configuration_names_the_unknown_instruction(world: &mut GivnWorld, id: String
     );
 }
 
+#[when(
+    "the project's configuration carries a malformed extension entry for the proposal instruction"
+)]
+fn configuration_carries_malformed_extension_entry(world: &mut GivnWorld) {
+    let env = env(world);
+    write_extensions(env, "  proposal: not-a-list\n");
+}
+
 #[then(regex = r#"^a warning names the unknown instruction "([^"]+)"$"#)]
 fn warning_names_the_unknown_instruction(world: &mut GivnWorld, id: String) {
     let env = env(world);
@@ -176,6 +184,17 @@ fn warning_names_the_unknown_instruction(world: &mut GivnWorld, id: String) {
     assert!(
         stderr.contains(&warning),
         "no warning names the unknown instruction in the request stderr: {stderr:?}"
+    );
+}
+
+#[then("a warning names the malformed entry")]
+fn warning_names_the_malformed_entry(world: &mut GivnWorld) {
+    let env = env(world);
+    let warning = "warning: ignoring malformed extension for 'proposal'";
+    let stderr = crate::steps::serve_extended_rules_steps::recorded_stderr(env, "proposal");
+    assert!(
+        stderr.contains(warning),
+        "no malformed-extension warning in the request stderr: {stderr:?}"
     );
 }
 

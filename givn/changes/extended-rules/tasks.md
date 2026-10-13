@@ -566,27 +566,80 @@ sections in the same feature order.
             720a41d7 — feat(instruction-extension): <release note>; body: Scenario: Removing an extension restores the built-in rules alone
             ```
 
-- [ ] instruction-extension: An extension for an unknown instruction is dropped with a warning
+- [x] instruction-extension: An extension for an unknown instruction is dropped with a warning
       Design constraints:
         - Validation runs when guidance is resolved: an instruction key that does not resolve through the request path warns `warning: ignoring extension for unknown instruction 'propozal'` and is skipped in config document order.
         - Assertions: the warning names "propozal"; the served content is the built-in rules alone; the request still succeeds; no project state changes (config byte-for-byte).
         - Step file: `tests/steps/instruction_extension_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::An extension for an unknown instruction is dropped with a warning"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::An extension for an unknown instruction is dropped with a warning"
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An extension for an unknown instruction is dropped with a warning
+               ✔  Given a Givn project with an active change
+               ✔  When the project's configuration names the unknown instruction "propozal"
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✔  Then a warning names the unknown instruction "propozal"
+               ✔  And the served content is the built-in rules alone
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the unknown-id validation is delivered by
+            the coupled earlier scenario's edit (`extensions::load` resolves every
+            id when guidance is requested and warns for the unresolvable one).
+            ORACLE_RED calibration (controlled omission from the delivered output):
+            $ (temporarily suppressed the unknown-instruction warning emission in
+               src/config/extensions.rs; same scoped command)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An extension for an unknown instruction is dropped with a warning
+               ✔  Given a Givn project with an active change
+               ✔  When the project's configuration names the unknown instruction "propozal"
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✘  Then a warning names the unknown instruction "propozal"
+                  Step panicked. Captured output: no warning names the unknown instruction in the request stderr: ""
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            With the warning omitted, the assertion fails on the same fixture, so
+            it discriminates; the emission was restored immediately and the scoped
+            command passed again. No production switch, exception, fake success,
+            or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the validation was delivered by the previous scenarios' serving
+            path (`src/config/extensions.rs::load` skips the unresolvable id with
+            `warning: ignoring extension for unknown instruction '<id>'`); this
+            scenario binds the warning assertion and the built-in-alone control.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the warning emission)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An extension for an unknown instruction is dropped with a warning
+               ✔  Given a Givn project with an active change
+               ✔  When the project's configuration names the unknown instruction "propozal"
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✔  Then a warning names the unknown instruction "propozal"
+               ✔  And the served content is the built-in rules alone
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.97s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            f7aaaa61 — feat(instruction-extension): <release note>; body: Scenario: An extension for an unknown instruction is dropped with a warning
             ```
 
 - [ ] instruction-extension: A malformed extension entry is dropped with a warning
