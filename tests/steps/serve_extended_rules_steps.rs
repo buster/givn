@@ -114,11 +114,29 @@ pub(crate) fn record_expected_rule(env: &common::TestEnv, id: &str, rule: &str) 
         .unwrap_or_else(|error| panic!("record the expected rule for {id}: {error}"));
 }
 
+/// Record the rule the extension scenarios expect the served content of `id`
+/// NOT to carry (the earlier of two entries for one instruction key).
+pub(crate) fn record_excluded_rule(env: &common::TestEnv, id: &str, rule: &str) {
+    let dir = extension_fixture_dir(env).join("excluded");
+    fs::create_dir_all(&dir).unwrap_or_else(|error| panic!("create {}: {error}", dir.display()));
+    fs::write(dir.join(id), format!("{rule}\n"))
+        .unwrap_or_else(|error| panic!("record the excluded rule for {id}: {error}"));
+}
+
 /// The rule recorded for `id` by a fixture step.
 pub(crate) fn expected_rule(env: &common::TestEnv, id: &str) -> String {
     let path = extension_fixture_dir(env).join("rules").join(id);
     fs::read_to_string(&path)
         .unwrap_or_else(|error| panic!("no expected rule recorded for {id}: {error}"))
+        .trim()
+        .to_string()
+}
+
+/// The rule a fixture step recorded as excluded for `id`.
+pub(crate) fn excluded_rule(env: &common::TestEnv, id: &str) -> String {
+    let path = extension_fixture_dir(env).join("excluded").join(id);
+    fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("no excluded rule recorded for {id}: {error}"))
         .trim()
         .to_string()
 }
@@ -241,5 +259,34 @@ fn served_content_carries_no_extension_section(world: &mut GivnWorld) {
     assert!(
         !content.contains(EXTENSION_SECTION_MARKER),
         "the served proposal content carries an extension section: {content}"
+    );
+}
+
+#[then("the served content carries the rule from the last entry")]
+fn served_content_carries_the_last_entry_rule(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let rule = expected_rule(env, "proposal");
+    let content = recorded_stdout(env, "proposal");
+    let section = extension_section("proposal", &content);
+    assert!(
+        section.contains(&rule),
+        "the served proposal extension section is missing the last entry's rule {rule:?}: {content}"
+    );
+}
+
+#[then("the served content does not carry the rule from the earlier entry")]
+fn served_content_does_not_carry_the_earlier_entry_rule(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let rule = excluded_rule(env, "proposal");
+    let content = recorded_stdout(env, "proposal");
+    assert!(
+        !content.contains(&rule),
+        "the served proposal content carries the earlier entry's rule {rule:?}: {content}"
     );
 }
