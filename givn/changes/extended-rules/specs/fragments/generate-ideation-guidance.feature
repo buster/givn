@@ -192,7 +192,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "dependencies and a suggested start order"
     And  the served ideation instruction contains "changes/<change-id>.md"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation command guardrails carry the same conduct rules
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI

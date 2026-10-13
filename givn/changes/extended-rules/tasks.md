@@ -2254,26 +2254,91 @@ sections in the same feature order.
             4376d379 — feat(generate-ideation-guidance): <release note>; body: Scenario: The frame is confirmed once and later phase boundaries report
             ```
 
-- [ ] generate-ideation-guidance: Handoff cuts change seeds by deliverable guarantee
+- [x] generate-ideation-guidance: Handoff cuts change seeds by deliverable guarantee
       Design constraints:
         - Content seam: `assets/instructions/ideation.md` carries the seed-cutting rule by deliverable guarantee and the seed path/suggested order.
         - Assertions (served ideation instruction): contains "deliverable guarantee", "true end to end", "can ship alone", "may cover several use cases", "one use case may yield several seeds", "confirmed rule untrue", "dependencies and a suggested start order", "changes/<change-id>.md".
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::Handoff cuts change seeds by deliverable guarantee"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: Handoff cuts change seeds by deliverable guarantee
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "deliverable guarantee"
+               ✔  And the served ideation instruction contains "true end to end"
+               ✔  And the served ideation instruction contains "can ship alone"
+               ✔  And the served ideation instruction contains "may cover several use cases"
+               ✔  And the served ideation instruction contains "one use case may yield several seeds"
+               ✔  And the served ideation instruction contains "confirmed rule untrue"
+               ✔  And the served ideation instruction contains "dependencies and a suggested start order"
+               ✔  And the served ideation instruction contains "changes/<change-id>.md"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            10 steps (10 passed)                                         EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the seed-cutting rule and the seed
+            path/suggested order moved with the first scenario's slice. This is
+            the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "can ship alone" → "can ship on its own" in
+               assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: Handoff cuts change seeds by deliverable guarantee
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "deliverable guarantee"
+               ✔  And the served ideation instruction contains "true end to end"
+               ✘  And the served ideation instruction contains "can ship alone"
+                  Step panicked. Captured output: the served ideation instruction is missing "can ship alone": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            10 steps (9 passed, 1 failed)                                EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the seed-cutting rule and the seed path/suggested order moved
+            with the first scenario's slice (`assets/instructions/ideation.md`);
+            this scenario binds those assertions on the served surface.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: Handoff cuts change seeds by deliverable guarantee
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "deliverable guarantee"
+               ✔  And the served ideation instruction contains "true end to end"
+               ✔  And the served ideation instruction contains "can ship alone"
+               ✔  And the served ideation instruction contains "may cover several use cases"
+               ✔  And the served ideation instruction contains "one use case may yield several seeds"
+               ✔  And the served ideation instruction contains "confirmed rule untrue"
+               ✔  And the served ideation instruction contains "dependencies and a suggested start order"
+               ✔  And the served ideation instruction contains "changes/<change-id>.md"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            10 steps (10 passed)                                         EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 10 steps (10 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            6e250dde — feat(generate-ideation-guidance): <release note>; body: Scenario: Handoff cuts change seeds by deliverable guarantee
             ```
 
 - [ ] generate-ideation-guidance: The ideation command guardrails carry the same conduct rules
