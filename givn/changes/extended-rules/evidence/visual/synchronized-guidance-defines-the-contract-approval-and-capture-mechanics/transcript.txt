@@ -1,0 +1,104 @@
+scenario: Synchronized guidance defines the contract approval and capture mechanics
+argv: givn skills sync
+cwd: <freshly initialized project in a temp dir, agent targets opencode, agents, claude, omp>
+exit: 0
+context commands (all in that project):
+  printf 'opencode, agents, claude, omp\n' | givn init        exit 0
+  givn instructions design-review --change design-review       exit 0
+  givn instructions steps                                      exit 0
+--- stdout (raw) ---
+Syncing skills and agent commands...
+  commit attribution: .githooks/commit-msg
+  Git activation: unavailable (no Git worktree)
+  attribution integration: .opencode/plugins/givn-attribution.js
+  attribution integration: .omp/hooks/pre/givn-attribution.js
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced skill: givn-domain-modeling
+  synced skill: givn-dev-principles
+  synced command: /givn-propose
+  synced command: /givn-spec
+  synced command: /givn-design
+  synced command: /givn-tasks
+  synced command: /givn-implement
+  synced command: /givn-review
+  synced command: /givn-archive
+  synced command: /givn-explore
+  synced command: /givn-design-review
+  synced command: /givn-steps
+  synced command: /givn-reverse-engineer
+  synced command: /givn-characterize
+  synced command: /givn-ideation
+  synced command: /grill-me
+  synced command: /grill-with-docs
+  sync: rules: local-only
+  sync: no tracked rule in the current revision
+  sync: no rule in reachable history
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+
+Done. Generated:
+  .opencode/skills/   (skills for opencode)
+  .agents/skills/   (skills for agents)
+  .claude/skills/   (skills for claude)
+  .omp/skills/   (skills for omp)
+  .opencode/commands/ (opencode slash commands)
+  .omp/commands/ (omp slash commands)
+--- stderr (raw) ---
+--- delivered .opencode/skills/givn-design-review/SKILL.md head ---
+---
+name: givn-design-review
+description: Stress-test the plan before tasks are written — grill the design question by question, harden the artifacts, then sign off.
+---
+
+# givn-design-review
+
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
+Stress-test the complete plan for change `<change-id>` before the task list
+is written. Grill every branch of the design, harden the artifacts with what
+you learn, then sign off.
+
+## Mandatory, non-skippable, fresh context
+--- served design-review instruction (givn instructions design-review --change design-review) contract excerpt ---
+  resolves in the design's `## Decisions` ledger or is explicitly carried
+  with a named owner, and that a seed-sourced question keeps its seed
+  reference (`D2 (seed Q5)`). An unresolved, unrecorded item is a finding.
+- **Visual design contract** — for a change that introduces or visibly changes
+  a screen, `design.md` must contain the `## Visual Design Contract` section
+  with its `Interface:` line and viewports. When no approved design exists,
+  the agent must propose two or three rendered options (style tiles or an
+  equivalent rendered reference) and the user approves one; the approved
+  direction is recorded in `design.md`. Without an approved contract,
+  design-review does not sign off.
+- **Deferrals** — a mandatory check may be deferred only after an operator question; record the operator's decision, otherwise do not sign off.
+- **Persona disposition** — record, per persona, the relevance and evidence; when no persona is confirmed, record the reason and the operator confirmation. A user-visible surface requires at least one confirmed Persona.
+- **Interface classification** — test the opposite classification before accepting a non-browser interface: a screen rendered in a browser is a Web UI, so a design that declares no browser driver must say why the opposite does not hold.
+- **ADR qualification** — delegate the complete qualification procedure to the
+  canonical Arc42 addon instruction by running `givn instructions arc42-docs
+  --change <id>`. Check only candidates whose structured verdict has all
+--- served steps instruction (givn instructions steps) capture mechanics excerpt ---
+## Visual capture mechanics
+
+For a visual interface, each `@e2e` scenario captures a final-state
+screenshot per contract viewport after the final assertion. When the contract
+declares UI states, each state the scenario traverses is captured as
+`<viewport>--<state>.png` (for example `mobile--empty.png`). Before every
+capture, animations are frozen (or `prefers-reduced-motion` is emulated) and
+fonts and network are settled, so the evidence is deterministic. Committed
+evidence lives under `evidence/visual/<scenario-slug>/<viewport>.png` — or
+`transcript.txt` for a terminal interface; per-assertion captures live under
+`reports/` and are debug artifacts, not review evidence.
+
+## Prefer the real interface
