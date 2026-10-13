@@ -182,6 +182,12 @@ fn configuration_carries_empty_extension_list(world: &mut GivnWorld) {
     write_extensions(env, "  proposal: []\n");
 }
 
+#[given("the project's configuration carries a whitespace-only rule for the proposal instruction")]
+fn configuration_carries_whitespace_only_rule(world: &mut GivnWorld) {
+    let env = env(world);
+    write_extensions(env, "  proposal:\n    - \"   \"\n");
+}
+
 #[then(regex = r#"^a warning names the unknown instruction "([^"]+)"$"#)]
 fn warning_names_the_unknown_instruction(world: &mut GivnWorld, id: String) {
     let env = env(world);
@@ -195,6 +201,17 @@ fn warning_names_the_unknown_instruction(world: &mut GivnWorld, id: String) {
 
 #[then("a warning names the malformed entry")]
 fn warning_names_the_malformed_entry(world: &mut GivnWorld) {
+    let env = env(world);
+    let warning = "warning: ignoring malformed extension for 'proposal'";
+    let stderr = crate::steps::serve_extended_rules_steps::recorded_stderr(env, "proposal");
+    assert!(
+        stderr.contains(warning),
+        "no malformed-extension warning in the request stderr: {stderr:?}"
+    );
+}
+
+#[then("a warning names the malformed extension for the proposal instruction")]
+fn warning_names_the_malformed_proposal_extension(world: &mut GivnWorld) {
     let env = env(world);
     let warning = "warning: ignoring malformed extension for 'proposal'";
     let stderr = crate::steps::serve_extended_rules_steps::recorded_stderr(env, "proposal");
