@@ -76,7 +76,7 @@ Feature: A project extends an instruction's built-in rules
     And the agent requests the ideation instructions through the Givn CLI
     Then each served content carries its project's rule in the marked extension section
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: An upgrade preserves the extension and the next request serves it
     Given a committed Givn project with an active change and an extension for the proposal instruction
     When the consumer upgrades the project through the Givn CLI

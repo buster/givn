@@ -6,14 +6,18 @@
 //! RED; this module exists so the capability owns exactly one e2e step file
 //! (never one shared file).
 
-use cucumber::{given, then};
+use cucumber::{given, then, when};
 
+use crate::common;
 use crate::steps::GivnWorld;
 use crate::steps::instruction_extension_steps::write_extensions;
 use crate::steps::serve_extended_rules_steps::{
-    record_builtin_content, record_expected_rule, recorded_builtin_content, recorded_stdout,
-    request_instruction, without_skill_route,
+    marked_extension_section, record_builtin_content, record_expected_rule,
+    recorded_builtin_content, recorded_stdout, request_instruction, without_skill_route,
 };
+
+/// The rule the upgrade fixture records for the proposal instruction.
+const UPGRADE_EXTENSION_RULE: &str = "Keep proposals under 500 words";
 
 /// The Given fixture for "A developer records an extension and it governs the
 /// next guidance request": the developer writes the rule into the
@@ -59,5 +63,65 @@ fn builtin_proposal_rules_stay_unchanged(world: &mut GivnWorld) {
         served.starts_with(&builtin),
         "the served content does not keep the built-in proposal rules as its \
          unchanged prefix: {served}"
+    );
+}
+
+/// The Given fixture for "An upgrade preserves the extension and the next
+/// request serves it": a committed project with an active change and the
+/// extension recorded in project-owned configuration, so `givn upgrade` runs
+/// on a clean checkout and the revision can be inspected.
+#[given(
+    "a committed Givn project with an active change and an extension for the proposal instruction"
+)]
+fn committed_project_with_proposal_extension(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let change = common::run_givn(&env, &["new", "instruction-extension"]);
+    assert!(
+        change.status.success(),
+        "givn new instruction-extension failed: {}",
+        String::from_utf8_lossy(&change.stderr)
+    );
+    write_extensions(
+        &env,
+        &format!("  proposal:\n    - {UPGRADE_EXTENSION_RULE}\n"),
+    );
+    record_expected_rule(&env, "proposal", UPGRADE_EXTENSION_RULE);
+    // The extension is user-owned configuration; the fixture commits it so
+    // the upgrade starts from a clean checkout.
+    common::commit_fixture(&env);
+    world.env = Some(env);
+}
+
+/// The When for "An upgrade preserves the extension and the next request
+/// serves it": the consumer upgrades the project through the real CLI.
+#[when("the consumer upgrades the project through the Givn CLI")]
+fn consumer_upgrades_the_project(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    world.last_output = Some(common::run_givn(env, &["upgrade"]));
+}
+
+/// The served content carries the project's rule beside the current built-in
+/// rules: the marked extension section carries the recorded rule and the
+/// built-in proposal rules still appear.
+#[then("the served content carries the project's rule beside the current built-in rules")]
+fn served_content_carries_rule_beside_builtin(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let rule = crate::steps::serve_extended_rules_steps::expected_rule(env, "proposal");
+    let content = recorded_stdout(env, "proposal");
+    let (section, _) = marked_extension_section("proposal", &content);
+    assert!(
+        section.contains(&rule),
+        "the served proposal extension section is missing {rule:?}: {content}"
+    );
+    assert!(
+        content.contains("proposed by"),
+        "the served proposal content is missing the current built-in rules \
+         beside {rule:?}: {content}"
     );
 }
