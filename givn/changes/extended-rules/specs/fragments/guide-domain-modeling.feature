@@ -22,7 +22,7 @@ Feature: Guide domain modeling
     Then the served domain-modeling instruction contains "maintaining the project's arc42 glossary"
     And the served domain-modeling instruction does not contain "domain.md"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The skill requires the arc42 glossary for domain modeling
     Given a Givn project
     Then the served domain-modeling instruction contains "Requires the arc42 addon"
