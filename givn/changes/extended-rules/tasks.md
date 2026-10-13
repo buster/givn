@@ -6022,6 +6022,6 @@ sections in the same feature order.
             ```
       - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
-            <pending>
+            f179047a — test(e2e): <release note>; body: Scenario: An agent receives the extended rules through the Givn CLI
             ```
 
