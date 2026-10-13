@@ -488,27 +488,82 @@ sections in the same feature order.
             7c842b31 — feat(instruction-extension): <release note>; body: Scenario: Changing an extension changes the next served content and touches nothing else
             ```
 
-- [ ] instruction-extension: Removing an extension restores the built-in rules alone
+- [x] instruction-extension: Removing an extension restores the built-in rules alone
       Design constraints:
         - The extension never entered installed files or the managed revision, so removal needs no cleanup: delete the fixture entry and request again.
         - Assertions: the served content is the built-in rules alone (no `## Project extension` section); the installed guidance is unchanged (byte-for-byte before/after removal).
         - Step file: `tests/steps/instruction_extension_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::Removing an extension restores the built-in rules alone"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::Removing an extension restores the built-in rules alone"
+            Feature: A project extends an instruction's built-in rules
+              Scenario: Removing an extension restores the built-in rules alone
+               ✔  Given a Givn project with an active change and an extension for the proposal instruction
+               ✔  When the developer removes the project's extension for the proposal instruction
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the served content is the built-in rules alone
+               ✔  And the installed guidance is unchanged
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the removal semantics are delivered by
+            the coupled earlier scenario's edit (the extension is read from the
+            config per request, so deleting the entry restores the built-in rules
+            with no cleanup). This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission in the isolated fixture):
+            $ (temporarily made the removal step a no-op so the recorded extension
+               stays effective; same scoped command)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: Removing an extension restores the built-in rules alone
+               ✔  Given a Givn project with an active change and an extension for the proposal instruction
+               ✔  When the developer removes the project's extension for the proposal instruction
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✘  Then the served content is the built-in rules alone
+                  Step panicked. Captured output: the served proposal content carries an extension section
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            With the removal omitted, the served content carries the section and
+            the assertion fails, so it discriminates; the real removal step was
+            restored immediately and the scoped command passed again. No
+            production switch, exception, fake success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the mechanism was delivered by the previous scenario's serving
+            path (src/config/extensions.rs reads the map on every request, so a
+            removed entry simply stops being appended). This scenario is the
+            removal negative control: no installed file or revision was ever
+            touched, so removal needs no cleanup.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the real removal step)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: Removing an extension restores the built-in rules alone
+               ✔  Given a Givn project with an active change and an extension for the proposal instruction
+               ✔  When the developer removes the project's extension for the proposal instruction
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the served content is the built-in rules alone
+               ✔  And the installed guidance is unchanged
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.33s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-extension): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            720a41d7 — feat(instruction-extension): <release note>; body: Scenario: Removing an extension restores the built-in rules alone
             ```
 
 - [ ] instruction-extension: An extension for an unknown instruction is dropped with a warning

@@ -27,7 +27,7 @@ Feature: A project extends an instruction's built-in rules
     Then the served content is the built-in rules alone
     And the installed guidance is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: An extension for an unknown instruction is dropped with a warning
     Given a Givn project with an active change
     When the project's configuration names the unknown instruction "propozal"
