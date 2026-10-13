@@ -71,7 +71,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "Accepted decisions"
     And  the served ideation instruction contains "Suggested start"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation guidance carries the term schema and the collision procedure
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
