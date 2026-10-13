@@ -3895,27 +3895,77 @@ sections in the same feature order.
             500ee1c4 — feat(initialize-a-project): <release note>; body: Scenario: A full copy installed by an earlier version is reconciled to the direction
             ```
 
-- [ ] initialize-a-project: The project-start block renders its resident rules from the tasks instruction
+- [x] initialize-a-project: The project-start block renders its resident rules from the tasks instruction
       Design constraints:
         - Seams: `assets/instructions/tasks.md` carries the task-checkoff obligation and the atomic-commit obligation (backend-neutral attribution wording) between `<!-- givn:resident-rules:begin -->` and `<!-- givn:resident-rules:end -->`; `assets/agents-project-hint.md` replaces its two resident bullets with `{{RESIDENT_RULES}}`; `src/cli/project_hint.rs::apply` extracts the marked section from the same embedded `instructions/tasks.md` the request path serves and substitutes it.
         - Fail-closed: a missing marker is a shipped-asset defect — the call fails naming the asset instead of writing a block without the obligations.
         - Assertions: after real `givn skills sync`, the project-start block carries the resident rules section of the tasks instruction; the block requires the effective dialog policy.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "initialize-project/initialize-a-project.feature::The project-start block renders its resident rules from the tasks instruction"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "initialize-project/initialize-a-project.feature::The project-start block renders its resident rules from the tasks instruction"
+            Feature: initialize-a-project
+              Scenario: The project-start block renders its resident rules from the tasks instruction
+               ✔  Given a Givn project with an active change
+               ✔  When the user runs `givn skills sync`
+               ✘  Then the project-start block carries the resident rules section of the tasks instruction
+                  Step panicked. Captured output: the served tasks instruction is missing the
+                  <!-- givn:resident-rules:begin --> marker
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                 EXIT=101
+            OLD_PRODUCT_RED — the served `assets/instructions/tasks.md` carries no
+            resident-rules section yet, so the block has no single home to render
+            from. The step reads the served instruction through the real CLI.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            assets/instructions/tasks.md — the resident-rules section (task
+              checkoff + atomic commit with the attribution sentence) between
+              the givn:resident-rules markers; it is part of the served
+              instruction.
+            assets/agents-project-hint.md — the two resident bullets replaced by
+              {{RESIDENT_RULES}}; every other bullet stays.
+            src/cli/project_hint.rs — apply extracts the marked section from the
+              embedded instructions/tasks.md and substitutes it; missing or
+              empty markers fail closed naming the asset; unit tests cover the
+              extraction, the fail-closed path, and the substitution.
+            tests/steps/prose_consolidation_steps.rs — the two real Then steps
+              (served resident section matched against the managed block;
+              dialog-policy requirement).
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after the production edits)
+            Feature: initialize-a-project
+              Scenario: The project-start block renders its resident rules from the tasks instruction
+               ✔  Given a Givn project with an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the project-start block carries the resident rules section of the tasks instruction
+               ✔  And the project-start block requires the effective dialog policy
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.93s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            $ (project_hint unit tests) cargo test --locked --lib project_hint → 3 passed  EXIT=0
+            $ (permanent guard for the block) create-change/prose-consolidation.feature::
+              Successful project skill and command replacements are preserved without
+              policy injection → 7 steps (7 passed)                              EXIT=0
+            $ (rendered-block spot check outside the suite: the block carries both
+              resident bullets, the release-note sentence, the dialog obligations,
+              and no leftover {{RESIDENT_RULES}} placeholder)
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(initialize-a-project): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(initialize-a-project): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            506d92c5 — feat(initialize-a-project): <release note>; body: Scenario: The project-start block renders its resident rules from the tasks instruction
             ```
 
 - [ ] serve-extended-rules: The built-in rules are served alone when no extension exists
