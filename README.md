@@ -21,6 +21,12 @@ A single-binary, Gherkin-first spec-driven workflow tool.
 - **The `.feature` file IS the specification.** The same file is the change's
   delta document, the executable test your runner executes, and — after
   archiving — the permanent spec under `givn/specs/`. No parallel `spec.md`.
+- **Rules are served, not copied.** The rules an agent follows for a step
+  come from the instruction served by `givn instructions <id>`; each
+  installed skill and command carries its trigger and orchestration and
+  directs the agent there. A project extends any instruction with its own
+  rules in `givn/config.yaml` — synchronization and upgrades never fight
+  them.
 - **One change lifecycle.** propose → spec → design → design-review → tasks →
   implement → review → archive. Archive is forward-only and SCM-backed (Git or Fossil): it
   commits the merged archive candidate, runs each verification scope once
