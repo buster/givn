@@ -241,7 +241,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "every aggregate is a declared"
     And  the served ideation instruction contains "never a record or a specification"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation guidance binds every confirmed term to the user's verified name
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
