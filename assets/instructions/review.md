@@ -254,8 +254,9 @@ Run this block when the change's design declares a visual interface (a
 - The vision review names the state screenshots the review saw for each declared UI state.
 - End the block with `VISUAL-REVIEW: PASS` only when the evidence is
   complete, the baseline holds, and every Persona finding is dispositioned.
-- No pixel-level or coordinate findings: every finding names a contract rule
-  or a failed Persona goal. A finding that only says "2px off" is invalid.
+- Every finding names a contract rule or a failed Persona goal: no pixel-level
+  or coordinate findings are accepted. A finding that only says "2px off" is
+  invalid.
 - A style improvement that stays within the contract updates the contract in
   the same change; it is not a review failure, and the code is never rolled
   back to match a stale reference.
