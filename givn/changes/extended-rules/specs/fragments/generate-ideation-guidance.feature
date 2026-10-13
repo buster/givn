@@ -276,7 +276,7 @@ Feature: Generate ideation guidance
     Then  the served ideation instruction contains "the user's verified name"
     And  the served ideation instruction contains "Term check — <phase>"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation command guardrails carry the verified-name rule
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
