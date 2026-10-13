@@ -275,6 +275,73 @@ fn then_later_archive_refused(world: &mut GivnWorld) {
     );
 }
 
+// --- initialize-a-project: earlier-version full-copy reconciliation ----------
+
+/// The full-copy givn-propose skill an earlier version installed: rule text,
+/// no direction to the served instruction.
+const EARLIER_VERSION_PROPOSE_SKILL: &str = "---\nname: givn-propose\ndescription: Write the proposal for a givn change — earlier-version full copy.\n---\n\n# givn-propose\n\n## Rules (earlier version)\n\n- Write from the user's perspective, not the implementer's.\n- Every revision the change records carries the release note as its message subject.\n";
+
+#[given("a full-copy givn-propose skill installed by an earlier version")]
+fn full_copy_propose_skill_installed(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let path = env.path(".opencode/skills/givn-propose/SKILL.md");
+    std::fs::create_dir_all(path.parent().expect("skill parent directory"))
+        .expect("create the skill directory");
+    std::fs::write(&path, EARLIER_VERSION_PROPOSE_SKILL).expect("write the earlier-version skill");
+    let content = std::fs::read_to_string(&path).expect("read the earlier-version skill");
+    assert!(
+        content.contains("earlier version") && !content.contains("givn instructions proposal"),
+        "the fixture must be a full copy with rule text and no direction: {content}"
+    );
+}
+
+#[then(regex = r#"^the file "([^"]+)" directs the author to the proposal instruction$"#)]
+fn installed_file_directs_to_proposal_instruction(world: &mut GivnWorld, rel: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let path = env.path(&rel);
+    let content = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+    assert!(
+        content.contains("givn instructions proposal"),
+        "{rel} does not direct the author to the proposal instruction: {content}"
+    );
+}
+
+#[then(regex = r#"^the file "([^"]+)" carries no built-in rule text$"#)]
+fn installed_file_carries_no_builtin_rule_text(world: &mut GivnWorld, rel: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let path = env.path(&rel);
+    let content = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+    assert!(
+        !content.contains("earlier version"),
+        "{rel} still carries the earlier-version rule copy: {content}"
+    );
+    for marker in [
+        "Artifact-specific rules",
+        "carries the release note as its message subject",
+        "Overlap dispositions",
+        "Black-Box-First",
+        "the user's verified name",
+        "VISUAL-REVIEW: PASS",
+        "one question at a time",
+    ] {
+        assert!(
+            !content.contains(marker),
+            "{rel} still carries the built-in rule marker {marker:?}: {content}"
+        );
+    }
+}
+
 #[given(regex = r"^a (Git|Fossil) project$")]
 fn given_backend_project(world: &mut GivnWorld, backend: String) {
     world.env = Some(match backend.as_str() {
