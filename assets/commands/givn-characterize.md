@@ -138,10 +138,8 @@ the boundary is untestable, check off the task as "untestable — follow-up
 needed," continue. Report all boundary failures at the end.
 
 ## Done
-- One commit for RED+GREEN+REFACTOR:
-  "characterize(<capability>): <release note>".
-  The message carries the release note as its message subject, and
-  the scenario title goes in the message body. Record the hash.
+- One commit for RED+GREEN+REFACTOR, following the commit contract served by
+  `givn instructions tasks --change <id>`. Record the hash.
 - Paste RED/GREEN(/REFACTOR) evidence and the commit hash into the task in
   tasks.md. Only then check it off.
 - Report back: RED result (failed as expected / reused → immediate GREEN)

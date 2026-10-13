@@ -3662,27 +3662,64 @@ sections in the same feature order.
             2f3cb6fb — feat(match-guidance-to-enabled-addons): <release note>; body: Scenario: Review guidance omits the Arc42 section when the Arc42 addon is disabled
             ```
 
-- [ ] match-guidance-to-enabled-addons: Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled
+- [x] match-guidance-to-enabled-addons: Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled
       Design constraints:
         - Condition seam: the Architecture documentation (arc42) branch moves into `assets/instructions/design-review.md` as a `{{#if addons.arc42}}` block; the generated files carry the direction only; the prose "N/A when disabled" clauses are absorbed by the conditional selection.
         - Assertions: the served design-review instruction omits the Architecture documentation (arc42) branch; the generated design-review skill and command carry none.
         - Step file: `tests/steps/template_conditional_rendering_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled"
+            Feature: Match guidance to enabled addons
+              Scenario: Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled
+               ✔  Given a Givn project with the arc42 addon disabled and the skills synchronized
+               ✘  Then the served design-review instruction omits the Architecture documentation (arc42) branch
+                  Step panicked. Captured output: the served design-review instruction carries the arc42 branch:
+                  # Instruction: design-review ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (1 passed, 1 failed)                                 EXIT=101
+            OLD_PRODUCT_RED — `assets/instructions/design-review.md` carries the
+            Architecture documentation (arc42) branch unconditionally with a
+            prose N/A clause. All steps are bound with real assertions.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            assets/instructions/design-review.md — the Architecture documentation
+              (arc42) branch is a `{{#if addons.arc42}}` block; the "N/A if the
+              arc42 addon is not enabled" prose is removed (the conditional
+              selection carries the absence).
+            tests/steps/template_conditional_rendering_steps.rs — the served
+              design-review step plus the two `carries no …` bindings.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after the conditional edit)
+            Feature: Match guidance to enabled addons
+              Scenario: Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled
+               ✔  Given a Givn project with the arc42 addon disabled and the skills synchronized
+               ✔  Then the served design-review instruction omits the Architecture documentation (arc42) branch
+               ✔  And the generated design-review skill carries no Architecture documentation (arc42) branch
+               ✔  And the generated design-review command carries no Architecture documentation (arc42) check
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
+            $ (enabled-case spot check outside the suite: the branch renders with
+               arc42 enabled in a probe project, 1 occurrence; 0 with it disabled)
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.23s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(match-guidance-to-enabled-addons): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(match-guidance-to-enabled-addons): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            b4afc639 — feat(match-guidance-to-enabled-addons): <release note>; body: Scenario: Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled
             ```
 
 - [ ] refresh-generated-guidance: Generated guidance carries no copy of a built-in rule

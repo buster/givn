@@ -27,7 +27,7 @@ Gather the authoritative material:
 - Any architecture decision records or the project's decisions log
 - `givn/config.yaml` (verify.command, features_path, addons, extras)
 
-### 2. Cross-check, one question at a time
+### 2. Cross-check question by question
 
 Follow the canonical dialog policy (`givn instructions dialog`): name
 artifacts in domain language, and give every option its meaning, gain, cost,

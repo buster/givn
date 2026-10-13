@@ -49,11 +49,11 @@ Read `givn instructions specs --change <id>` for the normalized action scope,
 real-interface assertions, and driver-fidelity rules. This command owns only
 step-definition mechanics and scenario targeting; it does not restate policy.
 
-## Black-Box-First
+## Prefer the real interface
 
-For every internal step or test retained, record which case this test covers
-that the E2E does not. Otherwise remove the duplicate and extend the real-
-interface scenario.
+The black-box-first policy — served by
+`givn instructions design --change <id>` — applies to every internal step or
+test that remains.
 
 ## RED → GREEN → REFACTOR → COMMIT (one scenario at a time)
 
@@ -90,13 +90,10 @@ never infer from whole-suite output) and captures output verbatim as evidence.
 
 ### COMMIT
 
-8. One commit for RED+GREEN+REFACTOR. The revision message
-   carries the release note as its message subject, and
-   the scenario title goes in the message body
-   (`feat(<capability>): <release note>`,
-   `characterize(<capability>): <release note>`, or
-   `test(e2e): <release note>`). Record the hash. No commit, or a commit
-   touching only the spec, means the work is not done.
+8. One commit for RED+GREEN+REFACTOR, following the commit contract
+   served by `givn instructions tasks --change <id>`. Record the hash.
+   No commit, or a commit touching only the spec, means the work is not
+   done.
 
 ### Done
 

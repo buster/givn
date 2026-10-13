@@ -98,11 +98,11 @@ coverage. That instruction owns inventory normalization, action scope,
 real-interface assertions, and driver fidelity. This skill owns only the
 technical design fields and the coverage matrix below.
 
-## Black-Box-First policy
+## Prefer the real interface
 
-Prefer the real interface. For every internal test retained, answer the
-question: **which case this test covers that the E2E does not**? Without a
-concrete answer, use the E2E scenario instead of adding a weaker duplicate.
+The black-box-first policy — served by
+`givn instructions design --change {{CHANGE_ID}}` — applies to every internal
+test retained.
 
 ## Coverage process boundaries (when enabled)
 

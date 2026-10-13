@@ -7,7 +7,7 @@ Grill the current plan or design before implementation.
 **Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
 
 This command is a **stress test**: it interrogates the proposal, specs, design,
-and tasks for a givn change one question at a time, refusing to let weak
+and tasks for a givn change question by question, refusing to let weak
 assumptions hide behind "looks reasonable."
 
 ## Steps
@@ -20,7 +20,7 @@ givn status --change <id>
 
 Read in order: `proposal.md`, the `.feature` specs, `design.md`, `tasks.md`.
 
-### 2. Ask one question at a time
+### 2. Ask the questions
 
 Follow the canonical dialog policy (`givn instructions dialog`): name
 artifacts in domain language, and give every option its meaning, gain, cost,
