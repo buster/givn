@@ -7,6 +7,8 @@ description: Work a vague idea into change-ready use cases through a structured,
 
 **Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
 
+**Delegated contexts:** a fresh delegated context does not inherit the parent's loaded policy. Pass the obligation explicitly — for every user-facing question, follow the effective policy from `givn instructions dialog`; load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
+
 Work a vague idea into change-ready use cases through a structured,
 multi-session domain exploration. This is the artifact-producing alternative
 to `givn-explore`; the outcome is topic state and change seeds, one per future
