@@ -58,7 +58,7 @@ Feature: Guide domain modeling
     And the served domain-modeling instruction contains "collides"
     And the served domain-modeling instruction contains "should the record use, or what is yours"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The design-review skill checks that the ubiquitous language is followed
     Given a project root with givn/ initialised
     And an existing change named "design-review-ubiquitous-language"
