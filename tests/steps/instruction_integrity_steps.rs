@@ -417,6 +417,33 @@ fn returned_guidance_keeps_deterministic_toolchain(world: &mut GivnWorld) {
     }
 }
 
+#[then("the returned guidance carries the placement test")]
+fn returned_guidance_carries_placement_test(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("placement test"),
+        "returned guidance does not carry the capability placement test: {output}"
+    );
+}
+
+#[then("the returned guidance rejects a channel as an answer")]
+fn returned_guidance_rejects_channel_answer(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("Channel is never an answer"),
+        "returned guidance does not reject a channel as an answer: {output}"
+    );
+}
+
+#[then("the returned guidance requires goal-shaped capability names")]
+fn returned_guidance_requires_goal_shaped_names(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("goal-shaped"),
+        "returned guidance does not require goal-shaped capability names: {output}"
+    );
+}
+
 // --- dialog-question-quality: dialog policy steps --------------------------
 
 fn cli_stdout(world: &GivnWorld) -> String {
