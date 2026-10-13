@@ -5599,10 +5599,10 @@ sections in the same feature order.
             ```
       - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
-            <pending>
+            c772e4de — test(e2e): <release note>; body: Scenario: A consumer enables the addons a generated section needs and the guidance gains it
             ```
 
-- [ ] match-guidance-to-enabled-addons: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
+- [x] match-guidance-to-enabled-addons: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
       Design constraints:
         - `Scenario Outline` — the tag marks the outline as a whole as the e2e evidence for ONE inventory entry; both Examples rows (`arc42`, `domain-modeling`) are input variation and run in one process; assertions must hold for each example.
         - Real `givn addons disable <addon>` through the Givn CLI from a project with the domain-modeling and arc42 addons enabled and synchronized.
@@ -5611,23 +5611,108 @@ sections in the same feature order.
         - Evidence: capture argv, cwd, exit, raw stdout/stderr for both examples, and the final transcript at the design path after the last assertion.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed"`
-      - [ ] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed"
+            (all four sentences already bind: the Given, the disable When, the
+             generated domain-modeling skill step, and the shared
+             served-instruction omission step added by the previous scenario.
+             No new binding was needed. First run:)
+            Feature: Match guidance to enabled addons
+              Scenario Outline: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
+               ✔  Given a Givn project with the domain-modeling and arc42 addons enabled and the skills synchronized
+               ✔  When a consumer disables the arc42 addon through the Givn CLI
+               ✔  Then no generated domain-modeling skill exists
+               ✔  And the served review instruction omits the Ubiquitous language conformance section
+              Scenario Outline: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
+               ✔  Given a Givn project with the domain-modeling and arc42 addons enabled and the skills synchronized
+               ✔  When a consumer disables the domain-modeling addon through the Givn CLI
+               ✔  Then no generated domain-modeling skill exists
+               ✔  And the served review instruction omits the Ubiquitous language conformance section
+            [Summary]
+            1 feature
+            2 scenarios (2 passed)
+            8 steps (8 passed)                                          EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the double gate added by the previous
+            scenario (`{{#if addons.domain_modeling}}` + `{{#if addons.arc42}}`)
+            renders the section away when either addon is disabled, and
+            `reconcile_addon_artifacts` removes the domain-modeling skill for
+            both Examples rows. All steps hold, so this is the recorded
+            ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily removed the two nested conditional gates around the
+               Ubiquitous language conformance block in
+               `assets/instructions/review.md`, delivering it unconditionally;
+               same scoped command)
+            Feature: Match guidance to enabled addons
+              Scenario Outline: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
+               ✔  Given a Givn project with the domain-modeling and arc42 addons enabled and the skills synchronized
+               ✔  When a consumer disables the arc42 addon through the Givn CLI
+               ✔  Then no generated domain-modeling skill exists
+               ✘  And the served review instruction omits the Ubiquitous language conformance section
+                  Step failed:
+                  Defined: givn/changes/extended-rules/specs/fragments/match-guidance-to-enabled-addons.feature:47:5
+                  Matched: tests/steps/template_conditional_rendering_e2e_steps.rs:28:1
+                  Step panicked. Captured output: the served review instruction carries the ubiquitous-language section:
+                  ...
+              Scenario Outline: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
+               ✔  Given a Givn project with the domain-modeling and arc42 addons enabled and the skills synchronized
+               ✔  When a consumer disables the domain-modeling addon through the Givn CLI
+               ✔  Then no generated domain-modeling skill exists
+               ✘  And the served review instruction omits the Ubiquitous language conformance section
+                  Step panicked. Captured output: the served review instruction carries the ubiquitous-language section:
+                  ...
+            [Summary]
+            1 feature
+            2 scenarios (2 failed)
+            8 steps (6 passed, 2 failed)                                EXIT=101
+            The omission makes exactly the matching assertion fail in both
+            Examples rows, so the assertion discriminates; the excerpt was
+            restored immediately (`git checkout -- assets/instructions/review.md`)
+            and the scoped command passed again. No production switch,
+            exception, fake success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
             ```
+            none — the served-section omission and the disabled-addon file
+            removal were delivered by the earlier match-guidance-to-enabled-addons
+            slices: `assets/instructions/review.md` double-gates the
+            ubiquitous-language section, and the existing reconciliation removes
+            the domain-modeling skill when either addon is disabled. Only the
+            `@wip` removal was needed; all steps were reused.
             ```
             Evidence transcript path (design.md §Visual Design Contract):
             ```
+            givn/changes/extended-rules/evidence/visual/a-consumer-disables-an-addon-the-domain-modeling-skill-needs-and-the-generated-domain-skill-is-removed/transcript.txt
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed"
+            Feature: Match guidance to enabled addons
+              Scenario Outline: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
+               ✔  Given a Givn project with the domain-modeling and arc42 addons enabled and the skills synchronized
+               ✔  When a consumer disables the arc42 addon through the Givn CLI
+               ✔  Then no generated domain-modeling skill exists
+               ✔  And the served review instruction omits the Ubiquitous language conformance section
+              Scenario Outline: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
+               ✔  Given a Givn project with the domain-modeling and arc42 addons enabled and the skills synchronized
+               ✔  When a consumer disables the domain-modeling addon through the Givn CLI
+               ✔  Then no generated domain-modeling skill exists
+               ✔  And the served review instruction omits the Ubiquitous language conformance section
+            [Summary]
+            1 feature
+            2 scenarios (2 passed)
+            8 steps (8 passed)                                          EXIT=0
             ```
-      - [ ] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 2 scenarios (2 passed), 8 steps (8 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
+            <pending>
             ```
 
 - [ ] refresh-generated-guidance: Synchronized guidance explains how to resolve the deterministic gates
