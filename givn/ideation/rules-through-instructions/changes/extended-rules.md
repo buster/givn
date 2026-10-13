@@ -1,6 +1,6 @@
 # Change seed: extended-rules
 
-Status: proposed by extended-rules
+Status: implemented in extended-rules
 
 - Use-case IDs: `obtain-effective-guidance` (new), `extend-an-instruction`
   (new), `initialize-project` (modified), `upgrade-a-project` (modified);
