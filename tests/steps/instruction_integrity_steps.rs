@@ -553,6 +553,78 @@ fn every_named_instruction_id_resolves(world: &mut GivnWorld) {
     );
 }
 
+#[then("every generated skill and command carries trigger metadata and a direction")]
+fn every_generated_file_carries_metadata_and_direction(world: &mut GivnWorld) {
+    let files = installed_guidance_files(world);
+    assert!(
+        !files.is_empty(),
+        "the fixture has no generated skills or commands to check"
+    );
+    for path in &files {
+        let content = std::fs::read_to_string(path)
+            .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+        assert!(
+            content.starts_with("---\n"),
+            "{} carries no YAML frontmatter trigger metadata",
+            path.display()
+        );
+        let rest = &content[4..];
+        let end = rest
+            .find("\n---")
+            .unwrap_or_else(|| panic!("{} frontmatter is never closed", path.display()));
+        let frontmatter = &rest[..end];
+        assert!(
+            frontmatter.contains("description:"),
+            "{} carries no description trigger metadata",
+            path.display()
+        );
+        if path.file_name().is_some_and(|name| name == "SKILL.md") {
+            assert!(
+                frontmatter.contains("name:"),
+                "{} carries no name trigger metadata",
+                path.display()
+            );
+        }
+        assert!(
+            !named_instruction_ids(&content).is_empty(),
+            "{} names no served instruction (no `givn instructions <id>` direction)",
+            path.display()
+        );
+    }
+}
+
+/// Representative built-in-rule markers that must never reappear in a
+/// generated skill or command (design.md §Step definitions).
+const RULE_COPY_MARKERS: [&str; 7] = [
+    "Artifact-specific rules",
+    "carries the release note as its message subject",
+    "Overlap dispositions",
+    "Black-Box-First",
+    "the user's verified name",
+    "VISUAL-REVIEW: PASS",
+    "one question at a time",
+];
+
+#[then("no generated skill or command copies the built-in rules of its instruction")]
+fn no_generated_file_copies_builtin_rules(world: &mut GivnWorld) {
+    let files = installed_guidance_files(world);
+    assert!(
+        !files.is_empty(),
+        "the fixture has no generated skills or commands to check"
+    );
+    for path in &files {
+        let content = std::fs::read_to_string(path)
+            .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+        for marker in RULE_COPY_MARKERS {
+            assert!(
+                !content.contains(marker),
+                "{} still copies the built-in rule marker {marker:?}:\n{content}",
+                path.display()
+            );
+        }
+    }
+}
+
 // --- instruction-integrity: directions resolve in their documented context --
 
 /// One `givn instructions <id>` direction occurrence in an installed file.

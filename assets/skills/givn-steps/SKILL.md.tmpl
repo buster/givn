@@ -84,11 +84,11 @@ evidence lives under `evidence/visual/<scenario-slug>/<viewport>.png` — or
 `transcript.txt` for a terminal interface; per-assertion captures live under
 `reports/` and are debug artifacts, not review evidence.
 
-## Black-Box-First policy
+## Prefer the real interface
 
-Prefer reused real-interface steps. For an internal step or test that remains,
-record **which case this test covers that the E2E does not**; otherwise remove
-the duplicate and extend the E2E scenario.
+The black-box-first policy — served by
+`givn instructions design --change {{CHANGE_ID}}` — applies to every internal
+step or test that remains.
 
 ## Step reuse
 
@@ -164,13 +164,10 @@ never infer from whole-suite output) and captures output verbatim as evidence.
 
 ### COMMIT
 
-8. One commit for RED+GREEN+REFACTOR. The revision message
-   carries the release note as its message subject, and
-   the scenario title goes in the message body
-   (`feat(<capability>): <release note>`,
-   `characterize(<capability>): <release note>`, or
-   `test(e2e): <release note>`). Record the hash. No commit, or a commit
-   touching only the spec, means the work is not done.
+8. One commit for RED+GREEN+REFACTOR, following the commit contract
+   served by `givn instructions tasks --change {{CHANGE_ID}}`. Record
+   the hash. No commit, or a commit touching only the spec, means the
+   work is not done.
 
 ### Done
 

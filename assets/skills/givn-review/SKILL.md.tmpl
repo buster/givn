@@ -171,34 +171,19 @@ Do not write `REVIEW: PASS` while a ubiquitous-language finding remains.
 
 ## Visual review (conditional)
 
-Run this block when the change's design declares a visual interface (a
-`## Visual Design Contract` section whose `Interface:` is not `none`).
-
-- Confirm the evidence is complete: every delta `@e2e` scenario has one
-  committed final-state screenshot per contract viewport, or a transcript for
-  a terminal interface.
-- Spawn one fresh-context vision subagent per confirmed Persona. The subagent
-  sees the committed screenshots and judges whether that Persona can reach
-  its goal with what is shown. Record every finding with a disposition; never
-  invent a Persona.
-- The vision review names the state screenshots the review saw for each declared UI state.
-- Every finding names a contract rule or a failed Persona goal: no pixel-level
-  or coordinate finding is accepted.
-- A style improvement inside the contract updates the contract; it is not a
-  review failure. Without a vision-capable harness, record
-  `VISUAL-REVIEW: UNVERIFIED` and require a human sign-off.
-- End the block with `VISUAL-REVIEW: PASS` only when the evidence is complete,
-  the baseline holds, and every Persona finding is dispositioned.
+The visual review gate — the evidence rules, the vision review per confirmed
+Persona, and the `VISUAL-REVIEW` verdict — is served by
+`givn instructions review --change {{CHANGE_ID}}`. Follow it when the change's
+design declares a visual interface (a `## Visual Design Contract` section whose
+`Interface:` is not `none`).
 
 **Delegated contexts:** a fresh delegated context does not inherit the parent's loaded policy. Pass the obligation explicitly — for every user-facing question, follow the effective policy from `givn instructions dialog`; load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
 
 ## Deterministic gate dispositions
 
-Before sign-off, inspect the deterministic overlap findings. Complete the
-**Overlap dispositions** table for every shape match, add a **split-or-keep**
-decision for every long scenario, and explain every removed+added pair as
-supersession or unrelated work. Do not use scores as a substitute for a human
-disposition.
+The deterministic gate dispositions for the change are served by
+`givn instructions review --change {{CHANGE_ID}}`; record them in `review.md`
+before sign-off.
 
 ## README impact decision (readme addon enabled)
 

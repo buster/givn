@@ -208,9 +208,9 @@ cycle (see `givn-steps` skill for the shared loop mechanics). For each task:
   messages, change return types, change control flow.
 - Include a place to paste the RED/GREEN/REFACTOR runner output (a
   description of what should happen is not evidence — pasted output is).
-- Include a place for the commit hash. One atomic commit per scenario;
-  the message carries the release note as its message subject, and
-  the scenario title goes in the message body.
+- Include a place for the commit hash. One atomic commit per scenario,
+  following the commit contract served by
+  `givn instructions tasks --change <id>`.
 - Any step without a real assertion yet uses the not-implemented stub
   pattern — never an empty body.
 

@@ -17,7 +17,7 @@ Feature: Refresh generated guidance
     And the served steps instruction contains "which case this test covers"
     And generated guidance does not contain "Run `givn spec index`"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Generated guidance carries no copy of a built-in rule
     Given a givn project with all agent skill targets enabled
     When the user runs `givn skills sync`
