@@ -362,6 +362,23 @@ fn generated_command_directs_to_instruction(
     );
 }
 
+#[then(
+    regex = r"^the generated givn-([a-z-]+) guidance directs the [a-z]+ to the ([a-z-]+) instruction$"
+)]
+fn generated_guidance_directs_to_instruction(
+    world: &mut GivnWorld,
+    skill: String,
+    instruction: String,
+) {
+    let content = generated_skill_content(world, &skill);
+    let needle = format!("givn instructions {instruction}");
+    assert!(
+        content.contains(&needle),
+        "givn-{skill} guidance does not direct to the {instruction} instruction \
+         (missing {needle:?}): {content}"
+    );
+}
+
 #[given(regex = r##"^a project override for specs instructions containing "([^"]+)"$"##)]
 fn specs_instruction_override(world: &mut GivnWorld, text: String) {
     common::write_override(env(world), "specs", "instructions.md", &text);
