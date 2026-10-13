@@ -88,7 +88,7 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "Grep the durable glossary"
     And  the served ideation instruction contains "without recorded commands is not a record"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ideation guidance carries the canonical definition and the eight scoping rules
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
