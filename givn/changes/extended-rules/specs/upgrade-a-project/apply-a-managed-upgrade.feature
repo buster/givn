@@ -10,7 +10,7 @@ Feature: Managed upgrade and legacy project migration
     Then the command exits 0
     And the revision shows ".opencode/skills/givn-propose/SKILL.md" rewritten to the direction
 
-  @givn.added @wip
+  @givn.added
   Scenario: An upgrade leaves the project's extensions untouched
     Given a committed project root with givn/ initialised
     And the project records an extension for the proposal instruction

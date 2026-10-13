@@ -4392,7 +4392,7 @@ sections in the same feature order.
         - Step file: `tests/steps/run_upgrade_steps.rs`.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade reconciles full-copy guidance to the direction"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
             $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade reconciles full-copy guidance to the direction"
             Feature: Managed upgrade and legacy project migration
@@ -4435,7 +4435,7 @@ sections in the same feature order.
             scoped command passed again. No production switch, exception, fake
             success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
             none — the upgrade sync rewrites the tracked full copy to the
             direction and stages it through the calculated allowlist. This
@@ -4459,14 +4459,15 @@ sections in the same feature order.
             1 scenario (1 passed)
             5 steps (5 passed)                                            EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
             $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.24s     (clean)
             $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(apply-a-managed-upgrade): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(apply-a-managed-upgrade): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            ab5584b2 — feat(apply-a-managed-upgrade): <release note>; body: Scenario: An upgrade reconciles full-copy guidance to the direction
             ```
 
 - [ ] apply-a-managed-upgrade: An upgrade leaves the project's extensions untouched
@@ -4478,15 +4479,90 @@ sections in the same feature order.
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade leaves the project's extensions untouched"`
       - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade leaves the project's extensions untouched"
+            Feature: Managed upgrade and legacy project migration
+              Scenario: An upgrade leaves the project's extensions untouched
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✔  And the upgrade revision carries no extension content
+               ✔  And the recorded extension is unchanged
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the config upgrade already preserves
+            the user-owned `extensions:` block (its lines are unchanged, so the
+            no-context revision diff carries none of them) and the fixture is
+            committed for the clean-checkout witness; this is the recorded
+            ORACLE_RED case. The first binding run exposed a fixture gap, not a
+            product gap: the shared recording step captured the built-in
+            proposal content, which needs a change context the upgrade fixture
+            does not have; the capture is now conditional on a single active
+            change, and the ordering scenarios keep it.
+            ORACLE_RED calibration 1 (controlled omission from the delivered revision):
+            $ (temporarily recorded the expected rule as a line the upgrade
+               revision does add; same scoped command)
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✘  And the upgrade revision carries no extension content
+                  Step panicked. Captured output: the upgrade revision carries the extension content "# --- User overrides preserved from previous version ---"
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                  EXIT=101
+            ORACLE_RED calibration 2 (controlled drift in the isolated fixture):
+            $ (temporarily recorded the extension block with a trailing drift
+               line; same scoped command)
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✔  And the upgrade revision carries no extension content
+               ✘  And the recorded extension is unchanged
+                  Step panicked. Captured output: assertion `left == right` failed: the recorded extension block changed across the upgrade
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            6 steps (5 passed, 1 failed)                                  EXIT=101
+            Each omission makes exactly the matching assertion fail, so both
+            assertions discriminate; the fixture was restored immediately and
+            the scoped command passed again. No production switch, exception,
+            fake success, or source-text test.
             ```
       - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the `extensions:` block is user-owned configuration
+            outside the allowlist; the upgrade preserves it while refreshing
+            the scaffold. This scenario adds the extension-block record and the
+            preserved-overrides byte comparison plus the no-context revision
+            check in tests/steps/run_upgrade_steps.rs (and the block recorder
+            in tests/steps/serve_extended_rules_steps.rs).
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the fixture)
+            Feature: Managed upgrade and legacy project migration
+              Scenario: An upgrade leaves the project's extensions untouched
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✔  And the upgrade revision carries no extension content
+               ✔  And the recorded extension is unchanged
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
             ```
       - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.37s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
       - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(apply-a-managed-upgrade): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
