@@ -6025,3 +6025,67 @@ sections in the same feature order.
             f179047a — test(e2e): <release note>; body: Scenario: An agent receives the extended rules through the Givn CLI
             ```
 
+---
+
+## Repair scenarios (review findings, 2026-10-13)
+
+The review phase found unfinished work against the reviewed design: permanent
+scenarios still pinned content the change removes, six instruction assets the
+design names were never created, eleven generated files named no own
+direction, and `tasks-reverse.md` still restated the shared commit contract.
+These sections repair the findings with real scenarios, following the same
+RED→GREEN→REFACTOR→COMMIT loop, the shared release note, and the same scoped
+run command.
+
+- [x] review-architecture-documentation: Generated review guidance stays aligned after skill sync
+      Design constraints:
+        - Delta replacement of the permanent `givn/specs/fragments/review-architecture-documentation.feature` scenario of the same title: the generated review skill directs the reviewer to the review instruction and carries no Arc42 implementation conformance section; the served review instruction still contains the section.
+        - The Arc42 and Ubiquitous-language blocks leave `assets/skills/givn-review/SKILL.md.tmpl` and the Ubiquitous-language block leaves `assets/skills/givn-design-review/SKILL.md.tmpl`; the served instructions own them.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/review-architecture-documentation.feature::Generated review guidance stays aligned after skill sync"`
+      - [x] RED: bound the scenario (all steps reused from the match-guidance work), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/review-architecture-documentation.feature::Generated review guidance stays aligned after skill sync"
+              Scenario: Generated review guidance stays aligned after skill sync
+               ✔  Given a project root with givn/ initialised
+               ✔  And an existing change named "review-alignment"
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the command succeeds
+               ✔  And the generated review skill directs the reviewer to the review instruction
+               ✘  And the generated review skill carries no Arc42 implementation conformance section
+                  Step panicked. Captured output: generated review skill unexpectedly contains the Arc42 section:
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            6 steps (5 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: with the arc42 addon enabled, the generated review
+            skill (rendered from `assets/skills/givn-review/SKILL.md.tmpl`) still
+            carries the "Arc42 implementation conformance" copy.
+            ```
+      - [x] GREEN: removed the Arc42 and Ubiquitous-language blocks from `assets/skills/givn-review/SKILL.md.tmpl` and the Ubiquitous-language block from `assets/skills/givn-design-review/SKILL.md.tmpl` (the served instructions own them; the review instruction keeps its `N/A when the arc42 addon is disabled` else-branch). Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the template edits)
+              Scenario: Generated review guidance stays aligned after skill sync
+               ✔  Given a project root with givn/ initialised
+               ✔  And an existing change named "review-alignment"
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the command succeeds
+               ✔  And the generated review skill directs the reviewer to the review instruction
+               ✔  And the generated review skill carries no Arc42 implementation conformance section
+               ✔  And the served review instruction contains "Arc42 implementation conformance"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            7 steps (7 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 7 steps (7 passed)  EXIT=0
+            $ (regression: the two match-guidance non-e2e scenarios) → both EXIT=0
+            ```
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(review-architecture-documentation): <shared release note>`, scenario title in the message body. Record the revision identifier:
+            ```
+            9ca8c848 — feat(review-architecture-documentation): <release note>; body: Scenario: Generated review guidance stays aligned after skill sync
+            ```

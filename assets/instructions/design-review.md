@@ -98,6 +98,11 @@ content violates the diagram policy — treat this as a
   wrote the docs — not verification; treat any mismatch, including a
   missing row, as a finding.
 {{/if}}
+{{#if addons.domain_modeling}}
+{{#if addons.arc42}}
+- **Ubiquitous language** — confirm that the ubiquitous language is used consistently and recorded in the project's arc42 glossary before sign-off is mandatory: `docs/arc42/12-glossary.md` must already contain the design's agreed terms. If the design introduces a term the glossary does not hold, or reuses an existing term inconsistently, raise it as a question — do not sign off.
+{{/if}}
+{{/if}}
 
 If a question can be answered by exploring the existing codebase, explore it
 and record the finding — do not burden the user with it.
