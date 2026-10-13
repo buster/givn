@@ -2,7 +2,7 @@
 
 Feature: Instruction and skill guidance remains complete and machine-readable
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Retrieval guidance distinguishes build capabilities
     Given  a Givn project with an active change
     When  the author requests the specs instructions through the Givn CLI
