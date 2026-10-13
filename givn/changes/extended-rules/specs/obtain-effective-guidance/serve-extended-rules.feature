@@ -46,7 +46,7 @@ Feature: The served instruction carries the built-in rules and the project's ext
     Then the served content carries the replacement text
     And the served content carries the project's rule in the marked extension section
 
-  @givn.added @wip
+  @givn.added
   Scenario: A guidance request changes nothing in the project
     Given a Givn project with an active change
     And the project records an extension for the proposal instruction
