@@ -5820,7 +5820,7 @@ sections in the same feature order.
             $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "initialize-project/initialize-a-project.feature::Consumer runs init non-interactively and gets opencode skills"
             (bindings: only the installed-guidance direction step is new and
              lives in the capability's e2e file; the When reuses the existing
-             generic `the consumer runs \`givn init ...\`` step, which spawns
+             generic `the consumer runs` step, which spawns
              the real CLI, and every other sentence already binds. First run:)
             Feature: initialize-a-project
               Scenario: Consumer runs init non-interactively and gets opencode skills
@@ -5848,7 +5848,7 @@ sections in the same feature order.
             the recorded ORACLE_RED case.
             ORACLE_RED calibration (controlled omission from the delivered excerpt):
             $ (temporarily removed the direction line
-               `- Instructions: run \`givn instructions proposal --change {{CHANGE_ID}}\``
+               "`givn instructions proposal --change {{CHANGE_ID}}`"
                from assets/skills/givn-propose/SKILL.md.tmpl; same scoped command)
             Feature: initialize-a-project
               Scenario: Consumer runs init non-interactively and gets opencode skills
@@ -5921,10 +5921,10 @@ sections in the same feature order.
             ```
       - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
-            <pending>
+            ab8d7db5 — test(e2e): <release note>; body: Scenario: Consumer runs init non-interactively and gets opencode skills
             ```
 
-- [ ] serve-extended-rules: An agent receives the extended rules through the Givn CLI
+- [x] serve-extended-rules: An agent receives the extended rules through the Givn CLI
       Design constraints:
         - Real `givn instructions proposal --change <active>` subprocess with the project's extension recorded; the primary assertion is on the real subprocess stdout — built-in rules plus the marked extension section.
         - Seam: `src/cli/instructions.rs` renders the resolved instruction (conditionals with the project's enabled addons) and appends `config/extensions::append`'s marked section; JSON carries the same text (D2; arc42 §8.3b).
@@ -5933,22 +5933,95 @@ sections in the same feature order.
         - E2E steps: `tests/steps/serve_extended_rules_e2e_steps.rs` (real CLI).
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::An agent receives the extended rules through the Givn CLI"`
-      - [ ] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::An agent receives the extended rules through the Givn CLI"
+            (every sentence already binds through real-subprocess steps: the
+             active-change fixture, the extension recording Given, the real
+             `givn instructions proposal --change ...` When, the exit-code
+             step, and the two served-content assertions. No new binding was
+             needed. First run:)
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: An agent receives the extended rules through the Givn CLI
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the command exits 0
+               ✔  And the served content carries the built-in proposal rules
+               ✔  And the served content carries the project's rule in the marked extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                          EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the extension serving path
+            (`src/cli/instructions.rs` + `extensions::append`) was delivered by
+            the earlier serve-extended-rules slices, and the scenario's steps
+            drive the real CLI subprocess. All steps pass, so this is the
+            recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily made `extensions::append` return the content
+               unchanged in src/config/extensions.rs; same scoped command)
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: An agent receives the extended rules through the Givn CLI
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the command exits 0
+               ✔  And the served content carries the built-in proposal rules
+               ✘  And the served content carries the project's rule in the marked extension section
+                  Step failed:
+                  Defined: givn/changes/extended-rules/specs/obtain-effective-guidance/serve-extended-rules.feature:12:5
+                  Matched: tests/steps/serve_extended_rules_steps.rs:720:1
+                  Step panicked. Captured output: the served proposal content carries no marked extension section: # Instruction: proposal
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            6 steps (5 passed, 1 failed)                                EXIT=101
+            The omission makes exactly the matching assertion fail — the
+            built-in-rules assertion still passes, so the failing step isolates
+            the extension delivery — and the source was restored immediately
+            (`git checkout -- src/config/extensions.rs`); the scoped command
+            passed again after the rebuild. No production switch, exception,
+            fake success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
             ```
+            none — the serving path already renders the resolved instruction and
+            appends the marked extension section for the text and JSON paths
+            (`src/cli/instructions.rs` + `src/config/extensions.rs::append`).
+            The step bindings and the real-CLI request steps were delivered by
+            the earlier serve-extended-rules slices; only the `@wip` removal was
+            needed.
             ```
             Evidence transcript path (design.md §Visual Design Contract):
             ```
+            givn/changes/extended-rules/evidence/visual/an-agent-receives-the-extended-rules-through-the-givn-cli/transcript.txt
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::An agent receives the extended rules through the Givn CLI"
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: An agent receives the extended rules through the Givn CLI
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the command exits 0
+               ✔  And the served content carries the built-in proposal rules
+               ✔  And the served content carries the project's rule in the marked extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                          EXIT=0
             ```
-      - [ ] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.75s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `test(e2e): <shared release note>`, scenario title in the message body, transcript included. Record the revision identifier:
             ```
+            <pending>
             ```
 

@@ -2,7 +2,7 @@
 
 Feature: The served instruction carries the built-in rules and the project's extension
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: An agent receives the extended rules through the Givn CLI
     Given a Givn project with an active change
     And the project records an extension for the proposal instruction
