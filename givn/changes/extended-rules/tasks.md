@@ -3221,26 +3221,84 @@ sections in the same feature order.
             f594f6ff — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the persona schema
             ```
 
-- [ ] generate-ideation-guidance: The generated ideation files direct the agent to the ideation instruction
+- [x] generate-ideation-guidance: The generated ideation files direct the agent to the ideation instruction
       Design constraints:
         - Generated seam: both `assets/skills/givn-ideation/SKILL.md.tmpl` and `assets/commands/givn-ideation.md` become direction-only files; real `givn skills sync` with all targets enabled.
         - Assertions: the generated givn-ideation guidance directs the ideator to the ideation instruction; the generated givn-ideation command directs the ideator to the ideation instruction.
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The generated ideation files direct the agent to the ideation instruction"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The generated ideation files direct the agent to the ideation instruction
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the generated givn-ideation guidance directs the ideator to the ideation instruction
+               ✔  And the generated givn-ideation command directs the ideator to the ideation instruction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the skill template and the command
+            already carry the direction to `givn instructions ideation` (the
+            rule copies left them in the earlier scenarios' slices), so a real
+            `givn skills sync` generates directing files. This is the recorded
+            ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "givn instructions ideation" → "givn
+               instructions for the ideation discipline" in
+               assets/skills/givn-ideation/SKILL.md.tmpl — the replacement must
+               not keep the needle as a prefix, an earlier "…ideation-discipline"
+               rewrite was a superset and did not discriminate; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The generated ideation files direct the agent to the ideation instruction
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✘  Then the generated givn-ideation guidance directs the ideator to the ideation instruction
+                  Step panicked. Captured output: givn-ideation guidance does not direct to the ideation instruction (missing "givn instructions ideation"): ---
+                  name: givn-ideation
+                  ... (full generated guidance elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                 EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the template was restored immediately
+            (`git checkout -- assets/skills/givn-ideation/SKILL.md.tmpl`) and
+            the scoped command passed again. No production switch, exception,
+            fake success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — the skill template and the command are already
+            direction-only (`givn instructions ideation` in the **Rules**
+            paragraph and the invocation step); this scenario binds both
+            generated-direction assertions on the real sync fixture.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the template)
+            Feature: Generate ideation guidance
+              Scenario: The generated ideation files direct the agent to the ideation instruction
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the generated givn-ideation guidance directs the ideator to the ideation instruction
+               ✔  And the generated givn-ideation command directs the ideator to the ideation instruction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(generate-ideation-guidance): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            59ff6a90 — feat(generate-ideation-guidance): <release note>; body: Scenario: The generated ideation files direct the agent to the ideation instruction
             ```
 
 - [ ] instruction-integrity: Retrieval guidance distinguishes build capabilities
