@@ -553,6 +553,191 @@ fn every_named_instruction_id_resolves(world: &mut GivnWorld) {
     );
 }
 
+// --- instruction-integrity: directions resolve in their documented context --
+
+/// One `givn instructions <id>` direction occurrence in an installed file.
+struct NamedDirection {
+    path: std::path::PathBuf,
+    id: String,
+    line: String,
+}
+
+/// Every `givn instructions <id>` direction in every installed skill and
+/// command, with the line the direction appears on.
+fn all_directions(world: &GivnWorld) -> Vec<NamedDirection> {
+    const NEEDLE: &str = "givn instructions ";
+    let mut directions = Vec::new();
+    for path in installed_guidance_files(world) {
+        let content = std::fs::read_to_string(&path)
+            .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+        for line in content.lines() {
+            let mut rest = line;
+            while let Some(position) = rest.find(NEEDLE) {
+                let after = &rest[position + NEEDLE.len()..];
+                let token: String = after
+                    .chars()
+                    .take_while(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || *c == '-')
+                    .collect();
+                if token.chars().next().is_some_and(|c| c.is_ascii_lowercase()) {
+                    directions.push(NamedDirection {
+                        path: path.clone(),
+                        id: token,
+                        line: line.trim().to_string(),
+                    });
+                }
+                rest = after;
+            }
+        }
+    }
+    directions
+}
+
+/// The manifest artifact ids of the fixture, from `givn graph --json`.
+fn artifact_ids(world: &GivnWorld) -> std::collections::BTreeSet<String> {
+    let output = crate::common::run_givn(env(world), &["graph", "--json"]);
+    assert!(
+        output.status.success(),
+        "givn graph --json failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let value: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("graph output is not JSON");
+    value["artifacts"]
+        .as_array()
+        .expect("graph JSON carries an artifacts array")
+        .iter()
+        .map(|artifact| {
+            artifact["id"]
+                .as_str()
+                .expect("artifact entry carries an id")
+                .to_string()
+        })
+        .collect()
+}
+
+/// The fixture's single active change id.
+fn single_active_change(world: &GivnWorld) -> String {
+    let dir = env(world).path("givn/changes");
+    let mut ids: Vec<String> = std::fs::read_dir(&dir)
+        .unwrap_or_else(|error| panic!("read {}: {error}", dir.display()))
+        .filter_map(|entry| {
+            let entry = entry.ok()?;
+            if entry.path().is_dir() {
+                Some(entry.file_name().to_string_lossy().into_owned())
+            } else {
+                None
+            }
+        })
+        .collect();
+    ids.sort();
+    assert_eq!(
+        ids.len(),
+        1,
+        "expected exactly one active change in the fixture, got {ids:?}"
+    );
+    ids.remove(0)
+}
+
+/// The `--change` token a direction line names, when it names one.
+fn named_change(line: &str) -> Option<String> {
+    let position = line.find("--change ")?;
+    let token: String = line[position + "--change ".len()..]
+        .chars()
+        .take_while(|c| !c.is_whitespace() && !matches!(c, '`' | ')' | '>'))
+        .collect();
+    if token.is_empty() { None } else { Some(token) }
+}
+
+#[then("every direction to an artifact instruction names the change context it needs")]
+fn artifact_directions_name_change_context(world: &mut GivnWorld) {
+    let artifacts = artifact_ids(world);
+    let directions = all_directions(world);
+    assert!(
+        !directions.is_empty(),
+        "the generated guidance carries no directions"
+    );
+    let mut found_artifact = false;
+    for direction in &directions {
+        if artifacts.contains(&direction.id) {
+            found_artifact = true;
+            assert!(
+                named_change(&direction.line).is_some(),
+                "{}: the direction to artifact instruction `{}` names no change context: {}",
+                direction.path.display(),
+                direction.id,
+                direction.line
+            );
+        }
+    }
+    assert!(
+        found_artifact,
+        "the generated guidance carries no direction to an artifact instruction"
+    );
+}
+
+#[then("every direction to a policy or step instruction names no change context")]
+fn policy_directions_name_no_change_context(world: &mut GivnWorld) {
+    let artifacts = artifact_ids(world);
+    let directions = all_directions(world);
+    let mut found_policy = false;
+    for direction in &directions {
+        if !artifacts.contains(&direction.id) {
+            found_policy = true;
+            assert!(
+                named_change(&direction.line).is_none(),
+                "{}: the direction to policy/step instruction `{}` names a change context: {}",
+                direction.path.display(),
+                direction.id,
+                direction.line
+            );
+        }
+    }
+    assert!(
+        found_policy,
+        "the generated guidance carries no direction to a policy or step instruction"
+    );
+}
+
+#[then("every named instruction id resolves in the context the direction names")]
+fn ids_resolve_in_named_context(world: &mut GivnWorld) {
+    let artifacts = artifact_ids(world);
+    let active_change = single_active_change(world);
+    let project = env(world);
+    let directions = all_directions(world);
+    let mut checked: std::collections::BTreeSet<(String, Option<String>)> =
+        std::collections::BTreeSet::new();
+    for direction in &directions {
+        let context = if artifacts.contains(&direction.id) {
+            let named = named_change(&direction.line);
+            let resolvable =
+                named.filter(|token| project.path(&format!("givn/changes/{token}")).is_dir());
+            Some(resolvable.unwrap_or_else(|| active_change.clone()))
+        } else {
+            None
+        };
+        if !checked.insert((direction.id.clone(), context.clone())) {
+            continue;
+        }
+        let mut args = vec!["instructions", direction.id.as_str()];
+        if let Some(change) = context.as_deref() {
+            args.push("--change");
+            args.push(change);
+        }
+        let output = crate::common::run_givn(project, &args);
+        assert!(
+            output.status.success(),
+            "`givn instructions {}` in its documented context failed (direction line: {}): {}",
+            direction.id,
+            direction.line,
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    assert!(
+        !checked.is_empty(),
+        "the generated guidance names no instruction ids at all"
+    );
+}
+
 // --- dialog-question-quality: dialog policy steps --------------------------
 
 fn cli_stdout(world: &GivnWorld) -> String {

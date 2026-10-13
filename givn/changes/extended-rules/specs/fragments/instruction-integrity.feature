@@ -25,7 +25,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     Then every generated skill and command names a served instruction
     And every named instruction id resolves through the Givn CLI
 
-  @givn.added @wip
+  @givn.added
   Scenario: Every generated direction is invokable in its documented context
     Given a givn project with all agent skill targets enabled and an active change
     When the user runs `givn skills sync`

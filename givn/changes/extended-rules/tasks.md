@@ -3446,26 +3446,87 @@ sections in the same feature order.
             c495df8d — feat(instruction-integrity): <release note>; body: Scenario: The specs guidance carries the capability placement test
             ```
 
-- [ ] instruction-integrity: Every instruction id named by generated guidance resolves through the Givn CLI
+- [x] instruction-integrity: Every instruction id named by generated guidance resolves through the Givn CLI
       Design constraints:
         - Real `givn skills sync` with all targets enabled; every generated skill and command names a served instruction via the direction (`givn instructions <id>`); the id-resolution step lives in `tests/steps/instruction_integrity_steps.rs`.
         - Assertion: every named instruction id resolves through the Givn CLI in the same Givn version or a later one (design.md §inner decision: "instruction-id references are a graded reference class").
       Scoped single-scenario run (design.md §Runner and strict mode):
         `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::Every instruction id named by generated guidance resolves through the Givn CLI"`
-      - [ ] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
             ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::Every instruction id named by generated guidance resolves through the Givn CLI"
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: Every instruction id named by generated guidance resolves through the Givn CLI
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then every generated skill and command names a served instruction
+               ✔  And every named instruction id resolves through the Givn CLI
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — all 30 generated template files already
+            carry the dialog-policy direction and their own `givn instructions
+            <id>` directions, and every named id (`dialog`, `specs`, `proposal`,
+            `design`, `design-review`, `tasks`, `review`, `archive`,
+            `review-reverse`, `ideation`, `arc42-docs`) resolves through the
+            current CLI. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "givn instructions dialog" → "givn instructions
+               dialogues" in assets/skills/givn-dev-principles/SKILL.md.tmpl; same
+               scoped command)
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: Every instruction id named by generated guidance resolves through the Givn CLI
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then every generated skill and command names a served instruction
+               ✘  And every named instruction id resolves through the Givn CLI
+                  Step panicked. Captured output: `givn instructions dialogues` (named by
+                  /tmp/.tmpTlKLA8/.opencode/skills/givn-dev-principles/SKILL.md) failed:
+                  error: unknown artifact 'dialogues'. Known artifacts: proposal, specs,
+                  design, design-review, tasks, review, arc42-docs
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                 EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the template was restored immediately
+            (`git checkout -- assets/skills/givn-dev-principles/SKILL.md.tmpl`)
+            and the scoped command passed again. No production switch,
+            exception, fake success, or source-text test.
             ```
-      - [ ] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
             ```
+            none — every generated file already carries its direction; this
+            scenario adds the two real Then steps (every installed skill and
+            command file for the configured targets is read; each must name at
+            least one `givn instructions <id>`; every distinct id is resolved by
+            running the real CLI) in
+            tests/steps/instruction_integrity_steps.rs.
             ```
             Run scoped → MUST exit 0. Paste command + output:
             ```
+            $ (same scoped command after restoring the template)
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: Every instruction id named by generated guidance resolves through the Givn CLI
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then every generated skill and command names a served instruction
+               ✔  And every named instruction id resolves through the Givn CLI
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
             ```
-      - [ ] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
             ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.46s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
             ```
-      - [ ] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-integrity): <shared release note>`, scenario title in the message body. Record the revision identifier:
+      - [x] COMMIT: one atomic commit for RED+GREEN+REFACTOR — subject `feat(instruction-integrity): <shared release note>`, scenario title in the message body. Record the revision identifier:
             ```
+            1bab5e74 — feat(instruction-integrity): <release note>; body: Scenario: Every instruction id named by generated guidance resolves through the Givn CLI
             ```
 
 - [ ] instruction-integrity: Every generated direction is invokable in its documented context
