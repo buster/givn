@@ -6,6 +6,29 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-14
+
+### Bug Fixes
+
+- **generate-ideation-guidance:** Keep the served event-storming phrases contiguous across line wraps
+
+- **instruction-integrity:** Point the reverse task breakdown at the served steps instruction and the single commit contract
+
+- **instruction-integrity:** Keep the delegated-dialog obligation in the generated delegation prompts
+
+- **instruction-integrity:** Serve the review conformance rules and document the served-rules model
+
+- **extended-rules:** Repair the review-audit findings
+
+- **guide-domain-modeling:** Restore the nine re-point scenarios lost to the repair write
+
+
+### Features
+
+- **prose-consolidation:** Givn serves every step's rules through `givn instructions` — installed skills and commands direct agents there instead of carrying rule copies — and a project can extend any served instruction with its own rules, which synchronization and upgrades never fight.
+
+- **migrate-0-8-0-to-0-9-0:** Catalog the 0.8.0 to 0.9.0 route and ship the bundle
+
 ## [0.8.5] - 2026-10-12
 
 ### Bug Fixes
@@ -329,3 +352,5 @@ for the complete 0.2.0 feature set.
 [0.8.4]: https://github.com/buster/givn/compare/v0.8.3...v0.8.4
 
 [0.8.5]: https://github.com/buster/givn/compare/v0.8.4...v0.8.5
+
+[0.9.0]: https://github.com/buster/givn/compare/v0.8.5...v0.9.0
