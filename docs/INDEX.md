@@ -29,6 +29,7 @@ Status values:
 - [Givn 0.2.0 to 0.3.0 Migration Guide](migrations/0.2.0-to-0.3.0.md) - `reference`; ordered LLM prompts for upgrading projects created from the 0.2.0 master branch.
 - [Migration Bundles](migrations/README.md) - `reference`; authoring contract for future release-owned migration bundles and aggregate plans.
 - [Givn 0.4.0 to 0.5.0 Migration Guide](migrations/0.4.0-to-0.5.0.md) - `reference`; ordered LLM prompts for the 0.4.0-to-0.5.0 project migration.
+- [Givn 0.8.0 to 0.9.0 Migration Guide](migrations/0.8.0-to-0.9.0.md) - `reference`; ordered LLM prompts for moving project rules into instruction extensions (`extensions:` in `givn/config.yaml`).
 - [Use-Case Migration Release Plan](usecase-migration-release-plan.md) - `reference`; ordered implementation sessions and release migration rules for replacing groups with semantic use cases, fragments, personas, and ideation-aligned coverage.
 
 ## Architecture
