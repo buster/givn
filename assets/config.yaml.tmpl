@@ -212,8 +212,13 @@ givn_config_version: "{{GIVN_VERSION}}"
 # a rule is a non-empty string. An unknown id or a malformed entry warns and
 # is skipped, and the built-in rules are served alone.
 #
+# Example — two instructions, two project rules each. A rule listed under
+# several ids extends each of those instructions:
+#
 # extensions:
-#   proposal:
-#     - Keep proposals under 500 words.
-#   dialog:
-#     - Answer in the project's glossary terms.
+#   ideation:
+#     - Keep raw ideas free of implementation detail.
+#     - Link every open question to the Persona it affects.
+#   specs:
+#     - Keep scenarios free of implementation detail.
+#     - Use the project's domain vocabulary in every scenario title.

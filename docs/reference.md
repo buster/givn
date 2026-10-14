@@ -106,6 +106,24 @@ Key sections:
 - Hooks (`post:` per artifact) — built-ins `verify`, `verify-e2e`, `lint`,
   `integrity`, or any shell command; object form supports `allow_failure` and
   display `name` (built-in hook names always ignore `allow_failure`).
+- `extensions:` — project-owned rules that extend a served instruction: an
+  instruction id maps to a list of non-empty rule strings, appended to the
+  served content under a marked `## Project extension` section by
+  `givn instructions <id>`. Effective at the next request; synchronization
+  and upgrades never touch it; an unknown id or a malformed entry warns and
+  is skipped, and the built-in rules are served alone. Each instruction
+  carries its own list — the commented scaffold in `givn/config.yaml` shows
+  the shape:
+
+  ```yaml
+  extensions:
+    ideation:
+      - Keep raw ideas free of implementation detail.
+      - Link every open question to the Persona it affects.
+    specs:
+      - Keep scenarios free of implementation detail.
+      - Use the project's domain vocabulary in every scenario title.
+  ```
 - `addons:` / `extras:` — see tables above.
 
 ## What givn creates in your project
