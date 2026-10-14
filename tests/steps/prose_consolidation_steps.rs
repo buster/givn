@@ -190,6 +190,64 @@ fn managed_guidance_references_policy(world: &mut GivnWorld) {
     );
 }
 
+// --- initialize-a-project: resident rules in the project-start block --------
+
+const RESIDENT_RULES_BEGIN: &str = "<!-- givn:resident-rules:begin -->";
+const RESIDENT_RULES_END: &str = "<!-- givn:resident-rules:end -->";
+
+/// The managed project-start block of the fixture's AGENTS.md.
+fn project_start_block(world: &GivnWorld) -> String {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let agents = fs::read_to_string(env.path("AGENTS.md")).expect("read AGENTS.md");
+    let start = agents
+        .find("<!-- givn:begin:givn-project -->")
+        .expect("managed block start missing");
+    let end = agents
+        .find("<!-- givn:end:givn-project -->")
+        .expect("managed block end missing");
+    agents[start..end].to_string()
+}
+
+#[then("the project-start block carries the resident rules section of the tasks instruction")]
+fn project_start_block_carries_resident_rules(world: &mut GivnWorld) {
+    let served = {
+        let env = world
+            .env
+            .as_ref()
+            .expect("a project root is required first");
+        crate::steps::serve_extended_rules_steps::served_instruction(env, "tasks")
+    };
+    let begin = served.find(RESIDENT_RULES_BEGIN).unwrap_or_else(|| {
+        panic!("the served tasks instruction is missing the {RESIDENT_RULES_BEGIN} marker")
+    });
+    let end = served.find(RESIDENT_RULES_END).unwrap_or_else(|| {
+        panic!("the served tasks instruction is missing the {RESIDENT_RULES_END} marker")
+    });
+    let section = served[begin + RESIDENT_RULES_BEGIN.len()..end].trim();
+    assert!(
+        !section.is_empty(),
+        "the resident rules section of the tasks instruction is empty"
+    );
+    let block = project_start_block(world);
+    assert!(
+        block.contains(section),
+        "the project-start block does not carry the resident rules section of the tasks instruction:\
+         \nblock:\n{block}\nsection:\n{section}"
+    );
+}
+
+#[then("the project-start block requires the effective dialog policy")]
+fn project_start_block_requires_dialog_policy(world: &mut GivnWorld) {
+    let block = project_start_block(world);
+    assert!(
+        block.contains("effective dialog policy") && block.contains("givn instructions dialog"),
+        "the project-start block does not require the effective dialog policy:\n{block}"
+    );
+}
+
 #[given("a Givn project with delegated authoring and review guidance enabled")]
 fn project_with_delegated_guidance(world: &mut GivnWorld) {
     let env = crate::common::make_bare_root();
@@ -329,6 +387,55 @@ fn project_with_all_targets(world: &mut GivnWorld) {
     let output = common::run_givn_with_stdin(&env, &["init"], &format!("{selection}\n"));
     assert!(output.status.success(), "givn init failed: {:?}", output);
     world.env = Some(env);
+}
+
+#[given("a givn project with all agent skill targets enabled and an active change")]
+fn project_with_all_targets_and_active_change(world: &mut GivnWorld) {
+    project_with_all_targets(world);
+    let env = world.env.as_ref().expect("init created the fixture");
+    let output = common::run_givn(env, &["new", "add-user-auth"]);
+    assert!(
+        output.status.success(),
+        "givn new add-user-auth failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[then(
+    regex = r"^the generated givn-([a-z-]+) command directs the [a-z]+ to the ([a-z-]+) instruction$"
+)]
+fn generated_command_directs_to_instruction(
+    world: &mut GivnWorld,
+    command: String,
+    instruction: String,
+) {
+    let path = env(world).path(&format!(".opencode/commands/givn-{command}.md"));
+    let content = fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read generated command {}: {error}", path.display()));
+    let needle = format!("givn instructions {instruction}");
+    assert!(
+        content.contains(&needle),
+        "givn-{command} does not direct to the {instruction} instruction \
+         (missing {needle:?}): {content}"
+    );
+}
+
+#[then(
+    regex = r"^the generated givn-([a-z-]+) guidance directs the ([a-z]+(?: [a-z]+)?) to the ([a-z-]+) instruction$"
+)]
+fn generated_guidance_directs_to_instruction(
+    world: &mut GivnWorld,
+    skill: String,
+    _actor: String,
+    instruction: String,
+) {
+    let content = generated_skill_content(world, &skill);
+    let needle = format!("givn instructions {instruction}");
+    assert!(
+        content.contains(&needle),
+        "givn-{skill} guidance does not direct to the {instruction} instruction \
+         (missing {needle:?}): {content}"
+    );
 }
 
 #[given(regex = r##"^a project override for specs instructions containing "([^"]+)"$"##)]

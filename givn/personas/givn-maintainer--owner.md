@@ -39,3 +39,11 @@
 - 2026-09-23 — local-only-integrations: this repository currently versions
   its generated rules for self-hosting; keeping that under the new default is
   a pending decision, not a settled exception (Q9).
+- 2026-10-13 — rules-through-instructions: demands one canonical asset per
+  rule instead of up to three copies (skill template, command asset,
+  instruction asset).
+- 2026-10-13 — rules-through-instructions: demands that the specs, the
+  guidance-integrity requirement (Q-97), and the managed-upgrade path stay
+  truthful when generated guidance stops carrying the rules.
+- 2026-10-13 — rules-through-instructions: needs the experiment to prove the
+  directing form before it becomes a default.

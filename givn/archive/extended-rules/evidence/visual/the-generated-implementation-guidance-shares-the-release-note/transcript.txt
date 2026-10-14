@@ -1,0 +1,141 @@
+scenario: The generated implementation guidance shares the release note
+argv: givn skills sync
+cwd: <freshly initialized project in a temp dir, agent targets opencode, agents, claude, omp; active change add-user-auth>
+exit: 0
+context commands (all in that project):
+  printf 'opencode, agents, claude, omp\n' | givn init        exit 0
+  givn new add-user-auth                                      exit 0
+  givn instructions tasks --change add-user-auth              exit 0
+--- stdout (raw) ---
+Syncing skills and agent commands...
+  commit attribution: .githooks/commit-msg
+  Git activation: unavailable (no Git worktree)
+  attribution integration: .opencode/plugins/givn-attribution.js
+  attribution integration: .omp/hooks/pre/givn-attribution.js
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced skill: givn-domain-modeling
+  synced skill: givn-dev-principles
+  synced command: /givn-propose
+  synced command: /givn-spec
+  synced command: /givn-design
+  synced command: /givn-tasks
+  synced command: /givn-implement
+  synced command: /givn-review
+  synced command: /givn-archive
+  synced command: /givn-explore
+  synced command: /givn-design-review
+  synced command: /givn-steps
+  synced command: /givn-reverse-engineer
+  synced command: /givn-characterize
+  synced command: /givn-ideation
+  synced command: /grill-me
+  synced command: /grill-with-docs
+  sync: rules: local-only
+  sync: no tracked rule in the current revision
+  sync: no rule in reachable history
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+
+Done. Generated:
+  .opencode/skills/   (skills for opencode)
+  .agents/skills/   (skills for agents)
+  .claude/skills/   (skills for claude)
+  .omp/skills/   (skills for omp)
+  .opencode/commands/ (opencode slash commands)
+  .omp/commands/ (omp slash commands)
+--- stderr (raw) ---
+--- delivered .opencode/skills/givn-steps/SKILL.md head ---
+---
+name: givn-steps
+description: Shared step-writing mechanics for Gherkin scenarios — the RED/GREEN/REFACTOR loop with step reuse. Referenced by givn-implement and givn-characterize.
+---
+
+# givn-steps
+
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
+Shared step-writing mechanics for Gherkin `.feature` scenarios. Reference
+skill, not a standalone workflow — read by `/givn-implement` and
+`/givn-characterize` subagents before writing step definitions.
+
+## Context
+
+- Test runner: `./run-tests.sh`
+- Features path: `GIVN_FEATURES=givn/specs`
+- Change: `givn/changes/<change-id>/`
+
+## Before starting
+--- delivered .opencode/commands/givn-steps.md head ---
+---
+description: Shared step-writing mechanics for Gherkin scenarios — RED/GREEN/REFACTOR with step reuse. Reference skill for givn-implement and givn-characterize.
+---
+
+Shared step-writing mechanics for Gherkin `.feature` scenarios. Reference
+skill, not a standalone workflow — read by `/givn-implement` and
+`/givn-characterize` subagents before writing step definitions.
+
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
+This command is a pointer: the reference is served by
+`givn instructions steps`. To write steps as part of a change:
+`/givn-implement` (normal changes) or `/givn-characterize` (reverse changes).
+
+Run `givn instructions steps` and follow it — it carries the canonical
+step-writing rules: definition locations, step reuse, the no-empty-body
+rule, the canonical E2E policy, the capture mechanics, and the
+RED→GREEN→REFACTOR loop.
+--- served tasks instruction (givn instructions tasks --change add-user-auth) resident-rules excerpt ---
+<!-- givn:resident-rules:begin -->
+- Tick off each task in `tasks.md` immediately after completing it —
+  an unchecked box means that scenario is not done. Never batch-check
+  boxes at the end.
+- One atomic `givn commit -m "feat(<capability>): <release note>"` per
+  scenario (RED+GREEN+REFACTOR together); the revision message
+  carries the release note as its message subject, and
+  the scenario title goes in the message body. It works on Git and Fossil. A
+  raw Git commit is stamped by the hook, a raw Fossil check-in is not. No
+  commit, or a commit touching only the spec, means the work is not done.
+  Record the revision identifier in tasks.md.
+<!-- givn:resident-rules:end -->
+--- AGENTS.md managed project-start block (resident rules rendered) ---
+<!-- givn:begin:givn-project -->
+This project uses **givn** for spec-driven development. This block is
+auto-maintained by `givn init` / `givn skills sync` — do not edit it by hand.
+
+- Run `givn instructions` as the first action of every session. Do not
+  search, grep, or explore files to determine what to do next — this command
+  inspects the current project state and tells you exactly what command or
+  skill to run next, including `--change <CHANGE>` for active changes.
+- For every user-facing question, follow the effective dialog policy from
+  `givn instructions dialog`; load it once per context before the first
+  question, including clarification and confirmation outside a named
+  workflow, and pass the obligation explicitly to fresh delegated contexts.
+  This obligation applies with optional addons disabled and outside any named
+  skill; the presenting agent remains responsible for the question.
+- Run `givn status --change <CHANGE>` for a full artifact checklist of an
+  active change (includes task progress and pending task descriptions).
+- Tick off each task in `tasks.md` immediately after completing it —
+  an unchecked box means that scenario is not done. Never batch-check
+  boxes at the end.
+- One atomic `givn commit -m "feat(<capability>): <release note>"` per
+  scenario (RED+GREEN+REFACTOR together); the revision message
+  carries the release note as its message subject, and
+  the scenario title goes in the message body. It works on Git and Fossil. A
+  raw Git commit is stamped by the hook, a raw Fossil check-in is not. No
+  commit, or a commit touching only the spec, means the work is not done.
+  Record the revision identifier in tasks.md.
+- The full workflow, available commands, and skills are documented in the
+  output of these commands — this block is intentionally just a pointer.
+<!-- givn:end:givn-project -->

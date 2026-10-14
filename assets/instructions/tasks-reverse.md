@@ -1,8 +1,8 @@
 # Instruction: tasks-reverse
 
 Write the characterization task breakdown. Each task is a RED/GREEN/REFACTOR
-cycle (see `givn-steps` skill for shared mechanics). Differences from normal
-TDD are below.
+cycle (see `givn instructions steps` for shared mechanics). Differences from
+normal TDD are below.
 
 ## Setup task (first task, always)
 
@@ -54,11 +54,9 @@ For each scenario:
               Apply it. Re-run, PASTE output. Must still pass. If red:
               revert the refactor — behaviour changed, the test was correct.
               No seam needed → skip.
-  COMMIT:   One commit for RED+GREEN+REFACTOR. Message: "characterize
-              (<capability>): <release note>". The message
-              carries the release note as its message subject, and
-              the scenario title goes in the message body.
-              Record the hash. No commit = task not done.
+  COMMIT:   One commit for RED+GREEN+REFACTOR, following the commit contract
+              served by `givn instructions tasks --change <id>`. Record the
+              hash. No commit = task not done.
   Then move to the next scenario.
 ```
 

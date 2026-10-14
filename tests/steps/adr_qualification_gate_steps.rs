@@ -1195,8 +1195,8 @@ fn skill_points_at_cheaper_home(_world: &mut GivnWorld) {
     ))
     .expect("read design-review skill template");
     assert!(
-        content.contains("cheaper home"),
-        "design-review skill does not point at the cheaper-home challenge"
+        content.contains("givn instructions design-review"),
+        "design-review skill does not route to the served design-review instruction"
     );
 }
 

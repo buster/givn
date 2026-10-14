@@ -119,9 +119,11 @@ Feature: Visual Review Gate
   Scenario: Synchronized review guidance carries the visual block
     Given  a givn project with all agent skill targets enabled
     When  the user runs `givn skills sync`
-    Then  the generated givn-review guidance contains "VISUAL-REVIEW: PASS"
-    And  the generated givn-review guidance contains "confirmed Persona"
-    And  the generated givn-review guidance contains "no pixel-level"
+    Then  the generated givn-review guidance directs the reviewer to the review instruction
+    And  the served review instruction contains "VISUAL-REVIEW: PASS"
+    And  the served review instruction contains "confirmed Persona"
+    And  the served review instruction contains "no pixel-level"
+
   Scenario: Review guidance tests the opposite interface classification
     Given  a givn project
     When  the user runs `givn instructions review --change visual-review-gate`

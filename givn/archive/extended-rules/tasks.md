@@ -1,0 +1,6804 @@
+# Tasks: extended-rules
+
+One section per executable scenario: RED→GREEN→REFACTOR→COMMIT.
+Non-`@e2e` scenarios first, then the E2E setup task, then the `@e2e` scenarios.
+
+Legend: an unchecked box means pending; a box is checked only when its evidence
+and revision identifier are filled in. Check each box immediately after the
+step — tasks.md must always reflect true state; never batch-check at the end.
+
+**Release note (shared subject of every revision in this change, copied
+verbatim from `proposal.md` §Release note):**
+
+> Givn serves every step's rules through `givn instructions` — installed skills
+> and commands direct agents there instead of carrying rule copies — and a
+> project can extend any served instruction with its own rules, which
+> synchronization and upgrades never fight.
+
+**Delta inventory (verified against every delta `.feature` under
+`givn/changes/extended-rules/specs/`):** 79 executable scenarios in 14
+features = 26 `@givn.added` + 53 `@givn.modified` + 0 `@givn.removed`;
+12 `@e2e` + 67 regular. The 11 repair scenarios the review findings added
+(2026-10-13) are included. Per feature (scenarios / added / modified / e2e):
+
+| Feature | Scenarios | Added | Modified | E2E |
+|---|---|---|---|---|
+| `create-change/change-release-note.feature` | 1 | 0 | 1 | 1 |
+| `create-change/prose-consolidation.feature` | 2 | 0 | 2 | 1 |
+| `create-change/visual-design-contract.feature` | 2 | 0 | 2 | 1 |
+| `extend-an-instruction/instruction-extension.feature` | 10 | 10 | 0 | 2 |
+| `fragments/generate-ideation-guidance.feature` | 29 | 1 | 28 | 1 |
+| `fragments/guide-domain-modeling.feature` | 9 | 0 | 9 | 0 |
+| `fragments/instruction-integrity.feature` | 5 | 3 | 2 | 0 |
+| `fragments/match-guidance-to-enabled-addons.feature` | 5 | 0 | 5 | 3 |
+| `fragments/refresh-generated-guidance.feature` | 2 | 1 | 1 | 1 |
+| `fragments/review-architecture-documentation.feature` | 1 | 0 | 1 | 0 |
+| `initialize-project/initialize-a-project.feature` | 3 | 2 | 1 | 1 |
+| `obtain-effective-guidance/serve-extended-rules.feature` | 6 | 6 | 0 | 1 |
+| `upgrade-a-project/apply-a-managed-upgrade.feature` | 3 | 3 | 0 | 0 |
+| `verify-change/visual-review-gate.feature` | 1 | 0 | 1 | 0 |
+| **Total** | **79** | **26** | **53** | **12** |
+
+The 12 `@e2e` titles (interaction-coverage-verified against `design.md`'s
+Interaction Coverage Matrix, which matches the `## Interactions` tables of the
+four owning use-case documents and of the `support` fragment document — this
+change carries no separate `# User Interaction Inventory:` comments inside
+`.feature` files):
+
+1. `The generated implementation guidance shares the release note`
+2. `Generated guidance points to the canonical E2E policy`
+3. `Synchronized guidance defines the contract approval and capture mechanics`
+4. `A developer records an extension and it governs the next guidance request`
+5. `An upgrade preserves the extension and the next request serves it`
+6. `A consumer synchronizes skills and every agent target receives the ideation facilitation skill`
+7. `A consumer synchronizes skills and the generated guidance omits disabled-addon sections`
+8. `A consumer enables the addons a generated section needs and the guidance gains it`
+9. `A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed` (`Scenario Outline`)
+10. `Synchronized guidance explains how to resolve the deterministic gates`
+11. `Consumer runs init non-interactively and gets opencode skills`
+12. `An agent receives the extended rules through the Givn CLI`
+
+**Work order (recorded choice):** `design.md` names no implementation
+sequencing section, so per the canonical tasks instruction this file follows
+`.feature` order — features alphabetically by path (the delta-inventory order
+above), scenarios in their in-file order. Two groups: the 67 non-`@e2e`
+scenario sections, then the E2E setup task, then the 12 `@e2e` scenario
+sections in the same feature order. The repair scenarios (2026-10-13) run
+after the planned sections in the order the review findings name them.
+
+---
+
+## Global constraints (apply to every task)
+
+- **Runner**: `tests/features_runner.rs` (cucumber-rs 0.23.0 / gherkin 0.16,
+  as pinned in `Cargo.lock`) is the single runner for `givn/specs/` and the
+  change delta. Strict mode is `.fail_on_skipped()` plus the non-zero exit on
+  `failed > 0 || skipped > 0`; never weaken it. `./run-tests.sh` runs it via
+  `cargo nextest run --test features_runner` (fallback `GIVN_TEST_RUNNER=cargo`).
+  `givn/commands.yaml` is the config home: `verify.command: ./run-tests.sh`,
+  `verify.e2e_command: ./run-tests.sh --e2e` (confirm and record in the setup
+  task; edit only if the actual values differ).
+- **Scoped single-scenario command** (use for every RED/GREEN/REFACTOR run,
+  exact form from `design.md` §Runner and strict mode, with this scenario's
+  relative feature path and title):
+
+  ```sh
+  GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "<relative feature path>::<scenario title>"
+  ```
+
+  Never infer RED/GREEN from whole-suite output. Full-delta scope:
+  `GIVN_FEATURES=givn/changes/extended-rules/specs ./run-tests.sh` (68
+  scenarios), `... --non-e2e` (56), `... --e2e` (12).
+- **Step-file ownership, one file per capability** (`design.md` §Step
+  definitions and §Exact file changes): new files
+  `tests/steps/serve_extended_rules_steps.rs` (extension recording/serving
+  steps plus the shared served-instruction content step `the served <id>
+  instruction contains/does not contain …`, beside the shared helper
+  `served_instruction(env, id) -> String`) and
+  `tests/steps/instruction_extension_steps.rs` (record/change/remove/reject
+  steps). Modified capabilities keep their existing files:
+  `tests/steps/prose_consolidation_steps.rs` (generic direction steps, the
+  project-start-block step, updated generic content steps),
+  `tests/steps/instruction_integrity_steps.rs` (id-resolution step, the
+  no-duplication step), `tests/steps/template_conditional_rendering_steps.rs`
+  (addon-condition steps read the served instruction),
+  `tests/steps/init_agent_target_selection_steps.rs` (block reading + the
+  full-copy fixture), `tests/steps/run_upgrade_steps.rs`,
+  `tests/steps/visual_design_contract_steps.rs`,
+  `tests/steps/visual_review_gate_steps.rs`; the ideation served-instruction
+  step and every `the served <id> instruction contains/does not contain`
+  assertion use the shared step in
+  `tests/steps/serve_extended_rules_steps.rs` (design.md §Step definitions;
+  the post-review correction removed the stale duplicate assignment from the
+  §Exact file changes table). The visual step files add no content bindings
+  and keep their existing eject and fixture steps. E2E files are
+  created only in the E2E setup task.
+- **Step bodies are never empty** — `{}`, a bare `pass`, a bare `return` are
+  indistinguishable from PASS and banned at every phase. An unimplemented Rust
+  step uses `unimplemented!()` (or `todo!()`); a step is exempt only once it
+  has a real assertion (GREEN) or performs a real reused setup action. Reuse
+  is never an excuse for a new step to be empty.
+- **RED discipline**: remove `@wip` from THIS scenario only at RED, run the
+  scoped command, paste the output, and it MUST exit non-zero — exit 0 means
+  the runner is not strict or a step is empty; hard stop. Record the behavioral
+  category honestly:
+  - `OLD_PRODUCT_RED` — the current delivered guidance fails the new
+    assertion (typical here: the requested instruction id does not exist yet
+    and the CLI refuses it, or a generated file still carries a rule copy).
+  - `ORACLE_RED` — the old contract already passes, or a coupled earlier
+    scenario's edit already delivered it; prove discrimination with a
+    controlled omission in an isolated fixture (temporary project override /
+    temporary omission from the delivered excerpt), rerun the SAME assertion,
+    then restore the fixture immediately. Never add a production switch,
+    exception, fake success, or a source-text test for this.
+  A missing binding, a build error, or an `unimplemented!()` panic alone is
+  never the behavioral RED evidence for a scenario that has a behavioral
+  assertion.
+- **Production edit set** (nothing else; `design.md` §Exact file changes):
+  `src/skills/render.rs` (expose `render_conditionals`; `render_template`
+  delegates), `src/cli/instructions.rs` (render conditionals; append the
+  extension on text and JSON paths), `src/config/extensions.rs` (new:
+  `load` + `append`), `src/config/mod.rs` (register), `src/config/overlay.rs`
+  (lenient `extensions` entry list, last-wins), `src/cli/project_hint.rs`
+  (extract the marked resident-rules section; `{{RESIDENT_RULES}}`; fail
+  closed on a missing marker), `assets/skills/*/SKILL.md.tmpl` (15),
+  `assets/commands/*.md` (15), the new instruction assets (`archive`,
+  `explore`, `ideation`, `steps`, `reverse-engineer`, `characterize`,
+  `domain-modeling`, `dev-principles`, `grill-me`, `grill-with-docs`),
+  `assets/instructions/review.md`, `design-review.md`, `tasks.md`,
+  `tasks-reverse.md`, `assets/agents-project-hint.md`,
+  `assets/config.yaml.tmpl`, the named step-definition files, and the arc42
+  chapters 05/06/08/10/11 (`08-crosscutting-concepts.md`,
+  `10-quality-requirements.md` per §Exact file changes). No new dependency, no
+  render cache, no new command surface; `resolve_instruction` keeps its
+  signature and order; the sync render path stays untouched beyond exposing
+  `render_conditionals`; `src/cli/eject.rs` keeps materializing raw assets.
+- **Commit discipline**: one atomic commit per scenario (RED+GREEN+REFACTOR
+  together): `givn commit -m "feat(<capability>): <shared release note>"` for
+  regular scenarios, `test(e2e): <shared release note>` for `@e2e` scenarios;
+  the scenario title goes in the message body. Record the revision identifier
+  immediately; never reuse one. A commit touching only the spec or a stub
+  means the task is not done.
+- **Personas are review lenses, never Gherkin actors**: the scenarios'
+  actors (`the user`, `the agent`, `the developer`, `the consumer`) stay
+  distinct from `developer--primary-user`, `agent--technical-role`,
+  `givn-maintainer--owner`.
+- **Terminal transcript evidence (`@e2e` only)**: after the scenario's final
+  assertion, commit one transcript at
+  `givn/changes/extended-rules/evidence/visual/<scenario-slug>/transcript.txt`
+  (`<scenario-slug>` = kebab-case scenario title, `givn::integrity_hook::scenario_slug`),
+  recording the scenario title, the exact `argv`, the working-directory
+  disposition, the exit code, and the raw stdout and stderr. Preserve raw
+  output; never substitute file excerpts for stdout. Intermediate captures, if
+  any, live under `reports/visual/` and are not review evidence.
+- **Local runnability / digital twins** (`design.md` §Local runnability &
+  digital twins): the system runs and tests locally with `./run-tests.sh`;
+  no external or third-party service is touched, so no docker-compose stack,
+  isolated network, or digital twin is required. Every changed action is a
+  real CLI subprocess (or a real PTY for interactive init); no server, no
+  network dependency, no interface obstacle anticipated.
+- **Track progress rule**: check each box immediately after completing it —
+  before starting the next scenario. Never batch-check boxes at the end.
+
+## Domain constraints (from the owning use cases)
+
+| Task group | Use-case rule or guarantee | Persona impact |
+|---|---|---|
+| `serve-extended-rules` (obtain-effective-guidance) | The served content is the extended rule: the built-in rules resolved from the canonical asset (or the project's replacement of the facet) plus the project's extension; an extension never overrides, suppresses, or reorders them; text and machine-readable paths carry identical content; a request never mutates project state; the unknown-id refusal, change-context rules, and machine contract shape are unchanged; built-in rules stay technology-agnostic. | `agent--technical-role` receives deterministic, complete content on both paths; `developer--primary-user` reads the same request manually. |
+| `instruction-extension` (extend-an-instruction) | The extension lives in project-owned configuration; it never enters generated files, the managed revision, or the published clean-history surface; it is effective at the next request; a rejected entry warns and is skipped and nothing is mutated; every upgrade leaves it untouched; removing it restores the built-in rules alone; a textually contradicting rule appears beside the built-in rule (no semantic conflict detection). | `developer--primary-user` keeps rules that survive sync and upgrade; `givn-maintainer--owner` keeps one canonical asset per rule. |
+| `initialize-a-project` (initialize-project) | Generated guidance carries trigger metadata, invocation orchestration, and the direction to the served instruction only; the project-start block renders its task-checkoff and commit-message obligations from the canonical source and keeps the dialog obligation under every option; reconciliation rewrites full copies to the direction, removes disabled-addon files, and preserves project-owned replacements byte-for-byte; selected targets and human-authored text are preserved. | `developer--primary-user` keeps target choices and human text; `agent--technical-role` reaches the effective guidance; `givn-maintainer--owner` maintains one source. |
+| `apply-a-managed-upgrade` (upgrade-a-project) | The managed revision refreshes generated guidance to the direction and never carries the project's extensions; a project-owned replacement stays authoritative and byte-for-byte; improved built-in rules need no revision — the next request serves them. | `developer--primary-user` keeps extensions across upgrades; `givn-maintainer--owner` keeps the allowlist clean. |
+| fragment capabilities `instruction-integrity`, `refresh-generated-guidance`, `match-guidance-to-enabled-addons`, `generate-ideation-guidance` (support fragment) | Resolution and the machine contract stay; every direction names an instruction id that resolves in the same or a later Givn version and is invokable in its documented context (an artifact direction names a resolvable change context; a policy or step direction names none); rule content leaves generated files; addon conditions select the served content; the verified-name gate holds without the addon. | `agent--technical-role` can always invoke the named call; `givn-maintainer--owner` grades one asset per rule. |
+| `prose-consolidation`, `change-release-note`, `visual-design-contract` (create-change) | Content assertions move to the served instruction; the commit and release-note contract has exactly one home (the tasks instruction); the design, design-review, and steps rules move to the served instructions. | `developer--primary-user` sees no drift; `agent--technical-role` reads one source. |
+| `visual-review-gate` (verify-change) | The review block moves to the served review instruction; a terminal change passes review only with a transcript. | `developer--primary-user` keeps review evidence; `givn-maintainer--owner` keeps the gate honest. |
+
+---
+
+## Strict-mode proof and runner setup (do first)
+
+- [x] Setup: confirm the Gherkin runner and its strict mode, create the step-definition skeleton, and record `verify.command`
+      Design constraints:
+        - Runner: `tests/features_runner.rs` executes the `.feature` files for both
+          scopes — the permanent `givn/specs/` (`./run-tests.sh`) and this change's
+          delta (`GIVN_FEATURES=givn/changes/extended-rules/specs`; `design.md` §Runner
+          and strict mode). A bare unit-test runner is never sufficient; do not
+          replace it, and do not add a parallel hand-maintained test file.
+        - Strict mode must be confirmed in code, not assumed: `.fail_on_skipped()`
+          on the Cucumber builder in both the plain path (`main`) and the nextest
+          exact path (`nextest_run`), and the non-zero exit on
+          `failed > 0 || skipped > 0`. Paste the confirming lines; never weaken them.
+        - Step-definition skeleton, ONE FILE PER CAPABILITY, exactly as `design.md`
+          names: create `tests/steps/serve_extended_rules_steps.rs` and
+          `tests/steps/instruction_extension_steps.rs` as module skeletons (step
+          bindings are added scenario by scenario at RED) and register both in
+          `tests/steps/mod.rs`; the existing per-capability files are extended as
+          their scenarios come: `tests/steps/prose_consolidation_steps.rs`,
+          `tests/steps/instruction_integrity_steps.rs`,
+          `tests/steps/template_conditional_rendering_steps.rs`,
+          `tests/steps/init_agent_target_selection_steps.rs`,
+          `tests/steps/run_upgrade_steps.rs`,
+          `tests/steps/visual_design_contract_steps.rs`,
+          `tests/steps/visual_review_gate_steps.rs`. Never one shared step file.
+          Do NOT create the E2E files before the E2E setup task.
+        - Config home: in this project the verify commands live in
+          `givn/commands.yaml` (not `givn/config.yaml`). Confirm and record the
+          actual values; edit only if they differ from `verify.command:
+          ./run-tests.sh` and `verify.e2e_command: ./run-tests.sh --e2e`.
+        - Confirm delta discovery and the unit budget:
+          `GIVN_FEATURES=givn/changes/extended-rules/specs GIVN_CUCUMBER_TAGS='' cargo nextest list --locked --test features_runner`
+          → 68 units; `GIVN_CUCUMBER_TAGS='not @e2e'` → 56; `GIVN_CUCUMBER_TAGS='@e2e'` → 12.
+      PROOF OF STRICTNESS (mandatory — non-zero exit required; paste command +
+      output for each step):
+        1. Write a throwaway probe feature (one scenario, one step with no binding)
+           at `givn/changes/extended-rules/probe/probe.feature` and run it scoped:
+           `GIVN_FEATURES=givn/changes/extended-rules/probe cargo test --locked --test features_runner -- --exact "probe.feature::Probe with an undefined step"`
+           → MUST exit non-zero with an undefined-step failure.
+        2. Bind that step with an `unimplemented!()` stub and run the same command
+           → MUST exit non-zero with the panic.
+        3. Remove the probe file and the temporary binding immediately; re-run the
+           discovery listing to confirm 68 units and no probe title.
+      ```
+      $ sed -n '55p;64,65p;151p' tests/features_runner.rs
+        .fail_on_skipped()
+    if stats.failed > 0 || stats.skipped > 0 {
+        std::process::exit(1);
+        .fail_on_skipped()
+      $ rg -n "command:|e2e_command:" givn/commands.yaml
+      2:  command: "./run-tests.sh"
+      3:  e2e_command: "./run-tests.sh --e2e"
+
+      Discovery (GIVN_FEATURES=givn/changes/extended-rules/specs):
+      $ GIVN_CUCUMBER_TAGS=''        cargo nextest list --locked --test features_runner → 68 units
+      $ GIVN_CUCUMBER_TAGS='not @e2e' cargo nextest list --locked --test features_runner → 56 units
+      $ GIVN_CUCUMBER_TAGS='@e2e'      cargo nextest list --locked --test features_runner → 12 units
+
+      Probe 1 — undefined step (non-zero required):
+      $ GIVN_FEATURES=givn/changes/extended-rules/probe cargo test --locked --test features_runner -- --exact "probe.feature::Probe with an undefined step"
+            Step doesn't match any function
+        1 scenario (1 failed), 1 step (1 failed)
+        error: test failed, to rerun pass `--test features_runner`        EXIT=101
+
+      Probe 2 — `unimplemented!()` stub (non-zero required):
+      $ (same command after binding the step with unimplemented!())
+            Step panicked. Captured output: not implemented
+        1 scenario (1 failed), 1 step (1 failed)
+        error: test failed, to rerun pass `--test features_runner`        EXIT=101
+
+      Probes removed; re-listing: 68 units, no probe title.
+      Skeletons created: tests/steps/serve_extended_rules_steps.rs,
+      tests/steps/instruction_extension_steps.rs; registered in
+      tests/steps/mod.rs. No runner or config edit was needed.
+      ```
+      - [x] COMMIT: `748a10f3` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            (expected: none — strict mode and the commands already exist) plus the
+            new step-module skeletons and their `mod.rs` registration. Record the
+            revision identifier:
+            ```
+            748a10f3  test(extended-rules): strict-mode proof and step skeletons
+            ```
+
+## Scenario tasks (non-@e2e, in .feature order)
+
+- [x] prose-consolidation: The propose and archive commands carry the seed stamping instructions
+      Design constraints:
+        - Served-content seam: `givn instructions proposal --change <active>` reads `assets/instructions/proposal.md` and must contain "proposed by"; `givn instructions archive --change <active>` reads the new `assets/instructions/archive.md` and must contain "implemented in" — the seed-stamping instructions move into the served instruction assets.
+        - Generated seam: `assets/commands/givn-propose.md` and `assets/commands/givn-archive.md` are rewritten to the direction (trigger metadata + invocation orchestration + the call), carrying no rule copy; the direction assertions use the generic direction steps in `tests/steps/prose_consolidation_steps.rs`.
+        - Assertions: the served proposal instruction contains "proposed by"; the served archive instruction contains "implemented in"; the generated givn-propose command directs the author to the proposal instruction; the generated givn-archive command directs the archivist to the archive instruction.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/prose-consolidation.feature::The propose and archive commands carry the seed stamping instructions"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/prose-consolidation.feature::The propose and archive commands carry the seed stamping instructions"
+            Feature: prose-consolidation
+              Scenario: The propose and archive commands carry the seed stamping instructions
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the served proposal instruction contains "proposed by"
+               ✘  And the served archive instruction contains "implemented in"
+                  Step panicked. Captured output: givn instructions archive failed: error: unknown artifact 'archive'. Known artifacts: proposal, specs, design, design-review, tasks, review, arc42-docs
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: the `archive` instruction id does not exist yet; the CLI refuses it.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            assets/instructions/archive.md (new: archive rules — gate, seed stamping, guardrails)
+            assets/commands/givn-archive.md (orchestration + direction to `givn instructions archive`)
+            assets/commands/givn-propose.md (artifact-specific rules section removed; direction names `givn instructions proposal`)
+            tests/steps/serve_extended_rules_steps.rs (served_instruction helper + contains/does-not-contain steps)
+            tests/steps/prose_consolidation_steps.rs (given with active change; direction step)
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the production edits)
+            Feature: prose-consolidation
+              Scenario: The propose and archive commands carry the seed stamping instructions
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the served proposal instruction contains "proposed by"
+               ✔  And the served archive instruction contains "implemented in"
+               ✔  And the generated givn-propose command directs the author to the proposal instruction
+               ✔  And the generated givn-archive command directs the archivist to the archive instruction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 13.31s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `1eb811fc` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            1eb811fc — feat(prose-consolidation): <release note>; body: Scenario: The propose and archive commands carry the seed stamping instructions
+            ```
+
+- [x] visual-design-contract: Synchronized authoring guidance carries the classification, driver, and persona rules
+      Design constraints:
+        - Served-content seams: `assets/instructions/design.md` carries "renders HTML, CSS, or JavaScript in a browser" and "default browser driver"; `assets/instructions/design-review.md` carries "opposite classification"; `assets/instructions/proposal.md` carries "operator confirmation" — requested with the artifact change context.
+        - Real `givn skills sync` first; every content assertion reads the served instruction, never a generated copy; the generated files only carry the direction.
+        - Step files: `tests/steps/prose_consolidation_steps.rs` (shared served-content and direction steps) and `tests/steps/visual_design_contract_steps.rs` (capability-specific steps) per design.md §Step definitions.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/visual-design-contract.feature::Synchronized authoring guidance carries the classification, driver, and persona rules"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/visual-design-contract.feature::Synchronized authoring guidance carries the classification, driver, and persona rules"
+            Feature: Visual Design Contract
+              Scenario: Synchronized authoring guidance carries the classification, driver, and persona rules
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the served design instruction contains "renders HTML, CSS, or JavaScript in a browser"
+               ✔  And the served design instruction contains "default browser driver"
+               ✔  And the served design-review instruction contains "opposite classification"
+               ✔  And the served proposal instruction contains "operator confirmation"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            BASELINE_GREEN — assertion migration: every step binding already exists
+            (the shared `Given a givn project with all agent skill targets enabled and
+            an active change` from the prose-consolidation task, the generic sync When,
+            and the shared served-instruction content steps), and the served design,
+            design-review, and proposal instructions already carry the rules the old
+            scenario read from the generated copies. This is the recorded
+            ORACLE_RED case: the old contract already passes.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "opposite classification" → "opposite categorization" in assets/instructions/design-review.md; same scoped command)
+            Feature: Visual Design Contract
+              Scenario: Synchronized authoring guidance carries the classification, driver, and persona rules
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the served design instruction contains "renders HTML, CSS, or JavaScript in a browser"
+               ✔  And the served design instruction contains "default browser driver"
+               ✘  And the served design-review instruction contains "opposite classification"
+                  Step panicked. Captured output: the served design-review instruction is missing "opposite classification"
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)
+            1 step failed                                                     EXIT=101
+            The omission makes exactly the matching assertion fail, so the assertion
+            discriminates; the excerpt was restored immediately (`git checkout --
+            assets/instructions/design-review.md`) and the scoped command passed
+            again. No production switch, exception, fake success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — assertion migration only. The delta scenario re-points the
+            permanent scenario's generated-copy assertions at the served
+            instructions (`assets/instructions/design.md`, `design-review.md`,
+            `proposal.md`), which already carry the classification, driver, and
+            persona rules; the generated-file direction rewrites are delivered by
+            the scenarios whose own assertions name those directions.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Visual Design Contract
+              Scenario: Synchronized authoring guidance carries the classification, driver, and persona rules
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the served design instruction contains "renders HTML, CSS, or JavaScript in a browser"
+               ✔  And the served design instruction contains "default browser driver"
+               ✔  And the served design-review instruction contains "opposite classification"
+               ✔  And the served proposal instruction contains "operator confirmation"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `dcb785cb` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            dcb785cb — feat(visual-design-contract): <release note>; body: Scenario: Synchronized authoring guidance carries the classification, driver, and persona rules
+            ```
+
+- [x] instruction-extension: Changing an extension changes the next served content and touches nothing else
+      Design constraints:
+        - Extension source: the project-owned `extensions:` map in `givn/config.yaml`; `src/config/extensions.rs::load` reads it on every request (no render cache, nothing written); the change is a fixture edit, not a command.
+        - Assertions: the served proposal content carries "Keep proposals under 300 words"; no installed guidance file carries the changed rule; no revision carries the changed rule — check the generated files and the repository history, not the config file.
+        - Step file: `tests/steps/instruction_extension_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::Changing an extension changes the next served content and touches nothing else"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::Changing an extension changes the next served content and touches nothing else"
+            Feature: A project extends an instruction's built-in rules
+              Scenario: Changing an extension changes the next served content and touches nothing else
+               ✔  Given a Givn project with an active change and an extension for the proposal instruction
+               ✔  When the developer changes the project's extension for the proposal instruction to the rule "Keep proposals under 300 words"
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✘  Then the served content carries the changed rule
+                  Step panicked. Captured output: the served proposal content carries no marked extension section: # Instruction: proposal
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: the product ignores the project's extension map
+            entirely — `givn instructions proposal` succeeds but serves the
+            built-in rules alone, so the changed rule is absent and no
+            `## Project extension` section exists.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            src/config/extensions.rs (new: load — validate + warn per rejected entry;
+              append — the marked ## Project extension section)
+            src/config/overlay.rs (OverlayDoc gains the lenient `extensions` entry
+              list: raw values in document order, repeated key last-wins, duplicate
+              keys and malformed values never fail a command)
+            src/config/mod.rs (register the new module)
+            src/cli/instructions.rs (append the project's rules on the text and JSON
+              serve paths, both the artifact and the non-artifact fallback)
+            assets/config.yaml.tmpl (documents `extensions:` in the managed comment
+              scaffold so new and upgraded projects see the key)
+            tests/steps/serve_extended_rules_steps.rs (request/record fixtures plus
+              the changed-rule assertion)
+            tests/steps/instruction_extension_steps.rs (fixture, change, and
+              no-file/no-revision assertions)
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the production edits)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: Changing an extension changes the next served content and touches nothing else
+               ✔  Given a Givn project with an active change and an extension for the proposal instruction
+               ✔  When the developer changes the project's extension for the proposal instruction to the rule "Keep proposals under 300 words"
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the served content carries the changed rule
+               ✔  And no installed guidance file carries the changed rule
+               ✔  And no revision carries the changed rule
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.96s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `7c842b31` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            7c842b31 — feat(instruction-extension): <release note>; body: Scenario: Changing an extension changes the next served content and touches nothing else
+            ```
+
+- [x] instruction-extension: Removing an extension restores the built-in rules alone
+      Design constraints:
+        - The extension never entered installed files or the managed revision, so removal needs no cleanup: delete the fixture entry and request again.
+        - Assertions: the served content is the built-in rules alone (no `## Project extension` section); the installed guidance is unchanged (byte-for-byte before/after removal).
+        - Step file: `tests/steps/instruction_extension_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::Removing an extension restores the built-in rules alone"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::Removing an extension restores the built-in rules alone"
+            Feature: A project extends an instruction's built-in rules
+              Scenario: Removing an extension restores the built-in rules alone
+               ✔  Given a Givn project with an active change and an extension for the proposal instruction
+               ✔  When the developer removes the project's extension for the proposal instruction
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the served content is the built-in rules alone
+               ✔  And the installed guidance is unchanged
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the removal semantics are delivered by
+            the coupled earlier scenario's edit (the extension is read from the
+            config per request, so deleting the entry restores the built-in rules
+            with no cleanup). This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission in the isolated fixture):
+            $ (temporarily made the removal step a no-op so the recorded extension
+               stays effective; same scoped command)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: Removing an extension restores the built-in rules alone
+               ✔  Given a Givn project with an active change and an extension for the proposal instruction
+               ✔  When the developer removes the project's extension for the proposal instruction
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✘  Then the served content is the built-in rules alone
+                  Step panicked. Captured output: the served proposal content carries an extension section
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            With the removal omitted, the served content carries the section and
+            the assertion fails, so it discriminates; the real removal step was
+            restored immediately and the scoped command passed again. No
+            production switch, exception, fake success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the mechanism was delivered by the previous scenario's serving
+            path (src/config/extensions.rs reads the map on every request, so a
+            removed entry simply stops being appended). This scenario is the
+            removal negative control: no installed file or revision was ever
+            touched, so removal needs no cleanup.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the real removal step)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: Removing an extension restores the built-in rules alone
+               ✔  Given a Givn project with an active change and an extension for the proposal instruction
+               ✔  When the developer removes the project's extension for the proposal instruction
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the served content is the built-in rules alone
+               ✔  And the installed guidance is unchanged
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.33s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `720a41d7` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            720a41d7 — feat(instruction-extension): <release note>; body: Scenario: Removing an extension restores the built-in rules alone
+            ```
+
+- [x] instruction-extension: An extension for an unknown instruction is dropped with a warning
+      Design constraints:
+        - Validation runs when guidance is resolved: an instruction key that does not resolve through the request path warns `warning: ignoring extension for unknown instruction 'propozal'` and is skipped in config document order.
+        - Assertions: the warning names "propozal"; the served content is the built-in rules alone; the request still succeeds; no project state changes (config byte-for-byte).
+        - Step file: `tests/steps/instruction_extension_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::An extension for an unknown instruction is dropped with a warning"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::An extension for an unknown instruction is dropped with a warning"
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An extension for an unknown instruction is dropped with a warning
+               ✔  Given a Givn project with an active change
+               ✔  When the project's configuration names the unknown instruction "propozal"
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✔  Then a warning names the unknown instruction "propozal"
+               ✔  And the served content is the built-in rules alone
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the unknown-id validation is delivered by
+            the coupled earlier scenario's edit (`extensions::load` resolves every
+            id when guidance is requested and warns for the unresolvable one).
+            ORACLE_RED calibration (controlled omission from the delivered output):
+            $ (temporarily suppressed the unknown-instruction warning emission in
+               src/config/extensions.rs; same scoped command)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An extension for an unknown instruction is dropped with a warning
+               ✔  Given a Givn project with an active change
+               ✔  When the project's configuration names the unknown instruction "propozal"
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✘  Then a warning names the unknown instruction "propozal"
+                  Step panicked. Captured output: no warning names the unknown instruction in the request stderr: ""
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            With the warning omitted, the assertion fails on the same fixture, so
+            it discriminates; the emission was restored immediately and the scoped
+            command passed again. No production switch, exception, fake success,
+            or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the validation was delivered by the previous scenarios' serving
+            path (`src/config/extensions.rs::load` skips the unresolvable id with
+            `warning: ignoring extension for unknown instruction '<id>'`); this
+            scenario binds the warning assertion and the built-in-alone control.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the warning emission)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An extension for an unknown instruction is dropped with a warning
+               ✔  Given a Givn project with an active change
+               ✔  When the project's configuration names the unknown instruction "propozal"
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✔  Then a warning names the unknown instruction "propozal"
+               ✔  And the served content is the built-in rules alone
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.97s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `f7aaaa61` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            f7aaaa61 — feat(instruction-extension): <release note>; body: Scenario: An extension for an unknown instruction is dropped with a warning
+            ```
+
+- [x] instruction-extension: A malformed extension entry is dropped with a warning
+      Design constraints:
+        - A value that is not a list, or a list element that is not a string, warns `warning: ignoring malformed extension for '<id>': …` and is skipped; one warning line per rejected entry, in config document order.
+        - Assertions: a warning names the malformed entry; the served content is the built-in rules alone; nothing is mutated.
+        - Step file: `tests/steps/instruction_extension_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::A malformed extension entry is dropped with a warning"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::A malformed extension entry is dropped with a warning"
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A malformed extension entry is dropped with a warning
+               ✔  Given a Givn project with an active change
+               ✔  When the project's configuration carries a malformed extension entry for the proposal instruction
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✔  Then a warning names the malformed entry
+               ✔  And the served content is the built-in rules alone
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the malformed-entry validation is
+            delivered by the coupled earlier scenario's edit (`extensions::load`
+            warns and skips a value that is not a rule list).
+            ORACLE_RED calibration (controlled omission from the delivered output):
+            $ (temporarily suppressed the malformed-entry warning emission in
+               src/config/extensions.rs; same scoped command)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A malformed extension entry is dropped with a warning
+               ✔  Given a Givn project with an active change
+               ✔  When the project's configuration carries a malformed extension entry for the proposal instruction
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✘  Then a warning names the malformed entry
+                  Step panicked. Captured output: no malformed-extension warning in the request stderr: ""
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            With the warning omitted, the assertion fails on the same fixture, so
+            it discriminates; the emission was restored immediately (the file is
+            byte-identical to the committed state) and the scoped command passed
+            again. No production switch, exception, fake success, or source-text
+            test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the validation was delivered by the earlier scenarios' serving
+            path (`src/config/extensions.rs::load` warns
+            `warning: ignoring malformed extension for '<id>': expected a list of
+            rule strings` and skips the entry); this scenario binds the warning
+            assertion and the built-in-alone control.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the warning emission)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A malformed extension entry is dropped with a warning
+               ✔  Given a Givn project with an active change
+               ✔  When the project's configuration carries a malformed extension entry for the proposal instruction
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✔  Then a warning names the malformed entry
+               ✔  And the served content is the built-in rules alone
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.91s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `0722f40c` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            0722f40c — feat(instruction-extension): <release note>; body: Scenario: A malformed extension entry is dropped with a warning
+            ```
+
+- [x] instruction-extension: An empty extension list is valid and adds nothing
+      Design constraints:
+        - An empty list — like a list whose entries were all skipped — is valid and adds nothing; it is not a rejection and produces no warning.
+        - Assertions: the command exits 0; the served content carries the built-in proposal rules; the served content carries no extension section.
+        - Step file: `tests/steps/instruction_extension_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::An empty extension list is valid and adds nothing"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::An empty extension list is valid and adds nothing"
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An empty extension list is valid and adds nothing
+               ✔  Given a Givn project with an active change
+               ✔  And the project's configuration carries an empty extension list for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the command exits 0
+               ✔  And the served content carries the built-in proposal rules
+               ✔  And the served content carries no extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — an empty list adds nothing by
+            construction (`extensions::append` returns the content unchanged when
+            no rule remains), delivered by the coupled earlier scenario's edit.
+            ORACLE_RED calibration (controlled omission from the delivered output):
+            $ (temporarily omitted the empty-list guard in
+               src/config/extensions.rs::append so the marked section was appended
+               even with no rules; same scoped command)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An empty extension list is valid and adds nothing
+               ✔  Given a Givn project with an active change
+               ✔  And the project's configuration carries an empty extension list for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the command exits 0
+               ✔  And the served content carries the built-in proposal rules
+               ✘  And the served content carries no extension section
+                  Step panicked. Captured output: the served proposal content carries an extension section
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            6 steps (5 passed, 1 failed)                                  EXIT=101
+            With the guard omitted, the section appears and exactly the last
+            assertion fails, so it discriminates; the guard was restored
+            immediately (the file is byte-identical to the committed state) and
+            the scoped command passed again. No production switch, exception,
+            fake success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the empty-list behavior was delivered by the earlier scenarios'
+            serving path (`extensions::append` adds nothing when no rule remains);
+            this scenario binds the exit-0, built-in-rules, and no-section
+            controls.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the empty-list guard)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An empty extension list is valid and adds nothing
+               ✔  Given a Givn project with an active change
+               ✔  And the project's configuration carries an empty extension list for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the command exits 0
+               ✔  And the served content carries the built-in proposal rules
+               ✔  And the served content carries no extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.85s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `e6fff160` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            e6fff160 — feat(instruction-extension): <release note>; body: Scenario: An empty extension list is valid and adds nothing
+            ```
+
+- [x] instruction-extension: A whitespace-only rule entry is skipped with a warning
+      Design constraints:
+        - A rule that is empty or whitespace-only after trimming is skipped with the malformed warning naming the proposal instruction; every rejection is deterministic, one warning line per rejected entry.
+        - Assertions: a warning names the malformed extension for the proposal instruction; the served content is the built-in rules alone.
+        - Step file: `tests/steps/instruction_extension_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::A whitespace-only rule entry is skipped with a warning"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::A whitespace-only rule entry is skipped with a warning"
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A whitespace-only rule entry is skipped with a warning
+               ✔  Given a Givn project with an active change
+               ✔  And the project's configuration carries a whitespace-only rule for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then a warning names the malformed extension for the proposal instruction
+               ✔  And the served content is the built-in rules alone
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the trim-and-warn validation is delivered
+            by the coupled earlier scenario's edit (`extensions::load` warns and
+            skips an element that is empty after trimming).
+            ORACLE_RED calibration (controlled omission from the delivered output):
+            $ (temporarily suppressed the element-level malformed warning emission in
+               src/config/extensions.rs; same scoped command)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A whitespace-only rule entry is skipped with a warning
+               ✔  Given a Givn project with an active change
+               ✔  And the project's configuration carries a whitespace-only rule for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✘  Then a warning names the malformed extension for the proposal instruction
+                  Step panicked. Captured output: no malformed-extension warning in the request stderr: ""
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            With the warning omitted, the assertion fails on the same fixture, so
+            it discriminates; the emission was restored immediately (the file is
+            byte-identical to the committed state) and the scoped command passed
+            again. No production switch, exception, fake success, or source-text
+            test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the whitespace-only validation was delivered by the earlier
+            scenarios' serving path (`extensions::load` trims every rule and warns
+            `warning: ignoring malformed extension for '<id>': a rule must be a
+            non-empty string` for an empty result); this scenario binds the warning
+            assertion and the built-in-alone control.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the warning emission)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A whitespace-only rule entry is skipped with a warning
+               ✔  Given a Givn project with an active change
+               ✔  And the project's configuration carries a whitespace-only rule for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then a warning names the malformed extension for the proposal instruction
+               ✔  And the served content is the built-in rules alone
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.79s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `a5d744b9` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            a5d744b9 — feat(instruction-extension): <release note>; body: Scenario: A whitespace-only rule entry is skipped with a warning
+            ```
+
+- [x] instruction-extension: A repeated instruction key keeps the last entry
+      Design constraints:
+        - `src/config/overlay.rs` reads `extensions` as an ordered entry list (a small private wrapper carrying raw `serde_yaml_ng::Value`s) instead of a duplicate-checked `Value` mapping, because the pinned parser rejects duplicate keys inside a `Value` mapping; a repeated instruction key keeps its last occurrence (recorded behavior).
+        - Assertions: the served content carries the rule from the last entry; the served content does not carry the rule from the earlier entry.
+        - Step file: `tests/steps/instruction_extension_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::A repeated instruction key keeps the last entry"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::A repeated instruction key keeps the last entry"
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A repeated instruction key keeps the last entry
+               ✔  Given a Givn project with an active change
+               ✔  And the project's configuration carries two extension entries for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the served content carries the rule from the last entry
+               ✔  And the served content does not carry the rule from the earlier entry
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the lenient entry-list read (duplicate
+            keys parse; the last occurrence replaces the earlier one) is delivered
+            by the coupled earlier scenario's edit in `src/config/overlay.rs`.
+            ORACLE_RED calibration (controlled omission from the delivered behavior):
+            $ (temporarily reversed the wrapper to keep the FIRST occurrence instead
+               of the last; same scoped command)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A repeated instruction key keeps the last entry
+               ✔  Given a Givn project with an active change
+               ✔  And the project's configuration carries two extension entries for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✘  Then the served content carries the rule from the last entry
+                  Step panicked. Captured output: the served proposal extension section is missing the last entry's rule "Keep proposals under 900 words"
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            With first-wins, exactly the last-entry assertion fails, so it
+            discriminates; last-wins was restored immediately (the file is
+            byte-identical to the committed state) and the scoped command passed
+            again. No production switch, exception, fake success, or source-text
+            test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the repeated-key behavior was delivered by the earlier
+            scenarios' serving path (`src/config/overlay.rs::ExtensionEntries`
+            replaces a repeated instruction key with its last occurrence; the
+            duplicate keys never reach a `serde_yaml_ng::Value` mapping). This
+            scenario binds the last-entry and earlier-entry-absent assertions.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring last-wins)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A repeated instruction key keeps the last entry
+               ✔  Given a Givn project with an active change
+               ✔  And the project's configuration carries two extension entries for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the served content carries the rule from the last entry
+               ✔  And the served content does not carry the rule from the earlier entry
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.96s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `e8231e5f` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            e8231e5f — feat(instruction-extension): <release note>; body: Scenario: A repeated instruction key keeps the last entry
+            ```
+
+- [x] instruction-extension: An extension extends a policy and a step instruction alike
+      Design constraints:
+        - The map's ids may name a policy instruction (`dialog`) and a step instruction (`ideation`); both resolve through the non-artifact fallback and require no change context.
+        - Assertions: each served content carries its project's rule under the marked `## Project extension` section; the built-in rules stay unmodified (extension adds, never overrides, suppresses, or reorders).
+        - Step file: `tests/steps/instruction_extension_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::An extension extends a policy and a step instruction alike"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::An extension extends a policy and a step instruction alike"
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An extension extends a policy and a step instruction alike
+               ✔  Given a Givn project with an active change
+               ✔  When the project's configuration records a rule for the dialog policy and for the ideation step
+               ✔  And the agent requests the dialog policy through the Givn CLI
+               ✔  And the agent requests the ideation instructions through the Givn CLI
+               ✘  Then each served content carries its project's rule in the marked extension section
+                  Step panicked. Captured output: the served ideation content carries no marked extension section:
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: the `ideation` step instruction does not exist yet,
+            so `givn instructions ideation` is refused with the unknown-artifact
+            error; the served ideation content is empty and carries no extension
+            section. (The `dialog` policy request already serves its extension.)
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            assets/instructions/ideation.md (new canonical step-instruction asset:
+              the minimum content that makes the id resolve through the non-artifact
+              fallback and serve; the full ideation discipline migration is owned by
+              the generate-ideation-guidance scenarios, whose content assertions
+              bind each excerpt as it moves out of the givn-ideation skill template)
+            tests/steps/serve_extended_rules_steps.rs (recorded-served-ids fixture
+              plus the each-served-content assertion)
+            tests/steps/instruction_extension_steps.rs (policy-and-step fixture step)
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after creating assets/instructions/ideation.md)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An extension extends a policy and a step instruction alike
+               ✔  Given a Givn project with an active change
+               ✔  When the project's configuration records a rule for the dialog policy and for the ideation step
+               ✔  And the agent requests the dialog policy through the Givn CLI
+               ✔  And the agent requests the ideation instructions through the Givn CLI
+               ✔  Then each served content carries its project's rule in the marked extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.28s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `1844715d` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            1844715d — feat(instruction-extension): <release note>; body: Scenario: An extension extends a policy and a step instruction alike
+            ```
+
+- [x] generate-ideation-guidance: The ideation skill ships without any addon enabled
+      Design constraints:
+        - Content seam: the new canonical `assets/instructions/ideation.md` renders through `givn instructions ideation` (step id, no change context) with no addon enabled — the unconditional discipline renders, the addon-gated fragments are omitted; shared served-instruction step per Global constraints §Step-file ownership.
+        - Generated seam: `assets/skills/givn-ideation/SKILL.md.tmpl` becomes the direction; real `givn skills sync` in a project root without addons.
+        - Assertions: the served ideation instruction contains "Frame"; the generated givn-ideation guidance directs the ideator to the ideation instruction.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation skill ships without any addon enabled"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation skill ships without any addon enabled"
+            Feature: Generate ideation guidance
+              Scenario: The ideation skill ships without any addon enabled
+               ✔  Given a project root with givn/ initialised without addons
+               ✔  When the user runs `givn skills sync`
+               ✘  Then the served ideation instruction contains "Frame"
+                  Step panicked. Captured output: the served ideation instruction is missing "Frame": # Instruction: ideation
+                  ... (the minimal placeholder: intro plus the three Scope bullets)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: the served instruction is still the minimal
+            placeholder asset — it carries the scope bullets only, no "Frame"
+            section — and the generated givn-ideation skill still carries the
+            old discipline copy and names no `givn instructions ideation`
+            direction.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            assets/instructions/ideation.md (rewritten: the whole ideation discipline
+              moved out of the skill template — context and Frame, Personas, Topic
+              state, the question/term/seed/use-case schemas, Handoff, One question at
+              a time, Event Storming, Use Case Definition, Use Case Elaboration,
+              Quality reviews, What you must NOT do — with the domain_modeling and
+              arc42 gated fragments as `{{#if addons.<key>}}` blocks)
+            assets/skills/givn-ideation/SKILL.md.tmpl (direction: the discipline is
+              served by `givn instructions ideation`; rule copy removed, invocation
+              orchestration kept)
+            src/skills/render.rs (render_conditionals exposed; render_template delegates)
+            src/cli/instructions.rs (render the resolved instruction with the
+              project's enabled addons on the text and JSON paths, both the artifact
+              and the non-artifact fallback, before appending the extension)
+            tests/steps/prose_consolidation_steps.rs (generic direction step
+              `the generated givn-<file> guidance directs …`)
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the production edits)
+            Feature: Generate ideation guidance
+              Scenario: The ideation skill ships without any addon enabled
+               ✔  Given a project root with givn/ initialised without addons
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the served ideation instruction contains "Frame"
+               ✔  And the generated givn-ideation guidance directs the ideator to the ideation instruction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.89s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `2d389d11` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            2d389d11 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation skill ships without any addon enabled
+            ```
+
+- [x] generate-ideation-guidance: The ideation guidance carries the phase ladder and the one-question rule
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` carries the whole ideation discipline (moved out of the skill template); the dialog obligation stays a direction, so "givn instructions dialog" appears.
+        - Assertions (served ideation instruction): contains "Event Storming", "Use Case Definition", "Use Case Elaboration", "Handoff", "one question at a time", "quality review", "givn instructions dialog", "In practice:", "Rejected:".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance carries the phase ladder and the one-question rule"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after binding the shared `Given a Givn project`
+               fixture and removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the phase ladder and the one-question rule
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "Event Storming"
+               ✔  And the served ideation instruction contains "Use Case Definition"
+               ✔  And the served ideation instruction contains "Use Case Elaboration"
+               ✔  And the served ideation instruction contains "Handoff"
+               ✔  And the served ideation instruction contains "one question at a time"
+               ✔  And the served ideation instruction contains "quality review"
+               ✔  And the served ideation instruction contains "givn instructions dialog"
+               ✔  And the served ideation instruction contains "In practice:"
+               ✔  And the served ideation instruction contains "Rejected:"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            11 steps (11 passed)                                         EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the previous scenario's slice moved
+            the whole discipline into the served asset, so the new assertions
+            already pass. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "Event Storming" → "Eventstorming" in
+               assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the phase ladder and the one-question rule
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✘  Then the served ideation instruction contains "Event Storming"
+                  Step panicked. Captured output: the served ideation instruction is missing "Event Storming": # Instruction: ideation
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the content was delivered by the previous scenario's slice
+            (`assets/instructions/ideation.md` carries the phase ladder, the One
+            question at a time section, Quality reviews, the dialog direction, and
+            the In practice/Rejected schemas). This scenario binds the served-content
+            assertions and adds the shared `Given a Givn project` fixture
+            (tests/steps/serve_extended_rules_steps.rs).
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the phase ladder and the one-question rule
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "Event Storming"
+               ✔  And the served ideation instruction contains "Use Case Definition"
+               ✔  And the served ideation instruction contains "Use Case Elaboration"
+               ✔  And the served ideation instruction contains "Handoff"
+               ✔  And the served ideation instruction contains "one question at a time"
+               ✔  And the served ideation instruction contains "quality review"
+               ✔  And the served ideation instruction contains "givn instructions dialog"
+               ✔  And the served ideation instruction contains "In practice:"
+               ✔  And the served ideation instruction contains "Rejected:"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            11 steps (11 passed)                                         EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.21s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 11 steps (11 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `2aa7a2c4` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            2aa7a2c4 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the phase ladder and the one-question rule
+            ```
+
+- [x] generate-ideation-guidance: The ideation guidance binds personas to the artifacts that affect them
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` keeps the persona-to-artifact binding rule.
+        - Assertions (served ideation instruction): contains "stakeholder type", "persona segment", "persona promotion", "every artifact that affects".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance binds personas to the artifacts that affect them"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance binds personas to the artifacts that affect them
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "stakeholder type"
+               ✔  And the served ideation instruction contains "persona segment"
+               ✔  And the served ideation instruction contains "persona promotion"
+               ✔  And the served ideation instruction contains "every artifact that affects"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the whole discipline (Personas section
+            included) was delivered by the first scenario's slice. This is the
+            recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "stakeholder type" → "stakeholder group" in
+               assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance binds personas to the artifacts that affect them
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✘  Then the served ideation instruction contains "stakeholder type"
+                  Step panicked. Captured output: the served ideation instruction is missing "stakeholder type": # Instruction: ideation
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the Personas section moved with the first scenario's slice
+            (`assets/instructions/ideation.md`); this scenario binds the
+            persona-to-artifact binding assertions on the served surface.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance binds personas to the artifacts that affect them
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "stakeholder type"
+               ✔  And the served ideation instruction contains "persona segment"
+               ✔  And the served ideation instruction contains "persona promotion"
+               ✔  And the served ideation instruction contains "every artifact that affects"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `87d1767e` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            87d1767e — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance binds personas to the artifacts that affect them
+            ```
+
+- [x] generate-ideation-guidance: The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` keeps the topic-state persistence and handoff boundary rules.
+        - Assertions (served ideation instruction): contains "givn/ideation/", "open question", "change seed", "session.md", "docs/ideation/", "Handoff never starts a change".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "givn/ideation/"
+               ✔  And the served ideation instruction contains "open question"
+               ✔  And the served ideation instruction contains "change seed"
+               ✔  And the served ideation instruction contains "session.md"
+               ✔  And the served ideation instruction contains "docs/ideation/"
+               ✔  And the served ideation instruction contains "Handoff never starts a change"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            8 steps (8 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the Topic state and Handoff sections
+            were delivered by the first scenario's slice. This is the recorded
+            ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "Handoff never starts a change" →
+               "Handoff never begins a change" in assets/instructions/ideation.md;
+               same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "givn/ideation/"
+               ✔  And the served ideation instruction contains "open question"
+               ✔  And the served ideation instruction contains "change seed"
+               ✔  And the served ideation instruction contains "session.md"
+               ✔  And the served ideation instruction contains "docs/ideation/"
+               ✘  And the served ideation instruction contains "Handoff never starts a change"
+                  Step panicked. Captured output: the served ideation instruction is missing "Handoff never starts a change": # Instruction: ideation
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            8 steps (7 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the Topic state and Handoff sections moved with the first
+            scenario's slice (`assets/instructions/ideation.md`); this scenario
+            binds the persistence, parking, and handoff-boundary assertions.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "givn/ideation/"
+               ✔  And the served ideation instruction contains "open question"
+               ✔  And the served ideation instruction contains "change seed"
+               ✔  And the served ideation instruction contains "session.md"
+               ✔  And the served ideation instruction contains "docs/ideation/"
+               ✔  And the served ideation instruction contains "Handoff never starts a change"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            8 steps (8 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 8 steps (8 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `25af5ee8` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            25af5ee8 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes
+            ```
+
+- [x] generate-ideation-guidance: The explore guidance points to ideation for structured domain work
+      Design constraints:
+        - Content seam: the new canonical `assets/instructions/explore.md` carries the explore discipline and the direction to ideation.
+        - Assertion: the served explore instruction (step id, no change context) contains "givn-ideation".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The explore guidance points to ideation for structured domain work"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The explore guidance points to ideation for structured domain work"
+            Feature: Generate ideation guidance
+              Scenario: The explore guidance points to ideation for structured domain work
+               ✔  Given a Givn project
+               ✔  When the agent requests the explore instructions through the Givn CLI
+               ✘  Then the served explore instruction contains "givn-ideation"
+                  Step panicked. Captured output: givn instructions explore failed: error: unknown artifact 'explore'. Known artifacts: proposal, specs, design, design-review, tasks, review, arc42-docs
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (2 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: the `explore` instruction id does not exist yet;
+            the CLI refuses it, so the served content cannot be asserted.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            assets/instructions/explore.md (new canonical step-instruction asset:
+              the explore discipline moved out of the givn-explore skill — the
+              stance, what you might do, the must-nots, the transitioning-out table,
+              and the explicit `/givn-ideation` direction for structured domain work)
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after creating assets/instructions/explore.md)
+            Feature: Generate ideation guidance
+              Scenario: The explore guidance points to ideation for structured domain work
+               ✔  Given a Givn project
+               ✔  When the agent requests the explore instructions through the Givn CLI
+               ✔  Then the served explore instruction contains "givn-ideation"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            3 steps (3 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 3 steps (3 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `ec188787` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            ec188787 — feat(generate-ideation-guidance): <release note>; body: Scenario: The explore guidance points to ideation for structured domain work
+            ```
+
+- [x] generate-ideation-guidance: The ideation guidance carries the seed schema and its status values
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` carries the change-seed schema and its status values.
+        - Assertions (served ideation instruction): contains "change seed", "Status: ready", "proposed by", "implemented in", "superseded by", "withdrawn", "Accepted decisions", "Suggested start".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance carries the seed schema and its status values"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the seed schema and its status values
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "change seed"
+               ✔  And the served ideation instruction contains "Status: ready"
+               ✔  And the served ideation instruction contains "proposed by"
+               ✔  And the served ideation instruction contains "implemented in"
+               ✔  And the served ideation instruction contains "superseded by"
+               ✔  And the served ideation instruction contains "withdrawn"
+               ✔  And the served ideation instruction contains "Accepted decisions"
+               ✔  And the served ideation instruction contains "Suggested start"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            10 steps (10 passed)                                         EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the seed schema and status lines were
+            delivered by the first scenario's slice (the Handoff section and the
+            seed template moved into the served asset). This is the recorded
+            ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "Status: ready" → "Status: pending" in
+               assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the seed schema and its status values
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "change seed"
+               ✘  And the served ideation instruction contains "Status: ready"
+                  Step panicked. Captured output: the served ideation instruction is missing "Status: ready": # Instruction: ideation
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the Handoff and seed-schema content moved with the first
+            scenario's slice (`assets/instructions/ideation.md`); this scenario
+            binds the schema-field and status-value assertions.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the seed schema and its status values
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "change seed"
+               ✔  And the served ideation instruction contains "Status: ready"
+               ✔  And the served ideation instruction contains "proposed by"
+               ✔  And the served ideation instruction contains "implemented in"
+               ✔  And the served ideation instruction contains "superseded by"
+               ✔  And the served ideation instruction contains "withdrawn"
+               ✔  And the served ideation instruction contains "Accepted decisions"
+               ✔  And the served ideation instruction contains "Suggested start"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            10 steps (10 passed)                                         EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 10 steps (10 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `5ab8be8c` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            5ab8be8c — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the seed schema and its status values
+            ```
+
+- [x] generate-ideation-guidance: The ideation guidance carries the term schema and the collision procedure
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` carries the domain-term record schema and the collision-check procedure (including the direction to the domain-modeling skill).
+        - Assertions (served ideation instruction): contains "domain-terms.md", "`candidate`, `confirmed`, or `rejected`", "Contrast", "First use", "definition and first use", "recorded collision check", "only `confirmed` terms", "never deleted", "givn-domain-modeling", "Collision check", "Grep the durable glossary", "without recorded commands is not a record".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance carries the term schema and the collision procedure"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the term schema and the collision procedure
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "domain-terms.md"
+               ✔  And the served ideation instruction contains "`candidate`, `confirmed`, or `rejected`"
+               ✔  And the served ideation instruction contains "Contrast"
+               ✔  And the served ideation instruction contains "First use"
+               ✔  And the served ideation instruction contains "definition and first use"
+               ✔  And the served ideation instruction contains "recorded collision check"
+               ✔  And the served ideation instruction contains "only `confirmed` terms"
+               ✔  And the served ideation instruction contains "never deleted"
+               ✔  And the served ideation instruction contains "givn-domain-modeling"
+               ✔  And the served ideation instruction contains "Collision check"
+               ✔  And the served ideation instruction contains "Grep the durable glossary"
+               ✔  And the served ideation instruction contains "without recorded commands is not a record"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            14 steps (14 passed)                                         EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the term schema, the search-before-coin
+            procedure, and the addon-gated directions were delivered by the first
+            scenario's slice (`assets/instructions/ideation.md`, rendered with the
+            default project's enabled addons). This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "Grep the durable glossary" →
+               "Grep the glossary" in assets/instructions/ideation.md; same
+               scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the term schema and the collision procedure
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "domain-terms.md"
+               ✔  And the served ideation instruction contains "`candidate`, `confirmed`, or `rejected`"
+               ✔  And the served ideation instruction contains "Contrast"
+               ✔  And the served ideation instruction contains "First use"
+               ✔  And the served ideation instruction contains "definition and first use"
+               ✔  And the served ideation instruction contains "recorded collision check"
+               ✔  And the served ideation instruction contains "only `confirmed` terms"
+               ✔  And the served ideation instruction contains "never deleted"
+               ✔  And the served ideation instruction contains "givn-domain-modeling"
+               ✔  And the served ideation instruction contains "Collision check"
+               ✘  And the served ideation instruction contains "Grep the durable glossary"
+                  Step panicked. Captured output: the served ideation instruction is missing "Grep the durable glossary": # Instruction: ideation
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            13 steps (12 passed, 1 failed)                                EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the term schema and collision procedure moved with the first
+            scenario's slice (`assets/instructions/ideation.md`), including the
+            `addons.domain_modeling` and `addons.arc42` gated fragments; this
+            scenario binds the schema, status, and collision-check assertions.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the term schema and the collision procedure
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "domain-terms.md"
+               ✔  And the served ideation instruction contains "`candidate`, `confirmed`, or `rejected`"
+               ✔  And the served ideation instruction contains "Contrast"
+               ✔  And the served ideation instruction contains "First use"
+               ✔  And the served ideation instruction contains "definition and first use"
+               ✔  And the served ideation instruction contains "recorded collision check"
+               ✔  And the served ideation instruction contains "only `confirmed` terms"
+               ✔  And the served ideation instruction contains "never deleted"
+               ✔  And the served ideation instruction contains "givn-domain-modeling"
+               ✔  And the served ideation instruction contains "Collision check"
+               ✔  And the served ideation instruction contains "Grep the durable glossary"
+               ✔  And the served ideation instruction contains "without recorded commands is not a record"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            14 steps (14 passed)                                         EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 14 steps (14 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `2c14c968` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            2c14c968 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the term schema and the collision procedure
+            ```
+
+- [x] generate-ideation-guidance: The ideation guidance carries the canonical definition and the eight scoping rules
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` carries the canonical use-case definition and the eight scoping rules.
+        - Assertions (served ideation instruction): contains "contract between one primary actor and the system", "One goal, one primary actor", "Goal-shaped, never component-shaped", "Level discipline", "promotion rule", "three or more distinct actor goals", "Placement test", "Mutation containment", "Extension discipline", "Precondition and flow consistency", "Implementation independence", "Relationship semantics".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance carries the canonical definition and the eight scoping rules"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the canonical definition and the eight scoping rules
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "contract between one primary actor and the system"
+               ✔  And the served ideation instruction contains "One goal, one primary actor"
+               ✔  And the served ideation instruction contains "Goal-shaped, never component-shaped"
+               ✔  And the served ideation instruction contains "Level discipline"
+               ✔  And the served ideation instruction contains "promotion rule"
+               ✔  And the served ideation instruction contains "three or more distinct actor goals"
+               ✔  And the served ideation instruction contains "Placement test"
+               ✔  And the served ideation instruction contains "Mutation containment"
+               ✔  And the served ideation instruction contains "Extension discipline"
+               ✔  And the served ideation instruction contains "Precondition and flow consistency"
+               ✔  And the served ideation instruction contains "Implementation independence"
+               ✔  And the served ideation instruction contains "Relationship semantics"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            14 steps (14 passed)                                         EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the Use Case Definition section
+            (canonical definition and the eight rules) moved with the first
+            scenario's slice. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "Mutation containment" → "Mutation boundaries"
+               in assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the canonical definition and the eight scoping rules
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "contract between one primary actor and the system"
+               ✔  And the served ideation instruction contains "One goal, one primary actor"
+               ✔  And the served ideation instruction contains "Goal-shaped, never component-shaped"
+               ✔  And the served ideation instruction contains "Level discipline"
+               ✔  And the served ideation instruction contains "promotion rule"
+               ✔  And the served ideation instruction contains "three or more distinct actor goals"
+               ✔  And the served ideation instruction contains "Placement test"
+               ✘  And the served ideation instruction contains "Mutation containment"
+                  Step panicked. Captured output: the served ideation instruction is missing "Mutation containment": # Instruction: ideation
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            10 steps (9 passed, 1 failed)                                 EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the Use Case Definition section moved with the first scenario's
+            slice (`assets/instructions/ideation.md`); this scenario binds the
+            canonical-definition and scoping-rule assertions.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the canonical definition and the eight scoping rules
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "contract between one primary actor and the system"
+               ✔  And the served ideation instruction contains "One goal, one primary actor"
+               ✔  And the served ideation instruction contains "Goal-shaped, never component-shaped"
+               ✔  And the served ideation instruction contains "Level discipline"
+               ✔  And the served ideation instruction contains "promotion rule"
+               ✔  And the served ideation instruction contains "three or more distinct actor goals"
+               ✔  And the served ideation instruction contains "Placement test"
+               ✔  And the served ideation instruction contains "Mutation containment"
+               ✔  And the served ideation instruction contains "Extension discipline"
+               ✔  And the served ideation instruction contains "Precondition and flow consistency"
+               ✔  And the served ideation instruction contains "Implementation independence"
+               ✔  And the served ideation instruction contains "Relationship semantics"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            14 steps (14 passed)                                         EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 14 steps (14 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `8d1e182f` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            8d1e182f — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the canonical definition and the eight scoping rules
+            ```
+
+- [x] generate-ideation-guidance: The ideation guidance carries the authoring requirements and the handoff mapping
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` carries the use-case authoring requirements and the handoff mapping rules.
+        - Assertions (served ideation instruction): contains "the first actor is the primary actor", "Supporting:", "protects <guarantee>", "never an extension", "never to a capability inside another goal".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance carries the authoring requirements and the handoff mapping"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the authoring requirements and the handoff mapping
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "the first actor is the primary actor"
+               ✔  And the served ideation instruction contains "Supporting:"
+               ✔  And the served ideation instruction contains "protects <guarantee>"
+               ✔  And the served ideation instruction contains "never an extension"
+               ✔  And the served ideation instruction contains "never to a capability inside another goal"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            7 steps (7 passed)                                          EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the Use Case Elaboration authoring
+            requirements and the Handoff mapping line moved with the first
+            scenario's slice. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "the first actor is the primary actor" →
+               "the first actor is the main actor" in assets/instructions/ideation.md;
+               same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the authoring requirements and the handoff mapping
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✘  Then the served ideation instruction contains "the first actor is the primary actor"
+                  Step panicked. Captured output: the served ideation instruction is missing "the first actor is the primary actor": # Instruction: ideation
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the Use Case Elaboration authoring requirements and the Handoff
+            mapping rule moved with the first scenario's slice
+            (`assets/instructions/ideation.md`); this scenario binds those
+            assertions on the served surface.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the authoring requirements and the handoff mapping
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "the first actor is the primary actor"
+               ✔  And the served ideation instruction contains "Supporting:"
+               ✔  And the served ideation instruction contains "protects <guarantee>"
+               ✔  And the served ideation instruction contains "never an extension"
+               ✔  And the served ideation instruction contains "never to a capability inside another goal"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            7 steps (7 passed)                                          EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 7 steps (7 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `51132a38` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            51132a38 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the authoring requirements and the handoff mapping
+            ```
+
+- [x] generate-ideation-guidance: The ideation guidance carries the persona identity criteria and the reuse protocol
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` carries the persona identity criteria and the reuse protocol.
+        - Assertions (served ideation instruction): contains "authority boundary", "evaluation capability", "own vocabulary", "topic stance", "inventory", "Reuse:", "New:", "append-only", "one persona with three stance blocks", "record entries only".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance carries the persona identity criteria and the reuse protocol"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the persona identity criteria and the reuse protocol
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "authority boundary"
+               ✔  And the served ideation instruction contains "evaluation capability"
+               ✔  And the served ideation instruction contains "own vocabulary"
+               ✔  And the served ideation instruction contains "topic stance"
+               ✔  And the served ideation instruction contains "inventory"
+               ✔  And the served ideation instruction contains "Reuse:"
+               ✔  And the served ideation instruction contains "New:"
+               ✔  And the served ideation instruction contains "append-only"
+               ✔  And the served ideation instruction contains "one persona with three stance blocks"
+               ✔  And the served ideation instruction contains "record entries only"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            12 steps (12 passed)                                         EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the Personas identity criteria and the
+            reuse protocol (including the persona-file schema and the Reuse:/New:
+            block) moved with the first scenario's slice. This is the recorded
+            ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "one persona with three stance blocks" →
+               "one persona with three stance parts" in
+               assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the persona identity criteria and the reuse protocol
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "authority boundary"
+               ✔  And the served ideation instruction contains "evaluation capability"
+               ✔  And the served ideation instruction contains "own vocabulary"
+               ✔  And the served ideation instruction contains "topic stance"
+               ✔  And the served ideation instruction contains "inventory"
+               ✔  And the served ideation instruction contains "Reuse:"
+               ✔  And the served ideation instruction contains "New:"
+               ✔  And the served ideation instruction contains "append-only"
+               ✘  And the served ideation instruction contains "one persona with three stance blocks"
+                  Step panicked. Captured output: the served ideation instruction is missing "one persona with three stance blocks": # Instruction: ideation
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            12 steps (11 passed, 1 failed)                                EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the persona identity criteria and the reuse protocol moved with
+            the first scenario's slice (`assets/instructions/ideation.md`); this
+            scenario binds those assertions on the served surface.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the persona identity criteria and the reuse protocol
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "authority boundary"
+               ✔  And the served ideation instruction contains "evaluation capability"
+               ✔  And the served ideation instruction contains "own vocabulary"
+               ✔  And the served ideation instruction contains "topic stance"
+               ✔  And the served ideation instruction contains "inventory"
+               ✔  And the served ideation instruction contains "Reuse:"
+               ✔  And the served ideation instruction contains "New:"
+               ✔  And the served ideation instruction contains "append-only"
+               ✔  And the served ideation instruction contains "one persona with three stance blocks"
+               ✔  And the served ideation instruction contains "record entries only"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            12 steps (12 passed)                                         EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 12 steps (12 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `da3bd6d7` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            da3bd6d7 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the persona identity criteria and the reuse protocol
+            ```
+
+- [x] generate-ideation-guidance: The ideation guidance keeps the confirmed persona behaviors
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` keeps the confirmed persona behaviors (reuse/inventory/arbitration boundaries).
+        - Assertions (served ideation instruction): contains "stakeholder type", "persona segment", "persona promotion", "every artifact that affects", "at most three", "never auto-promote", "confirms every persona", "arbitrates", "inventory", "match", "separate from Actors".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance keeps the confirmed persona behaviors"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance keeps the confirmed persona behaviors"
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance keeps the confirmed persona behaviors
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "stakeholder type"
+               ✔  And the served ideation instruction contains "persona segment"
+               ✔  And the served ideation instruction contains "persona promotion"
+               ✔  And the served ideation instruction contains "every artifact that affects"
+               ✔  And the served ideation instruction contains "at most three"
+               ✔  And the served ideation instruction contains "never auto-promote"
+               ✔  And the served ideation instruction contains "confirms every persona"
+               ✔  And the served ideation instruction contains "arbitrates"
+               ✔  And the served ideation instruction contains "inventory"
+               ✔  And the served ideation instruction contains "match"
+               ✘  And the served ideation instruction contains "separate from Actors"
+                  Step panicked. Captured output: the served ideation instruction is missing "separate from Actors": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            13 steps (12 passed, 1 failed)                                EXIT=101
+            OLD_PRODUCT_RED: the served ideation instruction never carried the
+            persona/actor separation rule — it still lived as a rule copy in
+            `assets/commands/givn-ideation.md` ("Keep confirmed Persona IDs
+            separate from Actors").
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            assets/instructions/ideation.md (one Personas-section bullet:
+            "Confirmed persona IDs stay separate from Actors: Actors appear in
+            Gherkin; persona biographies remain human-reviewed Markdown under
+            `givn/personas/`." — the rule copy moved out of the command seam
+            into the served instruction)
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the production edit)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance keeps the confirmed persona behaviors
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "stakeholder type"
+               ✔  And the served ideation instruction contains "persona segment"
+               ✔  And the served ideation instruction contains "persona promotion"
+               ✔  And the served ideation instruction contains "every artifact that affects"
+               ✔  And the served ideation instruction contains "at most three"
+               ✔  And the served ideation instruction contains "never auto-promote"
+               ✔  And the served ideation instruction contains "confirms every persona"
+               ✔  And the served ideation instruction contains "arbitrates"
+               ✔  And the served ideation instruction contains "inventory"
+               ✔  And the served ideation instruction contains "match"
+               ✔  And the served ideation instruction contains "separate from Actors"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            13 steps (13 passed)                                         EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 13 steps (13 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `ad36aa18` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            ad36aa18 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance keeps the confirmed persona behaviors
+            ```
+
+- [x] generate-ideation-guidance: The ideation guidance carries the open-question qualifier rule
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` carries the open-question qualifier rule.
+        - Assertions (served ideation instruction): contains "(open: Q<N>)", "must not be presented as unconditional", "removes the qualifier".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance carries the open-question qualifier rule"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the open-question qualifier rule
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "(open: Q<N>)"
+               ✔  And the served ideation instruction contains "must not be presented as unconditional"
+               ✔  And the served ideation instruction contains "removes the qualifier"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the open-question qualifier rule moved
+            with the first scenario's slice. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "removes the qualifier" → "removes the mark" in
+               assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the open-question qualifier rule
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "(open: Q<N>)"
+               ✔  And the served ideation instruction contains "must not be presented as unconditional"
+               ✘  And the served ideation instruction contains "removes the qualifier"
+                  Step panicked. Captured output: the served ideation instruction is missing "removes the qualifier": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                 EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the open-question qualifier rule moved with the first
+            scenario's slice (`assets/instructions/ideation.md`); this scenario
+            binds those assertions on the served surface.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the open-question qualifier rule
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "(open: Q<N>)"
+               ✔  And the served ideation instruction contains "must not be presented as unconditional"
+               ✔  And the served ideation instruction contains "removes the qualifier"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `542c4cdc` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            542c4cdc — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the open-question qualifier rule
+            ```
+
+- [x] generate-ideation-guidance: The ideation guidance carries the live-question standard
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` carries the live-question standard (no bare option lists).
+        - Assertions (served ideation instruction): contains "A bare option list is a defect", "the decision it blocks", "context that forces it".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance carries the live-question standard"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the live-question standard
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "A bare option list is a defect"
+               ✔  And the served ideation instruction contains "the decision it blocks"
+               ✔  And the served ideation instruction contains "context that forces it"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the live-question standard moved with
+            the first scenario's slice. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "A bare option list is a defect" → "A bare
+               option list is a flaw" in assets/instructions/ideation.md; same
+               scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the live-question standard
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✘  Then the served ideation instruction contains "A bare option list is a defect"
+                  Step panicked. Captured output: the served ideation instruction is missing "A bare option list is a defect": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                 EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the live-question standard moved with the first scenario's
+            slice (`assets/instructions/ideation.md`); this scenario binds those
+            assertions on the served surface.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the live-question standard
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "A bare option list is a defect"
+               ✔  And the served ideation instruction contains "the decision it blocks"
+               ✔  And the served ideation instruction contains "context that forces it"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `a32a03ac` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            a32a03ac — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the live-question standard
+            ```
+
+- [x] generate-ideation-guidance: The ideation guidance stops questions at decided directions
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` carries the decided-direction question-stop rule.
+        - Assertions (served ideation instruction): contains "never asked again", "applied and reported", "phase report", "only when a new fork", "share one direction are one question".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance stops questions at decided directions"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance stops questions at decided directions
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "never asked again"
+               ✔  And the served ideation instruction contains "applied and reported"
+               ✔  And the served ideation instruction contains "phase report"
+               ✔  And the served ideation instruction contains "only when a new fork"
+               ✔  And the served ideation instruction contains "share one direction are one question"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            7 steps (7 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the decided-direction question-stop rule
+            moved with the first scenario's slice. This is the recorded ORACLE_RED
+            case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "never asked again" → "never re-opened" in
+               assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance stops questions at decided directions
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✘  Then the served ideation instruction contains "never asked again"
+                  Step panicked. Captured output: the served ideation instruction is missing "never asked again": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            7 steps (6 passed, 1 failed)                                 EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the decided-direction question-stop rule moved with the first
+            scenario's slice (`assets/instructions/ideation.md`); this scenario
+            binds those assertions on the served surface.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance stops questions at decided directions
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "never asked again"
+               ✔  And the served ideation instruction contains "applied and reported"
+               ✔  And the served ideation instruction contains "phase report"
+               ✔  And the served ideation instruction contains "only when a new fork"
+               ✔  And the served ideation instruction contains "share one direction are one question"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            7 steps (7 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 7 steps (7 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `51a26d58` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            51a26d58 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance stops questions at decided directions
+            ```
+
+- [x] generate-ideation-guidance: The frame is confirmed once and later phase boundaries report
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` carries the confirm-frame-once rule and the later-boundary reporting rule.
+        - Assertions (served ideation instruction): contains "Confirm the Frame", "report what was recorded and proceed".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The frame is confirmed once and later phase boundaries report"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The frame is confirmed once and later phase boundaries report
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "Confirm the Frame"
+               ✔  And the served ideation instruction contains "report what was recorded and proceed"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the confirm-frame-once rule and the
+            later-boundary reporting rule moved with the first scenario's slice.
+            This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "Confirm the Frame" → "Confirm the Framing" in
+               assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The frame is confirmed once and later phase boundaries report
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✘  Then the served ideation instruction contains "Confirm the Frame"
+                  Step panicked. Captured output: the served ideation instruction is missing "Confirm the Frame": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                 EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the confirm-frame-once rule and the later-boundary reporting
+            rule moved with the first scenario's slice
+            (`assets/instructions/ideation.md`); this scenario binds those
+            assertions on the served surface.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The frame is confirmed once and later phase boundaries report
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "Confirm the Frame"
+               ✔  And the served ideation instruction contains "report what was recorded and proceed"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `4376d379` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            4376d379 — feat(generate-ideation-guidance): <release note>; body: Scenario: The frame is confirmed once and later phase boundaries report
+            ```
+
+- [x] generate-ideation-guidance: Handoff cuts change seeds by deliverable guarantee
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` carries the seed-cutting rule by deliverable guarantee and the seed path/suggested order.
+        - Assertions (served ideation instruction): contains "deliverable guarantee", "true end to end", "can ship alone", "may cover several use cases", "one use case may yield several seeds", "confirmed rule untrue", "dependencies and a suggested start order", "changes/<change-id>.md".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::Handoff cuts change seeds by deliverable guarantee"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: Handoff cuts change seeds by deliverable guarantee
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "deliverable guarantee"
+               ✔  And the served ideation instruction contains "true end to end"
+               ✔  And the served ideation instruction contains "can ship alone"
+               ✔  And the served ideation instruction contains "may cover several use cases"
+               ✔  And the served ideation instruction contains "one use case may yield several seeds"
+               ✔  And the served ideation instruction contains "confirmed rule untrue"
+               ✔  And the served ideation instruction contains "dependencies and a suggested start order"
+               ✔  And the served ideation instruction contains "changes/<change-id>.md"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            10 steps (10 passed)                                         EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the seed-cutting rule and the seed
+            path/suggested order moved with the first scenario's slice. This is
+            the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "can ship alone" → "can ship on its own" in
+               assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: Handoff cuts change seeds by deliverable guarantee
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "deliverable guarantee"
+               ✔  And the served ideation instruction contains "true end to end"
+               ✘  And the served ideation instruction contains "can ship alone"
+                  Step panicked. Captured output: the served ideation instruction is missing "can ship alone": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            10 steps (9 passed, 1 failed)                                EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the seed-cutting rule and the seed path/suggested order moved
+            with the first scenario's slice (`assets/instructions/ideation.md`);
+            this scenario binds those assertions on the served surface.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: Handoff cuts change seeds by deliverable guarantee
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "deliverable guarantee"
+               ✔  And the served ideation instruction contains "true end to end"
+               ✔  And the served ideation instruction contains "can ship alone"
+               ✔  And the served ideation instruction contains "may cover several use cases"
+               ✔  And the served ideation instruction contains "one use case may yield several seeds"
+               ✔  And the served ideation instruction contains "confirmed rule untrue"
+               ✔  And the served ideation instruction contains "dependencies and a suggested start order"
+               ✔  And the served ideation instruction contains "changes/<change-id>.md"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            10 steps (10 passed)                                         EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 10 steps (10 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `6e250dde` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            6e250dde — feat(generate-ideation-guidance): <release note>; body: Scenario: Handoff cuts change seeds by deliverable guarantee
+            ```
+
+- [x] generate-ideation-guidance: The ideation command guardrails carry the same conduct rules
+      Design constraints:
+        - Content seam: `assets/commands/givn-ideation.md` keeps invocation orchestration and the direction only; the conduct rules are read from the served instruction.
+        - Assertions (served ideation instruction): contains "deliverable guarantee", "never asked again".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation command guardrails carry the same conduct rules"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation command guardrails carry the same conduct rules
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "deliverable guarantee"
+               ✔  And the served ideation instruction contains "never asked again"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the conduct rules the command's old
+            guardrails copied already sit in the served instruction (moved with
+            the first scenario's slice); this scenario binds them on the served
+            surface. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "deliverable guarantee" → "delivery
+               guarantee" in assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation command guardrails carry the same conduct rules
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✘  Then the served ideation instruction contains "deliverable guarantee"
+                  Step panicked. Captured output: the served ideation instruction is missing "deliverable guarantee": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                 EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            assets/commands/givn-ideation.md (rewritten to invocation
+            orchestration plus the direction: the **Rules** paragraph points to
+            `givn instructions ideation`, the steps run `givn status` and
+            `givn instructions ideation`, and the Stance/Guardrails rule copies
+            — full option treatment, never asked again, term verification,
+            reuse-before-minting, persona/actor separation, seed cutting, the
+            frame confirmation, and the canvas/aggregate rules — are gone; the
+            served instruction is their single home)
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the command rewrite)
+            Feature: Generate ideation guidance
+              Scenario: The ideation command guardrails carry the same conduct rules
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "deliverable guarantee"
+               ✔  And the served ideation instruction contains "never asked again"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
+            Coupled regression check (scoped, same delta):
+            $ ...--exact "fragments/generate-ideation-guidance.feature::The ideation
+               skill ships without any addon enabled"
+            → 1 scenario (1 passed), 4 steps (4 passed)                   EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `0e416600` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            0e416600 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation command guardrails carry the same conduct rules
+            ```
+
+- [x] generate-ideation-guidance: The ideation guidance requires a canvas with distinguishable element kinds
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` carries the canvas requirement with distinguishable element kinds.
+        - Assertions (served ideation instruction): contains "one or more mermaid diagrams", "show every event, command, aggregate, and actor, with the kinds", "(per-node kind markers or a legend)", "the actor that issues it and the aggregate it changes", "A text chain without a canvas is an incomplete event storming", "the canvas must render", "drawn as a rendered mermaid canvas", "aggregate (the consistency boundary the command changes)".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance requires a canvas with distinguishable element kinds"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance requires a canvas with distinguishable element kinds
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "one or more mermaid diagrams"
+               ✔  And the served ideation instruction contains "show every event, command, aggregate, and actor, with the kinds"
+               ✔  And the served ideation instruction contains "(per-node kind markers or a legend)"
+               ✔  And the served ideation instruction contains "the actor that issues it and the aggregate it changes"
+               ✔  And the served ideation instruction contains "A text chain without a canvas is an incomplete event storming"
+               ✔  And the served ideation instruction contains "the canvas must render"
+               ✔  And the served ideation instruction contains "drawn as a rendered mermaid canvas"
+               ✔  And the served ideation instruction contains "aggregate (the consistency boundary the command changes)"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            10 steps (10 passed)                                         EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the canvas requirement with
+            distinguishable element kinds moved with the first scenario's slice.
+            This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "drawn as a rendered mermaid canvas" → "drawn
+               as a rendered mermaid picture" in assets/instructions/ideation.md;
+               same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance requires a canvas with distinguishable element kinds
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "one or more mermaid diagrams"
+               ✔  And the served ideation instruction contains "show every event, command, aggregate, and actor, with the kinds"
+               ✔  And the served ideation instruction contains "(per-node kind markers or a legend)"
+               ✔  And the served ideation instruction contains "the actor that issues it and the aggregate it changes"
+               ✔  And the served ideation instruction contains "A text chain without a canvas is an incomplete event storming"
+               ✔  And the served ideation instruction contains "the canvas must render"
+               ✘  And the served ideation instruction contains "drawn as a rendered mermaid canvas"
+                  Step panicked. Captured output: the served ideation instruction is missing "drawn as a rendered mermaid canvas": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            10 steps (9 passed, 1 failed)                                EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the canvas requirement with distinguishable element kinds
+            moved with the first scenario's slice
+            (`assets/instructions/ideation.md`); this scenario binds those
+            assertions on the served surface.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance requires a canvas with distinguishable element kinds
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "one or more mermaid diagrams"
+               ✔  And the served ideation instruction contains "show every event, command, aggregate, and actor, with the kinds"
+               ✔  And the served ideation instruction contains "(per-node kind markers or a legend)"
+               ✔  And the served ideation instruction contains "the actor that issues it and the aggregate it changes"
+               ✔  And the served ideation instruction contains "A text chain without a canvas is an incomplete event storming"
+               ✔  And the served ideation instruction contains "the canvas must render"
+               ✔  And the served ideation instruction contains "drawn as a rendered mermaid canvas"
+               ✔  And the served ideation instruction contains "aggregate (the consistency boundary the command changes)"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            10 steps (10 passed)                                         EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 10 steps (10 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `48ad5465` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            48ad5465 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance requires a canvas with distinguishable element kinds
+            ```
+
+- [x] generate-ideation-guidance: The ideation guidance keeps aggregates to declared consistency boundaries
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` carries the aggregate discipline (declared consistency boundaries only).
+        - Assertions (served ideation instruction): contains "Aggregates are given, not minted", "a domain-noun root that receives commands and emits events under one", "confirmed before the canvas relies on it", "Reuse the aggregates the project already declares", "never an aggregate", "Name the kind".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance keeps aggregates to declared consistency boundaries"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance keeps aggregates to declared consistency boundaries
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "Aggregates are given, not minted"
+               ✔  And the served ideation instruction contains "a domain-noun root that receives commands and emits events under one"
+               ✔  And the served ideation instruction contains "confirmed before the canvas relies on it"
+               ✔  And the served ideation instruction contains "Reuse the aggregates the project already declares"
+               ✔  And the served ideation instruction contains "never an aggregate"
+               ✔  And the served ideation instruction contains "Name the kind"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            8 steps (8 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the aggregate discipline moved with the
+            first scenario's slice. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "Aggregates are given, not minted" → "Aggregates
+               are given, not invented" in assets/instructions/ideation.md; same
+               scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance keeps aggregates to declared consistency boundaries
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✘  Then the served ideation instruction contains "Aggregates are given, not minted"
+                  Step panicked. Captured output: the served ideation instruction is missing "Aggregates are given, not minted": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            8 steps (7 passed, 1 failed)                                 EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the aggregate discipline moved with the first scenario's slice
+            (`assets/instructions/ideation.md`); this scenario binds those
+            assertions on the served surface.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance keeps aggregates to declared consistency boundaries
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "Aggregates are given, not minted"
+               ✔  And the served ideation instruction contains "a domain-noun root that receives commands and emits events under one"
+               ✔  And the served ideation instruction contains "confirmed before the canvas relies on it"
+               ✔  And the served ideation instruction contains "Reuse the aggregates the project already declares"
+               ✔  And the served ideation instruction contains "never an aggregate"
+               ✔  And the served ideation instruction contains "Name the kind"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            8 steps (8 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 8 steps (8 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `d36dd1ef` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            d36dd1ef — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance keeps aggregates to declared consistency boundaries
+            ```
+
+- [x] generate-ideation-guidance: The event storming review checks canvas coverage, legality, agreement, and rendering
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` carries the event-storming review checks.
+        - Assertions (served ideation instruction): contains "canvas that shows every event, command, aggregate, and actor with its kinds", "every aggregate a declared consistency boundary or a", "drawn as an aggregate is a defect", "the lines and the picture naming the", "a canvas that renders".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The event storming review checks canvas coverage, legality, agreement, and rendering"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The event storming review checks canvas coverage, legality, agreement, and rendering
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "canvas that shows every event, command, aggregate, and actor with its kinds"
+               ✔  And the served ideation instruction contains "every aggregate a declared consistency boundary or a"
+               ✔  And the served ideation instruction contains "drawn as an aggregate is a defect"
+               ✔  And the served ideation instruction contains "the lines and the picture naming the"
+               ✔  And the served ideation instruction contains "a canvas that renders"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            7 steps (7 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the event-storming review checks moved
+            with the first scenario's slice. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "a canvas that renders" → "a canvas that draws"
+               in assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The event storming review checks canvas coverage, legality, agreement, and rendering
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "canvas that shows every event, command, aggregate, and actor with its kinds"
+               ✔  And the served ideation instruction contains "every aggregate a declared consistency boundary or a"
+               ✔  And the served ideation instruction contains "drawn as an aggregate is a defect"
+               ✔  And the served ideation instruction contains "the lines and the picture naming the"
+               ✘  And the served ideation instruction contains "a canvas that renders"
+                  Step panicked. Captured output: the served ideation instruction is missing "a canvas that renders": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            7 steps (6 passed, 1 failed)                                 EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the event-storming review checks moved with the first
+            scenario's slice (`assets/instructions/ideation.md`); this scenario
+            binds those assertions on the served surface.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The event storming review checks canvas coverage, legality, agreement, and rendering
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "canvas that shows every event, command, aggregate, and actor with its kinds"
+               ✔  And the served ideation instruction contains "every aggregate a declared consistency boundary or a"
+               ✔  And the served ideation instruction contains "drawn as an aggregate is a defect"
+               ✔  And the served ideation instruction contains "the lines and the picture naming the"
+               ✔  And the served ideation instruction contains "a canvas that renders"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            7 steps (7 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 7 steps (7 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `da56b3c2` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            da56b3c2 — feat(generate-ideation-guidance): <release note>; body: Scenario: The event storming review checks canvas coverage, legality, agreement, and rendering
+            ```
+
+- [x] generate-ideation-guidance: The ideation command guardrails require the canvas and legal aggregates
+      Design constraints:
+        - Content seam: `assets/commands/givn-ideation.md` orchestration references the canvas/aggregate checks now served by the instruction.
+        - Assertions (served ideation instruction): contains "rendered mermaid canvas naming every event", "every aggregate is a declared", "never a record or a specification".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation command guardrails require the canvas and legal aggregates"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation command guardrails require the canvas and legal aggregates"
+            Feature: Generate ideation guidance
+              Scenario: The ideation command guardrails require the canvas and legal aggregates
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✘  Then the served ideation instruction contains "rendered mermaid canvas naming every event"
+                  Step panicked. Captured output: the served ideation instruction is missing "rendered mermaid canvas naming every event": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                 EXIT=101
+            OLD_PRODUCT_RED: the served instruction carries the canvas and
+            aggregate rules in skill-shaped bullets, but the command guardrail
+            summary — the rendered canvas naming every element and the declared
+            consistency boundary — never moved into the served instruction; the
+            request succeeds and the excerpt is absent.
+            No new step bindings were needed: the scenario reuses the shared
+            `Given a Givn project` fixture, the agent-request step, and the
+            served-instruction content step from
+            `tests/steps/serve_extended_rules_steps.rs`.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            assets/instructions/ideation.md (Event Storming: the "Draw the
+            canvas" bullet gains the relocated guardrail sentence "The event
+            storming ships a rendered mermaid canvas naming every event,
+            command, aggregate, and actor."; the aggregate bullet now states
+            "every aggregate is a declared consistency boundary — ... — never
+            a record or a specification")
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the instruction edit)
+            Feature: Generate ideation guidance
+              Scenario: The ideation command guardrails require the canvas and legal aggregates
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "rendered mermaid canvas naming every event"
+               ✔  And the served ideation instruction contains "every aggregate is a declared"
+               ✔  And the served ideation instruction contains "never a record or a specification"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `d78e99f4` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            d78e99f4 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation command guardrails require the canvas and legal aggregates
+            ```
+
+- [x] generate-ideation-guidance: The ideation guidance binds every confirmed term to the user's verified name
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` carries the verified-name binding for every confirmed term.
+        - Assertion: the served ideation instruction contains "the user's verified name".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance binds every confirmed term to the user's verified name"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance binds every confirmed term to the user's verified name
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "the user's verified name"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            3 steps (3 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the verified-name binding moved with
+            the first scenarios' slice (the `confirmed` status bullet carries
+            "the user's verified name"); this scenario binds it on the served
+            surface. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "the user's verified name" → "the user's
+               confirmed name" in assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance binds every confirmed term to the user's verified name
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✘  Then the served ideation instruction contains "the user's verified name"
+                  Step panicked. Captured output: the served ideation instruction is missing "the user's verified name": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                 EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the verified-name binding moved with the earlier slices
+            (`assets/instructions/ideation.md`); this scenario binds the
+            served-content assertion on the shared step.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance binds every confirmed term to the user's verified name
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "the user's verified name"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            3 steps (3 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 3 steps (3 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `9befc99b` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            9befc99b — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance binds every confirmed term to the user's verified name
+            ```
+
+- [x] generate-ideation-guidance: The ideation guidance asks the naming question as soon as a name fails
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` carries the immediate-naming-question rule.
+        - Assertions (served ideation instruction): contains "generic, overloaded", "cannot fill its genus slot", "ask the naming question immediately", "is collision-checked like any other".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance asks the naming question as soon as a name fails"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance asks the naming question as soon as a name fails
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "generic, overloaded"
+               ✔  And the served ideation instruction contains "cannot fill its genus slot"
+               ✔  And the served ideation instruction contains "ask the naming question immediately"
+               ✔  And the served ideation instruction contains "is collision-checked like any other"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the immediate-naming-question rule moved
+            with the earlier slices (the term-verification bullets carry the
+            trigger and the collision check); this scenario binds it on the
+            served surface. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "ask the naming question immediately" → "ask
+               the naming question at once" in assets/instructions/ideation.md;
+               same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance asks the naming question as soon as a name fails
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "generic, overloaded"
+               ✔  And the served ideation instruction contains "cannot fill its genus slot"
+               ✘  And the served ideation instruction contains "ask the naming question immediately"
+                  Step panicked. Captured output: the served ideation instruction is missing "ask the naming question immediately": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            6 steps (5 passed, 1 failed)                                 EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the immediate-naming-question rule and the collision check
+            moved with the earlier slices (`assets/instructions/ideation.md`);
+            this scenario binds the served-content assertions on the shared step.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance asks the naming question as soon as a name fails
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "generic, overloaded"
+               ✔  And the served ideation instruction contains "cannot fill its genus slot"
+               ✔  And the served ideation instruction contains "ask the naming question immediately"
+               ✔  And the served ideation instruction contains "is collision-checked like any other"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `34723a83` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            34723a83 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance asks the naming question as soon as a name fails
+            ```
+
+- [x] generate-ideation-guidance: The ideation guidance asks the term check before a phase closes
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` carries the phase-closing term check.
+        - Assertions (served ideation instruction): contains "The user verifies every new core term before it is used", "Term check — <phase>", "Confirm all, or name the terms to revisit", "one-sentence description", "Confirm all makes them `confirmed`", "naming dialog, one at a time, before confirmation", "the other terms stand", "a replaced name becomes an anti-term".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance asks the term check before a phase closes"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance asks the term check before a phase closes
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "The user verifies every new core term before it is used"
+               ✔  And the served ideation instruction contains "Term check — <phase>"
+               ✔  And the served ideation instruction contains "Confirm all, or name the terms to revisit"
+               ✔  And the served ideation instruction contains "one-sentence description"
+               ✔  And the served ideation instruction contains "Confirm all makes them `confirmed`"
+               ✔  And the served ideation instruction contains "naming dialog, one at a time, before confirmation"
+               ✔  And the served ideation instruction contains "the other terms stand"
+               ✔  And the served ideation instruction contains "a replaced name becomes an anti-term"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            10 steps (10 passed)                                        EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the phase-closing term check moved with
+            the earlier slices (the verification paragraph carries the checkpoint
+            question, its rows, and the confirm/revisit outcomes); this scenario
+            binds it on the served surface. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "Term check — <phase>" → "Term review —
+               <phase>" in assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance asks the term check before a phase closes
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "The user verifies every new core term before it is used"
+               ✘  And the served ideation instruction contains "Term check — <phase>"
+                  Step panicked. Captured output: the served ideation instruction is missing "Term check — <phase>": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            10 steps (9 passed, 1 failed)                                EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the phase-closing term check moved with the earlier slices
+            (`assets/instructions/ideation.md`); this scenario binds the
+            served-content assertions on the shared step.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance asks the term check before a phase closes
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "The user verifies every new core term before it is used"
+               ✔  And the served ideation instruction contains "Term check — <phase>"
+               ✔  And the served ideation instruction contains "Confirm all, or name the terms to revisit"
+               ✔  And the served ideation instruction contains "one-sentence description"
+               ✔  And the served ideation instruction contains "Confirm all makes them `confirmed`"
+               ✔  And the served ideation instruction contains "naming dialog, one at a time, before confirmation"
+               ✔  And the served ideation instruction contains "the other terms stand"
+               ✔  And the served ideation instruction contains "a replaced name becomes an anti-term"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            10 steps (10 passed)                                        EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 10 steps (10 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `ceac6598` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            ceac6598 — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance asks the term check before a phase closes
+            ```
+
+- [x] generate-ideation-guidance: The verified-name gate holds without the addon
+      Design constraints:
+        - Content seam: the verified-name gate and the phase term check must sit OUTSIDE every `{{#if addons.*}}` block in `assets/instructions/ideation.md` — the fixture initializes `givn/` without addons and still receives them.
+        - Assertions (served ideation instruction): contains "the user's verified name", "Term check — <phase>".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The verified-name gate holds without the addon"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The verified-name gate holds without the addon
+               ✔  Given a project root with givn/ initialised without addons
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "the user's verified name"
+               ✔  And the served ideation instruction contains "Term check — <phase>"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the verified-name gate and the phase
+            term check already sit outside every addon-conditional block, so the
+            no-addon fixture receives them; this scenario binds the no-addon
+            delivery as the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily wrapped the whole term-verification paragraph in
+               `{{#if addons.domain_modeling}}` … `{{/if}}` in
+               assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The verified-name gate holds without the addon
+               ✔  Given a project root with givn/ initialised without addons
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "the user's verified name"
+               ✘  And the served ideation instruction contains "Term check — <phase>"
+                  Step panicked. Captured output: the served ideation instruction is missing "Term check — <phase>": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                 EXIT=101
+            With the paragraph temporarily addon-gated, the no-addon fixture loses
+            the phase term check and exactly the matching assertion fails, so the
+            assertion discriminates on the no-addon path; the excerpt was
+            restored immediately (`git checkout -- assets/instructions/ideation.md`)
+            and the scoped command passed again. No production switch, exception,
+            fake success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the gate and the term check are delivered by the earlier
+            slices and sit outside every addon block
+            (`assets/instructions/ideation.md`); this scenario binds the
+            no-addon served-content assertions on the shared fixture and step.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The verified-name gate holds without the addon
+               ✔  Given a project root with givn/ initialised without addons
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "the user's verified name"
+               ✔  And the served ideation instruction contains "Term check — <phase>"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `f2ad52ff` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            f2ad52ff — feat(generate-ideation-guidance): <release note>; body: Scenario: The verified-name gate holds without the addon
+            ```
+
+- [x] generate-ideation-guidance: The ideation command guardrails carry the verified-name rule
+      Design constraints:
+        - Content seam: `assets/commands/givn-ideation.md` orchestration points at the phase term check, which the served instruction now owns.
+        - Assertions (served ideation instruction): contains "verifies every new core term", "phase term check", "naming dialog", "before the canvas, use cases, or seeds rely on it".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation command guardrails carry the verified-name rule"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation command guardrails carry the verified-name rule"
+            Feature: Generate ideation guidance
+              Scenario: The ideation command guardrails carry the verified-name rule
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "verifies every new core term"
+               ✘  And the served ideation instruction contains "phase term check"
+                  Step panicked. Captured output: the served ideation instruction is missing "phase term check": # Instruction: ideation
+                  ... (full served content omitted; category line follows)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            6 steps (5 passed, 1 failed)                                 EXIT=101
+            OLD_PRODUCT_RED: the command's old guardrail sentence — the phase
+            term check and the "before the canvas, use cases, or seeds" ordering
+            — was dropped when the guardrail copies left the command; the served
+            instruction carries the verification bullets but not the named check
+            or the ordering clause, and the request succeeds with the excerpt
+            absent.
+            No new step bindings were needed: the scenario reuses the shared
+            fixture, request, and served-content steps.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            assets/instructions/ideation.md (the phase checkpoint bullet now
+            names the "phase term check"; a closing sentence relocates the
+            command guardrail — "The verified name reaches the phase term check
+            or the term's naming dialog, before the canvas, use cases, or seeds
+            rely on it.")
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the instruction edit)
+            Feature: Generate ideation guidance
+              Scenario: The ideation command guardrails carry the verified-name rule
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "verifies every new core term"
+               ✔  And the served ideation instruction contains "phase term check"
+               ✔  And the served ideation instruction contains "naming dialog"
+               ✔  And the served ideation instruction contains "before the canvas, use cases, or seeds rely on it"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                           EXIT=0
+            Neighbor sanity: the earlier committed scenarios sharing the edited
+            paragraph stayed green — verified-name binding (3 steps), term check
+            before a phase closes (10 steps), verified-name gate without the
+            addon (4 steps).
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `af94bf8f` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            af94bf8f — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation command guardrails carry the verified-name rule
+            ```
+
+- [x] generate-ideation-guidance: The ideation guidance carries the persona schema
+      Design constraints:
+        - Content seam: `assets/instructions/ideation.md` carries the persona schema (including the conditional `domain_modeling`/`arc42` fragments moved from the skill template — this fixture has the addons enabled).
+        - Assertions (served ideation instruction): contains "Stable core", "Authority boundary", "Evaluation capability", "Own vocabulary", "Success criterion", "Running record", "append-only", "Topic stances".
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The ideation guidance carries the persona schema"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the persona schema
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "Stable core"
+               ✔  And the served ideation instruction contains "Authority boundary"
+               ✔  And the served ideation instruction contains "Evaluation capability"
+               ✔  And the served ideation instruction contains "Own vocabulary"
+               ✔  And the served ideation instruction contains "Success criterion"
+               ✔  And the served ideation instruction contains "Running record"
+               ✔  And the served ideation instruction contains "append-only"
+               ✔  And the served ideation instruction contains "Topic stances"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            10 steps (10 passed)                                        EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the persona schema moved with the
+            first scenario's slice (the Personas section carries the stable
+            core, the append-only running record, and the topic stances
+            appendix); this scenario binds it on the served surface. This is
+            the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "Authority boundary" → "Authority scope" in
+               the persona schema code block of
+               assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the persona schema
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "Stable core"
+               ✘  And the served ideation instruction contains "Authority boundary"
+                  Step panicked. Captured output: the served ideation instruction is missing "Authority boundary": # Instruction: ideation
+                  ... (full served content elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            10 steps (9 passed, 1 failed)                                EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the persona schema moved with the first scenario's slice
+            (`assets/instructions/ideation.md`); this scenario binds the
+            served-content assertions on the shared step.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: The ideation guidance carries the persona schema
+               ✔  Given a Givn project
+               ✔  When the agent requests the ideation instructions through the Givn CLI
+               ✔  Then the served ideation instruction contains "Stable core"
+               ✔  And the served ideation instruction contains "Authority boundary"
+               ✔  And the served ideation instruction contains "Evaluation capability"
+               ✔  And the served ideation instruction contains "Own vocabulary"
+               ✔  And the served ideation instruction contains "Success criterion"
+               ✔  And the served ideation instruction contains "Running record"
+               ✔  And the served ideation instruction contains "append-only"
+               ✔  And the served ideation instruction contains "Topic stances"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            10 steps (10 passed)                                        EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 10 steps (10 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `f594f6ff` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            f594f6ff — feat(generate-ideation-guidance): <release note>; body: Scenario: The ideation guidance carries the persona schema
+            ```
+
+- [x] generate-ideation-guidance: The generated ideation files direct the agent to the ideation instruction
+      Design constraints:
+        - Generated seam: both `assets/skills/givn-ideation/SKILL.md.tmpl` and `assets/commands/givn-ideation.md` become direction-only files; real `givn skills sync` with all targets enabled.
+        - Assertions: the generated givn-ideation guidance directs the ideator to the ideation instruction; the generated givn-ideation command directs the ideator to the ideation instruction.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::The generated ideation files direct the agent to the ideation instruction"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ (same scoped command after removing `@wip` from this scenario only)
+            Feature: Generate ideation guidance
+              Scenario: The generated ideation files direct the agent to the ideation instruction
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the generated givn-ideation guidance directs the ideator to the ideation instruction
+               ✔  And the generated givn-ideation command directs the ideator to the ideation instruction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the skill template and the command
+            already carry the direction to `givn instructions ideation` (the
+            rule copies left them in the earlier scenarios' slices), so a real
+            `givn skills sync` generates directing files. This is the recorded
+            ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "givn instructions ideation" → "givn
+               instructions for the ideation discipline" in
+               assets/skills/givn-ideation/SKILL.md.tmpl — the replacement must
+               not keep the needle as a prefix, an earlier "…ideation-discipline"
+               rewrite was a superset and did not discriminate; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: The generated ideation files direct the agent to the ideation instruction
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✘  Then the generated givn-ideation guidance directs the ideator to the ideation instruction
+                  Step panicked. Captured output: givn-ideation guidance does not direct to the ideation instruction (missing "givn instructions ideation"): ---
+                  name: givn-ideation
+                  ... (full generated guidance elided)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                 EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the template was restored immediately
+            (`git checkout -- assets/skills/givn-ideation/SKILL.md.tmpl`) and
+            the scoped command passed again. No production switch, exception,
+            fake success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the skill template and the command are already
+            direction-only (`givn instructions ideation` in the **Rules**
+            paragraph and the invocation step); this scenario binds both
+            generated-direction assertions on the real sync fixture.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the template)
+            Feature: Generate ideation guidance
+              Scenario: The generated ideation files direct the agent to the ideation instruction
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the generated givn-ideation guidance directs the ideator to the ideation instruction
+               ✔  And the generated givn-ideation command directs the ideator to the ideation instruction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `59ff6a90` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            59ff6a90 — feat(generate-ideation-guidance): <release note>; body: Scenario: The generated ideation files direct the agent to the ideation instruction
+            ```
+
+- [x] instruction-integrity: Retrieval guidance distinguishes build capabilities
+      Design constraints:
+        - Served-content seam: `givn instructions specs --change <active>` reads `assets/instructions/specs.md`; the deterministic spec toolchain wording stays, and engine-backed retrieval commands are never named.
+        - Assertions: the returned guidance does not mention engine-backed retrieval commands; does not offer advisory or blocking retrieval paths; keeps the deterministic spec toolchain wording.
+        - Step file: `tests/steps/instruction_integrity_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::Retrieval guidance distinguishes build capabilities"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::Retrieval guidance distinguishes build capabilities"
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: Retrieval guidance distinguishes build capabilities
+               ✔  Given a Givn project with an active change
+               ✔  When the author requests the specs instructions through the Givn CLI
+               ✔  Then the returned guidance does not mention engine-backed retrieval commands
+               ✔  And the returned guidance does not offer advisory or blocking retrieval paths
+               ✔  And the returned guidance keeps the deterministic spec toolchain wording
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the served specs asset was already
+            rewritten by the permanent instruction-integrity work
+            (d67d88d6, 98ae9173) and the new Then steps read the real served
+            stdout, so the bound assertions already pass. This is the recorded
+            ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote every "givn lint" → "givn-lint" in
+               assets/instructions/specs.md; same scoped command)
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: Retrieval guidance distinguishes build capabilities
+               ✔  Given a Givn project with an active change
+               ✔  When the author requests the specs instructions through the Givn CLI
+               ✔  Then the returned guidance does not mention engine-backed retrieval commands
+               ✔  And the returned guidance does not offer advisory or blocking retrieval paths
+               ✘  And the returned guidance keeps the deterministic spec toolchain wording
+                  Step panicked. Captured output: returned guidance lost the
+                  deterministic toolchain wording `givn lint`: # Instruction: specs ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                 EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/specs.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the served specs content was delivered by the permanent
+            instruction-integrity work; this scenario binds three real Then
+            steps against the served stdout in
+            tests/steps/instruction_integrity_steps.rs (reusing the
+            `a Givn project with an active change` fixture and the
+            `the author requests the specs instructions through the Givn CLI`
+            step).
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: Retrieval guidance distinguishes build capabilities
+               ✔  Given a Givn project with an active change
+               ✔  When the author requests the specs instructions through the Givn CLI
+               ✔  Then the returned guidance does not mention engine-backed retrieval commands
+               ✔  And the returned guidance does not offer advisory or blocking retrieval paths
+               ✔  And the returned guidance keeps the deterministic spec toolchain wording
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.43s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `27a50a60` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            27a50a60 — feat(instruction-integrity): <release note>; body: Scenario: Retrieval guidance distinguishes build capabilities
+            ```
+
+- [x] instruction-integrity: The specs guidance carries the capability placement test
+      Design constraints:
+        - Served-content seam: `assets/instructions/specs.md` carries the capability placement test from the canonical policy.
+        - Assertions: the returned guidance carries the placement test; rejects a channel as an answer; requires goal-shaped capability names.
+        - Step file: `tests/steps/instruction_integrity_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::The specs guidance carries the capability placement test"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::The specs guidance carries the capability placement test"
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: The specs guidance carries the capability placement test
+               ✔  Given a Givn project with an active change
+               ✔  When the author requests the specs instructions through the Givn CLI
+               ✘  Then the returned guidance carries the placement test
+                  Step panicked. Captured output: returned guidance does not carry the
+                  capability placement test: # Instruction: specs ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                 EXIT=101
+            OLD_PRODUCT_RED — the served `assets/instructions/specs.md` broke the
+            phrase across a line wrap ("apply the placement\ntest:"), so the
+            served guidance carries the placement test only as two words on
+            separate lines. The literal assertion discriminates; no calibration
+            was needed.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            assets/instructions/specs.md — reflowed the capability-placement
+              sentence so the served content carries "placement test"
+              contiguously ("apply the placement test:\nwhich actor goal …").
+            tests/steps/instruction_integrity_steps.rs — the three real Then
+              steps reading the served stdout.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the reflow)
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: The specs guidance carries the capability placement test
+               ✔  Given a Givn project with an active change
+               ✔  When the author requests the specs instructions through the Givn CLI
+               ✔  Then the returned guidance carries the placement test
+               ✔  And the returned guidance rejects a channel as an answer
+               ✔  And the returned guidance requires goal-shaped capability names
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.43s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `c495df8d` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            c495df8d — feat(instruction-integrity): <release note>; body: Scenario: The specs guidance carries the capability placement test
+            ```
+
+- [x] instruction-integrity: Every instruction id named by generated guidance resolves through the Givn CLI
+      Design constraints:
+        - Real `givn skills sync` with all targets enabled; every generated skill and command names a served instruction via the direction (`givn instructions <id>`); the id-resolution step lives in `tests/steps/instruction_integrity_steps.rs`.
+        - Assertion: every named instruction id resolves through the Givn CLI in the same Givn version or a later one (design.md §inner decision: "instruction-id references are a graded reference class").
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::Every instruction id named by generated guidance resolves through the Givn CLI"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::Every instruction id named by generated guidance resolves through the Givn CLI"
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: Every instruction id named by generated guidance resolves through the Givn CLI
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then every generated skill and command names a served instruction
+               ✔  And every named instruction id resolves through the Givn CLI
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — all 30 generated template files already
+            carry the dialog-policy direction and their own `givn instructions
+            <id>` directions, and every named id (`dialog`, `specs`, `proposal`,
+            `design`, `design-review`, `tasks`, `review`, `archive`,
+            `review-reverse`, `ideation`, `arc42-docs`) resolves through the
+            current CLI. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "givn instructions dialog" → "givn instructions
+               dialogues" in assets/skills/givn-dev-principles/SKILL.md.tmpl; same
+               scoped command)
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: Every instruction id named by generated guidance resolves through the Givn CLI
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then every generated skill and command names a served instruction
+               ✘  And every named instruction id resolves through the Givn CLI
+                  Step panicked. Captured output: `givn instructions dialogues` (named by
+                  /tmp/.tmpTlKLA8/.opencode/skills/givn-dev-principles/SKILL.md) failed:
+                  error: unknown artifact 'dialogues'. Known artifacts: proposal, specs,
+                  design, design-review, tasks, review, arc42-docs
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                 EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the template was restored immediately
+            (`git checkout -- assets/skills/givn-dev-principles/SKILL.md.tmpl`)
+            and the scoped command passed again. No production switch,
+            exception, fake success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — every generated file already carries its direction; this
+            scenario adds the two real Then steps (every installed skill and
+            command file for the configured targets is read; each must name at
+            least one `givn instructions <id>`; every distinct id is resolved by
+            running the real CLI) in
+            tests/steps/instruction_integrity_steps.rs.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the template)
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: Every instruction id named by generated guidance resolves through the Givn CLI
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then every generated skill and command names a served instruction
+               ✔  And every named instruction id resolves through the Givn CLI
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.46s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `1bab5e74` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            1bab5e74 — feat(instruction-integrity): <release note>; body: Scenario: Every instruction id named by generated guidance resolves through the Givn CLI
+            ```
+
+- [x] instruction-integrity: Every generated direction is invokable in its documented context
+      Design constraints:
+        - Graded two-class rule: a direction to an artifact instruction carries a resolvable change context (the named `--change` or the project's single active change); a direction to a policy or step instruction carries no change context and resolves without one; a syntactically resolvable id that cannot be invoked in its documented context is a defect.
+        - Fail-closed guard analogous to the Q-97 file-reference check; `resolve_instruction` keeps its signature and order; assertion runs through the real CLI per context, not through source text.
+        - Step file: `tests/steps/instruction_integrity_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::Every generated direction is invokable in its documented context"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::Every generated direction is invokable in its documented context"
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: Every generated direction is invokable in its documented context
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✘  Then every direction to an artifact instruction names the change context it needs
+                  Step panicked. Captured output: /tmp/.tmpi9JTcL/.opencode/commands/givn-design-review.md:
+                  the direction to artifact instruction `arc42-docs` names no change context:
+                  chapter-selection table (`givn instructions arc42-docs`) yourself against
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                 EXIT=101
+            OLD_PRODUCT_RED — the design-review command template directs its
+            reader to the artifact instruction `arc42-docs` without a change
+            context, while every other artifact direction names `--change`.
+            The assertion reads the generated files after a real sync through
+            the real CLI classification (`givn graph --json`), not source text.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            assets/commands/givn-design-review.md — the arc42-docs direction now
+              names the change context: `givn instructions arc42-docs --change <id>`.
+            tests/steps/instruction_integrity_steps.rs — the three real Then steps
+              (parse every `givn instructions <id>` direction line; classify the
+              id against `givn graph --json` artifacts; assert the change-context
+              class per direction; resolve every id through the real CLI with the
+              named change or the project's single active change).
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the template fix)
+            Feature: Instruction and skill guidance remains complete and machine-readable
+              Scenario: Every generated direction is invokable in its documented context
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then every direction to an artifact instruction names the change context it needs
+               ✔  And every direction to a policy or step instruction names no change context
+               ✔  And every named instruction id resolves in the context the direction names
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.45s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `2c233573` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            2c233573 — feat(instruction-integrity): <release note>; body: Scenario: Every generated direction is invokable in its documented context
+            ```
+
+- [x] match-guidance-to-enabled-addons: Review guidance omits the Arc42 section when the Arc42 addon is disabled
+      Design constraints:
+        - Condition seam: the Arc42 implementation conformance section moves out of the review skill/command templates into `assets/instructions/review.md` wrapped in `{{#if addons.arc42}}`; `src/skills/render.rs` gains `render_conditionals` (the existing `render_lines` semantics: fail-closed on an unknown addon key or an unbalanced conditional); `src/cli/instructions.rs` renders with the project's enabled addons before printing.
+        - Assertions: the served review instruction omits the Arc42 implementation conformance section; the generated review skill and command carry no Arc42 section; the generated review skill directs the reviewer to the review instruction.
+        - Step file: `tests/steps/template_conditional_rendering_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::Review guidance omits the Arc42 section when the Arc42 addon is disabled"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::Review guidance omits the Arc42 section when the Arc42 addon is disabled"
+            Feature: Match guidance to enabled addons
+              Scenario: Review guidance omits the Arc42 section when the Arc42 addon is disabled
+               ✔  Given a Givn project with the arc42 addon disabled and the skills synchronized
+               ✘  Then the served review instruction omits the Arc42 implementation conformance section
+                  Step panicked. Captured output: the served review instruction carries the Arc42 section:
+                  # Instruction: review ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (1 passed, 1 failed)                                 EXIT=101
+            OLD_PRODUCT_RED — `assets/instructions/review.md` serves the Arc42
+            implementation conformance section unconditionally, with a prose N/A
+            clause instead of a conditional block. Every step is bound with a
+            real assertion; the served-content step is the one that fails.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            assets/instructions/review.md — the Arc42 implementation conformance
+              section is now a `{{#if addons.arc42}}` block; the disabled case
+              carries the `{{else}}` note with the N/A sentence (the permanent
+              `Arc42-disabled review instructions mark conformance as not
+              applicable` scenario requires that literal on the served surface,
+              so it is kept as the else branch instead of being deleted).
+            tests/steps/template_conditional_rendering_steps.rs — new real steps:
+              `the served review instruction omits …` (creates the fixture's
+              single active change when absent, then uses the shared
+              `served_instruction` helper), the two `carries no …` bindings
+              (delegating to the existing assertions), and
+              `the generated review skill directs …`.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the conditional edit)
+            Feature: Match guidance to enabled addons
+              Scenario: Review guidance omits the Arc42 section when the Arc42 addon is disabled
+               ✔  Given a Givn project with the arc42 addon disabled and the skills synchronized
+               ✔  Then the served review instruction omits the Arc42 implementation conformance section
+               ✔  And the generated review skill carries no Arc42 implementation conformance section
+               ✔  And the generated review command carries no Arc42 implementation conformance section
+               ✔  And the generated review skill directs the reviewer to the review instruction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.24s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
+            $ (also re-ran the permanent N/A scenario to guard the kept else branch)
+              fragments/review-architecture-documentation.feature::Arc42-disabled
+              review instructions mark conformance as not applicable → 5 steps (5 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `2f3cb6fb` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            2f3cb6fb — feat(match-guidance-to-enabled-addons): <release note>; body: Scenario: Review guidance omits the Arc42 section when the Arc42 addon is disabled
+            ```
+
+- [x] match-guidance-to-enabled-addons: Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled
+      Design constraints:
+        - Condition seam: the Architecture documentation (arc42) branch moves into `assets/instructions/design-review.md` as a `{{#if addons.arc42}}` block; the generated files carry the direction only; the prose "N/A when disabled" clauses are absorbed by the conditional selection.
+        - Assertions: the served design-review instruction omits the Architecture documentation (arc42) branch; the generated design-review skill and command carry none.
+        - Step file: `tests/steps/template_conditional_rendering_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled"
+            Feature: Match guidance to enabled addons
+              Scenario: Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled
+               ✔  Given a Givn project with the arc42 addon disabled and the skills synchronized
+               ✘  Then the served design-review instruction omits the Architecture documentation (arc42) branch
+                  Step panicked. Captured output: the served design-review instruction carries the arc42 branch:
+                  # Instruction: design-review ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (1 passed, 1 failed)                                 EXIT=101
+            OLD_PRODUCT_RED — `assets/instructions/design-review.md` carries the
+            Architecture documentation (arc42) branch unconditionally with a
+            prose N/A clause. All steps are bound with real assertions.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            assets/instructions/design-review.md — the Architecture documentation
+              (arc42) branch is a `{{#if addons.arc42}}` block; the "N/A if the
+              arc42 addon is not enabled" prose is removed (the conditional
+              selection carries the absence).
+            tests/steps/template_conditional_rendering_steps.rs — the served
+              design-review step plus the two `carries no …` bindings.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the conditional edit)
+            Feature: Match guidance to enabled addons
+              Scenario: Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled
+               ✔  Given a Givn project with the arc42 addon disabled and the skills synchronized
+               ✔  Then the served design-review instruction omits the Architecture documentation (arc42) branch
+               ✔  And the generated design-review skill carries no Architecture documentation (arc42) branch
+               ✔  And the generated design-review command carries no Architecture documentation (arc42) check
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
+            $ (enabled-case spot check outside the suite: the branch renders with
+               arc42 enabled in a probe project, 1 occurrence; 0 with it disabled)
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.23s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `b4afc639` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            b4afc639 — feat(match-guidance-to-enabled-addons): <release note>; body: Scenario: Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled
+            ```
+
+- [x] refresh-generated-guidance: Generated guidance carries no copy of a built-in rule
+      Design constraints:
+        - Real `givn skills sync` with all targets enabled; every generated skill and command carries trigger metadata and a direction, and none copies the built-in rules of its instruction.
+        - No-duplication step (design.md §Step definitions, lives in `tests/steps/instruction_integrity_steps.rs`): the file names `givn instructions <id>`, and NONE of the representative marker list appears — "Artifact-specific rules", "carries the release note as its message subject", "Overlap dispositions", "Black-Box-First", "the user's verified name", "VISUAL-REVIEW: PASS", "one question at a time"; the list samples rules owned by different instruction assets so a copy reappearing anywhere is caught.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/refresh-generated-guidance.feature::Generated guidance carries no copy of a built-in rule"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/refresh-generated-guidance.feature::Generated guidance carries no copy of a built-in rule"
+            Feature: Refresh generated guidance
+              Scenario: Generated guidance carries no copy of a built-in rule
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then every generated skill and command carries trigger metadata and a direction
+               ✘  And no generated skill or command copies the built-in rules of its instruction
+                  Step panicked. Captured output: /tmp/.tmpzGVk9q/.opencode/skills/givn-design/SKILL.md
+                  still copies the built-in rule marker "Black-Box-First":
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                 EXIT=101
+            OLD_PRODUCT_RED — the generated templates still carry the built-in
+            rule copies (the check walks every installed skill and command of
+            the configured targets and asserts the representative marker list).
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            assets/skills/givn-design/SKILL.md.tmpl, givn-design-review/SKILL.md.tmpl,
+              givn-implement/SKILL.md.tmpl, givn-propose/SKILL.md.tmpl,
+              givn-review/SKILL.md.tmpl, givn-steps/SKILL.md.tmpl,
+              givn-tasks/SKILL.md.tmpl
+            assets/commands/givn-characterize.md, givn-design.md, givn-implement.md,
+              givn-reverse-engineer.md, givn-review.md, givn-steps.md,
+              givn-tasks.md, grill-me.md, grill-with-docs.md
+              — every representative marker copy removed from all 30 template
+              files; each affected file now points at the served instruction
+              that owns the rule (commit contract → `givn instructions tasks
+              --change …`, black-box-first → `givn instructions design
+              --change …`, gate dispositions and the visual verdict →
+              `givn instructions review --change …`; the one-question
+              discipline stays with the dialog policy).
+            tests/steps/instruction_integrity_steps.rs — the two real steps
+              (frontmatter trigger metadata + a named direction per installed
+              file; the seven-marker representative copy scan).
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the template edits)
+            Feature: Refresh generated guidance
+              Scenario: Generated guidance carries no copy of a built-in rule
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then every generated skill and command carries trigger metadata and a direction
+               ✔  And no generated skill or command copies the built-in rules of its instruction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.52s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            $ (direction guards re-run after the new pointers)
+              fragments/instruction-integrity.feature::Every instruction id named by
+              generated guidance resolves through the Givn CLI → 4 steps (4 passed)  EXIT=0
+              fragments/instruction-integrity.feature::Every generated direction is
+              invokable in its documented context → 5 steps (5 passed)               EXIT=0
+              (the first wrapped `givn instructions tasks --change` line breaks were
+              unwrapped so the direction holds the change context on one line)
+            $ (permanent guards for the kept orchestration text)
+              create-change/prose-consolidation.feature::Generated guidance names the
+              commit path that works on every backend → 3 steps (3 passed)           EXIT=0
+              initialize-project/initialize-a-project.feature::Fossil initialization
+              names the supported attribution path without Git plumbing → 7 steps (7 passed)  EXIT=0
+              fragments/review-architecture-documentation.feature::Generated review
+              guidance stays aligned after skill sync → 4 steps (4 passed)           EXIT=0
+            ```
+      - [x] COMMIT: `ce266c18` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            ce266c18 — feat(refresh-generated-guidance): <release note>; body: Scenario: Generated guidance carries no copy of a built-in rule
+            ```
+
+- [x] initialize-a-project: A full copy installed by an earlier version is reconciled to the direction
+      Design constraints:
+        - Fixture seam: a new fixture in `tests/steps/init_agent_target_selection_steps.rs` installs a full-copy `.opencode/skills/givn-propose/SKILL.md` as written by an earlier version (rule text, no direction).
+        - Reconciliation is the existing overwrite: the sync render path (`src/skills/render.rs`, `src/skills/targets.rs::sync`) is untouched; the next real `givn skills sync` rewrites the managed file.
+        - Assertions: exit 0; the file directs the author to the proposal instruction; the file carries no built-in rule text.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "initialize-project/initialize-a-project.feature::A full copy installed by an earlier version is reconciled to the direction"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "initialize-project/initialize-a-project.feature::A full copy installed by an earlier version is reconciled to the direction"
+            Feature: initialize-a-project
+              Scenario: A full copy installed by an earlier version is reconciled to the direction
+               ✔  Given a project root with givn/ initialised
+               ✔  And a full-copy givn-propose skill installed by an earlier version
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the command exits 0
+               ✔  And the file ".opencode/skills/givn-propose/SKILL.md" directs the author to the proposal instruction
+               ✔  And the file ".opencode/skills/givn-propose/SKILL.md" carries no built-in rule text
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                           EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the reconciliation is the existing
+            managed-path overwrite (the sync render path is untouched by this
+            change), so the fixture's earlier-version copy is already rewritten
+            by the real sync. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration 1 (controlled omission of the delivered direction):
+            $ (temporarily rewrote "givn instructions proposal --change" →
+               "givn instructions the-proposal --change" in
+               assets/skills/givn-propose/SKILL.md.tmpl; same scoped command)
+            Feature: initialize-a-project
+              Scenario: A full copy installed by an earlier version is reconciled to the direction
+               ✔  Given a project root with givn/ initialised
+               ✔  And a full-copy givn-propose skill installed by an earlier version
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the command exits 0
+               ✘  And the file ".opencode/skills/givn-propose/SKILL.md" directs the author to the proposal instruction
+                  Step panicked. Captured output: .opencode/skills/givn-propose/SKILL.md
+                  does not direct the author to the proposal instruction: ---
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                 EXIT=101
+            ORACLE_RED calibration 2 (representative rule copy reinserted):
+            $ (temporarily appended "The revision carries the release note as its
+               message subject." to the template; same scoped command)
+            ✘  And the file ".opencode/skills/givn-propose/SKILL.md" carries no built-in rule text
+               Step panicked. Captured output: .opencode/skills/givn-propose/SKILL.md still
+               carries the built-in rule marker "carries the release note as its message subject"
+            5 steps (4 passed, 1 failed)                                 EXIT=101
+            Each omission makes exactly the matching assertion fail, so both
+            assertions discriminate; the excerpt was restored immediately
+            (`git checkout -- assets/skills/givn-propose/SKILL.md.tmpl`) and the
+            scoped command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — reconciliation is the existing sync overwrite. This scenario
+            adds the earlier-version full-copy fixture and the two real file
+            assertions in tests/steps/init_agent_target_selection_steps.rs.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the template)
+            Feature: initialize-a-project
+              Scenario: A full copy installed by an earlier version is reconciled to the direction
+               ✔  Given a project root with givn/ initialised
+               ✔  And a full-copy givn-propose skill installed by an earlier version
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the command exits 0
+               ✔  And the file ".opencode/skills/givn-propose/SKILL.md" directs the author to the proposal instruction
+               ✔  And the file ".opencode/skills/givn-propose/SKILL.md" carries no built-in rule text
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.19s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `500ee1c4` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            500ee1c4 — feat(initialize-a-project): <release note>; body: Scenario: A full copy installed by an earlier version is reconciled to the direction
+            ```
+
+- [x] initialize-a-project: The project-start block renders its resident rules from the tasks instruction
+      Design constraints:
+        - Seams: `assets/instructions/tasks.md` carries the task-checkoff obligation and the atomic-commit obligation (backend-neutral attribution wording) between `<!-- givn:resident-rules:begin -->` and `<!-- givn:resident-rules:end -->`; `assets/agents-project-hint.md` replaces its two resident bullets with `{{RESIDENT_RULES}}`; `src/cli/project_hint.rs::apply` extracts the marked section from the same embedded `instructions/tasks.md` the request path serves and substitutes it.
+        - Fail-closed: a missing marker is a shipped-asset defect — the call fails naming the asset instead of writing a block without the obligations.
+        - Assertions: after real `givn skills sync`, the project-start block carries the resident rules section of the tasks instruction; the block requires the effective dialog policy.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "initialize-project/initialize-a-project.feature::The project-start block renders its resident rules from the tasks instruction"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "initialize-project/initialize-a-project.feature::The project-start block renders its resident rules from the tasks instruction"
+            Feature: initialize-a-project
+              Scenario: The project-start block renders its resident rules from the tasks instruction
+               ✔  Given a Givn project with an active change
+               ✔  When the user runs `givn skills sync`
+               ✘  Then the project-start block carries the resident rules section of the tasks instruction
+                  Step panicked. Captured output: the served tasks instruction is missing the
+                  <!-- givn:resident-rules:begin --> marker
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                 EXIT=101
+            OLD_PRODUCT_RED — the served `assets/instructions/tasks.md` carries no
+            resident-rules section yet, so the block has no single home to render
+            from. The step reads the served instruction through the real CLI.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            assets/instructions/tasks.md — the resident-rules section (task
+              checkoff + atomic commit with the attribution sentence) between
+              the givn:resident-rules markers; it is part of the served
+              instruction.
+            assets/agents-project-hint.md — the two resident bullets replaced by
+              {{RESIDENT_RULES}}; every other bullet stays.
+            src/cli/project_hint.rs — apply extracts the marked section from the
+              embedded instructions/tasks.md and substitutes it; missing or
+              empty markers fail closed naming the asset; unit tests cover the
+              extraction, the fail-closed path, and the substitution.
+            tests/steps/prose_consolidation_steps.rs — the two real Then steps
+              (served resident section matched against the managed block;
+              dialog-policy requirement).
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the production edits)
+            Feature: initialize-a-project
+              Scenario: The project-start block renders its resident rules from the tasks instruction
+               ✔  Given a Givn project with an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the project-start block carries the resident rules section of the tasks instruction
+               ✔  And the project-start block requires the effective dialog policy
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                           EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.93s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            $ (project_hint unit tests) cargo test --locked --lib project_hint → 3 passed  EXIT=0
+            $ (permanent guard for the block) create-change/prose-consolidation.feature::
+              Successful project skill and command replacements are preserved without
+              policy injection → 7 steps (7 passed)                              EXIT=0
+            $ (rendered-block spot check outside the suite: the block carries both
+              resident bullets, the release-note sentence, the dialog obligations,
+              and no leftover {{RESIDENT_RULES}} placeholder)
+            ```
+      - [x] COMMIT: `506d92c5` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            506d92c5 — feat(initialize-a-project): <release note>; body: Scenario: The project-start block renders its resident rules from the tasks instruction
+            ```
+
+- [x] serve-extended-rules: The built-in rules are served alone when no extension exists
+      Design constraints:
+        - Seams: `src/config/extensions.rs::load` yields empty for an absent `extensions:` key; `append` is a no-op without rules; `src/cli/instructions.rs` is the only caller of the serve path.
+        - Assertions: `givn instructions specs --change <active>` serves the built-in specs rules; the served content carries no extension section.
+        - Step file: `tests/steps/serve_extended_rules_steps.rs` (shared served-instruction step beside `served_instruction(env, id)`).
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The built-in rules are served alone when no extension exists"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The built-in rules are served alone when no extension exists"
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: The built-in rules are served alone when no extension exists
+               ✔  Given a Givn project with an active change
+               ✔  When the agent requests the specs instructions through the Givn CLI
+               ✔  Then the served content carries the built-in specs rules
+               ✔  And the served content carries no extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the built-in serving path already
+            delivers the specs rules alone when no extension exists; this is
+            the recorded ORACLE_RED case. The first binding attempt hit an
+            ambiguous step match: the pre-existing literal binding
+            `the agent requests the specs instructions through the Givn CLI`
+            in `tests/steps/fix_domain_modeling_skill_trigger_steps.rs` owns
+            that sentence, so the shared request regex was narrowed to the ids
+            this delta serves (proposal|dialog|ideation|explore) — a comment in
+            `serve_extended_rules_steps.rs` records why.
+            ORACLE_RED calibration (controlled omission of the delivered excerpt):
+            $ (temporarily rewrote "Primary assertion rule:" → "Primary assertion criterion:" in assets/instructions/specs.md; same scoped command)
+               ✔  Given a Givn project with an active change
+               ✔  When the agent requests the specs instructions through the Givn CLI
+               ✘  Then the served content carries the built-in specs rules
+                  Step panicked. Captured output: the served specs content is missing the built-in specs rules ("Primary assertion rule"): # Instruction: specs
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/specs.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — assertion migration and binding only. The built-in serving
+            path (resolve → render → print) already delivers the specs rules
+            alone; this scenario adds the built-in specs assertion in
+            tests/steps/serve_extended_rules_steps.rs and generalizes the
+            no-extension-section assertion to the requested served content, so
+            the `specs` request is covered without a duplicate ambiguous
+            binding.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: The built-in rules are served alone when no extension exists
+               ✔  Given a Givn project with an active change
+               ✔  When the agent requests the specs instructions through the Givn CLI
+               ✔  Then the served content carries the built-in specs rules
+               ✔  And the served content carries no extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.18s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `d3738387` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            d3738387 — feat(serve-extended-rules): <release note>; body: Scenario: The built-in rules are served alone when no extension exists
+            ```
+
+- [x] serve-extended-rules: The extension adds to the built-in rules without replacing or reordering them
+      Design constraints:
+        - Append seam: `src/cli/instructions.rs` renders the built-in rules, then appends the project's extension under the marked `## Project extension` section (heading is the acceptance marker; rule order follows config order).
+        - Contradiction fixture: the extension records "Never write a release note" while the built-in release-note rule stays; both appear — rules are extended, never overridden, suppressed, or reordered, and no semantic conflict detection exists (R-79).
+        - Assertions: every built-in rule of the proposal instruction remains in the served content; the built-in rules appear before the marked extension section; the contradicting project rule appears beside the built-in release-note rule.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The extension adds to the built-in rules without replacing or reordering them"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The extension adds to the built-in rules without replacing or reordering them"
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: The extension adds to the built-in rules without replacing or reordering them
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  And the extension carries the rule "Never write a release note"
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then every built-in rule of the proposal instruction remains in the served content
+               ✔  And the built-in rules appear before the marked extension section
+               ✔  And the contradicting project rule appears beside the built-in release-note rule
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            7 steps (7 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the append mechanism is delivered by
+            the earlier instruction-extension scenarios; the extension is
+            appended after the unmodified built-in content, so this is the
+            recorded ORACLE_RED case. The first binding run exposed a
+            fixture-comparison flaw, not a product gap: the text path appends a
+            trailing `Skill to load now:` line, so the prefix comparison now
+            normalizes that routing line on both captures.
+            ORACLE_RED calibration (controlled omission of the delivered excerpt):
+            $ (temporarily rewrote "carries the release note as its message subject" → "carries the release note in its message subject" in assets/instructions/proposal.md; same scoped command)
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  And the extension carries the rule "Never write a release note"
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then every built-in rule of the proposal instruction remains in the served content
+               ✔  And the built-in rules appear before the marked extension section
+               ✘  And the contradicting project rule appears beside the built-in release-note rule
+                  Step panicked. Captured output: the served proposal content is missing the built-in release-note rule ("carries the release note as its message subject") beside "Never write a release note": # Instruction: proposal
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            7 steps (6 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/proposal.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the serving path and the marked append section are
+            delivered by the earlier instruction-extension scenarios. This
+            scenario adds the shared recording step (built-in capture, the
+            `extensions:` block, the expected-rule record), the
+            `the extension carries the rule` step, and the three ordering /
+            contradiction assertions in
+            tests/steps/serve_extended_rules_steps.rs; the write/replace
+            helpers in tests/steps/instruction_extension_steps.rs become
+            `pub(crate)` for reuse.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: The extension adds to the built-in rules without replacing or reordering them
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  And the extension carries the rule "Never write a release note"
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then every built-in rule of the proposal instruction remains in the served content
+               ✔  And the built-in rules appear before the marked extension section
+               ✔  And the contradicting project rule appears beside the built-in release-note rule
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            7 steps (7 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.35s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 7 steps (7 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `62458919` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            62458919 — feat(serve-extended-rules): <release note>; body: Scenario: The extension adds to the built-in rules without replacing or reordering them
+            ```
+
+- [x] serve-extended-rules: The machine-readable path carries the same extended content as the text path
+      Design constraints:
+        - JSON contract (arc42 §8.3b): `id`, `generates`, `requires`, `skill_to_load` are unchanged; the `instruction` field carries the same rendered-and-extended text as the text path, extension included.
+        - Assertions: the response identifies the artifact and its generated paths and prerequisites; the response carries the same instruction content as the text path; the response carries the project's rule in the marked extension section.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The machine-readable path carries the same extended content as the text path"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The machine-readable path carries the same extended content as the text path"
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: The machine-readable path carries the same extended content as the text path
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the proposal instructions as JSON through the Givn CLI
+               ✔  Then the response identifies the artifact and its generated paths and prerequisites
+               ✔  And the response carries the same instruction content as the text path
+               ✔  And the response carries the project's rule in the marked extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the JSON branch of the serve path
+            already fills `instruction` with the rendered-and-extended text
+            (delivered by the earlier instruction-extension scenarios), so this
+            is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily replaced the artifact path's
+               `extensions::append` with `let content = content;` in
+               src/cli/instructions.rs; same scoped command)
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: The machine-readable path carries the same extended content as the text path
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the proposal instructions as JSON through the Givn CLI
+               ✔  Then the response identifies the artifact and its generated paths and prerequisites
+               ✔  And the response carries the same instruction content as the text path
+               ✘  And the response carries the project's rule in the marked extension section
+                  Step panicked. Captured output: the served proposal content carries no marked extension section: # Instruction: proposal
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            6 steps (5 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the source was restored immediately
+            (`git checkout -- src/cli/instructions.rs`) and the scoped command
+            passed again. No production switch, exception, fake success, or
+            source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the JSON path already appends the extension (delivered by
+            the earlier instruction-extension scenarios; arc42 §8.3b shape
+            unchanged). This scenario adds the JSON request step, the
+            artifact-identity assertions, the text-path parity comparison
+            (normalizing the trailing skill route) and the marked-section
+            rule assertion in tests/steps/serve_extended_rules_steps.rs.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the source)
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: The machine-readable path carries the same extended content as the text path
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the proposal instructions as JSON through the Givn CLI
+               ✔  Then the response identifies the artifact and its generated paths and prerequisites
+               ✔  And the response carries the same instruction content as the text path
+               ✔  And the response carries the project's rule in the marked extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.85s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `caa573f5` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            caa573f5 — feat(serve-extended-rules): <release note>; body: Scenario: The machine-readable path carries the same extended content as the text path
+            ```
+
+- [x] serve-extended-rules: The extension applies on top of a project-owned replacement
+      Design constraints:
+        - D4: the project's whole-facet replacement is the effective base and the marked extension section is appended to it; the replacement file itself is never modified or injected (R-74 unchanged); `src/config/cascade.rs::resolve_instruction` keeps its signature and order (project override, embedded, addon); `src/cli/eject.rs` keeps materializing raw assets.
+        - Assertions: the served proposal content carries the replacement text; the served content carries the project's rule in the marked extension section after it.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The extension applies on top of a project-owned replacement"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The extension applies on top of a project-owned replacement"
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: The extension applies on top of a project-owned replacement
+               ✔  Given a Givn project with an active change
+               ✔  And a project-owned replacement for the proposal instruction
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the served content carries the replacement text
+               ✔  And the served content carries the project's rule in the marked extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the cascade already resolves the
+            project-owned replacement as the effective base and the serve path
+            appends the marked extension section to it (D4 delivered by the
+            earlier instruction-extension scenarios); this is the recorded
+            ORACLE_RED case. The first binding run failed with a missing
+            binding for the shared text assertion
+            `the served content carries the project's rule in the marked
+            extension section` (design.md §Step definitions names it; its only
+            earlier use was @wip), which is now bound with the real assertion.
+            ORACLE_RED calibration (controlled omission in the isolated fixture):
+            $ (temporarily made the replacement fixture record bytes that do not
+               match what it writes; same scoped command)
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: The extension applies on top of a project-owned replacement
+               ✔  Given a Givn project with an active change
+               ✔  And a project-owned replacement for the proposal instruction
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✘  Then the served content carries the replacement text
+                  Step panicked. Captured output: the served proposal content does not carry the project-owned replacement: # Instruction: proposal (project-owned replacement)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the real recording was restored immediately
+            and the scoped command passed again. No production switch,
+            exception, fake success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the cascade resolves the project-owned replacement as the
+            effective base (signature and order unchanged) and the marked
+            extension section appends to it. This scenario adds the
+            replacement fixture and its two real assertions in
+            tests/steps/serve_extended_rules_steps.rs, plus the shared text
+            assertion binding named by design.md §Step definitions.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the real recording)
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: The extension applies on top of a project-owned replacement
+               ✔  Given a Givn project with an active change
+               ✔  And a project-owned replacement for the proposal instruction
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the served content carries the replacement text
+               ✔  And the served content carries the project's rule in the marked extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.28s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `b2f92a4e` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            b2f92a4e — feat(serve-extended-rules): <release note>; body: Scenario: The extension applies on top of a project-owned replacement
+            ```
+
+- [x] serve-extended-rules: A guidance request changes nothing in the project
+      Design constraints:
+        - No render cache and no new command surface: `givn instructions` resolves, renders, appends, and prints on every call; the extension map is read from `givn/config.yaml` on every call; nothing is written.
+        - Assertion: after requesting the instructions for every served step, a project snapshot shows no changed file (the request path must not mutate configuration, generated files, or state).
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::A guidance request changes nothing in the project"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::A guidance request changes nothing in the project"
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: A guidance request changes nothing in the project
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the instructions for every served step
+               ✔  Then no project file changed
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the request path already resolves,
+            renders, appends, and prints without writing (delivered by the
+            earlier instruction-extension scenarios); this is the recorded
+            ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission in the isolated fixture):
+            $ (temporarily made the request step write a probe project file after
+               the requests, simulating a mutating request path; same scoped
+               command)
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: A guidance request changes nothing in the project
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the instructions for every served step
+               ✘  Then no project file changed
+                  Step panicked. Captured output: the request path changed project files: ["mutation-probe.txt"]
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            The simulated mutation makes exactly the matching assertion fail, so
+            the assertion discriminates; the probe write was removed immediately
+            and the scoped command passed again. No production switch,
+            exception, fake success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the request path writes nothing (no render cache, no new
+            command surface; the extension map is read per call). This scenario
+            adds the every-served-step request step (the instruction assets the
+            binary serves in this version, so later assets are covered too) and
+            the project-file snapshot comparison in
+            tests/steps/serve_extended_rules_steps.rs.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after removing the probe write)
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: A guidance request changes nothing in the project
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the instructions for every served step
+               ✔  Then no project file changed
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.28s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `4022aa3d` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            4022aa3d — feat(serve-extended-rules): <release note>; body: Scenario: A guidance request changes nothing in the project
+            ```
+
+- [x] apply-a-managed-upgrade: An upgrade reconciles full-copy guidance to the direction
+      Design constraints:
+        - Existing managed-path synchronization renders the rewritten assets; ignored managed paths are force-staged only through the calculated allowlist; the fixture is a committed project root with a tracked full-copy `.opencode/skills/givn-propose/SKILL.md`.
+        - Assertions: the command exits 0; the revision shows `.opencode/skills/givn-propose/SKILL.md` rewritten to the direction (the rules now arrive only through `givn instructions`).
+        - Step file: `tests/steps/run_upgrade_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade reconciles full-copy guidance to the direction"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade reconciles full-copy guidance to the direction"
+            Feature: Managed upgrade and legacy project migration
+              Scenario: An upgrade reconciles full-copy guidance to the direction
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And a tracked full-copy generated rule at ".opencode/skills/givn-propose/SKILL.md"
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✔  And the revision shows ".opencode/skills/givn-propose/SKILL.md" rewritten to the direction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the managed-path synchronization
+            already renders the rewritten asset and force-stages it through the
+            calculated allowlist (the fixture models a project that tracks its
+            generated rules: `rules: versioned`, so the rewrite is repository
+            content rather than a local-only removal — the permanent
+            "A local-only upgrade publishes rule removals" scenario owns the
+            other policy). This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission of the delivered direction):
+            $ (temporarily rewrote "givn instructions proposal --change" →
+               "givn instructions the-proposal --change" in
+               assets/skills/givn-propose/SKILL.md.tmpl; same scoped command)
+            Feature: Managed upgrade and legacy project migration
+              Scenario: An upgrade reconciles full-copy guidance to the direction
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And a tracked full-copy generated rule at ".opencode/skills/givn-propose/SKILL.md"
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✘  And the revision shows ".opencode/skills/givn-propose/SKILL.md" rewritten to the direction
+                  Step panicked. Captured output: .opencode/skills/givn-propose/SKILL.md is not rewritten to the direction: ---
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the template was restored immediately
+            (`git checkout -- assets/skills/givn-propose/SKILL.md.tmpl`) and the
+            scoped command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the upgrade sync rewrites the tracked full copy to the
+            direction and stages it through the calculated allowlist. This
+            scenario adds the tracked-full-copy fixture (earlier-version copy,
+            versioned policy, committed) and the revision assertion in
+            tests/steps/run_upgrade_steps.rs; the revision content is read at
+            HEAD, not from the working tree.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the template)
+            Feature: Managed upgrade and legacy project migration
+              Scenario: An upgrade reconciles full-copy guidance to the direction
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And a tracked full-copy generated rule at ".opencode/skills/givn-propose/SKILL.md"
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✔  And the revision shows ".opencode/skills/givn-propose/SKILL.md" rewritten to the direction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.24s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `ab5584b2` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            ab5584b2 — feat(apply-a-managed-upgrade): <release note>; body: Scenario: An upgrade reconciles full-copy guidance to the direction
+            ```
+
+- [x] apply-a-managed-upgrade: An upgrade leaves the project's extensions untouched
+      Design constraints:
+        - The `extensions:` key is user-owned configuration outside the allowlist; the managed revision never stages, merges, or rewrites it.
+        - Assertions: the command exits 0; the upgrade revision carries no extension content; the recorded extension is unchanged (byte-for-byte).
+        - Step file: `tests/steps/run_upgrade_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade leaves the project's extensions untouched"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade leaves the project's extensions untouched"
+            Feature: Managed upgrade and legacy project migration
+              Scenario: An upgrade leaves the project's extensions untouched
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✔  And the upgrade revision carries no extension content
+               ✔  And the recorded extension is unchanged
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the config upgrade already preserves
+            the user-owned `extensions:` block (its lines are unchanged, so the
+            no-context revision diff carries none of them) and the fixture is
+            committed for the clean-checkout witness; this is the recorded
+            ORACLE_RED case. The first binding run exposed a fixture gap, not a
+            product gap: the shared recording step captured the built-in
+            proposal content, which needs a change context the upgrade fixture
+            does not have; the capture is now conditional on a single active
+            change, and the ordering scenarios keep it.
+            ORACLE_RED calibration 1 (controlled omission from the delivered revision):
+            $ (temporarily recorded the expected rule as a line the upgrade
+               revision does add; same scoped command)
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✘  And the upgrade revision carries no extension content
+                  Step panicked. Captured output: the upgrade revision carries the extension content "# --- User overrides preserved from previous version ---"
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                  EXIT=101
+            ORACLE_RED calibration 2 (controlled drift in the isolated fixture):
+            $ (temporarily recorded the extension block with a trailing drift
+               line; same scoped command)
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✔  And the upgrade revision carries no extension content
+               ✘  And the recorded extension is unchanged
+                  Step panicked. Captured output: assertion `left == right` failed: the recorded extension block changed across the upgrade
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            6 steps (5 passed, 1 failed)                                  EXIT=101
+            Each omission makes exactly the matching assertion fail, so both
+            assertions discriminate; the fixture was restored immediately and
+            the scoped command passed again. No production switch, exception,
+            fake success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the `extensions:` block is user-owned configuration
+            outside the allowlist; the upgrade preserves it while refreshing
+            the scaffold. This scenario adds the extension-block record and the
+            preserved-overrides byte comparison plus the no-context revision
+            check in tests/steps/run_upgrade_steps.rs (and the block recorder
+            in tests/steps/serve_extended_rules_steps.rs).
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the fixture)
+            Feature: Managed upgrade and legacy project migration
+              Scenario: An upgrade leaves the project's extensions untouched
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✔  And the upgrade revision carries no extension content
+               ✔  And the recorded extension is unchanged
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.37s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `329f2756` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            329f2756 — feat(apply-a-managed-upgrade): <release note>; body: Scenario: An upgrade leaves the project's extensions untouched
+            ```
+
+- [x] apply-a-managed-upgrade: A project-owned replacement stays byte-for-byte across an upgrade
+      Design constraints:
+        - The project's whole-facet replacement stays authoritative; the upgrade never modifies it or injects text into it (R-74 unchanged).
+        - Assertions: the command exits 0; the project-owned replacement is byte-for-byte unchanged; the upgrade revision carries no injected text for the replacement.
+        - Step file: `tests/steps/run_upgrade_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "upgrade-a-project/apply-a-managed-upgrade.feature::A project-owned replacement stays byte-for-byte across an upgrade"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "upgrade-a-project/apply-a-managed-upgrade.feature::A project-owned replacement stays byte-for-byte across an upgrade"
+            Feature: Managed upgrade and legacy project migration
+              Scenario: A project-owned replacement stays byte-for-byte across an upgrade
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And a project-owned replacement for the proposal instruction
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✔  And the project-owned replacement is byte-for-byte unchanged
+               ✔  And the upgrade revision carries no injected text for the replacement
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the replacement lives under
+            `givn/artifacts/`, outside the managed allowlist, so the upgrade
+            neither touches the file nor stages it; this is the recorded
+            ORACLE_RED case.
+            ORACLE_RED calibration 1 (controlled omission in the isolated fixture):
+            $ (temporarily recorded replacement bytes that do not match what the
+               fixture writes; same scoped command)
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And a project-owned replacement for the proposal instruction
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✘  And the project-owned replacement is byte-for-byte unchanged
+                  Step panicked. Captured output: assertion `left == right` failed: the project-owned replacement is not byte-for-byte unchanged
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                  EXIT=101
+            ORACLE_RED calibration 2 (controlled omission from the delivered revision):
+            $ (temporarily set the replacement marker needle to a line the upgrade
+               revision does add; same scoped command)
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And a project-owned replacement for the proposal instruction
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✔  And the project-owned replacement is byte-for-byte unchanged
+               ✘  And the upgrade revision carries no injected text for the replacement
+                  Step panicked. Captured output: the upgrade revision injected text for the replacement:
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            6 steps (5 passed, 1 failed)                                  EXIT=101
+            Each omission makes exactly the matching assertion fail, so both
+            assertions discriminate; the fixture was restored immediately and
+            the scoped command passed again. No production switch, exception,
+            fake success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the cascade-visible replacement is outside the managed
+            allowlist and the upgrade leaves it authoritative (R-74 unchanged).
+            This scenario reuses the shared replacement fixture (written and
+            committed by the serve-extended-rules step) and adds the
+            byte-for-byte comparison and the revision-injection check in
+            tests/steps/run_upgrade_steps.rs.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the fixture)
+            Feature: Managed upgrade and legacy project migration
+              Scenario: A project-owned replacement stays byte-for-byte across an upgrade
+               ✔  Given a committed project root with givn/ initialised
+               ✔  And a project-owned replacement for the proposal instruction
+               ✔  When the user runs `givn upgrade`
+               ✔  Then the command exits 0
+               ✔  And the project-owned replacement is byte-for-byte unchanged
+               ✔  And the upgrade revision carries no injected text for the replacement
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.35s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `b23428d2` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            b23428d2 — feat(apply-a-managed-upgrade): <release note>; body: Scenario: A project-owned replacement stays byte-for-byte across an upgrade
+            ```
+
+- [x] visual-review-gate: Synchronized review guidance carries the visual block
+      Design constraints:
+        - Served-content seam: `assets/instructions/review.md` carries the visual block; the generated givn-review file carries the direction only.
+        - Assertions: the generated givn-review guidance directs the reviewer to the review instruction; the served review instruction contains "VISUAL-REVIEW: PASS", "confirmed Persona", "no pixel-level".
+        - Step file: `tests/steps/visual_review_gate_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "verify-change/visual-review-gate.feature::Synchronized review guidance carries the visual block"`
+      - [x] RED: bind this scenario's steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only, run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "verify-change/visual-review-gate.feature::Synchronized review guidance carries the visual block"
+            Feature: Visual Review Gate
+              Scenario: Synchronized review guidance carries the visual block
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the generated givn-review guidance directs the reviewer to the review instruction
+               ✔  And the served review instruction contains "VISUAL-REVIEW: PASS"
+               ✔  And the served review instruction contains "confirmed Persona"
+               ✘  And the served review instruction contains "no pixel-level"
+                  Step panicked. Captured output: the served review instruction is missing "no pixel-level": # Instruction: review
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            6 steps (5 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED — the served review instruction carries the visual
+            block, but the rule text reads "No pixel-level or coordinate
+            findings" (capital N), so the asserted phrase "no pixel-level" is
+            absent. The no-change sync fixture also needed the shared
+            served-instruction helper to carry a change context for artifact
+            ids without an active change (the CLI authorizes the context by
+            shape; artifact instructions are not change-specific).
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            assets/instructions/review.md — the visual-block bullet reworded
+            so the served rule carries "no pixel-level" while keeping the
+            contract-rule/Persona-goal requirement and the "2px off" example.
+            tests/steps/serve_extended_rules_steps.rs — the served-instruction
+            helper resolves a manifest artifact id for the no-change sync
+            fixture (single active change when present, else the requested id).
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the production edit)
+            Feature: Visual Review Gate
+              Scenario: Synchronized review guidance carries the visual block
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the generated givn-review guidance directs the reviewer to the review instruction
+               ✔  And the served review instruction contains "VISUAL-REVIEW: PASS"
+               ✔  And the served review instruction contains "confirmed Persona"
+               ✔  And the served review instruction contains "no pixel-level"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.34s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `cfd7bbee` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            cfd7bbee — feat(visual-review-gate): <release note>; body: Scenario: Synchronized review guidance carries the visual block
+            ```
+
+---
+
+## E2E setup (after all non-@e2e scenarios are GREEN)
+
+- [x] Setup: e2e step skeletons, e2e strict-mode proof, `verify.e2e_command` isolation proof, and local runnability
+      Design constraints:
+        - E2E step files, separate from the regular steps, per `design.md` §E2E
+          smoke test infrastructure ("Step locations"): create
+          `tests/steps/serve_extended_rules_e2e_steps.rs` and
+          `tests/steps/instruction_extension_e2e_steps.rs` and register both in
+          `tests/steps/mod.rs`; the modified features' e2e steps stay in their
+          existing per-capability files (for example
+          `tests/steps/prose_consolidation_e2e_steps.rs`,
+          `tests/steps/template_conditional_rendering_e2e_steps.rs`,
+          `tests/steps/initialize_a_project_e2e_steps.rs`) — never one shared
+          e2e file.
+        - Framework: `cucumber-rs` over real subprocess invocations
+          (`CARGO_BIN_EXE_givn`); the CLI is the real interface, so no browser
+          or HTTP driver applies.
+        - `verify.e2e_command` is exactly `./run-tests.sh --e2e`, never
+          byte-identical to `verify.command` (`./run-tests.sh`); the `@e2e`
+          scoping uses the runner's own tag-filter mechanism
+          (`GIVN_CUCUMBER_TAGS='@e2e'` under nextest, `--tags '@e2e'` under the
+          cargo fallback) — never a second hand-maintained suite.
+        - Local runnability (`design.md` §Local runnability & digital twins):
+          no docker-compose, no isolated network, no digital twin — every
+          changed action is a real CLI subprocess (or a real PTY for
+          interactive init); the only local preparation is the script's
+          existing `cargo build --locked --test ready_fixture`; nothing to
+          start or stop (state this explicitly); a temporary project directory
+          plus the compiled givn binary is the whole environment.
+      PROOF OF E2E STRICTNESS (mandatory — non-zero exit required; paste command
+      + output for each step):
+        1. Write a throwaway `@e2e` probe feature (one scenario, one step with no
+           binding) under `givn/changes/extended-rules/probe-e2e/` and run
+           `GIVN_FEATURES=givn/changes/extended-rules/probe-e2e ./run-tests.sh --e2e`
+           → MUST exit non-zero with an undefined-step failure.
+        2. Bind that step with an `unimplemented!()` stub and rerun the same
+           command → MUST exit non-zero with the panic.
+        3. Remove the probe feature and the temporary binding immediately.
+      PROOF OF ISOLATION (mandatory — paste both counts and both command
+      strings):
+        4. `GIVN_FEATURES=givn/changes/extended-rules/specs GIVN_CUCUMBER_TAGS='' cargo nextest list --locked --test features_runner`
+           → 68 units (the full delta).
+        5. Same with `GIVN_CUCUMBER_TAGS='@e2e'` → 12 units; with
+           `GIVN_CUCUMBER_TAGS='not @e2e'` → 56 units. The e2e count (12) MUST be
+           strictly smaller than the full count (68) — the "all scenarios are
+           @e2e" exception does not apply — and `verify.e2e_command`
+           (`./run-tests.sh --e2e`) MUST differ from `verify.command`
+           (`./run-tests.sh`); record both strings.
+        6. Smoke the real boundary before writing any scenario steps: run the
+           compiled binary once through the e2e harness path (for example
+           `cargo run --locked -- instructions` in a temporary initialized
+           project) → exits 0 and prints guidance, proving the e2e runner
+           reaches the real CLI.
+      ```text
+      PROOF OF E2E STRICTNESS (non-zero exits required; raw output):
+      Probe 1 — undefined step:
+      $ GIVN_FEATURES=givn/changes/extended-rules/probe-e2e ./run-tests.sh --e2e
+        FAIL [   0.381s] (1/1) givn::features_runner probe.feature::Probe with an undefined step
+      stdout: Step doesn't match any function
+      [Summary] 1 feature / 1 scenario (1 failed) / 1 step (1 failed)
+      error: test run failed                                            EXIT=100
+
+      Probe 2 — the step bound with an `unimplemented!()` stub in
+      tests/steps/instruction_extension_e2e_steps.rs:
+      $ (same command after the temporary binding)
+        FAIL [   0.379s] (1/1) givn::features_runner probe.feature::Probe with an undefined step
+      stdout: Matched: tests/steps/instruction_extension_e2e_steps.rs:13:1
+              Step panicked. Captured output: not implemented
+      error: test run failed                                            EXIT=100
+
+      Probe feature and temporary binding removed immediately
+      (probe-e2e/ deleted); re-listing below shows 68 units and no probe
+      title.
+
+      PROOF OF ISOLATION:
+      $ rg -n "command:|e2e_command:" givn/commands.yaml
+      3:  command: "./run-tests.sh"
+      4:  e2e_command: "./run-tests.sh --e2e"
+      verify.command = `./run-tests.sh`; verify.e2e_command =
+      `./run-tests.sh --e2e` — the two strings differ; no config edit was
+      needed.
+
+      $ GIVN_FEATURES=givn/changes/extended-rules/specs GIVN_CUCUMBER_TAGS='' \
+          cargo nextest list --locked --test features_runner | wc -l       → 68 units
+      $ ... GIVN_CUCUMBER_TAGS='@e2e'     ... | wc -l                      → 12 units
+      $ ... GIVN_CUCUMBER_TAGS='not @e2e' ... | wc -l                      → 56 units
+      The e2e count (12) is strictly smaller than the full count (68); the
+      `@e2e` scoping uses the runner's own tag-filter mechanism.
+
+      SMOKE OF THE REAL BOUNDARY (temporary initialized project; the
+      compiled `target/debug/givn` binary the harness spawns):
+      $ target/debug/givn init --agents opencode    → INIT_EXIT=0
+        (skills and commands installed: synced skill: givn-propose …)
+      $ target/debug/givn instructions               → INSTRUCTIONS_EXIT=0
+        givn — from Given to done. ... Status: No changes exist yet.
+        Next: run `givn new <change-id>` to start one, or `/givn-propose …
+      The e2e runner reaches the real CLI.
+
+      LOCAL RUNNABILITY: no docker-compose, no isolated network, no digital
+      twin — every changed action is a real CLI subprocess (or a real PTY for
+      interactive init); the only local preparation is the script's existing
+      `cargo build --locked --test ready_fixture`; nothing to start or stop. A
+      temporary project directory plus the compiled givn binary is the whole
+      environment.
+
+      Skeletons created: tests/steps/serve_extended_rules_e2e_steps.rs,
+      tests/steps/instruction_extension_e2e_steps.rs; both registered in
+      tests/steps/mod.rs.
+      ```
+      - [x] COMMIT: `6c0cce14` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            registration; the e2e run commands are already the configured
+            `givn/commands.yaml` values (edit only if the recorded values
+            differed). Record the revision identifier:
+            ```
+            6c0cce14 — test(extended-rules): e2e step skeletons, strict-mode and isolation proof
+            ```
+
+---
+
+## E2E Smoke Tests
+
+- [x] change-release-note: The generated implementation guidance shares the release note
+      Design constraints:
+        - Real `givn skills sync` with all agent targets enabled; the primary assertion is on the real sync output plus the served tasks instruction (`givn instructions tasks --change <active>`), never on asset source text.
+        - Served-content seam: the commit and release-note contract has exactly one home — `assets/instructions/tasks.md` — and the block's obligations come from the same asset; the generated givn-steps, givn-implement, and givn-tasks files carry the direction only.
+        - Assertions: exit 0; the generated givn-steps guidance directs the step writer to the steps instruction; the generated givn-implement guidance directs the implementer to the tasks instruction; the generated givn-tasks guidance directs the task author to the tasks instruction; the served tasks instruction contains "carries the release note as its message subject" and "the scenario title goes in the message body"; generated guidance does not contain "message references the scenario title"; the file "AGENTS.md" contains "carries the release note as its message subject".
+        - Evidence: capture argv, cwd, exit, raw sync stdout, and the final transcript at the design path after the last assertion.
+        - E2E steps: existing per-capability file (`tests/steps/prose_consolidation_e2e_steps.rs`); direction steps per `tests/steps/prose_consolidation_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/change-release-note.feature::The generated implementation guidance shares the release note"`
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/change-release-note.feature::The generated implementation guidance shares the release note"
+            (first run: the two-word actor sentences were unbound — "Step doesn't
+             match any function" for `directs the step writer…`; the generic
+             direction regex in tests/steps/prose_consolidation_steps.rs was
+             broadened to accept a one- or two-word actor at RED, then:)
+            Feature: Change release note
+              Scenario: The generated implementation guidance shares the release note
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the command exits 0
+               ✘  And the generated givn-steps guidance directs the step writer to the steps instruction
+                  Step panicked. Captured output: givn-steps guidance does not direct to the
+                  steps instruction (missing "givn instructions steps"): ---
+                  name: givn-steps (…delivered givn-steps content follows, abridged…)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: the generated givn-steps guidance carries no
+            `givn instructions steps` direction; the skill body still holds the
+            rule copy.
+            ```
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+            ```
+            assets/instructions/steps.md (new: the canonical steps instruction — the
+              whole step-writing discipline moved out of the givn-steps skill/command:
+              the executable-spec rule, definition locations, immutable @e2e tags,
+              reuse, the no-empty-body rule, the canonical E2E policy, capture
+              mechanics, prefer-the-real-interface, the RED→GREEN→REFACTOR→COMMIT
+              loop, coverage measurement, distinctions, guardrails)
+            assets/skills/givn-steps/SKILL.md.tmpl (direction: run `givn instructions
+              steps` and follow it; rule copy removed, invocation orchestration kept)
+            assets/commands/givn-steps.md (pointer to the served steps instruction;
+              rule copy removed)
+            tests/steps/prose_consolidation_steps.rs (the generic direction step
+              accepts a one- or two-word actor: "the step writer", "the task author")
+            ```
+            Evidence transcript path (design.md §Visual Design Contract):
+            ```
+            givn/changes/extended-rules/evidence/visual/the-generated-implementation-guidance-shares-the-release-note/transcript.txt
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the production edits)
+            Feature: Change release note
+              Scenario: The generated implementation guidance shares the release note
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the command exits 0
+               ✔  And the generated givn-steps guidance directs the step writer to the steps instruction
+               ✔  And the generated givn-implement guidance directs the implementer to the tasks instruction
+               ✔  And the generated givn-tasks guidance directs the task author to the tasks instruction
+               ✔  And the served tasks instruction contains "carries the release note as its message subject"
+               ✔  And the served tasks instruction contains "the scenario title goes in the message body"
+               ✔  And generated guidance does not contain "message references the scenario title"
+               ✔  And the file "AGENTS.md" contains "carries the release note as its message subject"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            10 steps (10 passed)                                          EXIT=0
+            ```
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.29s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 10 steps (10 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `f7fbad01` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            f7fbad01 — test(e2e): <release note>; body: Scenario: The generated implementation guidance shares the release note
+            ```
+
+- [x] prose-consolidation: Generated guidance points to the canonical E2E policy
+      Design constraints:
+        - Real `givn skills sync` with all agent targets and optional guidance enabled; the primary assertion is on the emitted files and the served instructions, not on asset source text.
+        - Served-content seam: `assets/instructions/specs.md` carries the canonical interaction and E2E policy (including the `# User Interaction Inventory:` policy and the terminal-transcript rule); the emitted skills and commands direct to their instructions and keep the dialog-policy obligation.
+        - Assertions: every emitted skill and command requires the effective dialog policy before its context asks a user-facing question; direct skill invocation has the same obligation as session-start invocation; reference skills do not narrow the obligation to one workflow phase; the generated givn-spec guidance directs the author to the specs instruction; the served specs instruction carries the canonical interaction and E2E policy; detailed dialog rules and worked examples remain in the effective dialog instructions rather than competing generated copies; the synchronization result reports the selected guidance successfully.
+        - Evidence: capture argv, cwd, exit, raw sync stdout, path-labeled delivered excerpts, and the final transcript at the design path after the last assertion.
+        - E2E steps: `tests/steps/prose_consolidation_e2e_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/prose-consolidation.feature::Generated guidance points to the canonical E2E policy"`
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/prose-consolidation.feature::Generated guidance points to the canonical E2E policy"
+            (the new binding `the served specs instruction carries the canonical
+             interaction and E2E policy` was written with its real assertion in
+             tests/steps/prose_consolidation_e2e_steps.rs; first run:)
+            Feature: prose-consolidation
+              Scenario: Generated guidance points to the canonical E2E policy
+               ✔  Given a Givn project with all agent skill targets and optional guidance enabled
+               ✔  When the consumer synchronizes the selected agent guidance through the Givn CLI
+               ✔  Then every emitted skill and command requires the effective dialog policy before its context asks a user-facing question
+               ✔  And direct skill invocation has the same obligation as session-start invocation
+               ✔  And reference skills do not narrow the obligation to one workflow phase
+               ✔  And the generated givn-spec guidance directs the author to the specs instruction
+               ✔  And the served specs instruction carries the canonical interaction and E2E policy
+               ✔  And detailed dialog rules and worked examples remain in the effective dialog instructions rather than competing generated copies
+               ✔  And the synchronization result reports the selected guidance successfully
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            9 steps (9 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the canonical interaction and E2E
+            policy already lives in `assets/instructions/specs.md` and is served
+            by the existing path (delivered by the earlier instruction-integrity
+            slices); the emitted files carry the dialog obligation and their
+            directions. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "commits a captured transcript" → "commits a
+               captured terminal record" in assets/instructions/specs.md; same
+               scoped command)
+            Feature: prose-consolidation
+              Scenario: Generated guidance points to the canonical E2E policy
+               ✔  … (6 passed)
+               ✘  And the served specs instruction carries the canonical interaction and E2E policy
+                  Step panicked. Captured output: the served specs instruction is
+                  missing the canonical interaction/E2E policy marker "captured
+                  transcript": # Instruction: specs
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            7 steps (6 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/specs.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+            ```
+            none — assertion migration only. The scenario's one new binding
+            (`tests/steps/prose_consolidation_e2e_steps.rs`, written at RED with
+            its real assertion) reads the served specs instruction through the
+            shared `served_instruction` helper with the real CLI; the canonical
+            interaction and E2E policy content was delivered by the earlier
+            instruction-integrity slices in `assets/instructions/specs.md`.
+            ```
+            Evidence transcript path (design.md §Visual Design Contract):
+            ```
+            givn/changes/extended-rules/evidence/visual/generated-guidance-points-to-the-canonical-e2e-policy/transcript.txt
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: prose-consolidation
+              Scenario: Generated guidance points to the canonical E2E policy
+               ✔  Given a Givn project with all agent skill targets and optional guidance enabled
+               ✔  When the consumer synchronizes the selected agent guidance through the Givn CLI
+               ✔  Then every emitted skill and command requires the effective dialog policy before its context asks a user-facing question
+               ✔  And direct skill invocation has the same obligation as session-start invocation
+               ✔  And reference skills do not narrow the obligation to one workflow phase
+               ✔  And the generated givn-spec guidance directs the author to the specs instruction
+               ✔  And the served specs instruction carries the canonical interaction and E2E policy
+               ✔  And detailed dialog rules and worked examples remain in the effective dialog instructions rather than competing generated copies
+               ✔  And the synchronization result reports the selected guidance successfully
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            9 steps (9 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.21s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 9 steps (9 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `9ed3878e` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            9ed3878e — test(e2e): <release note>; body: Scenario: Generated guidance points to the canonical E2E policy
+            ```
+
+- [x] visual-design-contract: Synchronized guidance defines the contract approval and capture mechanics
+      Design constraints:
+        - Real `givn skills sync` with all agent targets enabled; the primary assertion is on the served instructions, not on generated copies.
+        - Served-content seam: `assets/instructions/design-review.md` carries the contract approval mechanics and `assets/instructions/steps.md` (new asset) carries the capture mechanics; the generated givn-design-review and givn-steps files carry the direction only.
+        - Assertions: the generated givn-design-review guidance directs the reviewer to the design-review instruction; the served design-review instruction contains "Visual Design Contract", "propose", "user approves", "rendered options"; the generated givn-steps guidance directs the step writer to the steps instruction; the served steps instruction contains "evidence/visual", "final-state", "animations are frozen", "reports/".
+        - Evidence: capture argv, cwd, exit, raw sync stdout, and the final transcript at the design path after the last assertion.
+        - E2E steps: existing per-capability files (`tests/steps/prose_consolidation_e2e_steps.rs` for the sync; `tests/steps/visual_design_contract_steps.rs` for the served-content steps).
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/visual-design-contract.feature::Synchronized guidance defines the contract approval and capture mechanics"`
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "create-change/visual-design-contract.feature::Synchronized guidance defines the contract approval and capture mechanics"
+            (every binding already exists: the generic direction step for the
+             givn-design-review/givn-steps guidance, the shared served-instruction
+             content step for design-review, and the shared served-instruction step
+             for steps; the visual step files add no content bindings. First run:)
+            Feature: Visual Design Contract
+              Scenario: Synchronized guidance defines the contract approval and capture mechanics
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the generated givn-design-review guidance directs the reviewer to the design-review instruction
+               ✔  And the served design-review instruction contains "Visual Design Contract"
+               ✔  And the served design-review instruction contains "propose"
+               ✔  And the served design-review instruction contains "user approves"
+               ✔  And the served design-review instruction contains "rendered options"
+               ✔  And the generated givn-steps guidance directs the step writer to the steps instruction
+               ✔  And the served steps instruction contains "evidence/visual"
+               ✔  And the served steps instruction contains "final-state"
+               ✔  And the served steps instruction contains "animations are frozen"
+               ✔  And the served steps instruction contains "reports/"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            12 steps (12 passed)                                         EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the contract approval mechanics
+            already live in `assets/instructions/design-review.md`, and the
+            capture mechanics landed in `assets/instructions/steps.md` with the
+            change-release-note scenario's steps-asset move (the first scenario
+            that needed the `givn instructions steps` direction); every step
+            binding already exists. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "animations are frozen" → "motion is frozen" in
+               assets/instructions/steps.md; same scoped command)
+            Feature: Visual Design Contract
+              Scenario: Synchronized guidance defines the contract approval and capture mechanics
+               ✔  … (7 passed)
+               ✘  And the served steps instruction contains "animations are frozen"
+                  Step panicked. Captured output: the served steps instruction is
+                  missing "animations are frozen": # Instruction: steps
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            12 steps (11 passed, 1 failed)                                EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/steps.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+            ```
+            none — assertion migration only. The served design-review and steps
+            instructions already carry the contract approval and capture
+            mechanics (the steps asset moved with the change-release-note
+            scenario's slice); the generated givn-design-review and givn-steps
+            files already carry the direction only. No new content binding was
+            needed — the visual step files keep their existing eject and fixture
+            steps.
+            ```
+            Evidence transcript path (design.md §Visual Design Contract):
+            ```
+            givn/changes/extended-rules/evidence/visual/synchronized-guidance-defines-the-contract-approval-and-capture-mechanics/transcript.txt
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Visual Design Contract
+              Scenario: Synchronized guidance defines the contract approval and capture mechanics
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the generated givn-design-review guidance directs the reviewer to the design-review instruction
+               ✔  And the served design-review instruction contains "Visual Design Contract"
+               ✔  And the served design-review instruction contains "propose"
+               ✔  And the served design-review instruction contains "user approves"
+               ✔  And the served design-review instruction contains "rendered options"
+               ✔  And the generated givn-steps guidance directs the step writer to the steps instruction
+               ✔  And the served steps instruction contains "evidence/visual"
+               ✔  And the served steps instruction contains "final-state"
+               ✔  And the served steps instruction contains "animations are frozen"
+               ✔  And the served steps instruction contains "reports/"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            12 steps (12 passed)                                         EXIT=0
+            ```
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 12 steps (12 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `b04de934` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            b04de934 — test(e2e): <release note>; body: Scenario: Synchronized guidance defines the contract approval and capture mechanics
+            ```
+
+- [x] instruction-extension: A developer records an extension and it governs the next guidance request
+      Design constraints:
+        - The e2e action is configuration maintenance plus a real guidance request (design-review finding 2): the fixture writes the project's rule into the `extensions:` map of `givn/config.yaml` (no recording command exists — D2), then a real `givn instructions proposal --change <active>` subprocess runs.
+        - Primary assertion on the real subprocess stdout: the served content carries the project's rule in the marked extension section; the built-in proposal rules stay unchanged (they are unmodified by the extension and still appear).
+        - The request never mutates the project; nothing is written by `givn instructions`.
+        - Evidence: capture argv, cwd, exit, raw stdout/stderr, and the final transcript at the design path after the last assertion.
+        - E2E steps: `tests/steps/instruction_extension_e2e_steps.rs` (real CLI).
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::A developer records an extension and it governs the next guidance request"`
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::A developer records an extension and it governs the next guidance request"
+            (the two e2e bindings were written at RED with their real
+             assertions in tests/steps/instruction_extension_e2e_steps.rs: the
+             recording Given captures the built-in served content through a real
+             `givn instructions proposal` subprocess, then writes the rule into
+             the `extensions:` map; the "stay unchanged" Then compares the served
+             prefix. First run:)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A developer records an extension and it governs the next guidance request
+               ✔  Given a Givn project with an active change
+               ✔  And the developer records the rule "Keep proposals under 500 words" for the proposal instruction in the project's configuration
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the served content carries the project's rule in the marked extension section
+               ✔  And the built-in proposal rules stay unchanged
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the extension map is read on every
+            request and appended under the marked section by the earlier
+            instruction-extension slices; the built-in rules are the unchanged
+            prefix. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission in the delivered behavior):
+            $ (temporarily prepended "TEMP-CALIBRATION-LEADING-LINE" before the
+               content in src/config/extensions.rs::append so the built-in rules
+               are no longer the served prefix; same scoped command)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A developer records an extension and it governs the next guidance request
+               ✔  … (4 passed)
+               ✘  And the built-in proposal rules stay unchanged
+                  Step panicked. Captured output: the served content does not keep
+                  the built-in proposal rules as its unchanged prefix:
+                  TEMP-CALIBRATION-LEADING-LINE …
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the new
+            assertion discriminates (it reads the real subprocess stdout, not
+            "it ran"); the edit was restored immediately
+            (`git checkout -- src/config/extensions.rs`) and the scoped command
+            passed again. No production switch, exception, fake success, or
+            source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+            ```
+            none — the recording Given writes the project-owned `extensions:` map
+            and the request path was delivered by the earlier
+            instruction-extension slices (src/config/extensions.rs::load/append
+            and src/cli/instructions.rs); this scenario binds the real-CLI
+            recording fixture and the built-in-prefix control in
+            tests/steps/instruction_extension_e2e_steps.rs.
+            ```
+            Evidence transcript path (design.md §Visual Design Contract):
+            ```
+            givn/changes/extended-rules/evidence/visual/a-developer-records-an-extension-and-it-governs-the-next-guidance-request/transcript.txt
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the edit)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: A developer records an extension and it governs the next guidance request
+               ✔  Given a Givn project with an active change
+               ✔  And the developer records the rule "Keep proposals under 500 words" for the proposal instruction in the project's configuration
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the served content carries the project's rule in the marked extension section
+               ✔  And the built-in proposal rules stay unchanged
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.82s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `17ce271b` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            17ce271b — test(e2e): <release note>; body: Scenario: A developer records an extension and it governs the next guidance request
+            ```
+
+- [x] instruction-extension: An upgrade preserves the extension and the next request serves it
+      Design constraints:
+        - Fixture: a committed Givn project with an active change and a recorded extension for the proposal instruction; a real `givn upgrade` subprocess runs first, then a real `givn instructions proposal` subprocess.
+        - Primary assertion on the real subprocesses: the upgrade revision carries no extension content (the `extensions:` key is user-owned config outside the allowlist); the served content carries the project's rule beside the current built-in rules.
+        - Evidence: capture argv, cwd, exit, raw stdout/stderr of both commands, the revision excerpt, and the final transcript at the design path after the last assertion.
+        - E2E steps: `tests/steps/instruction_extension_e2e_steps.rs` (real CLI).
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::An upgrade preserves the extension and the next request serves it"`
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "extend-an-instruction/instruction-extension.feature::An upgrade preserves the extension and the next request serves it"
+            (the e2e bindings were written at RED with their real assertions in
+             tests/steps/instruction_extension_e2e_steps.rs: the committed-project
+             Given, the real `givn upgrade` When, and the rule-beside-built-ins
+             Then; the revision assertion reuses the existing
+             `the upgrade revision carries no extension content` step. First run:)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An upgrade preserves the extension and the next request serves it
+               ✔  Given a committed Givn project with an active change and an extension for the proposal instruction
+               ✔  When the consumer upgrades the project through the Givn CLI
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the upgrade revision carries no extension content
+               ✔  And the served content carries the project's rule beside the current built-in rules
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the managed upgrade path and the
+            extension serving were delivered by the earlier
+            instruction-extension/apply-a-managed-upgrade slices (the extension is
+            user-owned config outside the allowlist; the request appends it). This
+            is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission in the delivered behavior):
+            $ (temporarily made src/config/extensions.rs::append return the content
+               unchanged; same scoped command)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An upgrade preserves the extension and the next request serves it
+               ✔  … (4 passed)
+               ✘  And the served content carries the project's rule beside the current built-in rules
+                  Step panicked. Captured output: the served proposal content carries
+                  no marked extension section: # Instruction: proposal
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            5 steps (4 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the new
+            assertion discriminates (it reads the real subprocess stdout); the
+            edit was restored immediately
+            (`git checkout -- src/config/extensions.rs`) and the scoped command
+            passed again. No production switch, exception, fake success, or
+            source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+            ```
+            none — the managed-upgrade path and the extension serving were
+            delivered by the earlier slices; this scenario binds the committed
+            fixture and the real `givn upgrade` subprocess plus the
+            rule-beside-built-ins assertion in
+            tests/steps/instruction_extension_e2e_steps.rs.
+            ```
+            Evidence transcript path (design.md §Visual Design Contract):
+            ```
+            givn/changes/extended-rules/evidence/visual/an-upgrade-preserves-the-extension-and-the-next-request-serves-it/transcript.txt
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the edit)
+            Feature: A project extends an instruction's built-in rules
+              Scenario: An upgrade preserves the extension and the next request serves it
+               ✔  Given a committed Givn project with an active change and an extension for the proposal instruction
+               ✔  When the consumer upgrades the project through the Givn CLI
+               ✔  And the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the upgrade revision carries no extension content
+               ✔  And the served content carries the project's rule beside the current built-in rules
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            5 steps (5 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.82s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 5 steps (5 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `616b40c5` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            616b40c5 — test(e2e): <release note>; body: Scenario: An upgrade preserves the extension and the next request serves it
+            ```
+
+- [x] generate-ideation-guidance: A consumer synchronizes skills and every agent target receives the ideation facilitation skill
+      Design constraints:
+        - Real `givn skills sync` with all agent targets enabled; the primary assertion is on the real sync stdout plus the served ideation instruction.
+        - Served-content seam: `assets/instructions/ideation.md` (new) carries the ideation discipline; `assets/skills/givn-ideation/SKILL.md.tmpl` and `assets/commands/givn-ideation.md` carry the direction only.
+        - Assertions: stdout contains "Syncing skills and agent commands..." and "synced skill: givn-ideation"; the served ideation instruction contains "Frame"; the generated givn-ideation command directs the ideator to the ideation instruction.
+        - Evidence: capture argv, cwd, exit, raw sync stdout, and the final transcript at the design path after the last assertion.
+        - E2E steps: existing per-capability files (`tests/steps/prose_consolidation_e2e_steps.rs` for the sync; the shared served-instruction step per Global constraints §Step-file ownership).
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::A consumer synchronizes skills and every agent target receives the ideation facilitation skill"`
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/generate-ideation-guidance.feature::A consumer synchronizes skills and every agent target receives the ideation facilitation skill"
+            (every binding already exists: the all-targets fixture and the real
+             `givn skills sync` When, the stdout assertions, the shared
+             served-instruction content step for ideation, and the generic
+             command-direction step. No new binding was needed. First run:)
+            Feature: Generate ideation guidance
+              Scenario: A consumer synchronizes skills and every agent target receives the ideation facilitation skill
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then stdout contains "Syncing skills and agent commands..."
+               ✔  And stdout contains "synced skill: givn-ideation"
+               ✔  And the served ideation instruction contains "Frame"
+               ✔  And the generated givn-ideation command directs the ideator to the ideation instruction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the whole ideation discipline moved
+            into `assets/instructions/ideation.md` with the earlier
+            generate-ideation-guidance slices, and the generated givn-ideation
+            files already carry the direction. All steps reused. This is the
+            recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote every "Frame" → "Framing" in
+               assets/instructions/ideation.md; same scoped command)
+            Feature: Generate ideation guidance
+              Scenario: A consumer synchronizes skills and every agent target receives the ideation facilitation skill
+               ✔  … (3 passed)
+               ✘  And the served ideation instruction contains "Frame"
+                  Step panicked. Captured output: the served ideation instruction
+                  is missing "Frame": # Instruction: ideation
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            6 steps (5 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/ideation.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+            ```
+            none — all steps reused: the sync path rewrites the generated
+            givn-ideation files, and the served ideation instruction was
+            delivered by the earlier generate-ideation-guidance slices
+            (assets/instructions/ideation.md plus the direction in
+            assets/skills/givn-ideation/SKILL.md.tmpl and
+            assets/commands/givn-ideation.md).
+            ```
+            Evidence transcript path (design.md §Visual Design Contract):
+            ```
+            givn/changes/extended-rules/evidence/visual/a-consumer-synchronizes-skills-and-every-agent-target-receives-the-ideation-facilitation-skill/transcript.txt
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+            Feature: Generate ideation guidance
+              Scenario: A consumer synchronizes skills and every agent target receives the ideation facilitation skill
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then stdout contains "Syncing skills and agent commands..."
+               ✔  And stdout contains "synced skill: givn-ideation"
+               ✔  And the served ideation instruction contains "Frame"
+               ✔  And the generated givn-ideation command directs the ideator to the ideation instruction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `7a6e2e37` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            7a6e2e37 — test(e2e): <release note>; body: Scenario: A consumer synchronizes skills and every agent target receives the ideation facilitation skill
+            ```
+
+- [x] match-guidance-to-enabled-addons: A consumer synchronizes skills and the generated guidance omits disabled-addon sections
+      Design constraints:
+        - Real `givn skills sync` with the arc42, domain-modeling, and coverage addons disabled; primary assertions on the served review instruction and the generated files.
+        - Condition seam: `{{#if addons.*}}` blocks in `assets/instructions/review.md`; `render_conditionals` at request time; disabled-addon files (the domain-modeling skill) are removed by the existing reconciliation (`reconcile_addon_artifacts`).
+        - Assertions: the served review instruction omits the Arc42 implementation conformance section and the Ubiquitous language conformance section; the generated review skill carries neither; no generated domain-modeling skill exists; no generated skill or command mentions any disabled addon.
+        - Evidence: capture argv, cwd, exit, raw sync stdout, and the final transcript at the design path after the last assertion.
+        - E2E steps: `tests/steps/template_conditional_rendering_e2e_steps.rs` (real addon toggles/sync) and `tests/steps/template_conditional_rendering_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::A consumer synchronizes skills and the generated guidance omits disabled-addon sections"`
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::A consumer synchronizes skills and the generated guidance omits disabled-addon sections"
+            (bindings: the served-instruction omission step and the
+             generated-review-skill omission step are new and live in the
+             capability's e2e file; the served-instruction helper moved from
+             the regular steps file to the shared support module so both files
+             use one implementation; the other six sentences reuse existing
+             steps. First run:)
+            Feature: Match guidance to enabled addons
+              Scenario: A consumer synchronizes skills and the generated guidance omits disabled-addon sections
+               ✔  Given a Givn project with the arc42, domain-modeling, and coverage addons disabled and the skills synchronized
+               ✔  When a consumer synchronizes skills through the Givn CLI
+               ✔  Then the served review instruction omits the Arc42 implementation conformance section
+               ✔  And the served review instruction omits the Ubiquitous language conformance section
+               ✔  And the generated review skill carries no Arc42 implementation conformance section
+               ✔  And the generated review skill carries no Ubiquitous language conformance section
+               ✔  And no generated domain-modeling skill exists
+               ✔  And no generated skill or command mentions any disabled addon
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            8 steps (8 passed)                                          EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the disabled-addon selection already
+            renders on the current product: the `{{#if addons.arc42}}` block in
+            `assets/instructions/review.md` and the conditional templates drop
+            the sections, and `reconcile_addon_artifacts` removes the
+            domain-modeling skill. All eight steps hold, so this is the
+            recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily removed the `{{#if addons.arc42}}`/`{{else}}`/`{{/if}}`
+               selection around the Arc42 implementation conformance block in
+               `assets/instructions/review.md`, delivering it unconditionally;
+               same scoped command)
+            Feature: Match guidance to enabled addons
+              Scenario: A consumer synchronizes skills and the generated guidance omits disabled-addon sections
+               ✔  Given a Givn project with the arc42, domain-modeling, and coverage addons disabled and the skills synchronized
+               ✔  When a consumer synchronizes skills through the Givn CLI
+               ✘  Then the served review instruction omits the Arc42 implementation conformance section
+                  Step failed:
+                  Defined: givn/changes/extended-rules/specs/fragments/match-guidance-to-enabled-addons.feature:24:5
+                  Matched: tests/steps/template_conditional_rendering_steps.rs:133:1
+                  Step panicked. Captured output: the served review instruction carries the Arc42 section:
+                  # Instruction: review
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/review.md`) and the scoped
+            command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+            ```
+            none — the underlying behaviour was delivered by the earlier
+            match-guidance-to-enabled-addons slices: `assets/instructions/review.md`
+            carries the `{{#if addons.arc42}}` condition, the templates gate
+            their addon sections with the same directives, and the existing
+            reconciliation removes the disabled addon skill. The scenario's
+            production change is empty; only step bindings were added.
+            ```
+            Evidence transcript path (design.md §Visual Design Contract):
+            ```
+            givn/changes/extended-rules/evidence/visual/a-consumer-synchronizes-skills-and-the-generated-guidance-omits-disabled-addon-sections/transcript.txt
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::A consumer synchronizes skills and the generated guidance omits disabled-addon sections"
+            Feature: Match guidance to enabled addons
+              Scenario: A consumer synchronizes skills and the generated guidance omits disabled-addon sections
+               ✔  Given a Givn project with the arc42, domain-modeling, and coverage addons disabled and the skills synchronized
+               ✔  When a consumer synchronizes skills through the Givn CLI
+               ✔  Then the served review instruction omits the Arc42 implementation conformance section
+               ✔  And the served review instruction omits the Ubiquitous language conformance section
+               ✔  And the generated review skill carries no Arc42 implementation conformance section
+               ✔  And the generated review skill carries no Ubiquitous language conformance section
+               ✔  And no generated domain-modeling skill exists
+               ✔  And no generated skill or command mentions any disabled addon
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            8 steps (8 passed)                                          EXIT=0
+            ```
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.33s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 8 steps (8 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `e20b91bb` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            e20b91bb — test(e2e): <release note>; body: Scenario: A consumer synchronizes skills and the generated guidance omits disabled-addon sections
+            ```
+
+- [x] match-guidance-to-enabled-addons: A consumer enables the addons a generated section needs and the guidance gains it
+      Design constraints:
+        - Real `givn addons enable arc42 domain_modeling` through the Givn CLI after a sync; primary assertions on the served instructions and the generated files.
+        - Assertions: the served review instruction contains the Arc42 implementation conformance section and the Ubiquitous language conformance section; the served design-review instruction contains the Architecture documentation (arc42) branch; a generated domain-modeling skill exists; the generated review skill and command direct the reviewer to the review instruction.
+        - E2E steps: `tests/steps/template_conditional_rendering_e2e_steps.rs` (the existing `a consumer enables the arc42 and domain-modeling addons through the Givn CLI` step) and `tests/steps/template_conditional_rendering_steps.rs`.
+        - Evidence: capture argv, cwd, exit, raw stdout/stderr, and the final transcript at the design path after the last assertion.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::A consumer enables the addons a generated section needs and the guidance gains it"`
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::A consumer enables the addons a generated section needs and the guidance gains it"
+            (bindings: the two served-content presence steps, the served
+             design-review presence step, and the generated review command
+             direction step are new and live in the capability's e2e file; the
+             Given, the enable When, the generated domain-modeling skill step,
+             and the generated review skill direction step reuse existing
+             steps.)
+            Feature: Match guidance to enabled addons
+              Scenario: A consumer enables the addons a generated section needs and the guidance gains it
+               ✔  Given a Givn project with the arc42 and domain-modeling addons disabled and the skills synchronized
+               ✔  When a consumer enables the arc42 and domain-modeling addons through the Givn CLI
+               ✔  Then the served review instruction contains the Arc42 implementation conformance section
+               ✘  And the served review instruction contains the Ubiquitous language conformance section
+                  Step failed:
+                  Defined: givn/changes/extended-rules/specs/fragments/match-guidance-to-enabled-addons.feature:36:5
+                  Matched: tests/steps/template_conditional_rendering_e2e_steps.rs:58:1
+                  Step panicked. Captured output: the served review instruction is missing the ubiquitous-language section:
+                  # Instruction: review
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                EXIT=101
+            OLD_PRODUCT_RED — `assets/instructions/review.md` still carries no
+            Ubiquitous language conformance section; the Arc42 section is
+            already served through its `{{#if addons.arc42}}` block, so the
+            exactly matching assertion fails and the rest of the scenario
+            cannot run until the section moves in.
+            ```
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+            ```
+            assets/instructions/review.md — the Ubiquitous language conformance
+            section moved in from the review skill template, double-gated
+            (`{{#if addons.domain_modeling}}` / `{{#if addons.arc42}}`) so the
+            request path renders it exactly when both addons are enabled.
+            ```
+            Evidence transcript path (design.md §Visual Design Contract):
+            ```
+            givn/changes/extended-rules/evidence/visual/a-consumer-enables-the-addons-a-generated-section-needs-and-the-guidance-gains-it/transcript.txt
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::A consumer enables the addons a generated section needs and the guidance gains it"
+            Feature: Match guidance to enabled addons
+              Scenario: A consumer enables the addons a generated section needs and the guidance gains it
+               ✔  Given a Givn project with the arc42 and domain-modeling addons disabled and the skills synchronized
+               ✔  When a consumer enables the arc42 and domain-modeling addons through the Givn CLI
+               ✔  Then the served review instruction contains the Arc42 implementation conformance section
+               ✔  And the served review instruction contains the Ubiquitous language conformance section
+               ✔  And the served design-review instruction contains the Architecture documentation (arc42) branch
+               ✔  And a generated domain-modeling skill exists
+               ✔  And the generated review skill directs the reviewer to the review instruction
+               ✔  And the generated review command directs the reviewer to the review instruction
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            8 steps (8 passed)                                          EXIT=0
+            ```
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.26s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 8 steps (8 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `c772e4de` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            c772e4de — test(e2e): <release note>; body: Scenario: A consumer enables the addons a generated section needs and the guidance gains it
+            ```
+
+- [x] match-guidance-to-enabled-addons: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
+      Design constraints:
+        - `Scenario Outline` — the tag marks the outline as a whole as the e2e evidence for ONE inventory entry; both Examples rows (`arc42`, `domain-modeling`) are input variation and run in one process; assertions must hold for each example.
+        - Real `givn addons disable <addon>` through the Givn CLI from a project with the domain-modeling and arc42 addons enabled and synchronized.
+        - Assertions: no generated domain-modeling skill exists; the served review instruction omits the Ubiquitous language conformance section.
+        - E2E steps: `tests/steps/template_conditional_rendering_e2e_steps.rs` (the existing `a consumer disables the <addon> addon through the Givn CLI` step) and `tests/steps/template_conditional_rendering_steps.rs`.
+        - Evidence: capture argv, cwd, exit, raw stdout/stderr for both examples, and the final transcript at the design path after the last assertion.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed"`
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed"
+            (all four sentences already bind: the Given, the disable When, the
+             generated domain-modeling skill step, and the shared
+             served-instruction omission step added by the previous scenario.
+             No new binding was needed. First run:)
+            Feature: Match guidance to enabled addons
+              Scenario Outline: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
+               ✔  Given a Givn project with the domain-modeling and arc42 addons enabled and the skills synchronized
+               ✔  When a consumer disables the arc42 addon through the Givn CLI
+               ✔  Then no generated domain-modeling skill exists
+               ✔  And the served review instruction omits the Ubiquitous language conformance section
+              Scenario Outline: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
+               ✔  Given a Givn project with the domain-modeling and arc42 addons enabled and the skills synchronized
+               ✔  When a consumer disables the domain-modeling addon through the Givn CLI
+               ✔  Then no generated domain-modeling skill exists
+               ✔  And the served review instruction omits the Ubiquitous language conformance section
+            [Summary]
+            1 feature
+            2 scenarios (2 passed)
+            8 steps (8 passed)                                          EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the double gate added by the previous
+            scenario (`{{#if addons.domain_modeling}}` + `{{#if addons.arc42}}`)
+            renders the section away when either addon is disabled, and
+            `reconcile_addon_artifacts` removes the domain-modeling skill for
+            both Examples rows. All steps hold, so this is the recorded
+            ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily removed the two nested conditional gates around the
+               Ubiquitous language conformance block in
+               `assets/instructions/review.md`, delivering it unconditionally;
+               same scoped command)
+            Feature: Match guidance to enabled addons
+              Scenario Outline: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
+               ✔  Given a Givn project with the domain-modeling and arc42 addons enabled and the skills synchronized
+               ✔  When a consumer disables the arc42 addon through the Givn CLI
+               ✔  Then no generated domain-modeling skill exists
+               ✘  And the served review instruction omits the Ubiquitous language conformance section
+                  Step failed:
+                  Defined: givn/changes/extended-rules/specs/fragments/match-guidance-to-enabled-addons.feature:47:5
+                  Matched: tests/steps/template_conditional_rendering_e2e_steps.rs:28:1
+                  Step panicked. Captured output: the served review instruction carries the ubiquitous-language section:
+                  ...
+              Scenario Outline: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
+               ✔  Given a Givn project with the domain-modeling and arc42 addons enabled and the skills synchronized
+               ✔  When a consumer disables the domain-modeling addon through the Givn CLI
+               ✔  Then no generated domain-modeling skill exists
+               ✘  And the served review instruction omits the Ubiquitous language conformance section
+                  Step panicked. Captured output: the served review instruction carries the ubiquitous-language section:
+                  ...
+            [Summary]
+            1 feature
+            2 scenarios (2 failed)
+            8 steps (6 passed, 2 failed)                                EXIT=101
+            The omission makes exactly the matching assertion fail in both
+            Examples rows, so the assertion discriminates; the excerpt was
+            restored immediately (`git checkout -- assets/instructions/review.md`)
+            and the scoped command passed again. No production switch,
+            exception, fake success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+            ```
+            none — the served-section omission and the disabled-addon file
+            removal were delivered by the earlier match-guidance-to-enabled-addons
+            slices: `assets/instructions/review.md` double-gates the
+            ubiquitous-language section, and the existing reconciliation removes
+            the domain-modeling skill when either addon is disabled. Only the
+            `@wip` removal was needed; all steps were reused.
+            ```
+            Evidence transcript path (design.md §Visual Design Contract):
+            ```
+            givn/changes/extended-rules/evidence/visual/a-consumer-disables-an-addon-the-domain-modeling-skill-needs-and-the-generated-domain-skill-is-removed/transcript.txt
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed"
+            Feature: Match guidance to enabled addons
+              Scenario Outline: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
+               ✔  Given a Givn project with the domain-modeling and arc42 addons enabled and the skills synchronized
+               ✔  When a consumer disables the arc42 addon through the Givn CLI
+               ✔  Then no generated domain-modeling skill exists
+               ✔  And the served review instruction omits the Ubiquitous language conformance section
+              Scenario Outline: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
+               ✔  Given a Givn project with the domain-modeling and arc42 addons enabled and the skills synchronized
+               ✔  When a consumer disables the domain-modeling addon through the Givn CLI
+               ✔  Then no generated domain-modeling skill exists
+               ✔  And the served review instruction omits the Ubiquitous language conformance section
+            [Summary]
+            1 feature
+            2 scenarios (2 passed)
+            8 steps (8 passed)                                          EXIT=0
+            ```
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 2 scenarios (2 passed), 8 steps (8 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `e2415c97` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            e2415c97 — test(e2e): <release note>; body: Scenario: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
+            ```
+
+- [x] refresh-generated-guidance: Synchronized guidance explains how to resolve the deterministic gates
+      Design constraints:
+        - Real `givn skills sync` with all agent targets enabled; primary assertions on the real stdout and the served instructions, never on asset source text.
+        - Served-content seam: the deterministic gate rules move into `assets/instructions/review.md`, `assets/instructions/design.md`, and the new `assets/instructions/steps.md`; the generated givn-review, givn-design, and givn-steps files carry the direction only.
+        - Assertions: stdout contains "Syncing skills and agent commands..."; the generated givn-review guidance directs the reviewer to the review instruction; the generated givn-design guidance directs the designer to the design instruction; the generated givn-steps guidance directs the step writer to the steps instruction; the served review instruction contains "Overlap dispositions", "split-or-keep", "removed+added"; the served design instruction contains "Black-Box-First"; the served steps instruction contains "which case this test covers"; generated guidance does not contain "Run `givn spec index`".
+        - Evidence: capture argv, cwd, exit, raw sync stdout, and the final transcript at the design path after the last assertion.
+        - E2E steps: `tests/steps/prose_consolidation_e2e_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/refresh-generated-guidance.feature::Synchronized guidance explains how to resolve the deterministic gates"`
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/refresh-generated-guidance.feature::Synchronized guidance explains how to resolve the deterministic gates"
+            (every sentence already binds: the all-targets fixture, the real
+             `givn skills sync` When, the generic direction and served-content
+             steps, and the generated-guidance scan. No new binding was
+             needed. First run:)
+            Feature: Refresh generated guidance
+              Scenario: Synchronized guidance explains how to resolve the deterministic gates
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then stdout contains "Syncing skills and agent commands..."
+               ✔  And the generated givn-review guidance directs the reviewer to the review instruction
+               ✔  And the generated givn-design guidance directs the designer to the design instruction
+               ✔  And the generated givn-steps guidance directs the step writer to the steps instruction
+               ✔  And the served review instruction contains "Overlap dispositions"
+               ✔  And the served review instruction contains "split-or-keep"
+               ✔  And the served review instruction contains "removed+added"
+               ✔  And the served design instruction contains "Black-Box-First"
+               ✘  And the served steps instruction contains "which case this test covers"
+                  Step failed:
+                  Defined: givn/changes/extended-rules/specs/fragments/refresh-generated-guidance.feature:17:5
+                  Matched: tests/steps/serve_extended_rules_steps.rs:84:1
+                  Step panicked. Captured output: the served steps instruction is missing "which case this test covers": # Instruction: steps
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            11 steps (10 passed, 1 failed)                              EXIT=101
+            OLD_PRODUCT_RED — the step-writing dedup gate (`which case this
+            test covers that the E2E does not`) left the generated givn-steps
+            files when the direction landed, and its new home
+            `assets/instructions/steps.md` does not carry it yet. The failing
+            assertion is exactly the served steps instruction's missing rule;
+            the review and design instructions already serve their gates.
+            ```
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+            ```
+            assets/instructions/steps.md — the "Prefer the real interface"
+            section regains the dedup gate rule moved out of the givn-steps
+            skill/command files: record which case the internal test covers that
+            the E2E does not, otherwise remove the duplicate and extend the E2E
+            scenario. Served by `givn instructions steps`; the generated files
+            keep carrying the direction only.
+            ```
+            Evidence transcript path (design.md §Visual Design Contract):
+            ```
+            givn/changes/extended-rules/evidence/visual/synchronized-guidance-explains-how-to-resolve-the-deterministic-gates/transcript.txt
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/refresh-generated-guidance.feature::Synchronized guidance explains how to resolve the deterministic gates"
+            Feature: Refresh generated guidance
+              Scenario: Synchronized guidance explains how to resolve the deterministic gates
+               ✔  Given a givn project with all agent skill targets enabled
+               ✔  When the user runs `givn skills sync`
+               ✔  Then stdout contains "Syncing skills and agent commands..."
+               ✔  And the generated givn-review guidance directs the reviewer to the review instruction
+               ✔  And the generated givn-design guidance directs the designer to the design instruction
+               ✔  And the generated givn-steps guidance directs the step writer to the steps instruction
+               ✔  And the served review instruction contains "Overlap dispositions"
+               ✔  And the served review instruction contains "split-or-keep"
+               ✔  And the served review instruction contains "removed+added"
+               ✔  And the served design instruction contains "Black-Box-First"
+               ✔  And the served steps instruction contains "which case this test covers"
+               ✔  And generated guidance does not contain "Run `givn spec index`"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            12 steps (12 passed)                                        EXIT=0
+            ```
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 12 steps (12 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `731c2882` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            731c2882 — test(e2e): <release note>; body: Scenario: Synchronized guidance explains how to resolve the deterministic gates
+            ```
+
+- [x] initialize-a-project: Consumer runs init non-interactively and gets opencode skills
+      Design constraints:
+        - Real `givn init --no-addons --agents opencode` in a root without `givn/` that contains human-authored agent instructions to preserve; primary assertions on the real stdout and the generated files.
+        - Seam: the refreshed project-start block renders `{{RESIDENT_RULES}}` from `assets/instructions/tasks.md` through `src/cli/project_hint.rs`; the generated givn-propose file is the direction; the dialog obligation stays as today.
+        - Assertions: exit 0; the report names opencode and states optional addons are disabled; `.opencode/skills/givn-propose/SKILL.md` exists; the installed givn-propose guidance directs the author to the proposal instruction; `.claude/skills/givn-propose` does not exist; the project-start guidance requires the effective dialog policy before every context's first user-facing question; the obligation covers questions outside named skills and explicit handoff to delegated agents; the project-start guidance contains a policy reference rather than the worked dialog examples; the human-authored agent instructions remain unchanged; no optional tone addon is required for the obligation.
+        - Evidence: capture argv, cwd, exit, raw stdout/stderr, the managed document excerpt (path-labeled), and the final transcript at the design path after the last assertion.
+        - E2E steps: `tests/steps/initialize_a_project_e2e_steps.rs`.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "initialize-project/initialize-a-project.feature::Consumer runs init non-interactively and gets opencode skills"`
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "initialize-project/initialize-a-project.feature::Consumer runs init non-interactively and gets opencode skills"
+            (bindings: only the installed-guidance direction step is new and
+             lives in the capability's e2e file; the When reuses the existing
+             generic `the consumer runs` step, which spawns
+             the real CLI, and every other sentence already binds. First run:)
+            Feature: initialize-a-project
+              Scenario: Consumer runs init non-interactively and gets opencode skills
+               ✔  Given a project root without a givn/ directory
+               ✔  And the root contains human-authored agent instructions to preserve
+               ✔  When the consumer runs `givn init --no-addons --agents opencode`
+               ✔  Then the command exits 0
+               ✔  And the initialization report names opencode and states that optional addons are disabled
+               ✔  And the file ".opencode/skills/givn-propose/SKILL.md" exists
+               ✔  And the installed givn-propose guidance directs the author to the proposal instruction
+               ✔  And the directory ".claude/skills/givn-propose" does not exist
+               ✔  And the generated project-start guidance requires the effective dialog policy before every context's first user-facing question
+               ✔  And the obligation covers questions outside named skills and requires explicit handoff to delegated agents
+               ✔  And the project-start guidance contains a policy reference rather than the worked dialog examples
+               ✔  And the human-authored agent instructions remain unchanged
+               ✔  And no optional tone addon is required for the obligation
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            13 steps (13 passed)                                        EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the direction in the givn-propose
+            template, the refreshed project-start block rendered from
+            `assets/instructions/tasks.md`, and the preserved human bytes all
+            already hold on the current product. All steps pass, so this is
+            the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily removed the direction line
+               "`givn instructions proposal --change {{CHANGE_ID}}`"
+               from assets/skills/givn-propose/SKILL.md.tmpl; same scoped command)
+            Feature: initialize-a-project
+              Scenario: Consumer runs init non-interactively and gets opencode skills
+               ✔  Given a project root without a givn/ directory
+               ✔  And the root contains human-authored agent instructions to preserve
+               ✔  When the consumer runs `givn init --no-addons --agents opencode`
+               ✔  Then the command exits 0
+               ✔  And the initialization report names opencode and states that optional addons are disabled
+               ✔  And the file ".opencode/skills/givn-propose/SKILL.md" exists
+               ✘  And the installed givn-propose guidance directs the author to the proposal instruction
+                  Step failed:
+                  Defined: givn/changes/extended-rules/specs/initialize-project/initialize-a-project.feature:13:5
+                  Matched: tests/steps/initialize_a_project_e2e_steps.rs:115:1
+                  Step panicked. Captured output: the installed givn-propose guidance does not direct the author to the proposal instruction:
+                  ---
+                  name: givn-propose
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            7 steps (6 passed, 1 failed)                                EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/skills/givn-propose/SKILL.md.tmpl`) and
+            the scoped command passed again. No production switch, exception,
+            fake success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+            ```
+            none — the underlying behaviour was delivered by the earlier
+            initialize-a-project slices: the project-start block renders its
+            resident rules from `assets/instructions/tasks.md` through
+            `src/cli/project_hint.rs`, the givn-propose template carries the
+            direction, and `givn init --no-addons --agents opencode` preserves
+            the human AGENTS.md bytes and installs only .opencode. Only the
+            `@wip` removal and the installed-guidance binding were needed.
+            ```
+            Evidence transcript path (design.md §Visual Design Contract):
+            ```
+            givn/changes/extended-rules/evidence/visual/consumer-runs-init-non-interactively-and-gets-opencode-skills/transcript.txt
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "initialize-project/initialize-a-project.feature::Consumer runs init non-interactively and gets opencode skills"
+            Feature: initialize-a-project
+              Scenario: Consumer runs init non-interactively and gets opencode skills
+               ✔  Given a project root without a givn/ directory
+               ✔  And the root contains human-authored agent instructions to preserve
+               ✔  When the consumer runs `givn init --no-addons --agents opencode`
+               ✔  Then the command exits 0
+               ✔  And the initialization report names opencode and states that optional addons are disabled
+               ✔  And the file ".opencode/skills/givn-propose/SKILL.md" exists
+               ✔  And the installed givn-propose guidance directs the author to the proposal instruction
+               ✔  And the directory ".claude/skills/givn-propose" does not exist
+               ✔  And the generated project-start guidance requires the effective dialog policy before every context's first user-facing question
+               ✔  And the obligation covers questions outside named skills and requires explicit handoff to delegated agents
+               ✔  And the project-start guidance contains a policy reference rather than the worked dialog examples
+               ✔  And the human-authored agent instructions remain unchanged
+               ✔  And no optional tone addon is required for the obligation
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            13 steps (13 passed)                                        EXIT=0
+            ```
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.24s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 13 steps (13 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `ab8d7db5` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            ab8d7db5 — test(e2e): <release note>; body: Scenario: Consumer runs init non-interactively and gets opencode skills
+            ```
+
+- [x] serve-extended-rules: An agent receives the extended rules through the Givn CLI
+      Design constraints:
+        - Real `givn instructions proposal --change <active>` subprocess with the project's extension recorded; the primary assertion is on the real subprocess stdout — built-in rules plus the marked extension section.
+        - Seam: `src/cli/instructions.rs` renders the resolved instruction (conditionals with the project's enabled addons) and appends `config/extensions::append`'s marked section; JSON carries the same text (D2; arc42 §8.3b).
+        - Assertions: the command exits 0; the served content carries the built-in proposal rules; the served content carries the project's rule in the marked extension section.
+        - Evidence: capture argv, cwd, exit, raw stdout, and the final transcript at the design path after the last assertion.
+        - E2E steps: `tests/steps/serve_extended_rules_e2e_steps.rs` (real CLI).
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::An agent receives the extended rules through the Givn CLI"`
+      - [x] RED: bind this scenario's e2e steps (unimplemented bodies use `unimplemented!()`), remove `@wip` from this scenario only (never touch the `@e2e` tag), run the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::An agent receives the extended rules through the Givn CLI"
+            (every sentence already binds through real-subprocess steps: the
+             active-change fixture, the extension recording Given, the real
+             `givn instructions proposal --change ...` When, the exit-code
+             step, and the two served-content assertions. No new binding was
+             needed. First run:)
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: An agent receives the extended rules through the Givn CLI
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the command exits 0
+               ✔  And the served content carries the built-in proposal rules
+               ✔  And the served content carries the project's rule in the marked extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                          EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the extension serving path
+            (`src/cli/instructions.rs` + `extensions::append`) was delivered by
+            the earlier serve-extended-rules slices, and the scenario's steps
+            drive the real CLI subprocess. All steps pass, so this is the
+            recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily made `extensions::append` return the content
+               unchanged in src/config/extensions.rs; same scoped command)
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: An agent receives the extended rules through the Givn CLI
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the command exits 0
+               ✔  And the served content carries the built-in proposal rules
+               ✘  And the served content carries the project's rule in the marked extension section
+                  Step failed:
+                  Defined: givn/changes/extended-rules/specs/obtain-effective-guidance/serve-extended-rules.feature:12:5
+                  Matched: tests/steps/serve_extended_rules_steps.rs:720:1
+                  Step panicked. Captured output: the served proposal content carries no marked extension section: # Instruction: proposal
+                  ...
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            6 steps (5 passed, 1 failed)                                EXIT=101
+            The omission makes exactly the matching assertion fail — the
+            built-in-rules assertion still passes, so the failing step isolates
+            the extension delivery — and the source was restored immediately
+            (`git checkout -- src/config/extensions.rs`); the scoped command
+            passed again after the rebuild. No production switch, exception,
+            fake success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions against the real CLI and the minimum production code; capture the scenario's terminal transcript (title, exact argv, working-directory disposition, exit code, raw stdout/stderr) at the design-named evidence path after the final assertion. Production files created/modified:
+            ```
+            none — the serving path already renders the resolved instruction and
+            appends the marked extension section for the text and JSON paths
+            (`src/cli/instructions.rs` + `src/config/extensions.rs::append`).
+            The step bindings and the real-CLI request steps were delivered by
+            the earlier serve-extended-rules slices; only the `@wip` removal was
+            needed.
+            ```
+            Evidence transcript path (design.md §Visual Design Contract):
+            ```
+            givn/changes/extended-rules/evidence/visual/an-agent-receives-the-extended-rules-through-the-givn-cli/transcript.txt
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::An agent receives the extended rules through the Givn CLI"
+            Feature: The served instruction carries the built-in rules and the project's extension
+              Scenario: An agent receives the extended rules through the Givn CLI
+               ✔  Given a Givn project with an active change
+               ✔  And the project records an extension for the proposal instruction
+               ✔  When the agent requests the proposal instructions through the Givn CLI
+               ✔  Then the command exits 0
+               ✔  And the served content carries the built-in proposal rules
+               ✔  And the served content carries the project's rule in the marked extension section
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                          EXIT=0
+            ```
+      - [x] REFACTOR: clean up the e2e code without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.75s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `f179047a` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            f179047a — test(e2e): <release note>; body: Scenario: An agent receives the extended rules through the Givn CLI
+            ```
+
+---
+
+## Repair scenarios (review findings, 2026-10-13)
+
+The review phase found unfinished work against the reviewed design: permanent
+scenarios still pinned content the change removes, six instruction assets the
+design names were never created, eleven generated files named no own
+direction, and `tasks-reverse.md` still restated the shared commit contract.
+These sections repair the findings with real scenarios, following the same
+RED→GREEN→REFACTOR→COMMIT loop, the shared release note, and the same scoped
+run command.
+
+- [x] review-architecture-documentation: Generated review guidance stays aligned after skill sync
+      Design constraints:
+        - Delta replacement of the permanent `givn/specs/fragments/review-architecture-documentation.feature` scenario of the same title: the generated review skill directs the reviewer to the review instruction and carries no Arc42 implementation conformance section; the served review instruction still contains the section.
+        - The Arc42 and Ubiquitous-language blocks leave `assets/skills/givn-review/SKILL.md.tmpl` and the Ubiquitous-language block leaves `assets/skills/givn-design-review/SKILL.md.tmpl`; the served instructions own them.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/review-architecture-documentation.feature::Generated review guidance stays aligned after skill sync"`
+      - [x] RED: bound the scenario (all steps reused from the match-guidance work), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/review-architecture-documentation.feature::Generated review guidance stays aligned after skill sync"
+              Scenario: Generated review guidance stays aligned after skill sync
+               ✔  Given a project root with givn/ initialised
+               ✔  And an existing change named "review-alignment"
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the command succeeds
+               ✔  And the generated review skill directs the reviewer to the review instruction
+               ✘  And the generated review skill carries no Arc42 implementation conformance section
+                  Step panicked. Captured output: generated review skill unexpectedly contains the Arc42 section:
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            6 steps (5 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: with the arc42 addon enabled, the generated review
+            skill (rendered from `assets/skills/givn-review/SKILL.md.tmpl`) still
+            carries the "Arc42 implementation conformance" copy.
+            ```
+      - [x] GREEN: removed the Arc42 and Ubiquitous-language blocks from `assets/skills/givn-review/SKILL.md.tmpl` and the Ubiquitous-language block from `assets/skills/givn-design-review/SKILL.md.tmpl` (the served instructions own them; the review instruction keeps its `N/A when the arc42 addon is disabled` else-branch). Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the template edits)
+              Scenario: Generated review guidance stays aligned after skill sync
+               ✔  Given a project root with givn/ initialised
+               ✔  And an existing change named "review-alignment"
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the command succeeds
+               ✔  And the generated review skill directs the reviewer to the review instruction
+               ✔  And the generated review skill carries no Arc42 implementation conformance section
+               ✔  And the served review instruction contains "Arc42 implementation conformance"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            7 steps (7 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 7 steps (7 passed)  EXIT=0
+            $ (regression: the two match-guidance non-e2e scenarios) → both EXIT=0
+            ```
+      - [x] COMMIT: `9ca8c848` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            9ca8c848 — feat(review-architecture-documentation): <release note>; body: Scenario: Generated review guidance stays aligned after skill sync
+            ```
+
+- [x] guide-domain-modeling: The design-review skill checks that the ubiquitous language is followed
+      Design constraints:
+        - Same-title `@givn.modified` delta replacement of the permanent `givn/specs/fragments/guide-domain-modeling.feature` scenario: it re-points the removed design-review skill copy at the served design-review instruction.
+        - `assets/instructions/design-review.md` gains the Ubiquitous-language branch as an `addons.domain_modeling` + `addons.arc42` conditional block (mirroring the served review instruction).
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The design-review skill checks that the ubiquitous language is followed"`
+      - [x] RED: bound the scenario (all steps reused), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The design-review skill checks that the ubiquitous language is followed"
+              Scenario: The design-review skill checks that the ubiquitous language is followed
+               ✔  Given a project root with givn/ initialised
+               ✔  And an existing change named "design-review-ubiquitous-language"
+               ✘  Then the served design-review instruction contains "ubiquitous language is used consistently"
+                  Step panicked. Captured output: the served design-review instruction is missing "ubiquitous language is used consistently": # Instruction: design-review
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: the served design-review instruction never carried
+            the ubiquitous-language check — it lived only in the skill template
+            copy the delta removes.
+            ```
+      - [x] GREEN: added the Ubiquitous-language branch to `assets/instructions/design-review.md` as a `domain_modeling` + `arc42` conditional block. Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the served-instruction edit)
+              Scenario: The design-review skill checks that the ubiquitous language is followed
+               ✔  Given a project root with givn/ initialised
+               ✔  And an existing change named "design-review-ubiquitous-language"
+               ✔  Then the served design-review instruction contains "ubiquitous language is used consistently"
+               ✔  And the served design-review instruction contains "arc42 glossary"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `97889222` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            97889222 — feat(guide-domain-modeling): <release note>; body: Scenario: The design-review skill checks that the ubiquitous language is followed
+            ```
+
+- [x] guide-domain-modeling: The review skill checks that the ubiquitous language is followed
+      Design constraints:
+        - Same-title `@givn.modified` delta replacement of the permanent `givn/specs/fragments/guide-domain-modeling.feature` scenario: it re-points the removed review skill copy at the served review instruction, which already carried the ubiquitous-language section.
+        - No production change: assertion migration only.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The review skill checks that the ubiquitous language is followed"`
+      - [x] RED: bound the scenario (all steps reused), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The review skill checks that the ubiquitous language is followed"
+              Scenario: The review skill checks that the ubiquitous language is followed
+               ✔  Given a project root with givn/ initialised
+               ✔  And an existing change named "review-ubiquitous-language"
+               ✔  Then the served review instruction contains "ubiquitous language is used consistently everywhere"
+               ✔  And the served review instruction contains "arc42 glossary"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the served review instruction already
+            carries the ubiquitous-language section (assets/instructions/review.md
+            lines 160-172), delivered with the match-guidance migration. This is
+            the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "used consistently everywhere" → "used consistently
+               now and then" in assets/instructions/review.md; same scoped command)
+              Scenario: The review skill checks that the ubiquitous language is followed
+               ✔  Given a project root with givn/ initialised
+               ✔  And an existing change named "review-ubiquitous-language"
+               ✘  Then the served review instruction contains "ubiquitous language is used consistently everywhere"
+                  Step panicked. Captured output: the served review instruction is missing "ubiquitous language is used consistently everywhere": # Instruction: review
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            3 steps (2 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/review.md`) and the scoped
+            command passed again. No production switch, exception, fake success,
+            or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — assertion migration only: the served review instruction
+            already carried the ubiquitous-language section; the delta scenario
+            re-points the removed generated copy at it.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+              Scenario: The review skill checks that the ubiquitous language is followed
+               ✔  Given a project root with givn/ initialised
+               ✔  And an existing change named "review-ubiquitous-language"
+               ✔  Then the served review instruction contains "ubiquitous language is used consistently everywhere"
+               ✔  And the served review instruction contains "arc42 glossary"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ git status --short  (only the delta feature file modified — no leftover calibration edit)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `6ae4cdd0` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            6ae4cdd0 — feat(guide-domain-modeling): <release note>; body: Scenario: The review skill checks that the ubiquitous language is followed
+            ```
+
+- [x] guide-domain-modeling: The skill body is an active discipline
+      Design constraints:
+        - Same-title `@givn.modified` delta replacement of the permanent `givn/specs/fragments/guide-domain-modeling.feature` scenario: it re-points the skill-template body assertions at the new served `domain-modeling` instruction.
+        - `assets/instructions/domain-modeling.md` carries the whole discipline moved out of `assets/skills/givn-domain-modeling/SKILL.md.tmpl`; the skill keeps trigger metadata (including "maintaining the project's arc42 glossary", which the permanent e2e routing scenario reads from the generated skill) and invocation orchestration plus the direction.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The skill body is an active discipline"`
+      - [x] RED: bound the scenario (all steps reused), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The skill body is an active discipline"
+              Scenario: The skill body is an active discipline
+               ✔  Given a Givn project
+               ✘  Then the served domain-modeling instruction contains "Challenge generic or overloaded terms"
+                  Step panicked. Captured output: givn instructions domain-modeling failed: error: unknown artifact 'domain-modeling'. Known artifacts: proposal, specs, design, design-review, tasks, review, arc42-docs
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (1 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: the `domain-modeling` instruction id does not exist
+            yet; the CLI refuses it because the design-named asset was never
+            created.
+            ```
+      - [x] GREEN: created `assets/instructions/domain-modeling.md` with the discipline moved out of the skill body and rewrote `assets/skills/givn-domain-modeling/SKILL.md.tmpl` to trigger metadata + orchestration + the direction `givn instructions domain-modeling`. Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after creating the asset and rewriting the skill)
+              Scenario: The skill body is an active discipline
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "Challenge generic or overloaded terms"
+               ✔  And the served domain-modeling instruction contains "Name aggregates with domain nouns"
+               ✔  And the served domain-modeling instruction contains "the glossary inline"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `2bdd47a0` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            2bdd47a0 — feat(guide-domain-modeling): <release note>; body: Scenario: The skill body is an active discipline
+            ```
+
+- [x] guide-domain-modeling: Lifecycle guidance describes the domain, not the givn change
+      Design constraints:
+        - Same-title `@givn.modified` delta replacement re-pointing the lifecycle assertions at the served `domain-modeling` instruction.
+        - No production change: the discipline slice (including the Lifecycle events bullet) was delivered by the previous scenario's edit.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::Lifecycle guidance describes the domain, not the givn change"`
+      - [x] RED: bound the scenario (all steps reused), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::Lifecycle guidance describes the domain, not the givn change"
+              Scenario: Lifecycle guidance describes the domain, not the givn change
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "the *domain's own*"
+               ✔  And the served domain-modeling instruction contains "trip reset"
+               ✔  And the served domain-modeling instruction does not contain "created -> planned -> implemented -> archived"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the Lifecycle events bullet moved with
+            the previous scenario's discipline slice. This is the recorded
+            ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "the *domain's own*" → "the domain's own" in
+               assets/instructions/domain-modeling.md; same scoped command)
+              Scenario: Lifecycle guidance describes the domain, not the givn change
+               ✔  Given a Givn project
+               ✘  Then the served domain-modeling instruction contains "the *domain's own*"
+                  Step panicked. Captured output: the served domain-modeling instruction is missing "the *domain's own*": # Instruction: domain-modeling
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (1 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately
+            (`git checkout -- assets/instructions/domain-modeling.md`) and the
+            scoped command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the lifecycle content was delivered by the previous scenario's
+            slice (`assets/instructions/domain-modeling.md`); this scenario binds
+            the served-content assertions.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+              Scenario: Lifecycle guidance describes the domain, not the givn change
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "the *domain's own*"
+               ✔  And the served domain-modeling instruction contains "trip reset"
+               ✔  And the served domain-modeling instruction does not contain "created -> planned -> implemented -> archived"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `b61058d3` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            b61058d3 — feat(guide-domain-modeling): <release note>; body: Scenario: Lifecycle guidance describes the domain, not the givn change
+            ```
+
+- [x] guide-domain-modeling: The ubiquitous language is recorded in the project's arc42 glossary
+      Design constraints:
+        - Same-title `@givn.modified` delta replacement re-pointing the glossary-maintenance assertions at the served `domain-modeling` instruction.
+        - No production change: the Glossary maintenance section moved with the discipline slice.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The ubiquitous language is recorded in the project's arc42 glossary"`
+      - [x] RED: bound the scenario (all steps reused), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The ubiquitous language is recorded in the project's arc42 glossary"
+              Scenario: The ubiquitous language is recorded in the project's arc42 glossary
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "maintaining the project's arc42 glossary"
+               ✔  And the served domain-modeling instruction does not contain "domain.md"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            3 steps (3 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the Glossary maintenance section moved
+            with the discipline slice. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "maintaining the project's arc42 glossary" →
+               "maintaining the project glossary"; same scoped command)
+              Scenario: The ubiquitous language is recorded in the project's arc42 glossary
+               ✔  Given a Givn project
+               ✘  Then the served domain-modeling instruction contains "maintaining the project's arc42 glossary"
+                  Step panicked. Captured output: the served domain-modeling instruction is missing "maintaining the project's arc42 glossary": # Instruction: domain-modeling
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (1 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately and the
+            scoped command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the glossary content was delivered by the discipline slice;
+            this scenario binds the served-content assertions.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+              Scenario: The ubiquitous language is recorded in the project's arc42 glossary
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "maintaining the project's arc42 glossary"
+               ✔  And the served domain-modeling instruction does not contain "domain.md"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            3 steps (3 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 3 steps (3 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `9311f7a2` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            9311f7a2 — feat(guide-domain-modeling): <release note>; body: Scenario: The ubiquitous language is recorded in the project's arc42 glossary
+            ```
+
+- [x] guide-domain-modeling: The skill requires the arc42 glossary for domain modeling
+      Design constraints:
+        - Same-title `@givn.modified` delta replacement re-pointing the arc42-requirement assertions at the served `domain-modeling` instruction.
+        - No production change: the Requirements section moved with the discipline slice.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The skill requires the arc42 glossary for domain modeling"`
+      - [x] RED: bound the scenario (all steps reused), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The skill requires the arc42 glossary for domain modeling"
+              Scenario: The skill requires the arc42 glossary for domain modeling
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "Requires the arc42 addon"
+               ✔  And the served domain-modeling instruction contains "enable it first when the glossary is missing"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            3 steps (3 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the Requirements section moved with the
+            discipline slice. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "Requires the arc42 addon" → "Requires the
+               arc42 guidance"; same scoped command)
+              Scenario: The skill requires the arc42 glossary for domain modeling
+               ✔  Given a Givn project
+               ✘  Then the served domain-modeling instruction contains "Requires the arc42 addon"
+                  Step panicked. Captured output: the served domain-modeling instruction is missing "Requires the arc42 addon": # Instruction: domain-modeling
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (1 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately and the
+            scoped command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the arc42-requirement content was delivered by the discipline
+            slice; this scenario binds the served-content assertions.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+              Scenario: The skill requires the arc42 glossary for domain modeling
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "Requires the arc42 addon"
+               ✔  And the served domain-modeling instruction contains "enable it first when the glossary is missing"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            3 steps (3 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 3 steps (3 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `b237a687` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            b237a687 — feat(guide-domain-modeling): <release note>; body: Scenario: The skill requires the arc42 glossary for domain modeling
+            ```
+
+- [x] guide-domain-modeling: The domain-modeling guidance carries the term introduction test
+      Design constraints:
+        - Same-title `@givn.modified` delta replacement re-pointing the term-introduction assertions at the served `domain-modeling` instruction.
+        - No production change: the Term introduction test moved with the discipline slice.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The domain-modeling guidance carries the term introduction test"`
+      - [x] RED: bound the scenario (all steps reused), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The domain-modeling guidance carries the term introduction test"
+              Scenario: The domain-modeling guidance carries the term introduction test
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "Genus + differentia"
+               ✔  And the served domain-modeling instruction contains "is a `<kind>` that"
+               ✔  And the served domain-modeling instruction contains "Contrast pair"
+               ✔  And the served domain-modeling instruction contains "not `<near neighbour>`"
+               ✔  And the served domain-modeling instruction contains "concrete domain sentence"
+               ✔  And the served domain-modeling instruction contains "Substrate"
+               ✔  And the served domain-modeling instruction contains "has no referent"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            8 steps (8 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the Term introduction test moved with
+            the discipline slice. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "Genus + differentia" → "Genus plus
+               differentia"; same scoped command)
+              Scenario: The domain-modeling guidance carries the term introduction test
+               ✔  Given a Givn project
+               ✘  Then the served domain-modeling instruction contains "Genus + differentia"
+                  Step panicked. Captured output: the served domain-modeling instruction is missing "Genus + differentia": # Instruction: domain-modeling
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (1 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately and the
+            scoped command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the term-introduction content was delivered by the discipline
+            slice; this scenario binds the served-content assertions.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+              Scenario: The domain-modeling guidance carries the term introduction test
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "Genus + differentia"
+               ✔  And the served domain-modeling instruction contains "is a `<kind>` that"
+               ✔  And the served domain-modeling instruction contains "Contrast pair"
+               ✔  And the served domain-modeling instruction contains "not `<near neighbour>`"
+               ✔  And the served domain-modeling instruction contains "concrete domain sentence"
+               ✔  And the served domain-modeling instruction contains "Substrate"
+               ✔  And the served domain-modeling instruction contains "has no referent"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            8 steps (8 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 8 steps (8 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `9d482d40` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            9d482d40 — feat(guide-domain-modeling): <release note>; body: Scenario: The domain-modeling guidance carries the term introduction test
+            ```
+
+- [x] guide-domain-modeling: The challenge bullet hands the name choice to the user
+      Design constraints:
+        - Same-title `@givn.modified` delta replacement re-pointing the naming-choice assertions at the served `domain-modeling` instruction.
+        - No production change: the challenge bullet moved with the discipline slice.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The challenge bullet hands the name choice to the user"`
+      - [x] RED: bound the scenario (all steps reused), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The challenge bullet hands the name choice to the user"
+              Scenario: The challenge bullet hands the name choice to the user
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "do not choose it alone"
+               ✔  And the served domain-modeling instruction does not contain "Propose it and justify it"
+               ✔  And the served domain-modeling instruction contains "the concept in one sentence"
+               ✔  And the served domain-modeling instruction contains "up to three candidate names"
+               ✔  And the served domain-modeling instruction contains "any collision it carries"
+               ✔  And the served domain-modeling instruction contains "accept the user's own name"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            7 steps (7 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the challenge bullet moved with the
+            discipline slice. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "do not choose it alone" → "choose it together";
+               same scoped command)
+              Scenario: The challenge bullet hands the name choice to the user
+               ✔  Given a Givn project
+               ✘  Then the served domain-modeling instruction contains "do not choose it alone"
+                  Step panicked. Captured output: the served domain-modeling instruction is missing "do not choose it alone": # Instruction: domain-modeling
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (1 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately and the
+            scoped command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the naming-choice content was delivered by the discipline
+            slice; this scenario binds the served-content assertions.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+              Scenario: The challenge bullet hands the name choice to the user
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "do not choose it alone"
+               ✔  And the served domain-modeling instruction does not contain "Propose it and justify it"
+               ✔  And the served domain-modeling instruction contains "the concept in one sentence"
+               ✔  And the served domain-modeling instruction contains "up to three candidate names"
+               ✔  And the served domain-modeling instruction contains "any collision it carries"
+               ✔  And the served domain-modeling instruction contains "accept the user's own name"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            7 steps (7 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 7 steps (7 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `9fa8c37f` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            9fa8c37f — feat(guide-domain-modeling): <release note>; body: Scenario: The challenge bullet hands the name choice to the user
+            ```
+
+- [x] guide-domain-modeling: The challenge bullet shows a naming question with candidates and a collision
+      Design constraints:
+        - Same-title `@givn.modified` delta replacement re-pointing the naming-question example assertions at the served `domain-modeling` instruction.
+        - No production change: the naming-question example moved with the discipline slice.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The challenge bullet shows a naming question with candidates and a collision"`
+      - [x] RED: bound the scenario (all steps reused), removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/guide-domain-modeling.feature::The challenge bullet shows a naming question with candidates and a collision"
+              Scenario: The challenge bullet shows a naming question with candidates and a collision
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "ShoppingList"
+               ✔  And the served domain-modeling instruction contains "Candidates:"
+               ✔  And the served domain-modeling instruction contains "Basket"
+               ✔  And the served domain-modeling instruction contains "collides"
+               ✔  And the served domain-modeling instruction contains "should the record use, or what is yours"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            BASELINE_GREEN / ORACLE_RED — the naming-question example moved with
+            the discipline slice. This is the recorded ORACLE_RED case.
+            ORACLE_RED calibration (controlled omission from the delivered excerpt):
+            $ (temporarily rewrote "ShoppingList" → "ShoppingPlan" in
+               assets/instructions/domain-modeling.md; same scoped command)
+              Scenario: The challenge bullet shows a naming question with candidates and a collision
+               ✔  Given a Givn project
+               ✘  Then the served domain-modeling instruction contains "ShoppingList"
+                  Step panicked. Captured output: the served domain-modeling instruction is missing "ShoppingList": # Instruction: domain-modeling
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            2 steps (1 passed, 1 failed)                                  EXIT=101
+            The omission makes exactly the matching assertion fail, so the
+            assertion discriminates; the excerpt was restored immediately and the
+            scoped command passed again. No production switch, exception, fake
+            success, or source-text test.
+            ```
+      - [x] GREEN: replace the stubs with real assertions and the minimum production code. Production files created/modified:
+            ```
+            none — the naming-question example was delivered by the discipline
+            slice; this scenario binds the served-content assertions.
+            ```
+            Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after restoring the excerpt)
+              Scenario: The challenge bullet shows a naming question with candidates and a collision
+               ✔  Given a Givn project
+               ✔  Then the served domain-modeling instruction contains "ShoppingList"
+               ✔  And the served domain-modeling instruction contains "Candidates:"
+               ✔  And the served domain-modeling instruction contains "Basket"
+               ✔  And the served domain-modeling instruction contains "collides"
+               ✔  And the served domain-modeling instruction contains "should the record use, or what is yours"
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            6 steps (6 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0. Paste command + output:
+            ```
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 6 steps (6 passed)  EXIT=0
+            ```
+      - [x] COMMIT: `d0f574cb` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            d0f574cb — feat(guide-domain-modeling): <release note>; body: Scenario: The challenge bullet shows a naming question with candidates and a collision
+            ```
+
+- [x] instruction-integrity: Every generated skill and command directs to exactly one served instruction id
+      Design constraints:
+        - Design D3: every generated skill and command directs to exactly one served instruction id; artifact-aligned steps keep their existing ids, `givn-implement` directs to the tasks instruction, and the remaining steps receive the new instruction assets (`reverse-engineer`, `characterize`, `dev-principles`, `grill-me`, `grill-with-docs`; `domain-modeling` was delivered by the earlier re-point slice).
+        - The new step lives in `tests/steps/instruction_integrity_steps.rs` (design.md §Step definitions) and grades every installed skill and command across the configured targets: it names its own expected id per the design mapping, and every named id resolves through the real CLI (`--change` for manifest artifact ids).
+        - Addon-gated fragments move into the assets (`grill-with-docs`'s `docs/arc42` line, the archive README gate); generated files keep trigger metadata, invocation orchestration, the dialog obligation, and the direction.
+      Scoped single-scenario run (design.md §Runner and strict mode):
+        `GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::Every generated skill and command directs to exactly one served instruction id"`
+      - [x] RED: bound the new step with its real assertion, removed `@wip` from this scenario only, ran the scoped command → MUST exit non-zero. Paste command + output:
+            ```
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::Every generated skill and command directs to exactly one served instruction id"
+              Scenario: Every generated skill and command directs to exactly one served instruction id
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the command succeeds
+               [step panic] generated guidance files do not direct to their own served instruction:
+               .opencode/skills/givn-archive/SKILL.md does not name "givn instructions archive"
+               .opencode/skills/givn-characterize/SKILL.md does not name "givn instructions characterize"
+               .opencode/skills/givn-dev-principles/SKILL.md does not name "givn instructions dev-principles"
+               .opencode/skills/givn-explore/SKILL.md does not name "givn instructions explore"
+               .opencode/skills/givn-reverse-engineer/SKILL.md does not name "givn instructions reverse-engineer"
+               .opencode/commands/givn-characterize.md does not name "givn instructions characterize"
+               .opencode/commands/givn-explore.md does not name "givn instructions explore"
+               .opencode/commands/givn-reverse-engineer.md does not name "givn instructions reverse-engineer"
+               .opencode/commands/grill-me.md does not name "givn instructions grill-me"
+               .opencode/commands/grill-with-docs.md does not name "givn instructions grill-with-docs"
+               (the same five skills repeat for .agents, .claude, and .omp; the .omp commands
+               repeat the command failures)
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            4 steps (3 passed, 1 failed)                                  EXIT=101
+            OLD_PRODUCT_RED: ten generated sources (eleven files, minus the
+            domain-modeling skill already fixed by the re-point slice) name no own
+            served instruction: the five new instruction assets do not exist and
+            the generated files carry the old rule copies instead of a direction.
+            ```
+      - [x] GREEN: created `assets/instructions/characterize.md`, `dev-principles.md`, `grill-me.md`, `grill-with-docs.md`, `reverse-engineer.md` by moving the discipline out of the corresponding skills/commands; rewrote the eleven generated files to the direction (`givn instructions <own-id>`, plus orchestration, trigger metadata, and the dialog obligation); moved the archive README gate into `assets/instructions/archive.md` as an addon-gated block; kept the generated archive skill's coverage README example (the permanent coverage guidance scenarios pin it) and the characterize files' `givn instructions review-reverse` epilogue reference. Run scoped → MUST exit 0. Paste command + output:
+            ```
+            $ (same scoped command after the production edits)
+              Scenario: Every generated skill and command directs to exactly one served instruction id
+               ✔  Given a givn project with all agent skill targets enabled and an active change
+               ✔  When the user runs `givn skills sync`
+               ✔  Then the command succeeds
+               ✔  And every generated skill and command directs to exactly one served instruction id
+            [Summary]
+            1 feature
+            1 scenario (1 passed)
+            4 steps (4 passed)                                            EXIT=0
+            ```
+      - [x] REFACTOR: clean up without behaviour change; re-run scoped → MUST still exit 0, and the full non-@e2e delta scope stays green. Paste command + output:
+            ```
+            $ cargo fmt && cargo clippy --locked --test features_runner -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.54s     (clean)
+            $ (re-ran the scoped command) → 1 scenario (1 passed), 4 steps (4 passed)  EXIT=0
+            $ GIVN_FEATURES=givn/changes/extended-rules/specs ./run-tests.sh --non-e2e
+            Summary [   4.880s] 67 tests run: 67 passed, 12 skipped
+            ```
+      - [x] COMMIT: `5d61b8ba` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+            ```
+            5d61b8ba — feat(instruction-integrity): <release note>; body: Scenario: Every generated skill and command directs to exactly one served instruction id
+            ```
+
+### Repair 3 — tasks-reverse alignment (recorded decision, no new scenario)
+
+`assets/instructions/tasks-reverse.md` no longer points at the `givn-steps`
+skill and no longer restates the commit/release-note contract: shared step
+mechanics are served by `givn instructions steps`, and the commit contract has
+exactly one home (`givn instructions tasks --change <id>`). Only
+reverse-specific content remains in the instruction.
+
+- [x] COMMIT: `fac3637c` -- one atomic commit for RED+GREEN+REFACTOR; the scenario title goes in the message body (see the fence below).
+      ```
+      fac3637c — fix(instruction-integrity): point the reverse task breakdown at the served steps instruction and the single commit contract
+      ```
+
+  Post-commit correction (Repair 2, discovered by the permanent-suite check):
+  `givn/specs/create-change/prose-consolidation.feature`'s "Delegated question
+  preparation carries the policy without assuming inherited context" pins the
+  delegated-dialog obligation on the generated delegation prompts. The
+  characterize/reverse-engineer rewrites (and the earlier ideation-skill
+  migration) had dropped it, so the obligation was restored in the two
+  skills, the two commands' delegated prompt blocks, and the ideation skill —
+  the obligation is part of the generated files' orchestration, not a rule
+  copy of the served instructions. Revision identifier:
+
+  ```
+  632c2962 — fix(instruction-integrity): keep the delegated-dialog obligation in the generated delegation prompts
+  ```
+
+  Evidence (scoped, permanent scope):
+  ```
+  $ GIVN_FEATURES=givn/specs cargo test --locked --test features_runner -- --exact "create-change/prose-consolidation.feature::Delegated question preparation carries the policy without assuming inherited context"
+    Scenario: Delegated question preparation carries the policy without assuming inherited context
+     ✔  Given a Givn project with delegated authoring and review guidance enabled
+     ✔  When the author reads the synchronized delegation instructions
+     ✔  Then every question-preparing delegation explicitly requires the effective dialog policy in the fresh context
+     ✔  And the delegation instructions do not assume the parent's loaded policy is inherited
+     ✔  And the presenting agent remains responsible for the question before it reaches the person
+     ✔  And a question-tool recommendation or option label does not replace context and answer consequences
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  6 steps (6 passed)                                            EXIT=0
+  ```
+  Full non-@e2e delta scope re-run after the correction:
+  `Summary [   4.874s] 67 tests run: 67 passed, 12 skipped`
+
+---
+
+## Review-audit repairs
+
+- [x] `guide-domain-modeling`: An agent synchronizes skills and the domain skill is routed (re-pointed `@givn.modified @e2e`)
+      Repair of the review-audit finding "permanent e2e scenario left failing, unreconciled": the
+      generated skill now directs to the served domain-modeling instruction; the glossary-maintenance
+      assertion moved to the served content.
+      RED: ORACLE_RED controlled omission — the served instruction temporarily lacked
+      "maintaining the project's arc42 glossary" → the scoped run failed on exactly that assertion;
+      restored immediately.
+      ```
+      $ GIVN_FEATURES=givn/changes/extended-rules/specs ./run-tests.sh --e2e  (scenario-scoped)
+        … ✘ the served domain-modeling instruction contains "maintaining the project's arc42 glossary"
+        ORACLE_RED calibration, then restored.
+        $ (same scoped command after restore)
+      1 scenario (1 passed), 7 steps (7 passed)                    EXIT=0
+      ```
+      - [x] GREEN: delta `specs/fragments/guide-domain-modeling.feature` (same-title re-point), reused
+            the existing generic guidance-direction step; transcript committed:
+            `evidence/visual/an-agent-synchronizes-skills-and-the-domain-skill-is-routed/transcript.txt`
+      - [x] Result: the re-pointed scenario runs in the e2e scope; its transcript is committed.
+
+- [x] `review-architecture-documentation`: Generated review guidance stays aligned after skill sync — `@e2e` tag restored
+      Fabrication-audit correction (tag integrity): the repair had re-pointed the permanent `@e2e`
+      scenario through a same-title `@givn.modified` replacement that dropped the tag. The tag is
+      restored; the scenario runs through `verify.e2e_command`; transcript committed.
+      ```
+      $ GIVN_FEATURES=givn/changes/extended-rules/specs ./run-tests.sh --e2e
+        14 tests run: 14 passed, 57 skipped                        EXIT=0
+      ```
+      Transcript: `evidence/visual/generated-review-guidance-stays-aligned-after-skill-sync/transcript.txt`
+      (records the real `givn skills sync`, the generated skill carrying no Arc42 section, and the served
+      review instruction carrying it).
+      - [x] Result: the restored `@e2e` tag passes the tag-integrity check; its transcript is committed.
+
+- [x] Check-gate repairs: Capability Routing rows and contract-bullet parsing
+      `givn check review` reported the two new fragment capabilities absent from the proposal's
+      Capability Routing table and wrapped bullets rejected by the use-case parser.
+      - [x] `proposal.md` gained the `guide-domain-modeling` and `review-architecture-documentation`
+            routing rows (`NEW in fragments`).
+      - [x] `specs/obtain-effective-guidance/usecase.md`, `specs/extend-an-instruction/usecase.md`,
+            `specs/initialize-project/usecase.md`, `specs/upgrade-a-project/usecase.md`: list-section
+            bullets unwrapped (one item per line for Actors/Preconditions/Capabilities/Extensions/
+            Rules/Examples/Personas).
+      - [x] COMMIT: `163062eb` -- fix(extended-rules): repair the review-audit findings (e2e tag restoration, re-pointed routed-skill scenario, routing rows, contract-bullet unwrapping, design-cell corrections); the file-write restore follow-up is `63877b2e`.

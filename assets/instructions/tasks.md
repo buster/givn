@@ -3,6 +3,19 @@
 Write the implementation task breakdown as a strict scenario-by-scenario
 RED→GREEN→REFACTOR→COMMIT loop.
 
+## Preconditions (before writing any task)
+
+- **`design-review` must be done.** If `design-review` appears in the artifact
+  sequence (`givn status --change <id> --json`), it must have status `done`
+  before tasks are written. Never write tasks around a missing or skipped
+  design-review.
+- **Interaction coverage pre-flight.** Cross-check the interaction inventory in
+  each owning use-case document (`usecase.md` §Interactions — never a
+  `.feature` comment block) against the design's Interaction Coverage Matrix.
+  Every inventory entry needs a matrix row *and* an existing `@e2e` scenario.
+  Any gap is a finding: report it before writing tasks. Never write task
+  entries for `@e2e` scenarios that do not exist yet.
+
 ## Setup task (first task, always)
 
 Before writing scenario tasks, read the owning `usecase.md`, its guarantees and
@@ -19,6 +32,9 @@ context between artifacts.
 - Create the runner test binary and step-definition skeleton, **one file per
   capability** (e.g. `CompanyOnboardingSteps`). Never one file for everything.
 - Run the proof-of-strictness check (below). Do not proceed until it passes.
+- **End state**: after the proof, remove or fix the probe and re-run the runner
+  so it exits 0 again — back to a passing baseline with the real scenarios
+  still `@wip`.
 
 ## Rule: prove strict mode once, with evidence
 
@@ -56,6 +72,25 @@ at every phase, not just RED. Unimplemented steps use:
 
 A step body is exempt only once it has a real assertion (GREEN) or performs
 a real reused setup action. Reuse is never an excuse for a new step to be empty.
+
+## Resident rules (project-start block)
+
+The managed project-start block (`AGENTS.md`) renders the section between the
+`givn:resident-rules` markers verbatim; it is part of this served instruction,
+so the text has exactly one home.
+
+<!-- givn:resident-rules:begin -->
+- Tick off each task in `tasks.md` immediately after completing it —
+  an unchecked box means that scenario is not done. Never batch-check
+  boxes at the end.
+- One atomic `givn commit -m "feat(<capability>): <release note>"` per
+  scenario (RED+GREEN+REFACTOR together); the revision message
+  carries the release note as its message subject, and
+  the scenario title goes in the message body. It works on Git and Fossil. A
+  raw Git commit is stamped by the hook, a raw Fossil check-in is not. No
+  commit, or a commit touching only the spec, means the work is not done.
+  Record the revision identifier in tasks.md.
+<!-- givn:resident-rules:end -->
 
 ## TDD loop — non-@e2e scenarios (in .feature order)
 
@@ -175,6 +210,9 @@ this.
 ## Tasks file format
 
 - `[ ]`/`[x]` checkboxes. One section per scenario: RED/GREEN/REFACTOR/COMMIT.
+- Every scenario task carries a populated **Design constraints** block copied
+  from `design.md` — the implementer may not read design.md, so the task must
+  carry every decision it needs. Never leave the block empty or generic.
 - Each RED/GREEN/REFACTOR line has a field for pasted runner output.
 - Each scenario has a field for the commit hash.
 - Non-@e2e scenarios first, @e2e last.
@@ -190,3 +228,41 @@ this.
   `verify.command` and `verify.e2e_command` exit 0 on the full suite, and
   the e2e setup task's scenario-count proof (e2e count strictly less than
   full count, or an explicit "all scenarios are @e2e" statement) is pasted.
+
+## Step orchestration (implement)
+
+**Audience: the agent running the implement step.** This section is the
+served instruction the implement files route to; artifact authors follow the
+task-list rules above. Implement one scenario at a time, in task order,
+optionally delegating each task's RED→GREEN→REFACTOR→COMMIT cycle to one
+coding subagent. Do not start the next task until the current one is verified
+and checked off.
+
+**Never trust subagent self-reports.** A "PASSED" claim is not proof: a
+subagent has previously checked off every task while every step was an empty
+stub and the runner silently reported GREEN. Independent verification is
+mandatory for every task, never a spot-check:
+
+1. Re-run the scenario yourself, scoped to that scenario (the single-scenario
+   run command from `design.md`), and confirm zero exit.
+2. Confirm the recorded revision touches production source (for example
+   `git show --stat <hash>`), not only the spec/stub.
+3. Grep the step files the task touched for empty bodies (`{}`, bare
+   `pass`/`return`) — any match rejects the task.
+4. Confirm `tasks.md` carries pasted evidence and the revision identifier, not
+   just a checked box.
+5. For every `@e2e` task, read the scenario's Then steps and confirm at least
+   one asserts on the named real interface's output (page content, HTTP
+   response, redirect, CLI output) — never repository-only state.
+6. For a browser-UI `@e2e` task, read the step implementation and confirm it
+   actually drives the browser (click/type/navigate) — an HTTP request, or
+   `fetch()` inside the page's JS context, is not real-interface driving.
+
+**GREEN requires all three**: the scenario passes, the implementation matches
+the design, and independent verification confirms it. A task that deviates
+from the design is rejected even when its test passes. On any failure: uncheck
+the task, name the failure, and redo the loop before moving on.
+
+**Never claim PASS without re-checking.** No empty or no-op stubs may remain,
+the production files touched must be listed, and the zero exit must come from
+a targeted run of this scenario — never an inference from whole-suite output.

@@ -372,6 +372,545 @@ fn guidance_keeps_deterministic_toolchain(world: &mut GivnWorld) {
     }
 }
 
+// --- instruction-integrity: served specs guidance through the CLI -----------
+
+#[then("the returned guidance does not mention engine-backed retrieval commands")]
+fn returned_guidance_omits_engine_commands(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    for command in [
+        "givn spec index",
+        "givn spec search",
+        "givn spec explore",
+        "givn spec review",
+    ] {
+        assert!(
+            !output.contains(command),
+            "returned guidance still mentions engine-backed retrieval command `{command}`: {output}"
+        );
+    }
+}
+
+#[then("the returned guidance does not offer advisory or blocking retrieval paths")]
+fn returned_guidance_omits_retrieval_paths(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    for marker in [
+        "retrieval-unavailable",
+        "Retrieval-aware authoring",
+        "BGE_TOKEN_CAP",
+        "NLI_TOKEN_CAP",
+    ] {
+        assert!(
+            !output.contains(marker),
+            "returned guidance still offers a retrieval path via `{marker}`: {output}"
+        );
+    }
+}
+
+#[then("the returned guidance keeps the deterministic spec toolchain wording")]
+fn returned_guidance_keeps_deterministic_toolchain(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    for marker in ["@givn.delta", "givn lint", "givn/changes/"] {
+        assert!(
+            output.contains(marker),
+            "returned guidance lost the deterministic toolchain wording `{marker}`: {output}"
+        );
+    }
+}
+
+#[then("the returned guidance carries the placement test")]
+fn returned_guidance_carries_placement_test(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("placement test"),
+        "returned guidance does not carry the capability placement test: {output}"
+    );
+}
+
+#[then("the returned guidance rejects a channel as an answer")]
+fn returned_guidance_rejects_channel_answer(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("Channel is never an answer"),
+        "returned guidance does not reject a channel as an answer: {output}"
+    );
+}
+
+#[then("the returned guidance requires goal-shaped capability names")]
+fn returned_guidance_requires_goal_shaped_names(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("goal-shaped"),
+        "returned guidance does not require goal-shaped capability names: {output}"
+    );
+}
+
+// --- instruction-integrity: generated directions resolve through the CLI ----
+
+/// Every installed skill and command file for the project's configured
+/// targets, in deterministic order.
+fn installed_guidance_files(world: &GivnWorld) -> Vec<std::path::PathBuf> {
+    let root = env(world).root();
+    let targets =
+        givn::config::overlay::load_skills_targets(&root).expect("load configured skills targets");
+    let mut files = Vec::new();
+    for name in targets {
+        let Some(target) = AgentTarget::from_name(&name) else {
+            continue;
+        };
+        let skills_dir = root.join(target.dir()).join("skills");
+        if skills_dir.is_dir() {
+            let mut entries: Vec<std::path::PathBuf> = std::fs::read_dir(&skills_dir)
+                .unwrap_or_else(|error| panic!("read {}: {error}", skills_dir.display()))
+                .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+                .collect();
+            entries.sort();
+            for entry in entries {
+                let file = entry.join("SKILL.md");
+                if file.is_file() {
+                    files.push(file);
+                }
+            }
+        }
+        if target.owns_commands() {
+            let commands_dir = root.join(target.dir()).join("commands");
+            if commands_dir.is_dir() {
+                let mut entries: Vec<std::path::PathBuf> = std::fs::read_dir(&commands_dir)
+                    .unwrap_or_else(|error| panic!("read {}: {error}", commands_dir.display()))
+                    .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+                    .filter(|path| path.extension().is_some_and(|ext| ext == "md"))
+                    .collect();
+                entries.sort();
+                files.extend(entries);
+            }
+        }
+    }
+    files
+}
+
+/// Every instruction id named by a `givn instructions <id>` direction in
+/// `content`, in occurrence order.
+fn named_instruction_ids(content: &str) -> Vec<String> {
+    const NEEDLE: &str = "givn instructions ";
+    let mut ids = Vec::new();
+    let mut rest = content;
+    while let Some(position) = rest.find(NEEDLE) {
+        let after = &rest[position + NEEDLE.len()..];
+        let token: String = after
+            .chars()
+            .take_while(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || *c == '-')
+            .collect();
+        if token.chars().next().is_some_and(|c| c.is_ascii_lowercase()) {
+            ids.push(token);
+        }
+        rest = after;
+    }
+    ids
+}
+
+#[then("every generated skill and command names a served instruction")]
+fn every_generated_file_names_instruction(world: &mut GivnWorld) {
+    let files = installed_guidance_files(world);
+    assert!(
+        !files.is_empty(),
+        "the fixture has no generated skills or commands to check"
+    );
+    for path in &files {
+        let content = std::fs::read_to_string(path)
+            .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+        let ids = named_instruction_ids(&content);
+        assert!(
+            !ids.is_empty(),
+            "{} names no served instruction (no `givn instructions <id>` direction)",
+            path.display()
+        );
+    }
+}
+
+#[then("every named instruction id resolves through the Givn CLI")]
+fn every_named_instruction_id_resolves(world: &mut GivnWorld) {
+    let files = installed_guidance_files(world);
+    let project = env(world);
+    let mut checked: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+    for path in &files {
+        let content = std::fs::read_to_string(path)
+            .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+        for id in named_instruction_ids(&content) {
+            if !checked.insert(id.clone()) {
+                continue;
+            }
+            let output = crate::common::run_givn(project, &["instructions", &id]);
+            assert!(
+                output.status.success(),
+                "`givn instructions {id}` (named by {}) failed: {}",
+                path.display(),
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+    }
+    assert!(
+        !checked.is_empty(),
+        "the generated guidance names no instruction ids at all"
+    );
+}
+
+#[then("every generated skill and command carries trigger metadata and a direction")]
+fn every_generated_file_carries_metadata_and_direction(world: &mut GivnWorld) {
+    let files = installed_guidance_files(world);
+    assert!(
+        !files.is_empty(),
+        "the fixture has no generated skills or commands to check"
+    );
+    for path in &files {
+        let content = std::fs::read_to_string(path)
+            .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+        assert!(
+            content.starts_with("---\n"),
+            "{} carries no YAML frontmatter trigger metadata",
+            path.display()
+        );
+        let rest = &content[4..];
+        let end = rest
+            .find("\n---")
+            .unwrap_or_else(|| panic!("{} frontmatter is never closed", path.display()));
+        let frontmatter = &rest[..end];
+        assert!(
+            frontmatter.contains("description:"),
+            "{} carries no description trigger metadata",
+            path.display()
+        );
+        if path.file_name().is_some_and(|name| name == "SKILL.md") {
+            assert!(
+                frontmatter.contains("name:"),
+                "{} carries no name trigger metadata",
+                path.display()
+            );
+        }
+        assert!(
+            !named_instruction_ids(&content).is_empty(),
+            "{} names no served instruction (no `givn instructions <id>` direction)",
+            path.display()
+        );
+    }
+}
+
+/// Representative built-in-rule markers that must never reappear in a
+/// generated skill or command (design.md §Step definitions).
+const RULE_COPY_MARKERS: [&str; 7] = [
+    "Artifact-specific rules",
+    "carries the release note as its message subject",
+    "Overlap dispositions",
+    "Black-Box-First",
+    "the user's verified name",
+    "VISUAL-REVIEW: PASS",
+    "one question at a time",
+];
+
+#[then("no generated skill or command copies the built-in rules of its instruction")]
+fn no_generated_file_copies_builtin_rules(world: &mut GivnWorld) {
+    let files = installed_guidance_files(world);
+    assert!(
+        !files.is_empty(),
+        "the fixture has no generated skills or commands to check"
+    );
+    for path in &files {
+        let content = std::fs::read_to_string(path)
+            .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+        for marker in RULE_COPY_MARKERS {
+            assert!(
+                !content.contains(marker),
+                "{} still copies the built-in rule marker {marker:?}:\n{content}",
+                path.display()
+            );
+        }
+    }
+}
+
+// --- instruction-integrity: directions resolve in their documented context --
+
+/// One `givn instructions <id>` direction occurrence in an installed file.
+struct NamedDirection {
+    path: std::path::PathBuf,
+    id: String,
+    line: String,
+}
+
+/// Every `givn instructions <id>` direction in every installed skill and
+/// command, with the line the direction appears on.
+fn all_directions(world: &GivnWorld) -> Vec<NamedDirection> {
+    const NEEDLE: &str = "givn instructions ";
+    let mut directions = Vec::new();
+    for path in installed_guidance_files(world) {
+        let content = std::fs::read_to_string(&path)
+            .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+        for line in content.lines() {
+            let mut rest = line;
+            while let Some(position) = rest.find(NEEDLE) {
+                let after = &rest[position + NEEDLE.len()..];
+                let token: String = after
+                    .chars()
+                    .take_while(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || *c == '-')
+                    .collect();
+                if token.chars().next().is_some_and(|c| c.is_ascii_lowercase()) {
+                    directions.push(NamedDirection {
+                        path: path.clone(),
+                        id: token,
+                        line: line.trim().to_string(),
+                    });
+                }
+                rest = after;
+            }
+        }
+    }
+    directions
+}
+
+/// The manifest artifact ids of the fixture, from `givn graph --json`.
+fn artifact_ids(world: &GivnWorld) -> std::collections::BTreeSet<String> {
+    let output = crate::common::run_givn(env(world), &["graph", "--json"]);
+    assert!(
+        output.status.success(),
+        "givn graph --json failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let value: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("graph output is not JSON");
+    value["artifacts"]
+        .as_array()
+        .expect("graph JSON carries an artifacts array")
+        .iter()
+        .map(|artifact| {
+            artifact["id"]
+                .as_str()
+                .expect("artifact entry carries an id")
+                .to_string()
+        })
+        .collect()
+}
+
+/// The fixture's single active change id.
+fn single_active_change(world: &GivnWorld) -> String {
+    let dir = env(world).path("givn/changes");
+    let mut ids: Vec<String> = std::fs::read_dir(&dir)
+        .unwrap_or_else(|error| panic!("read {}: {error}", dir.display()))
+        .filter_map(|entry| {
+            let entry = entry.ok()?;
+            if entry.path().is_dir() {
+                Some(entry.file_name().to_string_lossy().into_owned())
+            } else {
+                None
+            }
+        })
+        .collect();
+    ids.sort();
+    assert_eq!(
+        ids.len(),
+        1,
+        "expected exactly one active change in the fixture, got {ids:?}"
+    );
+    ids.remove(0)
+}
+
+/// The `--change` token a direction line names, when it names one.
+fn named_change(line: &str) -> Option<String> {
+    let position = line.find("--change ")?;
+    let token: String = line[position + "--change ".len()..]
+        .chars()
+        .take_while(|c| !c.is_whitespace() && !matches!(c, '`' | ')' | '>'))
+        .collect();
+    if token.is_empty() { None } else { Some(token) }
+}
+
+#[then("every direction to an artifact instruction names the change context it needs")]
+fn artifact_directions_name_change_context(world: &mut GivnWorld) {
+    let artifacts = artifact_ids(world);
+    let directions = all_directions(world);
+    assert!(
+        !directions.is_empty(),
+        "the generated guidance carries no directions"
+    );
+    let mut found_artifact = false;
+    for direction in &directions {
+        if artifacts.contains(&direction.id) {
+            found_artifact = true;
+            assert!(
+                named_change(&direction.line).is_some(),
+                "{}: the direction to artifact instruction `{}` names no change context: {}",
+                direction.path.display(),
+                direction.id,
+                direction.line
+            );
+        }
+    }
+    assert!(
+        found_artifact,
+        "the generated guidance carries no direction to an artifact instruction"
+    );
+}
+
+#[then("every direction to a policy or step instruction names no change context")]
+fn policy_directions_name_no_change_context(world: &mut GivnWorld) {
+    let artifacts = artifact_ids(world);
+    let directions = all_directions(world);
+    let mut found_policy = false;
+    for direction in &directions {
+        if !artifacts.contains(&direction.id) {
+            found_policy = true;
+            assert!(
+                named_change(&direction.line).is_none(),
+                "{}: the direction to policy/step instruction `{}` names a change context: {}",
+                direction.path.display(),
+                direction.id,
+                direction.line
+            );
+        }
+    }
+    assert!(
+        found_policy,
+        "the generated guidance carries no direction to a policy or step instruction"
+    );
+}
+
+#[then("every named instruction id resolves in the context the direction names")]
+fn ids_resolve_in_named_context(world: &mut GivnWorld) {
+    let artifacts = artifact_ids(world);
+    let active_change = single_active_change(world);
+    let project = env(world);
+    let directions = all_directions(world);
+    let mut checked: std::collections::BTreeSet<(String, Option<String>)> =
+        std::collections::BTreeSet::new();
+    for direction in &directions {
+        let context = if artifacts.contains(&direction.id) {
+            let named = named_change(&direction.line);
+            let resolvable =
+                named.filter(|token| project.path(&format!("givn/changes/{token}")).is_dir());
+            Some(resolvable.unwrap_or_else(|| active_change.clone()))
+        } else {
+            None
+        };
+        if !checked.insert((direction.id.clone(), context.clone())) {
+            continue;
+        }
+        let mut args = vec!["instructions", direction.id.as_str()];
+        if let Some(change) = context.as_deref() {
+            args.push("--change");
+            args.push(change);
+        }
+        let output = crate::common::run_givn(project, &args);
+        assert!(
+            output.status.success(),
+            "`givn instructions {}` in its documented context failed (direction line: {}): {}",
+            direction.id,
+            direction.line,
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    assert!(
+        !checked.is_empty(),
+        "the generated guidance names no instruction ids at all"
+    );
+}
+
+/// The one instruction id an installed guidance file owns, from the design's
+/// generated-file-to-instruction mapping (`design.md` §Generated guidance
+/// carries a direction).
+fn own_instruction_id(path: &std::path::Path) -> String {
+    let stem = if path.file_name().is_some_and(|name| name == "SKILL.md") {
+        path.parent()
+            .and_then(|parent| parent.file_name())
+            .and_then(|name| name.to_str())
+            .unwrap_or_else(|| panic!("skill file {} has no directory name", path.display()))
+            .to_string()
+    } else {
+        path.file_stem()
+            .and_then(|name| name.to_str())
+            .unwrap_or_else(|| panic!("guidance file {} has no file stem", path.display()))
+            .to_string()
+    };
+    let key = stem.strip_prefix("givn-").unwrap_or(&stem);
+    let id = match key {
+        "propose" => "proposal",
+        "spec" => "specs",
+        "design" => "design",
+        "design-review" => "design-review",
+        "tasks" => "tasks",
+        "implement" => "tasks",
+        "review" => "review",
+        "archive" => "archive",
+        "explore" => "explore",
+        "ideation" => "ideation",
+        "steps" => "steps",
+        "reverse-engineer" => "reverse-engineer",
+        "characterize" => "characterize",
+        "domain-modeling" => "domain-modeling",
+        "dev-principles" => "dev-principles",
+        "grill-me" => "grill-me",
+        "grill-with-docs" => "grill-with-docs",
+        other => panic!(
+            "generated guidance file {} has no instruction id in the design's mapping (name `{other}`)",
+            path.display()
+        ),
+    };
+    id.to_string()
+}
+
+#[then("every generated skill and command directs to exactly one served instruction id")]
+fn every_generated_file_directs_to_own_instruction(world: &mut GivnWorld) {
+    let files = installed_guidance_files(world);
+    assert!(
+        !files.is_empty(),
+        "the fixture has no generated skills or commands to check"
+    );
+    let artifacts = artifact_ids(world);
+    let active_change = single_active_change(world);
+    let project = env(world);
+    let mut missing: Vec<String> = Vec::new();
+    let mut unresolved: Vec<String> = Vec::new();
+    let mut checked: std::collections::BTreeSet<(String, Option<String>)> =
+        std::collections::BTreeSet::new();
+    for path in &files {
+        let content = std::fs::read_to_string(path)
+            .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+        let own = own_instruction_id(path);
+        let needle = format!("givn instructions {own}");
+        if !content.contains(&needle) {
+            missing.push(format!("{} does not name {needle:?}", path.display()));
+        }
+        for id in named_instruction_ids(&content) {
+            let context = if artifacts.contains(&id) {
+                Some(active_change.clone())
+            } else {
+                None
+            };
+            if !checked.insert((id.clone(), context.clone())) {
+                continue;
+            }
+            let mut args = vec!["instructions", id.as_str()];
+            if let Some(change) = context.as_deref() {
+                args.push("--change");
+                args.push(change);
+            }
+            let output = crate::common::run_givn(project, &args);
+            if !output.status.success() {
+                unresolved.push(format!(
+                    "`givn instructions {id}` (named by {}) failed: {}",
+                    path.display(),
+                    String::from_utf8_lossy(&output.stderr)
+                ));
+            }
+        }
+    }
+    assert!(
+        missing.is_empty(),
+        "generated guidance files do not direct to their own served instruction:\n{}",
+        missing.join("\n")
+    );
+    assert!(
+        unresolved.is_empty(),
+        "named instruction ids do not resolve:\n{}",
+        unresolved.join("\n")
+    );
+}
+
 // --- dialog-question-quality: dialog policy steps --------------------------
 
 fn cli_stdout(world: &GivnWorld) -> String {

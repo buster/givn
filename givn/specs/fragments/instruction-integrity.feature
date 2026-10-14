@@ -46,11 +46,11 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     Then the response is valid JSON with artifact paths prerequisites and instructions
 
   Scenario: Retrieval guidance distinguishes build capabilities
-    Given  the synchronized agent guidance for the specs workflow
-    When  an author reads the guidance
-    Then  the guidance does not mention engine-backed retrieval commands
-    And  the guidance does not offer advisory or blocking retrieval paths
-    And  the guidance keeps the deterministic spec toolchain wording
+    Given  a Givn project with an active change
+    When  the author requests the specs instructions through the Givn CLI
+    Then  the returned guidance does not mention engine-backed retrieval commands
+    And  the returned guidance does not offer advisory or blocking retrieval paths
+    And  the returned guidance keeps the deterministic spec toolchain wording
 
   Scenario: Review guidance names the deterministic disposition gates
     Given  a Givn project with an active change
@@ -119,11 +119,12 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     Then  the guidance points at the use-case scope criteria
 
   Scenario: The specs guidance carries the capability placement test
-    Given  the synchronized agent guidance for the specs workflow
-    When  an author reads the capability placement guidance
-    Then  the guidance carries the placement test
-    And  the guidance rejects a channel as an answer
-    And  the guidance requires goal-shaped capability names
+    Given  a Givn project with an active change
+    When  the author requests the specs instructions through the Givn CLI
+    Then  the returned guidance carries the placement test
+    And  the returned guidance rejects a channel as an answer
+    And  the returned guidance requires goal-shaped capability names
+
   Scenario: The proposal instruction carries the question disposition rule
     Given  the proposal instructions are requested
     When  an author reads the question disposition rule
@@ -243,3 +244,21 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     Given  a givn project with all agent skill targets enabled
     When  the skills of the agent target ".claude" are removed
     Then  the configured-target check fails and names the agent target ".claude"
+  Scenario: Every instruction id named by generated guidance resolves through the Givn CLI
+    Given  a givn project with all agent skill targets enabled and an active change
+    When  the user runs `givn skills sync`
+    Then  every generated skill and command names a served instruction
+    And  every named instruction id resolves through the Givn CLI
+
+  Scenario: Every generated direction is invokable in its documented context
+    Given  a givn project with all agent skill targets enabled and an active change
+    When  the user runs `givn skills sync`
+    Then  every direction to an artifact instruction names the change context it needs
+    And  every direction to a policy or step instruction names no change context
+    And  every named instruction id resolves in the context the direction names
+
+  Scenario: Every generated skill and command directs to exactly one served instruction id
+    Given  a givn project with all agent skill targets enabled and an active change
+    When  the user runs `givn skills sync`
+    Then  the command succeeds
+    And  every generated skill and command directs to exactly one served instruction id

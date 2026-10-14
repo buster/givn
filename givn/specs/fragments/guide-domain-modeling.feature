@@ -8,26 +8,26 @@ Feature: Guide domain modeling
     And the trigger loads when spec and code terms disagree
 
   Scenario: The skill body is an active discipline
-    Given the domain-modeling skill template is inspected
-    When an agent reads the skill body
-    Then the body challenges generic and overloaded terms
-    And the body names aggregates with domain nouns
-    And the body is updated inline as the vocabulary resolves
+    Given  a Givn project
+    Then  the served domain-modeling instruction contains "Challenge generic or overloaded terms"
+    And  the served domain-modeling instruction contains "Name aggregates with domain nouns"
+    And  the served domain-modeling instruction contains "the glossary inline"
 
   Scenario: Lifecycle guidance describes the domain, not the givn change
-    Given the domain-modeling skill template is inspected
-    When an agent reads the lifecycle guidance
-    Then the lifecycle describes the domain's own observable states
-    And the lifecycle does not describe the givn change lifecycle
+    Given  a Givn project
+    Then  the served domain-modeling instruction contains "the *domain's own*"
+    And  the served domain-modeling instruction contains "trip reset"
+    And  the served domain-modeling instruction does not contain "created -> planned -> implemented -> archived"
 
   @e2e
   Scenario: An agent synchronizes skills and the domain skill is routed
-    Given a Givn project with the domain model addon enabled and a change awaiting specs
-    When the agent synchronizes skills through the Givn CLI
-    Then the generated domain skill names the domain-modeling skill
-    And the generated skill loads during every workflow step of a change
-    And the generated skill instructs maintaining the project's arc42 glossary
-    And the generated skill does not describe the givn change lifecycle
+    Given  a Givn project with the domain model addon enabled and a change awaiting specs
+    When  the agent synchronizes skills through the Givn CLI
+    Then  the generated domain skill names the domain-modeling skill
+    And  the generated skill loads during every workflow step of a change
+    And  the generated givn-domain-modeling guidance directs the domain modeler to the domain-modeling instruction
+    And  the served domain-modeling instruction contains "maintaining the project's arc42 glossary"
+    And  the generated skill does not describe the givn change lifecycle
 
   @e2e
   Scenario: An agent requests next-step guidance and is routed to the domain skill
@@ -57,15 +57,14 @@ Feature: Guide domain modeling
     When the agent requests the specs instructions through the Givn CLI
     Then the guidance does not mention the domain-modeling skill
   Scenario: The ubiquitous language is recorded in the project's arc42 glossary
-    Given the domain-modeling skill template is inspected
-    When an agent reads the skill body
-    Then the body instructs maintaining the project's arc42 glossary
-    And the body does not require a per-change domain artifact
+    Given  a Givn project
+    Then  the served domain-modeling instruction contains "maintaining the project's arc42 glossary"
+    And  the served domain-modeling instruction does not contain "domain.md"
 
   Scenario: The skill requires the arc42 glossary for domain modeling
-    Given the domain-modeling skill template is inspected
-    When an agent reads the skill body
-    Then the body instructs enabling the arc42 addon first when the glossary is missing
+    Given  a Givn project
+    Then  the served domain-modeling instruction contains "Requires the arc42 addon"
+    And  the served domain-modeling instruction contains "enable it first when the glossary is missing"
 
   Scenario: The next-step guidance names the domain skill during later change phases
     Given a Givn project with the domain model addon enabled and a change awaiting review
@@ -78,33 +77,40 @@ Feature: Guide domain modeling
     Then the guidance does not mention the domain-modeling skill
 
   Scenario: The design-review skill checks that the ubiquitous language is followed
-    Given the design-review skill template is inspected
-    When an agent reads the check list
-    Then a check requires confirming the ubiquitous language is used consistently and recorded in the arc42 glossary
+    Given  a project root with givn/ initialised
+    And  an existing change named "design-review-ubiquitous-language"
+    Then  the served design-review instruction contains "ubiquitous language is used consistently"
+    And  the served design-review instruction contains "arc42 glossary"
 
   Scenario: The review skill checks that the ubiquitous language is followed
-    Given the review skill template is inspected
-    When an agent reads the check list
-    Then a check requires confirming the ubiquitous language is used consistently everywhere and recorded in the arc42 glossary
+    Given  a project root with givn/ initialised
+    And  an existing change named "review-ubiquitous-language"
+    Then  the served review instruction contains "ubiquitous language is used consistently everywhere"
+    And  the served review instruction contains "arc42 glossary"
+
   Scenario: The domain-modeling guidance carries the term introduction test
-    Given  the domain-modeling skill template is inspected
-    When  an agent reads the term introduction test
-    Then  the body requires a genus and differentia definition
-    And  the body requires a contrast pair
-    And  the body requires one concrete domain sentence
-    And  the body demonstrates a failure when the genus slot cannot be filled
+    Given  a Givn project
+    Then  the served domain-modeling instruction contains "Genus + differentia"
+    And  the served domain-modeling instruction contains "is a `<kind>` that"
+    And  the served domain-modeling instruction contains "Contrast pair"
+    And  the served domain-modeling instruction contains "not `<near neighbour>`"
+    And  the served domain-modeling instruction contains "concrete domain sentence"
+    And  the served domain-modeling instruction contains "Substrate"
+    And  the served domain-modeling instruction contains "has no referent"
+
   Scenario: The challenge bullet hands the name choice to the user
-    Given  the domain-modeling skill template is inspected
-    When  an agent reads the skill body
-    Then  the body no longer tells the agent to choose the name alone
-    And  the body describes the concept before proposing names
-    And  the body offers up to three candidate names
-    And  the body states what each candidate evokes and any collision it carries
-    And  the body accepts the user's own name
+    Given  a Givn project
+    Then  the served domain-modeling instruction contains "do not choose it alone"
+    And  the served domain-modeling instruction does not contain "Propose it and justify it"
+    And  the served domain-modeling instruction contains "the concept in one sentence"
+    And  the served domain-modeling instruction contains "up to three candidate names"
+    And  the served domain-modeling instruction contains "any collision it carries"
+    And  the served domain-modeling instruction contains "accept the user's own name"
 
   Scenario: The challenge bullet shows a naming question with candidates and a collision
-    Given  the domain-modeling skill template is inspected
-    When  an agent reads the skill body
-    Then  the body shows the naming question for "ShoppingList"
-    And  the body shows the colliding candidate "Basket"
-    And  the body asks which name the record should use
+    Given  a Givn project
+    Then  the served domain-modeling instruction contains "ShoppingList"
+    And  the served domain-modeling instruction contains "Candidates:"
+    And  the served domain-modeling instruction contains "Basket"
+    And  the served domain-modeling instruction contains "collides"
+    And  the served domain-modeling instruction contains "should the record use, or what is yours"

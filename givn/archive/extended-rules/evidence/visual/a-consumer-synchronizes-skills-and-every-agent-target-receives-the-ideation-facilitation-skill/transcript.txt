@@ -1,0 +1,106 @@
+scenario: A consumer synchronizes skills and every agent target receives the ideation facilitation skill
+argv: givn skills sync
+cwd: <freshly initialized project in a temp dir, agent targets opencode, agents, claude, omp>
+exit: 0
+context commands (all in that project):
+  printf 'opencode, agents, claude, omp\n' | givn init        exit 0
+  givn instructions ideation                                     exit 0
+--- stdout (raw) ---
+Syncing skills and agent commands...
+  commit attribution: .githooks/commit-msg
+  Git activation: unavailable (no Git worktree)
+  attribution integration: .opencode/plugins/givn-attribution.js
+  attribution integration: .omp/hooks/pre/givn-attribution.js
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced skill: givn-domain-modeling
+  synced skill: givn-dev-principles
+  synced command: /givn-propose
+  synced command: /givn-spec
+  synced command: /givn-design
+  synced command: /givn-tasks
+  synced command: /givn-implement
+  synced command: /givn-review
+  synced command: /givn-archive
+  synced command: /givn-explore
+  synced command: /givn-design-review
+  synced command: /givn-steps
+  synced command: /givn-reverse-engineer
+  synced command: /givn-characterize
+  synced command: /givn-ideation
+  synced command: /grill-me
+  synced command: /grill-with-docs
+  sync: rules: local-only
+  sync: no tracked rule in the current revision
+  sync: no rule in reachable history
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+
+Done. Generated:
+  .opencode/skills/   (skills for opencode)
+  .agents/skills/   (skills for agents)
+  .claude/skills/   (skills for claude)
+  .omp/skills/   (skills for omp)
+  .opencode/commands/ (opencode slash commands)
+  .omp/commands/ (omp slash commands)
+--- stderr (raw) ---
+--- every agent target received the skill (ls -d) ---
+.agents/skills/givn-ideation
+.claude/skills/givn-ideation
+.omp/skills/givn-ideation
+.opencode/skills/givn-ideation
+--- delivered .opencode/commands/givn-ideation.md head ---
+---
+description: Work a vague idea into change-ready use cases — structured, multi-session domain exploration
+---
+
+Work a vague idea into change-ready use cases.
+
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
+**Input**: The argument after `/givn-ideation` is an optional topic id. A
+topic id names one ideation effort; without one, derive it from the user's
+description and confirm it with the user.
+
+**Rules**: the ideation discipline — the phase ladder, the one-question rule,
+the persona rules, the topic state, the term and seed schemas, the handoff
+rules, and the event-storming and use-case rules — is served by
+`givn instructions ideation`. Load it and follow it; this file owns the
+invocation orchestration only.
+
+---
+
+--- served ideation instruction (givn instructions ideation) Frame excerpt ---
+## Frame
+
+Inventory what is known before exploring what is not.
+
+Existing project:
+
+1. Run `givn status` and `givn spec tree`; read the README and the
+   durable architecture chapters relevant to the domain.
+2. Record the research protocol: what exists, what the permanent specs
+   already own, where the gaps are.
+3. Identify stakeholders — the parties with an interest in the outcome,
+   including those who never touch the system (owners, regulators).
+
+New domain:
+
+1. Name the problem in one sentence. If the user named a solution first,
+   ask: "if that is the answer, what was the question?"
+2. Establish a vision: who the system serves and what changes for them.
+3. Establish stakeholders with their interests; every later artifact is
+   checked against this list.
+
+Write the frame protocol to the topic state. Confirm the Frame with the

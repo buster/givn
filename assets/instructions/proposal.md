@@ -56,3 +56,45 @@ language that a non-technical stakeholder can read and validate.
 3. Proposed Solution — what should the system do, observably?
 4. Out of Scope — what is not changing?
 5. Open Questions — unresolved decisions before moving to specs.
+
+## Step orchestration (propose)
+
+**Audience: the agent running the propose step.** Artifact authors follow the
+artifact rules above; this section owns only the step's sequencing. The propose
+step is an orchestrator — it creates the scaffold and delegates production of
+the planning artifacts through `design` to one **thinking architect subagent**;
+it does not write the artifacts itself.
+
+1. Resolve the change ID (derive a kebab-case ID from a plain description) and
+   create the change:
+   ```sh
+   givn new <id>
+   ```
+2. Read the artifact sequence from `givn status --change <id> --json` — never
+   hardcode which steps exist or in what order; a customised manifest is
+   followed as configured.
+3. Load the served instruction for every artifact in the sequence **up to and
+   including `design`** (stop before `design-review` if it appears in the
+   sequence; otherwise stop before `tasks`) via
+   `givn instructions <artifact-id> --change <id>`. Capture the full output.
+4. Spawn the architect subagent (Task tool; fall back to a prose description of
+   the delegation when the tool is unavailable) with a self-contained prompt:
+   the change ID, the user's request, the artifact sequence, and the full
+   served instruction text for every artifact in the pass. The architect
+   thinks through requirements, constraints, and decisions before writing, and
+   writes each artifact by following its served instruction.
+5. Stop after `design` and after any custom artifact that precedes
+   `design-review`/`tasks` in the sequence. The architect must not produce
+   `design-review`, `tasks`, or `review`.
+
+**Critical ambiguities go to the user — the architect does not guess.**
+
+### Sequencing and integrity
+
+`design-review` is mandatory and must run as its own step, in a fresh context,
+after the architect subagent's work is done — never continued from the same
+session that wrote the design, and never spawned from the proposing
+orchestrator's context. Tell the user to run `/givn-design-review <change-id>`
+now; a
+subagent that just wrote the design cannot credibly stress-test its own plan.
+Only after `design-review` signs off does the task-list step run.

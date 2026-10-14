@@ -1,0 +1,240 @@
+scenario: An upgrade preserves the extension and the next request serves it
+argv: givn upgrade
+cwd: <committed freshly initialized project in a temp dir, agent target opencode, active change instruction-extension, extension recorded in givn/config.yaml>
+exit: 0
+context commands (all in that project):
+  givn init --agents opencode                              exit 0
+  givn new instruction-extension                           exit 0
+  givn upgrade                                             exit 0
+  givn instructions proposal --change instruction-extension exit 0
+--- stdout (raw) [givn upgrade] ---
+  commit attribution: .githooks/commit-msg
+  Git activation: local commit-msg dispatcher installed
+  attribution integration: .opencode/plugins/givn-attribution.js
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced skill: givn-domain-modeling
+  synced skill: givn-dev-principles
+  synced command: /givn-propose
+  synced command: /givn-spec
+  synced command: /givn-design
+  synced command: /givn-tasks
+  synced command: /givn-implement
+  synced command: /givn-review
+  synced command: /givn-archive
+  synced command: /givn-explore
+  synced command: /givn-design-review
+  synced command: /givn-steps
+  synced command: /givn-reverse-engineer
+  synced command: /givn-characterize
+  synced command: /givn-ideation
+  synced command: /grill-me
+  synced command: /grill-with-docs
+  rules policy: 32 tracked rule(s) removed from the current revision (files kept)
+    - .githooks/commit-msg
+    - .opencode/commands/givn-archive.md
+    - .opencode/commands/givn-characterize.md
+    - .opencode/commands/givn-design-review.md
+    - .opencode/commands/givn-design.md
+    - .opencode/commands/givn-explore.md
+    - .opencode/commands/givn-ideation.md
+    - .opencode/commands/givn-implement.md
+    - .opencode/commands/givn-propose.md
+    - .opencode/commands/givn-reverse-engineer.md
+    - .opencode/commands/givn-review.md
+    - .opencode/commands/givn-spec.md
+    - .opencode/commands/givn-steps.md
+    - .opencode/commands/givn-tasks.md
+    - .opencode/commands/grill-me.md
+    - .opencode/commands/grill-with-docs.md
+    - .opencode/plugins/givn-attribution.js
+    - .opencode/skills/givn-archive/SKILL.md
+    - .opencode/skills/givn-characterize/SKILL.md
+    - .opencode/skills/givn-design-review/SKILL.md
+    - .opencode/skills/givn-design/SKILL.md
+    - .opencode/skills/givn-dev-principles/SKILL.md
+    - .opencode/skills/givn-domain-modeling/SKILL.md
+    - .opencode/skills/givn-explore/SKILL.md
+    - .opencode/skills/givn-ideation/SKILL.md
+    - .opencode/skills/givn-implement/SKILL.md
+    - .opencode/skills/givn-propose/SKILL.md
+    - .opencode/skills/givn-reverse-engineer/SKILL.md
+    - .opencode/skills/givn-review/SKILL.md
+    - .opencode/skills/givn-spec/SKILL.md
+    - .opencode/skills/givn-steps/SKILL.md
+    - .opencode/skills/givn-tasks/SKILL.md
+  sync: rules: local-only
+  sync: no tracked rule in the current revision
+  sync: 32 reachable revision(s) still contain a rule:
+    - .githooks/commit-msg: 1 revision(s)
+    - .opencode/commands/givn-archive.md: 1 revision(s)
+    - .opencode/commands/givn-characterize.md: 1 revision(s)
+    - .opencode/commands/givn-design-review.md: 1 revision(s)
+    - .opencode/commands/givn-design.md: 1 revision(s)
+    - .opencode/commands/givn-explore.md: 1 revision(s)
+    - .opencode/commands/givn-ideation.md: 1 revision(s)
+    - .opencode/commands/givn-implement.md: 1 revision(s)
+    - .opencode/commands/givn-propose.md: 1 revision(s)
+    - .opencode/commands/givn-reverse-engineer.md: 1 revision(s)
+    - .opencode/commands/givn-review.md: 1 revision(s)
+    - .opencode/commands/givn-spec.md: 1 revision(s)
+    - .opencode/commands/givn-steps.md: 1 revision(s)
+    - .opencode/commands/givn-tasks.md: 1 revision(s)
+    - .opencode/commands/grill-me.md: 1 revision(s)
+    - .opencode/commands/grill-with-docs.md: 1 revision(s)
+    - .opencode/plugins/givn-attribution.js: 1 revision(s)
+    - .opencode/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-tasks/SKILL.md: 1 revision(s)
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+  upgrade: rules: local-only
+  upgrade: no tracked rule in the current revision
+  upgrade: 32 reachable revision(s) still contain a rule:
+    - .githooks/commit-msg: 1 revision(s)
+    - .opencode/commands/givn-archive.md: 1 revision(s)
+    - .opencode/commands/givn-characterize.md: 1 revision(s)
+    - .opencode/commands/givn-design-review.md: 1 revision(s)
+    - .opencode/commands/givn-design.md: 1 revision(s)
+    - .opencode/commands/givn-explore.md: 1 revision(s)
+    - .opencode/commands/givn-ideation.md: 1 revision(s)
+    - .opencode/commands/givn-implement.md: 1 revision(s)
+    - .opencode/commands/givn-propose.md: 1 revision(s)
+    - .opencode/commands/givn-reverse-engineer.md: 1 revision(s)
+    - .opencode/commands/givn-review.md: 1 revision(s)
+    - .opencode/commands/givn-spec.md: 1 revision(s)
+    - .opencode/commands/givn-steps.md: 1 revision(s)
+    - .opencode/commands/givn-tasks.md: 1 revision(s)
+    - .opencode/commands/grill-me.md: 1 revision(s)
+    - .opencode/commands/grill-with-docs.md: 1 revision(s)
+    - .opencode/plugins/givn-attribution.js: 1 revision(s)
+    - .opencode/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-tasks/SKILL.md: 1 revision(s)
+  upgrade: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+Refreshed commit attribution plumbing and managed Givn files for 0.8.5 in commit 32651809bbd06d6790c3d9b0907eb16b33dc60b0; no migration change was required.
+--- stderr (raw) [givn upgrade] ---
+--- upgrade revision (HEAD) ---
+3265180 chore(givn): update managed files from 0.8.5 to 0.8.5
+.githooks/commit-msg
+.gitignore
+.opencode/commands/givn-archive.md
+.opencode/commands/givn-characterize.md
+.opencode/commands/givn-design-review.md
+.opencode/commands/givn-design.md
+--- managed revision carries no extension content ---
+$ git show -U0 --format= HEAD | grep -c 'Keep proposals under 500 words'
+0
+--- raw stdout [givn instructions proposal --change instruction-extension] ---
+# Instruction: proposal
+
+Write a proposal that describes the WHAT and WHY of this change, in domain
+language that a non-technical stakeholder can read and validate.
+
+**Rules (enforced by default):**
+- **Release note (required).** The proposal carries one complete, user-facing
+  sentence naming what the change does; every revision the change records
+  carries the release note as its message subject, with the scenario title in
+  the message body. A one-scenario change may reuse its scenario sentence as
+  the release note.
+- Describe observable behaviour, not implementation. No class names, function
+  signatures, HTTP routes, DB schemas, step-definition mechanics, or framework
+  references.
+- The only permitted implementation-flavoured content is an aspect that is
+  *itself* an externally observable requirement (e.g. "the response is valid JSON",
+  "data persists across restart", "responds within 200 ms"). Heuristic: if it
+  would still be true if the system were reimplemented in a different language
+  and framework, it belongs in the spec; otherwise it belongs in design/tasks.
+- Write from the user's perspective. Use domain language (business terms, not
+  technical terms).
+- **Executable-spec invariant.** The `.feature` files produced downstream (in
+  the `specs` artifact) are the executable tests. The `verify.command` chosen
+  in `design.md` MUST execute them via a Gherkin/Cucumber runner — never a
+  parallel hand-maintained test file. Keep this in mind: every behaviour you
+  describe here must be expressible as a runnable Gherkin scenario.
+- **Use-case context.** When a change has a permanent use-case ID or an
+  ideation change seed, read its `usecase.md` and record the ID, source topic,
+  and confirmed affected Persona IDs. Never invent or auto-promote Personas;
+  do not copy Persona biographies into the proposal.
+- **Seed stamping.** When the change originates from an ideation change seed,
+  record the seed path in the proposal's Use-Case Context and set the seed's
+  status line to `Status: proposed by <change-id>`. The seed's original text
+  stays unchanged; only the status line is edited.
+- **Question disposition.** When the change originates from an ideation seed,
+  every intersecting seed question is dispositioned in the proposal before
+  specs: **answered** with its source, **carried** with an owner and the
+  artifact that will decide it, or **out of scope** with a reason. An
+  undispositioned intersecting question blocks the specs step; the same
+  structure is advisory without an ideation source. "Resolved in `design.md`"
+  alone is not a disposition. A statement qualified `(open: Q<N>)` names a
+  question that must be dispositioned here.
+- **Question IDs.** Open questions carry stable IDs `D1`, `D2`, … (`D<n>` in
+  the templates) with the full question and its option treatment; the
+  design's ledger resolves each ID.
+- **Capability routing.** Run `givn spec route --change <id>`. When it
+  reports signal, record route's recommendation and the decision in the
+  Capability Routing table. When it reports no signal, omit the
+  recommendation column and record the decision with its rationale directly.
+  The recorded decision stays mandatory either way.
+- **Persona confirmation.** A change with a user-visible surface (a browser interface, a terminal interface, or CLI text output) names at least one confirmed Persona, or records `none` with the reason and the operator confirmation.
+
+**Structure:**
+1. Release note — one complete, user-facing sentence naming what the change does.
+2. Problem / Opportunity — what is wrong or missing?
+3. Proposed Solution — what should the system do, observably?
+4. Out of Scope — what is not changing?
+5. Open Questions — unresolved decisions before moving to specs.
+
+---
+
+## Project extension
+
+This project extends the built-in rules above with the following rules.
+They add to the built-in rules and never override, suppress, or reorder
+them.
+
+- Keep proposals under 500 words
+
+Skill to load now: `givn-domain-modeling`
+--- stderr [givn instructions proposal --change instruction-extension] ---
+--- served built-in head (beside the extension section) ---
+# Instruction: proposal
+
+Write a proposal that describes the WHAT and WHY of this change, in domain
+language that a non-technical stakeholder can read and validate.
+
+**Rules (enforced by default):**
