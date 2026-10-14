@@ -792,12 +792,21 @@ mod tests {
 
     #[test]
     fn migration_path_routes_0_7_0_to_the_current_release() {
-        let path = migration_path("0.7.0", env!("CARGO_PKG_VERSION")).unwrap();
-        assert_eq!(
-            path.iter()
-                .map(|bundle| bundle.id.as_str())
-                .collect::<Vec<_>>(),
-            ["migrate-0-7-0-to-0-8-0"]
+        let current = env!("CARGO_PKG_VERSION");
+        let path = migration_path("0.7.0", current).unwrap();
+        let last = path
+            .last()
+            .expect("0.7.0 must have a catalog route toward the current release");
+        let last_target = ReleaseVersion::parse(&last.target_version).unwrap();
+        let current_version = ReleaseVersion::parse(current).unwrap();
+        // The route must carry the project to the current release's minor
+        // line. Every minor release ships its catalog route; a missing route
+        // makes `migration_path` fail above instead of ending early.
+        assert!(
+            last_target.same_minor(current_version),
+            "the catalog route ends at {} (bundle '{}') and does not reach the current release {current}",
+            last.target_version,
+            last.id
         );
     }
 

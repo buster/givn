@@ -38,8 +38,8 @@ for generated metadata. The 0.2.0-to-0.3.0 bundle additionally uses
 `{{MIGRATION_GUIDE}}` to embed the public prompt pack; newer bundles carry
 their own complete prompts instead of relying on that guide.
 
-The current bundle is `migrate-0-7-0-to-0-8-0` (source 0.7.0, target 0.8.0,
-order 60). It inventories the use-case, persona, and ADR model hardening plus
-the dialog policy, seed statuses, term records, guarantee qualifiers, and the
-decision ledger, and names the follow-up changes that carry the repairs; the
-human-facing companion guide is [`0.7.0-to-0.8.0.md`](0.7.0-to-0.8.0.md).
+The current bundle is `migrate-0-8-0-to-0-9-0` (source 0.8.0, target 0.9.0,
+order 70). It inventories the project rules that 0.9.0 displaced from
+installed files, records them in the `extensions:` map of `givn/config.yaml`,
+and verifies the served instructions carry them; the human-facing companion
+guide is [`0.8.0-to-0.9.0.md`](0.8.0-to-0.9.0.md).
