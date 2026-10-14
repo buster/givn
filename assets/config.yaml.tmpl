@@ -203,3 +203,17 @@ givn_config_version: "{{GIVN_VERSION}}"
 #
 # skills:
 #   targets: [opencode]      # set to e.g. [opencode, agents, claude, omp] for all
+
+# --- Instruction extensions ---------------------------------------------------
+# Project-owned rules that extend any served instruction
+# (`givn instructions <id>`). The extension lives in this project-owned
+# configuration: it is effective at the next request, and synchronization and
+# upgrades never touch it. Ids name an artifact, policy, or step instruction;
+# a rule is a non-empty string. An unknown id or a malformed entry warns and
+# is skipped, and the built-in rules are served alone.
+#
+# extensions:
+#   proposal:
+#     - Keep proposals under 500 words.
+#   dialog:
+#     - Answer in the project's glossary terms.

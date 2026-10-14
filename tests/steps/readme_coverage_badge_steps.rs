@@ -1,43 +1,51 @@
+use crate::common;
 use crate::steps::GivnWorld;
 use cucumber::then;
 
-#[then("the archive guidance places the coverage badge directly after the README title")]
-fn badge_after_title(world: &mut GivnWorld) {
+/// The served coverage guidance for the fixture project.
+fn served_coverage_guidance(world: &mut GivnWorld) -> String {
     let env = world
         .env
         .as_ref()
         .expect("a project root is required first");
-    let skill = std::fs::read_to_string(env.path(".opencode/skills/givn-archive/SKILL.md"))
-        .expect("read generated archive skill");
+    let output = common::run_givn(env, &["instructions", "coverage"]);
     assert!(
-        skill.contains("Place the two")
-            && skill.contains("generated badges directly after the README"),
-        "archive skill missing the badge-placement rule"
+        output.status.success(),
+        "givn instructions coverage failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout).into_owned()
+}
+
+#[then("the served coverage guidance places the coverage badge directly after the README title")]
+fn badge_after_title(world: &mut GivnWorld) {
+    let guidance = served_coverage_guidance(world);
+    assert!(
+        guidance.contains("Place the two")
+            && guidance.contains("generated badges directly after the README"),
+        "coverage guidance missing the badge-placement rule"
     );
     assert!(
-        skill.contains("# <project name>")
-            && skill.contains("img.shields.io")
-            && skill.contains("coverage/cobertura-coverage.xml")
-            && skill.contains("Line Coverage")
-            && skill.contains("Branch Coverage"),
-        "archive skill example must show the badge directly under the title"
+        guidance.contains("# <project name>")
+            && guidance.contains("img.shields.io")
+            && guidance.contains("coverage/cobertura-coverage.xml")
+            && guidance.contains("Line Coverage")
+            && guidance.contains("Branch Coverage"),
+        "coverage guidance example must show the badge directly under the title"
     );
 }
 
-#[then("the archive guidance keeps the totals and reproduction commands")]
+#[then("the served coverage guidance keeps the totals and reproduction commands")]
 fn totals_and_commands(world: &mut GivnWorld) {
-    let env = world
-        .env
-        .as_ref()
-        .expect("a project root is required first");
-    let skill = std::fs::read_to_string(env.path(".opencode/skills/givn-archive/SKILL.md"))
-        .expect("read generated archive skill");
+    let guidance = served_coverage_guidance(world);
     assert!(
-        skill.contains("## Coverage") && skill.contains("non-E2E") && skill.contains("E2E runs"),
-        "archive skill example must keep the Coverage section with non-E2E and E2E totals"
+        guidance.contains("## Coverage")
+            && guidance.contains("non-E2E")
+            && guidance.contains("E2E runs"),
+        "coverage guidance example must keep the Coverage section with non-E2E and E2E totals"
     );
     assert!(
-        skill.contains("measure-coverage.sh") && skill.contains("merge-coverages.sh"),
-        "archive skill example must keep the reproduction commands"
+        guidance.contains("measure-coverage.sh") && guidance.contains("merge-coverages.sh"),
+        "coverage guidance example must keep the reproduction commands"
     );
 }

@@ -1,0 +1,100 @@
+scenario: Synchronized guidance explains how to resolve the deterministic gates
+argv: givn skills sync
+cwd: <freshly initialized project (givn init through its real prompt, targets opencode, agents, claude, omp) in a temp dir>
+exit: 0
+context commands (all in that project):
+  printf 'opencode, agents, claude, omp\n' | givn init   exit 0
+  givn instructions review --change review                exit 0
+  givn instructions design --change design                exit 0
+  givn instructions steps                                 exit 0
+--- stdout (raw, givn skills sync) ---
+Syncing skills and agent commands...
+  commit attribution: .githooks/commit-msg
+  Git activation: unavailable (no Git worktree)
+  attribution integration: .opencode/plugins/givn-attribution.js
+  attribution integration: .omp/hooks/pre/givn-attribution.js
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced skill: givn-domain-modeling
+  synced skill: givn-dev-principles
+  synced command: /givn-propose
+  synced command: /givn-spec
+  synced command: /givn-design
+  synced command: /givn-tasks
+  synced command: /givn-implement
+  synced command: /givn-review
+  synced command: /givn-archive
+  synced command: /givn-explore
+  synced command: /givn-design-review
+  synced command: /givn-steps
+  synced command: /givn-reverse-engineer
+  synced command: /givn-characterize
+  synced command: /givn-ideation
+  synced command: /grill-me
+  synced command: /grill-with-docs
+  sync: rules: local-only
+  sync: no tracked rule in the current revision
+  sync: no rule in reachable history
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+
+Done. Generated:
+  .opencode/skills/   (skills for opencode)
+  .agents/skills/   (skills for agents)
+  .claude/skills/   (skills for claude)
+  .omp/skills/   (skills for omp)
+  .opencode/commands/ (opencode slash commands)
+  .omp/commands/ (omp slash commands)
+--- stderr (raw, givn skills sync) ---
+--- served review instruction (givn instructions review --change review, stdout excerpt around the asserted markers) ---
+For every shape match involving the change, complete the **Overlap
+dispositions** table in `review.md`. Write the section with the exact
+heading `## Overlap dispositions` and one row per finding pair. The
+Decision column must be exactly one of `duplicate`, `variant`, or
+`boundary` (case-insensitive) — an empty or unrecognised word does not
+clear the finding. For every scenario longer than the gate threshold,
+record a **split-or-keep** decision: write the section with the exact
+heading `## Split-or-keep`, one row per long scenario, each Decision
+either `split` or `keep`. For every removed+added pair, record whether the
+new scenario supersedes the removed one or is unrelated. These decisions
+are review evidence, not score thresholds. An overlap finding is
+advisory evidence until its disposition is recorded; the recorded disposition,
+not the finding's presence, is the completed verification evidence.
+
+## Sign-off checklist
+...
+--- served design instruction (givn instructions design --change design, stdout excerpt around the asserted marker) ---
+fidelity.
+
+## Black-Box-First policy
+
+Prefer the real interface for every behavior. If an internal test is retained,
+the design must answer: **which case this test covers that the E2E does not**?
+If there is no concrete answer, use the E2E scenario instead. This policy
+prevents weaker duplicate scenarios from surviving under a new title.
+
+...
+--- served steps instruction (givn instructions steps, stdout excerpt around the asserted marker) ---
+`givn instructions design --change <id>` — applies to every internal step or
+test that remains. Prefer reused real-interface steps. For an internal step or
+test that remains, record **which case this test covers that the E2E does not**;
+otherwise remove the duplicate and extend the E2E scenario.
+
+## Step reuse
+
+Check for a matching step definition before writing a new one. Reused: keep
+as-is — its assertions are already proven. New: write fresh.
+...
+--- generated guidance scan: "Run `givn spec index`" occurrences ---
+none

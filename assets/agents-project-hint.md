@@ -13,15 +13,6 @@ auto-maintained by `givn init` / `givn skills sync` — do not edit it by hand.
   skill; the presenting agent remains responsible for the question.
 - Run `givn status --change <CHANGE>` for a full artifact checklist of an
   active change (includes task progress and pending task descriptions).
-- Tick off each task in `tasks.md` immediately after completing it —
-  an unchecked box means that scenario is not done. Never batch-check
-  boxes at the end.
-- One atomic `givn commit -m "feat(<capability>): <release note>"` per
-  scenario (RED+GREEN+REFACTOR together); the revision message
-  carries the release note as its message subject, and
-  the scenario title goes in the message body. It works on Git and Fossil. A
-  raw Git commit is stamped by the hook, a raw Fossil check-in is not. No
-  commit, or a commit touching only the spec, means the work is not done.
-  Record the revision identifier in tasks.md.
+{{RESIDENT_RULES}}
 - The full workflow, available commands, and skills are documented in the
   output of these commands — this block is intentionally just a pointer.

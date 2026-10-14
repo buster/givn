@@ -1,5 +1,5 @@
 <!-- givn:begin:coverage-badge -->
-[![Line Coverage: 79%](https://img.shields.io/badge/line%20coverage-79%25-brightgreen)](coverage/cobertura-coverage.xml)
+[![Line Coverage: 80%](https://img.shields.io/badge/line%20coverage-80%25-brightgreen)](coverage/cobertura-coverage.xml)
 [![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
 <!-- givn:end:coverage-badge -->
 
@@ -21,6 +21,12 @@ A single-binary, Gherkin-first spec-driven workflow tool.
 - **The `.feature` file IS the specification.** The same file is the change's
   delta document, the executable test your runner executes, and — after
   archiving — the permanent spec under `givn/specs/`. No parallel `spec.md`.
+- **Rules are served, not copied.** The rules an agent follows for a step
+  come from the instruction served by `givn instructions <id>`; each
+  installed skill and command carries its trigger and orchestration and
+  directs the agent there. A project extends any instruction with its own
+  rules in `givn/config.yaml` — synchronization and upgrades never fight
+  them.
 - **One change lifecycle.** propose → spec → design → design-review → tasks →
   implement → review → archive. Archive is forward-only and SCM-backed (Git or Fossil): it
   commits the merged archive candidate, runs each verification scope once
@@ -154,7 +160,7 @@ to the conditions of this license.
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 79% (8213/10454)
+Line coverage: 80% (8339/10378)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:

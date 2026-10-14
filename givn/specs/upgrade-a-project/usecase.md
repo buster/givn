@@ -1,3 +1,4 @@
+<!-- givn:base-sha256:9051eaa0baff4273a26e4273396013f2a4c112ced91224fa0e2ab2c7e15260e5 -->
 # Use case: upgrade-a-project
 
 ## Level
@@ -25,22 +26,29 @@ The maintainer upgrades Givn.
 ## Main flow
 
 1. The maintainer requests an upgrade; the system witnesses the clean state and refuses before any write when the project is dirty or has no version-control system.
-2. The system synchronizes the managed scaffold and publishes the allowlist-only upgrade revision.
-3. When the upgrade carries migration requirements, the system publishes the plan revision recording the upgrade revision.
-4. The system names any command a release removed instead of leaving a silent gap.
+2. The system synchronizes the managed scaffold and the installed guidance: it refreshes the generated guidance to carry the direction, and a full copy from an earlier version is rewritten to it.
+3. The system publishes the allowlist-only upgrade revision; the project's extensions live outside the allowlist, so the revision never stages, merges, or rewrites them.
+4. Improved built-in rules need no revision: the next request serves them.
+5. When the upgrade carries migration requirements, the system publishes the plan revision recording the upgrade revision.
+6. The system names any command a release removed instead of leaving a silent gap.
 
 ## Extensions
 
 - 1: uncommitted changes exist → the upgrade is refused before any write, naming the dirty paths; protects the minimal guarantee.
 - 1: no version-control system is selected → the upgrade is refused by name before any write; protects the minimal guarantee.
 - 2: the project is already current → no revision is published and the state is reported; protects the success guarantee.
-- 3: a plan for the gap already exists → the existing proposal and design are preserved and reported; protects the success guarantee.
-- 4: a consumer invokes a command the release removed → the system reports the command as unavailable; protects the success guarantee.
+- 3: a project-owned replacement exists → it stays authoritative and is never modified or injected; protects the minimal guarantee.
+- 3: the project records extensions → they survive the upgrade byte-for-byte and are never part of the revision; protects the success guarantee.
+- 5: a plan for the gap already exists → the existing proposal and design are preserved and reported; protects the success guarantee.
+- 6: a consumer invokes a command the release removed → the system reports the command as unavailable; protects the success guarantee.
 
 ## Rules
 
 - Historical migration evidence remains reviewable.
 - Ignored managed paths are force-staged only through the calculated allowlist, on both supported systems.
+- The managed revision refreshes generated guidance only to the direction; it never carries the project's extensions.
+- Improved built-in rules are served without any revision, at the next request.
+- A project-owned replacement stays authoritative.
 - The plan revision records the upgrade revision identifier.
 - The managed upgrade and migration bundles run on both supported systems with the same guarantees; a migration-free upgrade publishes exactly one revision and no plan revision.
 
@@ -51,14 +59,21 @@ The maintainer upgrades Givn.
 - Fossil: the same project receives the allowlist-only check-in `c8d9e0f1a2b3...`; a migration-bearing upgrade adds the plan check-in.
 - Dirty project: `givn upgrade` refuses before writing, naming the dirty paths.
 - No SCM: `givn upgrade` refuses by name before writing.
+- Direction: a project whose installed guidance carries full copies receives a revision whose diff shows the direction; the rules now arrive only through `givn instructions`.
+- Extensions present: the same project records "Keep proposals under 500 words"; after the upgrade the extension is untouched and the next request serves it beside the improved built-in rules.
 
 ## Minimal guarantee
 
-The project is protected from partial automatic migration.
+The project is protected from partial automatic migration, and an upgrade
+never stages, merges, rewrites, or injects into the project's extensions or a
+project-owned replacement.
 
 ## Success guarantee
 
-The upgrade work is explicit in the project's history, and any migration it carries is reviewable.
+The upgrade work is explicit in the project's history, any migration it
+carries is reviewable, and the installed guidance carries the direction to
+the served instruction with the improved built-in rules reachable at the
+next request — with the project's extensions unchanged.
 
 ## Personas
 

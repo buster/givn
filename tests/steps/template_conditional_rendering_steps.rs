@@ -128,6 +128,39 @@ fn consumer_synchronizes_skills(world: &mut GivnWorld) {
     support::sync(world);
 }
 
+// --- Then: served-section presence/absence ----------------------------------
+
+#[then("the served review instruction omits the Arc42 implementation conformance section")]
+fn served_review_instruction_omits_arc42(world: &mut GivnWorld) {
+    let content = support::served_artifact_instruction(world, "review");
+    assert!(
+        !content.contains("Arc42 implementation conformance"),
+        "the served review instruction carries the Arc42 section:\n{content}"
+    );
+}
+
+#[then("the generated review skill carries no Arc42 implementation conformance section")]
+fn review_skill_carries_no_arc42(world: &mut GivnWorld) {
+    review_skill_no_arc42(world);
+}
+
+#[then("the generated review command carries no Arc42 implementation conformance section")]
+fn review_command_carries_no_arc42(world: &mut GivnWorld) {
+    review_command_no_arc42(world);
+}
+
+#[then("the generated review skill directs the reviewer to the review instruction")]
+fn generated_review_skill_directs_to_instruction(world: &mut GivnWorld) {
+    let texts = support::skill_texts(world, "givn-review");
+    assert!(!texts.is_empty(), "no generated review skill was found");
+    for text in &texts {
+        assert!(
+            text.contains("givn instructions review"),
+            "the generated review skill does not direct the reviewer to the review instruction:\n{text}"
+        );
+    }
+}
+
 // --- Then: section presence/absence -----------------------------------------
 
 #[then("the generated review skill contains no Arc42 implementation conformance section")]
@@ -246,6 +279,25 @@ fn design_review_command_has_arc42(world: &mut GivnWorld) {
         text.contains("Architecture documentation (arc42)"),
         "generated design-review command missing the arc42 check:\n{text}",
     );
+}
+
+#[then("the served design-review instruction omits the Architecture documentation (arc42) branch")]
+fn served_design_review_instruction_omits_arc42(world: &mut GivnWorld) {
+    let content = support::served_artifact_instruction(world, "design-review");
+    assert!(
+        !content.contains("Architecture documentation (arc42)"),
+        "the served design-review instruction carries the arc42 branch:\n{content}"
+    );
+}
+
+#[then("the generated design-review skill carries no Architecture documentation (arc42) branch")]
+fn design_review_skill_carries_no_arc42(world: &mut GivnWorld) {
+    design_review_skill_no_arc42(world);
+}
+
+#[then("the generated design-review command carries no Architecture documentation (arc42) check")]
+fn design_review_command_carries_no_arc42(world: &mut GivnWorld) {
+    design_review_command_no_arc42(world);
 }
 
 // --- Then: domain-modeling skill generation ---------------------------------

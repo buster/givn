@@ -112,6 +112,18 @@ fn human_instructions_unchanged(world: &mut GivnWorld) {
     );
 }
 
+#[then("the installed givn-propose guidance directs the author to the proposal instruction")]
+fn installed_propose_guidance_directs_to_instruction(world: &mut GivnWorld) {
+    let env = fixture(world);
+    let path = env.path(".opencode/skills/givn-propose/SKILL.md");
+    let content = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+    assert!(
+        content.contains("givn instructions proposal"),
+        "the installed givn-propose guidance does not direct the author to the proposal instruction:\n{content}"
+    );
+}
+
 #[then("no optional tone addon is required for the obligation")]
 fn no_tone_addon_required(world: &mut GivnWorld) {
     let env = fixture(world);

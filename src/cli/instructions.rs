@@ -32,6 +32,8 @@ fn run_artifact(
 ) -> Result<()> {
     let manifest = load_effective()?;
     let artifact_definition = manifest.artifacts.iter().find(|a| a.id == artifact);
+    let extension_rules = extension_rules(project_root, artifact);
+    let addons = addon_flags(&manifest);
 
     let Some(artifact_definition) = artifact_definition else {
         // A non-artifact id may be a policy instruction (e.g. `dialog`). It is
@@ -46,6 +48,8 @@ fn run_artifact(
                 known.join(", ")
             )
         })?;
+        let content = crate::skills::render::render_conditionals(&content, &addons)?;
+        let content = crate::config::extensions::append(&content, &extension_rules);
         let skill_to_load =
             domain_skill_to_load(manifest.addons.domain_modeling, manifest.addons.arc42);
         if json {
@@ -85,6 +89,8 @@ fn run_artifact(
     };
     // --change is validated/resolved; artifact instructions are not change-specific.
     let content = crate::config::cascade::resolve_instruction(artifact)?;
+    let content = crate::skills::render::render_conditionals(&content, &addons)?;
+    let content = crate::config::extensions::append(&content, &extension_rules);
     let skill_to_load =
         domain_skill_to_load(manifest.addons.domain_modeling, manifest.addons.arc42);
 
@@ -107,6 +113,32 @@ fn run_artifact(
     }
 
     Ok(())
+}
+
+/// The project's extension rules for `artifact`, if recorded in
+/// `givn/config.yaml`.
+fn extension_rules(project_root: &std::path::Path, artifact: &str) -> Vec<String> {
+    crate::config::extensions::load(project_root)
+        .into_iter()
+        .find(|(id, _)| id == artifact)
+        .map(|(_, rules)| rules)
+        .unwrap_or_default()
+}
+
+/// The addon-name/enabled map the instruction renderer resolves conditional
+/// blocks against. Mirrors the sync render path's flags; the names match
+/// `render::KNOWN_ADDON_KEYS`.
+fn addon_flags(manifest: &crate::config::manifest::Manifest) -> Vec<(&'static str, bool)> {
+    vec![
+        ("arc42", manifest.addons.arc42),
+        ("domain_modeling", manifest.addons.domain_modeling),
+        ("dev_principles", manifest.addons.dev_principles),
+        ("grill_me", manifest.addons.grill_me),
+        ("grill_with_docs", manifest.addons.grill_with_docs),
+        ("absolute_mode", manifest.addons.absolute_mode),
+        ("readme", manifest.addons.readme),
+        ("coverage", manifest.addons.coverage),
+    ]
 }
 
 /// `givn instructions` with no artifact — the generic, context-aware entry point.

@@ -5,6 +5,8 @@ this change. These files are the delta — they will be merged into the permanen
 spec on archive.
 
 **Rules (enforced by default):**
+- **One scenario = one observable behaviour.** Never combine independent
+  behaviours into one scenario; split them.
 - Scenarios assert **observable behaviour** in domain language (Given/When/Then
   about inputs, outputs, state visible to a user/client). Never reference internal
   calls, class names, function names, specific code structures, HTTP routes,
@@ -29,6 +31,23 @@ Feature: My Capability
     When an action occurs
     Then an observable result is visible
 </example>
+
+## Delta layout, capability routing, and use-case preservation
+
+- **One file per capability.** Every delta `.feature` file lives at
+  `givn/changes/<id>/specs/<usecase-id>/<capability>.feature` — one file per
+  capability under the owning use case directory, never one file for the whole
+  change.
+- **The proposal's Capability Routing table decides.** Its recorded `Decision`
+  column — never its prose — determines the capability each scenario is
+  written under. If the table is missing a row for a capability you are about
+  to write, run `givn spec route --change <id>` and fill the rows in before
+  proceeding. Never invent a capability name from prose.
+- **Preserve the owning use case.** Read the owning
+  `givn/specs/<usecase-id>/usecase.md` (or the ideation change seed that names
+  it) and preserve its goal, guarantees, rules, typed relationships, Persona
+  references, and capability interaction inventory. Gherkin names domain
+  actors and observable actions; it never embeds Persona biographies.
 
 ## User Interaction Inventory (mandatory, before writing any scenario)
 
@@ -71,8 +90,8 @@ are not copied into every including use case.
 
 ### Capability placement
 
-Before recording a `NEW in <usecase-id>` capability, apply the placement
-test: which actor goal does completing this capability advance? Channel is never an answer —
+Before recording a `NEW in <usecase-id>` capability, apply the placement test:
+which actor goal does completing this capability advance? Channel is never an answer —
 a browser or CLI variant of an action lives under the action's goal.
 Capability names are goal-shaped, never component- or channel-shaped (no
 server, backend, store, service, panel, browser, or CLI names).

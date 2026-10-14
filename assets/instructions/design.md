@@ -218,6 +218,25 @@ not a reason to test something weaker instead.
   decision to tasks.md or to the implementer discovering it mid-scenario —
   a scenario blocked on an undesigned interface problem is a design gap.
 
+{{#if addons.coverage}}
+## Coverage process boundaries (mandatory when coverage is enabled)
+
+The design declares one row per production process the tests start — the test
+runner and every production process launched by tests — with every column
+filled:
+
+| Process | Started by | Instrumented artifact | Profile output | Merge step | Non-zero production probe |
+|---|---|---|---|---|---|
+
+For each process:
+
+- Launch the instrumented artifact, not the normal build.
+- Use collision-safe profile output.
+- Flush data before shutdown.
+- Merge its profile before export.
+- Name one exercised production path expected to be non-zero.
+
+{{/if}}
 ## Interaction Coverage Matrix (mandatory)
 
 After reading the canonical specs policy, the design MUST contain an
@@ -226,7 +245,7 @@ matching `@e2e` scenario and driving mechanism. One row per entry:
 
 | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
-| (from the spec's inventory comment) | (the @e2e scenario title) | (Web UI / CLI / HTTP API / Library / Message bus) | (specific driver + action) |
+| (from the owning use-case document's inventory) | (the @e2e scenario title) | (Web UI / CLI / HTTP API / Library / Message bus) | (specific driver + action) |
 
 A capability that renders HTML, CSS, or JavaScript in a browser is a Web UI row: it needs a browser driver and a concrete action, never an HTTP client.
 

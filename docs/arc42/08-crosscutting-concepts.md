@@ -84,7 +84,13 @@ not a browser interaction substitute. An obstacle is a design gap, not
 permission to weaken the assertion.
 
 Project overrides can replace the effective policy through the cascade. Generated
-skills and commands are snapshots and have no independent policy authority.
+skills and commands carry trigger metadata, invocation-specific orchestration,
+and a direction to `givn instructions <id>`; they carry no rule content and have
+no independent policy authority. The rule an agent follows for a step is the
+extended rule: the built-in, technology-agnostic rules resolved at call time
+plus the project's extension when one exists. An extension adds rules; it never
+overrides, suppresses, or reorders the built-in rules, and it never changes
+steps, order, or gates.
 
 The resolved `dialog` instruction is the single normative source for phrasing
 and recording user-facing questions. The current delivered references cover
@@ -107,7 +113,12 @@ new model-dependent gate or runtime interception mechanism.
 `givn instructions <artifact> --json` emits one JSON object with exactly the
 effective artifact `id`, `generates`, `requires`, and resolved `instruction`.
 Human-readable mode emits instruction text. The object is resolved from the
-effective manifest and the project-overrides-first instruction cascade.
+effective manifest and the project-overrides-first instruction cascade. Before
+printing, the resolved text is rendered against the effective manifest's addon
+flags (conditional sections resolved when guidance is requested) and the
+project's extension for the id is appended under the marked `## Project
+extension` section; the `instruction` field carries that same effective text
+on both paths.
 
 A policy instruction (`dialog`) has no lifecycle stage, so it is not a manifest
 artifact and is not resolved through the artifact graph. When the id is not a
@@ -209,6 +220,32 @@ the persisted target selection:
 - `.claude/skills/<name>/SKILL.md`;
 - `.omp/skills/<name>/SKILL.md` and `.omp/commands/<name>.md`.
 
+The standard skills and commands are direction-only: each file carries its
+trigger metadata (the frontmatter `name` and `description`), invocation-specific
+orchestration (change context, subagent boundaries, stop conditions,
+reporting), and a direction to `givn instructions <id>`; rule content is served
+at call time and never copied into the file. Every workflow step has an
+instruction id, and every instruction id a generated file names resolves
+through the CLI in the same Givn version or a later one, in the context its
+direction names — an artifact direction carries a resolvable change context, a
+policy or step direction resolves without one; the acceptance suite grades
+that. A full copy installed by an earlier Givn version is rewritten to the
+direction by the next synchronization or upgrade; a disabled addon's files are
+removed by the existing reconciliation; a project-owned replacement stays
+byte-for-byte and receives no injected text.
+
+A project extends one instruction's built-in rules through the `extensions:`
+map in `givn/config.yaml`: an instruction id maps to project-owned rule
+strings, appended to the served content under a marked `## Project extension`
+section. The extension is additive — it never overrides, suppresses, or
+reorders the built-in rules and never changes steps, order, or gates. It is
+read on every request, never written into generated files, and never part of
+the managed upgrade revision; an unknown instruction id or a malformed entry
+warns and is dropped, and the built-in rules are served alone. When a
+project-owned replacement of the instruction facet exists for the same id, the
+replacement is the base the extension extends; the replacement file itself is
+never modified.
+
 A target that owns a shell integration also receives its attribution
 integration: `.opencode/plugins/givn-attribution.js`,
 `.claude/hooks/givn-attribution.sh` with `.claude/settings.local.json`, and
@@ -223,23 +260,34 @@ target is marked, while an empty or unknown-only answer and EOF without the
 `--agents` flag refuse with a non-zero exit before the first write, naming
 `.opencode`, `.agents`, `.claude`, and `.omp` plus the `--agents` flag.
 
-The generated implementation guidance states the revision-message rule: every
-revision a change records carries the change's release note (authored in its
-proposal) as its message subject, with the scenario title in the message body.
-The rule is guidance only — `givn commit` neither composes nor validates the
-subject.
+The implementation guidance states the revision-message rule: every revision a
+change records carries the change's release note (authored in its proposal) as
+its message subject, with the scenario title in the message body. The rule
+lives in the `tasks` instruction; the project-start block renders its resident
+rules (the task-checkoff and commit obligations) from that same
+`instructions/tasks.md` asset, so the block's text and the served instruction
+cannot disagree. The rule is guidance only — `givn commit` neither composes nor
+validates the subject.
 
 Generated guidance is written for the consumer project. Every file reference
 it carries must resolve in the project that receives it: a file the project
 has, a location a named creation step creates, a project-owned destination
 the guidance itself defines, or a skill resolved by name across the
-configured agent targets. A reference into the Givn distribution (`assets/…`,
-a repository-only document) is a defect; the acceptance suite grades every
-generated skill, command, and printed instruction against this rule.
+configured agent targets. Every instruction id a direction names must resolve
+through the CLI in the same Givn version or a later one, in the context the
+direction names: an artifact direction carries a resolvable change context,
+and a policy or step direction resolves without one (an artifact request
+without a resolvable change context refuses by name). A reference into the
+Givn distribution (`assets/…`, a repository-only document) is a defect; the
+acceptance suite grades every generated skill, command, and printed
+instruction against both rules.
 
 `AGENTS.md` is user-owned outside givn-managed fenced blocks. The sync path may
 create or replace the unconditional `givn-project` block and, when enabled, the
-`absolute-mode` block. It does not rewrite surrounding user content. The pending
+`absolute-mode` block. It does not rewrite surrounding user content. The block
+carries the direction to `givn instructions`, the dialog-policy obligation,
+and its resident task-checkoff and commit obligations rendered from the
+canonical `instructions/tasks.md` asset. The pending
 decision-ready-question contract puts policy discovery in `givn-project`, not
 behind a tone addon; the addon defers question content to the effective dialog
 policy. Givn never stages `AGENTS.md` under either rules policy; committing it

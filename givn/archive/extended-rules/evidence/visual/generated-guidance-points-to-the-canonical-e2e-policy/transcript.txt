@@ -1,0 +1,120 @@
+scenario: Generated guidance points to the canonical E2E policy
+argv: givn skills sync
+cwd: <freshly initialized project in a temp dir, agent targets opencode, agents, claude, omp; optional guidance enabled>
+exit: 0
+context commands (all in that project):
+  givn init --agents opencode,agents,claude,omp        exit 0
+  givn instructions specs --change specs               exit 0
+--- stdout (raw) ---
+Syncing skills and agent commands...
+  commit attribution: .githooks/commit-msg
+  Git activation: unavailable (no Git worktree)
+  attribution integration: .opencode/plugins/givn-attribution.js
+  attribution integration: .omp/hooks/pre/givn-attribution.js
+  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced skill: givn-domain-modeling
+  synced skill: givn-dev-principles
+  synced command: /givn-propose
+  synced command: /givn-spec
+  synced command: /givn-design
+  synced command: /givn-tasks
+  synced command: /givn-implement
+  synced command: /givn-review
+  synced command: /givn-archive
+  synced command: /givn-explore
+  synced command: /givn-design-review
+  synced command: /givn-steps
+  synced command: /givn-reverse-engineer
+  synced command: /givn-characterize
+  synced command: /givn-ideation
+  synced command: /grill-me
+  synced command: /grill-with-docs
+  sync: rules: local-only
+  sync: no tracked rule in the current revision
+  sync: no rule in reachable history
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+
+Done. Generated:
+  .opencode/skills/   (skills for opencode)
+  .agents/skills/   (skills for agents)
+  .claude/skills/   (skills for claude)
+  .omp/skills/   (skills for omp)
+  .opencode/commands/ (opencode slash commands)
+  .omp/commands/ (omp slash commands)
+--- stderr (raw) ---
+--- delivered .opencode/skills/givn-spec/SKILL.md head ---
+---
+name: givn-spec
+description: Write Gherkin .feature delta files for a givn change — observable behaviour in domain language, no implementation detail.
+---
+
+# givn-spec
+
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
+Write the Gherkin spec delta for change `<change-id>`.
+
+## Context
+
+- Delta spec location: `givn/changes/<change-id>/specs/<usecase-id>/<capability>.feature`
+- Instructions: run `givn instructions specs --change <change-id>`
+- Proposal (WHY): `givn/changes/<change-id>/proposal.md`
+- Permanent specs: `givn/specs/`
+
+## Use-case context
+
+--- delivered .opencode/commands/givn-spec.md head ---
+---
+description: (Re-)write the Gherkin .feature spec for a givn change
+---
+
+Write (or re-write) the Gherkin spec for a givn change.
+
+**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+
+For starting a new change, use `/givn-propose` instead — it writes the
+proposal, spec, design, and tasks in one pass.
+Use this command to redo or extend the spec for an existing change.
+
+**Input**: Optionally specify a change ID after `/givn-spec`. If omitted, infer
+from conversation context, or auto-select if only one active change exists. If
+ambiguous, list changes and ask.
+
+--- served specs instruction (givn instructions specs --change specs) canonical policy excerpt ---
+## User Interaction Inventory (mandatory, before writing any scenario)
+
+This section is the canonical E2E and interaction-inventory policy. Other
+artifact instructions, skills, and slash commands reference it and must not
+define competing wording.
+
+Enumerate every interaction a consumer performs against the system's black-box
+boundary — before writing any scenario text. An interaction is a discrete
+action that triggers an observable state change through the real interface.
+What counts as "the real interface" depends on the system type:
+
+| System type | Real interface | Inventory must include |
+|---|---|---|
+| **Web UI** | Rendered browser (via Playwright, Selenium) | Every button click, form submission, navigation link, SSE/WebSocket event that changes visible content. |
+| **CLI / terminal** | Real subprocess invocation | Every distinct user action; output-affecting flags are recorded as variants unless they change the action or side effect. |
+| **HTTP/REST API** | Real HTTP client against the deployed server | Every endpoint, every side-effect-permitting operation. |
+  ...
+clean final state.
+
+For a terminal interface, each `@e2e` scenario commits a captured transcript
+instead of screenshots, and the same baseline applies to the text the consumer
+reads. API-only capabilities are exempt from visual evidence: the HTTP
+response is their interface, and its assertions already cover it.
+
