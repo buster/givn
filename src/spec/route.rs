@@ -1,9 +1,8 @@
-//! `givn spec route` — deterministic capability-routing candidates (Phase
-//! 4.5). A narrowing tool, not a decision-maker: it emits ranked candidates
-//! with evidence; a human/agent reads them and writes the decision in the
-//! proposal's Capability Routing table. The review-time gate (Phase 4.7)
-//! checks the recorded decision against what was built — it never reruns
-//! this ranking.
+//! `givn spec route` — deterministic capability-routing candidates. A
+//! narrowing tool, not a decision-maker: it emits ranked candidates with
+//! evidence; a human/agent reads them and writes the decision in the
+//! proposal's Capability Routing table. The review-time gate checks the
+//! recorded decision against what was built — it never reruns this ranking.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -12,7 +11,45 @@ use anyhow::Result;
 use gherkin::GherkinEnv;
 use serde::Serialize;
 
-use crate::spec::cluster::KNOWN_SUBCOMMANDS;
+/// The real subcommand list to match against. Keep in sync with `Commands`
+/// in `src/main.rs`; hand-maintained.
+pub const KNOWN_SUBCOMMANDS: &[&str] = &[
+    "init",
+    "new",
+    "instructions",
+    "lint",
+    "check",
+    "status",
+    "graph",
+    "archive",
+    "eject",
+    "addons",
+    "readme",
+    "skills",
+    "spec",
+    "upgrade",
+    "run",
+];
+
+/// Count backtick-wrapped `givn <subcommand>` invocations in `step_text`.
+pub fn count_invocations_for(step_text: &str, counts: &mut BTreeMap<String, usize>) {
+    count_invocations(step_text, counts);
+}
+
+fn count_invocations(step_text: &str, counts: &mut BTreeMap<String, usize>) {
+    let mut rest = step_text;
+    while let Some(pos) = rest.find("`givn ") {
+        let after = &rest[pos + "`givn ".len()..];
+        let token: String = after
+            .chars()
+            .take_while(|c| c.is_ascii_lowercase() || *c == '-')
+            .collect();
+        if let Some(sub) = KNOWN_SUBCOMMANDS.iter().find(|s| **s == token) {
+            *counts.entry((*sub).to_string()).or_insert(0) += 1;
+        }
+        rest = &rest[pos + 1..];
+    }
+}
 
 /// A ranked routing candidate.
 #[derive(Debug, Clone, Serialize)]
@@ -164,7 +201,7 @@ fn load_capabilities(root: &Path) -> Result<Vec<CapabilityInfo>> {
                 for step in scenario.steps.iter().chain(background_steps.iter()) {
                     text.push_str(&step.value);
                     text.push('\n');
-                    crate::spec::cluster::count_invocations_for(&step.value, &mut invocations);
+                    count_invocations_for(&step.value, &mut invocations);
                 }
             }
             let (goal_rules, interactions) = usecase_ownership_text(&usecase_dir);

@@ -1,4 +1,4 @@
-//! Deterministic spec-discovery step definitions (Phase 4 rebuild).
+//! Deterministic spec-discovery step definitions.
 //!
 //! These steps drive the compiled givn CLI as a real subprocess against
 //! fixture projects whose permanent corpus uses use-case ownership. They

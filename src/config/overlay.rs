@@ -11,7 +11,7 @@ use crate::config::manifest::{
 /// - `addons:` block: every flag is copied onto the effective manifest,
 ///   regardless of whether that addon has further side effects. `arc42: true`
 ///   additionally expands to the arc42-docs artifact definition.
-/// - After merge, the effective graph is validated (Phase 2.3a).
+/// - After merge, the effective graph is validated.
 use anyhow::{Result, bail};
 
 /// Parse the project overlay YAML and merge it onto `base`.

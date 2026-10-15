@@ -1,9 +1,8 @@
-//! `givn spec tree` — deterministic discovery over the permanent corpus
-//! (Phase 4.1). No embeddings, no network, no score. Walks
+//! `givn spec tree` — deterministic discovery over the permanent corpus.
+//! No embeddings, no network, no score. Walks
 //! `givn/specs/<usecase>/<capability>.feature`, reports per-use-case Actor/Goal from
 //! `usecase.md`, per-capability scenario and `@e2e` counts, and the per-use-case
-//! phrasing reuse ratio (the measurement approach from the retirement plan,
-//! reported only — never gated).
+//! phrasing reuse ratio (reported only — never gated).
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -181,7 +180,7 @@ pub fn print_tree(rows: &[UsecaseRow]) {
     }
 }
 
-/// One lexical search hit (Phase 4.2): a scenario whose title or step text
+/// One lexical search hit: a scenario whose title or step text
 /// contains the (lowercased) query.
 #[derive(Debug, Clone, Serialize)]
 pub struct FindHit {
@@ -192,7 +191,7 @@ pub struct FindHit {
     pub e2e: bool,
 }
 
-/// A deterministic duplicate/structural match (Phase 4.3). Exact
+/// A deterministic duplicate/structural match. Exact
 /// duplicates, shared assertion shapes, and assertion subsets only — no
 /// embeddings, no score.
 #[derive(Debug, Clone, Serialize)]

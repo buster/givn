@@ -157,8 +157,7 @@ enum Commands {
         command: SkillsCommands,
     },
     /// Work with the permanent spec corpus: coverage inventory, duplicate
-    /// report, use-case proposals, tree overview, lexical scenario search,
-    /// and proposal routing.
+    /// report, tree overview, lexical scenario search, and proposal routing.
     Spec {
         #[command(subcommand)]
         command: SpecCommands,
@@ -274,15 +273,6 @@ enum SpecCommands {
         #[arg(long, value_enum, default_value_t = SpecFormat::Text)]
         format: SpecFormat,
     },
-    /// Propose use cases for the current spec tree from command-
-    /// surface clustering. Never modifies files — prints a proposal for a
-    /// human to review, confirm, and then apply via the migration step.
-    #[command(name = "propose-usecases")]
-    ProposeUsecases {
-        /// Output format.
-        #[arg(long, value_enum, default_value_t = SpecFormat::Text)]
-        format: SpecFormat,
-    },
     /// Walk the permanent spec corpus by group: Actor/Goal per group,
     /// scenario and @e2e counts per capability, phrasing reuse ratio per
     /// group. Deterministic — no embeddings, no network, no score.
@@ -386,9 +376,6 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             }
             SpecCommands::Duplicates { format } => {
                 cli::spec::run_duplicates(matches!(format, SpecFormat::Json))
-            }
-            SpecCommands::ProposeUsecases { format } => {
-                cli::spec::run_propose_usecases(matches!(format, SpecFormat::Json))
             }
             SpecCommands::Tree { format } => {
                 cli::spec::run_tree(matches!(format, SpecFormat::Json))
