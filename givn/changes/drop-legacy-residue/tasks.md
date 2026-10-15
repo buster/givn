@@ -1706,4 +1706,4 @@ Each sweep is one atomic commit. Design constraints are copied from
     staging swept them; this commit records the tasks.md evidence — after it the checkout
     is fully committed and the archive precondition holds)
     ```
-  - COMMIT: `chore(bookkeeping): verify the delta merge records resolve` — Hash: ``
+  - COMMIT: `chore(bookkeeping): verify the delta merge records resolve` — Hash: `afdcdef3`
