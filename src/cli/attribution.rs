@@ -5,13 +5,6 @@ use serde_json::Value;
 use std::io::Read;
 use std::path::Path;
 
-const LEGACY_TRAILER_PREFIXES: [&str; 5] = [
-    "Givn-Version:",
-    "LLM:",
-    "LLM-Reasoning:",
-    "LLM-Harness:",
-    "Givn-Attribution-Status:",
-];
 const UNAVAILABLE: &str = "unavailable";
 const CLAUDE_HARNESS: &str = "claude-code";
 
@@ -74,9 +67,6 @@ fn stamp_text(message: &str, version: &str, llm: &str, reasoning: &str, harness:
 
 fn is_managed_trailer(line: &str) -> bool {
     line.starts_with("Co-Authored-By:") && line.contains(" with Givn ")
-        || LEGACY_TRAILER_PREFIXES
-            .iter()
-            .any(|prefix| line.starts_with(prefix))
 }
 
 fn attribution_value(name: &str) -> String {
@@ -192,7 +182,7 @@ mod tests {
         let path = directory.path().join("message");
         std::fs::write(
             &path,
-            "subject\n\nCo-Authored-By: Human Developer <human@example.test>\nCo-Authored-By: old/high@old-harness with Givn old\nGivn-Version: old\nLLM: old\nUser-Trailer: keep\n",
+            "subject\n\nCo-Authored-By: Human Developer <human@example.test>\nCo-Authored-By: old/high@old-harness with Givn old\nUser-Trailer: keep\n",
         )
         .expect("write message");
 
@@ -205,12 +195,6 @@ mod tests {
         );
         assert!(message.contains("User-Trailer: keep"));
         assert!(message.contains("Co-Authored-By: Human Developer <human@example.test>"));
-        assert!(!message.contains("Givn-Version:"));
-        assert!(!message.contains("LLM:"));
-        assert!(!message.contains("LLM-Reasoning:"));
-        assert!(!message.contains("LLM-Harness:"));
-        assert!(!message.contains("Givn-Attribution-Status:"));
-        assert!(!message.contains("Givn-Version: old"));
         assert!(!message.contains("Co-Authored-By: old/high@old-harness with Givn old"));
     }
 
