@@ -1472,9 +1472,9 @@ Each sweep is one atomic commit. Design constraints are copied from
              Summary [   1.573s] 16 tests run: 16 passed, 0 skipped
         (exit 0 — the whole delta scope is GREEN; the prose edits are not pinned by any scenario)
     ```
-  - COMMIT: `docs(migration): correct the front-door documentation and remove the dead guides` — Hash: ``
+  - COMMIT: `docs(migration): correct the front-door documentation and remove the dead guides` — Hash: `89029a6de5f5b1e04b44227602f4629bf83237da`
 
-- [ ] **Residue sweep: served-guidance corrections.**
+- [x] **Residue sweep: served-guidance corrections.**
   **Design constraints (design.md "Served guidance assets" table):**
   - Every hit is corrected to name the file that actually owns the value — the runner commands live in `givn/commands.yaml`, applied as the later overlay; addons, skill targets, extensions, and the rules policy live in `givn/config.yaml`. `assets/commands/` and `assets/skills/` carry no hit; `assets/templates/design-review.md`'s `addons.arc42` mention is correct and stays; `assets/commands/grill-with-docs.md` carries only the trigger, so it needs no edit.
   - `assets/instructions/grill-with-docs.md:26` — split the inventory by file: `givn/commands.yaml` (verify.command, verify.e2e_command, features_path, coverage, run) and `givn/config.yaml` (addons, skills.targets, extensions, rules).
@@ -1487,7 +1487,14 @@ Each sweep is one atomic commit. Design constraints are copied from
   - Files: the eight files above only. The generated copies in this repository's agent targets refresh from these assets through the normal dogfood `givn skills sync` after archive — do not hand-edit generated copies here.
   - Verification: no delta scenario pins the corrected prose (served-guidance spec coverage audit); the reference-resolution scenarios stay green either way. Re-run `./run-tests.sh` over the change's specs:
     ```text
-    <paste run output>
+    $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs ./run-tests.sh
+        Nextest run ID … with nextest profile: default
+            Starting 16 tests across 1 binary
+                PASS … (16/16) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A clean 0.7.0 project receives a reviewable aggregate migration plan
+        ────────────
+             Summary [   1.557s] 16 tests run: 16 passed, 0 skipped
+        (exit 0 — the whole delta scope is GREEN; no scenario pins the corrected
+        served-guidance prose)
     ```
   - COMMIT: `docs(guidance): correct the served-guidance configuration attributions` — Hash: ``
 

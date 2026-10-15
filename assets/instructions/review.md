@@ -51,7 +51,7 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
    its Then assertion checks page content — the interaction was never real.
    Record each occurrence found.
 7. **Identify the exact file(s) `verify.e2e_command` actually invokes.**
-   Read the command itself from `givn/config.yaml`, not just its name — a
+   Read the command itself from `givn/commands.yaml`, not just its name — a
    file merely containing "e2e" in its path is not evidence it is bound to
    that command. Then inspect the working state and search the tree for any other
    `@e2e` step implementation for the same capability, including untracked
@@ -67,7 +67,7 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
    of the same action are regular scenarios. Excess E2E scenarios are a
    fabrication-audit finding.
 9. **Confirm `verify.e2e_command` is actually scoped to `@e2e`, not a copy
-   of `verify.command`.** Read both values from `givn/config.yaml`
+   of `verify.command`.** Read both values from `givn/commands.yaml`
    literally. If they are identical strings, the "e2e run" re-runs the
    entire suite and proves nothing about e2e isolation specifically — this
    is always a fabrication-audit finding, never an acceptable
@@ -378,7 +378,7 @@ rather than trusting the subagent's report:
    did not mention. A report that never names the exact invoked file(s) or
    never mentions the parallel-implementation check is incomplete — reject it.
 6. Read both `verify.command` and `verify.e2e_command` from
-   `givn/config.yaml` yourself. Identical strings are never a passable state —
+   `givn/commands.yaml` yourself. Identical strings are never a passable state —
    reject `REVIEW: PASS` outright. A report without both scoped scenario
    counts (e2e strictly smaller, or an explicit "all scenarios are @e2e") is
    incomplete.

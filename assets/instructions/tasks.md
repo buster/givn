@@ -28,7 +28,7 @@ context between artifacts.
   unit-test runner is not sufficient.
 - Configure strict mode: undefined/pending steps FAIL the build, never
   silently pass or skip.
-- Set `verify.command` in `givn/config.yaml` to the exact runner invocation.
+- Set `verify.command` in `givn/commands.yaml` to the exact runner invocation.
 - Create the runner test binary and step-definition skeleton, **one file per
   capability** (e.g. `CompanyOnboardingSteps`). Never one file for everything.
 - Run the proof-of-strictness check (below). Do not proceed until it passes.

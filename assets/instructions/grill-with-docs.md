@@ -23,17 +23,21 @@ Gather the authoritative material:
 - `docs/arc42/` (if the arc42 addon is enabled)
 {{/if}}
 - Any architecture decision records or the project's decisions log
-- `givn/config.yaml` (verify.command, features_path, addons, extras)
+- `givn/commands.yaml` (verify.command, verify.e2e_command, features_path,
+  coverage, run) and `givn/config.yaml` (addons, skills.targets, extensions,
+  rules)
 
 ## Cross-check question by question
 
 For each plan element, ask: which source supports it, and which source
 contradicts it? Pose one question, cite the source, wait. Examples:
 
-- "tasks.md says the flow is write-config -> set_extras -> sync, but design.md
-  pitfall #4 warns about --force wiping the flag. Is the ordering covered?"
-- "The spec asserts `extras: true`, but config.yaml.tmpl ships it commented.
-  Which step uncomments it?"
+- "tasks.md says the flow is write `givn/config.yaml` -> `givn skills sync` ->
+  commit, but design.md names `givn/commands.yaml` as the home of the runner
+  values. Is the ordering and the file split covered?"
+- "The spec asserts `rules: versioned`, but the config scaffold ships the key
+  commented and an absent value resolves to `local-only`. Which step makes the
+  policy explicit?"
 
 ## Flag drift
 
