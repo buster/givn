@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "drop-legacy-residue",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "c97210aa72c8f8587057484ec7d82da46b769a71",
+  "tested_revision": "c97210aa72c8f8587057484ec7d82da46b769a71",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 97,
+      "passed": 97,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 13.90115326
+    },
+    "regular": {
+      "status": "passed",
+      "total": 641,
+      "passed": 641,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 61.892066293
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 8225,
+    "line_valid": 10207,
+    "line_percent": 80
+  },
   "started_at_unix": 1792062946,
-  "finished_at_unix": null
+  "finished_at_unix": 1792063109
 }
