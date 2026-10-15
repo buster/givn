@@ -39,7 +39,7 @@ Feature: Managed upgrade and legacy project migration
     And no commit is created
     And the user changes remain byte-for-byte unchanged
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: A project outside Git is protected from a partial automatic migration
     Given  a Givn 0.7.0 project that is not a Git repository
     When  the consumer invokes `givn upgrade` for migration
