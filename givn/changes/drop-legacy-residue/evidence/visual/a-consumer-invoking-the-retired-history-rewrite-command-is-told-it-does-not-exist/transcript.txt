@@ -1,0 +1,15 @@
+scenario: A consumer invoking the retired history rewrite command is told it does not exist
+argv: givn rewrite-history
+cwd: <freshly initialized project (givn init --agents opencode) in a temp dir>
+binary: target/debug/givn (the compiled binary the scenario spawns via CARGO_BIN_EXE_givn — built from this checkout with the RewriteHistory variant, module, and dispatch arm deleted)
+exit: 2 (non-zero; clap's parse-error exit code for an unrecognized subcommand)
+
+context commands (all in that project):
+  givn init --agents opencode                                   exit 0
+--- stdout (raw, givn rewrite-history) ---
+--- stderr (raw, givn rewrite-history) ---
+error: unrecognized subcommand 'rewrite-history'
+
+Usage: givn <COMMAND>
+
+For more information, try '--help'.

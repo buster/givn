@@ -271,26 +271,6 @@ fn latest_revision_touches(world: &mut GivnWorld, path: String) {
     );
 }
 
-#[then(regex = r#"^the reachable history contains "([^"]+)"$"#)]
-fn reachable_history_contains(world: &mut GivnWorld, path: String) {
-    let env = env(world);
-    let log = git_ok(env, &["log", "--all", "--format=%H", "--", &path]);
-    assert!(
-        !log.trim().is_empty(),
-        "expected reachable history to contain {path}"
-    );
-}
-
-#[then(regex = r#"^the reachable history does not contain "([^"]+)"$"#)]
-fn reachable_history_does_not_contain(world: &mut GivnWorld, path: String) {
-    let env = env(world);
-    let log = git_ok(env, &["log", "--all", "--format=%H", "--", &path]);
-    assert!(
-        log.trim().is_empty(),
-        "expected reachable history not to contain {path}:\n{log}"
-    );
-}
-
 #[then(regex = r#"^the latest revision does not touch "([^"]+)"$"#)]
 fn latest_revision_does_not_touch(world: &mut GivnWorld, path: String) {
     let env = env(world);
