@@ -1422,14 +1422,14 @@ Implementation strategy (from `design.md`):
              Summary [   1.454s] 6 tests run: 6 passed, 0 failed, 10 skipped
         (exit 0 — the whole @e2e scope is GREEN: all six delta @e2e units pass under the e2e gate protocol)
         ```
-  - [x] COMMIT: capture the transcript before committing. `test(e2e): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: capture the transcript before committing. `test(e2e): <release note>` with the scenario title in the message body — Hash: `8666d3c33fb944af50bfeee1798cfc4353b92762`
 
 ## Residue sweeps (non-scenario edit map)
 
 Each sweep is one atomic commit. Design constraints are copied from
 `design.md`'s exact-file-changes tables; do not extend the file lists.
 
-- [ ] **Residue sweep: stale documentation corrections and dead guide removal.**
+- [x] **Residue sweep: stale documentation corrections and dead guide removal.**
   **Design constraints (design.md "Assets, migration catalog, and docs" table):**
   - `README.md`: remove the semantic-duplicate-review clause from "Blocking gates"; replace the stale "Configurable without forking" build text (one feature-free binary, `[features] default = []`); correct the "Runner-agnostic" skill formats (`agents` neutral plus `claude`, `opencode`, `omp`); fix the install block comments; fix the `docs/workflow.md` bullet ("how semantic search assures deduplication" goes); drop `extras` from the reference bullet; delete the "Enforcement note for agents" section (the semantic engine is gone and its referenced chapter section no longer exists).
   - `docs/reference.md`: drop the retrieval-aware clause from the `givn-spec` row; "Enables all addons and extras by default." → "Enables all addons by default."; fold the four former extras into the addons table (`domain_modeling`, `dev_principles`, `grill_me`, `grill_with_docs`); delete the `## Extras` section and the `--no-extras` / `givn extras install` references; `addons:` / `extras:` → `addons:`; drop `extras` from the document intro; split the Configuration section by owning file — `givn/config.yaml` is the structural scaffold (generated fully-commented by `givn init`; commented lines are the managed documentation scaffold refreshed by `givn upgrade`; uncommented lines are user-owned; carries `givn_config_version`), `givn/commands.yaml` is the project-owned command file (test runner, coverage commands, run declaration, applied as the later overlay; the first value a working project must set is `verify.command` there) — and fix the project-layout comment (`givn/config.yaml` → `# documented + versioned: overlay, addons, rules, extensions`; `givn/commands.yaml` → `# project-owned verify, coverage, and run values`).
@@ -1442,7 +1442,35 @@ Each sweep is one atomic commit. Design constraints are copied from
   - Files: `README.md`, `docs/reference.md`, `docs/workflow.md`, `docs/migrations/README.md`, `docs/INDEX.md`, `CHANGELOG.md`, `src/cli/migration.rs` (const + substitution only), deletions `docs/migrations/0.2.0-to-0.3.0.md` + `docs/migrations/0.4.0-to-0.5.0.md`.
   - Verification: no scenario pins this prose; re-run `./run-tests.sh` over the change's specs to confirm the suite still passes (the 0.7.0 guide steps assert the retained guide, untouched here):
     ```text
-    <paste run output>
+    $ cargo check --tests
+        Checking givn v0.9.0 (/home/buster/.paseo/worktrees/008cxm4u/mellow-yak)
+        Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.42s
+
+    $ cargo clippy --workspace --all-targets -- -D warnings
+        Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.14s
+
+    $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs ./run-tests.sh
+        Nextest run ID f382966c-e704-430d-b3a4-52cf7a33b68e with nextest profile: default
+            Starting 16 tests across 1 binary
+                PASS [   0.598s] ( 1/16) givn::features_runner publish-a-release/describe-the-release.feature::The migration guide is an executable prompt sequence
+                PASS [   0.729s] ( 2/16) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A consumer invoking the retired history rewrite command is told it does not exist
+                PASS [   0.760s] ( 3/16) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::Nothing is merged when one delta file of a change has no routing decision
+                PASS [   0.779s] ( 4/16) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::Archive is blocked when a new capability has no declared routing decision
+                PASS [   0.804s] ( 5/16) givn::features_runner archive-change/enforce-post-merge-e2e-gate.feature::Archive is blocked when merged permanent specs gain @e2e scenarios and e2e_command is unconfigured
+                PASS [   0.844s] ( 6/16) givn::features_runner archive-change/enforce-post-merge-e2e-gate.feature::Consumer archives a delta that adds e2e scenarios and is blocked without a configured runner
+                PASS [   0.854s] ( 7/16) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::Consumer archives a new capability and the merged spec lands in its declared use case
+                PASS [   0.875s] ( 8/16) givn::features_runner archive-change/enforce-post-merge-e2e-gate.feature::Archive succeeds when merged permanent specs have no @e2e scenarios and e2e_command is unconfigured
+                PASS [   0.875s] ( 9/16) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::Retiring a use case's last capability removes the use-case directory and its narrative
+                PASS [   0.880s] (10/16) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A project below the oldest migration route receives no migration change
+                PASS [   1.002s] (11/16) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A Fossil project with uncommitted changes is protected from automatic migration commits
+                PASS [   0.507s] (12/16) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A project outside Git is protected from a partial automatic migration
+                PASS [   0.495s] (13/16) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::An existing migration plan is never overwritten
+                PASS [   0.493s] (14/16) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::An unclean project is protected from automatic migration commits
+                PASS [   0.513s] (15/16) givn::features_runner verify-change/resolve-change-directories.feature::Verify-e2e hook resolves the change directory from a relative features path inside givn/changes
+                PASS [   1.573s] (16/16) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A clean 0.7.0 project receives a reviewable aggregate migration plan
+        ────────────
+             Summary [   1.573s] 16 tests run: 16 passed, 0 skipped
+        (exit 0 — the whole delta scope is GREEN; the prose edits are not pinned by any scenario)
     ```
   - COMMIT: `docs(migration): correct the front-door documentation and remove the dead guides` — Hash: ``
 
