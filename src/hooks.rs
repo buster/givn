@@ -229,7 +229,6 @@ mod verify_e2e_hook_tests {
             addons: Addons::default(),
             coverage: Coverage::default(),
             givn_config_version: None,
-            extras: false,
         }
     }
 

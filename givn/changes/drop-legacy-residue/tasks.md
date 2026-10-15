@@ -1562,7 +1562,7 @@ Each sweep is one atomic commit. Design constraints are copied from
     `docs/arc42/12-glossary.md`,
     `docs/arc42/README.md`,
     `docs/arc42/adr/README.md`).
-  - COMMIT: `docs(arc42): <release note>` with a body line naming the arc42 documentation update — Hash: ``
+  - COMMIT: `docs(arc42): <release note>` with a body line naming the arc42 documentation update — Hash: `802de3f64f5cb2595af348a71ddb46c1c5f220cd`
 
 - [ ] **Residue sweep: remove the dead `extras` flag.**
   **Design constraints (design.md production table, D1):**

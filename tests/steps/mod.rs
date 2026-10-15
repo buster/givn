@@ -879,7 +879,7 @@ fn file_does_not_contain(world: &mut GivnWorld, rel: String, needle: String) {
     );
 }
 
-// --- Steps for install-extras -----------------------------------------------
+// --- Steps for optional addons ----------------------------------------------
 
 #[then(regex = r#"^the file "([^"]+)" exists$"#)]
 fn file_quoted_exists(world: &mut GivnWorld, rel: String) {
@@ -1286,12 +1286,6 @@ fn manifest_exactly_one(world: &mut GivnWorld, id: String) {
         "expected exactly one artifact '{}', found {}",
         id, count
     );
-}
-
-#[then("the effective manifest has extras enabled")]
-fn manifest_extras_enabled(world: &mut GivnWorld) {
-    let m = world.overlay_manifest.as_ref().expect("no overlay result");
-    assert!(m.extras, "expected extras to be enabled");
 }
 
 #[then("the effective manifest has the skill addons enabled")]

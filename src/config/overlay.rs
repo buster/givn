@@ -48,10 +48,6 @@ pub fn apply(base: Manifest, overlay_yaml: &str) -> Result<Manifest> {
         result.apply = a;
     }
 
-    if let Some(e) = overlay.extras {
-        result.extras = e;
-    }
-
     if let Some(addons) = overlay.addons {
         // arc42 additionally expands into an artifact-graph node — keep
         // that side effect here, guarded so enabling twice stays idempotent.
@@ -373,7 +369,6 @@ pub(crate) struct OverlayDoc {
     pub(crate) coverage: Option<Coverage>,
     pub(crate) apply: Option<Apply>,
     pub(crate) addons: Option<Addons>,
-    pub(crate) extras: Option<bool>,
     /// Agent targets for skill/command generation (`skills.targets`).
     /// Ignored by the manifest itself; consumed by `load_skills_targets`.
     pub(crate) skills: Option<Skills>,
