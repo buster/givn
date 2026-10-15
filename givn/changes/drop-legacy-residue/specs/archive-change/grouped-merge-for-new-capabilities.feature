@@ -24,7 +24,7 @@ Feature: grouped-merge-for-new-capabilities
     And  the directory "givn/specs/flat-new" does not exist
     And  the change directory still exists under givn/changes/
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Nothing is merged when one delta file of a change has no routing decision
     Given  a givn project with verify.e2e_command unconfigured in givn/commands.yaml
     And  a completed change "mixed-routing" with two deltas: one routed NEW in "mixed-group" and one unrouted
