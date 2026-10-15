@@ -53,7 +53,7 @@ not alter other content.
 | `givn check review --change <id>` | in/out | Mandatory checks and the overlap disposition gate. |
 | `givn readme check` | out | Deterministic README report: open placeholders, legacy scaffold texts, development and run managed block damage, unmanaged or missing README; exit status reflects findings. |
 | `givn run [--port <n>] [--print]` | in/out | Starts the declared product; for servers waits for readiness, prints `givn run: ready at http://127.0.0.1:<port><ready_path>` on stdout, forwards the child's exit code, and forwards SIGINT/SIGTERM on unix. Exit codes: 0 nothing-to-start/clean shutdown, 1 preflight findings or `--port` without `port_env`, 2 readiness timeout, 130 SIGINT, 143 SIGTERM. `--print` emits one sh-eval-able start line without executing. |
-| `givn upgrade` on a 0.2.0 project | in/out | Clean-checkout preflight through the selected backend, managed scaffold synchronization, two backend commits, and creation of a maintenance migration change. |
+| `givn upgrade` on a project behind a declared migration route | in/out | Clean-checkout preflight through the selected backend, managed scaffold synchronization, and — when a route is declared — two backend revisions including the maintenance migration change; a project below the oldest source declared in the migration catalog (0.7.0) receives the managed refresh only. |
 | `assets/migrations/catalog.yaml` | in | Release-owned migration bundle policy used to resolve version gaps and aggregate ordered migration phases. |
 | `givn/archive/<id>/` | out | Archived change directory, its pending/proven verification receipt, and the raw per-scope runner results. |
 | Agent target directories | out | Selected `.opencode`, `.agents`, `.claude`, and `.omp` skill paths; opencode and omp commands use their own `<target>/commands` directory. |
@@ -95,7 +95,8 @@ not alter other content.
   markers, no version control, a nested root, and a missing executable are
   refused by name before mutation.
 - Strict ADR qualification guidance and canonical routing of architecture rationale.
-- Version 0.3.0 release metadata and the 0.2.0-to-0.3.0 LLM migration path.
+- Release metadata and the release-owned migration routes; the oldest
+  source the migration catalog declares is 0.7.0.
 
 ### Out of scope
 
@@ -103,7 +104,7 @@ not alter other content.
   container files, or framework conventions; health monitoring beyond the
   declared readiness probe; a background or daemon mode for `givn run`.
 - A configurable Arc42 output directory or chapter selection cascade.
-- OpenSpec backward-compatible reads or migrations from versions other than
-  the documented 0.2.0-to-0.3.0 route.
+- OpenSpec backward-compatible reads or migrations from versions below the
+  oldest migration route the catalog declares.
 - Multi-repository workflow coordination.
 - Release, Homebrew, and shell-installer infrastructure before it is implemented.

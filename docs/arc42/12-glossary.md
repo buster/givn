@@ -54,8 +54,7 @@
 | **Local-only transition** | Making a tracked strict rule local-only: the file stays on disk and the path leaves the current revision (Git `git rm --cached`; Fossil `fossil rm --soft` or `forget`). |
 | **Ignore block** | Givn's fenced entry region inside the tracked ignore file (`.gitignore`, `.fossil-settings/ignore-glob`); the entries are project content and surrounding user content is never touched. |
 | **Publishable project** | A project whose repository and reachable history carry no strict rule, and whose build, run, and test paths work with no Givn installed. |
-| **Clean history** | No reachable revision contains a strict rule. Occurrences are reported and never block; the only remediation is the explicit history rewrite. Unreachable objects, remotes, and forks are outside the guarantee. |
-| **History rewrite** | The explicit, opt-in removal of strict rules from reachable history: Git through `git-filter-repo` (or a named refusal when absent), Fossil a named refusal. Never automatic; files stay on disk; the boundary and force-push need are reported. |
+| **Clean history** | No reachable revision contains a strict rule. Occurrences are reported and never block; Givn itself never rewrites history. Unreachable objects, remotes, and forks are outside the guarantee. |
 | **Net-delta receipt** | The count of Added, Modified, and Removed scenarios printed by the overlap review gate. |
 | **Eject** | Materialization of an embedded default into a project-owned `givn/` override. |
 | **Facet** | An independently resolvable asset unit such as a template or instruction. |

@@ -1542,7 +1542,27 @@ Each sweep is one atomic commit. Design constraints are copied from
         Checking givn v0.9.0 (/home/buster/.paseo/worktrees/008cxm4u/mellow-yak)
         Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.46s
     ```
-  - COMMIT: `chore(ci): drop the rewrite-history acceptance prerequisite` — Hash: ``
+  - COMMIT: `chore(ci): drop the rewrite-history acceptance prerequisite` — Hash: `92fa89c9b1a1176f0739aad2169dabb8854654e5`
+
+- [x] **Commit the arc42 documentation updates.**
+  The planning phase's `docs/arc42/**` edits (13 modified files) are still
+  uncommitted and the archive requires a committed checkout; this commit
+  records them.
+  - Files: the 13 modified files under `docs/arc42/` only
+    (`docs/arc42/01-introduction-and-goals.md`,
+    `docs/arc42/02-architecture-constraints.md`,
+    `docs/arc42/03-context-and-scope.md`,
+    `docs/arc42/04-solution-strategy.md`,
+    `docs/arc42/05-building-block-view.md`,
+    `docs/arc42/06-runtime-view.md`,
+    `docs/arc42/07-deployment-view.md`,
+    `docs/arc42/08-crosscutting-concepts.md`,
+    `docs/arc42/10-quality-requirements.md`,
+    `docs/arc42/11-risks-and-technical-debt.md`,
+    `docs/arc42/12-glossary.md`,
+    `docs/arc42/README.md`,
+    `docs/arc42/adr/README.md`).
+  - COMMIT: `docs(arc42): <release note>` with a body line naming the arc42 documentation update — Hash: ``
 
 - [ ] **Residue sweep: remove the dead `extras` flag.**
   **Design constraints (design.md production table, D1):**

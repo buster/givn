@@ -60,6 +60,16 @@ compatibility window and the
 session-link choice are single-component, one-change-reversible integration
 decisions owned by the change's proposal, design, and specs.
 
+The `drop-legacy-residue` change retires the in-tool history rewrite and
+removes the pre-0.8 migration bundles and guides: the oldest migration
+source the catalog declares is 0.7.0, a version below it receives only the
+managed refresh, rule cleanliness stays report-only, and the vestigial
+`extras` flag
+and legacy coverage commands are gone. Durable facts live in chapters 1, 2,
+3, 4, 5, 7, 8, 10 (Q-48, Q-55, Q-77), 11 (R-29, R-81, R-82), and the
+glossary. No ADR is introduced: the removed boundaries are product behaviour
+and release policy owned by the specs, the catalog, and the chapters above.
+
 Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
 register](adr/README.md) for status, relationships, evidence, reserved IDs, and
 historical records.
@@ -85,7 +95,7 @@ historical records.
 
 - [`../../README.md`](../../README.md) - user-facing project overview.
 - [`../workflow.md`](../workflow.md) - ordered workflow phases, gates, and chokepoints.
-- [`../migrations/0.2.0-to-0.3.0.md`](../migrations/0.2.0-to-0.3.0.md) - LLM prompt pack for the 0.3.0 project migration.
+- [`../migrations/0.8.0-to-0.9.0.md`](../migrations/0.8.0-to-0.9.0.md) - LLM prompt pack for the current project migration.
 - [`../migrations/README.md`](../migrations/README.md) - release-owned migration bundle and aggregate-plan contract.
 
 ## Reading Order

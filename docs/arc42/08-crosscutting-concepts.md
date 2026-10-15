@@ -311,11 +311,10 @@ wait for the developer after `givn init`. Under `versioned` the fenced blocks
 are removed and the rules are repository content. Every command that touches
 rules reports tracked and reachable-history occurrences; `givn check rules`
 exits non-zero on a violation, while init, sync, and upgrade never block.
-`givn rewrite-history` is the only remediation for historical occurrences: an
-explicit command that purges them from reachable history through
-`git-filter-repo` after a clean-state preflight and an explicit confirmation,
-keeps every file on disk, refuses on Fossil and under `versioned`, and never
-pushes.
+Givn itself never rewrites history: historical occurrences are reported, never
+repaired — a project that must purge them does so with its own SCM tooling
+outside Givn, and the reachable local refs boundary (remotes and forks are
+outside the guarantee) is named, not acted on.
 
 ## 8.8 Error Handling and Exit Codes
 
@@ -350,15 +349,15 @@ coverage:
 ```
 
 The measurement command must create distinct non-E2E and E2E Cobertura reports;
-the merge command must create a fresh output report. The merged report counts
-every measured line once — the union of the source reports' measured lines —
-and counts a line as covered when either source report hit it: both source
-reports measure the same source tree, so summed counters would count every
-shared line twice in the denominator. A merge falls back to summed counters
-only when a source report carries no per-line data (aggregate-only reports),
-and branch counters keep their summation because branch identity is not
-retained by the parser (documented limitation). Givn validates the source
-and merged reports and updates only its named README blocks. A coverage
+the merge command must create a fresh output report. Givn runs the two
+project-owned commands, validates the source reports, requires them to be
+distinct, and validates the merged report before publishing it. The merge
+arithmetic belongs to the project's merge command; this repository's merge
+script unions the per-line data so a line measured by both reports counts once
+and counts as covered when either report hit it (summed counters would count
+every shared line twice in the denominator), while branch counters stay summed
+because branch identity is not retained by the parser (documented limitation).
+Givn updates only its named README blocks. A coverage
 failure leaves the archive candidate unproven in place — the permanent
 corpus, README, and coverage files are not rolled back. A zero branch
 denominator is rendered as `n/a`, not as a measured zero percent.
@@ -480,9 +479,8 @@ model, reasoning mode, and harness, using `unavailable` where a harness has no
 value. Claude exports these variables for the complete Bash command so compound
 commands and shell wrappers such as RTK preserve them. The checked-in Git
 `commit-msg` hook consumes the variables only when `GIVN_ATTRIBUTION_ACTIVE` is
-present, stamps only the managed co-author attribution, removes stale legacy
-Givn attribution trailers, and never blocks a commit when context or the
-installed binary is absent.
+present, stamps only the managed co-author attribution, and never blocks a
+commit when context or the installed binary is absent.
 
 ### Configurable post hooks
 

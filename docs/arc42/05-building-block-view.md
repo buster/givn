@@ -7,8 +7,8 @@ reads the latest assistant model from the transcript named by the hook payload,
 then composes an exported environment prefix before the complete Bash command.
 The generated Claude shell hook remains a thin launcher. OpenCode model
 extraction remains in its generated plugin asset. The same attribution CLI
-stamps only the managed co-author line at the commit boundary (`givn commit` on every backend, the hook on Git) and removes
-stale legacy Givn attribution trailers.
+stamps only the managed co-author line at the commit boundary (`givn commit`
+on every backend, the hook on Git).
 
 ## 5.1 Level 0 - System
 
@@ -52,7 +52,6 @@ flowchart TD
 | `cli::instructions` | Resolve effective artifact instructions and non-artifact policy and step instructions with optional JSON metadata; render addon-conditional sections against the effective addon flags; append the project's extension under the marked section; provide context-aware generic guidance without an artifact id. |
 | `cli::lint` | Parse features, report WIP/PENDING, run the default tree-wide overlap scan with exit precedence 1, 3, 2, 0, report advisory change-seed status findings and dangling persona references, and classify every finding as `advisory`, `finding`, or `blocking` in the rendered and JSON output. |
 | `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks; named review also runs the overlap gate. Review executes `integrity` and the run-declaration check; scenario execution belongs to the archive verification. `givn check rules` reports tracked and reachable-history rules and exits non-zero on a violation. |
-| `cli::rewrite_history` | The explicit, opt-in history rewrite: refuses under `versioned` and on Fossil, requires a clean checkout and confirmation, purges generated rules from reachable history through `git-filter-repo` while keeping every file, re-scans, and reports the new revision plus the force-push boundary. |
 | `cli::archive` | Check archive prerequisites, run the run-declaration gate before the README completeness gate (independent of the readme addon), run the README completeness gate when the readme addon is enabled, select permanent verification for no-product-delta maintenance changes, run configured hooks, merge deltas, publish the archive candidate revision through the selected backend, run the regular and E2E verification scopes once against the candidate, run the optional coverage gate, refresh managed blocks, record the verification receipt, and publish the evidence-only finalization revision. |
 | `cli::status` and `cli::graph` | Render manifest-aware filesystem state, dependencies, optional flags, gates, and hooks; status and instructions surface unproven archive candidates with their resume command. |
 | `cli::eject` | Materialize an embedded facet, skill, or manifest into project-owned `givn/` content. |

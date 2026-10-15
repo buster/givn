@@ -52,7 +52,7 @@ enabled addon settings and scaffolds durable Arc42 chapters.
 | FR-21 | Run project commands at explicit gate points and keep binary mandatory checks non-deactivatable. |
 | FR-22 | Keep one normative interaction and E2E authoring policy. |
 | FR-30 | Audit the complete permanent corpus through `givn spec duplicates` without writing audit state. |
-| FR-33 | Publish version 0.3.0 with a complete changelog and an LLM-executable 0.2.0-to-0.3.0 migration guide. |
+| FR-33 | Publish each release with a complete changelog and its release-owned migration routes. |
 | FR-34 | Prepare legacy projects through a visible, reviewable migration change without inventing product specifications. |
 | FR-35 | Refresh and commit Givn-owned files for migration-free upgrades without creating a migration change. |
 | FR-36 | Resolve multiple release-owned migration bundles into one ordered aggregate maintenance change. |
@@ -101,7 +101,7 @@ Acceptance targets and evidence boundaries are Q-93 through Q-95 in chapter 10.
 | Contributors | Need stable Rust modules, contracts, and review gates. |
 | CI systems | Need deterministic lint, test-runner, and archive outcomes. |
 | Consumer repositories | Use Givn's workflow but do not host Givn's own acceptance fixtures. |
-| Migrating project maintainers | Need a clean version-control boundary and an explicit plan for project-specific 0.3.0 work. |
+| Migrating project maintainers | Need a clean version-control boundary and an explicit plan for project-specific migration work. |
 | Archiving developers | Need the archive proof to hold on the backend that owns their project, with the same candidate, receipt, and repair contract on Git and Fossil. |
 | Automation callers around givn (for example the kiekste preview host) | Consume the run declaration and the `givn run` machine contract (ready line, exit codes, port hand-off) to start products without guessing. |
 

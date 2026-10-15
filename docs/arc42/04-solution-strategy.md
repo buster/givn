@@ -24,7 +24,7 @@ is in the [ADR register](adr/README.md); mechanics are in [chapter 8](08-crosscu
 | Gate safety | `givn check tasks|review` contains non-deactivatable mandatory checks; `post` is additive customization. |
 | Arc42 | `givn init` enables addons by default unless `--no-addons`; Arc42 chapters are scaffolded at fixed `docs/arc42/`. |
 | Structural overlap | Deterministic Fingerprint evidence and disposition gate. |
-| Release migration | A clean 0.2.0 project receives a managed two-commit preparation and a visible maintenance change; project semantics remain LLM-reviewed. |
+| Release migration | A clean project behind a declared route (currently from 0.7.0) receives a managed two-revision preparation and a visible maintenance change; project semantics remain LLM-reviewed. |
 | Migration-free upgrade | A release without a selected route synchronizes managed guidance and creates one allowlist-only commit when files changed; it creates no maintenance change. |
 
 ## 4.2 Configuration and Gate Strategy
@@ -66,9 +66,11 @@ model dependencies exist.
 ### Upgradeability
 
 `givn upgrade` refreshes the managed configuration scaffold while preserving
-uncommented project values. For the exact 0.2.0-to-0.3.0 route it first requires
+uncommented project values. For a declared migration route it first requires
 a clean checkout of the selected backend, refreshes managed generated
 integrations, commits only the allowlisted Givn paths, and creates a migration
-maintenance change that records the first commit. Ejected facets, durable docs,
-specs, and user-owned files remain project-owned and are handled by the LLM
-through that change.
+maintenance change that records the first revision. A project below the
+oldest route the migration catalog declares (0.7.0) receives the managed
+refresh only. Ejected
+facets, durable docs, specs, and user-owned files remain project-owned and
+are handled by the LLM through that change.

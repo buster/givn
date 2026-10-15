@@ -86,11 +86,14 @@ treated as current checkout evidence until it is present and verified.
 ## 7.6 Upgrade
 
 After a binary upgrade, `givn upgrade` refreshes the managed config scaffold and
-generated guidance. For a clean project whose marker selects the 0.2.0-to-0.3.0
-route, the binary performs this synchronization as the first of two narrowly
-scoped Git commits and creates a second commit containing the LLM migration
-plan. For a release without a selected route, it creates one managed commit
-when files changed and no migration plan. Project overrides, durable Arc42 chapters, and user-owned
+generated guidance. For a clean project whose marker selects a declared
+migration route, the binary performs this synchronization as the first of two
+narrowly scoped revisions on the selected backend and creates a second
+revision containing the LLM migration plan. For a release without a selected
+route — including any version below the oldest source the migration catalog
+declares (0.7.0) — it
+creates one managed revision when files changed and no migration plan. Project
+overrides, durable Arc42 chapters, and user-owned
 `AGENTS.md` content outside givn blocks remain under project control.
 
 For the pending question-policy update, changed defaults require the rebuilt
@@ -101,7 +104,7 @@ an override or proving that an agent follows the referenced policy.
 
 The managed route requires a version-controlled project and a clean checkout.
 Projects without a usable backend and dirty projects receive no partial update;
-the public migration guide describes the evidence-preserving recovery path. A
+the retained migration guides describe the evidence-preserving recovery path. A
 migration catalog route may span multiple versions, but all of its bundle
 phases are inventoried in one ordered aggregate maintenance change; a bundle
 may direct that the repairs run as named follow-up changes.
