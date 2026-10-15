@@ -1,0 +1,30 @@
+scenario: Archive is blocked when a new capability has no declared routing decision
+argv: givn archive --change flat-new
+cwd: <freshly initialized Git project (givn init --agents opencode) in a temp dir;
+      givn/commands.yaml carries the unconfigured runner
+      (e2e_command: "givn missing-e2e-runner"); the change "flat-new" has all
+      artifacts done, a proposal that records no routing decision, and its
+      delta under specs/flat-new/; the fixture state is committed before the
+      archive — the archive starts from a committed project state>
+binary: target/debug/givn (the compiled binary the scenario spawns via CARGO_BIN_EXE_givn)
+exit: 1
+
+context commands (all in that project):
+  givn init --agents opencode                                   exit 0
+  git add -A && git commit -m "fixture: initial state"          exit 0
+  givn new flat-new                                             exit 0
+  (fixture writes: proposal/design/design-review/tasks/review/arc42
+   artifacts, the unrouted delta spec under specs/flat-new/, the result
+   runner, and the unconfigured givn/commands.yaml)
+  git add -A && git commit -m "fixture: archive input"          exit 0
+--- stdout (raw, givn archive --change flat-new) ---
+[12:10:12] Archiving change 'flat-new'...
+[12:10:12] Running archive gate hooks...
+[12:10:12] ✓ Gate hooks passed
+[12:10:12] ✓ run declaration passed
+[12:10:12] ✓ README completeness gate passed
+--- stderr (raw, givn archive --change flat-new) ---
+error: archive blocked: capability 'flat-new' exists nowhere in the permanent corpus and its proposal records no 'NEW in <usecase-id>' routing decision
+--- tree after the blocked archive ---
+givn/specs/flat-new:          absent (nothing was merged)
+givn/changes/flat-new:        present (the change directory still exists, repairable in place)

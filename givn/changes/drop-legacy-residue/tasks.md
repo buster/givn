@@ -1151,9 +1151,9 @@ Implementation strategy (from `design.md`):
              Summary [   0.574s] 6 tests run: 4 passed, 2 failed, 10 skipped
         (exit 100 — the still-@wip sections of the other tasks fail as expected; this scenario PASSes under the e2e gate protocol)
         ```
-  - [x] COMMIT: capture the transcript before committing. `test(e2e): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: capture the transcript before committing. `test(e2e): <release note>` with the scenario title in the message body — Hash: `77de1c2409aa70ff229bc4536ba1db2dd679e639`
 
-- [ ] Scenario: `Archive is blocked when a new capability has no declared routing decision` (`grouped-merge-for-new-capabilities`, `@givn.modified`, `@e2e`, reuse)
+- [x] Scenario: `Archive is blocked when a new capability has no declared routing decision` (`grouped-merge-for-new-capabilities`, `@givn.modified`, `@e2e`, reuse)
   **Design constraints:**
   - Delta file: `givn/changes/drop-legacy-residue/specs/archive-change/grouped-merge-for-new-capabilities.feature`. Given text re-pointed to `a givn project with verify.e2e_command unconfigured in givn/commands.yaml` — the exact shared step renamed by the previous scenario's GREEN. No additional file change; no production code change.
   - Behaviour (real CLI boundary): `givn archive --change flat-new` exits non-zero; stderr contains "records no 'NEW in"; the directory `givn/specs/flat-new` does not exist; the change directory still exists under `givn/changes/`.
@@ -1161,23 +1161,53 @@ Implementation strategy (from `design.md`):
   - Domain context: `archive-change` — a failed archive is never reported as proven, and its candidate remains repairable in place.
   - Single-scenario run: `GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^Archive is blocked when a new capability has no declared routing decision$'`
   - Remove `@wip` from this scenario only at RED.
-  - [ ] RED: remove `@wip` from this scenario only; run the single-scenario command. All steps reused (shared Given renamed in the previous scenario's GREEN; the `unrouted_new_change` fixture step already exists) → zero exit is legitimate immediate GREEN. Record the reused steps: `a givn project with verify.e2e_command unconfigured in givn/commands.yaml` (renamed in the previous scenario's GREEN) and the pre-existing grouped-merge fixture/archive steps. Paste the run:
+  - [x] RED: remove `@wip` from this scenario only; run the single-scenario command. All steps reused (shared Given renamed in the previous scenario's GREEN; the `unrouted_new_change` fixture step already exists) → zero exit is legitimate immediate GREEN. Record the reused steps: `a givn project with verify.e2e_command unconfigured in givn/commands.yaml` (renamed in the previous scenario's GREEN); the pre-existing grouped-merge fixture step `a completed change "flat-new" whose proposal records no routing decision and whose delta lives under specs/flat-new/`; `the project declares a complete run declaration`; the generic `the user invokes `…`` When; `the command exits non-zero`; `stderr contains "records no 'NEW in"`; `the directory "…" does not exist`; `the change directory still exists under givn/changes/`. Paste the run:
         ```text
-        <paste targeted run output — zero exit with all steps reused>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^Archive is blocked when a new capability has no declared routing decision$'
+        Feature: grouped-merge-for-new-capabilities
+          Scenario: Archive is blocked when a new capability has no declared routing decision
+           ✔  Given a givn project with verify.e2e_command unconfigured in givn/commands.yaml
+           ✔  And a completed change "flat-new" whose proposal records no routing decision and whose delta lives under specs/flat-new/
+           ✔  And the project declares a complete run declaration
+           ✔  When the user invokes `givn archive --change flat-new`
+           ✔  Then the command exits non-zero
+           ✔  And stderr contains "records no 'NEW in"
+           ✔  And the directory "givn/specs/flat-new" does not exist
+           ✔  And the change directory still exists under givn/changes/
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        (exit 0 — zero exit with all steps reused)
         ```
-  - [ ] GREEN: no new code; re-run targeted to confirm — MUST exit 0. Production files: none (pure reuse scenario):
+  - [x] GREEN: no new code; re-run targeted to confirm — MUST exit 0. Production files: none (pure reuse scenario):
         ```text
-        <paste targeted run output — expected exit 0>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^Archive is blocked when a new capability has no declared routing decision$'
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        (exit 0)
         ```
-  - [ ] REFACTOR: none; re-run targeted — MUST exit 0:
+  - [x] REFACTOR: none; re-run targeted — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^Archive is blocked when a new capability has no declared routing decision$'
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        (exit 0)
         ```
-  - [ ] Nextest gate evidence (F21): paste the `./run-tests.sh --e2e` nextest run showing this scenario passing under the e2e gate protocol:
+  - [x] Nextest gate evidence (F21): paste the `./run-tests.sh --e2e` nextest run showing this scenario passing under the e2e gate protocol:
         ```text
-        <paste nextest e2e gate run output>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs GIVN_CUCUMBER_TAGS='@e2e' cargo nextest run --no-fail-fast --no-tests=warn --locked --test features_runner
+            Starting 6 tests across 1 binary (10 tests skipped)
+                FAIL ... (the two remaining still-@wip upgrade-a-project @e2e units of the other task sections, expected mid-change)
+                PASS [   0.528s] (5/6) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::Archive is blocked when a new capability has no declared routing decision
+             Summary [   0.575s] 6 tests run: 4 passed, 2 failed, 10 skipped
+        (exit 100 — the still-@wip sections of the other tasks fail as expected; this scenario PASSes under the e2e gate protocol)
         ```
-  - [ ] COMMIT: capture the transcript before committing. `test(e2e): <release note>` with the scenario title in the message body (carries the `@wip` removal, the transcript, and this tasks.md record; no production delta — pure reuse) — Hash: ``
+  - [x] COMMIT: capture the transcript before committing. `test(e2e): <release note>` with the scenario title in the message body (carries the `@wip` removal, the transcript, and this tasks.md record; no production delta — pure reuse) — Hash: ``
 
 - [ ] Scenario: `Nothing is merged when one delta file of a change has no routing decision` (`grouped-merge-for-new-capabilities`, `@givn.modified`, `@e2e`, reuse)
   **Design constraints:**
