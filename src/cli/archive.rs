@@ -453,7 +453,7 @@ fn ensure_e2e_configured(
     if merged_has_e2e && !configured {
         bail!(
             "'{}' contains @e2e-tagged scenario(s) but verify.e2e_command is not \
-             configured in givn/config.yaml. An @e2e scenario without a configured \
+             configured in givn/commands.yaml. An @e2e scenario without a configured \
              e2e runner is an unenforced gap, not an optional one — set verify.e2e_command.",
             specs_dir.display()
         );

@@ -140,7 +140,7 @@ pub(crate) fn run_verify_e2e_hook(manifest: &Manifest, features_path: &str) -> R
         if has_e2e {
             anyhow::bail!(
                 "'{}' contains @e2e-tagged scenario(s) but verify.e2e_command is not \
-                 configured in givn/config.yaml. An @e2e scenario without a configured \
+                 configured in givn/commands.yaml. An @e2e scenario without a configured \
                  e2e runner is an unenforced gap, not an optional one — set verify.e2e_command.",
                 features_path.display()
             );
@@ -156,7 +156,7 @@ pub(crate) fn run_verify_e2e_hook(manifest: &Manifest, features_path: &str) -> R
                     anyhow::bail!(
                         "'{}' references @e2e scenarios but no @e2e-tagged scenario exists \
                          under '{}'. @e2e coverage was planned and then removed — restore \
-                         the @e2e tags and configure verify.e2e_command in givn/config.yaml. \
+                         the @e2e tags and configure verify.e2e_command in givn/commands.yaml. \
                          Removing @e2e tags to bypass the verify-e2e gate is a procedure \
                          violation.",
                         tasks_path.display(),
