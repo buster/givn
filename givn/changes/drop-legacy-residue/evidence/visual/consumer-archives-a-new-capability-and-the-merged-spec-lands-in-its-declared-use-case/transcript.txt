@@ -1,0 +1,47 @@
+scenario: Consumer archives a new capability and the merged spec lands in its declared use case
+argv: givn archive --change grouped-new
+cwd: <freshly initialized Git project (givn init --agents opencode) in a temp dir;
+      givn/commands.yaml carries the unconfigured runner
+      (e2e_command: "givn missing-e2e-runner"); the change "grouped-new" has all
+      artifacts done, a proposal declaring the capability NEW in "some-group",
+      and its delta under specs/some-group/; the fixture state is committed
+      before the archive — the archive starts from a committed project state>
+binary: target/debug/givn (the compiled binary the scenario spawns via CARGO_BIN_EXE_givn)
+exit: 0
+
+context commands (all in that project):
+  givn init --agents opencode                                   exit 0
+  git add -A && git commit -m "fixture: initial state"          exit 0
+  givn new grouped-new                                          exit 0
+  (fixture writes: proposal/design/design-review/tasks/review/arc42
+   artifacts, the routed delta spec under specs/some-group/, the result
+   runner, and the unconfigured givn/commands.yaml)
+  git add -A && git commit -m "fixture: archive input"          exit 0
+--- stdout (raw, givn archive --change grouped-new) ---
+[12:09:02] Archiving change 'grouped-new'...
+[12:09:02] Running archive gate hooks...
+[12:09:02] ✓ Gate hooks passed
+[12:09:02] ✓ run declaration passed
+[12:09:02] ✓ README completeness gate passed
+Merging 1 delta feature file(s)...
+[12:09:02]   merged → /tmp/opencode/t14/proj/givn/specs/some-group/grouped-new.feature
+[12:09:02] ✓ Candidate committed
+[12:09:02] Running regular verification: ./emit-result.sh regular
+Running coverage gate...
+  Running coverage measurement: true
+  Running coverage merge: cp coverage/non-e2e-cobertura.xml coverage/cobertura-coverage.xml
+  published merged coverage: Line coverage: 85% (340/400)
+Branch coverage: 72% (36/50)
+  updated README.md with merged line and branch coverage
+✓ Coverage gate passed
+[12:09:02] ✓ development managed block refreshed
+[12:09:02] ✓ Archived 'grouped-new' to /tmp/opencode/t14/proj/givn/archive/grouped-new
+Verification receipt: /tmp/opencode/t14/proj/givn/archive/grouped-new/verification.json
+
+Change archived successfully.
+The delta specs have been merged into givn/specs/.
+--- stderr (raw, givn archive --change grouped-new) ---
+--- merged tree after the archive ---
+givn/specs/some-group/grouped-new.feature:  present (the merged spec landed in its declared use case)
+givn/specs/grouped-new:                     absent (no flat capability directory was created)
+givn/archive/grouped-new:                   present (the change directory moved to givn/archive/)

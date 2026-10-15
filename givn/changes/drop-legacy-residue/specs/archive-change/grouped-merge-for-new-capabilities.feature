@@ -2,7 +2,7 @@
 
 Feature: grouped-merge-for-new-capabilities
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Consumer archives a new capability and the merged spec lands in its declared use case
     Given  a givn project with verify.e2e_command unconfigured in givn/commands.yaml
     And  a completed change "grouped-new" whose proposal declares the capability NEW in "some-group" and whose delta lives under specs/some-group/
