@@ -13,7 +13,7 @@ Feature: grouped-merge-for-new-capabilities
     And  the directory "givn/specs/grouped-new" does not exist
     And  the change directory has been moved to givn/archive/
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Archive is blocked when a new capability has no declared routing decision
     Given  a givn project with verify.e2e_command unconfigured in givn/commands.yaml
     And  a completed change "flat-new" whose proposal records no routing decision and whose delta lives under specs/flat-new/
