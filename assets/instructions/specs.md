@@ -128,7 +128,7 @@ client would.
 
 **Tag `@e2e`** on any scenario that is an end-to-end smoke test. The `@e2e`
 tag goes alongside the delta tag (`@givn.added @e2e @wip`). These scenarios
-run via `verify.e2e_command` (configured in `givn/config.yaml`), not
+run via `verify.e2e_command` (configured in `givn/commands.yaml`), not
 `verify.command`.
 
 **What makes a scenario `@e2e`:**

@@ -68,7 +68,7 @@ cleanly:
 ```
 
 **E2e isolation check** — `verify.command` and `verify.e2e_command` read
-literally from `givn/config.yaml`; if identical, this is always a finding
+literally from `givn/commands.yaml`; if identical, this is always a finding
 (the "e2e run" is not isolating `@e2e` scenarios at all). Prove isolation
 with the per-scope scenario counts recorded in the archive verification
 receipt (`givn/archive/<id>/verification.json`):

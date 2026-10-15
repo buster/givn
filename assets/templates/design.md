@@ -72,7 +72,7 @@
 > |---|---|
 > | | |
 >
-> Test runner command (from `verify.command` in givn/config.yaml):
+> Test runner command (from `verify.command` in givn/commands.yaml):
 > ```
 > {{VERIFY_COMMAND}}
 > ```
