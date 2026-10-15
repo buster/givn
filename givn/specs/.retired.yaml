@@ -46,3 +46,6 @@
 - capability: release-strict-model-overrides
   retired_date: 2026-09-08
   retired_by_change: drop-embedding-features
+- capability: history-rewrite
+  retired_date: 2026-10-15
+  retired_by_change: drop-legacy-residue

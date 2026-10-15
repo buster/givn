@@ -18,11 +18,11 @@ Feature: Givn release metadata and migration route
     And it contains the 0.2.0 to 0.3.0 migration entry point
 
   Scenario: The migration guide is an executable prompt sequence
-    Given the 0.2.0 to 0.3.0 migration guide
-    When an LLM reads the guide from a project using Givn
-    Then it finds ordered prompts for inventory, upgrade, synchronization, review, and verification
-    And each prompt tells the LLM which project evidence to inspect before editing
-    And the guide forbids automatic changes to domain specifications and architecture decisions
+    Given  the 0.7.0 to 0.8.0 migration guide
+    When  an LLM reads the guide from a project using Givn
+    Then  it finds ordered prompts that begin with inventory and end with validation and archive
+    And  the guide requires the LLM to inspect the project before editing it
+    And  the guide keeps corpus repairs out of the maintenance change
 
   Scenario: The migration catalog defines complete release-owned bundles
     Given the embedded Givn migration catalog

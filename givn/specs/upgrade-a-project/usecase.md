@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:9051eaa0baff4273a26e4273396013f2a4c112ced91224fa0e2ab2c7e15260e5 -->
+<!-- givn:base-sha256:52b61b2d64f47251cd0827f3a6df8d19156cae1d0c4f3e878bc1eec2ec9cbd40 -->
 # Use case: upgrade-a-project
 
 ## Level
@@ -88,10 +88,11 @@ next request — with the project's extensions unchanged.
 
 | Capability | Consumer action | E2E scenario |
 |---|---|---|
-| apply-a-managed-upgrade | plan a release migration | A clean 0.2.0 project receives a reviewable aggregate migration plan |
+| apply-a-managed-upgrade | plan a release migration | A clean 0.7.0 project receives a reviewable aggregate migration plan |
 | apply-a-managed-upgrade | run a managed upgrade | A clean project without migration requirements receives one managed upgrade commit |
 | apply-a-managed-upgrade | upgrade a Fossil project | A clean Fossil project receives the same managed upgrade revision shape |
 | apply-a-managed-upgrade | invoke a retired engine command | A consumer invoking a retired engine command is told it does not exist |
+| apply-a-managed-upgrade | invoke the retired history rewrite command | A consumer invoking the retired history rewrite command is told it does not exist |
 | apply-a-managed-upgrade | archive a maintenance migration | A completed maintenance migration can be archived without a product specification |
 
 ## Includes

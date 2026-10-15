@@ -18,21 +18,6 @@ Feature: Extract Coverage Gate
     Then the command succeeds
     And the README.md contains a coverage summary fence
     And the change directory has been moved to givn/archive/
-  Scenario: A line measured by both reports is counted once in the merged report
-    Given  a givn project with legacy coverage commands whose reports measure the same lines
-    And  a completed change "cov-union" with all required artifacts
-    And  the project declares a complete run declaration
-    When  the user runs `givn archive --change cov-union`
-    Then  the command exits 0
-    And  the merged Cobertura report contains line coverage `4/4`
-
-  Scenario: A line only one report measures counts once and uncovered lines are not dropped
-    Given  a givn project with legacy coverage commands whose second report measures lines the first does not
-    And  a completed change "cov-union-partial" with all required artifacts
-    And  the project declares a complete run declaration
-    When  the user runs `givn archive --change cov-union-partial`
-    Then  the command exits 0
-    And  the merged Cobertura report contains line coverage `2/4`
   Scenario: A coverage failure leaves the archive candidate unproven
     Given  a givn project with the coverage addon enabled but the non-e2e coverage command exits non-zero
     And  a completed change "cov-fail" ready to archive
