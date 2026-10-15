@@ -311,7 +311,7 @@ jobs:
       - name: Install acceptance prerequisites
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends fossil git-filter-repo
+          sudo apt-get install -y --no-install-recommends fossil
 
       - name: Install cargo-nextest
         uses: taiki-e/install-action@637df09687b2092ca3bdba3f1af641e2806e1356 # nextest
