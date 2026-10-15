@@ -422,14 +422,12 @@ fn check_coverage_config() -> Result<()> {
     let manifest = load_effective()?;
     let cov = &manifest.coverage;
     let sentinel = "givn missing-coverage";
-    let legacy_configured = cov.non_e2e_command.is_some() && cov.e2e_command.is_some();
-    if (cov.measure_command == sentinel || cov.merge_command == sentinel) && !legacy_configured {
+    if cov.measure_command == sentinel || cov.merge_command == sentinel {
         anyhow::bail!(
             "coverage addon is enabled but coverage commands are not configured. \
              Set coverage.measure_command and coverage.merge_command in givn/commands.yaml. \
              The measurement command must create both source reports and the merge command \
-             must create the configured output report. Legacy projects may temporarily \
-             keep both coverage.non_e2e_command and coverage.e2e_command while migrating. \
+             must create the configured output report. \
              Or disable the addon with: givn addons disable coverage"
         );
     }

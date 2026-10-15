@@ -1564,7 +1564,7 @@ Each sweep is one atomic commit. Design constraints are copied from
     `docs/arc42/adr/README.md`).
   - COMMIT: `docs(arc42): <release note>` with a body line naming the arc42 documentation update — Hash: `802de3f64f5cb2595af348a71ddb46c1c5f220cd`
 
-- [ ] **Residue sweep: remove the dead `extras` flag.**
+- [x] **Residue sweep: remove the dead `extras` flag.**
   **Design constraints (design.md production table, D1):**
   - `src/config/manifest.rs`: delete `Manifest.extras`; `Manifest` keeps `deny_unknown_fields`.
   - `src/config/overlay.rs`: delete the `overlay.extras` merge and the `OverlayDoc.extras` field; `OverlayDoc` stays lenient — which is what keeps a stale `extras:` line harmless (D1: a consumer config that still carries the retired `extras:` key is accepted and ignored; the overlay document is lenient by design, only the `coverage:` block carries `deny_unknown_fields`; no new validation code).
@@ -1575,9 +1575,28 @@ Each sweep is one atomic commit. Design constraints are copied from
   - Files: `src/config/manifest.rs`, `src/config/overlay.rs`, `src/cli/graph.rs`, `src/hooks.rs`, `tests/steps/mod.rs`.
   - Verification: the remaining overlay/module-boundary steps and the manifest unit tests stay green; re-run `./run-tests.sh` over the change's specs:
     ```text
-    <paste run output>
+    $ cargo check --tests
+        Checking givn v0.9.0 (/home/buster/.paseo/worktrees/008cxm4u/mellow-yak)
+        Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.96s
+
+    $ cargo test --lib config::
+        test config::overlay::tests::addons_coverage_and_arc42_can_both_be_enabled ... ok
+        test config::overlay::tests::overlay_replaces_verify_command ... ok
+        test config::overlay::tests::overlay_can_add_artifact ... ok
+        test config::overlay::tests::validation_rejects_dangling_requires ... ok
+        test config::overlay::tests::validation_rejects_cycle ... ok
+        test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 248 filtered out
+
+    $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs ./run-tests.sh
+        Nextest run ID 60940851-6d6a-4c22-885d-ee0f4160c0a6 with nextest profile: default
+            Starting 16 tests across 1 binary
+                PASS … (16/16) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A clean 0.7.0 project receives a reviewable aggregate migration plan
+        ────────────
+             Summary [   1.613s] 16 tests run: 16 passed, 0 skipped
+        (exit 0 — the whole delta scope is GREEN; the removed extras scenario's
+        placeholder is filtered by the runner)
     ```
-  - COMMIT: `feat(config): remove the dead extras manifest flag` — Hash: ``
+  - COMMIT: `feat(config): remove the dead extras manifest flag` — Hash: `80927541658e8294cb1ded402ce45ec3076f8518`
 
 - [ ] **Residue sweep: remove the legacy coverage schema and the in-tool merge.**
   **Design constraints (design.md production table, D2):**
