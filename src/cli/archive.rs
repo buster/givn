@@ -671,7 +671,7 @@ fn holds_feature_files(dir: &std::path::Path) -> Result<bool> {
 /// scanning `givn/specs/*/<cap>.feature`. Returns None if the capability
 /// doesn't exist yet anywhere (a genuinely new capability — the caller
 /// then decides placement; see the `## Capability Routing` section in
-/// proposal.md, Phase 4).
+/// proposal.md).
 fn resolve_capability_usecase(
     specs_root: &std::path::Path,
     cap: &str,

@@ -57,7 +57,7 @@ pub fn run_coverage(baseline: Option<&std::path::Path>, json: bool) -> Result<()
     Ok(())
 }
 pub fn run_duplicates(json: bool) -> Result<()> {
-    // Deterministic path only (Phase 4.3): exact/structural matches from
+    // Deterministic path only: exact/structural matches from
     // the parsed AST + overlap fingerprint. No embeddings, no score.
     let root = std::env::current_dir()?;
     let matches = crate::spec::tree::duplicate_matches(&root)?;
@@ -98,7 +98,7 @@ pub fn run_route(change: Option<&str>, file: Option<&std::path::Path>) -> Result
     Ok(())
 }
 
-/// `givn spec find <query>` — lexical search over the parsed AST (Phase 4.2).
+/// `givn spec find <query>` — lexical search over the parsed AST.
 pub fn run_find(query: &str) -> Result<()> {
     let hits = crate::spec::tree::find_scenarios(&std::env::current_dir()?, query)?;
     if hits.is_empty() {
@@ -118,57 +118,13 @@ pub fn run_find(query: &str) -> Result<()> {
     Ok(())
 }
 
-/// `givn spec tree` — deterministic corpus discovery (Phase 4.1).
+/// `givn spec tree` — deterministic corpus discovery.
 pub fn run_tree(json: bool) -> Result<()> {
     let rows = crate::spec::tree::build_tree(&std::env::current_dir()?)?;
     if json {
         println!("{}", serde_json::to_string_pretty(&rows)?);
     } else {
         crate::spec::tree::print_tree(&rows);
-    }
-    Ok(())
-}
-
-/// `givn spec propose-usecases` — print the command-surface proposal.
-/// Never modifies files; a human reviews, confirms, and applies it via the
-/// migration step (retirement plan task 2.5).
-pub fn run_propose_usecases(json: bool) -> Result<()> {
-    let proposal = crate::spec::cluster::cluster_tree(&std::env::current_dir()?);
-    if json {
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&serde_json::json!({
-                "usecases": proposal
-                    .usecases
-                    .iter()
-                    .map(|(sub, caps)| serde_json::json!({
-                        "dominant_subcommand": sub,
-                        "capabilities": caps,
-                    }))
-                    .collect::<Vec<_>>(),
-                "fragments": proposal.fragments,
-            }))?
-        );
-        return Ok(());
-    }
-    println!("Proposed use cases (command-surface clustering)");
-    println!("Review and confirm use-case identities before applying.");
-    println!("This command never modifies files.\n");
-    for (sub, caps) in &proposal.usecases {
-        println!("use case '{sub}' ({} capabilities):", caps.len());
-        for cap in caps {
-            println!("  - {cap}");
-        }
-    }
-    if !proposal.fragments.is_empty() {
-        println!(
-            "\nfragments ({} capability with no dominant command surface —",
-            proposal.fragments.len()
-        );
-        println!("«include» fragment candidates, not use-case candidates):");
-        for f in &proposal.fragments {
-            println!("  - {f}");
-        }
     }
     Ok(())
 }
