@@ -1,0 +1,71 @@
+scenario: A clean 0.7.0 project receives a reviewable aggregate migration plan (Scenario Outline; Examples rows: Git and Fossil — the transcript records the Git example's real `givn upgrade` run)
+argv: givn upgrade
+cwd: <clean Git project created with Givn 0.7.0 in a temp dir — givn init
+      --no-addons --agents opencode, givn_config_version recorded as "0.7.0",
+      a legacy generated marker appended to the generated givn-spec skill, one
+      fixture commit ("fixture: Givn 0.7.0 project")>
+binary: target/debug/givn (the compiled binary the scenario spawns via CARGO_BIN_EXE_givn)
+exit: 0
+
+context commands (all in that project):
+  givn init --no-addons --agents opencode                        exit 0
+  (fixture edits: givn_config_version -> "0.7.0"; legacy generated marker;
+   givn/commands.yaml verify scaffold; .gitignore)
+  git add --all && git commit -m "fixture: Givn 0.7.0 project"   exit 0
+--- stdout (raw, givn upgrade) ---
+  commit attribution: .githooks/commit-msg
+  Git activation: local commit-msg dispatcher installed
+  attribution integration: .opencode/plugins/givn-attribution.js
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced command: /givn-propose
+  synced command: /givn-spec
+  synced command: /givn-design
+  synced command: /givn-tasks
+  synced command: /givn-implement
+  synced command: /givn-review
+  synced command: /givn-archive
+  synced command: /givn-explore
+  synced command: /givn-design-review
+  synced command: /givn-steps
+  synced command: /givn-reverse-engineer
+  synced command: /givn-characterize
+  synced command: /givn-ideation
+  rules policy: 1 tracked rule(s) removed from the current revision (files kept)
+    - .githooks/commit-msg
+  sync: rules: local-only
+  sync: no tracked rule in the current revision
+  sync: 1 reachable revision(s) still contain a rule:
+    - .githooks/commit-msg: 1 revision(s)
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+  wrote    run: scaffold to givn/commands.yaml — fill it in; `givn archive` is blocked until you do
+  upgrade: rules: local-only
+  upgrade: no tracked rule in the current revision
+  upgrade: 1 reachable revision(s) still contain a rule:
+    - .githooks/commit-msg: 1 revision(s)
+  upgrade: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+Prepared Givn 0.9.0 migration from 0.7.0.
+  managed upgrade commit (A): 961543e4976a43b46d734017db57e50046cd998c
+  aggregate migration commit (B): d168674aaed40bf6b7670af6cb06a38b20500d6b
+  migration change: givn/changes/migrate-0-7-0-to-0-9-0
+  migration phases: migrate-0-7-0-to-0-8-0 -> migrate-0-8-0-to-0-9-0
+Next: run `givn status --change migrate-0-7-0-to-0-9-0` and complete the ordered LLM-guided migration.
+--- stderr (raw, givn upgrade) ---
+--- revision shape after the upgrade ---
+d168674 docs(upgrade): record aggregate migration plan migrate-0-7-0-to-0-9-0
+961543e chore(givn): prepare managed upgrade for 0.7.0 to 0.9.0
+49a0f72 fixture: Givn 0.7.0 project
+--- resulting migration change ---
+givn/changes/migrate-0-7-0-to-0-9-0:  present (proposal.md, design.md, migration.yaml — no specs/; the plan records the managed upgrade commit and the two ordered phases)
+givn/config.yaml:                     givn_config_version: "0.9.0" (the project config identifies the current Givn version)

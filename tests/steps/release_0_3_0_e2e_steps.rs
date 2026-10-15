@@ -9,6 +9,16 @@ fn clean_legacy_project(world: &mut GivnWorld) {
     world.env = Some(legacy_git_project());
 }
 
+#[given("a clean Git project created with Givn 0.7.0")]
+fn clean_git_project_at_0_7_0(world: &mut GivnWorld) {
+    world.env = Some(git_project_at_0_7_0());
+}
+
+#[given("a clean Fossil project created with Givn 0.7.0")]
+fn clean_fossil_project_at_0_7_0(world: &mut GivnWorld) {
+    world.env = Some(fossil_project_at_0_7_0());
+}
+
 #[given("a clean Fossil project with current Givn files and a stale generated integration")]
 fn fossil_current_project_with_stale_integration(world: &mut GivnWorld) {
     world.env = Some(current_fossil_project_with_stale_integration());
@@ -297,7 +307,7 @@ fn current_version_migration_change_exists(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("legacy project fixture");
     let id = find_migration_change_id(env);
     assert!(env.path(&format!("givn/changes/{id}")).is_dir());
-    assert!(id.starts_with("migrate-0-2-0-to-"), "{id}");
+    assert!(id.starts_with("migrate-0-7-0-to-"), "{id}");
 }
 
 #[then("the migration change records the managed upgrade commit")]
@@ -340,7 +350,7 @@ fn migration_contains_plan(world: &mut GivnWorld) {
     let metadata = std::fs::read_to_string(metadata).expect("read migration metadata");
     assert!(metadata.contains("sequence: 1"), "{metadata}");
     assert!(
-        metadata.contains("id: migrate-0-2-0-to-0-3-0"),
+        metadata.contains("id: migrate-0-7-0-to-0-8-0"),
         "{metadata}"
     );
     assert!(
@@ -589,7 +599,7 @@ fn user_changes_remain_unchanged(world: &mut GivnWorld) {
 
 #[given("a project that already has the current-version migration change")]
 fn prepared_project(world: &mut GivnWorld) {
-    let env = legacy_git_project();
+    let env = git_project_at_0_7_0();
     let first = crate::common::run_givn(&env, &["upgrade"]);
     assert!(
         first.status.success(),
@@ -712,14 +722,14 @@ fn existing_plan_reported(world: &mut GivnWorld) {
 
 #[given("a completed automatic current-version migration change")]
 fn completed_automatic_migration(world: &mut GivnWorld) {
-    let env = legacy_git_project();
+    let env = git_project_at_0_7_0();
     let upgrade = crate::common::run_givn(&env, &["upgrade"]);
     assert!(
         upgrade.status.success(),
         "upgrade failed: {}",
         String::from_utf8_lossy(&upgrade.stderr)
     );
-    // A real 0.2.0 project fills in the backfilled run scaffold before its
+    // A real 0.7.0 project fills in the backfilled run scaffold before its
     // next archive; the fixture mimics that with a complete cli declaration.
     let migration = env.path(&format!("givn/changes/{}", find_migration_change_id(&env)));
     std::fs::write(

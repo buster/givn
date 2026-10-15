@@ -6,7 +6,7 @@ Feature: Managed upgrade and legacy project migration
   Scenario: A clean 0.2.0 project receives a reviewable aggregate migration plan
     Given a placeholder step
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario Outline: A clean 0.7.0 project receives a reviewable aggregate migration plan
     Given  a clean <backend> project created with Givn 0.7.0
     When  the consumer invokes `givn upgrade` for migration
