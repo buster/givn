@@ -1084,9 +1084,9 @@ Implementation strategy (from `design.md`):
              Summary [   0.556s] 6 tests run: 1 passed, 5 failed, 10 skipped
         (exit 100 — the still-@wip sections of the other tasks fail as expected; this scenario PASSes under the e2e gate protocol)
         ```
-  - [x] COMMIT: capture the transcript before committing. `test(e2e): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: capture the transcript before committing. `test(e2e): <release note>` with the scenario title in the message body — Hash: `0dbf699102586c9cd7e8cfb284d991de904bd200`
 
-- [ ] Scenario: `Consumer archives a new capability and the merged spec lands in its declared use case` (`grouped-merge-for-new-capabilities`, `@givn.modified`, `@e2e`)
+- [x] Scenario: `Consumer archives a new capability and the merged spec lands in its declared use case` (`grouped-merge-for-new-capabilities`, `@givn.modified`, `@e2e`)
   **Design constraints:**
   - Delta file: `givn/changes/drop-legacy-residue/specs/archive-change/grouped-merge-for-new-capabilities.feature`. Given text re-pointed: `a givn project with verify.e2e_command unconfigured in givn/commands.yaml` (was `givn/config.yaml`); `@e2e` tag kept — never removed.
   - Files: modify `tests/steps/enforce_post_merge_e2e_gate_steps.rs` — rename the Given attribute `a givn project with verify.e2e_command unconfigured in givn/config.yaml` (~line 5) to `... in givn/commands.yaml` (shared Given; the two sibling scenarios below reuse it). The fixture body already writes `givn/commands.yaml`; nothing else changes; no production code change.
@@ -1095,23 +1095,63 @@ Implementation strategy (from `design.md`):
   - Domain context: `archive-change` — the permanent corpus contains the accepted change, bound to a verification receipt for the revision that passed every verification scope.
   - Single-scenario run: `GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^Consumer archives a new capability and the merged spec lands in its declared use case$'`
   - Remove `@wip` from this scenario only at RED.
-  - [ ] RED: remove `@wip` from this scenario only; run the single-scenario command. The renamed Given text has no matching step definition → undefined step fails (strict mode). Paste output — MUST exit non-zero:
+  - [x] RED: remove `@wip` from this scenario only; run the single-scenario command. The renamed Given text has no matching step definition → undefined step fails (strict mode). Paste output — MUST exit non-zero:
         ```text
-        <paste targeted run output — expected non-zero exit (undefined step)>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^Consumer archives a new capability and the merged spec lands in its declared use case$'
+        Feature: grouped-merge-for-new-capabilities
+          Scenario: Consumer archives a new capability and the merged spec lands in its declared use case
+           ✘  Given a givn project with verify.e2e_command unconfigured in givn/commands.yaml
+              Step failed:
+              Defined: givn/changes/drop-legacy-residue/specs/archive-change/grouped-merge-for-new-capabilities.feature:7:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        error: test failed, to rerun pass `--test features_runner`
+        (exit status: 1 — undefined step fails under strict mode)
         ```
-  - [ ] GREEN: apply the step-attribute rename in `tests/steps/enforce_post_merge_e2e_gate_steps.rs` (~line 5). Production files modified: `tests/steps/enforce_post_merge_e2e_gate_steps.rs`. Targeted re-run — MUST exit 0:
+  - [x] GREEN: apply the step-attribute rename in `tests/steps/enforce_post_merge_e2e_gate_steps.rs` (~line 5). Production files modified: `tests/steps/enforce_post_merge_e2e_gate_steps.rs`. Targeted re-run — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ cargo check --tests
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.80s
+
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^Consumer archives a new capability and the merged spec lands in its declared use case$'
+        Feature: grouped-merge-for-new-capabilities
+          Scenario: Consumer archives a new capability and the merged spec lands in its declared use case
+           ✔  Given a givn project with verify.e2e_command unconfigured in givn/commands.yaml
+           ✔  And a completed change "grouped-new" whose proposal declares the capability NEW in "some-group" and whose delta lives under specs/some-group/
+           ✔  And the project declares a complete run declaration
+           ✔  When the user invokes `givn archive --change grouped-new`
+           ✔  Then the command exits 0
+           ✔  And the file "givn/specs/some-group/grouped-new.feature" exists
+           ✔  And the directory "givn/specs/grouped-new" does not exist
+           ✔  And the change directory has been moved to givn/archive/
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        (exit 0)
         ```
-  - [ ] REFACTOR: no cleanup; re-run targeted — MUST exit 0:
+  - [x] REFACTOR: no cleanup; re-run targeted — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^Consumer archives a new capability and the merged spec lands in its declared use case$'
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        (exit 0)
         ```
-  - [ ] Nextest gate evidence (F21): paste the `./run-tests.sh --e2e` nextest run showing this scenario passing under the e2e gate protocol:
+  - [x] Nextest gate evidence (F21): paste the `./run-tests.sh --e2e` nextest run showing this scenario passing under the e2e gate protocol:
         ```text
-        <paste nextest e2e gate run output>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs GIVN_CUCUMBER_TAGS='@e2e' cargo nextest run --no-fail-fast --no-tests=warn --locked --test features_runner
+            Starting 6 tests across 1 binary (10 tests skipped)
+                FAIL ... (the two remaining still-@wip upgrade-a-project @e2e units of the other task sections, expected mid-change)
+                PASS [   0.574s] (6/6) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::Consumer archives a new capability and the merged spec lands in its declared use case
+             Summary [   0.574s] 6 tests run: 4 passed, 2 failed, 10 skipped
+        (exit 100 — the still-@wip sections of the other tasks fail as expected; this scenario PASSes under the e2e gate protocol)
         ```
-  - [ ] COMMIT: capture the transcript before committing. `test(e2e): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: capture the transcript before committing. `test(e2e): <release note>` with the scenario title in the message body — Hash: ``
 
 - [ ] Scenario: `Archive is blocked when a new capability has no declared routing decision` (`grouped-merge-for-new-capabilities`, `@givn.modified`, `@e2e`, reuse)
   **Design constraints:**

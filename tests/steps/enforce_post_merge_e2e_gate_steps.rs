@@ -2,7 +2,7 @@ use crate::common;
 use crate::steps::GivnWorld;
 use cucumber::{given, then};
 
-#[given("a givn project with verify.e2e_command unconfigured in givn/config.yaml")]
+#[given("a givn project with verify.e2e_command unconfigured in givn/commands.yaml")]
 fn e2e_given_unconfigured_e2e_command(world: &mut GivnWorld) {
     world.env = Some(common::make_init_root());
     let env = world.env.as_ref().unwrap();
