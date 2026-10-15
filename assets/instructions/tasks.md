@@ -233,15 +233,19 @@ this.
 
 **Audience: the agent running the implement step.** This section is the
 served instruction the implement files route to; artifact authors follow the
-task-list rules above. Implement one scenario at a time, in task order,
-optionally delegating each task's RED→GREEN→REFACTOR→COMMIT cycle to one
-coding subagent. Do not start the next task until the current one is verified
-and checked off.
+task-list rules above.
+
+Work the task list in one context, or split it into bundles of several related
+tasks, each bundle delegated to one coding subagent. Delegation is per bundle,
+never per task: a subagent per single task multiplies hand-off overhead and
+adds no independence. Within a bundle, complete one scenario at a time, in
+task order, and check each task off with its evidence and revision before
+starting the next. Finish one bundle before starting the next.
 
 **Never trust subagent self-reports.** A "PASSED" claim is not proof: a
 subagent has previously checked off every task while every step was an empty
-stub and the runner silently reported GREEN. Independent verification is
-mandatory for every task, never a spot-check:
+stub and the runner silently reported GREEN. Independently verify every task
+in a bundle when the bundle returns — never a spot-check:
 
 1. Re-run the scenario yourself, scoped to that scenario (the single-scenario
    run command from `design.md`), and confirm zero exit.
