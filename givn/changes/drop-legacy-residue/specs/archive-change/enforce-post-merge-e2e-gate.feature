@@ -15,7 +15,7 @@ Feature: Enforce Post-Merge E2E Gate
     And stderr mentions the e2e runner is not configured
     And the change directory still exists under givn/changes/
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Archive succeeds when merged permanent specs have no @e2e scenarios and e2e_command is unconfigured
     Given a project root with givn/ initialised
     And the givn/commands.yaml has e2e_command unconfigured
