@@ -774,20 +774,26 @@ mod tests {
             source_version: source.to_string(),
             target_version: target.to_string(),
             order,
-            proposal_asset: "migrations/0.2.0-to-0.3.0/proposal.md".to_string(),
-            design_asset: "migrations/0.2.0-to-0.3.0/design.md".to_string(),
+            proposal_asset: "migrations/0.7.0-to-0.8.0/proposal.md".to_string(),
+            design_asset: "migrations/0.7.0-to-0.8.0/design.md".to_string(),
         }
     }
 
     #[test]
-    fn catalog_contains_the_0_2_to_0_3_bundle() {
+    fn catalog_declares_0_7_0_as_the_oldest_source() {
         let catalog = load_catalog().unwrap();
         assert_eq!(catalog.schema_version, MIGRATION_CATALOG_SCHEMA_VERSION);
-        assert!(catalog.migrations.iter().any(|migration| {
-            migration.id == "migrate-0-2-0-to-0-3-0"
-                && migration.source_version == "0.2.0"
-                && migration.target_version == "0.3.0"
-        }));
+        let oldest = catalog
+            .migrations
+            .iter()
+            .map(|migration| ReleaseVersion::parse(&migration.source_version).unwrap())
+            .min()
+            .expect("the catalog declares at least one bundle");
+        assert_eq!(
+            oldest,
+            ReleaseVersion::parse("0.7.0").unwrap(),
+            "the oldest declared migration source must be 0.7.0"
+        );
     }
 
     #[test]
@@ -901,7 +907,7 @@ mod tests {
         let first = design.find("### Phase 1: first").unwrap();
         let second = design.find("### Phase 2: second").unwrap();
         assert!(first < second, "{design}");
-        assert!(design.contains("## Prompt 1: Inventory"));
+        assert!(design.contains("## Phase 1 — Use-case model (inventory)"));
     }
 
     #[test]
