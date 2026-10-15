@@ -236,16 +236,6 @@ coverage:
     std::fs::write(env.path("givn/commands.yaml"), yaml).expect("write commands.yaml");
 }
 
-#[given("the semantic gate is offline")]
-fn semantic_gate_offline(_world: &mut GivnWorld) {
-    // The semantic gate was removed with the engine; assert that no engine
-    // stub environment leaks into the subprocess from the outer suite.
-    assert!(
-        std::env::var("GIVN_SPEC_EMBEDDER").is_err(),
-        "engine stub environments must not leak into scenarios"
-    );
-}
-
 // --- Change fixtures ---------------------------------------------------------
 
 /// Write a change directory with every artifact complete and no delta specs,

@@ -95,7 +95,6 @@ Feature: README enforcement
     And verify commands are no-ops
     And givn addon "coverage" is "false"
     And a completed change "readme-demo"
-    And the semantic gate is offline
     And the project declares a complete run declaration
     When the user runs `givn archive --change readme-demo`
     Then the command exits non-zero
@@ -108,7 +107,6 @@ Feature: README enforcement
     And verify commands are no-ops
     And givn addon "coverage" is "false"
     And a completed change "readme-demo"
-    And the semantic gate is offline
     And the project declares a complete run declaration
     When the user runs `givn archive --change readme-demo`
     Then the command exits non-zero
@@ -120,7 +118,6 @@ Feature: README enforcement
     And verify commands are no-ops
     And givn addon "coverage" is "false"
     And a completed change "readme-demo"
-    And the semantic gate is offline
     And the project declares a complete run declaration
     When the user runs `givn archive --change readme-demo`
     Then the command exits non-zero
@@ -132,7 +129,6 @@ Feature: README enforcement
     And verify commands are no-ops
     And givn addon "coverage" is "false"
     And a completed change "readme-demo"
-    And the semantic gate is offline
     And the project declares a complete run declaration
     When the user runs `givn readme check`
     Then the command exits 0
@@ -146,7 +142,6 @@ Feature: README enforcement
     And a stale development managed block
     And a givn project providing its own workflow scripts
     And a completed change "readme-demo"
-    And the semantic gate is offline
     And the project declares a complete run declaration
     When the user invokes `givn archive --change readme-demo`
     Then the command succeeds

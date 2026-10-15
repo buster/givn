@@ -27,7 +27,6 @@ Feature: Declare the product start
     And verify commands are no-ops with a complete server run declaration
     And givn addon "coverage" is "false"
     And a completed change "run-demo"
-    And the semantic gate is offline
     When the user runs `givn archive --change run-demo`
     Then the command exits 0
     And the archived change directory "run-demo" exists
@@ -62,7 +61,6 @@ Feature: Declare the product start
     And verify commands are no-ops
     And givn addon "coverage" is "false"
     And a completed change "run-demo"
-    And the semantic gate is offline
     When the user runs `givn archive --change run-demo`
     Then the command exits non-zero
     And stdout mentions "run declaration"
