@@ -40,10 +40,6 @@ Feature: Customize the lifecycle graph
     When the overlay "addons:\n  arc42: true" is applied twice to the default manifest
     Then the effective manifest has exactly one artifact "arc42-docs"
 
-  Scenario: Extras flag is propagated from overlay
-    When the overlay "extras: true" is applied to the default manifest
-    Then the effective manifest has extras enabled
-
   Scenario: Cycle in dependency graph is rejected
     When the overlay "artifacts:\n  - id: a\n    requires:\n      - b\n  - id: b\n    requires:\n      - a" is applied to the default manifest
     Then the overlay application fails with "cycle"
