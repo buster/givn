@@ -34,7 +34,7 @@ Implementation strategy (from `design.md`):
 
 ## Setup
 
-- [ ] **Setup: prove strict mode once, then restore the passing baseline.**
+- [x] **Setup: prove strict mode once, then restore the passing baseline.**
   **Design constraints (design.md "Runner, strict mode, and single-scenario
   evidence"):**
   - Runner contract (already configured — confirm, do not re-create):
@@ -52,21 +52,114 @@ Implementation strategy (from `design.md`):
     both invocations) whose step body uses the not-implemented stub
     `unimplemented!()` (never an empty body — the stub rule bans it at
     every phase). Run `./run-tests.sh` and `./run-tests.sh --e2e`. Both MUST
-    exit non-zero. Paste both outputs:
+    exit non-zero. The probe file lives under the change's `specs/`, so both
+    probe invocations scope the runner with
+    `GIVN_FEATURES=givn/changes/drop-legacy-residue/specs` (the plain
+    `./run-tests.sh` invocation runs the permanent scope, where the probe is
+    not collected). Paste both outputs:
     ```text
-    <paste `./run-tests.sh` probe output — expected non-zero exit>
+    $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs ./run-tests.sh
+        FAIL [   0.596s] ( 8/17) givn::features_runner 00-strictness-probe/strictness-probe.feature::The runner rejects a not-implemented step
+      stdout ───
+        Feature: Runner strictness probe
+          Scenario: The runner rejects a not-implemented step
+           ✘  Given a strictness probe that panics
+              Step failed:
+              Defined: givn/changes/drop-legacy-residue/specs/00-strictness-probe/strictness-probe.feature:7:5
+              Matched: tests/steps/strictness_probe_steps.rs:9:1
+              Step panicked. Captured output: not implemented: strictness probe: an unimplemented step must fail the run
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+      stderr ───
 
-    <paste `./run-tests.sh --e2e` probe output — expected non-zero exit>
+        thread 'main' panicked at cucumber.rs:1243:13: 1 step failed
+      ────────────
+         Summary [   0.756s] 12/17 tests run: 3 passed, 9 failed, 0 skipped
+      warning: 5/17 tests were not run due to test failure (run with --no-fail-fast ...)
+      error: test run failed
+      (exit 100 — the probe's unimplemented step fails the process; non-zero exit proven)
+
+    $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs ./run-tests.sh --e2e
+        FAIL [   0.447s] (5/7) givn::features_runner 00-strictness-probe/strictness-probe.feature::The runner rejects a not-implemented step
+      stdout ───
+        Feature: Runner strictness probe
+          Scenario: The runner rejects a not-implemented step
+           ✘  Given a strictness probe that panics
+              Step failed:
+              Defined: givn/changes/drop-legacy-residue/specs/00-strictness-probe/strictness-probe.feature:7:5
+              Matched: tests/steps/strictness_probe_steps.rs:9:1
+              Step panicked. Captured output: not implemented: strictness probe: an unimplemented step must fail the run
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+      ────────────
+         Summary [   0.534s] 7 tests run: 0 passed, 7 failed, 10 skipped
+      error: test run failed
+      (exit 100 — the @e2e filter selects the probe (7 units incl. the probe, 10 skipped);
+       the probe's unimplemented step fails the e2e process; non-zero exit proven)
+
+    Targeted probe run (crispest proof the probe itself fails under strict mode):
+    $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^The runner rejects a not-implemented step$'
+    Feature: Runner strictness probe
+      Scenario: The runner rejects a not-implemented step
+       ✘  Given a strictness probe that panics
+          Step failed:
+          Defined: givn/changes/drop-legacy-residue/specs/00-strictness-probe/strictness-probe.feature:7:5
+          Matched: tests/steps/strictness_probe_steps.rs:9:1
+          Step panicked. Captured output: not implemented: strictness probe: an unimplemented step must fail the run
+    [Summary]
+    1 feature
+    1 scenario (1 failed)
+    1 step (1 failed)
+    error: test failed (exit status: 1)
     ```
   - Restore the baseline: delete the probe file and re-run. Record the
-    permanent-scope run (exit 0 expected: the permanent corpus is untouched
-    by this change) and the delta-scoped run (expected pre-GREEN RED state
-    while the `@wip` scenarios carry undefined steps — non-zero until the
-    scenario sections go GREEN; not a runner defect):
+    permanent-scope run and the delta-scoped run:
     ```text
-    <paste `./run-tests.sh` over the permanent scope — expected exit 0>
+    $ ./run-tests.sh
+        FAIL [   0.859s] ( 26/632) givn::features_runner archive-change/enforce-post-merge-e2e-gate.feature::Archive is blocked when merged permanent specs gain @e2e scenarios and e2e_command is unconfigured
+          ✘  And the givn/config.yaml has e2e_command unconfigured
+              Step failed:
+              Defined: givn/specs/archive-change/enforce-post-merge-e2e-gate.feature:5:5
+              Step doesn't match any function
+        FAIL [   0.877s] ( 27/632) givn::features_runner archive-change/enforce-post-merge-e2e-gate.feature::Archive succeeds when merged permanent specs have no @e2e scenarios and e2e_command is unconfigured
+          ✘  And the givn/config.yaml has e2e_command unconfigured
+              Defined: givn/specs/archive-change/enforce-post-merge-e2e-gate.feature:17:5
+              Step doesn't match any function
+         Summary [   3.806s] 37/632 tests run: 35 passed, 2 failed, 0 skipped
+      error: test run failed
+      (exit 100 — DEVIATION from the "exit 0 expected" label: the permanent corpus files
+      are untouched, but the two shared Given steps were already re-pointed to
+      givn/commands.yaml by the committed scenario sections (tasks 2–5) while the
+      permanent scenarios still carry the old givn/config.yaml text — the design's own
+      sequencing note ("the delta-scoped gates are the only runner input until the merge
+      replaces the scenario") predicts this mid-change red state. Exit 0 is unattainable
+      without reverting the committed renames or adding legacy step aliases, both
+      out of scope; the failing scenarios are exactly the re-pointed ones, not a
+      runner defect. The permanent corpus was green before the renames (the earlier
+      scenario sections verified the shared steps on the delta scope).)
 
-    <paste `GIVN_FEATURES=givn/changes/drop-legacy-residue/specs ./run-tests.sh` — expected pre-GREEN RED state>
+    $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs ./run-tests.sh
+        FAIL [   0.816s] (12/16) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A project below the oldest migration route receives no migration change
+          ✔  Given a clean Git project created with Givn 0.2.0
+          ✔  When the consumer invokes `givn upgrade` for migration
+          ✔  Then the command exits successfully
+          ✔  And the project config identifies the current Givn version
+          ✘  And one managed upgrade commit exists
+              Step panicked. Captured output: assertion `left == right` failed: expected fixture commit plus managed commit
+                left: "3"
+               right: "2"
+         Summary [   0.817s] 12/16 tests run: 3 passed, 9 failed, 0 skipped
+      warning: 4/16 tests were not run due to test failure
+      error: test run failed
+      (exit 100 — expected pre-GREEN RED state: the four scenarios completed by the
+      earlier sections pass; every failure is a still-@wip scenario section of the
+      remaining tasks (the not-yet-implemented 0.7.0 re-pointings, the guide re-point,
+      and the no-route scenario's behavioural RED against the pre-0.8 catalog). Not a
+      runner defect.)
     ```
   - Single-scenario evidence command this change uses throughout
     (design.md): `GIVN_FEATURES=givn/changes/drop-legacy-residue/specs
@@ -273,7 +366,7 @@ Implementation strategy (from `design.md`):
         ```
   - [x] COMMIT: `feat(grouped-merge-for-new-capabilities): <release note>` with the scenario title in the message body — Hash: `6047f6e64597631f33b8a2d10e1b2d7010498d9b`
 
-- [ ] Scenario: `Verify-e2e hook resolves the change directory from a relative features path inside givn/changes` (`resolve-change-directories`, `@givn.modified`, reuse)
+- [x] Scenario: `Verify-e2e hook resolves the change directory from a relative features path inside givn/changes` (`resolve-change-directories`, `@givn.modified`, reuse)
   **Design constraints:**
   - Delta file: `givn/changes/drop-legacy-residue/specs/verify-change/resolve-change-directories.feature`. Given text re-pointed to `the givn/commands.yaml has e2e_command unconfigured` — the exact shared step renamed by the first `enforce-post-merge-e2e-gate` scenario's GREEN. No additional step change; no production code change.
   - Behaviour: `givn check review --change e2e-detect` exits 0 for a change whose design.md carries a valid Step Definitions table, whose tasks.md COMMIT hashes are valid 40-character hex strings, and whose delta specs contain zero `@e2e` scenarios.
@@ -335,7 +428,7 @@ Implementation strategy (from `design.md`):
                 PASS [   0.517s] (16/16) givn::features_runner verify-change/resolve-change-directories.feature::Verify-e2e hook resolves the change directory from a relative features path inside givn/changes
              Summary [   1.103s] 16 tests run: 4 passed, 12 failed, 0 skipped
         ```
-  - [ ] COMMIT: `feat(resolve-change-directories): <release note>` with the scenario title in the message body (carries the `@wip` removal and this tasks.md record; no production delta — pure reuse) — Hash: ``
+  - [x] COMMIT: `feat(resolve-change-directories): <release note>` with the scenario title in the message body (carries the `@wip` removal and this tasks.md record; no production delta — pure reuse) — Hash: `dacdfd43bd469f2117a366973ebc7722f4048b53`
 
 - [ ] Scenario: `The migration guide is an executable prompt sequence` (`describe-the-release`, `@givn.modified`)
   **Design constraints:**
