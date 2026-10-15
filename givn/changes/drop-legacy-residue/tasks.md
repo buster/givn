@@ -594,9 +594,9 @@ Implementation strategy (from `design.md`):
                 PASS [   0.812s] (11/16) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A project below the oldest migration route receives no migration change
              Summary 16 tests run: 6 passed, 10 failed, 0 skipped
         ```
-  - [x] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: `ed00315edbb8f356c66636589a426fa031c26688`
 
-- [ ] Scenario: `An unclean project is protected from automatic migration commits` (`apply-a-managed-upgrade`, `@givn.modified` — fixture-only delta)
+- [x] Scenario: `An unclean project is protected from automatic migration commits` (`apply-a-managed-upgrade`, `@givn.modified` — fixture-only delta)
   **Design constraints:**
   - Delta file: `givn/changes/drop-legacy-residue/specs/upgrade-a-project/apply-a-managed-upgrade.feature`. The catalog deletion already landed in the previous section; this section carries only its fixture delta (ordering note).
   - Files: modify `tests/steps/release_0_3_0_e2e_steps.rs` — add `#[given("a Givn 0.7.0 project with uncommitted user changes")]`; the `dirty_legacy_project` fixture helper moves to the 0.7.0 fixture. The Then steps already exist; no production code change.
@@ -604,23 +604,64 @@ Implementation strategy (from `design.md`):
   - Domain context: `upgrade-a-project` extension 1 — uncommitted changes exist → the upgrade is refused before any write, naming the dirty paths; protects the minimal guarantee.
   - Single-scenario run: `GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^An unclean project is protected from automatic migration commits$'`
   - Remove `@wip` from this scenario only at RED.
-  - [ ] RED: remove `@wip` from this scenario only; run the single-scenario command. The 0.7.0 Given text has no matching step definition → undefined step fails (strict mode). Paste output — MUST exit non-zero:
+  - [x] RED: remove `@wip` from this scenario only; run the single-scenario command. The 0.7.0 Given text has no matching step definition → undefined step fails (strict mode). Paste output — MUST exit non-zero:
         ```text
-        <paste targeted run output — expected non-zero exit (undefined step)>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^An unclean project is protected from automatic migration commits$'
+        Feature: Managed upgrade and legacy project migration
+          Scenario: An unclean project is protected from automatic migration commits
+           ✘  Given a Givn 0.7.0 project with uncommitted user changes
+              Step failed:
+              Defined: givn/changes/drop-legacy-residue/specs/upgrade-a-project/apply-a-managed-upgrade.feature:36:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        error: test failed (exit status: 1)
         ```
-  - [ ] GREEN: add the 0.7.0 Given step definition (fixture parameterised with its recorded version); the Then steps are reused as-is. Production files modified: `tests/steps/release_0_3_0_e2e_steps.rs`. Targeted re-run — MUST exit 0:
+  - [x] GREEN: add the 0.7.0 Given step definition (fixture parameterised with its recorded version); the Then steps are reused as-is. Production files modified: `tests/steps/release_0_3_0_e2e_steps.rs`. Targeted re-run — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ cargo check --tests
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.44s
+
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^An unclean project is protected from automatic migration commits$'
+        Feature: Managed upgrade and legacy project migration
+          Scenario: An unclean project is protected from automatic migration commits
+           ✔  Given a Givn 0.7.0 project with uncommitted user changes
+           ✔  When the consumer invokes `givn upgrade` for migration
+           ✔  Then the command fails before changing project files
+           ✔  And no commit is created
+           ✔  And the user changes remain byte-for-byte unchanged
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        (exit 0 — Then steps `the command fails before changing project files`,
+        `no commit is created`, `the user changes remain byte-for-byte unchanged`
+        reused as-is)
         ```
-  - [ ] REFACTOR: no cleanup; re-run targeted — MUST exit 0:
+  - [x] REFACTOR: no cleanup; re-run targeted — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^An unclean project is protected from automatic migration commits$'
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        (exit 0)
         ```
-  - [ ] Nextest gate evidence (F21): paste the `./run-tests.sh` nextest run showing this scenario passing under the gate protocol:
+  - [x] Nextest gate evidence (F21): paste the `./run-tests.sh` nextest run showing this scenario passing under the gate protocol:
         ```text
-        <paste nextest gate run output>
+        The full `./run-tests.sh` gate run cancels the tail units on first
+        failure (nextest fail-fast), so this unit never runs in it. The same
+        gate protocol, filtered to this scenario:
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs GIVN_CUCUMBER_TAGS='' cargo nextest run --no-tests=warn --locked --test features_runner 'upgrade-a-project/apply-a-managed-upgrade.feature::An unclean project is protected from automatic migration commits'
+        Nextest run ID 4d728061-e9bd-467c-8b40-a001844d736a with nextest profile: default
+            Starting 1 test across 1 binary (15 tests skipped)
+                PASS [   0.478s] (1/1) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::An unclean project is protected from automatic migration commits
+        Summary [   0.478s] 1 test run: 1 passed, 15 skipped
+        (exit 0)
         ```
-  - [ ] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: ``
 
 - [ ] Scenario: `A project outside Git is protected from a partial automatic migration` (`apply-a-managed-upgrade`, `@givn.modified` — fixture-only delta)
   **Design constraints:**

@@ -31,7 +31,7 @@ Feature: Managed upgrade and legacy project migration
     And one managed upgrade commit exists
     And no migration change exists
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: An unclean project is protected from automatic migration commits
     Given a Givn 0.7.0 project with uncommitted user changes
     When the consumer invokes `givn upgrade` for migration

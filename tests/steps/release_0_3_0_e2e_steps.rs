@@ -510,6 +510,16 @@ fn current_fossil_project_with_stale_integration() -> crate::common::TestEnv {
     env
 }
 
+#[given("a Givn 0.7.0 project with uncommitted user changes")]
+fn dirty_project_at_0_7_0(world: &mut GivnWorld) {
+    let env = git_project_at_0_7_0();
+    let config = std::fs::read(env.path("givn/config.yaml")).expect("read legacy config");
+    std::fs::write(env.path("user-work.txt"), "uncommitted user change\n")
+        .expect("write uncommitted user change");
+    world.additional_output = Some(String::from_utf8(config).expect("legacy config is UTF-8"));
+    world.env = Some(env);
+}
+
 #[then("the command fails before changing project files")]
 fn command_fails_before_file_changes(world: &mut GivnWorld) {
     let output = crate::steps::output(world);
