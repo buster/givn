@@ -1598,7 +1598,7 @@ Each sweep is one atomic commit. Design constraints are copied from
     ```
   - COMMIT: `feat(config): remove the dead extras manifest flag` — Hash: `80927541658e8294cb1ded402ce45ec3076f8518`
 
-- [ ] **Residue sweep: remove the legacy coverage schema and the in-tool merge.**
+- [x] **Residue sweep: remove the legacy coverage schema and the in-tool merge.**
   **Design constraints (design.md production table, D2):**
   - `src/config/manifest.rs`: delete `Coverage.non_e2e_command` / `Coverage.e2e_command` and their `Default` initializers; delete the `legacy_coverage_commands_are_accepted_during_migration` unit test. `Coverage` keeps `#[serde(deny_unknown_fields)]` — which is what makes a stale legacy coverage block a hard load error (D2: the serde error already names the unknown field and the expected keys; no custom message is added; `givn upgrade` cannot rewrite the block because the strict parse refuses the file first, so the repair is a manual edit to declare `measure_command` / `merge_command`).
   - `src/cli/coverage_gate.rs`: delete the `legacy_commands` probe, the legacy command-execution branch, `write_legacy_merged_report`, and `remove_legacy_coverage_badges`. The gate keeps: measure → parse/validate both sources → `assert_distinct` → run `merge_command` → validate the merged report → badges and README summary. The README summary now always names `coverage.measure_command` and `coverage.merge_command` (drop the legacy `unwrap_or` fallbacks).
@@ -1610,9 +1610,37 @@ Each sweep is one atomic commit. Design constraints are copied from
   - Files: `src/config/manifest.rs`, `src/cli/coverage_gate.rs`, `src/cobertura.rs`, `src/integrity_hook.rs`, `tests/steps/extract_coverage_gate_steps.rs`.
   - Verification: `cargo test` for the surviving coverage/cobertura unit tests plus `./run-tests.sh` over the change's specs (the surviving extract-coverage-gate scenarios stay green):
     ```text
-    <paste run output>
+    $ cargo check --tests
+        Checking givn v0.9.0 (/home/buster/.paseo/worktrees/008cxm4u/mellow-yak)
+        Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.79s
+
+    $ cargo test --lib cobertura::
+        test cobertura::tests::parse_empty_cobertura_fails_validation ... ok
+        test cobertura::tests::parse_tolerates_packages_without_classes ... ok
+        test cobertura::tests::parse_extracts_per_file_distribution ... ok
+        test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 258 filtered out
+        (14 — the two legacy-merge tests removed with the merge function)
+
+    $ cargo test --lib config::
+        test config::overlay::tests::validation_rejects_cycle ... ok
+        test config::overlay::tests::validation_rejects_dangling_requires ... ok
+        test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 246 filtered out
+        (26 — the legacy_coverage_commands_are_accepted_during_migration test removed)
+
+    $ cargo clippy --workspace --all-targets -- -D warnings
+        Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.93s
+        (exit 0 — no warnings after the deletions)
+
+    $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs ./run-tests.sh
+        Nextest run ID … with nextest profile: default
+            Starting 16 tests across 1 binary
+                PASS … (16/16) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A clean 0.7.0 project receives a reviewable aggregate migration plan
+        ────────────
+             Summary [   1.691s] 16 tests run: 16 passed, 0 skipped
+        (exit 0 — the whole delta scope is GREEN; the two removed coverage
+        scenarios' placeholders are filtered by the runner)
     ```
-  - COMMIT: `feat(coverage): remove the legacy two-command coverage schema and in-tool merge` — Hash: ``
+  - COMMIT: `feat(coverage): remove the legacy two-command coverage schema and in-tool merge` — Hash: `d3c74f7f`
 
 - [ ] **Residue sweep: remove the legacy attribution-trailer prefixes.**
   **Design constraints (design.md production table):**
