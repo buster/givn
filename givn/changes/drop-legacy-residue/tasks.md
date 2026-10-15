@@ -1496,9 +1496,9 @@ Each sweep is one atomic commit. Design constraints are copied from
         (exit 0 — the whole delta scope is GREEN; no scenario pins the corrected
         served-guidance prose)
     ```
-  - COMMIT: `docs(guidance): correct the served-guidance configuration attributions` — Hash: ``
+  - COMMIT: `docs(guidance): correct the served-guidance configuration attributions` — Hash: `30387ed99a8c9d64a4f6bd90cc4289b3476adaf1`
 
-- [ ] **Residue sweep: configuration scaffold corrections.**
+- [x] **Residue sweep: configuration scaffold corrections.**
   **Design constraints (design.md "Configuration scaffold and reference text" section):**
   - `assets/config.yaml.tmpl`:
     - Addons block: extend the commented example so all eight flags are nested under `addons:` (the exact eight-line block from design.md, ending with `# Toggle with: givn addons enable|disable <name>, or` / `# `givn addons list` to see all known addons.`); then delete the four trailing top-level example lines from the per-addon sections — `# domain_modeling: false`, `# dev_principles: false`, `# grill_me: false`, `# grill_with_docs: false` (each followed by `# set to true to enable`) — and keep each section's description and `Toggle with: givn addons enable|disable <name>` line. An uncommented top-level key is ignored by the lenient overlay, so the old shape taught a setting that does nothing; the main block is now the one canonical example.
@@ -1510,7 +1510,24 @@ Each sweep is one atomic commit. Design constraints are copied from
   - Files: `assets/config.yaml.tmpl`, `assets/commands.yaml.tmpl` only.
   - Verification: `cargo test` for the two named unit tests plus `./run-tests.sh` over the change's specs:
     ```text
-    <paste run output>
+    $ cargo test --lib config::manifest::tests
+        running 4 tests
+        test config::manifest::tests::run_scaffold_is_embedded_verbatim ... ok
+        test config::manifest::tests::embedded_manifest_deserialises ... ok
+        test config::manifest::tests::config_template_keys_match_manifest_schema ... ok
+        test config::manifest::tests::legacy_coverage_commands_are_accepted_during_migration ... ok
+        test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 271 filtered out
+
+    $ cargo check --tests
+        Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.23s
+
+    $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs ./run-tests.sh
+        Nextest run ID … with nextest profile: default
+            Starting 16 tests across 1 binary
+                PASS … (16/16) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A clean 0.7.0 project receives a reviewable aggregate migration plan
+        ────────────
+             Summary [   1.587s] 16 tests run: 16 passed, 0 skipped
+        (exit 0 — both named unit tests pass and the whole delta scope is GREEN)
     ```
   - COMMIT: `docs(config): correct the configuration scaffold text` — Hash: ``
 
