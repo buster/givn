@@ -201,7 +201,7 @@ Implementation strategy (from `design.md`):
         ```
   - [x] COMMIT: `feat(enforce-post-merge-e2e-gate): <release note>` with the scenario title in the message body (carries the `@wip` removal and this tasks.md record; no production delta — pure reuse) — Hash: `e4a9ce4a2af7b003faad20c250f6b47e269607e7`
 
-- [ ] Scenario: `Retiring a use case's last capability removes the use-case directory and its narrative` (`grouped-merge-for-new-capabilities`, `@givn.added`)
+- [x] Scenario: `Retiring a use case's last capability removes the use-case directory and its narrative` (`grouped-merge-for-new-capabilities`, `@givn.added`)
   **Design constraints:**
   - Delta file: `givn/changes/drop-legacy-residue/specs/archive-change/grouped-merge-for-new-capabilities.feature`. Deliberately not `@e2e`: it pins a merge rule through the real archive subprocess (established practice in `archive-proof` and `preserve-scenario-docstrings`); the capability's `@e2e` evidence is unchanged, no interaction-inventory row is added, and the terminal evidence set stays at the six transcripts of Q1.
   - Files: modify `src/cli/archive.rs` — extend the retirement branch of `process_delta_file` (the `Some(usecase_dir)` arm): after removing the retiring capability's `.feature`, when the use-case directory is not `fragments` and holds no remaining `.feature` files, remove `usecase.md` when present and remove the directory; any `io::Error` propagates with `.with_context()`, leaving the already-recorded tombstone in place (repair-forward). A directory that still holds another capability's `.feature` stays untouched together with its narrative.
@@ -271,7 +271,7 @@ Implementation strategy (from `design.md`):
         Summary [   0.846s] 12/16 tests run: 3 passed, 9 failed, 0 skipped
         (exit 100 — the still-@wip sections of the other tasks fail as expected; this scenario PASSes under the nextest gate protocol)
         ```
-  - [ ] COMMIT: `feat(grouped-merge-for-new-capabilities): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: `feat(grouped-merge-for-new-capabilities): <release note>` with the scenario title in the message body — Hash: `6047f6e64597631f33b8a2d10e1b2d7010498d9b`
 
 - [ ] Scenario: `Verify-e2e hook resolves the change directory from a relative features path inside givn/changes` (`resolve-change-directories`, `@givn.modified`, reuse)
   **Design constraints:**
@@ -280,21 +280,60 @@ Implementation strategy (from `design.md`):
   - Domain context: `verify-change` — an invalid change cannot pass the verification gate; the developer receives a complete verification result.
   - Single-scenario run: `GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^Verify-e2e hook resolves the change directory from a relative features path inside givn/changes$'`
   - Remove `@wip` from this scenario only at RED.
-  - [ ] RED: remove `@wip` from this scenario only; run the single-scenario command. All steps reused (shared Given renamed in the first `enforce-post-merge-e2e-gate` scenario's GREEN) → zero exit is legitimate immediate GREEN. Record the reused steps: `the givn/commands.yaml has e2e_command unconfigured`; the fixture steps are the pre-existing `deduplicate_change_dir_detection_steps.rs` steps. Paste the run:
+  - [x] RED: remove `@wip` from this scenario only; run the single-scenario command. All steps reused (shared Given renamed in the first `enforce-post-merge-e2e-gate` scenario's GREEN) → zero exit is legitimate immediate GREEN. Record the reused steps: `the givn/commands.yaml has e2e_command unconfigured`; the fixture steps are the pre-existing `deduplicate_change_dir_detection_steps.rs` steps. Paste the run:
         ```text
-        <paste targeted run output — zero exit with all steps reused>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^Verify-e2e hook resolves the change directory from a relative features path inside givn/changes$'
+        Feature: Resolve change directories
+          Scenario: Verify-e2e hook resolves the change directory from a relative features path inside givn/changes
+           ✔  Given a project root with givn/ initialised
+           ✔  And the givn/commands.yaml has e2e_command unconfigured
+           ✔  And a change "e2e-detect" exists with design.md containing a valid Step Definitions table
+           ✔  And a change "e2e-detect" exists with tasks.md where every COMMIT hash is a valid 40-character hex string
+           ✔  And a change "e2e-detect" exists with specs under "specs/" containing zero @e2e scenarios
+           ✔  And the project declares a complete run declaration
+           ✔  When the user runs `givn check review --change e2e-detect`
+           ✔  Then the command exits 0
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        (exit 0 — zero exit with all steps reused)
         ```
-  - [ ] GREEN: no new code; re-run targeted to confirm — MUST exit 0. Production files: none (pure reuse scenario):
+  - [x] GREEN: no new code; re-run targeted to confirm — MUST exit 0. Production files: none (pure reuse scenario):
         ```text
-        <paste targeted run output — expected exit 0>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^Verify-e2e hook resolves the change directory from a relative features path inside givn/changes$'
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        (exit 0)
         ```
-  - [ ] REFACTOR: none; re-run targeted — MUST exit 0:
+  - [x] REFACTOR: none; re-run targeted — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^Verify-e2e hook resolves the change directory from a relative features path inside givn/changes$'
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        (exit 0)
         ```
-  - [ ] Nextest gate evidence (F21): paste the `./run-tests.sh` nextest run showing this scenario passing under the gate protocol:
+  - [x] Nextest gate evidence (F21): paste the `./run-tests.sh` nextest run showing this scenario passing under the gate protocol:
         ```text
-        <paste nextest gate run output>
+        The full `./run-tests.sh` gate run cancels the tail units on first
+        failure (nextest fail-fast), so this unit never runs in it. The same
+        gate protocol, filtered to this scenario:
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs GIVN_CUCUMBER_TAGS='' cargo nextest run --no-tests=warn --locked --test features_runner 'resolve-change-directories.feature::Verify-e2e hook resolves the change directory from a relative features path inside givn/changes'
+        Nextest run ID 0d4aef97-48e4-47c4-887b-1e0c8f0f1bc2 with nextest profile: default
+            Starting 1 test across 1 binary (15 tests skipped)
+                PASS [   0.488s] (1/1) givn::features_runner verify-change/resolve-change-directories.feature::Verify-e2e hook resolves the change directory from a relative features path inside givn/changes
+        Summary [   0.488s] 1 test run: 1 passed, 15 skipped
+        (exit 0)
+
+        Full gate with fail-fast off (`--no-fail-fast`): 16 run — 4 passed
+        (this scenario and the three earlier sections), 12 failed (the
+        remaining still-@wip sections of the other tasks, expected mid-change):
+                PASS [   0.517s] (16/16) givn::features_runner verify-change/resolve-change-directories.feature::Verify-e2e hook resolves the change directory from a relative features path inside givn/changes
+             Summary [   1.103s] 16 tests run: 4 passed, 12 failed, 0 skipped
         ```
   - [ ] COMMIT: `feat(resolve-change-directories): <release note>` with the scenario title in the message body (carries the `@wip` removal and this tasks.md record; no production delta — pure reuse) — Hash: ``
 
