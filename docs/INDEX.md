@@ -29,7 +29,6 @@ Status values:
 - [Migration Bundles](migrations/README.md) - `reference`; authoring contract for future release-owned migration bundles and aggregate plans.
 - [Givn 0.7.0 to 0.8.0 Migration Guide](migrations/0.7.0-to-0.8.0.md) - `reference`; ordered LLM prompts for the 0.7.0-to-0.8.0 project migration.
 - [Givn 0.8.0 to 0.9.0 Migration Guide](migrations/0.8.0-to-0.9.0.md) - `reference`; ordered LLM prompts for moving project rules into instruction extensions (`extensions:` in `givn/config.yaml`).
-- [Use-Case Migration Release Plan](usecase-migration-release-plan.md) - `reference`; ordered implementation sessions and release migration rules for replacing groups with semantic use cases, fragments, personas, and ideation-aligned coverage.
 
 ## Architecture
 
@@ -56,6 +55,8 @@ Status values:
 - [Real-Model Semantic Duplicate Analysis](archive/analysis/semantic-duplicates-real-model-analysis.md) - `historical`; 2026-08-19 real-model run based on 385 permanent scenarios and 100 E5 candidates.
 - [Manual Classification Questionnaire](archive/analysis/semantic-duplicates-manual-classification-questionnaire.md) - `historical`; 20-case stress questionnaire derived from the old 100-candidate baseline.
 - [Future Scenario-Level Branch Coverage Experiment](archive/analysis/future-coverage-experiment.md) - `reference`; optional, unimplemented coverage experiment proposal retained for future consideration.
+- [Use-Case Migration Release Plan](archive/analysis/usecase-migration-release-plan.md) - `archive`; ordered implementation sessions and release migration rules for the completed groups-to-use-cases migration; superseded by the shipped use-case corpus.
+- [Rule Refinement Handovers](archive/rulesrefinement/README.md) - `archive`; the eight handover documents that each seeded one archived rule-refinement change (dialog quality, seed lifecycle, term introduction, use-case scoping, ADR qualification, persona reuse, question traceability, finding severity).
 
 ## Archived Benchmarks
 
