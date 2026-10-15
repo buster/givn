@@ -1,0 +1,32 @@
+scenario: Nothing is merged when one delta file of a change has no routing decision
+argv: givn archive --change mixed-routing
+cwd: <freshly initialized Git project (givn init --agents opencode) in a temp dir;
+      givn/commands.yaml carries the unconfigured runner
+      (e2e_command: "givn missing-e2e-runner"); the change "mixed-routing" has
+      all artifacts done and two deltas — one routed NEW in "mixed-group"
+      (specs/mixed-group/mixed-routing.feature) and one unrouted
+      (specs/unrouted-group/unrouted-cap.feature); the fixture state is
+      committed before the archive — the archive starts from a committed
+      project state>
+binary: target/debug/givn (the compiled binary the scenario spawns via CARGO_BIN_EXE_givn)
+exit: 1
+
+context commands (all in that project):
+  givn init --agents opencode                                   exit 0
+  git add -A && git commit -m "fixture: initial state"          exit 0
+  givn new mixed-routing                                        exit 0
+  (fixture writes: proposal/design/design-review/tasks/review/arc42
+   artifacts, the two delta specs, the result runner, and the unconfigured
+   givn/commands.yaml)
+  git add -A && git commit -m "fixture: archive input"          exit 0
+--- stdout (raw, givn archive --change mixed-routing) ---
+[12:11:15] Archiving change 'mixed-routing'...
+[12:11:15] Running archive gate hooks...
+[12:11:15] ✓ Gate hooks passed
+[12:11:15] ✓ run declaration passed
+[12:11:15] ✓ README completeness gate passed
+--- stderr (raw, givn archive --change mixed-routing) ---
+error: archive blocked: capability 'unrouted-cap' exists nowhere in the permanent corpus and its proposal records no 'NEW in <usecase-id>' routing decision
+--- tree after the blocked archive ---
+givn/specs/mixed-group/mixed-routing.feature:  absent (nothing was merged — not even the routed delta)
+givn/changes/mixed-routing:                   present (the change directory still exists, repairable in place)
