@@ -1529,13 +1529,19 @@ Each sweep is one atomic commit. Design constraints are copied from
              Summary [   1.587s] 16 tests run: 16 passed, 0 skipped
         (exit 0 — both named unit tests pass and the whole delta scope is GREEN)
     ```
-  - COMMIT: `docs(config): correct the configuration scaffold text` — Hash: ``
+  - COMMIT: `docs(config): correct the configuration scaffold text` — Hash: `b2eeae29f5cd9245c9c8c629bc90ea2fc95c6af8`
 
-- [ ] **Residue sweep: AGENTS.md and CI prerequisite corrections.**
+- [x] **Residue sweep: AGENTS.md and CI prerequisite corrections.**
   **Design constraints (design.md "Assets, migration catalog, and docs" table):**
   - `AGENTS.md`: acceptance prerequisites — drop `git-filter-repo` from the required-tools list and drop the rewrite-history clause from the acceptance-suite sentence (no test needs either after the command is gone).
   - `.github/workflows/ci.yml` and `.github/workflows/release.yml`: drop `git-filter-repo` from both apt install lists (`sudo apt-get install -y --no-install-recommends fossil git-filter-repo` → `fossil` only).
   - Files: `AGENTS.md`, `.github/workflows/ci.yml`, `.github/workflows/release.yml` only.
+  - Verification: prose/CI edits only, no Rust delta; `cargo check` confirms the tree still builds:
+    ```text
+    $ cargo check
+        Checking givn v0.9.0 (/home/buster/.paseo/worktrees/008cxm4u/mellow-yak)
+        Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.46s
+    ```
   - COMMIT: `chore(ci): drop the rewrite-history acceptance prerequisite` — Hash: ``
 
 - [ ] **Residue sweep: remove the dead `extras` flag.**

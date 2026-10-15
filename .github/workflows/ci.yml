@@ -54,7 +54,7 @@ jobs:
       - name: Install acceptance prerequisites
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends fossil git-filter-repo
+          sudo apt-get install -y --no-install-recommends fossil
 
       - name: Cache pinned test tools
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
