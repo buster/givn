@@ -1642,20 +1642,31 @@ Each sweep is one atomic commit. Design constraints are copied from
     ```
   - COMMIT: `feat(coverage): remove the legacy two-command coverage schema and in-tool merge` — Hash: `d3c74f7f`
 
-- [ ] **Residue sweep: remove the legacy attribution-trailer prefixes.**
+- [x] **Residue sweep: remove the legacy attribution-trailer prefixes.**
   **Design constraints (design.md production table):**
   - `src/cli/attribution.rs`: delete `LEGACY_TRAILER_PREFIXES` and the prefix branch in `is_managed_trailer`; `stamp_text` keeps replacing the managed `Co-Authored-By: … with Givn …` line. The legacy `Givn-Version:`, `LLM:`, `LLM-Reasoning:`, `LLM-Harness:`, and `Givn-Attribution-Status:` prefixes are no longer stripped; an existing message that carries them keeps them (they are ordinary body lines now).
   - Update the unit test: drop the legacy trailer lines from the fixture and the assertions that they disappear; keep the human `Co-Authored-By`, the `User-Trailer: keep` line, and the managed-line replacement assertions.
   - Files: `src/cli/attribution.rs` only.
   - Verification: `cargo test` for the attribution unit test:
     ```text
-    <paste run output>
+    $ cargo check --tests
+        Checking givn v0.9.0 (/home/buster/.paseo/worktrees/008cxm4u/mellow-yak)
+        Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.33s
+
+    $ cargo test --lib cli::attribution
+        running 3 tests
+        test cli::attribution::tests::claude_payload_exports_context_for_compound_bash_commands ... ok
+        test cli::attribution::tests::stamp_replaces_managed_trailers_with_only_the_coauthor_line ... ok
+        test cli::attribution::tests::claude_payload_prefers_the_latest_assistant_model_from_transcript ... ok
+        test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 269 filtered out
+        (exit 0 — the managed-line replacement and the unknown-trailer preservation
+        both assert green; the legacy-stripping assertions are gone)
     ```
-  - COMMIT: `feat(attribution): stamp only the managed co-author line` — Hash: ``
+  - COMMIT: `feat(attribution): stamp only the managed co-author line` — Hash: `00fac4fc`
 
 ## Final bookkeeping: merge records and the retirement tombstone
 
-- [ ] **Bookkeeping: `@givn.removed` merge records, the `@givn.retired` tombstone, and the narrative delta.** No code work beyond the merge itself.
+- [x] **Bookkeeping: `@givn.removed` merge records, the `@givn.retired` tombstone, and the narrative delta.** No code work beyond the merge itself.
   **Design constraints (design.md "Delta map and merge semantics", "Retirement mechanics"):**
   - The four `@givn.removed` placeholders are merge instructions (the runner filters them out via `is_removed_placeholder`). Verify each title resolves against the permanent corpus (the merge deletes by exact title):
     - `A line measured by both reports is counted once in the merged report` (`givn/specs/archive-change/extract-coverage-gate.feature:21`)
@@ -1665,4 +1676,34 @@ Each sweep is one atomic commit. Design constraints are copied from
   - The tombstone `givn/changes/drop-legacy-residue/specs/rewrite-history/history-rewrite.feature` is two lines, zero scenarios, capability tag matching the permanent capability. At archive, `process_delta_file` removes `givn/specs/rewrite-history/history-rewrite.feature` and appends `history-rewrite / retired_by_change: drop-legacy-residue` to `givn/specs/.retired.yaml`; the extended retirement (implemented in the retirement scenario section) then removes the use-case directory and its narrative. `review.md` must contain `RETIRE: history-rewrite — <reason>` — the retirement disclosure gate blocks the archive without it.
   - The narrative delta `givn/changes/drop-legacy-residue/specs/upgrade-a-project/usecase.md` is a full narrative replacement carrying the base SHA-256 line (`givn:base-sha256:52b61b2d64f47251cd0827f3a6df8d19156cae1d0c4f3e878bc1eec2ec9cbd40`); it replaces the 0.2.0 plan row with the 0.7.0 title and adds the retired-history-rewrite interaction row. Verify it is in place; no implementation edit.
   - Baseline-findings note (F3/F4): default-scope `givn lint` exits 3 while the `rewrite-history` directory exists (the dangling `Includes: fragment: rules-policy` reference and the interaction-inventory `@e2e` mismatch) and returns to 0 only when the archive merge removes the directory — expected through implementation and until archive.
+  - Verification evidence (all four titles resolve at the exact lines the design names; the tombstone is two lines with zero scenarios; the narrative delta carries the base hash, the 0.7.0 plan row, and the retired-history-rewrite interaction row):
+    ```text
+    $ grep -n "A line measured by both reports is counted once in the merged report" givn/specs/archive-change/extract-coverage-gate.feature
+    21:  Scenario: A line measured by both reports is counted once in the merged report
+    $ grep -n "A line only one report measures counts once and uncovered lines are not dropped" givn/specs/archive-change/extract-coverage-gate.feature
+    29:  Scenario: A line only one report measures counts once and uncovered lines are not dropped
+    $ grep -n "Extras flag is propagated from overlay" givn/specs/fragments/customize-the-lifecycle-graph.feature
+    43:  Scenario: Extras flag is propagated from overlay
+    $ grep -n "A clean 0.2.0 project receives a reviewable aggregate migration plan" givn/specs/upgrade-a-project/apply-a-managed-upgrade.feature
+    4:  Scenario Outline: A clean 0.2.0 project receives a reviewable aggregate migration plan
+
+    $ cat givn/changes/drop-legacy-residue/specs/rewrite-history/history-rewrite.feature
+    @givn.delta @givn.retired @history-rewrite
+    Feature: Rewrite history
+    $ grep -c "Scenario" givn/changes/drop-legacy-residue/specs/rewrite-history/history-rewrite.feature
+    0
+
+    $ head -1 givn/changes/drop-legacy-residue/specs/upgrade-a-project/usecase.md
+    <!-- givn:base-sha256:52b61b2d64f47251cd0827f3a6df8d19156cae1d0c4f3e878bc1eec2ec9cbd40 -->
+    $ sed -n '91p;95p' givn/changes/drop-legacy-residue/specs/upgrade-a-project/usecase.md
+    | apply-a-managed-upgrade | plan a release migration | A clean 0.7.0 project receives a reviewable aggregate migration plan |
+    | apply-a-managed-upgrade | invoke the retired history rewrite command | A consumer invoking the retired history rewrite command is told it does not exist |
+
+    $ git status --short
+     M givn/changes/drop-legacy-residue/tasks.md
+    (every other change artifact is already tracked: the four planning artifacts and
+    the delta spec files landed in the extras-sweep commit `80927541`, whose `givn commit`
+    staging swept them; this commit records the tasks.md evidence — after it the checkout
+    is fully committed and the archive precondition holds)
+    ```
   - COMMIT: `chore(bookkeeping): verify the delta merge records resolve` — Hash: ``
