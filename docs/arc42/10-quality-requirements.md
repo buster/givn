@@ -118,3 +118,5 @@ graph TD
 - Fresh-context exercises on unseen decisions record concrete judgments and
   dispositions in ordinary review evidence, without adding model dependencies,
   online test services, numerical score guarantees, or runtime chat interception.
+
+*[Architecture documentation index](README.md)*

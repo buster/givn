@@ -115,3 +115,5 @@ owned by this repository. The `ready_fixture` harness-false test target is a
 test-only child process that binds a port, answers a readiness path, and can
 self-exit or trap signals; it exists so `givn run` scenarios exercise a real
 HTTP-ready product without shipping any test surface in the binary.
+
+*[Architecture documentation index](README.md)*

@@ -217,3 +217,5 @@ For codebases without baseline specs, the peer flow is
 - After the baseline exists, normal changes proceed through the standard
   workflow against it. During this loop `givn check <artifact>` is not used;
   `check` applies only to the review epilogue.
+
+*[Documentation index](INDEX.md)*

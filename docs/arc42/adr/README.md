@@ -76,7 +76,7 @@ superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 | Manifest and addons | [`src/config/overlay.rs`](../../../src/config/overlay.rs), [`src/config/manifest.rs`](../../../src/config/manifest.rs), [`src/cli/init.rs`](../../../src/cli/init.rs), [`givn/commands.yaml`](../../../givn/commands.yaml) |
 | Hooks and mandatory checks | [`src/cli/check.rs`](../../../src/cli/check.rs), [`src/hooks.rs`](../../../src/hooks.rs), [`src/cli/archive.rs`](../../../src/cli/archive.rs) |
 | Archive proof | [`src/scm.rs`](../../../src/scm.rs), [`src/fossil.rs`](../../../src/fossil.rs), [`src/proof.rs`](../../../src/proof.rs), [`src/cli/archive.rs`](../../../src/cli/archive.rs), [`givn/archive/archive-proof/`](../../../givn/archive/archive-proof/) |
-| SCM backend selection | [`src/scm.rs`](../../../src/scm.rs), [`src/cli/migration.rs`](../../../src/cli/migration.rs), [`givn/specs/fragments/scm-backend-selection.feature`](../../../givn/specs/fragments/scm-backend-selection.feature) |
+| SCM backend selection | [`src/scm.rs`](../../../src/scm.rs), [`src/cli/migration.rs`](../../../src/cli/migration.rs), [`givn/specs/fragments/detect-the-project-repository.feature`](../../../givn/specs/fragments/detect-the-project-repository.feature) |
 | Agent ownership | [`src/skills/targets.rs`](../../../src/skills/targets.rs), [`src/cli/agents_block.rs`](../../../src/cli/agents_block.rs), [`src/cli/absolute_mode.rs`](../../../src/cli/absolute_mode.rs) |
 | Release migration | [`src/cli/migration.rs`](../../../src/cli/migration.rs), [`assets/migrations/catalog.yaml`](../../../assets/migrations/catalog.yaml), [`docs/migrations/README.md`](../../migrations/README.md), and release migration feature scenarios |
 | PR #27 measurements | [`semantic-duplicates-real-model-analysis.md`](../../archive/analysis/semantic-duplicates-real-model-analysis.md) and its linked benchmark/manual reports; raw JSON reports are local and ephemeral under the paths stated there. |
@@ -126,3 +126,5 @@ canonical process/documentation home, and the later coverage records have no
 architecture value. Their ADR files and index entries are removed rather than
 preserved as duplicate historical records. `ADR-050` and `ADR-051` remain
 reserved and unassigned.
+
+*[Architecture documentation index](../README.md)*

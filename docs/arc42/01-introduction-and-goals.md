@@ -111,3 +111,5 @@ Givn's review, archive, and rollback behavior is accepted in this repository
 through temporary-project fixtures that invoke the compiled CLI. Consumer
 repositories retain their own domain specifications; they are not the hidden
 acceptance host for Givn's product contract.
+
+*[Architecture documentation index](README.md)*

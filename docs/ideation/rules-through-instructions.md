@@ -130,3 +130,5 @@ concrete example.
   is the harness (user).
 - Splitting the work into two changes, and deciding the cut at handoff:
   one change on the experiment branch (Q3, user).
+
+*[Documentation index](../INDEX.md)*

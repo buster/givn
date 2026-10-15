@@ -119,3 +119,5 @@ the permanent ADR register scenario asserts that no register record is left
 `proposed`, and that scenario is itself verified by the archive, so a
 `proposed` record could never satisfy the merged corpus. The recovery and
 review-evidence consequences are carried by R-53 through R-55 in chapter 11.
+
+*[Architecture documentation index](README.md)*

@@ -74,3 +74,5 @@ oldest route the migration catalog declares (0.7.0) receives the managed
 refresh only. Ejected
 facets, durable docs, specs, and user-owned files remain project-owned and
 are handled by the LLM through that change.
+
+*[Architecture documentation index](README.md)*

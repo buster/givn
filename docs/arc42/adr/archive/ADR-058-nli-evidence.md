@@ -86,4 +86,4 @@ NLI scenarios cover directional and symmetric output, label mapping, inclusive a
 
 ## More Information
 
-See [ADR-055](ADR-055-independent-semantic-features.md), [ADR-061](ADR-061-surface-specific-independent-pools.md), and [chapter 8.5a](../08-crosscutting-concepts.md#85a-local-scenario-retrieval).
+See [ADR-055](ADR-055-independent-semantic-features.md), [ADR-061](ADR-061-surface-specific-independent-pools.md), and [chapter 8.5a](../../08-crosscutting-concepts.md#85a-local-scenario-retrieval).

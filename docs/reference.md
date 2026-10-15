@@ -13,6 +13,8 @@ repository's development scripts.
 | `givn instructions [<artifact>] [--change <id>] [--json]` | No artifact: context-aware guidance on what to do next. With an artifact id: that artifact's writing instructions. A non-artifact policy id (`dialog`) resolves through the same instruction cascade and is available without an active change. |
 | `givn lint [--change <id>] [paths...]` | Static Gherkin check only (syntax, `@wip`, delta tags). Exit 0 clean / 1 parse error / 2 `@wip` present. Runs no tests. |
 | `givn check [<artifact>] [--change <id>]` | Run an artifact's `post` hooks on demand; blocking `givn check review --change <id>` also runs the overlap, routing, and integrity gates. |
+| `givn readme check` | Report open README placeholders, scaffold remnants, and managed-block damage; exit 1 while findings remain. |
+| `givn spec <coverage\|duplicates\|tree\|find\|route>` | Deterministic spec-corpus queries: coverage inventory (with `--baseline` comparison), duplicate report, structural tree, lexical scenario search, and advisory capability routing. |
 | `givn status [--change <id>] [--json]` | Lifecycle state: artifact checklist, current stage, task progress with pending task descriptions, next required/optional steps; the text view opens with `SCM: git`, `SCM: fossil`, or `SCM: none (archive and managed upgrade are unavailable)`. Filesystem-derived, no separate state file. |
 | `givn graph [--change <id>] [--json]` | Show the artifact workflow graph: nodes, `requires` edges, optional/gates-archive flags, post hooks; overlays live status with `--change`. |
 | `givn archive --change <id>` | Archive a completed change, forward-only and SCM-backed (Git or Fossil). Requires a clean committed checkout; publishes the merged candidate revision, runs the regular and E2E verification scopes once with fail-closed runner results, runs the optional coverage gate, and publishes the verification receipt (`givn/archive/<id>/verification.json`). A failed candidate remains unproven and resumable; an already proven archive is refused. |
@@ -27,8 +29,9 @@ repository's development scripts.
 ## Agent skills
 
 Emitted by `givn init` / `givn skills sync` to `.agents/skills/<name>/SKILL.md`
-(neutral), with mirrors for Claude Code (`.claude/skills/`) and opencode
-(`.opencode/skills/`, `.opencode/commands/`):
+(neutral), with mirrors for Claude Code (`.claude/skills/`), opencode
+(`.opencode/skills/`, `.opencode/commands/`), and omp (`.omp/skills/`,
+`.omp/commands/`):
 
 | Skill | When to use it |
 | --- | --- |
@@ -182,3 +185,5 @@ givn instructions
 ./run-tests.sh
 ./run-tests.sh --e2e
 ```
+
+*[Documentation index](INDEX.md)*

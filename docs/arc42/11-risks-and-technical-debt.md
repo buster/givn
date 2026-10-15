@@ -110,3 +110,5 @@ historical measurement is not a current quality claim.
   `docs/arc42/` path, and the placeholder repository URL is corrected. Debt
   D-3 is repaid and removed from the debt table; R-7 remains only for
   already-generated configs until their next `givn upgrade`.
+
+*[Architecture documentation index](README.md)*

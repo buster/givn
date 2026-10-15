@@ -868,3 +868,5 @@ candidates, when the top two candidates tie within `0.01`, or when the
 new-use-case path has a tied or below-floor top affinity; a no-signal report
 prints its reason and omits the ranked list. The recorded routing decision in
 the proposal remains the declaration.
+
+*[Architecture documentation index](README.md)*

@@ -87,4 +87,4 @@ Regular and E2E scenarios assert exact 512/513 handling, pair special tokens, pa
 
 ## More Information
 
-See [ADR-059](ADR-059-complete-semantic-serialization.md) and [chapter 8.5h](../08-crosscutting-concepts.md#85h-token-budget-and-cap-state-details).
+See [ADR-059](ADR-059-complete-semantic-serialization.md) and [chapter 8.5h](../../08-crosscutting-concepts.md#85h-token-budget-and-cap-state-details).

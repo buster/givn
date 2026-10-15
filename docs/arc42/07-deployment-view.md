@@ -108,3 +108,5 @@ the retained migration guides describe the evidence-preserving recovery path. A
 migration catalog route may span multiple versions, but all of its bundle
 phases are inventoried in one ordered aggregate maintenance change; a bundle
 may direct that the repairs run as named follow-up changes.
+
+*[Architecture documentation index](README.md)*

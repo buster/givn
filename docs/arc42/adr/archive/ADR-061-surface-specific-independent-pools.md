@@ -93,4 +93,4 @@ Surface-specific scenarios assert Duplicate Audit BGE/NLI pool identity, blockin
 
 ## More Information
 
-See [ADR-052](ADR-052-bge-advisory-evidence.md), [ADR-058](ADR-058-nli-evidence.md), and [chapter 6.8](../06-runtime-view.md#68-retrieval-primitives).
+See [ADR-052](ADR-052-bge-advisory-evidence.md), [ADR-058](ADR-058-nli-evidence.md), and [chapter 6.8](../../06-runtime-view.md#68-retrieval-primitives).

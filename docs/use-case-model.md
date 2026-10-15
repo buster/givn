@@ -145,3 +145,5 @@ The same project had already defined six properly-sized goals during ideation.
 All six shipped as capabilities absorbed into the mega-leaf, because nothing
 at authoring or review time named the absorption as a defect. The rules and
 criteria above are that missing signal.
+
+*[Documentation index](INDEX.md)*

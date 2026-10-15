@@ -153,3 +153,5 @@ upgrade path", and "Upgrade revision".
   core (`local-only-rules`) must be one unit so no release ships a setting
   upgrade does not honor; the rewrite ships separately because it is
   destructive and tool-gated.
+
+*[Documentation index](../INDEX.md)*

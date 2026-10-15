@@ -230,3 +230,5 @@ commit path all run on Git and Fossil.
   (enforcement site: `proof::is_evidence_path`).
 - A resumed candidate does not repeat the merge (enforcement site: pending
   receipt mode in `cli::archive`).
+
+*[Architecture documentation index](README.md)*

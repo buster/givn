@@ -108,3 +108,5 @@ not alter other content.
   oldest migration route the catalog declares.
 - Multi-repository workflow coordination.
 - Release, Homebrew, and shell-installer infrastructure before it is implemented.
+
+*[Architecture documentation index](README.md)*

@@ -86,7 +86,7 @@ Retrieval, exploration, index-refresh, missing-model, and feature-free scenarios
 
 ## More Information
 
-The strict gate is [ADR-041](ADR-041-e5-uniqueness-gate.md); retrieval mechanics are in [chapter 8.5a](../08-crosscutting-concepts.md#85a-local-scenario-retrieval).
+The strict gate is [ADR-041](ADR-041-e5-uniqueness-gate.md); retrieval mechanics are in [chapter 8.5a](../../08-crosscutting-concepts.md#85a-local-scenario-retrieval).
 
 ## Amendment (2026-08-23)
 

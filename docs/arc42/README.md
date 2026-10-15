@@ -8,7 +8,7 @@ Chapter 9 is a register whose decisions are stored as individual MADR files.
 
 The checkout contains the core Rust CLI, lifecycle, embedded assets, the
 deterministic specification toolchain (`spec find`, `spec tree`, `spec
-duplicates`, `spec progress`, `spec coverage`, `spec route`), and the
+duplicates`, `spec coverage`, `spec route`), and the
 repository-owned acceptance fixtures. Distribution through release binaries,
 Homebrew, and the shell installer remains planned work.
 
