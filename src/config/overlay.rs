@@ -720,4 +720,48 @@ artifacts:
             "arc42-docs template must contain STATUS marker"
         );
     }
+
+    #[test]
+    fn coverage_refuses_legacy_two_command_keys_and_accepts_the_surviving_schema() {
+        // The strict `Coverage` deserializer (deny_unknown_fields) refuses
+        // the retired legacy keys on load — a project still carrying them
+        // fails to load its configuration (risk R-81), and a leniency
+        // regression here would silently restore the removed acceptance.
+        let base = Manifest::load_embedded().unwrap();
+
+        let non_e2e = apply(base.clone(), "coverage:\n  non_e2e_command: \"x\"\n").unwrap_err();
+        assert!(
+            non_e2e.to_string().contains("non_e2e_command"),
+            "refusal must name the offending key, got: {non_e2e}"
+        );
+
+        let e2e = apply(base.clone(), "coverage:\n  e2e_command: \"x\"\n").unwrap_err();
+        assert!(
+            e2e.to_string().contains("e2e_command"),
+            "refusal must name the offending key, got: {e2e}"
+        );
+
+        // The surviving schema must still parse through the overlay.
+        let result = apply(
+            base,
+            "coverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n",
+        )
+        .unwrap();
+        assert_eq!(result.coverage.measure_command, "true");
+        assert_eq!(result.coverage.merge_command, "true");
+    }
+
+    #[test]
+    fn stray_extras_key_parses_and_has_no_effect() {
+        // Lenient overlay tolerance (design D1): a document still carrying
+        // the retired top-level `extras:` key must parse and change nothing —
+        // the effective manifest is byte-identical to the base.
+        let base = Manifest::load_embedded().unwrap();
+        let result = apply(base.clone(), "extras: true\n").unwrap();
+        assert_eq!(
+            serde_yaml_ng::to_string(&result).unwrap(),
+            serde_yaml_ng::to_string(&base).unwrap(),
+            "a stray extras key must leave the effective manifest unchanged"
+        );
+    }
 }
