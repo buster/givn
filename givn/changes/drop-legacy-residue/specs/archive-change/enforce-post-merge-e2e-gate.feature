@@ -34,5 +34,6 @@ Feature: Enforce Post-Merge E2E Gate
     When  the user invokes `givn archive --change real-e2e-merge`
     Then  the command fails
     And  stderr says the e2e runner is not configured for permanent specs with @e2e coverage
+    And  stderr names givn/commands.yaml as the e2e runner's configuration file
     And  the change directory still exists under givn/changes/
     And  no archive candidate exists for "real-e2e-merge"

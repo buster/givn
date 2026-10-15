@@ -19,10 +19,10 @@ context commands (all in that project):
    runner, and the unconfigured givn/commands.yaml)
   git add -A && git commit -m "fixture: archive input"          exit 0
 --- stdout (raw, givn archive --change real-e2e-merge) ---
-[12:06:54] Archiving change 'real-e2e-merge'...
-[12:06:54] Running archive gate hooks...
-[12:06:54] ✓ Gate hooks passed
-[12:06:54] ✓ run declaration passed
-[12:06:54] ✓ README completeness gate passed
+[13:06:14] Archiving change 'real-e2e-merge'...
+[13:06:14] Running archive gate hooks...
+[13:06:14] ✓ Gate hooks passed
+[13:06:14] ✓ run declaration passed
+[13:06:14] ✓ README completeness gate passed
 --- stderr (raw, givn archive --change real-e2e-merge) ---
-error: '/tmp/opencode/t13/proj/givn/specs' contains @e2e-tagged scenario(s) but verify.e2e_command is not configured in givn/config.yaml. An @e2e scenario without a configured e2e runner is an unenforced gap, not an optional one — set verify.e2e_command.
+error: '/tmp/opencode/t13/proj.3BbjWx/givn/specs' contains @e2e-tagged scenario(s) but verify.e2e_command is not configured in givn/commands.yaml. An @e2e scenario without a configured e2e runner is an unenforced gap, not an optional one — set verify.e2e_command.
