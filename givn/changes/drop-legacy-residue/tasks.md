@@ -868,11 +868,11 @@ Implementation strategy (from `design.md`):
         Summary [   0.586s] 1 test run: 1 passed, 15 skipped
         (exit 0)
         ```
-  - [x] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: `111bac30ce1c763d1c99b38e2fe1fcf2fa3da7b4`
 
 ## E2E setup (before the first @e2e scenario)
 
-- [ ] **E2E setup and subset proof.**
+- [x] **E2E setup and subset proof.**
   **Design constraints (design.md "E2E smoke test infrastructure" and "Local
   runnability & digital twins"):**
   - Local environment: no server, container, or network. The E2E scenarios
@@ -898,20 +898,123 @@ Implementation strategy (from `design.md`):
     and record its scenario count. The e2e count MUST be strictly less than
     the full count. Paste both counts:
     ```text
-    <paste full run output with scenario count>
+    Confirmed in givn/commands.yaml (verify.command: "./run-tests.sh";
+    verify.e2e_command: "./run-tests.sh --e2e"). The two strings differ by
+    the `--e2e` flag, which selects the `@e2e` tag expression inside
+    run-tests.sh. The counts below prove the filter is real.
 
-    <paste e2e run output with scenario count>
+    Note on scope: the counts are taken against the change's delta specs
+    (the design's prescribed GIVN_FEATURES scope). The permanent scope
+    (`./run-tests.sh` alone) currently fails mid-change on the pre-merge
+    permanent scenarios whose shared Given steps were re-pointed by the
+    committed task sections (the two enforce-post-merge-e2e-gate scenarios
+    plus the other re-pointed permanent texts) — expected until the archive
+    merge replaces them; the delta scope is the only runner input until
+    then (design.md "Runner, strict mode, and single-scenario evidence").
 
-    <e2e count> < <full count> — proven>
+    Full run (verify.command protocol, delta scope, fail-fast off so the
+    count is real):
+    $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs \
+        GIVN_CUCUMBER_TAGS='' cargo nextest run --no-fail-fast \
+        --no-tests=warn --locked --test features_runner
+        Nextest run ID 94e586ee-… with nextest profile: default
+            Starting 16 tests across 1 binary
+            ...
+                 PASS [   0.544s] (16/16) givn::features_runner verify-change/resolve-change-directories.feature::Verify-e2e hook resolves the change directory from a relative features path inside givn/changes
+        ────────────
+             Summary [   1.131s] 16 tests run: 10 passed, 6 failed, 0 skipped
+        error: test run failed
+        (exit 100 — the six failing units are exactly the six still-@wip
+         @e2e units of the remaining task sections; the ten completed
+         sections pass. Full scope count: 16.)
+
+    E2E run (verify.e2e_command protocol, delta scope, fail-fast off so the
+    count is real):
+    $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs \
+        GIVN_CUCUMBER_TAGS='@e2e' cargo nextest run --no-fail-fast \
+        --no-tests=warn --locked --test features_runner
+        Nextest run ID 5c3f1d0f-… with nextest profile: default
+            Starting 6 tests across 1 binary (10 tests skipped)
+            ...
+        ────────────
+             Summary [   0.423s] 6 tests run: 0 passed, 6 failed, 10 skipped
+        error: test run failed
+        (exit 100 — the six @e2e units are still @wip with undefined steps,
+         expected pre-GREEN. E2E scope count: 6.)
+
+    6 < 16 — proven. The e2e scope is a strict subset of the full scope.
+    ```
+
+  - E2E strictness probe (same procedure as the setup task's probe, against
+    the `@e2e` invocation): a temporary `@e2e`-tagged probe scenario whose
+    step body uses the not-implemented stub
+    (`unimplemented!()`), run through the e2e gate protocol, then removed:
+    ```text
+    Probe added:
+    givn/changes/drop-legacy-residue/specs/00-e2e-strictness-probe/e2e-strictness-probe.feature
+        @givn.delta @e2e-strictness-probe
+        Feature: E2E runner strictness probe
+          @e2e
+          Scenario: The e2e runner rejects a not-implemented step
+            Given an e2e strictness probe that panics
+    tests/steps/e2e_strictness_probe_steps.rs — body `unimplemented!(...)`
+    (registered in tests/steps/mod.rs; never an empty body).
+
+    $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs \
+        GIVN_CUCUMBER_TAGS='@e2e' cargo nextest run --no-fail-fast \
+        --no-tests=warn --locked --test features_runner
+        Nextest run ID b5b2b8cb-aefe-457e-9d08-9424d0205689 with nextest profile: default
+            Starting 7 tests across 1 binary (10 tests skipped)
+                FAIL [   0.430s] (3/7) givn::features_runner 00-e2e-strictness-probe/e2e-strictness-probe.feature::The e2e runner rejects a not-implemented step
+          stdout ───
+            Feature: E2E runner strictness probe
+              Scenario: The e2e runner rejects a not-implemented step
+               ✘  Given an e2e strictness probe that panics
+                  Step failed:
+                  Defined: givn/changes/drop-legacy-residue/specs/00-e2e-strictness-probe/e2e-strictness-probe.feature:7:5
+                  Matched: tests/steps/e2e_strictness_probe_steps.rs:5:1
+                  Step panicked. Captured output: not implemented: e2e strictness probe: an unimplemented step must fail the run
+            [Summary]
+            1 feature
+            1 scenario (1 failed)
+            1 step (1 failed)
+          stderr ───
+
+            thread 'main' (405262) panicked at …/cucumber-0.23.0/src/cucumber.rs:1243:13:
+            1 step failed
+        error: test run failed
+        (exit 100 — the e2e runner rejects the not-implemented step; the
+        e2e scope selected 7 units with the probe (6 + probe). Non-zero
+        exit proven.)
+
+    Probe removed (feature file, step file, and the mod registration line
+    deleted); the e2e run returns to the 6-unit pre-probe state:
+    $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs \
+        GIVN_CUCUMBER_TAGS='@e2e' cargo nextest run --no-fail-fast \
+        --no-tests=warn --locked --test features_runner
+            Starting 6 tests across 1 binary (10 tests skipped)
+             Summary [   0.454s] 6 tests run: 0 passed, 6 failed, 10 skipped
+        error: test run failed
+        (the six failures are the still-@wip @e2e units, the expected
+        pre-GREEN mid-change state — baseline restored)
     ```
   - Health check: confirm the e2e runner can reach the local environment —
     the compiled binary is built by the suite (the run-tests.sh
     `ready_fixture` build precedes the suite); a trivial smoke invocation of
     the built binary suffices. Paste the smoke output:
     ```text
-    <paste smoke check output>
+    $ cargo build --locked
+        Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.28s
+    $ ./target/debug/givn instructions --json
+    {
+      "id": "drop-legacy-residue",
+      "next_command": "givn instructions tasks --change drop-legacy-residue",
+      ...
+    (exit 0 — the compiled binary the @e2e scenarios spawn
+     (CARGO_BIN_EXE_givn) is built and answers a trivial invocation from the
+     local environment; no server, container, or network is involved.)
     ```
-  - COMMIT: `chore(tasks): e2e setup and subset proof` — Hash: ``
+  - COMMIT: `chore(tasks): e2e setup and subset proof` — Hash: `916a021d775c27a0fa47b61215e37b0ae241ecec`
 
 ## @e2e scenarios (in .feature order)
 
