@@ -225,14 +225,6 @@ pub struct Coverage {
     /// Command that merges the source reports into `output_path`.
     #[serde(default = "sentinel")]
     pub merge_command: String,
-    /// Legacy non-e2e command accepted during migration. New projects must
-    /// use `measure_command`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub non_e2e_command: Option<String>,
-    /// Legacy e2e command accepted during migration. New projects must use
-    /// `measure_command`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub e2e_command: Option<String>,
     /// Path (relative to project root) to the non-e2e source report.
     #[serde(default = "default_non_e2e_path")]
     pub non_e2e_path: String,
@@ -266,8 +258,6 @@ impl Default for Coverage {
         Self {
             measure_command: sentinel(),
             merge_command: sentinel(),
-            non_e2e_command: None,
-            e2e_command: None,
             non_e2e_path: default_non_e2e_path(),
             e2e_path: default_e2e_path(),
             output_path: default_cobertura_output(),
@@ -424,20 +414,5 @@ mod tests {
             "review.post must be empty in the default manifest — verify, verify-e2e, \
              and integrity are now mandatory binary checks, not configurable hooks"
         );
-    }
-
-    #[test]
-    fn legacy_coverage_commands_are_accepted_during_migration() {
-        let base = Manifest::load_embedded().unwrap();
-        let result = crate::config::overlay::apply(
-            base,
-            "coverage:\n  non_e2e_command: \"old-non-e2e\"\n  e2e_command: \"old-e2e\"\n",
-        )
-        .unwrap();
-        assert_eq!(
-            result.coverage.non_e2e_command.as_deref(),
-            Some("old-non-e2e")
-        );
-        assert_eq!(result.coverage.e2e_command.as_deref(), Some("old-e2e"));
     }
 }
