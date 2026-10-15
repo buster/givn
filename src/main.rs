@@ -156,7 +156,9 @@ enum Commands {
         #[command(subcommand)]
         command: SkillsCommands,
     },
-    /// Build and query the local permanent-scenario retrieval index.
+    /// Work with the permanent spec corpus: coverage inventory, duplicate
+    /// report, use-case proposals, tree overview, lexical scenario search,
+    /// and proposal routing.
     Spec {
         #[command(subcommand)]
         command: SpecCommands,
