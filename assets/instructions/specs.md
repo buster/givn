@@ -184,8 +184,8 @@ normalized inventory action has exactly one `@e2e` scenario. A regular
 scenario — a variant rule, edge precondition, or genuinely different end
 state. A regular scenario that only re-asserts the `@e2e` outcome (the same
 observable result asserted against the module instead of through the browser)
-is a duplicate: the layer is a driver, not an invariant. Semantic review flags
-it — distinguish it or delete it.
+is a duplicate: the layer is a driver, not an invariant. The overlap review
+flags it — distinguish it or delete it.
 
 **What an `@e2e` scenario is NOT:**
 - Not a unit test wrapped in Gherkin.
