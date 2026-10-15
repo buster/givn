@@ -446,15 +446,10 @@ fn fossil_revision_paths(env: &crate::common::TestEnv, revision: &str) -> Vec<St
 
 /// The 0.7.0 Fossil fixture: the oldest declared migration source, so a
 /// project recorded at this version still receives an aggregate plan.
-///
-/// Enters service with the re-pointed Fossil-dirty and clean-Fossil outline
-/// scenarios; until then it has no call site.
-#[allow(dead_code)]
 pub(crate) fn fossil_project_at_0_7_0() -> crate::common::TestEnv {
     fossil_project_with_version("0.7.0")
 }
 
-#[allow(dead_code)]
 fn fossil_project_with_version(version: &str) -> crate::common::TestEnv {
     let env = crate::common::make_fossil_root_uncommitted();
     let config_path = env.path("givn/config.yaml");
@@ -516,6 +511,16 @@ fn dirty_project_at_0_7_0(world: &mut GivnWorld) {
     let config = std::fs::read(env.path("givn/config.yaml")).expect("read legacy config");
     std::fs::write(env.path("user-work.txt"), "uncommitted user change\n")
         .expect("write uncommitted user change");
+    world.additional_output = Some(String::from_utf8(config).expect("legacy config is UTF-8"));
+    world.env = Some(env);
+}
+
+#[given("a Givn 0.7.0 Fossil project with uncommitted user changes")]
+fn fossil_dirty_project_at_0_7_0(world: &mut GivnWorld) {
+    let env = fossil_project_at_0_7_0();
+    let config = std::fs::read(env.path("givn/config.yaml")).expect("read legacy config");
+    std::fs::write(env.path("user-work.txt"), "uncommitted user change\n")
+        .expect("write user change");
     world.additional_output = Some(String::from_utf8(config).expect("legacy config is UTF-8"));
     world.env = Some(env);
 }

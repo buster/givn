@@ -795,9 +795,9 @@ Implementation strategy (from `design.md`):
         Summary [   0.467s] 1 test run: 1 passed, 15 skipped
         (exit 0)
         ```
-  - [x] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: `320e09c1a603bfd84abb862b7046930d1cd81faf`
 
-- [ ] Scenario: `A Fossil project with uncommitted changes is protected from automatic migration commits` (`apply-a-managed-upgrade`, `@givn.modified` — fixture-only delta)
+- [x] Scenario: `A Fossil project with uncommitted changes is protected from automatic migration commits` (`apply-a-managed-upgrade`, `@givn.modified` — fixture-only delta)
   **Design constraints:**
   - Delta file: `givn/changes/drop-legacy-residue/specs/upgrade-a-project/apply-a-managed-upgrade.feature`. This section carries only its fixture delta (ordering note).
   - Files: modify `tests/steps/release_0_3_0_e2e_steps.rs` — add `#[given("a Givn 0.7.0 Fossil project with uncommitted user changes")]`. The Then steps already exist; no production code change.
@@ -805,23 +805,70 @@ Implementation strategy (from `design.md`):
   - Domain context: `upgrade-a-project` extension 1 and the rule "the managed upgrade and migration bundles run on both supported systems with the same guarantees"; protects the minimal guarantee.
   - Single-scenario run: `GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A Fossil project with uncommitted changes is protected from automatic migration commits$'`
   - Remove `@wip` from this scenario only at RED.
-  - [ ] RED: remove `@wip` from this scenario only; run the single-scenario command. The 0.7.0 Given text has no matching step definition → undefined step fails (strict mode). Paste output — MUST exit non-zero:
+  - [x] RED: remove `@wip` from this scenario only; run the single-scenario command. The 0.7.0 Given text has no matching step definition → undefined step fails (strict mode). Paste output — MUST exit non-zero:
         ```text
-        <paste targeted run output — expected non-zero exit (undefined step)>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A Fossil project with uncommitted changes is protected from automatic migration commits$'
+        Feature: Managed upgrade and legacy project migration
+          Scenario: A Fossil project with uncommitted changes is protected from automatic migration commits
+           ✘  Given a Givn 0.7.0 Fossil project with uncommitted user changes
+              Step failed:
+              Defined: givn/changes/drop-legacy-residue/specs/upgrade-a-project/apply-a-managed-upgrade.feature:58:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        error: test failed (exit status: 1)
         ```
-  - [ ] GREEN: add the 0.7.0 Fossil Given step definition; the Then steps are reused as-is. Production files modified: `tests/steps/release_0_3_0_e2e_steps.rs`. Targeted re-run — MUST exit 0:
+  - [x] GREEN: add the 0.7.0 Fossil Given step definition; the Then steps are reused as-is. Production files modified: `tests/steps/release_0_3_0_e2e_steps.rs`. Targeted re-run — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ cargo check --tests
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.84s
+
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A Fossil project with uncommitted changes is protected from automatic migration commits$'
+        Feature: Managed upgrade and legacy project migration
+          Scenario: A Fossil project with uncommitted changes is protected from automatic migration commits
+           ✔  Given a Givn 0.7.0 Fossil project with uncommitted user changes
+           ✔  When the consumer invokes `givn upgrade` for migration
+           ✔  Then the command fails before changing project files
+           ✔  And no revision is created
+           ✔  And the user changes remain byte-for-byte unchanged
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        (exit 0 — Then steps `the command fails before changing project files`,
+        `no revision is created`, `the user changes remain byte-for-byte unchanged`
+        reused as-is; the 0.7.0 Fossil fixture is the parameterised builder from
+        the no-route section, now entering service)
         ```
-  - [ ] REFACTOR: no cleanup; re-run targeted — MUST exit 0:
+  - [x] REFACTOR: no cleanup; re-run targeted — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A Fossil project with uncommitted changes is protected from automatic migration commits$'
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        (exit 0)
+
+        $ cargo clippy --workspace --all-targets -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.41s
+        (exit 0 — the 0.7.0 Fossil builder's temporary dead-code allowance was
+        removed with this section; no warnings remain)
         ```
-  - [ ] Nextest gate evidence (F21): paste the `./run-tests.sh` nextest run showing this scenario passing under the gate protocol:
+  - [x] Nextest gate evidence (F21): paste the `./run-tests.sh` nextest run showing this scenario passing under the gate protocol:
         ```text
-        <paste nextest gate run output>
+        The full `./run-tests.sh` gate run cancels the tail units on first
+        failure (nextest fail-fast), so this unit never runs in it. The same
+        gate protocol, filtered to this scenario:
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs GIVN_CUCUMBER_TAGS='' cargo nextest run --no-tests=warn --locked --test features_runner 'upgrade-a-project/apply-a-managed-upgrade.feature::A Fossil project with uncommitted changes is protected from automatic migration commits'
+        Nextest run ID fd84f548-d798-49d4-99f6-81f20fbd3419 with nextest profile: default
+            Starting 1 test across 1 binary (15 tests skipped)
+                PASS [   0.586s] (1/1) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A Fossil project with uncommitted changes is protected from automatic migration commits
+        Summary [   0.586s] 1 test run: 1 passed, 15 skipped
+        (exit 0)
         ```
-  - [ ] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: ``
 
 ## E2E setup (before the first @e2e scenario)
 
