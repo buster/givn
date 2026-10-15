@@ -1263,34 +1263,90 @@ Implementation strategy (from `design.md`):
              Summary [   0.577s] 6 tests run: 4 passed, 2 failed, 10 skipped
         (exit 100 — the still-@wip sections of the other tasks fail as expected; this scenario PASSes under the e2e gate protocol)
         ```
-  - [x] COMMIT: capture the transcript before committing. `test(e2e): <release note>` with the scenario title in the message body (carries the `@wip` removal, the transcript, and this tasks.md record; no production delta — pure reuse) — Hash: ``
+  - [x] COMMIT: capture the transcript before committing. `test(e2e): <release note>` with the scenario title in the message body (carries the `@wip` removal, the transcript, and this tasks.md record; no production delta — pure reuse) — Hash: `591338fbb4fc768bed98cda9169e0a240d07a873`
 
-- [ ] Scenario Outline: `A clean 0.7.0 project receives a reviewable aggregate migration plan` (`apply-a-managed-upgrade`, `@givn.added`, `@e2e` — one section for the whole outline; two Examples rows: `Git` and `Fossil`)
+- [x] Scenario Outline: `A clean 0.7.0 project receives a reviewable aggregate migration plan` (`apply-a-managed-upgrade`, `@givn.added`, `@e2e` — one section for the whole outline; two Examples rows: `Git` and `Fossil`)
   **Design constraints:**
   - Delta file: `givn/changes/drop-legacy-residue/specs/upgrade-a-project/apply-a-managed-upgrade.feature`. The retired 0.2.0 outline cannot be `@givn.modified` (its title carries the version, and modified replaces by exact title), so the delta removes it and adds this 0.7.0 outline; the merge applies both atomically against the projected state. The catalog deletion already landed in the no-route section; this section carries only its fixture/step deltas (ordering note). The catalog keeps 0.7.0 → 0.8.0 → 0.9.0.
   - Files: modify `tests/steps/release_0_3_0_e2e_steps.rs` — add `#[given("a clean Git project created with Givn 0.7.0")]` and the Fossil 0.7.0 variants; the fixture helpers `prepared_project` and `completed_automatic_migration` move to the 0.7.0 fixture. Modify `tests/steps/release_0_3_0_steps.rs` — `current_version_migration_change_exists` asserts the `migrate-0-7-0-to-` prefix; `migration_contains_plan` asserts `id: migrate-0-7-0-to-0-8-0`.
+    Implementation note (no design deviation — design.md's fixture table names both files for this capability without per-function attribution): both assertion functions physically live in `tests/steps/release_0_3_0_e2e_steps.rs` (the e2e step file, alongside the migration-change fixture helpers), not in the regular `release_0_3_0_steps.rs`; the edits landed where the functions exist. All named updates applied: the two 0.7.0 Given steps added, `prepared_project` / `completed_automatic_migration` moved to `git_project_at_0_7_0()`, `current_version_migration_change_exists` asserts the `migrate-0-7-0-to-` prefix, `migration_contains_plan` asserts `id: migrate-0-7-0-to-0-8-0`.
   - Behaviour (real CLI boundary, both Examples rows in one process): `givn upgrade` on a clean 0.7.0 Git or Fossil project exits successfully; the project config identifies the current Givn version; one commit contains only the managed scaffold and generated agent integration changes; a migration change for the current version exists; the migration change records the managed upgrade commit; it contains a proposal and detailed design; it intentionally has no product specification.
   - Transcript evidence: capture `givn/changes/drop-legacy-residue/evidence/visual/a-clean-0-7-0-project-receives-a-reviewable-aggregate-migration-plan/transcript.txt` — the outline as a whole; the transcript records the Git example's `givn upgrade` run (argv, cwd, exit code, raw stdout/stderr) and the resulting migration change and revision shape.
   - Domain context: `upgrade-a-project` goal — cross a release gap with reviewable upgrade and migration revisions; main flow 5 (the plan revision records the upgrade revision); the rule "the managed upgrade and migration bundles run on both supported systems with the same guarantees".
   - Single-scenario run (selects the outline and runs all examples): `GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A clean 0.7.0 project receives a reviewable aggregate migration plan$'`
   - Remove `@wip` from this scenario only at RED.
-  - [ ] RED: remove `@wip` from this scenario only; run the single-scenario command. The 0.7.0 Given text has no matching step definition → undefined step fails (strict mode). Paste output — MUST exit non-zero:
+  - [x] RED: remove `@wip` from this scenario only; run the single-scenario command. The 0.7.0 Given text has no matching step definition → undefined step fails (strict mode). Paste output — MUST exit non-zero:
         ```text
-        <paste targeted run output — expected non-zero exit (undefined step)>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A clean 0.7.0 project receives a reviewable aggregate migration plan$'
+        Feature: Managed upgrade and legacy project migration
+          Scenario Outline: A clean 0.7.0 project receives a reviewable aggregate migration plan
+           ✘  Given a clean Git project created with Givn 0.7.0
+              Step failed:
+              Defined: givn/changes/drop-legacy-residue/specs/upgrade-a-project/apply-a-managed-upgrade.feature:11:5
+              Step doesn't match any function
+           ✘  Given a clean Fossil project created with Givn 0.7.0
+              Step failed:
+              Defined: givn/changes/drop-legacy-residue/specs/upgrade-a-project/apply-a-managed-upgrade.feature:11:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        2 scenarios (2 failed)
+        2 steps (2 failed)
+        error: test failed, to rerun pass `--test features_runner`
+        (exit status: 1 — the 0.7.0 Given text is undefined in both examples; strict mode fails)
         ```
-  - [ ] GREEN: add the 0.7.0 Git/Fossil fixture steps and move `prepared_project` / `completed_automatic_migration` to the 0.7.0 fixture; apply the `current_version_migration_change_exists` and `migration_contains_plan` assertion updates. Production files modified: `tests/steps/release_0_3_0_e2e_steps.rs`, `tests/steps/release_0_3_0_steps.rs`. Targeted re-run (both Examples rows) — MUST exit 0:
+  - [x] GREEN: add the 0.7.0 Git/Fossil fixture steps and move `prepared_project` / `completed_automatic_migration` to the 0.7.0 fixture; apply the `current_version_migration_change_exists` and `migration_contains_plan` assertion updates. Production files modified: `tests/steps/release_0_3_0_e2e_steps.rs` (both assertion functions and both fixture helpers live there — see the implementation note above; `tests/steps/release_0_3_0_steps.rs` needed no edit). Targeted re-run (both Examples rows) — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0, both examples>
+        $ cargo check --tests
+            Checking givn v0.9.0 (/home/buster/.paseo/worktrees/008cxm4u/mellow-yak)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.94s
+
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A clean 0.7.0 project receives a reviewable aggregate migration plan$'
+          Scenario Outline: A clean 0.7.0 project receives a reviewable aggregate migration plan
+           ✔  Given a clean Git project created with Givn 0.7.0
+           ✔  When the consumer invokes `givn upgrade` for migration
+           ✔  Then the command exits successfully
+           ✔  And the project config identifies the current Givn version
+           ✔  And one commit contains only the managed scaffold and generated agent integration changes
+           ✔  And a migration change for the current version exists
+           ✔  And the migration change records the managed upgrade commit
+           ✔  And the migration change contains a proposal and detailed design
+           ✔  And the migration change intentionally has no product specification
+          Scenario Outline: A clean 0.7.0 project receives a reviewable aggregate migration plan
+           ✔  Given a clean Fossil project created with Givn 0.7.0
+           ✔  When the consumer invokes `givn upgrade` for migration
+           ✔  Then the command exits successfully
+           ✔  And the project config identifies the current Givn version
+           ✔  And one commit contains only the managed scaffold and generated agent integration changes
+           ✔  And a migration change for the current version exists
+           ✔  And the migration change records the managed upgrade commit
+           ✔  And the migration change contains a proposal and detailed design
+           ✔  And the migration change intentionally has no product specification
+        [Summary]
+        1 feature
+        2 scenarios (2 passed)
+        18 steps (18 passed)
+        (exit 0 — both Examples rows pass)
         ```
-  - [ ] REFACTOR: no cleanup; re-run targeted — MUST exit 0:
+  - [x] REFACTOR: no cleanup; re-run targeted — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0, both examples>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A clean 0.7.0 project receives a reviewable aggregate migration plan$'
+        [Summary]
+        1 feature
+        2 scenarios (2 passed)
+        18 steps (18 passed)
+        (exit 0)
         ```
-  - [ ] Nextest gate evidence (F21): paste the `./run-tests.sh --e2e` nextest run showing this outline passing under the e2e gate protocol:
+  - [x] Nextest gate evidence (F21): paste the `./run-tests.sh --e2e` nextest run showing this outline passing under the e2e gate protocol:
         ```text
-        <paste nextest e2e gate run output>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs GIVN_CUCUMBER_TAGS='@e2e' cargo nextest run --no-fail-fast --no-tests=warn --locked --test features_runner
+            Starting 6 tests across 1 binary (10 tests skipped)
+                FAIL ... (the one remaining still-@wip rewrite-history @e2e unit of the final task section, expected mid-change)
+                PASS [   1.224s] (6/6) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A clean 0.7.0 project receives a reviewable aggregate migration plan
+             Summary [   1.224s] 6 tests run: 5 passed, 1 failed, 10 skipped
+        (exit 100 — the still-@wip section of the final task fails as expected; this outline PASSes under the e2e gate protocol)
         ```
-  - [ ] COMMIT: capture the transcript before committing. `test(e2e): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: capture the transcript before committing. `test(e2e): <release note>` with the scenario title in the message body — Hash: ``
 
 - [ ] Scenario: `A consumer invoking the retired history rewrite command is told it does not exist` (`apply-a-managed-upgrade`, `@givn.added`, `@e2e` — carries the rewrite-history production deletions)
   **Design constraints:**
