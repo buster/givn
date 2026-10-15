@@ -364,7 +364,7 @@ fn project_with_failing_e2e(world: &mut GivnWorld) {
     e2e_project(world, "false");
 }
 
-#[given("a committed givn project with verify.e2e_command unconfigured in givn/config.yaml")]
+#[given("a committed givn project with verify.e2e_command unconfigured in givn/commands.yaml")]
 fn committed_unconfigured_e2e(world: &mut GivnWorld) {
     e2e_given_unconfigured_e2e_command(world);
 }

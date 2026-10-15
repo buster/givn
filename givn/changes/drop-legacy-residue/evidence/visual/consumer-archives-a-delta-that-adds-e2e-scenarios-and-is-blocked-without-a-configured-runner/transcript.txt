@@ -1,0 +1,28 @@
+scenario: Consumer archives a delta that adds e2e scenarios and is blocked without a configured runner
+argv: givn archive --change real-e2e-merge
+cwd: <freshly initialized Git project (givn init --agents opencode) in a temp dir;
+      givn/commands.yaml carries the unconfigured runner
+      (e2e_command: "givn missing-e2e-runner"); the change "real-e2e-merge" has
+      all artifacts done and a delta spec carrying an @e2e scenario; the
+      permanent spec tree (givn/specs/existing/) has no @e2e scenario; the
+      fixture state is committed before the archive — the archive starts from a
+      committed project state>
+binary: target/debug/givn (the compiled binary the scenario spawns via CARGO_BIN_EXE_givn)
+exit: 1
+
+context commands (all in that project):
+  givn init --agents opencode                                   exit 0
+  git add -A && git commit -m "fixture: initial state"          exit 0
+  givn new real-e2e-merge                                       exit 0
+  (fixture writes: proposal/design/design-review/tasks/review/arc42
+   artifacts, the @e2e delta spec, the permanent spec tree, the result
+   runner, and the unconfigured givn/commands.yaml)
+  git add -A && git commit -m "fixture: archive input"          exit 0
+--- stdout (raw, givn archive --change real-e2e-merge) ---
+[12:06:54] Archiving change 'real-e2e-merge'...
+[12:06:54] Running archive gate hooks...
+[12:06:54] ✓ Gate hooks passed
+[12:06:54] ✓ run declaration passed
+[12:06:54] ✓ README completeness gate passed
+--- stderr (raw, givn archive --change real-e2e-merge) ---
+error: '/tmp/opencode/t13/proj/givn/specs' contains @e2e-tagged scenario(s) but verify.e2e_command is not configured in givn/config.yaml. An @e2e scenario without a configured e2e runner is an unenforced gap, not an optional one — set verify.e2e_command.

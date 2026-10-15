@@ -26,7 +26,7 @@ Feature: Enforce Post-Merge E2E Gate
     Then the command exits 0
     And the change directory has been moved to givn/archive/
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Consumer archives a delta that adds e2e scenarios and is blocked without a configured runner
     Given  a committed givn project with verify.e2e_command unconfigured in givn/commands.yaml
     And  a change "real-e2e-merge" with all artifacts done, whose delta spec has an @e2e scenario
