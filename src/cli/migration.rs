@@ -193,7 +193,12 @@ fn resolve_migration_path(
                 let Ok(bundle_target) = ReleaseVersion::parse(&bundle.target_version) else {
                     return false;
                 };
-                bundle_source == current && bundle_target > current && bundle_target <= target
+                // A bundle covers later patch releases of its source minor
+                // line: a project recording 0.8.3 follows a 0.8.0 bundle.
+                bundle_source.same_minor(current)
+                    && bundle_source <= current
+                    && bundle_target > current
+                    && bundle_target <= target
             })
             .collect();
         candidates.sort_by(|left, right| {
@@ -871,6 +876,37 @@ mod tests {
         )
         .unwrap();
         assert_eq!(path.len(), 1);
+    }
+
+    #[test]
+    fn migration_path_covers_a_source_patch_release() {
+        let catalog = MigrationCatalog {
+            schema_version: MIGRATION_CATALOG_SCHEMA_VERSION,
+            migrations: vec![bundle("first", "0.2.0", "0.3.0", 10)],
+        };
+        let path = resolve_migration_path(
+            &catalog,
+            ReleaseVersion::parse("0.2.3").unwrap(),
+            ReleaseVersion::parse("0.3.0").unwrap(),
+        )
+        .unwrap();
+        assert_eq!(path.len(), 1);
+        assert_eq!(path[0].id, "first");
+    }
+
+    #[test]
+    fn migration_path_ignores_a_newer_same_minor_source() {
+        let catalog = MigrationCatalog {
+            schema_version: MIGRATION_CATALOG_SCHEMA_VERSION,
+            migrations: vec![bundle("future", "0.2.5", "0.3.0", 10)],
+        };
+        let path = resolve_migration_path(
+            &catalog,
+            ReleaseVersion::parse("0.2.3").unwrap(),
+            ReleaseVersion::parse("0.3.0").unwrap(),
+        )
+        .unwrap();
+        assert!(path.is_empty());
     }
 
     #[test]
