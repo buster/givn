@@ -661,9 +661,9 @@ Implementation strategy (from `design.md`):
         Summary [   0.478s] 1 test run: 1 passed, 15 skipped
         (exit 0)
         ```
-  - [x] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: `efbe91644e44c2c2494d82e8ba02eb9479f16409`
 
-- [ ] Scenario: `A project outside Git is protected from a partial automatic migration` (`apply-a-managed-upgrade`, `@givn.modified` — fixture-only delta)
+- [x] Scenario: `A project outside Git is protected from a partial automatic migration` (`apply-a-managed-upgrade`, `@givn.modified` — fixture-only delta)
   **Design constraints:**
   - Delta file: `givn/changes/drop-legacy-residue/specs/upgrade-a-project/apply-a-managed-upgrade.feature`. This section carries only its fixture delta (ordering note).
   - Files: modify `tests/steps/release_0_3_0_e2e_steps.rs` — add `#[given("a Givn 0.7.0 project that is not a Git repository")]`; the `non_git_legacy_project` fixture helper moves to the 0.7.0 fixture. The Then steps already exist; no production code change.
@@ -671,23 +671,63 @@ Implementation strategy (from `design.md`):
   - Domain context: `upgrade-a-project` extension 1 — no version-control system is selected → the upgrade is refused by name before any write; protects the minimal guarantee.
   - Single-scenario run: `GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A project outside Git is protected from a partial automatic migration$'`
   - Remove `@wip` from this scenario only at RED.
-  - [ ] RED: remove `@wip` from this scenario only; run the single-scenario command. The 0.7.0 Given text has no matching step definition → undefined step fails (strict mode). Paste output — MUST exit non-zero:
+  - [x] RED: remove `@wip` from this scenario only; run the single-scenario command. The 0.7.0 Given text has no matching step definition → undefined step fails (strict mode). Paste output — MUST exit non-zero:
         ```text
-        <paste targeted run output — expected non-zero exit (undefined step)>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A project outside Git is protected from a partial automatic migration$'
+        Feature: Managed upgrade and legacy project migration
+          Scenario: A project outside Git is protected from a partial automatic migration
+           ✘  Given a Givn 0.7.0 project that is not a Git repository
+              Step failed:
+              Defined: givn/changes/drop-legacy-residue/specs/upgrade-a-project/apply-a-managed-upgrade.feature:44:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        error: test failed (exit status: 1)
         ```
-  - [ ] GREEN: add the 0.7.0 Given step definition; the Then steps are reused as-is. Production files modified: `tests/steps/release_0_3_0_e2e_steps.rs`. Targeted re-run — MUST exit 0:
+  - [x] GREEN: add the 0.7.0 Given step definition; the Then steps are reused as-is. Production files modified: `tests/steps/release_0_3_0_e2e_steps.rs`. Targeted re-run — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ cargo check --tests
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.85s
+
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A project outside Git is protected from a partial automatic migration$'
+        Feature: Managed upgrade and legacy project migration
+          Scenario: A project outside Git is protected from a partial automatic migration
+           ✔  Given a Givn 0.7.0 project that is not a Git repository
+           ✔  When the consumer invokes `givn upgrade` for migration
+           ✔  Then the command fails before changing project files
+           ✔  And the command explains that a version-controlled project is required for the automatic migration
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        (exit 0 — Then steps `the command fails before changing project files` and
+        `the command explains that a version-controlled project is required for
+        the automatic migration` reused as-is)
         ```
-  - [ ] REFACTOR: no cleanup; re-run targeted — MUST exit 0:
+  - [x] REFACTOR: no cleanup; re-run targeted — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A project outside Git is protected from a partial automatic migration$'
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        (exit 0)
         ```
-  - [ ] Nextest gate evidence (F21): paste the `./run-tests.sh` nextest run showing this scenario passing under the gate protocol:
+  - [x] Nextest gate evidence (F21): paste the `./run-tests.sh` nextest run showing this scenario passing under the gate protocol:
         ```text
-        <paste nextest gate run output>
+        The full `./run-tests.sh` gate run cancels the tail units on first
+        failure (nextest fail-fast), so this unit never runs in it. The same
+        gate protocol, filtered to this scenario:
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs GIVN_CUCUMBER_TAGS='' cargo nextest run --no-tests=warn --locked --test features_runner 'upgrade-a-project/apply-a-managed-upgrade.feature::A project outside Git is protected from a partial automatic migration'
+        Nextest run ID 18c3f9f8-3c55-47b1-9b4c-7cf799d83547 with nextest profile: default
+            Starting 1 test across 1 binary (15 tests skipped)
+                PASS [   0.442s] (1/1) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A project outside Git is protected from a partial automatic migration
+        Summary [   0.442s] 1 test run: 1 passed, 15 skipped
+        (exit 0)
         ```
-  - [ ] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: ``
 
 - [ ] Scenario: `An existing migration plan is never overwritten` (`apply-a-managed-upgrade`, `@givn.modified` — fixture-only delta)
   **Design constraints:**

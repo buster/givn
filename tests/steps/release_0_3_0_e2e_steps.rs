@@ -640,6 +640,26 @@ fn already_prepared_report(world: &mut GivnWorld) {
     assert!(String::from_utf8_lossy(&output.stdout).contains("already prepared for migration"));
 }
 
+#[given("a Givn 0.7.0 project that is not a Git repository")]
+fn non_git_project_at_0_7_0(world: &mut GivnWorld) {
+    let env = crate::common::make_bare_root();
+    let init = crate::common::run_givn_with_stdin(
+        &env,
+        &["init", "--no-addons", "--agents", "opencode"],
+        "",
+    );
+    assert!(init.status.success(), "fixture init failed");
+    let config_path = env.path("givn/config.yaml");
+    let config = std::fs::read_to_string(&config_path).expect("read fixture config");
+    let legacy = config.replace(
+        &format!("givn_config_version: \"{}\"", env!("CARGO_PKG_VERSION")),
+        "givn_config_version: \"0.7.0\"",
+    );
+    std::fs::write(&config_path, &legacy).expect("write legacy config");
+    world.additional_output = Some(legacy);
+    world.env = Some(env);
+}
+
 #[then("the command explains that a Git repository is required for the automatic migration")]
 fn git_required_report(world: &mut GivnWorld) {
     let output = crate::steps::output(world);
