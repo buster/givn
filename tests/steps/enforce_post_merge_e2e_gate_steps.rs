@@ -74,7 +74,7 @@ fn e2e_given_permanent_specs_no_e2e(world: &mut GivnWorld) {
     .unwrap();
 }
 
-#[given("the givn/config.yaml has e2e_command unconfigured")]
+#[given("the givn/commands.yaml has e2e_command unconfigured")]
 fn unconfigured_e2e_command(world: &mut GivnWorld) {
     let env = world
         .env
