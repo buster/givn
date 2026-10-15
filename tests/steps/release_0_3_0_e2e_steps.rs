@@ -9,27 +9,22 @@ fn clean_legacy_project(world: &mut GivnWorld) {
     world.env = Some(legacy_git_project());
 }
 
-#[given("a clean Fossil project created with Givn 0.2.0")]
-fn fossil_clean_legacy_project(world: &mut GivnWorld) {
-    world.env = Some(legacy_fossil_project());
-}
-
 #[given("a clean Fossil project with current Givn files and a stale generated integration")]
 fn fossil_current_project_with_stale_integration(world: &mut GivnWorld) {
     world.env = Some(current_fossil_project_with_stale_integration());
 }
 
-#[given("a Givn 0.2.0 Fossil project with uncommitted user changes")]
-fn fossil_dirty_project(world: &mut GivnWorld) {
-    let env = legacy_fossil_project();
-    let config = std::fs::read(env.path("givn/config.yaml")).expect("read legacy config");
-    std::fs::write(env.path("user-work.txt"), "uncommitted user change\n")
-        .expect("write user change");
-    world.additional_output = Some(String::from_utf8(config).expect("legacy config is UTF-8"));
-    world.env = Some(env);
+pub(crate) fn legacy_git_project() -> crate::common::TestEnv {
+    git_project_with_version("0.2.0")
 }
 
-pub(crate) fn legacy_git_project() -> crate::common::TestEnv {
+/// The 0.7.0 fixture: the oldest declared migration source, so a project
+/// recorded at this version still receives an aggregate migration plan.
+pub(crate) fn git_project_at_0_7_0() -> crate::common::TestEnv {
+    git_project_with_version("0.7.0")
+}
+
+fn git_project_with_version(version: &str) -> crate::common::TestEnv {
     let env = crate::common::make_bare_root();
     let init = crate::common::run_givn_with_stdin(
         &env,
@@ -48,7 +43,7 @@ pub(crate) fn legacy_git_project() -> crate::common::TestEnv {
         &config_path,
         config.replace(
             &format!("givn_config_version: \"{}\"", env!("CARGO_PKG_VERSION")),
-            "givn_config_version: \"0.2.0\"",
+            &format!("givn_config_version: \"{version}\""),
         ),
     )
     .expect("write legacy fixture config");
@@ -72,7 +67,10 @@ pub(crate) fn legacy_git_project() -> crate::common::TestEnv {
         &["config", "user.email", "givn-migration@example.test"],
     );
     git(&env, &["add", "--all"]);
-    let commit = git(&env, &["commit", "-m", "fixture: Givn 0.2.0 project"]);
+    let commit = git(
+        &env,
+        &["commit", "-m", &format!("fixture: Givn {version} project")],
+    );
     assert!(
         commit.status.success(),
         "fixture commit failed: {}",
@@ -210,15 +208,6 @@ fn no_migration_change_exists(world: &mut GivnWorld) {
     };
     assert!(no_migrate(&changes));
     assert!(no_migrate(&archives));
-    assert!(
-        std::fs::read_dir(&changes)
-            .expect("read active changes")
-            .flatten()
-            .all(|entry| !entry
-                .file_name()
-                .to_string_lossy()
-                .starts_with("migrate-0-2-0-to-"))
-    );
 }
 
 #[then("one commit contains only the managed scaffold and generated agent integration changes")]
@@ -455,7 +444,18 @@ fn fossil_revision_paths(env: &crate::common::TestEnv, revision: &str) -> Vec<St
         .collect()
 }
 
-fn legacy_fossil_project() -> crate::common::TestEnv {
+/// The 0.7.0 Fossil fixture: the oldest declared migration source, so a
+/// project recorded at this version still receives an aggregate plan.
+///
+/// Enters service with the re-pointed Fossil-dirty and clean-Fossil outline
+/// scenarios; until then it has no call site.
+#[allow(dead_code)]
+pub(crate) fn fossil_project_at_0_7_0() -> crate::common::TestEnv {
+    fossil_project_with_version("0.7.0")
+}
+
+#[allow(dead_code)]
+fn fossil_project_with_version(version: &str) -> crate::common::TestEnv {
     let env = crate::common::make_fossil_root_uncommitted();
     let config_path = env.path("givn/config.yaml");
     let config = std::fs::read_to_string(&config_path).expect("read fixture config");
@@ -463,7 +463,7 @@ fn legacy_fossil_project() -> crate::common::TestEnv {
         &config_path,
         config.replace(
             &format!("givn_config_version: \"{}\"", env!("CARGO_PKG_VERSION")),
-            "givn_config_version: \"0.2.0\"",
+            &format!("givn_config_version: \"{version}\""),
         ),
     )
     .expect("write legacy fixture config");
@@ -492,7 +492,7 @@ fn legacy_fossil_project() -> crate::common::TestEnv {
         "fossil settings failed: {}",
         String::from_utf8_lossy(&ignore.stderr)
     );
-    common::fossil_commit_all(&env, "fixture: Givn 0.2.0 project");
+    common::fossil_commit_all(&env, &format!("fixture: Givn {version} project"));
     env
 }
 
@@ -508,16 +508,6 @@ fn current_fossil_project_with_stale_integration() -> crate::common::TestEnv {
     );
     common::fossil_commit_all(&env, "fixture: Givn current project");
     env
-}
-
-#[given("a Givn 0.2.0 project with uncommitted user changes")]
-fn dirty_legacy_project(world: &mut GivnWorld) {
-    let env = legacy_git_project();
-    let config = std::fs::read(env.path("givn/config.yaml")).expect("read legacy config");
-    std::fs::write(env.path("user-work.txt"), "uncommitted user change\n")
-        .expect("write uncommitted user change");
-    world.additional_output = Some(String::from_utf8(config).expect("legacy config is UTF-8"));
-    world.env = Some(env);
 }
 
 #[then("the command fails before changing project files")]
@@ -640,26 +630,6 @@ fn already_prepared_report(world: &mut GivnWorld) {
     assert!(String::from_utf8_lossy(&output.stdout).contains("already prepared for migration"));
 }
 
-#[given("a Givn 0.2.0 project that is not a Git repository")]
-fn non_git_legacy_project(world: &mut GivnWorld) {
-    let env = crate::common::make_bare_root();
-    let init = crate::common::run_givn_with_stdin(
-        &env,
-        &["init", "--no-addons", "--agents", "opencode"],
-        "",
-    );
-    assert!(init.status.success(), "fixture init failed");
-    let config_path = env.path("givn/config.yaml");
-    let config = std::fs::read_to_string(&config_path).expect("read fixture config");
-    let legacy = config.replace(
-        &format!("givn_config_version: \"{}\"", env!("CARGO_PKG_VERSION")),
-        "givn_config_version: \"0.2.0\"",
-    );
-    std::fs::write(&config_path, &legacy).expect("write legacy config");
-    world.additional_output = Some(legacy);
-    world.env = Some(env);
-}
-
 #[then("the command explains that a Git repository is required for the automatic migration")]
 fn git_required_report(world: &mut GivnWorld) {
     let output = crate::steps::output(world);
@@ -678,28 +648,6 @@ fn version_controlled_required_report(world: &mut GivnWorld) {
     let output = crate::steps::output(world);
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(stderr.contains("version-controlled project"), "{stderr}");
-}
-
-#[given(regex = r#"^a Givn 0.2.0 project with an existing "([^"]+)" change$"#)]
-fn existing_migration_project(world: &mut GivnWorld, id: String) {
-    // The pre-created migrate-* change is respected whatever its version suffix.
-    assert!(id.starts_with("migrate-"), "{id}");
-    let env = legacy_git_project();
-    let migration = env.path(&format!("givn/changes/{id}"));
-    std::fs::create_dir_all(&migration).expect("create existing migration plan");
-    // The upgrade dedup detection keys on migration.yaml — the fixture's
-    // pre-existing plan carries one so it is recognised as pending.
-    std::fs::write(
-        migration.join("migration.yaml"),
-        "schema_version: 1\nsource_version: \"0.2.0\"\ntarget_version: \"0.4.0\"\n",
-    )
-    .expect("write existing migration metadata");
-    let proposal = "# Existing migration proposal\nkeep this proposal\n";
-    let design = "# Existing migration design\nkeep this design\n";
-    std::fs::write(migration.join("proposal.md"), proposal).expect("write existing proposal");
-    std::fs::write(migration.join("design.md"), design).expect("write existing design");
-    world.additional_output = Some(format!("{proposal}---\n{design}"));
-    world.env = Some(env);
 }
 
 #[then("the command does not overwrite the existing migration proposal or design")]

@@ -237,7 +237,9 @@ fn catalog_bundles_are_complete(world: &mut GivnWorld) {
 
 #[given("an automatically created current-version migration change")]
 fn automatic_migration_change(world: &mut GivnWorld) {
-    let env = crate::steps::release_0_3_0_e2e_steps::legacy_git_project();
+    // The fixture records 0.7.0, the oldest declared migration source: a
+    // project below the route floor receives no migration plan at all.
+    let env = crate::steps::release_0_3_0_e2e_steps::git_project_at_0_7_0();
     let output = crate::common::run_givn(&env, &["upgrade"]);
     assert!(
         output.status.success(),

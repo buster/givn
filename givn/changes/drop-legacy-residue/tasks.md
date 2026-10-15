@@ -439,7 +439,7 @@ Implementation strategy (from `design.md`):
   - Domain context: `publish-a-release` — a release with incomplete metadata is never presented as complete; the migration guide is an executable prompt sequence that forbids automatic changes to domain specifications and architecture decisions.
   - Single-scenario run: `GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^The migration guide is an executable prompt sequence$'`
   - Remove `@wip` from this scenario only at RED.
-  - [ ] RED: remove `@wip` from this scenario only; run the single-scenario command. The re-pointed Given text `the 0.7.0 to 0.8.0 migration guide` has no matching step definition → undefined step fails (strict mode). Paste output — MUST exit non-zero:
+  - [x] RED: remove `@wip` from this scenario only; run the single-scenario command. The re-pointed Given text `the 0.7.0 to 0.8.0 migration guide` has no matching step definition → undefined step fails (strict mode). Paste output — MUST exit non-zero:
         ```text
         $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^The migration guide is an executable prompt sequence$'
         Feature: Givn release metadata and migration route
@@ -454,7 +454,7 @@ Implementation strategy (from `design.md`):
         1 step (1 failed)
         error: test failed (exit status: 1)
         ```
-  - [ ] GREEN: apply the re-point and the three assertion rewrites in `tests/steps/release_0_3_0_steps.rs`. Production files modified: `tests/steps/release_0_3_0_steps.rs`. Targeted re-run — MUST exit 0:
+  - [x] GREEN: apply the re-point and the three assertion rewrites in `tests/steps/release_0_3_0_steps.rs`. Production files modified: `tests/steps/release_0_3_0_steps.rs`. Targeted re-run — MUST exit 0:
         ```text
         $ cargo check --tests
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.85s
@@ -473,7 +473,7 @@ Implementation strategy (from `design.md`):
         5 steps (5 passed)
         (exit 0)
         ```
-  - [ ] REFACTOR: no cleanup; re-run targeted — MUST exit 0:
+  - [x] REFACTOR: no cleanup; re-run targeted — MUST exit 0:
         ```text
         $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^The migration guide is an executable prompt sequence$'
         [Summary]
@@ -482,7 +482,7 @@ Implementation strategy (from `design.md`):
         5 steps (5 passed)
         (exit 0)
         ```
-  - [ ] Nextest gate evidence (F21): paste the `./run-tests.sh` nextest run showing this scenario passing under the gate protocol:
+  - [x] Nextest gate evidence (F21): paste the `./run-tests.sh` nextest run showing this scenario passing under the gate protocol:
         ```text
         The full `./run-tests.sh` gate run cancels the tail units on first
         failure (nextest fail-fast), so this unit never runs in it. The same
@@ -499,9 +499,9 @@ Implementation strategy (from `design.md`):
         remaining still-@wip sections of the other tasks, expected mid-change):
              Summary [   1.092s] 16 tests run: 5 passed, 11 failed, 0 skipped
         ```
-  - [ ] COMMIT: `feat(describe-the-release): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: `feat(describe-the-release): <release note>` with the scenario title in the message body — Hash: `e4235ed2ae0baafd4aa95da044b192c8278f1469`
 
-- [ ] Scenario: `A project below the oldest migration route receives no migration change` (`apply-a-managed-upgrade`, `@givn.added` — first migration section; carries the catalog/bundle deletion)
+- [x] Scenario: `A project below the oldest migration route receives no migration change` (`apply-a-managed-upgrade`, `@givn.added` — first migration section; carries the catalog/bundle deletion)
   **Design constraints:**
   - Delta file: `givn/changes/drop-legacy-residue/specs/upgrade-a-project/apply-a-managed-upgrade.feature`.
   - **This section carries the migration-catalog deletion (ordering note).** It is the natural first migration section: with the pre-0.8 bundles present, a 0.2.0 project receives a migration change and the scenario fails at RED; deleting the routes turns it green. Later migration sections (the four protection scenarios and the 0.7.0 outline) carry only their fixture/step/fixture-support deltas.
@@ -512,23 +512,89 @@ Implementation strategy (from `design.md`):
   - Domain context: `upgrade-a-project` (delta usecase.md) — a project whose recorded version has no declared route receives the managed refresh only; "a migration-free upgrade publishes exactly one revision and no plan revision"; the minimal guarantee protects the project from partial automatic migration.
   - Single-scenario run: `GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A project below the oldest migration route receives no migration change$'`
   - Remove `@wip` from this scenario only at RED.
-  - [ ] RED: remove `@wip` from this scenario only; run the single-scenario command. All steps already exist (`a clean Git project created with Givn 0.2.0`, `the consumer invokes `givn upgrade` for migration`, `the command exits successfully`, `the project config identifies the current Givn version`, `one managed upgrade commit exists`, `no migration change exists`) — the failure is behavioural: the catalog still declares the 0.2.0 routes, so a migration change is created and `no migration change exists` fails. Paste output — MUST exit non-zero:
+  - [x] RED: remove `@wip` from this scenario only; run the single-scenario command. All steps already exist (`a clean Git project created with Givn 0.2.0`, `the consumer invokes `givn upgrade` for migration`, `the command exits successfully`, `the project config identifies the current Givn version`, `one managed upgrade commit exists`, `no migration change exists`) — the failure is behavioural: the catalog still declares the 0.2.0 routes, so a migration change is created and `no migration change exists` fails. Paste output — MUST exit non-zero:
         ```text
-        <paste targeted run output — expected non-zero exit (migration change exists against the pre-0.8 catalog)>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A project below the oldest migration route receives no migration change$'
+        Feature: Managed upgrade and legacy project migration
+          Scenario: A project below the oldest migration route receives no migration change
+           ✔  Given a clean Git project created with Givn 0.2.0
+           ✔  When the consumer invokes `givn upgrade` for migration
+           ✔  Then the command exits successfully
+           ✔  And the project config identifies the current Givn version
+           ✘  And one managed upgrade commit exists
+              Step failed:
+              Defined: givn/changes/drop-legacy-residue/specs/upgrade-a-project/apply-a-managed-upgrade.feature:31:5
+              Matched: tests/steps/release_0_3_0_e2e_steps.rs:168:1
+              Step panicked. Captured output: assertion `left == right` failed: expected fixture commit plus managed commit
+                left: "3"
+               right: "2"
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        5 steps (4 passed, 1 failed)
+        error: test failed (exit status: 1)
+        (exit 1 — behavioural RED: the pre-0.8 catalog still routes 0.2.0, so the
+        upgrade writes the aggregate migration change and its plan revision: 3
+        commits instead of the managed-only 2.)
         ```
-  - [ ] GREEN: delete the five bundle directories and the five `assets/migrations/catalog.yaml` entries; apply the three `src/cli/migration.rs` unit-test updates; apply the fixture parameterisation (`no_migration_change_exists` drops the redundant per-version prefix scan; delete the now-unused 0.2.0 step functions except `a clean Git project created with Givn 0.2.0`). Production files modified: `assets/migrations/catalog.yaml`, five bundle directories deleted under `assets/migrations/`, `src/cli/migration.rs` (unit tests), `tests/steps/release_0_3_0_steps.rs`, `tests/steps/release_0_3_0_e2e_steps.rs`. Targeted re-run — MUST exit 0:
+  - [x] GREEN: delete the five bundle directories and the five `assets/migrations/catalog.yaml` entries; apply the three `src/cli/migration.rs` unit-test updates; apply the fixture parameterisation (`no_migration_change_exists` drops the redundant per-version prefix scan; delete the now-unused 0.2.0 step functions except `a clean Git project created with Givn 0.2.0`). Production files modified: `assets/migrations/catalog.yaml`, five bundle directories deleted under `assets/migrations/`, `src/cli/migration.rs` (unit tests), `tests/steps/release_0_3_0_steps.rs`, `tests/steps/release_0_3_0_e2e_steps.rs`. Targeted re-run — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ cargo test --lib cli::migration::tests
+        running 10 tests
+        test cli::migration::tests::catalog_declares_0_7_0_as_the_oldest_source ... ok
+        test cli::migration::tests::migration_path_routes_0_7_0_to_the_current_release ... ok
+        test cli::migration::tests::aggregate_design_keeps_bundle_phases_in_order ... ok
+        test cli::migration::tests::aggregate_proposal_preserves_word_spacing ... ok
+        (… 10 passed; 0 failed …)
+
+        $ cargo clippy --workspace --all-targets -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.84s
+        (exit 0)
+
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A project below the oldest migration route receives no migration change$'
+        Feature: Managed upgrade and legacy project migration
+          Scenario: A project below the oldest migration route receives no migration change
+           ✔  Given a clean Git project created with Givn 0.2.0
+           ✔  When the consumer invokes `givn upgrade` for migration
+           ✔  Then the command exits successfully
+           ✔  And the project config identifies the current Givn version
+           ✔  And one managed upgrade commit exists
+           ✔  And no migration change exists
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        (exit 0)
         ```
-  - [ ] REFACTOR: no cleanup beyond the deletions; re-run targeted — MUST exit 0:
+  - [x] REFACTOR: no cleanup beyond the deletions; re-run targeted — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A project below the oldest migration route receives no migration change$'
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        (exit 0)
         ```
-  - [ ] Nextest gate evidence (F21): paste the `./run-tests.sh` nextest run showing this scenario passing under the gate protocol:
+  - [x] Nextest gate evidence (F21): paste the `./run-tests.sh` nextest run showing this scenario passing under the gate protocol:
         ```text
-        <paste nextest gate run output>
+        The full `./run-tests.sh` gate run cancels the tail units on first
+        failure (nextest fail-fast), so this unit never runs in it. The same
+        gate protocol, filtered to this scenario:
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs GIVN_CUCUMBER_TAGS='' cargo nextest run --no-tests=warn --locked --test features_runner 'upgrade-a-project/apply-a-managed-upgrade.feature::A project below the oldest migration route receives no migration change'
+        Nextest run ID f70b06ac-7f94-4ab3-9936-3f9d6952030a with nextest profile: default
+            Starting 1 test across 1 binary (15 tests skipped)
+                PASS [   0.670s] (1/1) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A project below the oldest migration route receives no migration change
+        Summary [   0.670s] 1 test run: 1 passed, 15 skipped
+        (exit 0)
+
+        Full gate with fail-fast off (`--no-fail-fast`): 16 run — 6 passed
+        (this scenario, the guide scenario, and the four earlier sections),
+        10 failed (the remaining still-@wip sections of the other tasks,
+        expected mid-change):
+                PASS [   0.812s] (11/16) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A project below the oldest migration route receives no migration change
+             Summary 16 tests run: 6 passed, 10 failed, 0 skipped
         ```
-  - [ ] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: ``
 
 - [ ] Scenario: `An unclean project is protected from automatic migration commits` (`apply-a-managed-upgrade`, `@givn.modified` — fixture-only delta)
   **Design constraints:**
