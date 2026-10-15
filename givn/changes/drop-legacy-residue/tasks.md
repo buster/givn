@@ -727,9 +727,9 @@ Implementation strategy (from `design.md`):
         Summary [   0.442s] 1 test run: 1 passed, 15 skipped
         (exit 0)
         ```
-  - [x] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: `c97bc27fe043f64e5b878e7667b8879836359767`
 
-- [ ] Scenario: `An existing migration plan is never overwritten` (`apply-a-managed-upgrade`, `@givn.modified` — fixture-only delta)
+- [x] Scenario: `An existing migration plan is never overwritten` (`apply-a-managed-upgrade`, `@givn.modified` — fixture-only delta)
   **Design constraints:**
   - Delta file: `givn/changes/drop-legacy-residue/specs/upgrade-a-project/apply-a-managed-upgrade.feature`. This section carries only its fixture delta (ordering note).
   - Files: modify `tests/steps/release_0_3_0_steps.rs` — add the 0.7.0 existing-plan regex Given (`a Givn 0.7.0 project with an existing "migrate-0-7-0-to-0-8-0" change`); the `automatic_migration_change` fixture helper moves to the 0.7.0 fixture. The Then steps already exist; no production code change.
@@ -737,23 +737,65 @@ Implementation strategy (from `design.md`):
   - Domain context: `upgrade-a-project` extension 5 — a plan for the gap already exists → the existing proposal and design are preserved and reported; protects the success guarantee.
   - Single-scenario run: `GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^An existing migration plan is never overwritten$'`
   - Remove `@wip` from this scenario only at RED.
-  - [ ] RED: remove `@wip` from this scenario only; run the single-scenario command. The 0.7.0 Given text has no matching step definition → undefined step fails (strict mode). Paste output — MUST exit non-zero:
+  - [x] RED: remove `@wip` from this scenario only; run the single-scenario command. The 0.7.0 Given text has no matching step definition → undefined step fails (strict mode). Paste output — MUST exit non-zero:
         ```text
-        <paste targeted run output — expected non-zero exit (undefined step)>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^An existing migration plan is never overwritten$'
+        Feature: Managed upgrade and legacy project migration
+          Scenario: An existing migration plan is never overwritten
+           ✘  Given a Givn 0.7.0 project with an existing "migrate-0-7-0-to-0-8-0" change
+              Step failed:
+              Defined: givn/changes/drop-legacy-residue/specs/upgrade-a-project/apply-a-managed-upgrade.feature:51:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        error: test failed (exit status: 1)
         ```
-  - [ ] GREEN: add the 0.7.0 existing-plan Given step definition; the Then steps are reused as-is. Production files modified: `tests/steps/release_0_3_0_steps.rs`. Targeted re-run — MUST exit 0:
+  - [x] GREEN: add the 0.7.0 existing-plan Given step definition; the Then steps are reused as-is. Production files modified: `tests/steps/release_0_3_0_steps.rs`. Targeted re-run — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ cargo check --tests
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.96s
+
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^An existing migration plan is never overwritten$'
+        Feature: Managed upgrade and legacy project migration
+          Scenario: An existing migration plan is never overwritten
+           ✔  Given a Givn 0.7.0 project with an existing "migrate-0-7-0-to-0-8-0" change
+           ✔  When the consumer invokes `givn upgrade` for migration
+           ✔  Then the command does not overwrite the existing migration proposal or design
+           ✔  And the command reports the existing migration change
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        (exit 0 — Then steps `the command does not overwrite the existing migration
+        proposal or design` and `the command reports the existing migration change`
+        reused as-is. Note: the `automatic_migration_change` helper named in this
+        section's constraints already moved to the 0.7.0 fixture in the
+        no-route section's GREEN, where the fixture parameterisation landed.)
         ```
-  - [ ] REFACTOR: no cleanup; re-run targeted — MUST exit 0:
+  - [x] REFACTOR: no cleanup; re-run targeted — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^An existing migration plan is never overwritten$'
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        (exit 0)
         ```
-  - [ ] Nextest gate evidence (F21): paste the `./run-tests.sh` nextest run showing this scenario passing under the gate protocol:
+  - [x] Nextest gate evidence (F21): paste the `./run-tests.sh` nextest run showing this scenario passing under the gate protocol:
         ```text
-        <paste nextest gate run output>
+        The full `./run-tests.sh` gate run cancels the tail units on first
+        failure (nextest fail-fast), so this unit never runs in it. The same
+        gate protocol, filtered to this scenario:
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs GIVN_CUCUMBER_TAGS='' cargo nextest run --no-tests=warn --locked --test features_runner 'upgrade-a-project/apply-a-managed-upgrade.feature::An existing migration plan is never overwritten'
+        Nextest run ID 806777f9-2977-4955-910d-cb73bb2b4300 with nextest profile: default
+            Starting 1 test across 1 binary (15 tests skipped)
+                PASS [   0.467s] (1/1) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::An existing migration plan is never overwritten
+        Summary [   0.467s] 1 test run: 1 passed, 15 skipped
+        (exit 0)
         ```
-  - [ ] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: `feat(apply-a-managed-upgrade): <release note>` with the scenario title in the message body — Hash: ``
 
 - [ ] Scenario: `A Fossil project with uncommitted changes is protected from automatic migration commits` (`apply-a-managed-upgrade`, `@givn.modified` — fixture-only delta)
   **Design constraints:**

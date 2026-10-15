@@ -249,6 +249,28 @@ fn automatic_migration_change(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
+#[given(regex = r#"^a Givn 0.7.0 project with an existing "([^"]+)" change$"#)]
+fn existing_migration_project_at_0_7_0(world: &mut GivnWorld, id: String) {
+    // The pre-created migrate-* change is respected whatever its version suffix.
+    assert!(id.starts_with("migrate-"), "{id}");
+    let env = crate::steps::release_0_3_0_e2e_steps::git_project_at_0_7_0();
+    let migration = env.path(&format!("givn/changes/{id}"));
+    std::fs::create_dir_all(&migration).expect("create existing migration plan");
+    // The upgrade dedup detection keys on migration.yaml — the fixture's
+    // pre-existing plan carries one so it is recognised as pending.
+    std::fs::write(
+        migration.join("migration.yaml"),
+        "schema_version: 1\nsource_version: \"0.7.0\"\ntarget_version: \"0.8.0\"\n",
+    )
+    .expect("write existing migration metadata");
+    let proposal = "# Existing migration proposal\nkeep this proposal\n";
+    let design = "# Existing migration design\nkeep this design\n";
+    std::fs::write(migration.join("proposal.md"), proposal).expect("write existing proposal");
+    std::fs::write(migration.join("design.md"), design).expect("write existing design");
+    world.additional_output = Some(format!("{proposal}---\n{design}"));
+    world.env = Some(env);
+}
+
 #[when("an LLM opens the migration change")]
 fn llm_opens_migration_change(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("migration project fixture");

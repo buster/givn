@@ -46,7 +46,7 @@ Feature: Managed upgrade and legacy project migration
     Then  the command fails before changing project files
     And  the command explains that a version-controlled project is required for the automatic migration
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: An existing migration plan is never overwritten
     Given a Givn 0.7.0 project with an existing "migrate-0-7-0-to-0-8-0" change
     When the consumer invokes `givn upgrade` for migration
