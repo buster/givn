@@ -53,7 +53,7 @@ Feature: Managed upgrade and legacy project migration
     Then the command does not overwrite the existing migration proposal or design
     And the command reports the existing migration change
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: A Fossil project with uncommitted changes is protected from automatic migration commits
     Given  a Givn 0.7.0 Fossil project with uncommitted user changes
     When  the consumer invokes `givn upgrade` for migration
