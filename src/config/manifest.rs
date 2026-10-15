@@ -31,10 +31,6 @@ pub struct Manifest {
     /// Config version marker (written to givn/config.yaml by init/upgrade).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub givn_config_version: Option<String>,
-
-    /// Whether extra tooling (e.g. grilling subagent) is active.
-    #[serde(default)]
-    pub extras: bool,
 }
 
 /// An artifact node in the lifecycle graph.
