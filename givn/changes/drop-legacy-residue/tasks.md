@@ -166,7 +166,7 @@ Implementation strategy (from `design.md`):
     cargo test --test features_runner -- --name '^<scenario title>$'`.
     `--name` is used alone because the Cucumber CLI does not combine name
     and tag filters.
-  - COMMIT: `chore(tasks): prove runner strict mode and restore the passing baseline` — Hash: ``
+  - COMMIT: `chore(tasks): prove runner strict mode and restore the passing baseline` — Hash: `743028ff2c393c25ece528e176920a78914a732b`
 
 ## Non-@e2e scenarios (in .feature order)
 
@@ -430,7 +430,7 @@ Implementation strategy (from `design.md`):
         ```
   - [x] COMMIT: `feat(resolve-change-directories): <release note>` with the scenario title in the message body (carries the `@wip` removal and this tasks.md record; no production delta — pure reuse) — Hash: `dacdfd43bd469f2117a366973ebc7722f4048b53`
 
-- [ ] Scenario: `The migration guide is an executable prompt sequence` (`describe-the-release`, `@givn.modified`)
+- [x] Scenario: `The migration guide is an executable prompt sequence` (`describe-the-release`, `@givn.modified`)
   **Design constraints:**
   - Delta file: `givn/changes/drop-legacy-residue/specs/publish-a-release/describe-the-release.feature`. The title carries no version, so it stays unversioned and is re-pointed (D6) to `docs/migrations/0.7.0-to-0.8.0.md`, the oldest retained guide.
   - Files: modify `tests/steps/release_0_3_0_steps.rs` — re-point the Given attribute `the 0.2.0 to 0.3.0 migration guide` to `the 0.7.0 to 0.8.0 migration guide` (~line 122) and the `an LLM reads the guide from a project using Givn` body path (~line 129) to `docs/migrations/0.7.0-to-0.8.0.md`. Update the three Then steps to the retained guide's actual prompt contract: ordered headings of the exact shape `### Prompt N — <Title>` (em dash) ending in `### Prompt 6 — Validate and archive`; the sentence "The LLM must inspect the project before editing it" (line 9); the corpus boundary in the guide's own words — "The maintenance change is the **inventory and plan**, not the repair site." (line 42), "Do not edit the corpus in this change." (Prompt 1), and "Confirm this change edited no corpus artifact except the term collision-check cells" (Prompt 6). The guide carries no standalone "edits no corpus artifact" sentence; the rewrite matches the phrases above.
@@ -441,19 +441,63 @@ Implementation strategy (from `design.md`):
   - Remove `@wip` from this scenario only at RED.
   - [ ] RED: remove `@wip` from this scenario only; run the single-scenario command. The re-pointed Given text `the 0.7.0 to 0.8.0 migration guide` has no matching step definition → undefined step fails (strict mode). Paste output — MUST exit non-zero:
         ```text
-        <paste targeted run output — expected non-zero exit (undefined step)>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^The migration guide is an executable prompt sequence$'
+        Feature: Givn release metadata and migration route
+          Scenario: The migration guide is an executable prompt sequence
+           ✘  Given the 0.7.0 to 0.8.0 migration guide
+              Step failed:
+              Defined: givn/changes/drop-legacy-residue/specs/publish-a-release/describe-the-release.feature:7:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        error: test failed (exit status: 1)
         ```
   - [ ] GREEN: apply the re-point and the three assertion rewrites in `tests/steps/release_0_3_0_steps.rs`. Production files modified: `tests/steps/release_0_3_0_steps.rs`. Targeted re-run — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ cargo check --tests
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.85s
+
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^The migration guide is an executable prompt sequence$'
+        Feature: Givn release metadata and migration route
+          Scenario: The migration guide is an executable prompt sequence
+           ✔  Given the 0.7.0 to 0.8.0 migration guide
+           ✔  When an LLM reads the guide from a project using Givn
+           ✔  Then it finds ordered prompts that begin with inventory and end with validation and archive
+           ✔  And the guide requires the LLM to inspect the project before editing it
+           ✔  And the guide keeps corpus repairs out of the maintenance change
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        (exit 0)
         ```
   - [ ] REFACTOR: no cleanup; re-run targeted — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^The migration guide is an executable prompt sequence$'
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        (exit 0)
         ```
   - [ ] Nextest gate evidence (F21): paste the `./run-tests.sh` nextest run showing this scenario passing under the gate protocol:
         ```text
-        <paste nextest gate run output>
+        The full `./run-tests.sh` gate run cancels the tail units on first
+        failure (nextest fail-fast), so this unit never runs in it. The same
+        gate protocol, filtered to this scenario:
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs GIVN_CUCUMBER_TAGS='' cargo nextest run --no-tests=warn --locked --test features_runner 'publish-a-release/describe-the-release.feature::The migration guide is an executable prompt sequence'
+        Nextest run ID 5a304010-d090-4eb7-9195-3c03d47b67cc with nextest profile: default
+            Starting 1 test across 1 binary (15 tests skipped)
+                PASS [   0.400s] (1/1) givn::features_runner publish-a-release/describe-the-release.feature::The migration guide is an executable prompt sequence
+        Summary [   0.400s] 1 test run: 1 passed, 15 skipped
+        (exit 0)
+
+        Full gate with fail-fast off (`--no-fail-fast`): 16 run — 5 passed
+        (this scenario and the four earlier sections), 11 failed (the
+        remaining still-@wip sections of the other tasks, expected mid-change):
+             Summary [   1.092s] 16 tests run: 5 passed, 11 failed, 0 skipped
         ```
   - [ ] COMMIT: `feat(describe-the-release): <release note>` with the scenario title in the message body — Hash: ``
 
