@@ -25,7 +25,8 @@ The sequence is:
    `./run-tests.sh`, `./run-tests.sh --e2e`, and coverage script/path entries.
 6. Unless `--no-addons` is set, enable every registered addon. In the current
    registry this scaffolds Arc42, manages the Absolute Mode fenced block, may
-   scaffold README content, and enables other registered extras.
+   scaffold README content, enables the archive coverage gate, and toggles
+   the four project-level skills and commands.
 7. Synchronize skills, commands, and attribution integrations to the selected
    targets. The sync
    updates only givn-owned fenced blocks in `AGENTS.md` and leaves all other

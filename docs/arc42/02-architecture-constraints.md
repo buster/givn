@@ -98,7 +98,7 @@ enforced by the runtime.
 
 ## 2.7 Migration Ownership Constraint
 
-The automatic 0.2.0-to-0.3.0 route may write and commit only the config
+The automatic migration route may write and commit only the config
 scaffold, generated agent integrations, Givn-owned fenced blocks, and its own
 migration plan. It may force-stage an ignored managed path only after the path
 has been calculated explicitly, and only under the `versioned` rules policy;
