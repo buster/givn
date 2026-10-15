@@ -3,10 +3,11 @@
 > **Status: historical.** Measurement basis: a 2026-08-19 real local-model run
 > on 385 permanent scenarios and 100 E5 candidates, before PR #27. The 385/100
 > figures and the resulting sequential BGE/NLI measurements are retained for
-> provenance only and are not the current operating-point truth. See the current
-> [`semantic-duplicates-real-model-filter-report.md`](../../semantic-duplicates-real-model-filter-report.md),
-> [`semantic-duplicates-e5-threshold-vs-serialization-analysis.md`](../../semantic-duplicates-e5-threshold-vs-serialization-analysis.md),
-> and [`semantic-duplicates-manual-evaluation.md`](../../semantic-duplicates-manual-evaluation.md).
+> provenance only and are not the current operating-point truth. The
+> retrieval-era evidence reports (`semantic-duplicates-real-model-filter-report.md`,
+> `semantic-duplicates-e5-threshold-vs-serialization-analysis.md`,
+> `semantic-duplicates-manual-evaluation.md`) were removed together with the
+> semantic engine.
 
 ## Executive Summary
 

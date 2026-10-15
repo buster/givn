@@ -84,4 +84,4 @@ Approval scenarios assert failed approval fallback, matching metadata, explicit 
 
 ## More Information
 
-See [ADR-052](ADR-052-bge-advisory-evidence.md), [ADR-057](ADR-057-bge-local-artifacts.md), and [chapter 7](../07-deployment-view.md).
+See [ADR-052](ADR-052-bge-advisory-evidence.md), [ADR-057](ADR-057-bge-local-artifacts.md), and [chapter 7](../../07-deployment-view.md).

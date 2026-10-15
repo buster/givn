@@ -84,4 +84,4 @@ Retrieval scenarios query added and modified self-identities through both path f
 
 ## More Information
 
-See [chapter 8.5c](../08-crosscutting-concepts.md#85c-current-change-scenario-exploration).
+See [chapter 8.5c](../../08-crosscutting-concepts.md#85c-current-change-scenario-exploration).

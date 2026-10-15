@@ -85,5 +85,5 @@ Change-aware Explore scenarios assert source labeling, added/modified filtering,
 
 ## More Information
 
-The permanent query contract is maintained by the
-[`spec-explore-permanent` feature](../../../givn/specs/spec-explore-permanent/spec-explore-permanent.feature); see also [ADR-045](ADR-045-project-relative-identity.md).
+The permanent query contract was maintained by the
+`spec-explore-permanent` feature (retired); see also [ADR-045](ADR-045-project-relative-identity.md).

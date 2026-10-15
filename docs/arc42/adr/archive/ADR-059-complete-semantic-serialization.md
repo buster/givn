@@ -89,4 +89,4 @@ Serialization tests cover feature/rule context, backgrounds, roles, tables, docs
 ## More Information
 
 Omission of normalized empty optional content is part of this serializer
-decision; model input mechanics are in [chapter 8.5g](../08-crosscutting-concepts.md#85g-shared-complete-semantic-serialization-and-token-budget-guard).
+decision; model input mechanics are in [chapter 8.5g](../../08-crosscutting-concepts.md#85g-shared-complete-semantic-serialization-and-token-budget-guard).

@@ -90,4 +90,4 @@ Semantic-review scenarios cover report creation, exact output, evidence invalida
 
 ## More Information
 
-See [ADR-047](ADR-047-projected-remediation.md), [chapter 6.9](../06-runtime-view.md#69-blocking-semantic-review-report), and the parser limitation in [chapter 11](../11-risks-and-technical-debt.md).
+See [ADR-047](ADR-047-projected-remediation.md), [chapter 6.9](../../06-runtime-view.md#69-blocking-semantic-review-report), and the parser limitation in [chapter 11](../../11-risks-and-technical-debt.md).

@@ -40,3 +40,5 @@ order 70). It inventories the project rules that 0.9.0 displaced from
 installed files, records them in the `extensions:` map of `givn/config.yaml`,
 and verifies the served instructions carry them; the human-facing companion
 guide is [`0.8.0-to-0.9.0.md`](0.8.0-to-0.9.0.md).
+
+*[Documentation index](../INDEX.md)*

@@ -73,4 +73,4 @@ The open change's executable scenarios cover the default, E5-descending selectio
 
 ## More Information
 
-This supersedes the refusal behavior in [ADR-053](archive/ADR-053-bge-pair-cap.md), depends on [ADR-061](ADR-061-surface-specific-independent-pools.md), and refines [ADR-060](ADR-060-actual-tokenizer-caps.md).
+This supersedes the refusal behavior in [ADR-053](ADR-053-bge-pair-cap.md), depends on [ADR-061](ADR-061-surface-specific-independent-pools.md), and refines [ADR-060](ADR-060-actual-tokenizer-caps.md).

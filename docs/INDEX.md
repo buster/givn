@@ -19,10 +19,13 @@ Status values:
 
 - [Workflow in Detail](workflow.md) - `current`; ordered phases with artifacts and completion criteria, the scenario TDD loop, advisory versus blocking gates, status semantics, and archive mechanics.
 - [Multi-SCM support (ideation topic)](ideation/multi-scm-support.md) - `current`; the Git+Fossil topic record: decisions, use cases, and the seven archived seeds.
-- [Multi-SCM implementation assumptions](ideation/multi-scm-support-assumptions.md) - `current`; the documented judgment calls (A1-A19) made while implementing the topic.
+- [Local-only integrations (ideation topic)](ideation/local-only-integrations.md) - `current`; the rules-policy topic record: local-only vs versioned rules, cleanup, and commit attribution.
+- [Rules through instructions (ideation topic)](ideation/rules-through-instructions.md) - `current`; the served-instruction topic record: rules through `givn instructions`, project extensions, and guidance integrity.
+- [Multi-SCM implementation assumptions](../givn/ideation/multi-scm-support/assumptions.md) - `current`; the documented judgment calls (A1-A19) made while implementing the topic.
 - [Workflow Swimlane (SVG)](workflow.svg) - `current`; GitHub-safe swimlane rendering (pure shapes/text, no scripts or styles) of the full lifecycle with artifacts, checks, thresholds, and chokepoints. Regenerate via `python3 scripts/render-workflow-svg.py`.
 - [Workflow Swimlane (HTML)](workflow.html) - `current`; self-contained HTML swimlane view with one lane per artifact, creating actions, checking processes, and chokepoint summary. No JavaScript, no external assets, dark-mode aware.
 - [Reference](reference.md) - `current`; CLI command table, agent skills, addons, configuration keys, generated project layout, repository development scripts.
+- [Use-Case Model](use-case-model.md) - `current`; the canonical use-case definition, scoping rules, authoring requirements, and review rejection criteria.
 
 ## Project Planning
 

@@ -86,4 +86,4 @@ Remediation scenarios cover all class contracts, stale identity, disappearance, 
 
 ## More Information
 
-See [ADR-046](ADR-046-semantic-review-report.md) and [chapter 8.5e](../08-crosscutting-concepts.md#85e-projected-remediation-verification).
+See [ADR-046](ADR-046-semantic-review-report.md) and [chapter 8.5e](../../08-crosscutting-concepts.md#85e-projected-remediation-verification).

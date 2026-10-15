@@ -3,8 +3,9 @@
 > **Status: historical.** Measurement basis: a deliberately selected 20-case
 > stress set taken from the old 100-E5-candidate baseline, before PR #27. It is
 > retained as historical label context and must not be read as a current corpus
-> or threshold result. The new current evaluation is
-> [`semantic-duplicates-manual-evaluation.md`](../../semantic-duplicates-manual-evaluation.md).
+> or threshold result. The reference evaluation
+> (`semantic-duplicates-manual-evaluation.md`) was removed with the semantic
+> engine.
 
 ## Ziel
 

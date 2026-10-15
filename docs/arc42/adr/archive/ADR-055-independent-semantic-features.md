@@ -95,4 +95,4 @@ Cargo feature checks and BGE/NLI isolation scenarios assert that enabling one mo
 
 ## More Information
 
-See [ADR-054](ADR-054-versioned-evidence-output.md), [ADR-058](ADR-058-nli-evidence.md), and [chapter 2](../02-architecture-constraints.md).
+See [ADR-054](ADR-054-versioned-evidence-output.md), [ADR-058](ADR-058-nli-evidence.md), and [chapter 2](../../02-architecture-constraints.md).

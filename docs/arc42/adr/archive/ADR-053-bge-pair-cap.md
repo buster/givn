@@ -11,7 +11,7 @@ informed:
 
 # Historical record: fixed BGE pair-cap refusal
 
-> This record is superseded by [ADR-063](../ADR-063-reranker-pair-budget.md). The endpoint top-five eligibility remains, but overflow is now intended to be handled by an E5-ranked budget.
+> This record is superseded by [ADR-063](ADR-063-reranker-pair-budget.md). The endpoint top-five eligibility remains, but overflow is now intended to be handled by an E5-ranked budget.
 
 ## Qualification
 
@@ -68,4 +68,4 @@ The old fixed-cap scenarios were removed or migrated; current budget scenarios a
 
 ## More Information
 
-See [ADR-063](../ADR-063-reranker-pair-budget.md) and [chapter 11](../../11-risks-and-technical-debt.md).
+See [ADR-063](ADR-063-reranker-pair-budget.md) and [chapter 11](../../11-risks-and-technical-debt.md).

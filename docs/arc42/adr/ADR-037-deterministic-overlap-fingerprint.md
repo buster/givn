@@ -59,7 +59,7 @@ Chosen option: **Use a deterministic fingerprint of masked assertion steps plus 
 
 - Quoted strings and numbers are masked; facts include exit codes, `contains` polarity, tables, `[DONE]`, and TTY mentions.
 - Missing facts do not create a contradiction.
-- Semantic E5/BGE/NLI evidence remains a separate layer; [ADR-041](ADR-041-e5-uniqueness-gate.md) governs its strict gate.
+- Semantic E5/BGE/NLI evidence remains a separate layer; [ADR-041](archive/ADR-041-e5-uniqueness-gate.md) governs its strict gate.
 
 ### Confirmation
 

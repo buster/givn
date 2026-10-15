@@ -491,3 +491,5 @@ on a tie or below the floor. A no-signal report prints the reason and omits
 the ranked list, so the output never presents ranking noise as a
 recommendation. The recorded decision in the proposal remains the
 declaration; the command stays advisory.
+
+*[Architecture documentation index](README.md)*

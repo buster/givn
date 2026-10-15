@@ -1,6 +1,6 @@
 <!-- givn:begin:coverage-badge -->
 [![Line Coverage: 81%](https://img.shields.io/badge/line%20coverage-81%25-brightgreen)](coverage/cobertura-coverage.xml)
-[![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
+[![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-lightgrey)](coverage/cobertura-coverage.xml)
 <!-- givn:end:coverage-badge -->
 
 ```
@@ -62,7 +62,7 @@ Build from source (not published to crates.io or as release binaries). Requires
 a recent stable Rust toolchain; installs to `~/.cargo/bin`.
 
 ```sh
-git clone <this repository's URL>
+git clone https://github.com/buster/givn.git
 cd givn
 cargo install --path .                        # the single feature-free binary
 ```
@@ -80,6 +80,10 @@ givn init                             # scaffold givn/ + generate skills + AGENT
 /givn-review                          # (in your AI agent) coverage review, sign off
 /givn-archive
 ```
+
+Before the first archive, set `verify.command` in `givn/commands.yaml` to a
+Gherkin runner that executes the `.feature` files; the shipped sentinel fails
+on purpose until you do.
 
 `givn init` asks which agent targets receive the generated skills and commands;
 the list opens with `.opencode` marked and re-asks until at least one target is
@@ -111,6 +115,8 @@ Missing context never blocks a human commit.
 
 ## Documentation
 
+- [`docs/INDEX.md`](docs/INDEX.md) — the documentation index: every durable
+  document under `docs/`, current or archived.
 - [`docs/workflow.md`](docs/workflow.md) — the process in detail: every step in
   order, what is created, what is checked, and how givn enforces process
   quality.

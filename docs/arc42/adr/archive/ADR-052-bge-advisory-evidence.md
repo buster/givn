@@ -86,4 +86,4 @@ BGE scenarios assert bidirectional score output, inclusive threshold admission, 
 
 ## More Information
 
-The superseded experiment is [ADR-042](archive/ADR-042-bge-experiment.md); budget selection is [ADR-063](ADR-063-reranker-pair-budget.md).
+The superseded experiment is [ADR-042](ADR-042-bge-experiment.md); budget selection is [ADR-063](ADR-063-reranker-pair-budget.md).

@@ -101,7 +101,7 @@ Artifact scenarios assert valid local loading, missing/corrupt preflight failure
 
 ## More Information
 
-See [ADR-056](ADR-056-bge-approval.md) and [chapter 7.1](../07-deployment-view.md#71-product-artifact).
+See [ADR-056](ADR-056-bge-approval.md) and [chapter 7.1](../../07-deployment-view.md#71-product-artifact).
 
 ## Amendment (2026-08-23)
 

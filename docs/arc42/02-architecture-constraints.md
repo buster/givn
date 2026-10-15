@@ -111,3 +111,5 @@ Domain specs, source code, ejected facets, durable Arc42 content, and
 architecture decisions remain project-owned and are changed only through
 LLM-guided project changes — the maintenance change or the follow-up changes
 it names.
+
+*[Architecture documentation index](README.md)*

@@ -3,9 +3,10 @@
 > **Status: historical.** Measurement basis: the combined Givn/Watn corpus with
 > 425 scenarios, a strict E5 pool of 199 pairs, and a top-five union of 1,428
 > pairs. This experiment predates PR #27's current 394/1274/795 run and is
-> retained for historical comparison only. Current evidence is in
-> [`semantic-duplicates-real-model-filter-report.md`](../../semantic-duplicates-real-model-filter-report.md)
-> and [`semantic-duplicates-e5-threshold-vs-serialization-analysis.md`](../../semantic-duplicates-e5-threshold-vs-serialization-analysis.md).
+> retained for historical comparison only. The retrieval-era evidence reports
+> (`semantic-duplicates-real-model-filter-report.md`,
+> `semantic-duplicates-e5-threshold-vs-serialization-analysis.md`) were removed
+> with the semantic engine.
 
 ## Scope
 

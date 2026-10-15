@@ -2,9 +2,10 @@
 
 > **Status: historical.** Measurement basis: the NLI comparison branch with 208
 > permanent scenarios and 839 integrated candidate pairs. This predates PR #27
-> and is retained as benchmark history, not as the current operating point. See
-> the current [`semantic-duplicates-real-model-filter-report.md`](../../semantic-duplicates-real-model-filter-report.md)
-> and [`semantic-duplicates-manual-evaluation.md`](../../semantic-duplicates-manual-evaluation.md).
+> and is retained as benchmark history, not as the current operating point. The
+> paired reports (`semantic-duplicates-real-model-filter-report.md`,
+> `semantic-duplicates-manual-evaluation.md`) were removed with the semantic
+> engine.
 
 This document records the NLI comparison branch against the existing
 `cross-encoder-reranker` branch. It is an experiment document, not a givn

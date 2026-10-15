@@ -11,7 +11,7 @@ informed:
 
 # Historical record: retrieve with E5 and decide with a reranker
 
-> This experiment is superseded by [ADR-052](../ADR-052-bge-advisory-evidence.md). BGE is now advisory evidence, not a replacement decision gate.
+> This experiment is superseded by [ADR-052](ADR-052-bge-advisory-evidence.md). BGE is now advisory evidence, not a replacement decision gate.
 
 ## Qualification
 
@@ -69,4 +69,4 @@ Current BGE scenarios and the surface-specific evidence records implement ADR-05
 
 ## More Information
 
-See [ADR-052](../ADR-052-bge-advisory-evidence.md), [ADR-057](../ADR-057-bge-local-artifacts.md), and [chapter 8.5a](../../08-crosscutting-concepts.md#85a-local-scenario-retrieval).
+See [ADR-052](ADR-052-bge-advisory-evidence.md), [ADR-057](ADR-057-bge-local-artifacts.md), and [chapter 8.5a](../../08-crosscutting-concepts.md#85a-local-scenario-retrieval).

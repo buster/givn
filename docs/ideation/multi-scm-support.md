@@ -110,3 +110,5 @@ recording it.
 Seeds 5-7 may be folded into 1-3. Seed files with full decision records live
 under `givn/ideation/multi-scm-support/changes/`. Handoff does not start any
 change; run `/givn-propose <id>` per seed when ready.
+
+*[Documentation index](../INDEX.md)*
