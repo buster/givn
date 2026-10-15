@@ -77,7 +77,7 @@ Implementation strategy (from `design.md`):
 
 ## Non-@e2e scenarios (in .feature order)
 
-- [ ] Scenario: `Archive is blocked when merged permanent specs gain @e2e scenarios and e2e_command is unconfigured` (`enforce-post-merge-e2e-gate`, `@givn.modified`)
+- [x] Scenario: `Archive is blocked when merged permanent specs gain @e2e scenarios and e2e_command is unconfigured` (`enforce-post-merge-e2e-gate`, `@givn.modified`)
   **Design constraints:**
   - Delta file: `givn/changes/drop-legacy-residue/specs/archive-change/enforce-post-merge-e2e-gate.feature`. Permanent title unchanged; only the Given text is re-pointed: `And the givn/commands.yaml has e2e_command unconfigured` (was `givn/config.yaml`). Observable behaviour identical — the fixtures already write `givn/commands.yaml`; only the step attribute name changes.
   - Files: modify `tests/steps/enforce_post_merge_e2e_gate_steps.rs` — rename the Given attribute `the givn/config.yaml has e2e_command unconfigured` (~line 77) to `the givn/commands.yaml has e2e_command unconfigured`. Nothing else changes; no production code change.
@@ -142,7 +142,7 @@ Implementation strategy (from `design.md`):
         Summary [   0.836s] 12/16 tests run: 2 passed, 10 failed, 0 skipped
         (exit 100 — the still-@wip sections of the other tasks fail as expected; this scenario PASSes under the nextest gate protocol)
         ```
-  - [ ] COMMIT: `feat(enforce-post-merge-e2e-gate): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: `feat(enforce-post-merge-e2e-gate): <release note>` with the scenario title in the message body — Hash: `8bdcccac0dd7bc29a565a1e55eabff1535fb282d`
 
 - [ ] Scenario: `Archive succeeds when merged permanent specs have no @e2e scenarios and e2e_command is unconfigured` (`enforce-post-merge-e2e-gate`, `@givn.modified`, reuse)
   **Design constraints:**
@@ -151,21 +151,53 @@ Implementation strategy (from `design.md`):
   - Domain context: `archive-change` — the permanent corpus contains the accepted change, bound to a verification receipt for the revision that passed every verification scope.
   - Single-scenario run: `GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^Archive succeeds when merged permanent specs have no @e2e scenarios and e2e_command is unconfigured$'`
   - Remove `@wip` from this scenario only at RED.
-  - [ ] RED: remove `@wip` from this scenario only; run the single-scenario command. All steps reused (the shared Given `the givn/commands.yaml has e2e_command unconfigured` landed in the previous scenario's GREEN) → zero exit is legitimate immediate GREEN. Record the reused steps: `the givn/commands.yaml has e2e_command unconfigured` (renamed in the previous scenario's GREEN); all archive steps pre-existing. Paste the run:
+  - [x] RED: remove `@wip` from this scenario only; run the single-scenario command. All steps reused (the shared Given `the givn/commands.yaml has e2e_command unconfigured` landed in the previous scenario's GREEN) → zero exit is legitimate immediate GREEN. Record the reused steps: `the givn/commands.yaml has e2e_command unconfigured` (renamed in the previous scenario's GREEN); all archive steps pre-existing. Paste the run:
         ```text
-        <paste targeted run output — zero exit with all steps reused>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^Archive succeeds when merged permanent specs have no @e2e scenarios and e2e_command is unconfigured$'
+        Feature: Enforce Post-Merge E2E Gate
+          Scenario: Archive succeeds when merged permanent specs have no @e2e scenarios and e2e_command is unconfigured
+           ✔  Given a project root with givn/ initialised
+           ✔  And the givn/commands.yaml has e2e_command unconfigured
+           ✔  And a completed change "no-e2e" whose delta contains zero @e2e-tagged scenarios
+           ✔  And the permanent specs currently have no @e2e scenarios
+           ✔  And the project declares a complete run declaration
+           ✔  When the user runs `givn archive --change no-e2e`
+           ✔  Then the command exits 0
+           ✔  And the change directory has been moved to givn/archive/
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        (exit 0 — zero exit with all steps reused)
         ```
-  - [ ] GREEN: no new code; re-run targeted to confirm — MUST exit 0. Production files: none (pure reuse scenario):
+  - [x] GREEN: no new code; re-run targeted to confirm — MUST exit 0. Production files: none (pure reuse scenario):
         ```text
-        <paste targeted run output — expected exit 0>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^Archive succeeds when merged permanent specs have no @e2e scenarios and e2e_command is unconfigured$'
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        (exit 0)
         ```
-  - [ ] REFACTOR: none; re-run targeted — MUST exit 0:
+  - [x] REFACTOR: none; re-run targeted — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^Archive succeeds when merged permanent specs have no @e2e scenarios and e2e_command is unconfigured$'
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        (exit 0)
         ```
-  - [ ] Nextest gate evidence (F21): paste the `./run-tests.sh` nextest run showing this scenario passing under the gate protocol:
+  - [x] Nextest gate evidence (F21): paste the `./run-tests.sh` nextest run showing this scenario passing under the gate protocol:
         ```text
-        <paste nextest gate run output>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs ./run-tests.sh
+        Nextest run ID 0e89b0b8-67f7-46ea-9d39-6a1df08bbaa8 with nextest profile: default
+            Starting 16 tests across 1 binary
+                PASS [   0.680s] (10/16) givn::features_runner archive-change/enforce-post-merge-e2e-gate.feature::Archive is blocked when merged permanent specs gain @e2e scenarios and e2e_command is unconfigured
+                PASS [   0.729s] (11/16) givn::features_runner archive-change/enforce-post-merge-e2e-gate.feature::Archive succeeds when merged permanent specs have no @e2e scenarios and e2e_command is unconfigured
+                FAIL ... (the remaining still-@wip scenario sections of other tasks, expected mid-change)
+        Summary [   0.780s] 12/16 tests run: 2 passed, 10 failed, 0 skipped
+        (exit 100 — the still-@wip sections of the other tasks fail as expected; this scenario PASSes under the nextest gate protocol)
         ```
   - [ ] COMMIT: `feat(enforce-post-merge-e2e-gate): <release note>` with the scenario title in the message body (carries the `@wip` removal and this tasks.md record; no production delta — pure reuse) — Hash: ``
 
