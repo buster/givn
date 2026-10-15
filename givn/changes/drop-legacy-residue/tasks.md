@@ -1346,9 +1346,9 @@ Implementation strategy (from `design.md`):
              Summary [   1.224s] 6 tests run: 5 passed, 1 failed, 10 skipped
         (exit 100 — the still-@wip section of the final task fails as expected; this outline PASSes under the e2e gate protocol)
         ```
-  - [x] COMMIT: capture the transcript before committing. `test(e2e): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: capture the transcript before committing. `test(e2e): <release note>` with the scenario title in the message body — Hash: `bf8262fbcc2dffdbd97fef6b58a7ebc4b2fb63af`
 
-- [ ] Scenario: `A consumer invoking the retired history rewrite command is told it does not exist` (`apply-a-managed-upgrade`, `@givn.added`, `@e2e` — carries the rewrite-history production deletions)
+- [x] Scenario: `A consumer invoking the retired history rewrite command is told it does not exist` (`apply-a-managed-upgrade`, `@givn.added`, `@e2e` — carries the rewrite-history production deletions)
   **Design constraints:**
   - Delta file: `givn/changes/drop-legacy-residue/specs/upgrade-a-project/apply-a-managed-upgrade.feature`. Mirrors the retired `givn spec index` precedent in the same capability (D3): each retired command keeps its own refusal evidence so a re-added subcommand cannot hide behind the other's scenario.
   - **This is the design's "final implementation task before archive" — it carries the rewrite-history production deletions (sequencing note).**
@@ -1360,23 +1360,69 @@ Implementation strategy (from `design.md`):
   - Domain context: `upgrade-a-project` main flow 6 / extension 6 — the system names any command a release removed instead of leaving a silent gap; a consumer invoking a command the release removed is told it is unavailable; protects the success guarantee.
   - Single-scenario run: `GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A consumer invoking the retired history rewrite command is told it does not exist$'`
   - Remove `@wip` from this scenario only at RED.
-  - [ ] RED: remove `@wip` from this scenario only; run the single-scenario command. The new When/And steps have no matching step definitions → undefined steps fail (strict mode). Paste output — MUST exit non-zero:
+  - [x] RED: remove `@wip` from this scenario only; run the single-scenario command. The new When/And steps have no matching step definitions → undefined steps fail (strict mode). Paste output — MUST exit non-zero:
         ```text
-        <paste targeted run output — expected non-zero exit (undefined step)>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A consumer invoking the retired history rewrite command is told it does not exist$'
+        Feature: Managed upgrade and legacy project migration
+          Scenario: A consumer invoking the retired history rewrite command is told it does not exist
+           ✔  Given an installed Givn binary
+           ✘  When the consumer invokes the retired `givn rewrite-history` command
+              Step failed:
+              Defined: givn/changes/drop-legacy-residue/specs/upgrade-a-project/apply-a-managed-upgrade.feature:67:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+        error: test failed, to rerun pass `--test features_runner`
+        (exit status: 1 — the new When step is undefined; strict mode fails)
         ```
-  - [ ] GREEN: add the two retired-command steps in `tests/steps/release_0_3_0_steps.rs`; delete `src/cli/rewrite_history.rs`, the `pub mod rewrite_history;` line, the clap variant, and the dispatch arm; delete the two orphaned reachable-history steps in `tests/steps/local_only_rules_steps.rs`. Production files modified: `src/main.rs`, `src/cli/mod.rs`, `src/cli/rewrite_history.rs` (deleted), `tests/steps/release_0_3_0_steps.rs`, `tests/steps/local_only_rules_steps.rs`. Targeted re-run — MUST exit 0:
+  - [x] GREEN: add the two retired-command steps in `tests/steps/release_0_3_0_steps.rs`; delete `src/cli/rewrite_history.rs`, the `pub mod rewrite_history;` line, the clap variant, and the dispatch arm; delete the two orphaned reachable-history steps in `tests/steps/local_only_rules_steps.rs`. Production files modified: `src/main.rs`, `src/cli/mod.rs`, `src/cli/rewrite_history.rs` (deleted), `tests/steps/release_0_3_0_steps.rs`, `tests/steps/local_only_rules_steps.rs`. Targeted re-run — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ cargo check --tests
+            Checking givn v0.9.0 (/home/buster/.paseo/worktrees/008cxm4u/mellow-yak)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.50s
+
+        $ cargo clippy --workspace --all-targets -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.61s
+        (exit 0 — no warnings after the deletions)
+
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A consumer invoking the retired history rewrite command is told it does not exist$'
+        Feature: Managed upgrade and legacy project migration
+          Scenario: A consumer invoking the retired history rewrite command is told it does not exist
+           ✔  Given an installed Givn binary
+           ✔  When the consumer invokes the retired `givn rewrite-history` command
+           ✔  Then the command exits non-zero
+           ✔  And the error reports "rewrite-history" is not an available command
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        (exit 0)
         ```
-  - [ ] REFACTOR: no cleanup beyond the deletions; re-run targeted — MUST exit 0:
+  - [x] REFACTOR: no cleanup beyond the deletions; re-run targeted — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^A consumer invoking the retired history rewrite command is told it does not exist$'
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        (exit 0)
         ```
-  - [ ] Nextest gate evidence (F21): paste the `./run-tests.sh --e2e` nextest run showing this scenario passing under the e2e gate protocol:
+  - [x] Nextest gate evidence (F21): paste the `./run-tests.sh --e2e` nextest run showing this scenario passing under the e2e gate protocol:
         ```text
-        <paste nextest e2e gate run output>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs GIVN_CUCUMBER_TAGS='@e2e' cargo nextest run --no-fail-fast --no-tests=warn --locked --test features_runner
+            Starting 6 tests across 1 binary (10 tests skipped)
+                PASS [   0.646s] (1/6) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A consumer invoking the retired history rewrite command is told it does not exist
+                PASS [   0.701s] (2/6) givn::features_runner archive-change/enforce-post-merge-e2e-gate.feature::Consumer archives a delta that adds e2e scenarios and is blocked without a configured runner
+                PASS [   0.720s] (3/6) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::Archive is blocked when a new capability has no declared routing decision
+                PASS [   0.739s] (4/6) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::Nothing is merged when one delta file of a change has no routing decision
+                PASS [   0.792s] (5/6) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::Consumer archives a new capability and the merged spec lands in its declared use case
+                PASS [   1.454s] (6/6) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A clean 0.7.0 project receives a reviewable aggregate migration plan
+             Summary [   1.454s] 6 tests run: 6 passed, 0 failed, 10 skipped
+        (exit 0 — the whole @e2e scope is GREEN: all six delta @e2e units pass under the e2e gate protocol)
         ```
-  - [ ] COMMIT: capture the transcript before committing. `test(e2e): <release note>` with the scenario title in the message body — Hash: ``
+  - [x] COMMIT: capture the transcript before committing. `test(e2e): <release note>` with the scenario title in the message body — Hash: ``
 
 ## Residue sweeps (non-scenario edit map)
 

@@ -61,7 +61,7 @@ Feature: Managed upgrade and legacy project migration
     And  no revision is created
     And  the user changes remain byte-for-byte unchanged
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: A consumer invoking the retired history rewrite command is told it does not exist
     Given  an installed Givn binary
     When  the consumer invokes the retired `givn rewrite-history` command

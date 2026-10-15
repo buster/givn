@@ -19,7 +19,6 @@ pub mod missing_testrunner;
 pub mod new;
 pub mod project_hint;
 pub mod readme;
-pub mod rewrite_history;
 pub mod run;
 pub mod run_block;
 pub mod skills;
