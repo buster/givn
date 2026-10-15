@@ -1707,3 +1707,168 @@ Each sweep is one atomic commit. Design constraints are copied from
     is fully committed and the archive precondition holds)
     ```
   - COMMIT: `chore(bookkeeping): verify the delta merge records resolve` — Hash: `afdcdef3`
+
+## Review remediation
+
+Repairs the four findings of the review step (`REVIEW: FAIL`, all bucket 2 —
+user-visible contract and coverage pins). One atomic commit per repair; the
+`@e2e` tags are untouched; no scenario, code, or task outside the named
+repairs changed. `review.md` is not edited (the reviewer re-audits it).
+
+- [x] **R1: attribute `verify.e2e_command` to `givn/commands.yaml` in the three production error strings.**
+  **Design constraints (review finding 1):**
+  - `src/cli/archive.rs:456` (`ensure_e2e_configured`), `src/hooks.rs:143`
+    (missing-runner bail), `src/hooks.rs:159` (@e2e-intent bypass bail) all
+    said "configured in givn/config.yaml" — the corrected contract this
+    change establishes everywhere else names `givn/commands.yaml`.
+  - Files: `src/cli/archive.rs`, `src/hooks.rs`. A sweep of every remaining
+    `config.yaml` string in `src/` found only legitimate references
+    (`addons`, `skills`, `rules`, `extensions`, the version marker, the
+    init/upgrade scaffold writers, the migration `git add`, the eject
+    manifest note) — no further `verify.*` / `coverage.*` / `run:` key is
+    misattributed.
+  - Verification:
+    ```text
+    $ grep -rn "config.yaml" src/ --include="*.rs" | grep -viE "addons|skills|rules|extensions|givn_config_version|version|init|upgrade|overlay|manifest.yaml|wrote|exists|not found|create|tracked|agent-writable"
+    src/cli/eject.rs:57: … enable it in givn/config.yaml first."   (addon artifact — correct)
+    src/cli/instructions.rs:119: `givn/config.yaml`.               (extensions — correct)
+    src/cli/migration.rs:951,959: git add givn/config.yaml          (scaffold staging — correct)
+    src/config/manifest.rs:334-366: config.yaml.tmpl                (template name — correct)
+    src/config/render.rs:5,8: config.yaml.tmpl                      (template name — correct)
+    src/main.rs:217,222,242: addons / agent targets                  (addons+skills — correct)
+    (no remaining site attributes verify.*, coverage.*, or run: keys to config.yaml)
+
+    $ cargo check --tests
+        Checking givn v0.9.0 (/home/buster/.paseo/worktrees/008cxm4u/mellow-yak)
+        Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.42s
+    (exit 0)
+    ```
+  - COMMIT: `fix(e2e-gate): attribute verify.e2e_command to givn/commands.yaml in error strings` — Hash: `8cb752a4`
+
+- [x] **R2: replace the stale `givn spec` help text.**
+  **Design constraints (review finding 2):**
+  - `src/main.rs` (Spec variant, ~line 159) said "Build and query the local
+    permanent-scenario retrieval index." No such subcommand exists; the
+    actual subcommands are coverage, duplicates, propose-usecases, tree,
+    find, route. New doc comment: "Work with the permanent spec corpus:
+    coverage inventory, duplicate report, use-case proposals, tree overview,
+    lexical scenario search, and proposal routing." — no retrieval/index
+    vocabulary.
+  - Files: `src/main.rs`.
+  - Verification:
+    ```text
+    $ cargo build --locked
+        Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.54s
+    $ ./target/debug/givn spec --help
+    Work with the permanent spec corpus: coverage inventory, duplicate report, use-case proposals, tree overview, lexical scenario search, and proposal routing
+
+    Usage: givn spec <COMMAND>
+
+    Commands:
+      coverage          Emit the machine-readable specification coverage inventory
+      duplicates        Report duplicate and related permanent scenarios
+      propose-usecases  Propose use cases for the current spec tree from command- surface clustering. …
+      tree              Walk the permanent spec corpus by group: …
+      find              Lexical (not semantic) search over permanent scenario titles and step text …
+      route             Route a proposal against the permanent corpus: …
+      help              Print this message or the help of the given subcommand(s)
+    (exit 0 — the six real subcommands, no retrieval claim)
+    ```
+  - COMMIT: `fix(spec): describe the spec subcommands instead of the removed retrieval index` — Hash: `982c0ed3`
+
+- [x] **R3: pin the corrected attribution in the blocked-runner e2e scenario.**
+  **Design constraints (review finding 1 pin):**
+  - The scenario `Consumer archives a delta that adds e2e scenarios and is
+    blocked without a configured runner`
+    (`givn/changes/drop-legacy-residue/specs/archive-change/enforce-post-merge-e2e-gate.feature`,
+    `@givn.modified`, `@e2e` — tag untouched) gains the Then step
+    `stderr names givn/commands.yaml as the e2e runner's configuration
+    file`, asserted in `tests/steps/enforce_post_merge_e2e_gate_steps.rs`
+    (`e2e_stderr_names_commands_yaml`, `s.contains("givn/commands.yaml")`).
+  - No temporary revert (the strings were already corrected by R1, so the
+    green path is asserted); the assertion's strength is demonstrated
+    against the committed pre-repair transcript: its stderr line names
+    `givn/config.yaml` and does not contain the substring
+    `givn/commands.yaml`, so the new assertion fails against the old
+    string.
+  - Files: the delta feature file, `tests/steps/enforce_post_merge_e2e_gate_steps.rs`, and the re-captured transcript at
+    `givn/changes/drop-legacy-residue/evidence/visual/consumer-archives-a-delta-that-adds-e2e-scenarios-and-is-blocked-without-a-configured-runner/transcript.txt` (diff vs `0dbf6991`: timestamps, temp-dir suffix, and `config.yaml` → `commands.yaml` only).
+  - Verification:
+    ```text
+    $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name '^Consumer archives a delta that adds e2e scenarios and is blocked without a configured runner$'
+    Feature: Enforce Post-Merge E2E Gate
+      Scenario: Consumer archives a delta that adds e2e scenarios and is blocked without a configured runner
+       ✔  Given a committed givn project with verify.e2e_command unconfigured in givn/commands.yaml
+       ✔  And a change "real-e2e-merge" with all artifacts done, whose delta spec has an @e2e scenario
+       ✔  And the permanent spec directory givn/specs/ has no @e2e scenario
+       ✔  When the user invokes `givn archive --change real-e2e-merge`
+       ✔  Then the command fails
+       ✔  And stderr says the e2e runner is not configured for permanent specs with @e2e coverage
+       ✔  And stderr names givn/commands.yaml as the e2e runner's configuration file
+       ✔  And the change directory still exists under givn/changes/
+       ✔  And no archive candidate exists for "real-e2e-merge"
+    [Summary]
+    1 feature
+    1 scenario (1 passed)
+    9 steps (9 passed)
+    (exit 0)
+
+    $ old=$(git show 0dbf6991:givn/changes/drop-legacy-residue/evidence/visual/consumer-archives-a-delta-that-adds-e2e-scenarios-and-is-blocked-without-a-configured-runner/transcript.txt | sed -n '/stderr (raw/,$p')
+    $ echo "$old" | grep -o "configured in givn/[a-z.]*"
+    configured in givn/config.yaml.
+    (the pre-repair stderr lacks the "givn/commands.yaml" substring the new
+     assertion requires — the pin would have caught the misattribution)
+
+    $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs GIVN_CUCUMBER_TAGS='@e2e' cargo nextest run --no-fail-fast --no-tests=warn --locked --test features_runner
+        …
+        PASS [   0.670s] (5/6) givn::features_runner archive-change/enforce-post-merge-e2e-gate.feature::Consumer archives a delta that adds e2e scenarios and is blocked without a configured runner
+        …
+         Summary [   1.478s] 6 tests run: 6 passed, 10 skipped
+    (exit 0 — the scenario passes under the e2e gate protocol)
+    ```
+  - COMMIT: `test(e2e): pin the givn/commands.yaml attribution in the blocked-runner stderr` — Hash: `33cbe10f`
+
+- [x] **R4: pin the strict `Coverage` refusal and the lenient `extras:` tolerance with unit tests.**
+  **Design constraints (review findings 3 and 4):**
+  - `coverage_refuses_legacy_two_command_keys_and_accepts_the_surviving_schema`:
+    an overlay carrying `coverage: {non_e2e_command: "x"}` (and likewise
+    `e2e_command`) fails through the strict `Coverage` deserializer with
+    the unknown-field error naming the key (risk R-81), while the
+    surviving `measure_command` / `merge_command` schema still parses.
+  - `stray_extras_key_parses_and_has_no_effect`: an overlay carrying a
+    stray top-level `extras: true` parses (lenient `OverlayDoc`) and the
+    effective manifest serializes byte-identical to the base (design D1).
+  - Files: `src/config/overlay.rs` (existing test module).
+  - Verification:
+    ```text
+    $ cargo test --lib config::overlay
+    running 22 tests
+    …
+    test config::overlay::tests::coverage_refuses_legacy_two_command_keys_and_accepts_the_surviving_schema ... ok
+    test config::overlay::tests::stray_extras_key_parses_and_has_no_effect ... ok
+    …
+    test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 252 filtered out
+    (exit 0)
+    ```
+  - Final gates (run after R1-R4, before this tasks.md commit):
+    ```text
+    $ cargo fmt --check
+    (exit 0 — no formatting drift)
+
+    $ cargo clippy --workspace --all-targets -- -D warnings
+        Checking givn v0.9.0 (/home/buster/.paseo/worktrees/008cxm4u/mellow-yak)
+        Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.18s
+    (exit 0 — no warnings)
+
+    $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs ./run-tests.sh
+        …
+         Summary [   1.582s] 16 tests run: 16 passed, 0 skipped
+    (exit 0 — the whole delta scope is GREEN)
+
+    $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs ./run-tests.sh --e2e
+        …
+         Summary [   1.214s] 6 tests run: 6 passed, 10 skipped
+    (exit 0 — every @e2e scenario passes, including the re-pinned
+     blocked-runner scenario)
+    ```
+  - COMMIT: `test(config): pin the strict Coverage refusal and the lenient extras tolerance` — Hash: `4ea92522`
