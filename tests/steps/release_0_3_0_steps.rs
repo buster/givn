@@ -121,15 +121,15 @@ fn changelog_contains_migration_entry(world: &mut GivnWorld) {
 
 #[given("the 0.7.0 to 0.8.0 migration guide")]
 fn migration_guide(_world: &mut GivnWorld) {
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("docs/migrations/0.7.0-to-0.8.0.md");
+    let path =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/migrations/0.7.0-to-0.8.0.md");
     assert!(path.exists(), "migration guide is missing");
 }
 
 #[when("an LLM reads the guide from a project using Givn")]
 fn llm_reads_guide(world: &mut GivnWorld) {
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("docs/migrations/0.7.0-to-0.8.0.md");
+    let path =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/migrations/0.7.0-to-0.8.0.md");
     world.additional_output = Some(std::fs::read_to_string(path).expect("read migration guide"));
 }
 
@@ -152,7 +152,10 @@ fn guide_has_ordered_prompts(world: &mut GivnWorld) {
         assert!(position >= previous, "prompt order changed at {heading}");
         previous = position;
     }
-    assert!(!guide.contains("### Prompt 7"), "prompts must end at 6, {guide}");
+    assert!(
+        !guide.contains("### Prompt 7"),
+        "prompts must end at 6, {guide}"
+    );
 }
 
 #[then("the guide requires the LLM to inspect the project before editing it")]
@@ -168,7 +171,8 @@ fn guide_requires_inspection_before_editing(world: &mut GivnWorld) {
 fn guide_keeps_corpus_repairs_out(world: &mut GivnWorld) {
     let guide = world.additional_output.as_deref().expect("guide content");
     assert!(
-        guide.contains("The maintenance change is the **inventory and plan**, not the repair site."),
+        guide
+            .contains("The maintenance change is the **inventory and plan**, not the repair site."),
         "{guide}"
     );
     // Prompt-level sentences are wrapped across blockquote continuation
