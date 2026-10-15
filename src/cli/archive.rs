@@ -647,6 +647,26 @@ fn merge_usecase_documents(project_root: &std::path::Path, change_id: &str) -> R
     Ok(())
 }
 
+/// Whether a use-case directory still holds at least one capability
+/// `.feature` file. A directory whose last capability retired leaves with
+/// its narrative; one that still serves a sibling capability stays untouched.
+fn holds_feature_files(dir: &std::path::Path) -> Result<bool> {
+    let entries = std::fs::read_dir(dir)
+        .with_context(|| format!("failed to scan use-case directory '{}'", dir.display()))?;
+    for entry in entries {
+        let path = entry
+            .with_context(|| format!("failed to read use-case directory '{}'", dir.display()))?
+            .path();
+        if path
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("feature"))
+        {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
 /// Resolve which use-case directory an existing capability lives in, by
 /// scanning `givn/specs/*/<cap>.feature`. Returns None if the capability
 /// doesn't exist yet anywhere (a genuinely new capability — the caller
@@ -756,6 +776,30 @@ fn process_delta_file(
                 let cap_file = usecase_dir.join(format!("{cap}.feature"));
                 std::fs::remove_file(&cap_file)?;
                 record_retirement(project_root, &cap, change_id)?;
+                // Last-capability retirement: a use-case directory whose
+                // retiring capability was its only `.feature` leaves with its
+                // narrative. The `fragments` directory is exempt — it is the
+                // shared fragment home, not a use case.
+                let is_fragments = usecase_dir
+                    .file_name()
+                    .is_some_and(|name| name == "fragments");
+                if !is_fragments && !holds_feature_files(&usecase_dir)? {
+                    let narrative = usecase_dir.join("usecase.md");
+                    if narrative.exists() {
+                        std::fs::remove_file(&narrative).with_context(|| {
+                            format!(
+                                "failed to remove the retired use-case narrative '{}'",
+                                narrative.display()
+                            )
+                        })?;
+                    }
+                    std::fs::remove_dir(&usecase_dir).with_context(|| {
+                        format!(
+                            "failed to remove the emptied use-case directory '{}'",
+                            usecase_dir.display()
+                        )
+                    })?;
+                }
                 println!(
                     "[{}]   retired → {}",
                     crate::subprocess::local_timestamp(),
@@ -916,8 +960,12 @@ Feature: Dead capability
         process_delta_file(&project, "retire-change", &delta_path, &delta).unwrap();
 
         assert!(
-            cap_dir.join("usecase.md").exists(),
-            "use-case narrative remains"
+            !cap_dir.exists(),
+            "the last capability's use-case directory must leave with its narrative"
+        );
+        assert!(
+            !cap_dir.join("usecase.md").exists(),
+            "the use-case narrative must leave with the directory"
         );
         assert!(
             !cap_dir.join("dead-cap.feature").exists(),
@@ -929,6 +977,34 @@ Feature: Dead capability
         assert!(
             tombstone.contains("retire-change"),
             "tombstone: {tombstone}"
+        );
+    }
+
+    #[test]
+    fn retirement_of_shared_usecase_keeps_directory_and_narrative() {
+        let (_root, project, _backup) = temp_project();
+        let cap_dir = project.join("givn/specs/dead-cap");
+        std::fs::write(
+            cap_dir.join("sibling-cap.feature"),
+            "Feature: Sibling capability\n\n  Scenario: It stays\n    Given a thing\n",
+        )
+        .unwrap();
+
+        let delta_path = project.join("delta.feature");
+        let delta = parse_delta("@givn.delta @givn.retired @dead-cap\nFeature: Dead capability\n");
+        process_delta_file(&project, "retire-change", &delta_path, &delta).unwrap();
+
+        assert!(
+            !cap_dir.join("dead-cap.feature").exists(),
+            "the retiring capability's file should be deleted"
+        );
+        assert!(
+            cap_dir.join("sibling-cap.feature").exists(),
+            "a remaining sibling capability's file stays"
+        );
+        assert!(
+            cap_dir.join("usecase.md").exists(),
+            "a use case that still serves a capability keeps its narrative"
         );
     }
 
