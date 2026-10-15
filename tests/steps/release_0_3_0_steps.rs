@@ -119,31 +119,30 @@ fn changelog_contains_migration_entry(world: &mut GivnWorld) {
     assert!(changelog.contains("0.2.0-to-0.3.0"), "{changelog}");
 }
 
-#[given("the 0.2.0 to 0.3.0 migration guide")]
+#[given("the 0.7.0 to 0.8.0 migration guide")]
 fn migration_guide(_world: &mut GivnWorld) {
-    let path =
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/migrations/0.2.0-to-0.3.0.md");
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("docs/migrations/0.7.0-to-0.8.0.md");
     assert!(path.exists(), "migration guide is missing");
 }
 
 #[when("an LLM reads the guide from a project using Givn")]
 fn llm_reads_guide(world: &mut GivnWorld) {
-    let path =
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/migrations/0.2.0-to-0.3.0.md");
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("docs/migrations/0.7.0-to-0.8.0.md");
     world.additional_output = Some(std::fs::read_to_string(path).expect("read migration guide"));
 }
 
-#[then(
-    "it finds ordered prompts for inventory, upgrade, synchronization, review, and verification"
-)]
+#[then("it finds ordered prompts that begin with inventory and end with validation and archive")]
 fn guide_has_ordered_prompts(world: &mut GivnWorld) {
     let guide = world.additional_output.as_deref().expect("guide content");
     let headings = [
-        "## Prompt 1: Inventory",
-        "## Prompt 2: Machine-safe upgrade",
-        "## Prompt 3: Synchronize generated guidance",
-        "## Prompt 4: Review project changes",
-        "## Prompt 5: Verify and archive",
+        "### Prompt 1 — Inventory the use-case model",
+        "### Prompt 2 — Inventory personas",
+        "### Prompt 3 — Re-qualify ADRs",
+        "### Prompt 4 — Inventory the smaller adoptions",
+        "### Prompt 5 — Inventory ejected overrides",
+        "### Prompt 6 — Validate and archive",
     ];
     let mut previous = 0;
     for heading in headings {
@@ -153,26 +152,38 @@ fn guide_has_ordered_prompts(world: &mut GivnWorld) {
         assert!(position >= previous, "prompt order changed at {heading}");
         previous = position;
     }
+    assert!(!guide.contains("### Prompt 7"), "prompts must end at 6, {guide}");
 }
 
-#[then("each prompt tells the LLM which project evidence to inspect before editing")]
-fn guide_requires_evidence(world: &mut GivnWorld) {
+#[then("the guide requires the LLM to inspect the project before editing it")]
+fn guide_requires_inspection_before_editing(world: &mut GivnWorld) {
     let guide = world.additional_output.as_deref().expect("guide content");
-    let normalized = guide.to_ascii_lowercase();
-    assert!(normalized.matches("inspect").count() >= 5, "{guide}");
-    assert!(guide.contains("before editing"), "{guide}");
-}
-
-#[then("the guide forbids automatic changes to domain specifications and architecture decisions")]
-fn guide_forbids_automatic_semantic_edits(world: &mut GivnWorld) {
-    let guide = world.additional_output.as_deref().expect("guide content");
-    let normalized = guide.to_ascii_lowercase();
     assert!(
-        normalized.contains("must not automatically edit"),
+        guide.contains("The LLM must inspect the project before editing it"),
         "{guide}"
     );
-    assert!(guide.contains("ADR"), "{guide}");
-    assert!(guide.contains("givn/specs"), "{guide}");
+}
+
+#[then("the guide keeps corpus repairs out of the maintenance change")]
+fn guide_keeps_corpus_repairs_out(world: &mut GivnWorld) {
+    let guide = world.additional_output.as_deref().expect("guide content");
+    assert!(
+        guide.contains("The maintenance change is the **inventory and plan**, not the repair site."),
+        "{guide}"
+    );
+    // Prompt-level sentences are wrapped across blockquote continuation
+    // lines; join them before matching.
+    let joined = guide.replace("\n> ", " ");
+    assert!(
+        joined.contains("Do not edit the corpus in this change."),
+        "{guide}"
+    );
+    assert!(
+        joined.contains(
+            "Confirm this change edited no corpus artifact except the term collision-check cells"
+        ),
+        "{guide}"
+    );
 }
 
 #[given("the embedded Givn migration catalog")]
