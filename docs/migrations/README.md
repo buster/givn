@@ -3,10 +3,6 @@
 Release-owned project migrations live in the binary's embedded asset tree at
 `assets/migrations/`.
 
-The normal Cargo installation includes every declared retrieval feature. This
-bundle contract is independent of installation mode; a `--no-default-features`
-binary still uses the same migration assets but reports retrieval as unavailable.
-
 Each bundle is one ordered migration phase and contains:
 
 - `proposal.md` with the user-facing problem, scope, and completion boundary;
@@ -18,7 +14,9 @@ strictly advancing `source_version` and `target_version`, deterministic
 `order`, and the two asset paths. Do not encode a migration decision in a new
 Rust conditional.
 
-`givn upgrade` resolves the version gap through the declared bundle edges. If
+`givn upgrade` resolves the version gap through the declared bundle edges. The
+oldest declared route is `migrate-0-7-0-to-0-8-0` (source `0.7.0`); a project
+recording an earlier version receives the managed refresh only. If
 multiple bundles are required, it creates one aggregate maintenance change with
 `migration.yaml`, ordered phase sections, and all bundle Proposal/Design
 content. The LLM works the phases in order and follows each bundle's own
@@ -34,9 +32,8 @@ worktree.
 
 Bundle designs must be self-contained. They may use the
 `{{SOURCE_VERSION}}`, `{{TARGET_VERSION}}`, and `{{UPGRADE_COMMIT}}` placeholders
-for generated metadata. The 0.2.0-to-0.3.0 bundle additionally uses
-`{{MIGRATION_GUIDE}}` to embed the public prompt pack; newer bundles carry
-their own complete prompts instead of relying on that guide.
+for generated metadata. No retained asset uses the former `{{MIGRATION_GUIDE}}`
+placeholder — each bundle carries its own complete prompts.
 
 The current bundle is `migrate-0-8-0-to-0-9-0` (source 0.8.0, target 0.9.0,
 order 70). It inventories the project rules that 0.9.0 displaced from

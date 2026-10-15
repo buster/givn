@@ -1,14 +1,14 @@
 # Reference
 
 Factual reference material extracted from the README: CLI commands, agent
-skills, addons, extras, configuration keys, generated project layout, and this
+skills, addons, configuration keys, generated project layout, and this
 repository's development scripts.
 
 ## CLI commands
 
 | Command | Purpose |
 | --- | --- |
-| `givn init [--force] [--no-addons] [--agents <list>]` | Scaffold `givn/{specs,changes,archive}`, write `givn/config.yaml`, generate skills/commands, add the AGENTS.md hint block. Enables all addons and extras by default. |
+| `givn init [--force] [--no-addons] [--agents <list>]` | Scaffold `givn/{specs,changes,archive}`, write `givn/config.yaml`, generate skills/commands, add the AGENTS.md hint block. Enables all addons by default. |
 | `givn new <id> [--skip a,b,c]` | Create a change scaffold under `givn/changes/<id>/`. `--skip` marks artifacts as intentionally not produced (reverse engineering). |
 | `givn instructions [<artifact>] [--change <id>] [--json]` | No artifact: context-aware guidance on what to do next. With an artifact id: that artifact's writing instructions. A non-artifact policy id (`dialog`) resolves through the same instruction cascade and is available without an active change. |
 | `givn lint [--change <id>] [paths...]` | Static Gherkin check only (syntax, `@wip`, delta tags). Exit 0 clean / 1 parse error / 2 `@wip` present. Runs no tests. |
@@ -35,7 +35,7 @@ Emitted by `givn init` / `givn skills sync` to `.agents/skills/<name>/SKILL.md`
 | `givn-explore` | Think through ideas, investigate problems, clarify requirements before proposing a change. |
 | `givn-ideation` | Work a vague idea into change-ready use cases — domain-driven event storming with personas, reviews, and change seeds. The artifact-producing alternative to `givn-explore`. |
 | `givn-propose` | Write the proposal — WHAT and WHY, in domain language, no implementation detail. |
-| `givn-spec` | Write the Gherkin `.feature` delta — observable behaviour, no implementation detail. Includes retrieval-aware authoring guidance (`spec index`, `spec search`, `spec explore`). |
+| `givn-spec` | Write the Gherkin `.feature` delta — observable behaviour, no implementation detail. |
 | `givn-design` | Write the technical design — the HOW layer: tech decisions, architecture, step-def locations. |
 | `givn-design-review` | Stress-test the plan one question at a time before tasks are written; harden the artifacts; sign off. |
 | `givn-tasks` | Break the design down into a scenario-by-scenario RED/GREEN/REFACTOR/COMMIT task list. |
@@ -62,30 +62,26 @@ in `givn/config.yaml`:
 | `absolute_mode` | Manages a fenced block in `AGENTS.md` with a blunt, no-filler communication policy. |
 | `readme` | Scaffolds an initial project README (existing content preserved). |
 | coverage gate | Archive-level addon: runs measurement/merge scripts, validates Cobertura output, updates managed README badges/blocks, rolls back on failure. |
-
-## Extras
-
-Curated opt-in bundle of project-level skills and commands, independent of the
-change lifecycle. Enabled by default on `givn init` (disable with
-`--no-extras`); toggle with `givn extras install` / `uninstall`.
-
-| Extra | Kind | Purpose |
-| --- | --- | --- |
-| `givn-domain-modeling` | skill | Model a change's domain before designing — ubiquitous language, aggregates, invariants. |
-| `givn-dev-principles` | skill | Engineering principles while implementing — correctness first, boring when called for, no unnecessary abstractions. |
-| `/grill-me` | command | Socratically grill the current plan or design, one hard question at a time. |
-| `/grill-with-docs` | command | Grill the plan or design against the project's own docs and specs, citing sources. |
+| `domain_modeling` | Project-level skill: model a change's domain before designing — ubiquitous language, aggregates, invariants. |
+| `dev_principles` | Project-level skill: engineering principles while implementing — correctness first, boring when called for, no unnecessary abstractions. |
+| `grill_me` | Project-level command: socratically grill the current plan or design, one hard question at a time. |
+| `grill_with_docs` | Project-level command: grill the plan or design against the project's own docs and specs, citing sources. |
 
 ## Configuration
 
-`givn/config.yaml` is generated fully-commented by `givn init`: commented
-lines are the managed documentation scaffold (refreshed by `givn upgrade`);
-uncommented key/value lines are user-owned and never touched by upgrades.
-Carries `givn_config_version`.
+`givn/config.yaml` is the structural scaffold, generated fully-commented by
+`givn init`: commented lines are the managed documentation scaffold
+(refreshed by `givn upgrade`); uncommented key/value lines are user-owned and
+never touched by upgrades. Carries `givn_config_version`.
 
-The only value that must be set for a working project is `verify.command`.
+`givn/commands.yaml` is the project-owned command file: the test runner,
+coverage commands, and the product run declaration live there, applied as the
+later overlay.
 
-Key sections:
+The first value a working project must set is `verify.command` in
+`givn/commands.yaml`.
+
+Key sections of `givn/commands.yaml`:
 
 - `verify.command` / `verify.e2e_command` — test runner(s). Must be a
   Gherkin/Cucumber runner executing the `.feature` files, not a bare
@@ -94,11 +90,15 @@ Key sections:
   (default `givn/specs`).
 - `coverage.measure_command` / `coverage.merge_command` — project-owned
   scripts producing Cobertura reports for the archive coverage gate.
-- `run:` — the run declaration: `command`, `product_type` (`server`/`cli`/
-  `library`), exactly one of `port` (fixed) or `port_env` (the caller hands
-  the port over) for servers, `ready_path`, and `ready_timeout_s`. Validated
-  by rules R1–R10; gating `givn check review` and `givn archive`; executed by
-  `givn run`; documented in the README's run managed block.
+- `run:` — the run declaration: `command`, `product_type`
+  (`server`/`cli`/`library`), exactly one of `port` (fixed) or `port_env`
+  (the caller hands the port over) for servers, `ready_path`, and
+  `ready_timeout_s`. Validated by rules R1–R10; gating `givn check review`
+  and `givn archive`; executed by `givn run`; documented in the README's run
+  managed block.
+
+Key sections of `givn/config.yaml`:
+
 - `artifacts:` — patch the embedded workflow graph: remove/reorder steps, make
   steps optional, add custom steps with own template and instruction.
 - `apply.requires` — which artifacts gate `givn archive` (default
@@ -124,14 +124,17 @@ Key sections:
       - Keep scenarios free of implementation detail.
       - Use the project's domain vocabulary in every scenario title.
   ```
-- `addons:` / `extras:` — see tables above.
+- `addons:` — see the addons table above.
+- `skills:` — the persisted agent targets `givn skills sync` installs to.
+- `rules:` — the generated-rules policy: `local-only` (the default when
+  absent) or `versioned`.
 
 ## What givn creates in your project
 
 ```
 givn/
-├── config.yaml                       # documented + versioned: overlay + verify.command
-├── commands.yaml                     # project-owned test and coverage scripts
+├── config.yaml                       # documented + versioned: overlay, addons, rules, extensions
+├── commands.yaml                     # project-owned verify, coverage, and run values
 ├── specs/<group>/<cap>.feature       # permanent merged spec (source of truth)
 ├── changes/<id>/                     # active change (state = which files exist)
 │   ├── proposal.md

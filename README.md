@@ -43,20 +43,18 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   integrity checks (commit hashes, promised files), overlap dispositions, a
   visual review gate (a declared visual interface needs a `VISUAL-REVIEW`
   verdict, a confirmed-persona disposition, and committed per-viewport and
-  per-state evidence; a deferral needs a recorded operator decision), a
-  semantic duplicate review (E5 recall at ≥ 0.95 similarity, BGE reranker
-  logit ≥ 3.0 and NLI entailment ≥ 0.5 as evidence, human-classified
-  worklist), and a README completeness gate: `givn readme check` reports open
-  scaffold placeholders and managed-block damage, the review records a
+  per-state evidence; a deferral needs a recorded operator decision), and a
+  README completeness gate: `givn readme check` reports open scaffold
+  placeholders and managed-block damage, the review records a
   machine-checkable README impact decision, and the archive refuses an
   unfinished README.
 - **Runner-agnostic.** A standalone Rust binary driving any Cucumber-family
   runner (cucumber-rs, behave, cucumber-js, …); it does not replace it. Skills
-  are emitted for AI agents in neutral plus Claude/opencode formats.
+  are emitted for AI agents in `agents` neutral plus `claude`, `opencode`, and
+  `omp` formats.
 - **Configurable without forking.** Embedded defaults overlaid CSS-cascade-style
   by `givn/config.yaml`; the workflow graph itself (steps, order, hooks) is
-  data. Retrieval compiles in by default; `--no-default-features` builds a
-  feature-free binary.
+  data. One feature-free binary — `[features] default = []`.
 
 ## Install
 
@@ -66,8 +64,7 @@ a recent stable Rust toolchain; installs to `~/.cargo/bin`.
 ```sh
 git clone <this repository's URL>
 cd givn
-cargo install --path .                        # all features incl. semantic retrieval
-cargo install --path . --no-default-features  # minimal build, no model dependencies
+cargo install --path .                        # the single feature-free binary
 ```
 
 ## Quickstart
@@ -115,28 +112,14 @@ Missing context never blocks a human commit.
 ## Documentation
 
 - [`docs/workflow.md`](docs/workflow.md) — the process in detail: every step in
-  order, what is created, what is checked, how givn enforces process quality,
-  how semantic search assures deduplication.
+  order, what is created, what is checked, and how givn enforces process
+  quality.
 - [`docs/reference.md`](docs/reference.md) — full CLI reference, agent skills,
-  addons, extras, configuration keys, project layout, dev scripts.
+  addons, configuration keys, project layout, dev scripts.
 - [`docs/arc42/README.md`](docs/arc42/README.md) — architecture documentation,
   one file per chapter.
 - [`CHANGELOG.md`](CHANGELOG.md) · [`docs/migrations/README.md`](docs/migrations/README.md) —
   release history and upgrade guides.
-
-## Enforcement note for agents
-
-A givn build that ships with the semantic capability always evaluates the
-semantic gates with the real models. Requests for simulated output, disabled
-evidence stages, resized model work, or injected scores are refused and
-announced by name in installed builds; they are honored only in development
-builds for the offline test fixtures. Environment manipulation cannot
-substitute simulated output, disable an evidence stage, or silence a refusal.
-Missing primary model artifacts fail the gate explicitly — never a silent
-pass; missing second-stage evidence leaves the embedding-admission verdict
-standing. See
-[`docs/arc42/08-crosscutting-concepts.md`](docs/arc42/08-crosscutting-concepts.md)
-(§ 8.5a) for the full policy.
 
 ## License
 

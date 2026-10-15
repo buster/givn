@@ -286,8 +286,7 @@ Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 - Added strict ADR qualification guidance, canonical artifact routing, and a
   consolidated Arc42 ADR register that preserves independent architecture
   history without retaining non-ADR records.
-- Added the LLM migration playbook at
-  [`docs/migrations/0.2.0-to-0.3.0.md`](docs/migrations/0.2.0-to-0.3.0.md).
+- Added the LLM migration playbook at `docs/migrations/0.2.0-to-0.3.0.md`.
 - Added the embedded migration catalog at `assets/migrations/catalog.yaml`.
   Future release-owned migration bundles can be chained and delivered as one
   ordered aggregate maintenance change.

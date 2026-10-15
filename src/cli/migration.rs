@@ -8,7 +8,6 @@ use std::path::{Path, PathBuf};
 pub const MIGRATION_CATALOG_PATH: &str = "migrations/catalog.yaml";
 
 const MIGRATION_CATALOG_SCHEMA_VERSION: u32 = 1;
-const MIGRATION_GUIDE: &str = include_str!("../../docs/migrations/0.2.0-to-0.3.0.md");
 
 /// A release-owned migration bundle. The companion assets must contain all
 /// information needed by an LLM to perform that phase in a consumer project.
@@ -697,8 +696,7 @@ fn render_bundle_asset(
     Ok(content
         .replace("{{SOURCE_VERSION}}", source_version)
         .replace("{{TARGET_VERSION}}", target_version)
-        .replace("{{UPGRADE_COMMIT}}", commit_a)
-        .replace("{{MIGRATION_GUIDE}}", MIGRATION_GUIDE))
+        .replace("{{UPGRADE_COMMIT}}", commit_a))
 }
 
 fn commit_migration_plan(

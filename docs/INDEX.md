@@ -22,13 +22,12 @@ Status values:
 - [Multi-SCM implementation assumptions](ideation/multi-scm-support-assumptions.md) - `current`; the documented judgment calls (A1-A19) made while implementing the topic.
 - [Workflow Swimlane (SVG)](workflow.svg) - `current`; GitHub-safe swimlane rendering (pure shapes/text, no scripts or styles) of the full lifecycle with artifacts, checks, thresholds, and chokepoints. Regenerate via `python3 scripts/render-workflow-svg.py`.
 - [Workflow Swimlane (HTML)](workflow.html) - `current`; self-contained HTML swimlane view with one lane per artifact, creating actions, checking processes, and chokepoint summary. No JavaScript, no external assets, dark-mode aware.
-- [Reference](reference.md) - `current`; CLI command table, agent skills, addons, extras, configuration keys, generated project layout, repository development scripts.
+- [Reference](reference.md) - `current`; CLI command table, agent skills, addons, configuration keys, generated project layout, repository development scripts.
 
 ## Project Planning
 
-- [Givn 0.2.0 to 0.3.0 Migration Guide](migrations/0.2.0-to-0.3.0.md) - `reference`; ordered LLM prompts for upgrading projects created from the 0.2.0 master branch.
 - [Migration Bundles](migrations/README.md) - `reference`; authoring contract for future release-owned migration bundles and aggregate plans.
-- [Givn 0.4.0 to 0.5.0 Migration Guide](migrations/0.4.0-to-0.5.0.md) - `reference`; ordered LLM prompts for the 0.4.0-to-0.5.0 project migration.
+- [Givn 0.7.0 to 0.8.0 Migration Guide](migrations/0.7.0-to-0.8.0.md) - `reference`; ordered LLM prompts for the 0.7.0-to-0.8.0 project migration.
 - [Givn 0.8.0 to 0.9.0 Migration Guide](migrations/0.8.0-to-0.9.0.md) - `reference`; ordered LLM prompts for moving project rules into instruction extensions (`extensions:` in `givn/config.yaml`).
 - [Use-Case Migration Release Plan](usecase-migration-release-plan.md) - `reference`; ordered implementation sessions and release migration rules for replacing groups with semantic use cases, fragments, personas, and ideation-aligned coverage.
 
@@ -43,7 +42,7 @@ Status values:
 - [Arc42 05: Building Block View](arc42/05-building-block-view.md) - `current`; crate, module, and responsibility decomposition.
 - [Arc42 06: Runtime View](arc42/06-runtime-view.md) - `current`; runtime flows for lifecycle, hooks, exploration, duplicate audit, review, and archive.
 - [Arc42 07: Deployment View](arc42/07-deployment-view.md) - `current`; distribution, installation, and release concerns.
-- [Arc42 08: Cross-cutting Concepts](arc42/08-crosscutting-concepts.md) - `current`; cascade, Gherkin deltas, skills, serialization, retrieval, and evidence gates.
+- [Arc42 08: Cross-cutting Concepts](arc42/08-crosscutting-concepts.md) - `current`; cascade, Gherkin deltas, skills, serialization, and evidence gates.
 - [Arc42 09: Architecture Decisions](arc42/09-architecture-decisions.md) - `current`; binding ADR record and decision rationale.
 - [Arc42 10: Quality Requirements](arc42/10-quality-requirements.md) - `current`; quality tree and measurable requirements.
 - [Arc42 11: Risks and Technical Debt](arc42/11-risks-and-technical-debt.md) - `current`; known risks, limitations, and planned debt.

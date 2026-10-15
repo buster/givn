@@ -132,7 +132,6 @@ COMMIT   One revision for RED+GREEN+REFACTOR via
 | duplicates / coverage / tree | `givn spec …` | deterministic duplicate and coverage reports over the permanent corpus; no model or network dependency |
 | lint warnings | `givn lint [--change <id>]` | `shape_match` overlaps, subsets, scenarios longer than 14 steps |
 | seed status | `givn lint` (default scope) | missing or unrecognised seed status, a `proposed by` change that does not exist, a `proposed by` change that is already archived; advisory, exit code unchanged |
-| missing index notice | `givn check review` | hints to run `givn spec index` first |
 
 ### Blocking
 
@@ -151,8 +150,10 @@ Chokepoints:
 ```
 givn check tasks    → @wip gate + verify hooks
 givn check review   → verify → verify-e2e → integrity → overlap dispositions
-givn archive        → artifact existence/completeness + PASS markers + all required hooks
-                      + fresh similarity gate + delta merge + post-merge tests + coverage
+givn archive        → artifact existence/completeness + PASS markers + configured hooks
+                      + run-declaration gate + README completeness gate
+                      + use-case/delta prevalidation + E2E-runner configuration check
+                      + delta merge + verification scopes + coverage
 ```
 
 ## 6. Status
