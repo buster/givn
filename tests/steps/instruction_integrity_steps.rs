@@ -122,21 +122,6 @@ fn review_guidance(world: &GivnWorld) -> &str {
         .expect("review guidance was not loaded")
 }
 
-// Steps kept for @givn.removed placeholders — the scenarios below were
-// removed from the permanent spec together with the semantic gate, but the
-// removal deltas still parse and must match step definitions until the
-// change is archived.
-
-#[given("a semantic review contains classified candidates")]
-fn semantic_review_contains_candidates(world: &mut GivnWorld) {
-    let instruction =
-        std::fs::read_to_string(crate::common::repo_path("assets/instructions/review.md"))
-            .expect("read review instruction");
-    let template = std::fs::read_to_string(crate::common::repo_path("assets/templates/review.md"))
-        .expect("read review template");
-    world.additional_output = Some(format!("{instruction}\n{template}"));
-}
-
 #[given("the review instructions are requested")]
 fn review_instructions_requested(world: &mut GivnWorld) {
     let instruction =
