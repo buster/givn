@@ -59,6 +59,16 @@ fn e2e_stderr_says_not_configured(world: &mut GivnWorld) {
     );
 }
 
+#[then("stderr names givn/commands.yaml as the e2e runner's configuration file")]
+fn e2e_stderr_names_commands_yaml(world: &mut GivnWorld) {
+    let s = crate::steps::stderr(world);
+    assert!(
+        s.contains("givn/commands.yaml"),
+        "expected stderr to name givn/commands.yaml, got: {}",
+        s
+    );
+}
+
 #[given("the permanent spec directory givn/specs/ has no @e2e scenario")]
 fn e2e_given_permanent_specs_no_e2e(world: &mut GivnWorld) {
     let env = world
