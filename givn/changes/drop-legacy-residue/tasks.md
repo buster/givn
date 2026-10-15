@@ -144,7 +144,7 @@ Implementation strategy (from `design.md`):
         ```
   - [x] COMMIT: `feat(enforce-post-merge-e2e-gate): <release note>` with the scenario title in the message body — Hash: `8bdcccac0dd7bc29a565a1e55eabff1535fb282d`
 
-- [ ] Scenario: `Archive succeeds when merged permanent specs have no @e2e scenarios and e2e_command is unconfigured` (`enforce-post-merge-e2e-gate`, `@givn.modified`, reuse)
+- [x] Scenario: `Archive succeeds when merged permanent specs have no @e2e scenarios and e2e_command is unconfigured` (`enforce-post-merge-e2e-gate`, `@givn.modified`, reuse)
   **Design constraints:**
   - Delta file: `givn/changes/drop-legacy-residue/specs/archive-change/enforce-post-merge-e2e-gate.feature`. Given text re-pointed to `the givn/commands.yaml has e2e_command unconfigured` — the exact shared step renamed by the previous scenario's GREEN. No additional file change; no production code change.
   - Behaviour: with zero `@e2e` scenarios in the merged permanent specs, the archive exits 0 and the change directory moves to `givn/archive/`.
@@ -199,7 +199,7 @@ Implementation strategy (from `design.md`):
         Summary [   0.780s] 12/16 tests run: 2 passed, 10 failed, 0 skipped
         (exit 100 — the still-@wip sections of the other tasks fail as expected; this scenario PASSes under the nextest gate protocol)
         ```
-  - [ ] COMMIT: `feat(enforce-post-merge-e2e-gate): <release note>` with the scenario title in the message body (carries the `@wip` removal and this tasks.md record; no production delta — pure reuse) — Hash: ``
+  - [x] COMMIT: `feat(enforce-post-merge-e2e-gate): <release note>` with the scenario title in the message body (carries the `@wip` removal and this tasks.md record; no production delta — pure reuse) — Hash: `e4a9ce4a2af7b003faad20c250f6b47e269607e7`
 
 - [ ] Scenario: `Retiring a use case's last capability removes the use-case directory and its narrative` (`grouped-merge-for-new-capabilities`, `@givn.added`)
   **Design constraints:**
@@ -211,21 +211,65 @@ Implementation strategy (from `design.md`):
   - Domain context: `archive-change` main flow 2 — the archive merge applies retirement and grouping rules (`resolve_capability_usecase` + `process_delta_file`).
   - Single-scenario run: `GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name "^Retiring a use case's last capability removes the use-case directory and its narrative$"` (double-quoted: the title contains an apostrophe)
   - Remove `@wip` from this scenario only at RED.
-  - [ ] RED: remove `@wip` from this scenario only; run the single-scenario command. New steps use `unimplemented!()` stubs (`a givn project with a permanent use case "…" whose only capability is "…"`, `a completed change "…" whose delta retires capability "…"`, `the tombstone "givn/specs/.retired.yaml" records capability "…"`). Paste output — MUST exit non-zero:
+  - [x] RED: remove `@wip` from this scenario only; run the single-scenario command. New steps use `unimplemented!()` stubs (`a givn project with a permanent use case "…" whose only capability is "…"`, `a completed change "…" whose delta retires capability "…"`, `the tombstone "givn/specs/.retired.yaml" records capability "…"`). Paste output — MUST exit non-zero:
         ```text
-        <paste targeted run output — expected non-zero exit (stubbed step)>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name "^Retiring a use case's last capability removes the use-case directory and its narrative$"
+        Feature: grouped-merge-for-new-capabilities
+          Scenario: Retiring a use case's last capability removes the use-case directory and its narrative
+           ✘  Given a givn project with a permanent use case "retire-home" whose only capability is "only-cap"
+              Step failed:
+              Defined: givn/changes/drop-legacy-residue/specs/archive-change/grouped-merge-for-new-capabilities.feature:40:5
+              Matched: tests/steps/grouped_merge_steps.rs:115:1
+              Step panicked. Captured output: not implemented: TODO: retirement fixture
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        error: test failed (exit status: 1)
         ```
-  - [ ] GREEN: implement the extended retirement in `src/cli/archive.rs`, the three fixture steps in `tests/steps/grouped_merge_steps.rs`, and the two unit-test changes in `src/cli/archive.rs`. Production files modified: `src/cli/archive.rs`, `tests/steps/grouped_merge_steps.rs`. Targeted re-run — MUST exit 0:
+  - [x] GREEN: implement the extended retirement in `src/cli/archive.rs`, the three fixture steps in `tests/steps/grouped_merge_steps.rs`, and the two unit-test changes in `src/cli/archive.rs`. Production files modified: `src/cli/archive.rs`, `tests/steps/grouped_merge_steps.rs`. Targeted re-run — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ cargo test --lib cli::archive::tests
+        test cli::archive::tests::retirement_deletes_capability_and_writes_tombstone ... ok
+        test cli::archive::tests::retirement_of_shared_usecase_keeps_directory_and_narrative ... ok
+        test cli::archive::tests::retirement_targets_grouped_capability_directory ... ok
+        (… 10 passed; 0 failed …)
+
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name "^Retiring a use case's last capability removes the use-case directory and its narrative$"
+        Feature: grouped-merge-for-new-capabilities
+          Scenario: Retiring a use case's last capability removes the use-case directory and its narrative
+           ✔  Given a givn project with a permanent use case "retire-home" whose only capability is "only-cap"
+           ✔  And a completed change "retire-last" whose delta retires capability "only-cap"
+           ✔  And the project declares a complete run declaration
+           ✔  When the user invokes `givn archive --change retire-last`
+           ✔  Then the command exits 0
+           ✔  And the directory "givn/specs/retire-home" does not exist
+           ✔  And the tombstone "givn/specs/.retired.yaml" records capability "only-cap"
+           ✔  And the change directory has been moved to givn/archive/
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        (exit 0)
         ```
-  - [ ] REFACTOR: keep the retirement arm minimal (no dead abstractions); re-run targeted — MUST exit 0:
+  - [x] REFACTOR: keep the retirement arm minimal (no dead abstractions); re-run targeted — MUST exit 0:
         ```text
-        <paste targeted run output — expected exit 0>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs cargo test --test features_runner -- --name "^Retiring a use case's last capability removes the use-case directory and its narrative$"
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        (exit 0)
         ```
-  - [ ] Nextest gate evidence (F21): paste the `./run-tests.sh` nextest run showing this scenario passing under the gate protocol:
+  - [x] Nextest gate evidence (F21): paste the `./run-tests.sh` nextest run showing this scenario passing under the gate protocol:
         ```text
-        <paste nextest gate run output>
+        $ GIVN_FEATURES=givn/changes/drop-legacy-residue/specs ./run-tests.sh
+        Nextest run ID 45f6f86b-12d3-447d-b3c5-07f427c79f05 with nextest profile: default
+            Starting 16 tests across 1 binary
+                PASS [   0.742s] (11/16) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::Retiring a use case's last capability removes the use-case directory and its narrative
+                FAIL ... (the remaining still-@wip scenario sections of other tasks, expected mid-change)
+        Summary [   0.846s] 12/16 tests run: 3 passed, 9 failed, 0 skipped
+        (exit 100 — the still-@wip sections of the other tasks fail as expected; this scenario PASSes under the nextest gate protocol)
         ```
   - [ ] COMMIT: `feat(grouped-merge-for-new-capabilities): <release note>` with the scenario title in the message body — Hash: ``
 
