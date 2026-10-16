@@ -329,6 +329,10 @@ jobs:
         shell: bash
         run: ./setup-e2e-browser.sh
 
+      - name: Install the pinned Maki harness binary
+        shell: bash
+        run: ./setup-e2e-harness.sh
+
       - name: Run repository acceptance suites
         shell: bash
         run: |

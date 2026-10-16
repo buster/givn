@@ -50,8 +50,8 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   unfinished README.
 - **Runner-agnostic.** A standalone Rust binary driving any Cucumber-family
   runner (cucumber-rs, behave, cucumber-js, …); it does not replace it. Skills
-  are emitted for AI agents in `agents` neutral plus `claude`, `opencode`, and
-  `omp` formats.
+  are emitted for AI agents in `agents` neutral plus `claude`, `opencode`,
+  `omp`, and `maki` formats.
 - **Configurable without forking.** Embedded defaults overlaid CSS-cascade-style
   by `givn/config.yaml`; the workflow graph itself (steps, order, hooks) is
   data. One feature-free binary — `[features] default = []`.
@@ -89,7 +89,7 @@ on purpose until you do.
 the list opens with `.opencode` marked and re-asks until at least one target is
 marked. Scripted runs state the selection explicitly:
 `givn init --agents opencode,claude,omp` (valid targets: `opencode`, `agents`,
-`claude`, `omp`) — a missing or unknown-only selection is
+`claude`, `omp`, `maki`) — a missing or unknown-only selection is
 refused before anything is written. `givn skills sync` keeps writing to the
 persisted selection and falls back to `opencode` only for a config without a
 skills block.

@@ -150,6 +150,9 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
                 "omp" => {
                     println!("  attribution integration: .omp/hooks/pre/givn-attribution.js")
                 }
+                "maki" => println!(
+                    "  development reporter: .maki/lua/givn-timeline.lua + .maki/plugin.toml + .maki/init.lua"
+                ),
                 _ => {}
             }
         }
@@ -232,7 +235,7 @@ fn prompt_for_targets() -> Result<Vec<AgentTarget>> {
 fn require_agent_target(targets: Vec<AgentTarget>) -> Result<Vec<AgentTarget>> {
     if targets.is_empty() {
         bail!(
-            "no agent target selected; pass --agents <opencode|agents|claude|omp|all> \
+            "no agent target selected; pass --agents <opencode|agents|claude|omp|maki|all> \
              or select one in the prompt (valid targets: {})",
             crate::skills::targets::valid_names().join(", ")
         );

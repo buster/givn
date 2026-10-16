@@ -185,6 +185,11 @@ impl IngestedEvent {
             "subagent" => Err("missing required field `subagent`".to_string()),
             "question" if self.label.is_some() => Ok(()),
             "question" => Err("missing required field `label`".to_string()),
+            // A reported phase (a harness's own long step, e.g. Maki's
+            // compaction) is named by its label and carries its measured
+            // duration.
+            "phase" if self.label.is_some() => Ok(()),
+            "phase" => Err("missing required field `label`".to_string()),
             // A turn's usage is optional: a turn the harness did not measure is
             // still a turn (its usage is recorded as unavailable, never zero).
             "turn" => Ok(()),
@@ -215,6 +220,11 @@ impl IngestedEvent {
             "question" => {
                 if let Some(question) = self.label.as_deref() {
                     batch.push(self.question_entry(scope, question), batch.turn);
+                }
+            }
+            "phase" => {
+                if let Some(phase) = self.label.as_deref() {
+                    batch.push(self.phase_entry(scope, phase), batch.turn);
                 }
             }
             "turn" => self.map_turn(scope, batch),
@@ -271,6 +281,16 @@ impl IngestedEvent {
         entry
     }
 
+    /// The one `phase` entry a reported phase produces: a harness's own long
+    /// step (compaction), named by its label with its measured duration.
+    fn phase_entry(&self, scope: &Scope, phase: &str) -> HistoryEntry {
+        let mut entry = HistoryEntry::reported(scope.clone(), "phase", "phase", &self.at);
+        entry.label = Some(reported_label("phase", phase));
+        entry.duration_ms = self.duration_ms;
+        entry.outcome = self.outcome_word();
+        entry
+    }
+
     /// The one `tool` entry a reported tool call produces: the harness tool
     /// name as the entry's name, the reported subject through the record's one
     /// bounded-label path, and the harness's own measured duration.
@@ -318,6 +338,16 @@ impl IngestedEvent {
         });
         entry.outcome = outcome.to_string();
         entry.data = Some(subagent_data(agent.as_deref(), identity));
+        if self.usage.is_none() {
+            // Gap honesty: a harness that never reports a subagent's tokens
+            // marks the span's usage unavailable, never zero.
+            if let Some(data) = entry.data.as_mut().and_then(Value::as_object_mut) {
+                data.insert(
+                    "usage".to_string(),
+                    Value::String(USAGE_UNAVAILABLE.to_string()),
+                );
+            }
+        }
         // The span is nested in the turn that reported it, when the payload
         // reported one, else in the turn its start was reported inside.
         let parent = start.and_then(|start| start.parent).or(batch.turn);

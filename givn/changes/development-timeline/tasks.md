@@ -5714,7 +5714,7 @@ name it.
 
 ## Task 24a — `Maki's reporter keeps the harness's own tool duration and marks what its harness omits` (`agent-activity-reporting`, added)
 
-- [ ] **Scenario: `Maki's reporter keeps the harness's own tool duration and marks what its harness omits`**
+- [x] **Scenario: `Maki's reporter keeps the harness's own tool duration and marks what its harness omits`**
   - Design constraints:
     - Wiring: add `AgentTarget::Maki` (canonical name `maki`, dir `.maki`) as a
       **full target** — it writes skills to `.maki/skills/<name>/SKILL.md` and
@@ -5789,13 +5789,41 @@ name it.
     - RED expected failure: all **eight** new step phrases are undefined — one
       Given, three `When` (the three harness actions), and four `Then`/`And`
       assertions.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Maki's reporter keeps the harness's own tool duration and marks what its harness omits"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Maki's reporter keeps the harness's own tool duration and marks what its harness omits"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 11.40s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: Maki's reporter keeps the harness's own tool duration and marks what its harness omits
+           ✘  Given a project with the generated Maki development reporter
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:108:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+
+        thread 'main' (2872702) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — all eight new step phrases (one Given,
+        three When, four Then/And) match no function, exactly as the task
+        predicts. Sequencing note, recorded rather than glossed: the reporter
+        asset, the target wiring, and the driver helpers were authored in the
+        same working session before this run, and the step bindings were held
+        back for it, so the failing state this evidence shows is the
+        pre-binding state (no step can run), not a tree without the
+        production files.
         ```
-  - [ ] **GREEN** — implement the full target (skills, commands, and the
+  - [x] **GREEN** — implement the full target (skills, commands, and the
         reporter), the two assets, the merged `.maki/plugin.toml` grants, the
         managed fail-soft `init.lua` fence, the autocmd mapping, and the driver
         steps. Files: `src/skills/targets.rs`, `src/skills/rules.rs` (including
@@ -5814,12 +5842,174 @@ name it.
         exit 0. Paste it, together with the `maki --trust prompt` load-proof
         output.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ ./setup-e2e-harness.sh
+        downloading https://github.com/tontinton/maki/releases/download/v0.6.3/maki-v0.6.3-x86_64-unknown-linux-musl.tar.gz
+        /home/buster/.cache/givn-e2e/maki-v0.6.3-x86_64-unknown-linux-musl.tar.gz: OK
+        maki 0.6.3
+        maki installed at /home/buster/.cache/givn-e2e/bin/maki (GIVN_E2E_BIN=/home/buster/.cache/givn-e2e/bin)
+
+        Load proof, with the generated fence in a real project and no model call:
+        $ givn init --agents maki && maki --trust prompt >/tmp/maki-load.txt 2>&1
+        LOAD_EXIT=0            # and: grep -ci "error\|warning" -> 0
+        $ head -3 /tmp/maki-load.txt
+        You are Maki, an interactive CLI coding agent. Use the tools available to assist the user with software engineering tasks. ...
+        (the reporter's own load marker is asserted by the driver in every scenario run)
+
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.19s
+        BUILD=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Maki's reporter keeps the harness's own tool duration and marks what its harness omits"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 3.51s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: Maki's reporter keeps the harness's own tool duration and marks what its harness omits
+           ✔  Given a project with the generated Maki development reporter
+           ✔  When the Maki harness reports a completed tool call
+           ✔  Then the record holds that tool call with the duration the harness reported
+           ✔  When the Maki harness reports a tool call that never ran
+           ✔  Then the record holds that tool call without a measured duration
+           ✔  When the Maki harness reports a subagent that started and completed
+           ✔  Then the record holds that subagent's span
+           ✔  And the record marks that subagent's token usage as unavailable
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        EXIT=0
+
+        Delta scopes after the implementation:
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e
+             Summary [   3.638s] 36 tests run: 36 passed, 8 skipped
+        EXIT=0
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --e2e
+             Summary [   6.547s] 8 tests run: 8 passed, 36 skipped
+        EXIT=0
+        The e2e outline ran all four Examples rows (`omp`, `opencode`, `claude`,
+        `maki`) in one unit
+        (`...::Consumer installs the agent reporter and its reported activity lands in the record`)
+        and refreshed the change-wide visual evidence, the reporter outline's
+        pair included:
+        givn/changes/development-timeline/evidence/visual/consumer-installs-the-agent-reporter-and-its-reported-activity-lands-in-the-record/{mobile.png,desktop.png}
+
+        Production files created/modified by this GREEN step:
+        - `assets/agent-integrations/maki/givn-timeline.lua` (new — the reporter:
+          no `maki.*` call in the module body; `setup()` registers the twelve
+          autocmds and `run()` flushes; `os.clock()` stamps every start and
+          `ToolDone`'s `data.duration_ms` is used when the call ran; the flush
+          writes one payload to Maki's state directory and delivers it with an
+          awaited `maki.fn.jobstart({ "sh", "-c", "cat <payload-file> | givn
+          history ingest" }, { scope = "plugin" })` + `maki.fn.jobwait`; every
+          callback is wrapped, the buffer is bounded, and a failed flush counts
+          its dropped events);
+        - `assets/agent-integrations/maki/plugin.toml` (new — the create-case
+          grants, all six keys named: `fs_read`, `fs_write`, `run` true and
+          `net`, `env`, `agent` false);
+        - `src/skills/targets.rs` (modified — `AgentTarget::Maki` with skills
+          and commands, the reporter row in the asset-to-target table, the
+          `managed_registration_file`/`target_merges` split, and the two merged
+          files: `merge_maki_plugin` (per-key idempotent, never removing or
+          flipping a user key, created from the asset when absent) and
+          `merge_maki_init` (the exact fail-soft fence, created when absent,
+          re-applied in place, never touching the rest of the file));
+        - `src/skills/rules.rs` (modified — `ignore_entries` and `is_rule_path`
+          cover `.maki/lua/givn-timeline.lua`, `.maki/skills/givn-*/`, and
+          `.maki/commands/{givn,grill}-*`, and deliberately exclude the two
+          merged user-owned files);
+        - `src/cli/addons.rs` (modified — the two addon-removal target lists
+          and their messages include `.maki`, so a deselected addon's guidance is
+          removed there too);
+        - `src/config/overlay.rs`, `src/cli/init.rs`, `src/main.rs`, `README.md`
+          (modified — `maki` is a known target, appears in the `--agents` help
+          and the refusal/valid-target lists, and the init summary names the
+          reporter's three installed paths);
+        - `src/cli/history.rs` (modified — the intake gains the `phase` kind a
+          harness's own long step reports (Maki's compaction, labelled and
+          measured, `data.summary` never stored) and marks a subagent entry
+          whose harness reported no tokens with the record's
+          `usage: "unavailable"` marker, exactly as it already does for turns);
+        - `tests/steps/development_timeline_support.rs` (modified — the real
+          `maki` driver: the pinned binary is resolved from `GIVN_E2E_BIN`/
+          `~/.cache/givn-e2e/bin`/`PATH`; the driver's `init.lua` starts with the
+          shipped fence verbatim and then fires the scripted autocmds through
+          `maki.api.exec_autocmds`, asserts the load marker, and flushes with the
+          reporter's `run()`; the `HarnessActivity` vocabulary converts to the
+          harness's own autocmds for the e2e row; the shared `driver_path`
+          helper carries the `givn` shim and the harness bin directory);
+        - `tests/steps/agent_activity_reporting_steps.rs` (modified — the
+          scenario's eight phrases, the `maki` row in the reporter install
+          assertion with the merged files' content, and the reporter-asset table);
+        - `tests/steps/agent_activity_reporting_e2e_steps.rs` (modified — the
+          driver table's `maki` row);
+        - `setup-e2e-harness.sh` (new — downloads the pinned
+          `maki-v0.6.3-x86_64-unknown-linux-musl.tar.gz`, verifies its
+          sha256, and extracts it into the local bin directory the suite
+          resolves);
+        - `.github/workflows/ci.yml`, `.github/workflows/release.yml` (modified —
+          the Maki install step joins the browser install before the suites).
+
+        Recorded deviations and interpretations (none silent):
+        - the flush passes `{ scope = "plugin" }` to `jobstart`, because the
+          flush also runs from the exported `run()` at load time, where no task
+          is active and the default task scope raises `jobstart: no active task`
+          (reproduced during GREEN); the design's awaited job inside the owning
+          callback is unchanged;
+        - the tool label is the bounded input subject (one line, ≤ 120
+          characters) where the call ran, and the tool name for a call that never
+          ran: the design's prose says "the label is the tool name" while the
+          committed `@e2e` outline asserts the reported command for every
+          harness; the bounded label keeps D2's privacy bound, and the
+          never-run case is exactly where no input exists;
+        - a tool call that never ran is detected by the absence of BOTH
+          `data.duration_ms` and `data.input` (the API reference documents both
+          as present only for a call that actually ran), which is what makes
+          "a cancelled call is recorded without a duration" hold while a
+          measured call without a host duration still gets the reporter's own
+          stamp;
+        - the wait's label for `SessionStatusChanged` is the harness's own
+          `data.title` (bounded), falling back to `needs input`: Maki's status
+          change carries no question text, and the record requires a label.
         ```
-  - [ ] **REFACTOR** — keep one install helper and one flush helper shared with
+  - [x] **REFACTOR** — keep one install helper and one flush helper shared with
         the other reporters; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The install side is unchanged from the table Task 21 introduced: the Maki
+        rows go through the same `integrations_of` table and the same
+        `write_embedded_file`, and its two merged files go through the same
+        `target_merges` table as the Claude settings merge. On the driver side
+        the ad-hoc `PATH` composition is gone: one `driver_path(dirs)` helper
+        now builds the environment for every reporter process — the node
+        drivers (`driver_path(&[&shim])`) and the Maki driver
+        (`driver_path(&[maki_bin, &shim])`) share it. No behaviour change: the
+        same files install, the same merges run, and every driver process gets
+        the same `PATH` shape it had.
+
+        $ cargo fmt --all -- --check
+        FMT OK
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.51s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Maki's reporter keeps the harness's own tool duration and marks what its harness omits"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 3.51s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: Maki's reporter keeps the harness's own tool duration and marks what its harness omits
+           ✔  Given a project with the generated Maki development reporter
+           ✔  When the Maki harness reports a completed tool call
+           ✔  Then the record holds that tool call with the duration the harness reported
+           ✔  When the Maki harness reports a tool call that never ran
+           ✔  Then the record holds that tool call without a measured duration
+           ✔  When the Maki harness reports a subagent that started and completed
+           ✔  Then the record holds that subagent's span
+           ✔  And the record marks that subagent's token usage as unavailable
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        EXIT=0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `Maki's reporter keeps the harness's own tool

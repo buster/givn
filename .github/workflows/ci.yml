@@ -73,6 +73,9 @@ jobs:
       - name: Install the pinned Playwright browser
         run: ./setup-e2e-browser.sh
 
+      - name: Install the pinned Maki harness binary
+        run: ./setup-e2e-harness.sh
+
       - name: Run repository acceptance suites
         run: |
           set -euo pipefail

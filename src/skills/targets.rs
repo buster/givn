@@ -31,15 +31,19 @@ pub enum AgentTarget {
     Claude,
     /// `.omp/` — the omp (Oh My Pi) skills, commands, and hook location.
     Omp,
+    /// `.maki/` — the Maki skills, commands, reporter module, and its merged
+    /// `plugin.toml` grants / `init.lua` fence.
+    Maki,
 }
 
 impl AgentTarget {
     /// All known targets.
-    pub const ALL: [AgentTarget; 4] = [
+    pub const ALL: [AgentTarget; 5] = [
         AgentTarget::Opencode,
         AgentTarget::Agents,
         AgentTarget::Claude,
         AgentTarget::Omp,
+        AgentTarget::Maki,
     ];
 
     /// Canonical config name (no leading dot).
@@ -49,6 +53,7 @@ impl AgentTarget {
             AgentTarget::Agents => "agents",
             AgentTarget::Claude => "claude",
             AgentTarget::Omp => "omp",
+            AgentTarget::Maki => "maki",
         }
     }
 
@@ -59,6 +64,7 @@ impl AgentTarget {
             AgentTarget::Agents => ".agents",
             AgentTarget::Claude => ".claude",
             AgentTarget::Omp => ".omp",
+            AgentTarget::Maki => ".maki",
         }
     }
 
@@ -69,7 +75,10 @@ impl AgentTarget {
 
     /// Whether this target owns a `<dir>/commands/` slash-command directory.
     pub fn owns_commands(&self) -> bool {
-        matches!(self, AgentTarget::Opencode | AgentTarget::Omp)
+        matches!(
+            self,
+            AgentTarget::Opencode | AgentTarget::Omp | AgentTarget::Maki
+        )
     }
 
     /// Resolve a (possibly dotted) name to a target.
@@ -84,6 +93,7 @@ impl AgentTarget {
             "agents" => Some(AgentTarget::Agents),
             "claude" => Some(AgentTarget::Claude),
             "omp" => Some(AgentTarget::Omp),
+            "maki" => Some(AgentTarget::Maki),
             _ => None,
         }
     }
@@ -404,8 +414,8 @@ pub fn managed_generated_paths(project_root: &Path) -> Result<Vec<std::path::Pat
         for integration in integrations_of(*target) {
             paths.push(project_root.join(integration.relative));
         }
-        if let Some(registration) = registration_of(*target) {
-            paths.push(project_root.join(registration.file));
+        if let Some(file) = managed_registration_file(*target) {
+            paths.push(project_root.join(file));
         }
     }
 
@@ -485,6 +495,16 @@ const CLAUDE_INTEGRATIONS: &[AgentIntegration] = &[
     },
 ];
 
+/// The integrations the maki target receives: the reporter module, copied
+/// verbatim. Its two merged files (the `plugin.toml` grants and the fence in
+/// `init.lua`) are user-owned and never generated paths, so they are not rows
+/// here.
+const MAKI_INTEGRATIONS: &[AgentIntegration] = &[AgentIntegration {
+    relative: ".maki/lua/givn-timeline.lua",
+    asset: "agent-integrations/maki/givn-timeline.lua",
+    executable: false,
+}];
+
 /// The integrations one target receives: the table is the target's install
 /// set, so no branch here decides what a target gets.
 fn integrations_of(target: AgentTarget) -> &'static [AgentIntegration] {
@@ -492,26 +512,30 @@ fn integrations_of(target: AgentTarget) -> &'static [AgentIntegration] {
         AgentTarget::Opencode => OPENCODE_INTEGRATIONS,
         AgentTarget::Omp => OMP_INTEGRATIONS,
         AgentTarget::Claude => CLAUDE_INTEGRATIONS,
+        AgentTarget::Maki => MAKI_INTEGRATIONS,
         AgentTarget::Agents => &[],
     }
 }
 
-/// A target's registration: the file the merge writes and the merge that
-/// writes it. A registration is merged rather than copied from an asset, so it
-/// is a row of its own and never appears as an installed file.
-struct TargetRegistration {
-    file: &'static str,
-    merge: fn(&Path) -> Result<()>,
+/// The merged registration file a target owns that is also a managed generated
+/// path: the Claude Code settings file, which `sync` merges and `givn upgrade`
+/// stages. A target's other merges are user-owned files and are never listed
+/// here.
+fn managed_registration_file(target: AgentTarget) -> Option<&'static str> {
+    match target {
+        AgentTarget::Claude => Some(".claude/settings.local.json"),
+        _ => None,
+    }
 }
 
-/// The registration a target owns, when it has one.
-fn registration_of(target: AgentTarget) -> Option<TargetRegistration> {
+/// The merges a target runs over its own files: the Claude Code settings merge,
+/// and Maki's two merged files (the `plugin.toml` grants and the fence in
+/// `init.lua`), which are user-owned and therefore never generated paths.
+fn target_merges(target: AgentTarget) -> &'static [fn(&Path) -> Result<()>] {
     match target {
-        AgentTarget::Claude => Some(TargetRegistration {
-            file: ".claude/settings.local.json",
-            merge: merge_claude_settings,
-        }),
-        _ => None,
+        AgentTarget::Claude => &[merge_claude_settings],
+        AgentTarget::Maki => &[merge_maki_plugin, merge_maki_init],
+        _ => &[],
     }
 }
 
@@ -526,9 +550,11 @@ fn sync_agent_integrations(project_root: &Path, targets: &[AgentTarget]) -> Resu
             )?;
             println!("  integration: {}", integration.relative);
         }
-        if let Some(registration) = registration_of(*target) {
-            (registration.merge)(project_root)?;
-            println!("  integration: {}", registration.file);
+        if let Some(file) = managed_registration_file(*target) {
+            println!("  integration: {file}");
+        }
+        for merge in target_merges(*target) {
+            merge(project_root)?;
         }
     }
 
@@ -696,6 +722,130 @@ fn merge_claude_timeline_hook(
             "matcher": hook.matcher,
             "hooks": [serde_json::Value::Object(handler)],
         })),
+    }
+    Ok(())
+}
+
+/// The fence Givn owns inside `.maki/init.lua`: the exact fail-soft body the
+/// design reproduced (the bare `pcall(require, …).setup()` form indexes the
+/// boolean status, raises, and kills the rest of the user's `init.lua`).
+const MAKI_FENCE_BEGIN: &str = "-- givn:begin:timeline";
+const MAKI_FENCE_END: &str = "-- givn:end:timeline";
+const MAKI_FENCE_LINES: [&str; 6] = [
+    MAKI_FENCE_BEGIN,
+    "local ok, reporter = pcall(require, \"givn-timeline\")",
+    "if ok and type(reporter) == \"table\" and reporter.setup then",
+    "  reporter.setup()",
+    "end",
+    MAKI_FENCE_END,
+];
+
+/// The permission keys the Maki reporter calls: `maki.fs.read`,
+/// `maki.fs.write`/`rm`, and `maki.fn.jobstart`/`jobwait`. maki adds nothing
+/// else to a file the user already owns.
+const MAKI_REPORTER_GRANTS: [&str; 3] = ["fs_read", "fs_write", "run"];
+
+/// The key a TOML line assigns, when the line is a key/value pair.
+fn toml_key(line: &str) -> Option<&str> {
+    let line = line.trim();
+    if line.is_empty() || line.starts_with('[') || line.starts_with('#') {
+        return None;
+    }
+    let (key, _) = line.split_once('=')?;
+    Some(key.trim())
+}
+
+/// Merge the Maki reporter's permission grants into `.maki/plugin.toml`,
+/// idempotently per key and never clobbering the file: a key the user already
+/// wrote is never removed or flipped, and surrounding content is untouched.
+/// When the file is absent it is created from the asset, which names all six
+/// keys, so the created file states the whole grant.
+fn merge_maki_plugin(project_root: &Path) -> Result<()> {
+    let path = project_root.join(".maki/plugin.toml");
+    if !path.exists() {
+        return write_embedded_file(
+            project_root,
+            ".maki/plugin.toml",
+            "agent-integrations/maki/plugin.toml",
+            false,
+        );
+    }
+    let content = std::fs::read_to_string(&path)?;
+    let mut lines: Vec<String> = content.lines().map(str::to_string).collect();
+    match lines.iter().position(|line| line.trim() == "[permissions]") {
+        Some(start) => {
+            // The table ends at the next header (or the end of the file); an
+            // existing key — whatever value the user gave it — is left alone.
+            let end = lines[start + 1..]
+                .iter()
+                .position(|line| line.trim().starts_with('['))
+                .map(|offset| start + 1 + offset)
+                .unwrap_or(lines.len());
+            let missing: Vec<&str> = MAKI_REPORTER_GRANTS
+                .into_iter()
+                .filter(|key| {
+                    !lines[start + 1..end]
+                        .iter()
+                        .any(|line| toml_key(line) == Some(key))
+                })
+                .collect();
+            if missing.is_empty() {
+                return Ok(());
+            }
+            for (offset, key) in missing.into_iter().enumerate() {
+                lines.insert(end + offset, format!("{key} = true"));
+            }
+        }
+        None => {
+            if lines.iter().any(|line| !line.trim().is_empty()) {
+                lines.push(String::new());
+            }
+            lines.push("[permissions]".to_string());
+            for key in MAKI_REPORTER_GRANTS {
+                lines.push(format!("{key} = true"));
+            }
+        }
+    }
+    std::fs::write(&path, lines.join("\n") + "\n")?;
+    Ok(())
+}
+
+/// Merge the managed fence into `.maki/init.lua`: created when the file is
+/// absent, re-applied when the fence is already there (so a stale body is
+/// replaced), appended otherwise — and the rest of the user's file is never
+/// touched.
+fn merge_maki_init(project_root: &Path) -> Result<()> {
+    let path = project_root.join(".maki/init.lua");
+    let fence = MAKI_FENCE_LINES.join("\n");
+    if !path.exists() {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(&path, format!("{fence}\n"))?;
+        return Ok(());
+    }
+    let content = std::fs::read_to_string(&path)?;
+    let Some(begin) = content.find(MAKI_FENCE_BEGIN) else {
+        let mut merged = content;
+        if !merged.is_empty() && !merged.ends_with('\n') {
+            merged.push('\n');
+        }
+        if !merged.is_empty() {
+            merged.push('\n');
+        }
+        merged.push_str(&fence);
+        merged.push('\n');
+        std::fs::write(&path, merged)?;
+        return Ok(());
+    };
+    let end = content[begin..]
+        .find(MAKI_FENCE_END)
+        .map(|offset| begin + offset + MAKI_FENCE_END.len())
+        .ok_or_else(|| anyhow::anyhow!("the .maki/init.lua fence has no end marker"))?;
+    let merged = format!("{}{}", &content[..begin], fence);
+    let merged = format!("{}{}", merged, &content[end..]);
+    if merged != content {
+        std::fs::write(&path, merged)?;
     }
     Ok(())
 }
@@ -899,7 +1049,7 @@ mod tests {
         names.sort_unstable();
         assert_eq!(
             names,
-            ["claude", "omp", "opencode"],
+            ["claude", "maki", "omp", "opencode"],
             "the reporter set is not keyed to the executing targets: {reporters:#?}"
         );
         for (name, asset) in &reporters {

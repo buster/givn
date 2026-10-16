@@ -218,10 +218,10 @@ pub fn disable_scaffold(name: &str) -> Result<()> {
         println!("The coverage fence in README.md is preserved.");
     } else if is_skill_addon(name) {
         remove_skill_addon_files(name);
-        println!("Removed the '{name}' skill files from .agents/, .claude/, .opencode/.");
+        println!("Removed the '{name}' skill files from .agents/, .claude/, .opencode/, .maki/.");
     } else if is_command_addon(name) {
         remove_command_addon_files(name);
-        println!("Removed the '{name}' command file from .opencode/commands/.");
+        println!("Removed the '{name}' command file from .opencode/commands/ and .maki/commands/.");
     }
 
     Ok(())
@@ -404,7 +404,7 @@ fn remove_skill_addon_files(addon: &str) {
         return;
     };
     let project_root = std::env::current_dir().expect("current dir");
-    for base in &[".agents", ".claude", ".opencode", ".omp"] {
+    for base in &[".agents", ".claude", ".opencode", ".omp", ".maki"] {
         let dir = project_root.join(format!("{base}/skills/{skill_name}"));
         if dir.exists() {
             let _ = std::fs::remove_dir_all(&dir);
@@ -418,7 +418,7 @@ fn remove_command_addon_files(addon: &str) {
         return;
     };
     let project_root = std::env::current_dir().expect("current dir");
-    for base in &[".opencode", ".omp"] {
+    for base in &[".opencode", ".omp", ".maki"] {
         let file = project_root.join(format!("{base}/commands/{cmd_name}.md"));
         if file.exists() {
             let _ = std::fs::remove_file(&file);

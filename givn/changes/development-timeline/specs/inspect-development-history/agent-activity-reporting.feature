@@ -103,7 +103,7 @@ Feature: Agent Activity Reporting
     Then the record holds that turn's token usage
     And the usage names "claude-sonnet-5"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Maki's reporter keeps the harness's own tool duration and marks what its harness omits
     Given a project with the generated Maki development reporter
     When the Maki harness reports a completed tool call
