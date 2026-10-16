@@ -9653,10 +9653,36 @@ name it.
         5 steps (5 passed)
         REFACTOR_EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+  - [x] **COMMIT** — `11647c8be76c5f0030a3f74774ba089e3d53d162` — `test(e2e): <release note>` with the scenario
         title `Consumer opens the report of a scope with no recorded activity` in
         the body (including the four evidence PNGs). Record the revision
         identifier.
+        ```
+        $ ./target/debug/givn commit -m "test(e2e): Givn records the development process of every change and ideation — … opens in a browser.
+
+        Consumer opens the report of a scope with no recorded activity"
+        [18:08:50] committed revision on the Git backend
+
+        $ git show --stat --format='%H' 11647c8b
+        11647c8be76c5f0030a3f74774ba089e3d53d162
+         assets/timeline/report.html                        |  11 +-
+         .../desktop--empty.png                             | Bin 0 -> 29446 bytes
+         .../desktop.png                                    | Bin 0 -> 29446 bytes
+         .../mobile--empty.png                              | Bin 0 -> 22571 bytes
+         .../mobile.png                                     | Bin 0 -> 22567 bytes
+         .../development-report.feature                     |   2 +-
+         givn/changes/development-timeline/tasks.md         | 129 +++++++++++++++++++--
+         tests/steps/development_report_e2e_steps.rs        |  97 ++++++++++++++++
+
+        The revision is this scenario's RED+GREEN+REFACTOR as one atomic commit:
+        the `@wip` removal from this scenario alone (with it, no `@wip` remains on
+        any scenario this change implements), the asset's one `drawsTimeline`
+        condition, the scenario's two Thens and its probe, this task file's
+        evidence, and the scenario's four captures — the final-state pair the
+        visual gate reads for every `@e2e` scenario plus the contract's declared
+        `empty` state's pair. No other scenario's tag, step, or capture is
+        touched.
+        ```
 
 ---
 
