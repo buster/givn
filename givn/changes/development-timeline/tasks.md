@@ -6383,7 +6383,7 @@ name it.
 
 ## Task 29 — `The report orders the timeline by recorded time, not by store position` (`development-report`, added)
 
-- [ ] **Scenario: `The report orders the timeline by recorded time, not by store position`**
+- [x] **Scenario: `The report orders the timeline by recorded time, not by store position`**
   - Design constraints:
     - Ordering rule (design-review Q5): within every band the spans are ordered
       by `at` (the entry's recorded end timestamp), never by the entry's line
@@ -6528,9 +6528,27 @@ name it.
         $ ... --exact "...::The report of an ideation topic names the work done before the change exists"
         1 feature, 1 scenario (1 passed), 4 steps (4 passed)        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `429fd12a47ff35040b80c1d71f844adc49cd604c` — `feat(development-report): <release note>` with
         the scenario title `The report orders the timeline by recorded time, not
         by store position` in the body. Record the revision identifier.
+        ```
+        $ GIVN_ATTRIBUTION_ACTIVE=1 GIVN_ATTRIBUTION_LLM=deepseek/deepseek-flash \
+          GIVN_ATTRIBUTION_REASONING=max GIVN_ATTRIBUTION_HARNESS=omp \
+          ./target/debug/givn commit -m "feat(development-report): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        The report orders the timeline by recorded time, not by store position"
+        [16:45:43] committed revision on the Git backend
+        EXIT=0
+
+        Revision 429fd12a47ff35040b80c1d71f844adc49cd604c touches exactly this
+        scenario's files: `src/cli/timeline.rs` (the one `at` ordering, the axis
+        strip, and the elapsed read from the ordered ends),
+        `assets/timeline/report.html` (the tick style),
+        `tests/steps/development_report_steps.rs` (the out-of-order Given, the
+        drawn-span/drawn-tick readers, and the ordering Then step),
+        `tests/steps/development_timeline_support.rs` (the out-of-order seed),
+        the delta `.feature`'s `@wip` removal, and this task file's evidence.
+        ```
 
 ## Task 30 — `The report names the agent's fan-out into small subagents` (`development-report`, added)
 
