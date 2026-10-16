@@ -289,6 +289,80 @@ fn intake_reports_no_failure_to_the_agent(world: &mut GivnWorld) {
     );
 }
 
+/// The text the fixture pipes as a payload that is not readable JSON at all: a
+/// reporter's flush cut off mid-line, so the intake must refuse the payload
+/// itself rather than read events out of it.
+const UNREADABLE_PAYLOAD: &str =
+    "{\"schema\": 1, \"reporter\": \"fixture\", \"events\": [{\"kind\": \"tool\"";
+
+/// Hand one raw stdin payload to the real intake and keep its output.
+fn report_raw(world: &mut GivnWorld, text: &str) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let out = support::report_intake_raw(env, text);
+    world.last_output = Some(out);
+    world.last_command = Some("history".to_string());
+}
+
+#[when("the agent pipes a payload that is not JSON into `givn history ingest`")]
+fn pipes_a_payload_that_is_not_json(world: &mut GivnWorld) {
+    // The record is read before the payload is handed over, so the Then steps
+    // can assert what the failed read left behind.
+    snapshot_record(world);
+    report_raw(world, UNREADABLE_PAYLOAD);
+}
+
+#[then("the intake exits 2")]
+fn intake_exits_2(world: &mut GivnWorld) {
+    let out = crate::steps::output(world);
+    assert_eq!(
+        out.status.code(),
+        Some(2),
+        "the intake did not report the payload-level failure with its own exit code (exit {:?}): {}",
+        out.status.code(),
+        crate::steps::stderr(world)
+    );
+}
+
+#[then("the development record gains no entry")]
+fn record_gains_no_entry(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let before = recorded_before(world);
+    let after = support::store_bytes(&env.root());
+    // The failed read wrote nothing: no partial line and no new entry, so the
+    // bytes are still exactly the snapshot's — which also means the intake's
+    // own command entry was not recorded for a payload it refused.
+    assert_eq!(
+        after,
+        before,
+        "the failed payload read changed the record:\nbefore: {}\nafter: {}",
+        String::from_utf8_lossy(&before),
+        String::from_utf8_lossy(&after)
+    );
+    // No lock left behind either: the history directory holds nothing the
+    // failed read created.
+    let leftovers: Vec<String> = std::fs::read_dir(env.path("givn/history"))
+        .expect("the fixture's history directory")
+        .map(|entry| {
+            entry
+                .expect("read a history entry")
+                .file_name()
+                .to_string_lossy()
+                .into_owned()
+        })
+        .filter(|name| name.ends_with(".lock") || name.ends_with(".tmp"))
+        .collect();
+    assert!(
+        leftovers.is_empty(),
+        "the failed read left a lock or a partial file behind: {leftovers:?}"
+    );
+}
+
 #[then("the intake names the rejected event")]
 fn intake_names_the_rejected_event(world: &mut GivnWorld) {
     let (rejected, position) = violating_event(world);

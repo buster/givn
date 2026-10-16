@@ -52,7 +52,7 @@ Feature: Agent Activity Reporting
     When the agent reports a completed tool call
     Then the intake reports no failure to the agent
 
-  @givn.added @wip
+  @givn.added
   Scenario: The intake rejects a payload that is not readable JSON
     Given a project root with givn/ initialised
     When the agent pipes a payload that is not JSON into `givn history ingest`

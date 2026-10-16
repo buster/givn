@@ -434,7 +434,16 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             topic,
             json,
         } => match command {
-            Some(HistoryCommands::Ingest) => cli::history::ingest(),
+            Some(HistoryCommands::Ingest) => {
+                // The intake's machine contract: only an unreadable payload is
+                // a non-zero exit, and the process exits before the recording
+                // wrapper runs, so a refused payload records nothing.
+                let code = cli::history::ingest()?.exit_code();
+                if code != 0 {
+                    std::process::exit(code);
+                }
+                Ok(())
+            }
             None => cli::history::run(change.as_deref(), topic.as_deref(), json),
         },
         Commands::Timeline { change, topic, out } => {
