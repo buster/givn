@@ -251,6 +251,12 @@ impl HistoryRecorder {
     /// Best-effort by construction: a store that cannot be written warns and
     /// continues, and the outcome of the command itself is untouched.
     pub fn finish(&self, outcome: &str, exit_code: i32) {
+        // The engagement rule, checked before anything is created: a root with
+        // no Givn scaffold receives no record, no ignore block, and no
+        // directory.
+        if !engages(&self.root) {
+            return;
+        }
         // The record's ignore entry is re-asserted on every write, before the
         // store is touched: a store that predates the repository still becomes
         // ignored, and no destination this writes can dirty the worktree.
@@ -435,6 +441,18 @@ pub const GIT_IGNORE_ENTRY: &str = "givn/history/";
 /// The record's entry in a Fossil ignore list. A Fossil glob must match the
 /// whole path and `*` crosses `/`, so a bare directory path matches nothing.
 pub const FOSSIL_IGNORE_ENTRY: &str = "givn/history/*";
+
+/// Whether the recorder engages in this project: only a root that carries the
+/// Givn scaffold (`givn/`) records.
+///
+/// Before the scaffold exists the recorder writes nothing and creates no
+/// directory, so a refused command in a bare root — `givn init` with no agent
+/// target, or a root a backend preflight refuses — leaves that root exactly as
+/// it was. The rule keys on the scaffold, never on the VCS markers: once
+/// `givn/` exists, every command records, refusals and failures included.
+fn engages(root: &Path) -> bool {
+    root.join("givn").is_dir()
+}
 
 /// Keep the store out of repository history, re-asserted on every record
 /// write.

@@ -489,6 +489,74 @@ fn repository_reports_no_pending_change_for_the_record(world: &mut GivnWorld) {
     );
 }
 
+/// The record's directory, relative to the project root.
+pub(crate) const RECORD_DIR: &str = "givn/history";
+
+/// Whether `path` is the project's record directory. The acceptance suite's
+/// project-state comparisons exclude it because the record is Givn runtime
+/// state, not project content; the comparison is by path, never by bare entry
+/// name, so an unrelated directory called `history` is never dropped.
+pub(crate) fn is_record_dir(root: &std::path::Path, path: &std::path::Path) -> bool {
+    path == root.join(RECORD_DIR)
+}
+
+#[then(regex = r#"^the directory "([^"]+)" exists$"#)]
+fn named_directory_exists(world: &mut GivnWorld, rel: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let path = env.path(&rel);
+    assert!(
+        path.is_dir(),
+        "expected directory {} to exist",
+        path.display()
+    );
+}
+
+#[then("the project root holds no development record")]
+fn project_root_holds_no_development_record(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let root = env.root();
+    let store = support::store_file(&root);
+    assert!(
+        !store.exists(),
+        "the project root holds a development record at {}",
+        store.display()
+    );
+    assert!(
+        !root.join(RECORD_DIR).exists(),
+        "the recorder created the record directory {}",
+        root.join(RECORD_DIR).display()
+    );
+    // The engagement rule gates everything a record write would create,
+    // including the scaffold-time `.gitignore` fallback of a root with no
+    // repository.
+    assert!(
+        !root.join(".gitignore").exists(),
+        "the recorder wrote {} in a root it must not engage in",
+        root.join(".gitignore").display()
+    );
+}
+
+#[then("the project root holds a development record")]
+fn project_root_holds_a_development_record(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let entries = support::record_entries(&env.root());
+    assert!(
+        entries
+            .iter()
+            .any(|entry| entry["kind"] == json!("command") && entry["name"] == json!("init")),
+        "the successful init did not record its own command entry: {entries:#?}"
+    );
+}
+
 #[given("a project root with givn/ initialised in a Fossil checkout")]
 fn project_root_initialised_in_a_fossil_checkout(world: &mut GivnWorld) {
     // A real Fossil checkout first and `givn init` INSIDE it: the managed
