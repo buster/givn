@@ -173,6 +173,7 @@ pub fn current() -> Option<&'static HistoryRecorder> {
 /// returns an error to its caller.
 #[derive(Debug)]
 pub struct HistoryRecorder {
+    root: PathBuf,
     store: HistoryStore,
     scope: Scope,
     command: String,
@@ -188,6 +189,7 @@ impl HistoryRecorder {
         HistoryRecorder {
             store: HistoryStore::at(store_path(&root)),
             scope: resolve_scope(&root),
+            root,
             command: name.to_string(),
             label: label.to_string(),
             started: Instant::now(),
@@ -249,6 +251,10 @@ impl HistoryRecorder {
     /// Best-effort by construction: a store that cannot be written warns and
     /// continues, and the outcome of the command itself is untouched.
     pub fn finish(&self, outcome: &str, exit_code: i32) {
+        // The record's ignore entry is re-asserted on every write, before the
+        // store is touched: a store that predates the repository still becomes
+        // ignored, and no destination this writes can dirty the worktree.
+        ensure_ignored(&self.root);
         let mut command = self.entry("command", &self.command, Some(self.label.clone()));
         command.duration_ms = Some(self.started.elapsed().as_millis() as u64);
         command.outcome = outcome.to_string();
@@ -416,10 +422,35 @@ pub fn store_path(root: &Path) -> PathBuf {
     root.join("givn").join("history").join("events.jsonl")
 }
 
-/// Keep the store out of repository history through the managed
-/// `# givn:begin:history` ignore block.
-pub fn ensure_ignored(_root: &Path) -> std::io::Result<()> {
-    todo!("TODO: development-timeline")
+/// The fence of the record's own managed block. The record is development
+/// data, not a generated rule, so it never shares the `# givn:begin:rules`
+/// block.
+pub const HISTORY_BLOCK_BEGIN: &str = "# givn:begin:history";
+/// The line that closes the record's managed block.
+pub const HISTORY_BLOCK_END: &str = "# givn:end:history";
+
+/// The record's entry in a Git destination: the store's directory.
+pub const GIT_IGNORE_ENTRY: &str = "givn/history/";
+
+/// The record's entry in a Fossil ignore list. A Fossil glob must match the
+/// whole path and `*` crosses `/`, so a bare directory path matches nothing.
+pub const FOSSIL_IGNORE_ENTRY: &str = "givn/history/*";
+
+/// Keep the store out of repository history, re-asserted on every record
+/// write.
+///
+/// The recorder never writes a versioned file: with a Git worktree it
+/// re-asserts the record's block in the worktree-local exclude file, with a
+/// Fossil checkout it writes the repository-level `ignore-glob` setting only
+/// while no managed file overrides it, and it uses `.gitignore` only before a
+/// repository exists (the scaffold-time safety net). The destinations and the
+/// backend decision come from the ignore writer's one table. Best effort by
+/// construction: a destination that cannot be written leaves the store exactly
+/// as ignored as the project's own configuration made it.
+pub fn ensure_ignored(root: &Path) {
+    for write in crate::skills::rules::record_writes(root) {
+        let _ = crate::skills::rules::apply_write(root, &write);
+    }
 }
 
 /// Start timestamps for process-per-hook harnesses, keyed by the harness's own

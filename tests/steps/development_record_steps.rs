@@ -454,6 +454,52 @@ fn every_parent_link_names_an_entry_in_the_record(world: &mut GivnWorld) {
     );
 }
 
+#[then("the repository reports no pending change for the development record")]
+fn repository_reports_no_pending_change_for_the_record(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let store = support::store_file(&env.root());
+    assert!(
+        store.is_file(),
+        "the scenario's own command wrote no record at {}: the assertion below would be vacuous",
+        store.display()
+    );
+    let status = common::git(env, &["status", "--porcelain", "-uall"]);
+    assert!(
+        status.status.success(),
+        "git status failed: {}",
+        String::from_utf8_lossy(&status.stderr)
+    );
+    let porcelain = String::from_utf8_lossy(&status.stdout);
+    let named: Vec<&str> = porcelain
+        .lines()
+        .filter(|line| line.contains("givn/history/events.jsonl"))
+        .collect();
+    assert!(
+        named.is_empty(),
+        "the repository reports the development record as a pending change:\n{porcelain}"
+    );
+    // Not a vacuous claim: the record is ignored, not merely committed.
+    let ignored = common::git(env, &["check-ignore", "-q", "givn/history/events.jsonl"]);
+    assert!(
+        ignored.status.success(),
+        "the development record is not ignored by the repository:\n{porcelain}"
+    );
+}
+
+#[given("a project root with givn/ initialised under Git")]
+fn project_root_initialised_under_git(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    assert!(
+        common::is_git_repo(&env),
+        "the fixture must be a real Git worktree: {}",
+        env.root().display()
+    );
+    world.env = Some(env);
+}
+
 #[given(regex = r#"^a change "([^"]+)" with a recorded history$"#)]
 fn change_with_a_recorded_history(world: &mut GivnWorld, id: String) {
     let env = world

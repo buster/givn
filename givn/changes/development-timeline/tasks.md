@@ -2294,7 +2294,7 @@ name it.
 
 ## Task 10 — `The record stays out of the repository's own history` (`development-record`, added)
 
-- [ ] **Scenario: `The record stays out of the repository's own history`**
+- [x] **Scenario: `The record stays out of the repository's own history`**
   - Design constraints:
     - D1 (corrected rule): the **recorder never writes a versioned file**; the
       record path reaches versioned destinations only through the commands that
@@ -2342,24 +2342,204 @@ name it.
       Paste both commands and their output.
     - No push, no commit: the scenario only proves the file is ignored.
     - RED expected failure: the no-pending-change Then step is undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record stays out of the repository's own history"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        The first run failed on the new fixture's own undefined Given; the
+        fixture step (a real setup action with its own assertion) was then
+        written, so the RED lands on the assertion step the task predicts:
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record stays out of the repository's own history"
+        Feature: Development Record
+          Scenario: The record stays out of the repository's own history
+           ✘  Given a project root with givn/ initialised under Git
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:77:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        EXIT 101   (first run: the fixture step is undefined)
+
+        After the fixture step was written, the RED lands on the new behaviour's
+        assertion step:
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record stays out of the repository's own history"
+        Feature: Development Record
+          Scenario: The record stays out of the repository's own history
+           ✔  Given a project root with givn/ initialised under Git
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  When the user runs `givn status --change demo`
+           ✘  Then the repository reports no pending change for the development record
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:80:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        4 steps (3 passed, 1 failed)
+
+        thread 'main' (2114497) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT 101
+
+        RED category: undefined step — the ignore contract is genuinely new
+        (`ensure_ignored` was still `todo!()`), and the fixture's own run of
+        `givn status --change demo` really wrote the record the Then step reads.
         ```
-  - [ ] **GREEN** — implement `ensure_ignored` over the existing backend switch.
+  - [x] **GREEN** — implement `ensure_ignored` over the existing backend switch.
         Files: `src/history.rs`, `src/skills/rules.rs` (reuse/seam only — do not
         merge the record into the rules block), the step file
         `tests/steps/development_record_steps.rs`. Compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.04s
+        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record stays out of the repository's own history"
+        Feature: Development Record
+          Scenario: The record stays out of the repository's own history
+           ✔  Given a project root with givn/ initialised under Git
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  When the user runs `givn status --change demo`
+           ✔  Then the repository reports no pending change for the development record
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT 0
+
+        Production files created/modified:
+        - `src/history.rs` — the record's own ignore vocabulary
+          (`HISTORY_BLOCK_BEGIN`/`HISTORY_BLOCK_END`, `GIT_IGNORE_ENTRY =
+          "givn/history/"`, `FOSSIL_IGNORE_ENTRY = "givn/history/*"`), the real
+          `ensure_ignored` (best effort, over the writer's destination table),
+          and the call site: `HistoryRecorder::finish` re-asserts the record's
+          ignore entry immediately before every store write, so a store that
+          predates the repository still becomes ignored and no destination it
+          writes can dirty the worktree (`root` is now carried by the recorder).
+        - `src/skills/rules.rs` — the destination table both writers read:
+          `RootBackend` decided from the markers at the project root (`.git`,
+          `.fslckout`/`_FOSSIL_`; `Bare` before a repository exists;
+          `Ambiguous` when both markers are present, which neither writer
+          touches), `IgnoreDestination` (`Fenced(path)`/`FossilSetting`),
+          `IgnoreWrite`, `Fence` (`RULES_FENCE` unchanged, `HISTORY_FENCE` the
+          record's own markers), `rules_writes`, `record_writes`, one
+          `apply_write`, and the `upsert_block`/`render_block` pair
+          parameterized by fence — so the record never joins the
+          `# givn:begin:rules` block. `write_ignores` now iterates the table
+          instead of matching `scm::select`; the Fossil arm adds
+          `givn/history/*` to the managed file's entry list, because a committed
+          `.fossil-settings/ignore-glob` overrides the repository setting.
+          `upsert_local_exclude` folded into the table; the Fossil setting writer
+          is now `upsert_fossil_setting`.
+        - `tests/steps/development_record_steps.rs` — the `a project root with
+          givn/ initialised under Git` fixture (the Git backend fixture with a
+          real worktree, asserted) and the `the repository reports no pending
+          change for the development record` step: `git status --porcelain
+          -uall` carries no line naming `givn/history/events.jsonl`, with the
+          store asserted to exist (the scenario's own command wrote it) and
+          `git check-ignore` confirming the record is ignored, not merely
+          committed.
+        - Fixture class (F6, declared remedy): `tests/steps/run_execution_e2e_steps.rs::git_managed_project`
+          and `tests/steps/release_0_3_0_e2e_steps.rs::git_project_with_version`
+          now write `givn/history/` into their hand-written `.gitignore`
+          content, so their `git add --all` cannot commit the store.
+
+        Permanent-scenario acceptance evidence (the extra evidence this task
+        requires), both after this GREEN:
+
+        $ cargo test --locked --test features_runner -- --exact "operate-product/declare-the-product-start.feature::The upgrade commit includes the backfilled run declaration"
+        Feature: Declare the product start
+          Scenario: The upgrade commit includes the backfilled run declaration
+           ✔  Given a git-managed project with givn initialised
+           ✔  And the commands file has no run declaration
+           ✔  When the user runs `givn upgrade`
+           ✔  Then the command exits 0
+           ✔  And the working tree is clean
+           ✔  And the latest revision contains "givn/commands.yaml"
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        EXIT 0
+
+        $ cargo test --locked --test features_runner -- --exact "operate-product/declare-the-product-start.feature::A repeated upgrade creates no additional commit"
+        Feature: Declare the product start
+          Scenario: A repeated upgrade creates no additional commit
+           ✔  Given a git-managed project with givn initialised
+           ✔  And the commands file has no run declaration
+           ✔  When the user runs `givn upgrade`
+           ✔  And the user runs `givn upgrade` again
+           ✔  Then the command exits 0
+           ✔  And the latest revision is unchanged by the second upgrade
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        EXIT 0
+
+        Before this task the first scenario failed with exit 101 at
+        `the working tree is clean` (` M givn/history/events.jsonl`: the
+        fixture's `git add --all` had committed the store, and the recording
+        modified it).
         ```
-  - [ ] **REFACTOR** — one destination table shared with the rules writer, no
+  - [x] **REFACTOR** — one destination table shared with the rules writer, no
         duplicated Git/Fossil branches; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The Git/Fossil split exists once — in `root_backend` plus the two tables
+        that read it (`rules_writes`, `record_writes`) — and one writer applies
+        both (`apply_write`); neither the rules policy nor the record repeats a
+        backend branch. Cleanup with no behaviour change: `upsert_local_exclude`
+        is gone (the Git local exclude is a table row now), the fenced-block
+        helpers take the `Fence` instead of hardcoding the rules markers, and the
+        last skeleton allowance in the binary is dropped now that the step
+        capture, the bounded label, and the ignore block are all wired:
+
+        $ grep -n "mod history" src/main.rs
+        8:mod history;
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.27s   (no warnings)
+        $ cargo fmt --all -- --check                                    EXIT 0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.27s
+        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record stays out of the repository's own history"
+        Feature: Development Record
+          Scenario: The record stays out of the repository's own history
+           ✔  Given a project root with givn/ initialised under Git
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  When the user runs `givn status --change demo`
+           ✔  Then the repository reports no pending change for the development record
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT 0
+
+        Re-verified after the refactor: both permanent clean-checkout scenarios
+        still exit 0 (same output as the GREEN block above), and the whole
+        greened delta passes in one process:
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --tags "not @e2e and not @wip"
+        [Summary]
+        2 features
+        11 scenarios (11 passed)
+        58 steps (58 passed)
+        EXIT 0
+
+        The fixtures this task adapted are consumed by a whole feature, so it was
+        re-run too:
+        $ GIVN_FEATURES=givn/specs/upgrade-a-project cargo test --locked --test features_runner -- --tags "not @e2e"
+        [Summary]
+        1 feature
+        12 scenarios (12 passed)
+        65 steps (65 passed)
+        EXIT 0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
         the scenario title `The record stays out of the repository's own history`

@@ -5,11 +5,6 @@ mod error;
 mod fossil;
 mod gherkin;
 mod git;
-// Skeleton (tasks.md S4): the binary's copy of the record module is declared
-// here and `main` uses it; this allowance covers the skeleton items the
-// scenarios further down the task list have not wired yet (the step capture,
-// the bounded label, and the ignore block) — drop it when they are.
-#[allow(dead_code)]
 mod history;
 mod hooks;
 mod integrity_hook;

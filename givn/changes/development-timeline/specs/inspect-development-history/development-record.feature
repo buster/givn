@@ -72,7 +72,7 @@ Feature: Development Record
     And the user runs `givn timeline --change demo --out report.html`
     Then the development record holds no new entry
 
-  @givn.added @wip
+  @givn.added
   Scenario: The record stays out of the repository's own history
     Given a project root with givn/ initialised under Git
     And a change "demo" exists with artifact "proposal.md"

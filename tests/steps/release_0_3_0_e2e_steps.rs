@@ -67,8 +67,11 @@ fn git_project_with_version(version: &str) -> crate::common::TestEnv {
         &env.path("givn/commands.yaml"),
         "verify:\n  command: \"./emit-result.sh regular\"\n  e2e_command: \"\"\n",
     );
-    std::fs::write(env.path(".gitignore"), ".opencode/\nAGENTS.md\n")
-        .expect("ignore generated agent files");
+    std::fs::write(
+        env.path(".gitignore"),
+        ".opencode/\nAGENTS.md\ngivn/history/\n",
+    )
+    .expect("ignore generated agent files and the development record");
 
     git(&env, &["init"]);
     git(&env, &["config", "user.name", "Givn Migration Test"]);
