@@ -48,6 +48,11 @@ pub(crate) struct DevelopmentReportE2eState {
     /// The scope the scenario's report covers, where its Given named one: a
     /// change, an ideation topic, or the project.
     pub(crate) scope: Option<Scope>,
+    /// The rendered time range the zoom changed: what the browser showed before
+    /// the interaction and what it showed after, so the scenario's assertion
+    /// compares two observations of the page's own script rather than a
+    /// re-derived value.
+    pub(crate) zoomed_range: Option<(Value, Value)>,
     /// The scenario's browser, started on the first browser step: one driver,
     /// one browser, one context, so a page state survives across the steps.
     pub(crate) browser: Option<BrowserDriver>,
@@ -350,6 +355,18 @@ fn rendered_structure(driver: &mut BrowserDriver) -> Value {
     aside: document.querySelectorAll("aside").length,
     timelines: document.querySelectorAll("svg.timeline").length,
     timelineName: timeline ? timeline.getAttribute("aria-label") : null,
+    controls: [...document.querySelectorAll(".controls button")].map((button) => ({
+      id: button.id,
+      label: button.textContent.trim(),
+      disabled: button.disabled,
+    })),
+    range: document.getElementById("timeline-range")
+      ? {
+          text: document.getElementById("timeline-range").textContent,
+          start: Number(document.getElementById("timeline-range").dataset.rangeStartMs),
+          end: Number(document.getElementById("timeline-range").dataset.rangeEndMs),
+        }
+      : null,
     spans: [...document.querySelectorAll("svg.timeline .span")].map((span) => ({
       id: span.dataset.entryId,
       name: span.getAttribute("aria-label"),
@@ -530,7 +547,25 @@ fn browser_shows_the_heading_and_the_timeline(world: &mut GivnWorld) {
         "the browser drew no span at all for the scope's {} recorded entries: {structure:#}",
         entries.len()
     );
+    // Every control the browser rendered carries a visible text label, and
+    // every control that is not disabled at its own limit is reachable by Tab.
     let mut expected: Vec<String> = Vec::new();
+    for control in structure["controls"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the browser rendered no control list: {structure:#}"))
+    {
+        let id = control["id"]
+            .as_str()
+            .unwrap_or_else(|| panic!("a rendered control carries no id: {control:#}"));
+        let label = control["label"].as_str().unwrap_or_default();
+        assert!(
+            !label.is_empty(),
+            "the rendered control {id} carries no visible label: {control:#}"
+        );
+        if control["disabled"] != json!(true) {
+            expected.push(format!("button#{id}"));
+        }
+    }
     for span in spans {
         let id: u64 = span["id"]
             .as_str()
@@ -777,4 +812,160 @@ fn time_of_day(at_ms: i64) -> String {
         seconds % 3_600 / 60,
         seconds % 60
     )
+}
+
+/// The `@e2e` browser scenario that zooms the timeline.
+const ZOOM_SCENARIO: &str = "Consumer zooms the timeline to a shorter time range";
+
+/// The range the browser rendered: the visible window the page's own script
+/// produced, read from the rendered label and its machine-readable attributes.
+fn rendered_range(driver: &mut BrowserDriver) -> Value {
+    driver.evaluate(
+        r#"(() => {
+  const label = document.getElementById("timeline-range");
+  if (!label) return null;
+  return {
+    text: label.textContent.trim(),
+    start: Number(label.dataset.rangeStartMs),
+    end: Number(label.dataset.rangeEndMs),
+  };
+})()"#,
+    )
+}
+
+/// The rendered motion state: the emulated preference and the durations the
+/// browser computed for the timeline's own transition and animation.
+fn rendered_motion(driver: &mut BrowserDriver) -> Value {
+    driver.evaluate(
+        r#"(() => {
+  const timeline = document.querySelector("svg.timeline");
+  const style = getComputedStyle(timeline);
+  return {
+    reduce: matchMedia("(prefers-reduced-motion: reduce)").matches,
+    animation: style.animationName + " " + style.animationDuration,
+    transition: style.transitionDuration,
+  };
+})()"#,
+    )
+}
+
+#[when("the consumer zooms the timeline in")]
+fn consumer_zooms_the_timeline_in(world: &mut GivnWorld) {
+    let before = rendered_range(browser(world));
+    assert!(
+        !before.is_null(),
+        "the report renders no visible time range to zoom"
+    );
+    assert!(
+        before["start"].as_i64().is_some() && before["end"].as_i64().is_some(),
+        "the rendered range carries no machine-readable window: {before:#}"
+    );
+    // The real interaction: a click on the rendered zoom-in control.
+    let control = browser(world).evaluate(
+        r#"(() => {
+  const button = document.getElementById("zoom-in");
+  const out = document.getElementById("zoom-out");
+  return button
+    ? {
+        label: button.textContent.trim(),
+        disabled: button.disabled,
+        outDisabled: out ? out.disabled : null,
+      }
+    : null;
+})()"#,
+    );
+    assert_eq!(
+        control["label"],
+        json!("Zoom in"),
+        "the zoom-in control carries no visible text label: {control:#}"
+    );
+    assert_eq!(
+        control["outDisabled"],
+        json!(true),
+        "the zoom-out control is not disabled while the record's whole range is shown: {control:#}"
+    );
+    browser(world).click("#zoom-in");
+    // The control at the limit reveals itself once the range narrows: zooming
+    // out is reachable again exactly when there is something to zoom out to.
+    let widened = browser(world).evaluate(
+        r#"(() => {
+  const out = document.getElementById("zoom-out");
+  return out ? { disabled: out.disabled } : null;
+})()"#,
+    );
+    assert_eq!(
+        widened["disabled"],
+        json!(false),
+        "the zoom-out control stays disabled after the range narrowed: {widened:#}"
+    );
+    let after = rendered_range(browser(world));
+    assert!(
+        !after.is_null(),
+        "the report renders no visible time range after the zoom"
+    );
+    // The rendered state changed between the two observations: the page's own
+    // script produced a narrower window, and the label it rendered says so.
+    let width = |range: &Value| {
+        range["end"].as_i64().unwrap_or_default() - range["start"].as_i64().unwrap_or_default()
+    };
+    assert!(
+        width(&after) < width(&before),
+        "the zoom did not narrow the rendered time range: before={before:#} after={after:#}"
+    );
+    assert_ne!(
+        after["text"], before["text"],
+        "the rendered range label did not change between the two observations"
+    );
+    state(world)
+        .zoomed_range
+        .get_or_insert_with(|| (before.clone(), after.clone()));
+}
+
+#[then("the browser shows a narrower time range than before")]
+fn browser_shows_a_narrower_time_range(world: &mut GivnWorld) {
+    let (before, after) = world
+        .development_report_e2e
+        .as_ref()
+        .and_then(|state| state.zoomed_range.clone())
+        .expect("the timeline has not been zoomed yet");
+    let observed = rendered_range(browser(world));
+    assert_eq!(
+        observed, after,
+        "the rendered range the zoom produced is not the range the browser shows now"
+    );
+    let width = |range: &Value| {
+        range["end"].as_i64().unwrap_or_default() - range["start"].as_i64().unwrap_or_default()
+    };
+    assert!(
+        width(&after) < width(&before),
+        "the browser shows no narrower range than before the zoom: before={before:#} after={after:#}"
+    );
+    // The window's own bounds: the narrowed range stays inside the record's
+    // range, so the axis never leaves the timestamps the report embeds.
+    assert!(
+        after["start"].as_i64() >= before["start"].as_i64()
+            && after["end"].as_i64() <= before["end"].as_i64(),
+        "the zoomed range left the record's own range: before={before:#} after={after:#}"
+    );
+
+    // The motion contract: the driver emulates `prefers-reduced-motion: reduce`
+    // for the context, so the zoom's transition is removed entirely and the
+    // range above — already the narrowed one — is what the change applied
+    // instantly.
+    let motion = rendered_motion(browser(world));
+    assert_eq!(
+        motion["reduce"],
+        json!(true),
+        "the browser does not emulate the reduced-motion preference the tier captures with: {motion:#}"
+    );
+    assert!(
+        motion["animation"]
+            .as_str()
+            .unwrap_or_default()
+            .starts_with("none"),
+        "the zoom's animation still runs under the reduced-motion preference: {motion:#}"
+    );
+    // The visual gate's evidence for this scenario: the narrowed range at both
+    // contract viewports, captured after the assertions above.
+    browser(world).capture_evidence(ZOOM_SCENARIO);
 }

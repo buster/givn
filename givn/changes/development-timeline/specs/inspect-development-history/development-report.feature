@@ -92,7 +92,7 @@ Feature: Development Report
     Then the browser shows a details panel for that step
     And the panel names its start, its duration, and its outcome
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer zooms the timeline to a shorter time range
     Given an open development report with a recorded history
     When the consumer zooms the timeline in
