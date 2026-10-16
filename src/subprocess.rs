@@ -41,12 +41,19 @@ pub fn local_timestamp() -> String {
 /// Run `sh -c <command>` with extra environment entries and an optional
 /// working directory. Verbose mode pipes and forwards the child's output
 /// with `[HH:MM:SS]` prefixes; otherwise stdio is inherited unchanged.
+///
+/// This is the single shell-execution choke point, so it records one `step`
+/// entry per shell command — the caller's `label` as the entry's name and the
+/// command's own measured duration — without any caller gaining an
+/// instrumentation branch.
 pub fn sh_streamed(
     command: &str,
     envs: &[(&str, &str)],
     current_dir: Option<&std::path::Path>,
     label: &str,
 ) -> std::io::Result<ExitStatus> {
+    let step = crate::history::current().map(|recorder| recorder.span(label).label(command));
+
     let mut cmd = Command::new("sh");
     cmd.arg("-c").arg(command);
     for (key, value) in envs {
@@ -56,26 +63,39 @@ pub fn sh_streamed(
         cmd.current_dir(dir);
     }
 
-    if !VERBOSE.load(std::sync::atomic::Ordering::SeqCst) {
-        return cmd.status();
-    }
+    let status = if !VERBOSE.load(std::sync::atomic::Ordering::SeqCst) {
+        cmd.status()
+    } else {
+        println!("[{}] === {label} started: {command}", local_timestamp());
+        cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
+        let mut child = cmd.spawn()?;
+        let stdout = child.stdout.take().map(BufReader::new);
+        let stderr = child.stderr.take().map(BufReader::new);
+        let out_thread = std::thread::spawn(move || forward(stdout));
+        let err_thread = std::thread::spawn(move || forward(stderr));
+        let status = child.wait()?;
+        let _ = out_thread.join();
+        let _ = err_thread.join();
+        println!(
+            "[{}] === {label} finished (exit {})",
+            local_timestamp(),
+            status.code().unwrap_or(-1)
+        );
+        Ok(status)
+    };
 
-    println!("[{}] === {label} started: {command}", local_timestamp());
-    cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
-    let mut child = cmd.spawn()?;
-    let stdout = child.stdout.take().map(BufReader::new);
-    let stderr = child.stderr.take().map(BufReader::new);
-    let out_thread = std::thread::spawn(move || forward(stdout));
-    let err_thread = std::thread::spawn(move || forward(stderr));
-    let status = child.wait()?;
-    let _ = out_thread.join();
-    let _ = err_thread.join();
-    println!(
-        "[{}] === {label} finished (exit {})",
-        local_timestamp(),
-        status.code().unwrap_or(-1)
-    );
-    Ok(status)
+    if let Some(step) = step {
+        step.mark(outcome_of(&status));
+    }
+    status
+}
+
+/// The record's outcome for a finished shell command.
+fn outcome_of(status: &std::io::Result<ExitStatus>) -> &'static str {
+    match status {
+        Ok(status) if status.success() => "ok",
+        Ok(_) | Err(_) => "failed",
+    }
 }
 
 fn forward<R: std::io::Read>(reader: Option<BufReader<R>>) {

@@ -18,6 +18,20 @@ use std::path::Path;
 
 use serde_json::Value;
 
+use crate::common;
+
+/// The verification command the Task 2 fixture declares: a real subprocess that
+/// sleeps, so the recorded duration is a real measurement of a real run —
+/// never a mocked clock.
+pub const SLOW_VERIFY_COMMAND: &str = "sleep 2";
+
+/// Declare `command` as the fixture project's `verify.command`, which is what
+/// `givn check tasks --change <id>` runs through the shell choke point.
+pub fn declare_verify_command(env: &common::TestEnv, command: &str) {
+    let yaml = format!("verify:\n  command: \"{command}\"\n");
+    common::write_commands_yaml(&env.path("givn/commands.yaml"), &yaml);
+}
+
 /// The development record of the project rooted at `root`, read the way a
 /// consumer reads it: `givn/history/events.jsonl`, one JSON object per line.
 /// Every line must parse as a JSON object — that is the store's own contract,

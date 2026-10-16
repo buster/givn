@@ -10,7 +10,7 @@ Feature: Development Record
     Then the development record holds one entry for that command
     And that entry carries a measured duration and its outcome
 
-  @givn.added @wip
+  @givn.added
   Scenario: A verification run is recorded as its own step
     Given a project root with givn/ initialised
     And a change "demo" with a verification command that takes measurable time

@@ -7,7 +7,7 @@
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
+use std::sync::{Mutex, OnceLock};
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
@@ -110,8 +110,9 @@ impl HistoryStore {
 
     /// Append the entries in order (creating the store's directory on first
     /// write), minting each `id` at append time from the store's current last
-    /// line.
-    pub fn append(&self, entries: &mut [HistoryEntry]) -> std::io::Result<()> {
+    /// line. Returns the first id minted, so a caller can parent its children
+    /// to the entry it just wrote.
+    pub fn append(&self, entries: &mut [HistoryEntry]) -> std::io::Result<u64> {
         use std::io::Write as _;
 
         if let Some(parent) = self.path.parent() {
@@ -127,7 +128,7 @@ impl HistoryStore {
             let line = serde_json::to_string(entry).map_err(std::io::Error::other)?;
             writeln!(file, "{line}")?;
         }
-        Ok(())
+        Ok(first_id)
     }
 
     /// The id of the store's current last line (`0` when the store is empty).
@@ -172,6 +173,7 @@ pub struct HistoryRecorder {
     command: String,
     label: String,
     started: Instant,
+    pending: Mutex<Vec<HistoryEntry>>,
 }
 
 impl HistoryRecorder {
@@ -184,58 +186,140 @@ impl HistoryRecorder {
             command: name.to_string(),
             label: label.to_string(),
             started: Instant::now(),
+            pending: Mutex::new(Vec::new()),
         }
     }
 
-    /// Record one entry under this process's command entry.
-    pub fn record(&self, _entry: HistoryEntry) {
-        todo!("TODO: development-timeline")
+    /// A fresh entry in this process's scope: the values every entry starts
+    /// with — the schema version, its end timestamp, `givn` as the source, no
+    /// parent, and no measured duration. The store mints the `id` at append
+    /// time.
+    fn entry(&self, kind: &str, name: &str, label: Option<String>) -> HistoryEntry {
+        HistoryEntry {
+            schema: SCHEMA,
+            id: 0,
+            at: rfc3339_ms(SystemTime::now()),
+            scope: self.scope.clone(),
+            source: "givn".to_string(),
+            kind: kind.to_string(),
+            name: name.to_string(),
+            label,
+            duration_ms: None,
+            outcome: "unknown".to_string(),
+            parent: None,
+            data: None,
+        }
     }
 
-    /// A guard that measures one action's wall time and writes its entry when
-    /// it is finished or dropped.
-    pub fn span(&self, _name: &str) -> Span {
-        todo!("TODO: development-timeline")
+    /// Record one entry under this process's command entry: it is written by
+    /// the flush, after the command entry, which is this process's parent.
+    pub fn record(&self, entry: HistoryEntry) {
+        if let Ok(mut pending) = self.pending.lock() {
+            pending.push(entry);
+        }
+    }
+
+    /// A guard that measures one action's wall time (`Instant::now()..drop`)
+    /// and records the entry it measured.
+    pub fn span(&self, name: &str) -> Span<'_> {
+        Span {
+            recorder: self,
+            kind: "step".to_string(),
+            name: name.to_string(),
+            label: None,
+            started: Instant::now(),
+            outcome: "unknown".to_string(),
+        }
     }
 
     /// Write this process's `command` entry: the command name, its resolved
-    /// scope, its measured duration, its outcome, and its exit code.
+    /// scope, its measured duration, its outcome, and its exit code. Every
+    /// entry recorded during the run follows it, parented to its id — the ids
+    /// are all minted by this process, so every parent link names an entry of
+    /// this process's run.
     ///
     /// Best-effort by construction: a store that cannot be written warns and
     /// continues, and the outcome of the command itself is untouched.
     pub fn finish(&self, outcome: &str, exit_code: i32) {
-        let mut entry = HistoryEntry {
-            schema: SCHEMA,
-            id: 0, // minted at append time
-            at: rfc3339_ms(SystemTime::now()),
-            scope: self.scope.clone(),
-            source: "givn".to_string(),
-            kind: "command".to_string(),
-            name: self.command.clone(),
-            label: Some(self.label.clone()),
-            duration_ms: Some(self.started.elapsed().as_millis() as u64),
-            outcome: outcome.to_string(),
-            parent: None,
-            data: Some(serde_json::json!({ "exit_code": exit_code })),
+        let mut command = self.entry("command", &self.command, Some(self.label.clone()));
+        command.duration_ms = Some(self.started.elapsed().as_millis() as u64);
+        command.outcome = outcome.to_string();
+        command.data = Some(serde_json::json!({ "exit_code": exit_code }));
+        let command_id = match self.store.append(std::slice::from_mut(&mut command)) {
+            Ok(first_id) => first_id,
+            Err(error) => return self.warn(&error),
         };
-        let entries = std::slice::from_mut(&mut entry);
-        if let Err(error) = self.store.append(entries) {
-            eprintln!(
-                "warning: the development record could not be written to {}: {error}",
-                self.store.path().display()
-            );
+        let mut pending = self.take_pending();
+        for entry in &mut pending {
+            if entry.parent.is_none() {
+                entry.parent = Some(command_id);
+            }
         }
+        if let Err(error) = self.store.append(&mut pending) {
+            self.warn(&error);
+        }
+    }
+
+    /// The entries recorded during this run, in the order they were recorded.
+    fn take_pending(&self) -> Vec<HistoryEntry> {
+        self.pending
+            .lock()
+            .map(|mut pending| std::mem::take(&mut *pending))
+            .unwrap_or_default()
+    }
+
+    /// The one place a store that cannot be written is reported: a warning,
+    /// never an error to the caller.
+    fn warn(&self, error: &std::io::Error) {
+        eprintln!(
+            "warning: the development record could not be written to {}: {error}",
+            self.store.path().display()
+        );
     }
 }
 
-/// A measured span: it measures `Instant::now()..drop` and writes the entry it
-/// measured.
-// Skeleton (tasks.md S4): the scenario that reads this state drops the
-// allowance.
-#[allow(dead_code)]
+/// A measured span: it measures `Instant::now()..drop` and records the entry it
+/// measured when it drops, so an early return still records what ran.
 #[derive(Debug)]
-pub struct Span {
+pub struct Span<'a> {
+    recorder: &'a HistoryRecorder,
+    kind: String,
+    name: String,
+    label: Option<String>,
     started: Instant,
+    outcome: String,
+}
+
+impl Span<'_> {
+    /// The entry kind this span records (`step`, `phase`, `hook`, `revision`).
+    pub fn kind(mut self, kind: &str) -> Self {
+        self.kind = kind.to_string();
+        self
+    }
+
+    /// The bounded subject the entry keeps (a shell command's text, a
+    /// question's first line).
+    pub fn label(mut self, label: &str) -> Self {
+        self.label = Some(label.to_string());
+        self
+    }
+
+    /// The outcome the entry carries; an unmarked span records `unknown`.
+    pub fn mark(mut self, outcome: &str) -> Self {
+        self.outcome = outcome.to_string();
+        self
+    }
+}
+
+impl Drop for Span<'_> {
+    fn drop(&mut self) {
+        let mut entry = self
+            .recorder
+            .entry(&self.kind, &self.name, self.label.clone());
+        entry.duration_ms = Some(self.started.elapsed().as_millis() as u64);
+        entry.outcome = self.outcome.clone();
+        self.recorder.record(entry);
+    }
 }
 
 /// The scope every entry of this project resolves to: exactly one active
