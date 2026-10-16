@@ -4678,7 +4678,7 @@ name it.
 
 ## Task 20 — `The intake keeps the acceptable events of a payload with a rejected event` (`agent-activity-reporting`, added)
 
-- [ ] **Scenario: `The intake keeps the acceptable events of a payload with a rejected event`**
+- [x] **Scenario: `The intake keeps the acceptable events of a payload with a rejected event`**
   - Design constraints:
     - Partial acceptance is the contract: one payload, one rejected event named
       on stderr, exit `0`, and the acceptable event appended. A rejected event
@@ -4694,22 +4694,211 @@ name it.
       both must hold for the same validation table.
     - RED expected failure: the exit-0, stderr and record Then steps are
       undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::The intake keeps the acceptable events of a payload with a rejected event"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        (The first run, before the fixture's `When` existed:)
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::The intake keeps the acceptable events of a payload with a rejected event"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: The intake keeps the acceptable events of a payload with a rejected event
+           ✔  Given a project root with givn/ initialised
+           ✘  When the agent pipes a payload with one rejected event and one acceptable event into `givn history ingest`
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:65:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+
+        thread 'main' (2481037) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        The `When` — a real setup action, never a stub: it snapshots the record's
+        bytes and hands the real intake a two-event payload (the unmapped-kind
+        event first, then the acceptable tool call) — was then written so the RED
+        lands on the new behaviour's assertion steps, which is the failure the
+        task predicts:
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::The intake keeps the acceptable events of a payload with a rejected event"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 6.99s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: The intake keeps the acceptable events of a payload with a rejected event
+           ✔  Given a project root with givn/ initialised
+           ✔  When the agent pipes a payload with one rejected event and one acceptable event into `givn history ingest`
+           ✘  Then the intake exits 0
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:66:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+
+        thread 'main' (2481766) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — the exit-0, stderr and record Then steps
+        are unbound (`the intake exits 0` matches no function; the scenario stops
+        there). The batch path the Then steps assert already exists from Task 12
+        (one payload read, each event gated through the same
+        `accept_event`/`validate` path, the accepted entries appended in one
+        batch), so all three assertions are proven load-bearing in the GREEN
+        block below with two controlled omissions in the isolated fixture
+        (ORACLE_RED), restored immediately.
         ```
-  - [ ] **GREEN** — keep the batch path appending per accepted event. Files:
+  - [x] **GREEN** — keep the batch path appending per accepted event. Files:
         `src/cli/history.rs`, `tests/steps/agent_activity_reporting_steps.rs`.
         Compile first, re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.06s
+        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::The intake keeps the acceptable events of a payload with a rejected event"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 6.18s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: The intake keeps the acceptable events of a payload with a rejected event
+           ✔  Given a project root with givn/ initialised
+           ✔  When the agent pipes a payload with one rejected event and one acceptable event into `givn history ingest`
+           ✔  Then the intake exits 0
+           ✔  And stderr names the rejected event
+           ✔  And the development record holds the acceptable event
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT 0
+
+        Production files for the GREEN step: **none** — investigated, not
+        assumed. The batch path already accepts per event and appends the
+        accepted ones: `ingest` reads the payload, `accepted_entries` walks the
+        payload in order (each event gated by `accept_event` → the one
+        `IngestedEvent::validate` table, each rejection named by `warn_rejected`),
+        and the accepted entries reach `HistoryStore::append_linked` as one
+        batch — a rejected event never returns early and never fails the payload,
+        which is what this scenario asserts. The `src/cli/history.rs` work this
+        task names — no second code path beside Task 17's validation table —
+        is verified in the REFACTOR step below.
+        Steps and fixture (`tests/steps/agent_activity_reporting_steps.rs`):
+        - `When the agent pipes a payload with one rejected event and one
+          acceptable event into `givn history ingest`` — snapshot the record,
+          build the mixed payload (`kind: "teleport"` first, then the fixture's
+          acceptable `grep` tool call), and hand it to the real binary's stdin.
+          The payload names no scope, so the events are recorded under the
+          project scope the resolution derives.
+        - `Then the intake exits 0` — the payload was read: `Some(0)`.
+        - `And stderr names the rejected event` — exactly one `warning:` naming
+          the rejected event's position and kind, and no `error:` line.
+        - `And the development record holds the acceptable event` — the bytes
+          recorded before the payload are still the store's first bytes
+          (append-only, never rewritten); the appended region holds exactly one
+          agent-sourced entry, and it carries the acceptable event's kind, tool
+          name and label; and the record's only agent entry is that one, so the
+          rejected sibling was never recorded. The intake's own `command` entry
+          is the other appended line, which the design records for every
+          command — the assertion counts agent-sourced lines, never all lines.
+
+        Discrimination (ORACLE_RED) — controlled omissions in the isolated
+        fixture, each restored immediately:
+
+        (a) the rejected event omitted (a payload that is all acceptable), the
+            rejection assertion must fail:
+        ✔  Then the intake exits 0
+        ✘  And stderr names the rejected event
+           Step panicked. Captured output: assertion `left == right` failed: expected the payload's one contract-violating event to be named on stderr: []
+             left: 0
+            right: 1
+        EXIT=101
+
+        (b) the acceptable event omitted (a payload that is all rejected), the
+            record assertion must fail:
+        ✔  Then the intake exits 0
+        ✔  And stderr names the rejected event
+        ✘  And the development record holds the acceptable event
+           Step panicked. Captured output: assertion `left == right` failed: expected exactly the acceptable event in the appended region: [
+               Object {
+                   "at": String("2026-10-16T13:51:36.180Z"),
+                   "data": Object { "exit_code": Number(0) },
+                   "duration_ms": Number(3),
+                   "id": Number(2),
+                   "kind": String("command"),
+                   "label": String("history ingest"),
+                   "name": String("history"),
+                   "outcome": String("ok"),
+                   "schema": Number(1),
+                   "scope": Object { "id": String(".tmpB7b9wU"), "kind": String("project") },
+                   "source": String("givn"),
+               },
+           ]
+             left: 0
+            right: 1
+        EXIT=101
+
+        The exit-0 half of the assertion is the same contract Task 18 and Task 19
+        pin from their own sides (an unwritable store and an unreadable payload):
+        a rejected *event* by construction cannot fail the batch, and the one
+        payload-level failure that can (Task 19) reports its own code.
+
+        With the fixture restored the canonical run is green again (the run
+        pasted above, EXIT 0).
         ```
-  - [ ] **REFACTOR** — reuse Task 17's validation table without a second
+  - [x] **REFACTOR** — reuse Task 17's validation table without a second
         code path; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The batch path and the single-event path are one path: `accept_event` is
+        the only gate into the append (`IngestedEvent::validate` is the only
+        validation table), and `accepted_entries` is its only caller for a
+        payload, so a rejected event and a kept event cannot diverge between
+        Task 17's scenario and this one. No production line needed changing to
+        reuse it; the test side lost its duplication instead — the rejection
+        assertion (`assert_rejection_names_the_event`) and the append-only
+        byte-range check (`appended_since`) now each have one home, shared by the
+        two scenarios:
+
+        $ cargo fmt --all && cargo fmt --all -- --check
+        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.87s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::The intake keeps the acceptable events of a payload with a rejected event"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 4.34s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-05d317fc7c42c8e4)
+        Feature: Agent Activity Reporting
+          Scenario: The intake keeps the acceptable events of a payload with a rejected event
+           ✔  Given a project root with givn/ initialised
+           ✔  When the agent pipes a payload with one rejected event and one acceptable event into `givn history ingest`
+           ✔  Then the intake exits 0
+           ✔  And stderr names the rejected event
+           ✔  And the development record holds the acceptable event
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT 0
+
+        Regression check — every greened non-`@e2e` scenario of the delta, one
+        process:
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --tags "not @e2e and not @wip"
+        [Summary]
+        3 features
+        22 scenarios (22 passed)
+        109 steps (109 passed)
+        EXIT=0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `The intake keeps the acceptable events of a

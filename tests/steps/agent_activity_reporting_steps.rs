@@ -363,8 +363,40 @@ fn record_gains_no_entry(world: &mut GivnWorld) {
     );
 }
 
-#[then("the intake names the rejected event")]
-fn intake_names_the_rejected_event(world: &mut GivnWorld) {
+/// The acceptable event of a mixed payload: a completed tool call the intake's
+/// table maps — the event a rejected sibling must not take down with it. Its
+/// tool name and label are distinct from the seed record's entries, so the
+/// appended line is identified by the payload's own values.
+fn acceptable_tool_event() -> Value {
+    json!({
+        "kind": "tool",
+        "at": REPORTED_TOOL_AT,
+        "tool": "grep",
+        "label": "grep -rn development src",
+        "duration_ms": 37,
+        "outcome": "ok",
+    })
+}
+
+#[when(
+    "the agent pipes a payload with one rejected event and one acceptable event into `givn history ingest`"
+)]
+fn pipes_a_payload_with_one_rejected_and_one_acceptable_event(world: &mut GivnWorld) {
+    snapshot_record(world);
+    // The rejected event comes first, so the assertion proves a rejection early
+    // in the batch does not take the rest of the payload down with it.
+    let events = vec![contract_violating_event(), acceptable_tool_event()];
+    let (violating, position) = (events[0].clone(), 1);
+    state(world).violating_event = Some((violating, position));
+    let payload = support::intake_payload(None, None, events);
+    report(world, payload);
+}
+
+/// Assert the intake names the fixture's contract-violating event: exactly one
+/// `warning:` line on stderr carrying the event's 1-based payload position and
+/// its kind — legible enough for the reporter's author to fix the payload — and
+/// no `error:` line, because a rejected event is never a failed payload.
+fn assert_rejection_names_the_event(world: &GivnWorld) {
     let (rejected, position) = violating_event(world);
     let kind = rejected["kind"]
         .as_str()
@@ -389,14 +421,100 @@ fn intake_names_the_rejected_event(world: &mut GivnWorld) {
         "the rejection does not name the rejected event's kind `{kind}`: {line}"
     );
     let stderr = crate::steps::stderr(world);
-    let errors: Vec<&str> = stderr
-        .lines()
-        .filter(|line| line.starts_with("error:"))
-        .collect();
     assert!(
-        errors.is_empty(),
-        "the rejected event was reported as a failure of the intake: {errors:#?}"
+        !stderr.lines().any(|line| line.starts_with("error:")),
+        "the rejected event was reported as a failure of the payload: {stderr:?}"
     );
+}
+
+/// The record bytes appended since `before`, asserting the append-only property
+/// at the content level: the bytes that were recorded before the payload are
+/// still the store's first bytes, byte for byte.
+fn appended_since<'a>(before: &[u8], after: &'a [u8], subject: &str) -> &'a [u8] {
+    assert!(
+        after.starts_with(before),
+        "{subject} was rewritten: the store's earlier bytes are not a prefix of the new file:\nbefore: {}\nafter: {}",
+        String::from_utf8_lossy(before),
+        String::from_utf8_lossy(after)
+    );
+    &after[before.len()..]
+}
+
+#[then("the intake exits 0")]
+fn intake_exits_0(world: &mut GivnWorld) {
+    let out = crate::steps::output(world);
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "the intake did not read the payload (exit {:?}): {}",
+        out.status.code(),
+        crate::steps::stderr(world)
+    );
+}
+
+#[then("stderr names the rejected event")]
+fn stderr_names_the_rejected_event(world: &mut GivnWorld) {
+    assert_rejection_names_the_event(world);
+}
+
+#[then("the development record holds the acceptable event")]
+fn record_holds_the_acceptable_event(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let before = recorded_before(world);
+    let after = support::store_bytes(&env.root());
+    // The earlier bytes are still the store's first bytes: the append is an
+    // append, never a rewrite.
+    let appended = support::entries_of(appended_since(&before, &after, "the store"));
+    let reported: Vec<&Value> = appended
+        .iter()
+        .filter(|entry| entry["source"] == json!("agent"))
+        .collect();
+    assert_eq!(
+        reported.len(),
+        1,
+        "expected exactly the acceptable event in the appended region: {appended:#?}"
+    );
+    let entry = reported[0];
+    // The appended entry is the acceptable event the payload reported, by the
+    // payload's own values.
+    let acceptable = reported_event(world, "tool");
+    assert_eq!(
+        entry["kind"], acceptable["kind"],
+        "the appended entry is not the acceptable event's kind: {entry}"
+    );
+    assert_eq!(
+        entry["name"], acceptable["tool"],
+        "the appended entry does not name the acceptable event's tool: {entry}"
+    );
+    assert_eq!(
+        entry["label"], acceptable["label"],
+        "the appended entry does not keep the acceptable event's label: {entry}"
+    );
+    // The rejected sibling was never recorded, in the appended region or
+    // anywhere else: the record holds exactly one agent-sourced entry, and it
+    // is the acceptable event.
+    let entries = support::record_entries(&env.root());
+    let agent_entries: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| entry["source"] == json!("agent"))
+        .collect();
+    assert_eq!(
+        agent_entries.len(),
+        1,
+        "the rejected event was recorded beside the acceptable one: {agent_entries:#?}"
+    );
+    assert_eq!(
+        agent_entries[0]["kind"], acceptable["kind"],
+        "the recorded agent entry is not the acceptable event: {agent_entries:#?}"
+    );
+}
+
+#[then("the intake names the rejected event")]
+fn intake_names_the_rejected_event(world: &mut GivnWorld) {
+    assert_rejection_names_the_event(world);
 }
 
 #[then("the previously recorded history is unchanged")]
@@ -410,15 +528,9 @@ fn previously_recorded_history_is_unchanged(world: &mut GivnWorld) {
     // The append-only property at the content level: the bytes that were
     // recorded before the rejected payload are still the store's first bytes,
     // byte for byte.
-    assert!(
-        after.starts_with(&before),
-        "the recorded history was rewritten by the rejected payload:\nbefore: {}\nafter: {}",
-        String::from_utf8_lossy(&before),
-        String::from_utf8_lossy(&after)
-    );
+    let appended = support::entries_of(appended_since(&before, &after, "the recorded history"));
     // What the payload appended is the intake's own command entry, never the
     // rejected event: nothing agent-reported entered the record.
-    let appended = support::entries_of(&after[before.len()..]);
     for entry in &appended {
         assert_eq!(
             entry["source"],

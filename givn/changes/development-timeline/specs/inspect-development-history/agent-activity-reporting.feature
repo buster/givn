@@ -59,7 +59,7 @@ Feature: Agent Activity Reporting
     Then the intake exits 2
     And the development record gains no entry
 
-  @givn.added @wip
+  @givn.added
   Scenario: The intake keeps the acceptable events of a payload with a rejected event
     Given a project root with givn/ initialised
     When the agent pipes a payload with one rejected event and one acceptable event into `givn history ingest`
