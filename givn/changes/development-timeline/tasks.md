@@ -6886,11 +6886,31 @@ name it.
         3 steps (3 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `PENDING` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `50468ec60d74aea2be403969487d907254675fc0` — `feat(development-report): <release note>` with
         the scenario title `The report needs no network access to render` in the
         body. Record the revision identifier.
         ```
-        <!-- paste the commit output + the revision's file list -->
+        $ ./target/debug/givn commit -m "feat(development-report): Givn records the development process of every change and ideation — … opens in a browser.
+
+        The report needs no network access to render"
+        [16:54:44] committed revision on the Git backend
+        EXIT=0
+
+        $ git show --stat --format='%H' 50468ec6
+        50468ec60d74aea2be403969487d907254675fc0
+
+         .../development-report.feature                     |   2 +-
+         givn/changes/development-timeline/tasks.md         | 135 +++++++++++++++++++--
+         tests/steps/development_report_steps.rs            | 121 ++++++++++++++++++
+         3 files changed, 249 insertions(+), 9 deletions(-)
+
+        Revision 50468ec6 touches the scenario's test steps (the scan, its
+        discrimination controls, and the command-prints-the-path assertion), the
+        delta `.feature`'s `@wip` removal, and this task file's evidence. It
+        carries no production-source change by design: the claim is an absence
+        of remote references in the written document, the one-asset renderer
+        already satisfies it, and the scan is what makes it provable and keeps
+        it proven — the investigated finding recorded under GREEN above.
         ```
 
 ## Task 32 — `The report shows the empty state for a scope with no recorded activity` (`development-report`, added)
