@@ -3105,9 +3105,53 @@ name it.
         `@wip`, and strict mode fails an undefined step by design. The
         implemented-scope run above is this task's green evidence.
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+  - [x] **COMMIT** — `cdd18bd900b76a0aa8730c9b7cef37f11a0c84b6` — `feat(development-record): <release note>` with
         the scenario title `A refused command outside a Givn project creates no
         record` in the body. Record the revision identifier.
+        ```
+        $ givn commit -m "feat(development-record): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        A refused command outside a Givn project creates no record"
+        [15:06:56] committed revision on the Git backend
+        $ git rev-parse HEAD
+        cdd18bd900b76a0aa8730c9b7cef37f11a0c84b6
+
+        One atomic revision: RED+GREEN+REFACTOR together — the delta spec (this
+        scenario's `@wip` removed), the engagement predicate, the three new
+        steps and the shared record-path exclusion, the two project-state helper
+        exclusions, and this file's Task 11a record. `givn commit` takes one
+        `--message` (a repeated `-m` is refused by the binary), so the release
+        note is the message subject and the scenario title is the message body,
+        the form every scenario revision of this change uses.
+        ```
+
+        The delta scope was then re-run on the committed state:
+        ```
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e
+        FAIL [   0.763s] ( 7/35) inspect-development-history/agent-activity-reporting.feature::The intake keeps the acceptable events of a payload with a rejected event
+        …
+        warning: 23/35 tests were not run due to test failure
+        error: test run failed
+        EXIT 100
+
+        $ GIVN_CUCUMBER_TAGS="not @e2e" GIVN_FEATURES=givn/changes/development-timeline/specs cargo nextest run --no-tests=warn --locked --no-fail-fast --test features_runner
+        35 selected; 13 PASS (the 12 implemented non-e2e scenarios plus this
+        one) and 22 FAIL (every non-e2e `@wip` scenario of Tasks 12–33, each at
+        its own undefined step, which strict mode fails by design until those
+        tasks land)                                             EXIT 100
+
+        → `./run-tests.sh --non-e2e` is `not @e2e`: it *selects* the `@wip`
+        scenarios rather than skipping them, so the scope cannot report exit 0
+        while Tasks 12–33 are unimplemented. The implemented set is green in one
+        process:
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --tags "not @e2e and not @wip"
+        [Summary]
+        2 features
+        13 scenarios (13 passed)
+        71 steps (71 passed)
+        EXIT 0
+        ```
 
 ## Task 12 — `A reported tool call is recorded for its scope` (`agent-activity-reporting`, added)
 
