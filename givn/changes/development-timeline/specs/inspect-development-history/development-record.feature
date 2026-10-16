@@ -34,7 +34,7 @@ Feature: Development Record
     Then the earlier entry is still present unchanged
     And the new entry is appended after it without rewriting the store
 
-  @givn.added @wip
+  @givn.added
   Scenario: Activity outside a change belongs to the project scope
     Given a project root with givn/ initialised
     And no change and no ideation is active for this project

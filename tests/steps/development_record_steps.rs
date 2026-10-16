@@ -300,3 +300,45 @@ fn new_entry_is_appended_after_it_without_rewriting_the_store(world: &mut GivnWo
         "the appended entry is not this command's own entry: {entry}"
     );
 }
+
+#[given("no change and no ideation is active for this project")]
+fn no_change_and_no_ideation_is_active(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    support::assert_bare_project(env);
+}
+
+#[then("the recorded entry names the project as its scope")]
+fn recorded_entry_names_the_project_as_its_scope(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let command = world
+        .last_command
+        .clone()
+        .expect("no `givn` command has been run yet");
+    let entries = support::record_entries(&env.root());
+    let recorded: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| entry["kind"] == json!("command") && entry["name"] == json!(command))
+        .collect();
+    assert_eq!(
+        recorded.len(),
+        1,
+        "expected exactly one `command` entry for `{command}`; the record holds: {entries:#?}"
+    );
+    let scope = &recorded[0]["scope"];
+    assert_eq!(
+        scope["kind"],
+        json!("project"),
+        "the entry is not scoped to the project: {scope}"
+    );
+    assert_eq!(
+        scope["id"],
+        json!(support::project_name(env)),
+        "the entry's scope does not name the fixture's own project: {scope}"
+    );
+}

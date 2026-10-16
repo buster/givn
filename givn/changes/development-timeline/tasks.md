@@ -1266,7 +1266,7 @@ name it.
 
 ## Task 4 — `The record is append-only across commands` (`development-record`, added)
 
-- [ ] **Scenario: `The record is append-only across commands`**
+- [x] **Scenario: `The record is append-only across commands`**
   - Design constraints:
     - One JSONL line per entry, opened append-only: no rewrite, no reordering,
       no compaction. `id` is minted at append time under the store's exclusive
@@ -1391,9 +1391,19 @@ name it.
         one message and one definition instead of two copies; the JSONL parsing rule moved into
         `parse_entries`, which `record_entries` (parsed view) and the byte snapshot share.
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+  - [x] **COMMIT** — `49debc5da829d8618270fffc1a8fbef96256f088` — `feat(development-record): <release note>` with
         the scenario title `The record is append-only across commands` in the
         body. Record the revision identifier.
+        ```
+        $ givn commit -m "feat(development-record): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        The record is append-only across commands"
+        [13:26:52] committed revision on the Git backend
+        $ git rev-parse HEAD
+        49debc5da829d8618270fffc1a8fbef96256f088
+        ```
+        One atomic revision: RED+GREEN+REFACTOR together — the delta spec (this scenario's `@wip`
+        removed), both test files, and this file's Task 3 revision record.
 
 ## Task 5 — `Activity outside a change belongs to the project scope` (`development-record`, added)
 
@@ -1415,25 +1425,130 @@ name it.
     - Assertion shape: the recorded entry for `givn status` names the project as
       its scope (kind `project`, id equal to the fixture project name).
     - RED expected failure: the scope Then step is undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Activity outside a change belongs to the project scope"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Activity outside a change belongs to the project scope"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: Activity outside a change belongs to the project scope
+           ✔  Given a project root with givn/ initialised
+           ✘  And no change and no ideation is active for this project
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:40:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+
+        thread 'main' (2025375) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT 101
+
+        Category: undefined step — the bare-project Given and the scope Then do not exist yet.
+        Every other scenario kept its `@wip` tag.
         ```
-  - [ ] **GREEN** — implement `resolve_scope`'s fallback and the bare-project
+  - [x] **GREEN** — implement `resolve_scope`'s fallback and the bare-project
         fixture; Files: `src/history.rs`,
         `tests/steps/development_record_steps.rs`,
         `tests/steps/development_timeline_support.rs`. Compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Activity outside a change belongs to the project scope"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 4.46s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: Activity outside a change belongs to the project scope
+           ✔  Given a project root with givn/ initialised
+           ✔  And no change and no ideation is active for this project
+           ✔  When the user runs `givn status`
+           ✔  Then the recorded entry names the project as its scope
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT 0
+
+        Production files created/modified by this scenario: none — `resolve_scope`'s fallback
+        (`Scope::Project { id: project_name(root) }`, the root directory's own name) already
+        exists in `src/history.rs`; the topic arm between change and project is Task 7's, and this
+        scenario pins the fallback itself. The GREEN work is the fixture and the real assertions.
+
+        Discrimination proof — controlled omission (the fallback already holds, so the fixture is
+        what has to discriminate): `project_name` was made to return the constant `"project"` for
+        exactly one run, and the scenario went red on the id assertion:
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Activity outside a change belongs to the project scope"   # with the controlled omission applied
+        Feature: Development Record
+          Scenario: Activity outside a change belongs to the project scope
+           ✔  Given a project root with givn/ initialised
+           ✔  And no change and no ideation is active for this project
+           ✔  When the user runs `givn status`
+           ✘  Then the recorded entry names the project as its scope
+              Step panicked. Captured output: assertion `left == right` failed: the entry's scope does not name the fixture's own project: {"id":"project","kind":"project"}
+                left: String("project")
+               right: String(".tmpTQURSc")
+        [Summary]
+        1 scenario (1 failed)
+        EXIT 101
+
+        The omission was reverted immediately (`git diff src/history.rs` is empty) and the same
+        command re-ran green (exit 0, pasted above) — so the scenario reads the recorded scope and
+        compares it against the project's own name, never against a constant.
+
+        Test/fixture files touched:
+          tests/steps/development_timeline_support.rs  `assert_bare_project` (no directory under
+                               `givn/changes/`, no `givn/ideation/<topic>/session.md` — the two
+                               states `resolve_scope` could bind to, asserted so the fallback is
+                               exercised rather than assumed) and `project_name` (the fixture root's
+                               own name, never hard-coded)
+          tests/steps/development_record_steps.rs      the Given (asserts the bare project) and the
+                               Then: exactly one `command` entry for the command the scenario ran,
+                               its `scope.kind` is `project`, and its `scope.id` is the fixture
+                               root's own name
         ```
-  - [ ] **REFACTOR** — express the three scope cases as one rule in one place
+  - [x] **REFACTOR** — express the three scope cases as one rule in one place
         (no duplicated "is a change active?" logic); re-run → still exit 0. Paste
         it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        $ cargo fmt --all -- --check                                                  EXIT 0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.50s       EXIT 0
+
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.65s       EXIT 0
+        (binary rebuilt after the refactor: src/history.rs 13:28:15 → target/debug/givn 13:28:37)
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Activity outside a change belongs to the project scope"
+        Feature: Development Record
+          Scenario: Activity outside a change belongs to the project scope
+           ✔  Given a project root with givn/ initialised
+           ✔  And no change and no ideation is active for this project
+           ✔  When the user runs `givn status`
+           ✔  Then the recorded entry names the project as its scope
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT 0
+
+        Cleanup, no behaviour change: the scope cases are now one list of candidate
+        resolvers in the recorder's order — `resolve_scope` takes the first unambiguous one and
+        falls through to the project — so adding the ideation topic in Task 7 is one more entry
+        in that list, not a second `if let`. The exactly-one rule itself moved into `single`,
+        which `change_scope` applies to the change ids (the previous `single_active_change`
+        mixed the active-change question with the exactly-one rule, and is gone), so the
+        "is a change active?" logic exists once.
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
         the scenario title `Activity outside a change belongs to the project

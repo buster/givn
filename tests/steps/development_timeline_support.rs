@@ -32,6 +32,51 @@ pub fn declare_verify_command(env: &common::TestEnv, command: &str) {
     common::write_commands_yaml(&env.path("givn/commands.yaml"), &yaml);
 }
 
+/// The project's own name as the project's own state derives it: the name of
+/// its root directory. A scenario reads it from its fixture root, never from a
+/// constant.
+pub fn project_name(env: &common::TestEnv) -> String {
+    env.root()
+        .file_name()
+        .and_then(|name| name.to_str())
+        .expect("the fixture project root has a name")
+        .to_string()
+}
+
+/// Assert the fixture project is bare in the recorder's sense: no directory
+/// under `givn/changes/` (every directory there is a change for
+/// `list_changes`) and no `givn/ideation/<topic>/session.md` — so the project
+/// fallback is exercised rather than assumed.
+pub fn assert_bare_project(env: &common::TestEnv) {
+    let changes = read_dir_names(&env.path("givn/changes"));
+    assert!(
+        changes.is_empty(),
+        "the fixture project has changes: {changes:?}"
+    );
+    for topic in read_dir_names(&env.path("givn/ideation")) {
+        let session = env.path(&format!("givn/ideation/{topic}/session.md"));
+        assert!(
+            !session.exists(),
+            "the fixture project has an ideation session: {}",
+            session.display()
+        );
+    }
+}
+
+/// The names of a directory's entries, empty when the directory does not
+/// exist.
+fn read_dir_names(dir: &Path) -> Vec<String> {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return Vec::new();
+    };
+    let mut names: Vec<String> = entries
+        .flatten()
+        .map(|entry| entry.file_name().to_string_lossy().into_owned())
+        .collect();
+    names.sort();
+    names
+}
+
 /// The development record file of the project rooted at `root`:
 /// `givn/history/events.jsonl`, the store's own path.
 pub fn store_file(root: &Path) -> PathBuf {
