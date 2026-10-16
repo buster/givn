@@ -7848,7 +7848,7 @@ name it.
 
 ## Task E2 — `Consumer runs a lifecycle step and reads its recorded actions` (`@e2e`, `development-record`)
 
-- [ ] **Scenario: `Consumer runs a lifecycle step and reads its recorded actions`**
+- [x] **Scenario: `Consumer runs a lifecycle step and reads its recorded actions`**
   - Design constraints:
     - Matrix row: `development-record: run a lifecycle command` — real interface
       **CLI**, driving mechanism `common::run_givn`: `givn status --change demo`,
@@ -8025,10 +8025,49 @@ name it.
         bytes at 360x780/1920x1080): the evidence is the final code's own
         output, not the GREEN iteration's leftover.
         ```
-  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+  - [x] **COMMIT** — `398b343e33eb04e559a209bdb6c43c6e20496435` — `test(e2e): <release note>` with the scenario
         title `Consumer runs a lifecycle step and reads its recorded actions` in
         the body (including the two evidence PNGs). Record the revision
         identifier.
+        ```
+        $ ./target/debug/givn commit -m "test(e2e): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        Consumer runs a lifecycle step and reads its recorded actions"
+        [17:22:38] committed revision on the Git backend
+        COMMIT=0
+
+        $ git log -1 --format='%B' 398b343e
+        test(e2e): Givn records the development process of every change and ideation — … opens in a browser.
+
+        Consumer runs a lifecycle step and reads its recorded actions
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+        $ git show --stat --format='%H' 398b343e
+        398b343e33eb04e559a209bdb6c43c6e20496435
+         .../desktop.png                                    | Bin 0 -> 47086 bytes
+         .../mobile.png                                     | Bin 0 -> 32176 bytes
+         .../desktop.png                                    | Bin 0 -> 46816 bytes
+         .../mobile.png                                     | Bin 0 -> 32172 bytes
+         .../development-record.feature                     |   2 +-
+         givn/changes/development-timeline/tasks.md         | 148 ++++++++++++++++++++-
+         tests/steps/development_record_e2e_steps.rs        | 115 +++++++++++++++-
+         7 files changed, 256 insertions(+), 9 deletions(-)
+
+        The revision carries this scenario's RED+GREEN+REFACTOR as one atomic
+        commit: the `@wip` removal from this scenario alone, the two e2e Then
+        steps with their helpers, this task file's evidence, and the evidence
+        pair at both viewports. One note, stated rather than hidden: while this
+        scenario's RED ran, a `./run-tests.sh --e2e` scope-health run also bound
+        the *sibling* machine-readable scenario's then-existing step, so that
+        run captured the sibling slug's evidence pair as well
+        (`consumer-reads-the-development-record-as-machine-readable-output/`,
+        47086/32176 bytes) and the untracked evidence directory went in with
+        this commit. Task E3's own runs re-capture its pair and rewrite it in
+        Task E3's revision, so the pair that stands after this change is E3's
+        own final-state capture; nothing about this scenario's evidence or
+        assertions depends on it.
+        ```
 
 ## Task E3 — `Consumer reads the development record as machine-readable output` (`@e2e`, `development-record`)
 
@@ -8053,23 +8092,189 @@ name it.
       the browser, at both viewports under
       `givn/changes/development-timeline/evidence/visual/consumer-reads-the-development-record-as-machine-readable-output/`
       — `mobile.png` and `desktop.png`, animations disabled.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Consumer reads the development record as machine-readable output"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Consumer reads the development record as machine-readable output"
+        Feature: Development Record
+          Scenario: Consumer reads the development record as machine-readable output
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" with a recorded history
+           ✔  When the user runs `givn history --change demo --json`
+           ✔  Then the command exits 0
+           ✘  And the output names every recorded entry with its kind, its scope, and its duration
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:117:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        5 steps (4 passed, 1 failed)
+        error: test failed, to rerun pass `--test features_runner`
+        RED_EXIT=101
+
+        RED category: undefined step — this scenario's own Then
+        (`the output names every recorded entry with its kind, its scope, and its
+        duration`) is unbound. The shared recorded-history Given really ran (real
+        `givn new demo` + `givn status --change demo` against the fixture's init
+        root) and the `When` is the real `givn history --change demo --json`
+        read, so the scenario stops at its new assertion, not at a vacuous setup.
+        The read path the assertion drives already exists (Task 9's read view),
+        so the discrimination of both halves of the assertion is proven in the
+        GREEN block below with controlled omissions in the isolated fixture
+        (ORACLE_RED), restored immediately.
         ```
-  - [ ] **GREEN** — implement the JSON read output and the parsing steps. Files:
+  - [x] **GREEN** — implement the JSON read output and the parsing steps. Files:
         `src/cli/history.rs`, `tests/steps/development_record_e2e_steps.rs`,
         plus the two evidence screenshots. Compile first, re-run → exit 0. Paste
         it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) + the two screenshot paths -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.06s
+        BUILD=0
+        $ cargo fmt --all -- --check        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.86s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Consumer reads the development record as machine-readable output"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 4.61s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: Consumer reads the development record as machine-readable output
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" with a recorded history
+           ✔  When the user runs `givn history --change demo --json`
+           ✔  Then the command exits 0
+           ✔  And the output names every recorded entry with its kind, its scope, and its duration
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        GREEN_EXIT=0
+
+        The two evidence screenshots (the change-wide visual gate; the report the
+        scenario's own seeded record produced, rendered in the real browser):
+        $ ls -l givn/changes/development-timeline/evidence/visual/consumer-reads-the-development-record-as-machine-readable-output/
+        total 80
+        -rw-r--r-- 1 buster buster 47028 Oct 16 17:25 desktop.png
+        -rw-r--r-- 1 buster buster 32173 Oct 16 17:25 mobile.png
+        $ file givn/changes/development-timeline/evidence/visual/consumer-reads-the-development-record-as-machine-readable-output/*.png
+        …/desktop.png: PNG image data, 1920 x 1080, 8-bit/color RGB, non-interlaced
+        …/mobile.png:  PNG image data, 360 x 780, 8-bit/color RGB, non-interlaced
+
+        Production files: **none for this scenario** — investigated, not
+        assumed. The machine-readable view the scenario asserts on is the read
+        view's JSON mode, and it already exists: `givn history --change <id>
+        --json` prints `serde_json::to_string(&entries)` over
+        `src/cli/history.rs::entries_in_scope` (the read is filtered to the
+        named `Scope::Change`), and it was introduced by Task 9's revision
+        `d41ab44644e3c547207b1f2da057d448d18b1855` (`git log -S 'Emit the record
+        as JSON' -- src/main.rs` → `d41ab446`). The scenario's work is therefore
+        its own assertion — the machine contract's completeness — and no
+        production line was added.
+
+        Step file (`tests/steps/development_record_e2e_steps.rs`):
+        - `Then the output names every recorded entry with its kind, its scope,
+          and its duration` — the primary assertion is the read view's own
+          stdout (the `When`'s `givn history --change demo --json`, parsed once
+          into `DevelopmentRecordE2eState.entries`): every printed entry carries
+          a non-empty `kind`, a `scope` with a kind and an id, and a `duration_ms`
+          number, and the whole read covers exactly one scope.
+        - `assert_read_is_complete` — the secondary completeness check: the
+          printed entries are compared with the record's own lines *of that same
+          scope*, so the read cannot silently drop an entry (the design's "one
+          entry per recorded line").
+        - `commit_evidence` (shared with Task E2's scenario) — renders the report
+          the scenario's own record produced (`givn timeline --change demo --out
+          report.html`) and captures `mobile.png`/`desktop.png` at 360x780 and
+          1920x1080 through the real browser, after the final assertion.
+
+        Discrimination (ORACLE_RED) — the read path already exists, so both
+        halves of the new assertion are proven load-bearing by controlled
+        omissions in the isolated fixture (the scenario's own temp root), each
+        restored immediately:
+
+        (a) one recorded line of the read's scope made duration-less (a real
+            `step` line appended to the fixture's store and read back through
+            the real `givn history --change demo --json`), so the per-entry half
+            must fail:
+        ✔  Then the output names every recorded entry with its kind, its scope, and its duration
+        ✘  Step panicked. Captured output: the printed step entry names no duration: {
+             "at": "2026-10-16T09:00:00.000Z",
+             "id": 9001,
+             "kind": "step",
+             "name": "probe",
+             "outcome": "ok",
+             "schema": 1,
+             "scope": { "id": "demo", "kind": "change" },
+             "source": "givn"
+           }
+        PROBE_A_EXIT=101
+
+        (b) one more recorded line of the read's scope than the read printed (a
+            `command` line appended after the read), so the completeness half
+            must fail:
+        ✘  Step panicked. Captured output: assertion `left == right` failed: the machine-readable read printed 1 of the scope's 2 recorded entries: [
+        PROBE_B_EXIT=101
+
+        Both probes were removed from the step immediately after their runs; the
+        restored step was re-run and the scenario is green again (the
+        `RESTORED_EXIT=0` run above is the restored tree).
         ```
-  - [ ] **REFACTOR** — one entry-to-JSON mapping shared by the read paths;
+  - [x] **REFACTOR** — one entry-to-JSON mapping shared by the read paths;
         re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The read paths already share exactly one entry-to-JSON mapping, and it is
+        the record's own type: `HistoryEntry`'s serde derive in `src/history.rs`.
+        `givn history --json` prints `serde_json::to_string(&entries)` over that
+        type (`src/cli/history.rs::run`), and `givn timeline` embeds the same
+        `Vec<HistoryEntry>` inside its `ReportModel` (`src/cli/timeline.rs`,
+        serialized and `<`-escaped by `render_report`), so there is no second,
+        hand-rolled entry mapping to fold in:
+
+        $ grep -rn '"duration_ms"\|"outcome"' src/ | grep -v '^src/history.rs'
+        (no match)
+
+        Every entry field reaches JSON through that one derive — no read path
+        builds an entry object of its own — so no production change is needed for
+        this scenario's refactor.
+
+        Step-side consolidation (no behaviour change): the read's scope is
+        derived once — `assert_entries_complete` returns it, and the completeness
+        check takes it as an argument instead of re-deriving `entries[0]["scope"]`
+        — and the temporary ORACLE_RED probe code is gone from the step.
+
+        $ cargo fmt --all -- --check        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.81s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Consumer reads the development record as machine-readable output"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 4.12s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: Consumer reads the development record as machine-readable output
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" with a recorded history
+           ✔  When the user runs `givn history --change demo --json`
+           ✔  Then the command exits 0
+           ✔  And the output names every recorded entry with its kind, its scope, and its duration
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        REFACTOR_EXIT=0
+
+        This run also re-captured the scenario's evidence pair from the final
+        code (`desktop.png` 46816 bytes / `mobile.png` 32172 bytes, 17:26,
+        1920x1080 and 360x780), so the committed pair is this scenario's own
+        output, not the earlier iteration's.
         ```
   - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
         title `Consumer reads the development record as machine-readable output`

@@ -108,7 +108,7 @@ Feature: Development Record
     And the machine-readable record names the status command for "demo"
     And the machine-readable record carries a duration for that command
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer reads the development record as machine-readable output
     Given a project root with givn/ initialised
     And a change "demo" with a recorded history
