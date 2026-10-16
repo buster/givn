@@ -45,7 +45,7 @@ Feature: Agent Activity Reporting
     Then the intake names the rejected event
     And the previously recorded history is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: A rejected report never fails the agent action it reports
     Given a change "demo" with a recorded history
     And the development record cannot be written

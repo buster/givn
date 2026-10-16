@@ -205,6 +205,18 @@ fn last_id(text: &str) -> u64 {
         .unwrap_or(0)
 }
 
+/// The one place a store that cannot be written is reported: a warning naming
+/// the store path, never an error to the caller. Both writers of the record —
+/// the recorder that writes Givn's own run and the agent intake that writes a
+/// reporter's payload — read the same way, so the agent's caller is never
+/// failed by a full or read-only disk.
+pub fn warn_unwritten(store: &HistoryStore, error: &std::io::Error) {
+    eprintln!(
+        "warning: the development record could not be written to {}: {error}",
+        store.path().display()
+    );
+}
+
 /// The process's recorder for this invocation: the runtime command name and
 /// label are only known here, so the cell is installed rather than derived from
 /// a fixed initializer.
@@ -321,7 +333,7 @@ impl HistoryRecorder {
         command.data = Some(serde_json::json!({ "exit_code": exit_code }));
         let command_id = match self.store.append(std::slice::from_mut(&mut command)) {
             Ok(first_id) => first_id,
-            Err(error) => return self.warn(&error),
+            Err(error) => return warn_unwritten(&self.store, &error),
         };
         let mut pending = self.take_pending();
         for entry in &mut pending {
@@ -330,7 +342,7 @@ impl HistoryRecorder {
             }
         }
         if let Err(error) = self.store.append(&mut pending) {
-            self.warn(&error);
+            warn_unwritten(&self.store, &error);
         }
     }
 
@@ -340,15 +352,6 @@ impl HistoryRecorder {
             .lock()
             .map(|mut pending| std::mem::take(&mut *pending))
             .unwrap_or_default()
-    }
-
-    /// The one place a store that cannot be written is reported: a warning,
-    /// never an error to the caller.
-    fn warn(&self, error: &std::io::Error) {
-        eprintln!(
-            "warning: the development record could not be written to {}: {error}",
-            self.store.path().display()
-        );
     }
 }
 

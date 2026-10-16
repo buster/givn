@@ -4207,7 +4207,7 @@ name it.
 
 ## Task 18 — `A rejected report never fails the agent action it reports` (`agent-activity-reporting`, added)
 
-- [ ] **Scenario: `A rejected report never fails the agent action it reports`**
+- [x] **Scenario: `A rejected report never fails the agent action it reports`**
   - Design constraints:
     - Best-effort guarantee for the agent path: a record that cannot be written
       warns and still exits `0` — the reporter's caller must not fail because
@@ -4222,23 +4222,198 @@ name it.
     - Do not turn this into a retry/queue feature: there is no retry path, no
       spool file, no second write location.
     - RED expected failure: the no-failure Then step is undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A rejected report never fails the agent action it reports"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        (The first run, before the fixture's `When` existed:)
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A rejected report never fails the agent action it reports"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: A rejected report never fails the agent action it reports
+           ✔  Given a change "demo" with a recorded history
+           ✔  And the development record cannot be written
+           ✘  When the agent reports a completed tool call
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:52:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+
+        thread 'main' (2459105) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        The `When` — a real setup action, never a stub: the fixture's completed
+        tool call handed to the real `givn history ingest` — was then written so
+        the RED lands on the new behaviour's assertion step, which is the failure
+        the task predicts:
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A rejected report never fails the agent action it reports"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 5.12s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: A rejected report never fails the agent action it reports
+           ✔  Given a change "demo" with a recorded history
+           ✔  And the development record cannot be written
+           ✔  When the agent reports a completed tool call
+           ✘  Then the intake reports no failure to the agent
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:53:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        4 steps (3 passed, 1 failed)
+
+        thread 'main' (2460017) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — the no-failure Then step is unbound
+        (`the intake reports no failure to the agent` matches no function). The
+        scenario's own fixture really ran: the shared recorded-history Given built
+        the change and its record, the unwritable-store Given replaced the store
+        path with a directory (a real `EISDIR` on the real write path), and the
+        `When` handed the real intake the fixture's completed tool call — so the
+        RED is the new assertion, not a vacuous setup. The behaviour the Then
+        asserts already exists from Task 12/16's best-effort append, so both
+        halves of the assertion are proven load-bearing in the GREEN block below
+        with two controlled omissions in the isolated fixture (ORACLE_RED),
+        restored immediately.
         ```
-  - [ ] **GREEN** — route the ingest write path through the same best-effort
+  - [x] **GREEN** — route the ingest write path through the same best-effort
         recorder. Files: `src/cli/history.rs`, `src/history.rs`,
         `tests/steps/agent_activity_reporting_steps.rs`. Compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s
+        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A rejected report never fails the agent action it reports"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 4.94s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: A rejected report never fails the agent action it reports
+           ✔  Given a change "demo" with a recorded history
+           ✔  And the development record cannot be written
+           ✔  When the agent reports a completed tool call
+           ✔  Then the intake reports no failure to the agent
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT 0
+
+        Production files for the GREEN step: **none** — investigated, not
+        assumed. The intake's write path already is the best-effort recorder
+        path: `ingest` appends through `HistoryStore::append_linked`, whose
+        `Err` is reported and swallowed (`if let Err(error) = store.append_linked
+        (…) { warning }`), so the process exits 0; the recorder's own `command`
+        entry for the intake hits the same blocked path and warns the same way
+        (`HistoryRecorder::finish`), and nothing is retried or written elsewhere.
+        The `src/cli/history.rs`/`src/history.rs` work this task names — one
+        warning path for the agent-sourced and Givn-sourced write failures —
+        lands in the REFACTOR step below, where it belongs.
+
+        Step and fixture (`tests/steps/agent_activity_reporting_steps.rs`):
+        - `When the agent reports a completed tool call` — hands the fixture's
+          completed tool call to the real intake for the change the recorded
+          history built; the write failure is left to the fixture.
+        - `Then the intake reports no failure to the agent` — the process exited
+          `0` (a non-zero exit is a hook error for Claude Code and exit 2 blocks
+          the tool); the write failure is visible as a `warning:` naming the
+          blocked store path; no `error:` line; and the blocked store path is
+          still the blocking directory, so no retry path, spool file, or second
+          write location took the entry.
+
+        Discrimination (ORACLE_RED) — controlled omissions in the isolated
+        fixture, each restored immediately:
+
+        (a) the unwritable-store fixture omitted (the store writable, so the
+            write cannot fail), the warning half of the assertion must fail:
+        ✔  Given a change "demo" with a recorded history
+        ✔  And the development record cannot be written
+        ✔  When the agent reports a completed tool call
+        ✘  Then the intake reports no failure to the agent
+           Step panicked. Captured output: the write failure was not reported at all: ""
+        EXIT=101
+
+        (b) the payload made unreadable (a payload-level failure, so the intake's
+            exit is not 0), the exit-code half of the assertion must fail:
+        ✔  Given a change "demo" with a recorded history
+        ✔  And the development record cannot be written
+        ✔  When the agent reports a completed tool call
+        ✘  Then the intake reports no failure to the agent
+           Step panicked. Captured output: assertion `left == right` failed: the intake failed the agent action it reported (exit Some(1)): warning: the development record could not be written to /tmp/.tmp39WUZu/givn/history/events.jsonl: Is a directory (os error 21)
+        error: parse the intake payload as one JSON object: invalid type: string "not a payload", expected struct IntakePayload at line 1 column 15
+
+          left: Some(1)
+         right: Some(0)
+        EXIT=101
+
+        With the fixture restored the canonical run is green again (the run
+        pasted above, EXIT 0).
         ```
-  - [ ] **REFACTOR** — one warning path for the agent-sourced and givn-sourced
+  - [x] **REFACTOR** — one warning path for the agent-sourced and givn-sourced
         write failures; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The two writers of the record now report a store they could not write
+        through one function: `src/history.rs::warn_unwritten(store, error)`
+        (a warning naming the store path, never an error to the caller) replaces
+        the recorder's private `warn` method and the intake's inline `eprintln!`,
+        so `HistoryRecorder::finish` (Givn's own entries) and
+        `src/cli/history.rs::ingest` (a reporter's payload) read identically and
+        the wording has one home.
+
+        $ cargo fmt --all && cargo fmt --all -- --check
+        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.84s
+        CLIPPY=0
+
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.55s
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A rejected report never fails the agent action it reports"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 5.43s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: A rejected report never fails the agent action it reports
+           ✔  Given a change "demo" with a recorded history
+           ✔  And the development record cannot be written
+           ✔  When the agent reports a completed tool call
+           ✔  Then the intake reports no failure to the agent
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT 0
+
+        The warning wording has one home, so the scenario that pins it was
+        re-run together with the bundle:
+        $ for t in "development-record.feature::A record that cannot be written never fails the command it records" \
+                   "agent-activity-reporting.feature::A reported tool call is recorded for its scope" \
+                   "agent-activity-reporting.feature::A reported event that does not match the intake contract is rejected without corrupting the record" \
+                   "agent-activity-reporting.feature::A rejected report never fails the agent action it reports"; do
+              GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/$t" >/dev/null 2>&1
+              echo "$t => EXIT=$?"
+          done
+        A record that cannot be written never fails the command it records => EXIT=0
+        A reported tool call is recorded for its scope => EXIT=0
+        A reported event that does not match the intake contract is rejected without corrupting the record => EXIT=0
+        A rejected report never fails the agent action it reports => EXIT=0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `A rejected report never fails the agent action
