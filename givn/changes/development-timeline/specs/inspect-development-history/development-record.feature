@@ -26,7 +26,7 @@ Feature: Development Record
     Then the command exits 0
     And stderr warns that the development record could not be written
 
-  @givn.added @wip
+  @givn.added
   Scenario: The record is append-only across commands
     Given a project root with givn/ initialised
     And the development record holds an entry from an earlier command

@@ -12,10 +12,28 @@ use crate::steps::development_timeline_support as support;
 use crate::steps::{GivnWorld, stderr};
 
 /// State for the development-record scenarios: the entry the last reading
-/// step identified, so a following step can assert on "that entry".
+/// step identified, so a following step can assert on "that entry", plus the
+/// store snapshot the append-only scenario takes before its second command.
 #[derive(Debug, Default)]
 pub(crate) struct DevelopmentRecordState {
     pub(crate) last_entry: Option<Value>,
+    /// The store's bytes as they stood before this scenario's next command.
+    pub(crate) store_before: Option<Vec<u8>>,
+    /// The earlier entry's own field values, read the way a consumer reads
+    /// them.
+    pub(crate) earlier_entry: Option<Value>,
+}
+
+/// The byte-level form of "nothing earlier was rewritten": the store still
+/// begins with the bytes it held before the scenario's next command. Both
+/// append-only steps state the property through this one assertion.
+fn assert_store_prefix_unchanged(before: &[u8], after: &[u8]) {
+    assert!(
+        after.starts_with(before),
+        "the store's earlier bytes were rewritten:\nbefore: {}\nafter:  {}",
+        String::from_utf8_lossy(before),
+        String::from_utf8_lossy(after)
+    );
 }
 
 #[then("the development record holds one entry for that command")]
@@ -188,5 +206,97 @@ fn stderr_warns_that_the_record_could_not_be_written(world: &mut GivnWorld) {
         store.is_dir(),
         "the append wrote to the blocked store path {}",
         store.display()
+    );
+}
+
+#[given("the development record holds an entry from an earlier command")]
+fn record_holds_an_entry_from_an_earlier_command(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let out = common::run_givn(env, &["status"]);
+    assert!(
+        out.status.success(),
+        "the earlier command failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let entries = support::record_entries(&env.root());
+    let earlier = entries
+        .last()
+        .cloned()
+        .expect("the earlier command wrote no entry");
+    assert_eq!(
+        (earlier["kind"].clone(), earlier["name"].clone()),
+        (json!("command"), json!("status")),
+        "the last entry is not the earlier command's own entry: {earlier}"
+    );
+    let state = world
+        .development_record
+        .get_or_insert_with(DevelopmentRecordState::default);
+    state.store_before = Some(support::store_bytes(&env.root()));
+    state.earlier_entry = Some(earlier);
+}
+
+#[then("the earlier entry is still present unchanged")]
+fn earlier_entry_is_still_present_unchanged(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let state = world
+        .development_record
+        .as_ref()
+        .expect("the earlier-command fixture ran first");
+    let before = state
+        .store_before
+        .clone()
+        .expect("the fixture took no store snapshot");
+    let earlier = state
+        .earlier_entry
+        .clone()
+        .expect("the fixture identified no earlier entry");
+    let after = support::store_bytes(&env.root());
+    assert_store_prefix_unchanged(&before, &after);
+    let entries = support::record_entries(&env.root());
+    let read_back = entries
+        .iter()
+        .find(|entry| entry["id"] == earlier["id"])
+        .unwrap_or_else(|| panic!("the earlier entry is gone: {entries:#?}"));
+    assert_eq!(
+        read_back, &earlier,
+        "the earlier entry's field values changed"
+    );
+}
+
+#[then("the new entry is appended after it without rewriting the store")]
+fn new_entry_is_appended_after_it_without_rewriting_the_store(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let before = world
+        .development_record
+        .as_ref()
+        .and_then(|state| state.store_before.clone())
+        .expect("the earlier-command fixture ran first");
+    let after = support::store_bytes(&env.root());
+    assert_store_prefix_unchanged(&before, &after);
+    let appended = &after[before.len()..];
+    let appended = std::str::from_utf8(appended)
+        .unwrap_or_else(|error| panic!("the appended bytes are not UTF-8: {error}"));
+    let appended_lines: Vec<&str> = appended.lines().filter(|l| !l.trim().is_empty()).collect();
+    assert_eq!(
+        appended_lines.len(),
+        1,
+        "the command appended {} lines, not one: {appended:?}",
+        appended_lines.len()
+    );
+    let entry: Value = serde_json::from_str(appended_lines[0])
+        .unwrap_or_else(|error| panic!("the appended line is not a JSON object: {error}"));
+    assert_eq!(
+        (entry["kind"].clone(), entry["name"].clone()),
+        (json!("command"), json!("status")),
+        "the appended entry is not this command's own entry: {entry}"
     );
 }
