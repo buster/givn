@@ -18,6 +18,7 @@ use serde_json::{Value, json};
 use cucumber::then;
 
 use super::GivnWorld;
+use super::development_timeline_support as support;
 use crate::common;
 use crate::common::TestEnv;
 use crate::common::browser::{self, BrowserDriver};
@@ -25,6 +26,10 @@ use crate::common::browser::{self, BrowserDriver};
 /// The `@e2e` scenario whose record names the lifecycle command; spelled as the
 /// delta feature spells it, because the visual gate slugifies exactly this text.
 const LIFECYCLE_SCENARIO: &str = "Consumer runs a lifecycle step and reads its recorded actions";
+
+/// The `@e2e` scenario that reads the whole record as machine-readable output.
+const MACHINE_READABLE_SCENARIO: &str =
+    "Consumer reads the development record as machine-readable output";
 
 /// State for the `@e2e` development-record scenarios: the machine-readable
 /// record the scenario's own read printed
@@ -34,6 +39,14 @@ const LIFECYCLE_SCENARIO: &str = "Consumer runs a lifecycle step and reads its r
 pub(crate) struct DevelopmentRecordE2eState {
     /// The entries the last machine-readable read printed.
     pub(crate) entries: Vec<Value>,
+}
+
+/// The scenario's project root, as its Givens left it.
+fn project_root(world: &GivnWorld) -> &TestEnv {
+    world
+        .env
+        .as_ref()
+        .expect("a project root is required first")
 }
 
 /// The entries the scenario's own machine-readable read printed, parsed once:
@@ -64,6 +77,57 @@ fn command_entry<'a>(entries: &'a [Value], name: &str) -> &'a Value {
         .unwrap_or_else(|| {
             panic!("the machine-readable record names no `{name}` command entry: {entries:#?}")
         })
+}
+
+/// Every printed entry is complete on the read view's own terms — its kind, its
+/// exactly-one scope, and a measured duration — and the read covers exactly one
+/// scope throughout. Returns the scope the read named.
+fn assert_entries_complete(entries: &[Value]) -> Value {
+    assert!(
+        !entries.is_empty(),
+        "the machine-readable read printed no entry at all"
+    );
+    for entry in entries {
+        let kind = entry["kind"].as_str().unwrap_or_default();
+        assert!(!kind.is_empty(), "a printed entry names no kind: {entry:#}");
+        assert!(
+            entry["scope"]["kind"].is_string() && entry["scope"]["id"].is_string(),
+            "the printed {kind} entry names no scope: {entry:#}"
+        );
+        assert!(
+            entry["duration_ms"].is_u64(),
+            "the printed {kind} entry names no duration: {entry:#}"
+        );
+    }
+    let scope = entries[0]["scope"].clone();
+    assert!(
+        scope["kind"].is_string(),
+        "the read printed a scope with no kind: {scope:#}"
+    );
+    for entry in entries {
+        assert_eq!(
+            entry["scope"], scope,
+            "a printed entry left the read's scope: {entry:#}"
+        );
+    }
+    scope
+}
+
+/// The read is complete for the scope it named: it printed one entry per
+/// recorded line of that scope. The printed entries are the primary evidence;
+/// the record's own line count is the secondary check that none of them was
+/// dropped.
+fn assert_read_is_complete(entries: &[Value], scope: &Value, recorded: &[Value]) {
+    let lines = recorded
+        .iter()
+        .filter(|entry| &entry["scope"] == scope)
+        .count();
+    assert_eq!(
+        entries.len(),
+        lines,
+        "the machine-readable read printed {} of the scope's {lines} recorded entries: {entries:#?}",
+        entries.len()
+    );
 }
 
 #[then(regex = r#"^the machine-readable record names the status command for "([^"]+)"$"#)]
@@ -97,13 +161,19 @@ fn record_carries_a_duration_for_that_command(world: &mut GivnWorld) {
         duration < 60_000,
         "the recorded status command's duration is not a measured span: {duration} ms"
     );
-    commit_evidence(
-        world
-            .env
-            .as_ref()
-            .expect("a project root is required first"),
-        LIFECYCLE_SCENARIO,
+    commit_evidence(project_root(world), LIFECYCLE_SCENARIO);
+}
+
+#[then("the output names every recorded entry with its kind, its scope, and its duration")]
+fn output_names_every_recorded_entry(world: &mut GivnWorld) {
+    let entries = printed_entries(world);
+    let scope = assert_entries_complete(&entries);
+    assert_read_is_complete(
+        &entries,
+        &scope,
+        &support::record_entries(&project_root(world).root()),
     );
+    commit_evidence(project_root(world), MACHINE_READABLE_SCENARIO);
 }
 
 /// The change-wide visual gate's evidence for one `@e2e` CLI scenario: render
