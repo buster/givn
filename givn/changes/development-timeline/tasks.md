@@ -1942,7 +1942,7 @@ name it.
 
 ## Task 8 — `A recorded label is bounded to 120 characters` (`development-record`, added)
 
-- [ ] **Scenario: `A recorded label is bounded to 120 characters`**
+- [x] **Scenario: `A recorded label is bounded to 120 characters`**
   - Design constraints:
     - Privacy bound (D2, design-review Q7): an entry keeps kind, timestamps,
       duration, outcome, model, token counts, subagent identity, and a single
@@ -2099,7 +2099,7 @@ name it.
 
 ## Task 9 — `Reading the development record does not extend it` (`development-record`, added)
 
-- [ ] **Scenario: `Reading the development record does not extend it`**
+- [x] **Scenario: `Reading the development record does not extend it`**
   - Design constraints:
     - Deliberate exclusion (design-review Q8): `givn history` and `givn timeline`
       run **without** a recorder — reading the record never mutates it, and an
@@ -2260,9 +2260,21 @@ name it.
         54 steps (54 passed)
         EXIT 0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+  - [x] **COMMIT** — `d41ab44644e3c547207b1f2da057d448d18b1855` — `feat(development-record): <release note>` with
         the scenario title `Reading the development record does not extend it` in
         the body. Record the revision identifier.
+        ```
+        $ givn commit -m "feat(development-record): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        Reading the development record does not extend it"
+        [13:51:04] committed revision on the Git backend
+        $ git rev-parse HEAD
+        d41ab44644e3c547207b1f2da057d448d18b1855
+
+        One atomic revision: RED+GREEN+REFACTOR together — the delta spec (this
+        scenario's `@wip` removed), both read commands with the structural
+        exclusion, the wiring, the steps, and this file's Task 9 record.
+        ```
 
 ## Task 10 — `The record stays out of the repository's own history` (`development-record`, added)
 
