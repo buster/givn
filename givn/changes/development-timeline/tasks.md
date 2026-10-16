@@ -5713,7 +5713,7 @@ name it.
 
 ## Task 25 — `The report ranks the longest single step first` (`development-report`, added)
 
-- [ ] **Scenario: `The report ranks the longest single step first`**
+- [x] **Scenario: `The report ranks the longest single step first`**
   - Design constraints:
     - Command: `givn timeline --change demo --out report.html` (D4: an on-demand
       command that writes one self-contained file and prints its path; no
@@ -5867,9 +5867,26 @@ name it.
         3 steps (3 passed)
         EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `12d2f04d162f7388238d2f4a0653cfa3facc5870` — `feat(development-report): <release note>` with
         the scenario title `The report ranks the longest single step first` in
         the body. Record the revision identifier.
+        ```
+        $ GIVN_ATTRIBUTION_ACTIVE=1 GIVN_ATTRIBUTION_LLM=deepseek/deepseek-flash \
+          GIVN_ATTRIBUTION_REASONING=max GIVN_ATTRIBUTION_HARNESS=omp \
+          ./target/debug/givn commit -m "feat(development-report): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        The report ranks the longest single step first"
+        [16:33:30] committed revision on the Git backend
+        EXIT=0
+
+        Revision 12d2f04d162f7388238d2f4a0653cfa3facc5870 touches exactly this
+        scenario's files: `src/cli/timeline.rs`, `assets/timeline/report.html`,
+        the two step files (`development_report_steps.rs` and the
+        `development_timeline_support.rs` seeded-history builder),
+        `tests/steps/mod.rs` (the skeleton's `#[allow(dead_code)]` allowance on
+        the report slot, removed now that the capability's first step reads it),
+        the delta `.feature`'s `@wip` removal, and this task file's evidence.
+        ```
 
 ## Task 26 — `The report totals the time spent waiting for questions` (`development-report`, added)
 
