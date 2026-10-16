@@ -1407,7 +1407,7 @@ name it.
 
 ## Task 5 — `Activity outside a change belongs to the project scope` (`development-record`, added)
 
-- [ ] **Scenario: `Activity outside a change belongs to the project scope`**
+- [x] **Scenario: `Activity outside a change belongs to the project scope`**
   - Design constraints:
     - `resolve_scope` binds every entry to exactly one scope from the project's
       own state, in one order: change → ideation topic → project. Zero active
@@ -1550,9 +1550,20 @@ name it.
         mixed the active-change question with the exactly-one rule, and is gone), so the
         "is a change active?" logic exists once.
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+  - [x] **COMMIT** — `80ca8a7b4b7e1b2856d4e7f5702d10471295a912` — `feat(development-record): <release note>` with
         the scenario title `Activity outside a change belongs to the project
         scope` in the body. Record the revision identifier.
+        ```
+        $ givn commit -m "feat(development-record): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        Activity outside a change belongs to the project scope"
+        [13:28:46] committed revision on the Git backend
+        $ git rev-parse HEAD
+        80ca8a7b4b7e1b2856d4e7f5702d10471295a912
+        ```
+        One atomic revision: RED+GREEN+REFACTOR together — the delta spec (this scenario's `@wip`
+        removed), `src/history.rs` (the refactored candidate order and the shared exactly-one
+        rule), both test files, and this file's Task 4 revision record.
 
 ## Task 6 — `Two writers never mint the same entry id` (`development-record`, added)
 
@@ -1576,23 +1587,169 @@ name it.
       processes, so the fixture must spawn two.
     - RED expected failure: the distinct-id and parent-resolution Then steps are
       undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Two writers never mint the same entry id"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Two writers never mint the same entry id"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: Two writers never mint the same entry id
+           ✔  Given a project root with givn/ initialised
+           ✘  And two givn commands record at the same time
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:47:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+
+        thread 'main' (2030750) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT 101
+
+        Category: undefined step — the two-writer fixture Given, the `when both commands finish`
+        step and the two concurrency Then steps do not exist yet. Every other scenario kept its
+        `@wip` tag.
+
+        The property is real, not hypothetical: the same shape (6 rounds of two concurrent
+        `givn check tasks --change demo` runs, held at a barrier so both append at the same
+        moment) run by hand against the current, unlocked binary mints the same id many times
+        and interleaves two JSON objects on one line:
+
+        $ for r in $(seq 1 6); do rm -f .race-go; (givn check tasks --change demo &); (givn check tasks --change demo &); sleep 0.3; touch .race-go; wait; done   # in the probe project
+        $ python3 -c "import json; [json.loads(l) for l in open('givn/history/events.jsonl')]"
+        JSONDecodeError: Extra data: line 1 column 230 (char 229) -> {"schema":1,"id":1,…,"kind":"command","name":"check",…,"data":{"exit_code":0}}{"schema":1,"id":1,…
+        raw lines: 24   entries found: 36   ids seen: [1,1,1,1,2,2,3,3,1,1,2,2,1,2,3,2,3,4,5,5,…]
+        duplicates: {1: 15, 2: 12, 3: 6, 5: 2}
+        ids per line: [2,2,1,1,2,2,2,1,1,1,1,1,1,2,1,1,1,1,2,2,2,2,2,2]
+        ← `id` 1 minted 15 times, and 12 lines carry two objects
+
+        This is the controlled omission the GREEN block's fixture reproduces inside the suite
+        (barrier-synchronized appends); the append lock is what the GREEN step adds.
         ```
-  - [ ] **GREEN** — implement the append lock and append-time id minting.
+  - [x] **GREEN** — implement the append lock and append-time id minting.
         Files: `src/history.rs`, `tests/steps/development_record_steps.rs`,
         `tests/steps/development_timeline_support.rs` (the concurrent-spawn
         fixture). Compile first, re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.32s       EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Two writers never mint the same entry id"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 5.56s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: Two writers never mint the same entry id
+           ✔  Given a project root with givn/ initialised
+           ✔  And two givn commands record at the same time
+           ✔  When both commands finish
+           ✔  Then every entry in the development record has a distinct id
+           ✔  And every parent link names an entry that exists in the record
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT 0
+
+        Discrimination proof — the same fixture with the lock held out turns the scenario red
+        (controlled omission: `file.lock()?;` deleted for exactly one run, everything else
+        unchanged):
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Two writers never mint the same entry id"   # with the lock omitted
+        Feature: Development Record
+          Scenario: Two writers never mint the same entry id
+           ✔  Given a project root with givn/ initialised
+           ✔  And two givn commands record at the same time
+           ✔  When both commands finish
+           ✘  Then every entry in the development record has a distinct id
+              Step panicked. Captured output: store line is not a JSON object: trailing characters at line 1 column 230
+              {"schema":1,"id":3,…,"name":"check",…}{"schema":1,"id":3,…,"name":"check",…}{"schema":1,"id":3,…,"name":"check",…
+        [Summary]
+        1 scenario (1 failed)
+        EXIT 101
+
+        The lock was restored immediately (`grep -c "CONTROLLED OMISSION" src/history.rs` → 0) and
+        the same command re-ran green (exit 0, pasted above): the fixture races real processes, and
+        the lock is what keeps the ids distinct.
+
+        Production files created/modified by this scenario:
+          src/history.rs       `HistoryStore::append` now takes the store's exclusive append lock
+                               (`File::lock`) on one handle opened `create(true).read(true)
+                               .append(true)`, and only then reads the store's current last line
+                               (through that same handle, not a second open of the path) and
+                               mints each id from it — the id minted *at append time under the
+                               lock*, never from a count captured at process start. The lock is
+                               released when the handle drops. `last_id` became a free function
+                               over the text the locked handle read.
+        Test/fixture files touched:
+          tests/steps/development_timeline_support.rs  `RACING_ROUNDS = 6`, `RACE_BARRIER_COMMAND`
+                               (`until [ -e .givn-race-go ]; do :; done` — the declared verify
+                               command that holds every racer inside `givn check tasks` until the
+                               fixture releases them together, so the appends really overlap),
+                               `start_racing_commands` (spawns both commands per round, sleeps until
+                               they are at the barrier, then releases them) and
+                               `finish_racing_commands` (waits, asserts each racer exited 0).
+          tests/steps/development_record_steps.rs      the Given (creates the change, starts the
+                               race, snapshots the entry count), `when both commands finish`, and
+                               the two Then steps: every id distinct and the record's entry count
+                               exactly `before + RACING_ROUNDS * 2 * 3` (no line lost or invented);
+                               every `parent` value resolves to an id in the record, with the link
+                               count asserted so the claim is not vacuous.
         ```
-  - [ ] **REFACTOR** — keep exactly one id-minting site and one lock scope;
+  - [x] **REFACTOR** — keep exactly one id-minting site and one lock scope;
         re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        $ cargo fmt --all && cargo fmt --all -- --check                                 EXIT 0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.48s        EXIT 0
+        (`cargo fmt --all` was red before this step on the new assertion's filter chain — the
+        step's only code change.)
+
+        $ grep -n "file.lock\|entry.id =\|last_id" src/history.rs
+        src/history.rs:131:        file.lock()?;
+        src/history.rs:134:        let first_id = last_id(&text) + 1;
+        src/history.rs:136:            entry.id = first_id + offset as u64;
+        src/history.rs:145:fn last_id(text: &str) -> u64 {
+        → one lock site and one minting site, both inside `HistoryStore::append`; `last_id`
+        (now a free function over the text the locked handle read) is the only other reader of
+        ids, and the lock's scope is that single handle's lifetime — taken before the store's
+        last line is read, released only after the lines are written.
+
+        Regression check over every scenario this bundle has turned green, in one process (the
+        append path changed shape — `O_RDWR|O_APPEND` plus the lock — so the earlier scenarios
+        are re-run, including Task 3's `EISDIR` fixture):
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --tags "not @e2e and not @wip"
+        [Summary]
+        2 features
+        7 scenarios (7 passed)
+        40 steps (40 passed)
+        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Two writers never mint the same entry id"
+        Feature: Development Record
+          Scenario: Two writers never mint the same entry id
+           ✔  Given a project root with givn/ initialised
+           ✔  And two givn commands record at the same time
+           ✔  When both commands finish
+           ✔  Then every entry in the development record has a distinct id
+           ✔  And every parent link names an entry that exists in the record
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT 0
+
+        Cleanups, no behaviour change: the id-minting site and the store read are now the same
+        handle's (the second open of the store path is gone — `last_id` no longer opens the file
+        behind the lock's back), so the lock covers exactly one read-and-append scope; the test
+        code was formatted. One id-minting site and one lock scope, verified by the greps above.
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
         the scenario title `Two writers never mint the same entry id` in the

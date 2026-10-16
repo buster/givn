@@ -109,20 +109,29 @@ impl HistoryStore {
     }
 
     /// Append the entries in order (creating the store's directory on first
-    /// write), minting each `id` at append time from the store's current last
-    /// line. Returns the first id minted, so a caller can parent its children
-    /// to the entry it just wrote.
+    /// write), minting each `id` at append time under the store's exclusive
+    /// append lock, from the store's current last line. Returns the first id
+    /// minted, so a caller can parent its children to the entry it just wrote.
+    ///
+    /// One handle carries both halves: the lock is taken before the store's
+    /// last line is read and released only after the lines are written, so two
+    /// processes recording at the same time mint from different last lines and
+    /// neither can interleave its lines with the other's.
     pub fn append(&self, entries: &mut [HistoryEntry]) -> std::io::Result<u64> {
-        use std::io::Write as _;
+        use std::io::{Read as _, Write as _};
 
         if let Some(parent) = self.path.parent() {
             std::fs::create_dir_all(parent)?;
         }
-        let first_id = self.last_id()? + 1;
         let mut file = std::fs::OpenOptions::new()
             .create(true)
+            .read(true)
             .append(true)
             .open(&self.path)?;
+        file.lock()?;
+        let mut text = String::new();
+        file.read_to_string(&mut text)?;
+        let first_id = last_id(&text) + 1;
         for (offset, entry) in entries.iter_mut().enumerate() {
             entry.id = first_id + offset as u64;
             let line = serde_json::to_string(entry).map_err(std::io::Error::other)?;
@@ -130,20 +139,16 @@ impl HistoryStore {
         }
         Ok(first_id)
     }
+}
 
-    /// The id of the store's current last line (`0` when the store is empty).
-    fn last_id(&self) -> std::io::Result<u64> {
-        let Some(text) = self.text()? else {
-            return Ok(0);
-        };
-        Ok(text
-            .lines()
-            .rev()
-            .find(|line| !line.trim().is_empty())
-            .and_then(|line| serde_json::from_str::<HistoryEntry>(line).ok())
-            .map(|entry| entry.id)
-            .unwrap_or(0))
-    }
+/// The id of a store's current last line (`0` when the store is empty).
+fn last_id(text: &str) -> u64 {
+    text.lines()
+        .rev()
+        .find(|line| !line.trim().is_empty())
+        .and_then(|line| serde_json::from_str::<HistoryEntry>(line).ok())
+        .map(|entry| entry.id)
+        .unwrap_or(0)
 }
 
 /// The process's recorder for this invocation: the runtime command name and

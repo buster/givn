@@ -41,7 +41,7 @@ Feature: Development Record
     When the user runs `givn status`
     Then the recorded entry names the project as its scope
 
-  @givn.added @wip
+  @givn.added
   Scenario: Two writers never mint the same entry id
     Given a project root with givn/ initialised
     And two givn commands record at the same time

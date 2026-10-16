@@ -77,6 +77,76 @@ fn read_dir_names(dir: &Path) -> Vec<String> {
     names
 }
 
+/// The number of concurrent rounds the two-writer fixture races: on every
+/// round two `givn` invocations record into the same store, and all rounds are
+/// released at the same moment, so the overlap is real rather than lucky.
+pub const RACING_ROUNDS: usize = 6;
+
+/// The verification command the two-writer fixture declares: it holds every
+/// racing process inside its `givn check tasks` run until the fixture releases
+/// them together, so their appends really overlap. A busy loop, so the release
+/// is noticed within microseconds by every process — the failure the fixture
+/// creates is a real `EISDIR`-free, real-process interleaving, never a mocked
+/// clock and never a simulated failure.
+pub const RACE_BARRIER_COMMAND: &str = "until [ -e .givn-race-go ]; do :; done";
+
+/// The marker that releases the barrier.
+const RACE_MARKER: &str = ".givn-race-go";
+
+/// How long the racing processes get to reach the barrier before the fixture
+/// releases it. A process that arrives late appends later instead of racing —
+/// the assertions still hold, the race is only weaker.
+const RACE_ARMED: std::time::Duration = std::time::Duration::from_millis(300);
+
+/// Start the two-writer race: `RACING_ROUNDS` rounds of two concurrent
+/// recording commands, all held at the barrier and then released together, so
+/// every round's appends overlap. Returns the processes; the caller waits for
+/// them (the scenario's `both commands finish` step).
+pub fn start_racing_commands(env: &common::TestEnv) -> Vec<std::process::Child> {
+    declare_verify_command(env, RACE_BARRIER_COMMAND);
+    let marker = env.path(RACE_MARKER);
+    let _ = std::fs::remove_file(&marker);
+    let children: Vec<std::process::Child> = (0..RACING_ROUNDS * 2)
+        .map(|_| spawn_recording_command(env))
+        .collect();
+    std::thread::sleep(RACE_ARMED);
+    std::fs::write(&marker, b"").expect("release the racing commands");
+    children
+}
+
+/// Wait for the racing commands, assert every one of them finished
+/// successfully (a failed racer would record a different shape than this
+/// scenario claims to read), and clear the barrier marker.
+pub fn finish_racing_commands(env: &common::TestEnv, children: Vec<std::process::Child>) {
+    for (index, child) in children.into_iter().enumerate() {
+        let out = child
+            .wait_with_output()
+            .expect("wait for a racing givn process");
+        assert!(
+            out.status.success(),
+            "racing command {index} failed: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+    let _ = std::fs::remove_file(env.path(RACE_MARKER));
+}
+
+/// One recording `givn` invocation in the fixture project: `givn check tasks
+/// --change demo` writes the command entry plus its two children (the
+/// verification step and the mandatory-checks phase), so the store the racers
+/// append to also carries parent links to reconcile.
+fn spawn_recording_command(env: &common::TestEnv) -> std::process::Child {
+    std::process::Command::new(env!("CARGO_BIN_EXE_givn"))
+        .args(["check", "tasks", "--change", "demo"])
+        .current_dir(env.root())
+        .env_remove("GIVN_FEATURES")
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .expect("spawn a racing givn process")
+}
+
 /// The development record file of the project rooted at `root`:
 /// `givn/history/events.jsonl`, the store's own path.
 pub fn store_file(root: &Path) -> PathBuf {

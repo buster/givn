@@ -4,7 +4,9 @@
 //! (`givn/history/events.jsonl`, one JSON object per line) in a black-box
 //! project root, so nothing here reads the recorder's in-memory state.
 
-use cucumber::{given, then};
+use std::collections::BTreeSet;
+
+use cucumber::{given, then, when};
 use serde_json::{Value, json};
 
 use crate::common;
@@ -22,6 +24,11 @@ pub(crate) struct DevelopmentRecordState {
     /// The earlier entry's own field values, read the way a consumer reads
     /// them.
     pub(crate) earlier_entry: Option<Value>,
+    /// The entries the store held before the two-writer race started.
+    pub(crate) entries_before: Option<usize>,
+    /// The racing `givn` processes the last Given started, waiting to be
+    /// waited for.
+    pub(crate) racing: Option<Vec<std::process::Child>>,
 }
 
 /// The byte-level form of "nothing earlier was rewritten": the store still
@@ -340,5 +347,122 @@ fn recorded_entry_names_the_project_as_its_scope(world: &mut GivnWorld) {
         scope["id"],
         json!(support::project_name(env)),
         "the entry's scope does not name the fixture's own project: {scope}"
+    );
+}
+
+#[given("two givn commands record at the same time")]
+fn two_givn_commands_record_at_the_same_time(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let out = common::run_givn(env, &["new", "demo"]);
+    assert!(
+        out.status.success(),
+        "givn new demo failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let before = support::record_entries(&env.root()).len();
+    let racing = support::start_racing_commands(env);
+    let state = world
+        .development_record
+        .get_or_insert_with(DevelopmentRecordState::default);
+    state.entries_before = Some(before);
+    state.racing = Some(racing);
+}
+
+#[when("both commands finish")]
+fn both_commands_finish(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let racing = world
+        .development_record
+        .as_mut()
+        .and_then(|state| state.racing.take())
+        .expect("the previous step started no racing commands");
+    assert_eq!(
+        racing.len(),
+        support::RACING_ROUNDS * 2,
+        "the fixture did not start two commands per round"
+    );
+    support::finish_racing_commands(env, racing);
+}
+
+#[then("every entry in the development record has a distinct id")]
+fn every_entry_has_a_distinct_id(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let before = world
+        .development_record
+        .as_ref()
+        .and_then(|state| state.entries_before)
+        .expect("the two-writer fixture ran first");
+    let entries = support::record_entries(&env.root());
+    // Every racer appended its own run and no line was lost or invented: one
+    // `command` entry plus its two children per racing command.
+    let expected = before + support::RACING_ROUNDS * 2 * 3;
+    assert_eq!(
+        entries.len(),
+        expected,
+        "the record holds {} entries, expected {expected}: {entries:#?}",
+        entries.len()
+    );
+    let mut seen = BTreeSet::new();
+    let duplicates: Vec<u64> = entries
+        .iter()
+        .map(|entry| {
+            entry["id"]
+                .as_u64()
+                .unwrap_or_else(|| panic!("an entry carries no numeric id: {entry}"))
+        })
+        .filter(|id| !seen.insert(*id))
+        .collect();
+    assert!(
+        duplicates.is_empty(),
+        "the record minted the same id twice: {duplicates:?}"
+    );
+}
+
+#[then("every parent link names an entry that exists in the record")]
+fn every_parent_link_names_an_entry_in_the_record(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let entries = support::record_entries(&env.root());
+    let ids: BTreeSet<u64> = entries
+        .iter()
+        .map(|entry| {
+            entry["id"]
+                .as_u64()
+                .unwrap_or_else(|| panic!("an entry carries no numeric id: {entry}"))
+        })
+        .collect();
+    let dangling: Vec<&Value> = entries
+        .iter()
+        .filter(
+            |entry| match entry.get("parent").and_then(|parent| parent.as_u64()) {
+                Some(parent) => !ids.contains(&parent),
+                None => false,
+            },
+        )
+        .collect();
+    assert!(
+        dangling.is_empty(),
+        "these entries name a parent that is not in the record: {dangling:#?}"
+    );
+    // Not a vacuous claim: every racing run's children carry the link.
+    let linked = entries
+        .iter()
+        .filter(|entry| entry.get("parent").is_some())
+        .count();
+    assert_eq!(
+        linked,
+        support::RACING_ROUNDS * 2 * 2,
+        "the record does not carry the racing runs' child links: {entries:#?}"
     );
 }
