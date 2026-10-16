@@ -139,6 +139,45 @@ pub fn seed_ideation_topic(env: &common::TestEnv, topic: &str) -> Vec<HistoryEnt
     history.seed(env)
 }
 
+/// The steps the out-of-order fixture's record holds, in the order the store
+/// holds them: the second entry's recorded end is earlier than the first's —
+/// exactly what a late intake flush produces — so the store's line order and the
+/// record's own time order are different things.
+const OUT_OF_ORDER_STEPS: [(&str, &str, &str, u64); 3] = [
+    (
+        "verification",
+        "cargo test --locked --test features_runner",
+        "2026-10-16T10:00:00.000Z",
+        60_000,
+    ),
+    (
+        "lint",
+        "cargo clippy --locked --all-targets -- -D warnings",
+        "2026-10-16T09:00:00.000Z",
+        120_000,
+    ),
+    (
+        "coverage",
+        "cargo llvm-cov nextest --locked --test features_runner",
+        "2026-10-16T11:00:00.000Z",
+        300_000,
+    ),
+];
+
+/// Seed the fixture project's record with steps whose file order contradicts
+/// their recorded time order, under `scope`. A report that reused the store's
+/// line order (or the entry ids, which are minted at append time and therefore
+/// file-ordered too) cannot order these entries correctly. Returns the written
+/// entries.
+pub fn seed_out_of_order_steps(env: &common::TestEnv, scope: &Scope) -> Vec<HistoryEntry> {
+    let mut history = SeededHistory::new();
+    for (name, label, at, duration_ms) in OUT_OF_ORDER_STEPS {
+        let entry = history.span(scope, "step", name, at, duration_ms);
+        history.label(entry, label);
+    }
+    history.seed(env)
+}
+
 /// The names of a directory's entries, empty when the directory does not
 /// exist.
 fn read_dir_names(dir: &Path) -> Vec<String> {

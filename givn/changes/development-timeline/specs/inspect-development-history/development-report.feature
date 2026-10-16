@@ -29,7 +29,7 @@ Feature: Development Report
     Then the report names the topic's steps under the topic scope
     And the report names no change that does not exist yet
 
-  @givn.added @wip
+  @givn.added
   Scenario: The report orders the timeline by recorded time, not by store position
     Given a change "demo" whose record holds an entry appended after an entry with a later end time
     When the developer generates the development report for "demo"

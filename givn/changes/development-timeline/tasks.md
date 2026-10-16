@@ -6401,23 +6401,132 @@ name it.
       the append lock and is therefore also file-ordered — that is the bug this
       scenario exists to prevent.
     - RED expected failure: the ordering Then step is undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report orders the timeline by recorded time, not by store position"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report orders the timeline by recorded time, not by store position"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 6.78s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report orders the timeline by recorded time, not by store position
+           ✔  Given a change "demo" whose record holds an entry appended after an entry with a later end time
+           ✔  When the developer generates the development report for "demo"
+           ✘  Then the report orders the entries by their recorded end time
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:36:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+
+        thread 'main' (2587728) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — the ordering Then step matches no
+        function, and the run stops there. The fixture Given (a record whose
+        second entry really ended earlier than the first, seeded through the
+        store's own append path, so the entry ids are file-ordered too) and the
+        When are in place. The report at this revision draws the timeline in the
+        store's line order: `build_report_model` kept the lines exactly as
+        `entries_in_scope` read them, and the drawn spans and axis inherited
+        that order.
         ```
-  - [ ] **GREEN** — implement the `at` ordering in the model. Files:
+  - [x] **GREEN** — implement the `at` ordering in the model. Files:
         `src/cli/timeline.rs`, `tests/steps/development_report_steps.rs`,
         `tests/steps/development_timeline_support.rs` (the out-of-order seed).
         Compile first, re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.10s
+        BUILD=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report orders the timeline by recorded time, not by store position"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 9.92s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report orders the timeline by recorded time, not by store position
+           ✔  Given a change "demo" whose record holds an entry appended after an entry with a later end time
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report orders the entries by their recorded end time
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        3 steps (3 passed)
+        EXIT=0
+
+        Production files created/modified by this GREEN step:
+        - `src/cli/timeline.rs` (modified — `ordered_by_recorded_time` is the
+          report's one ordering: by `at`, `id` only as the tie breaker for two
+          entries that record the same instant, an unparsable `at` last;
+          `build_report_model` applies it to the window before it bands, ranks,
+          or scales, so the model's entries, every band's spans, and the drawn
+          axis share it. The axis strip arrived with it: `TimeScale::ticks`
+          picks round instants at the smallest step that keeps the count within
+          `MAX_TICKS`, `TimeScale::label` renders each tick's time of day, and
+          `render_axis` draws them above the band rows — all derived from the
+          embedded timestamps, never the wall clock);
+        - `assets/timeline/report.html` (modified — the tick text style, in the
+          muted token with tabular numerals);
+        - `tests/steps/development_report_steps.rs` (modified — the
+          out-of-order Given, the drawn-span and drawn-tick readers, and the
+          ordering Then step, which first proves the fixture's file order
+          contradicts its time order);
+        - `tests/steps/development_timeline_support.rs` (modified — the
+          out-of-order seed: `seed_out_of_order_steps` writes a record whose
+          second entry really ended earlier than the first).
         ```
-  - [ ] **REFACTOR** — one ordering comparator applied to every band; re-run →
+  - [x] **REFACTOR** — one ordering comparator applied to every band; re-run →
         still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The ordering is now visibly one comparator for the whole report: the
+        window is ordered by `at` once, before it is banded, ranked, or scaled, so
+        every band's spans, the drawn axis, and the summary inherit that one
+        order — `bands_for` states the rule instead of re-sorting anything. The
+        summary's elapsed time dropped the second time scan it no longer needed:
+        `recorded_span` reads the ordered window's two ends (the window is
+        ordered, so its ends are its extremes) and answers "not measured" when
+        an end is unreadable. No behaviour change: same order, same elapsed,
+        same rendering.
+
+        $ cargo fmt --all -- --check
+        FMT OK
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.50s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report orders the timeline by recorded time, not by store position"
+        Feature: Development Report
+          Scenario: The report orders the timeline by recorded time, not by store position
+           ✔  Given a change "demo" whose record holds an entry appended after an entry with a later end time
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report orders the entries by their recorded end time
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        3 steps (3 passed)
+        EXIT=0
+
+        Regression runs of the four committed scenarios this bundle's shared
+        model and renderer feed (all five scenarios of the bundle now run green
+        together):
+
+        $ ... --exact "...::The report ranks the longest single step first"
+        1 feature, 1 scenario (1 passed), 3 steps (3 passed)        EXIT=0
+        $ ... --exact "...::The report totals the time spent waiting for questions"
+        1 feature, 1 scenario (1 passed), 3 steps (3 passed)        EXIT=0
+        $ ... --exact "...::The report totals token usage per turn and per subagent"
+        1 feature, 1 scenario (1 passed), 5 steps (5 passed)        EXIT=0
+        $ ... --exact "...::The report of an ideation topic names the work done before the change exists"
+        1 feature, 1 scenario (1 passed), 4 steps (4 passed)        EXIT=0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
         the scenario title `The report orders the timeline by recorded time, not
