@@ -14,7 +14,7 @@
 //!   the event subscription for opencode, and a payload-on-stdin invocation of
 //!   the generated Claude shim with a fixture transcript.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 
@@ -32,13 +32,36 @@ pub fn declare_verify_command(env: &common::TestEnv, command: &str) {
     common::write_commands_yaml(&env.path("givn/commands.yaml"), &yaml);
 }
 
+/// The development record file of the project rooted at `root`:
+/// `givn/history/events.jsonl`, the store's own path.
+pub fn store_file(root: &Path) -> PathBuf {
+    root.join("givn/history/events.jsonl")
+}
+
+/// Make the record unwritable inside `env`: a directory where the store's file
+/// belongs makes the append fail deterministically (`EISDIR`) without
+/// depending on file permissions — a `chmod` fixture is unreliable when the
+/// suite runs as root. The mechanism is the fixture's: the production code is
+/// never asked to simulate a failure. The fixture project recorded its own
+/// setup commands, so the existing store file is removed first.
+pub fn make_record_unwritable(env: &common::TestEnv) {
+    let path = store_file(&env.root());
+    match std::fs::remove_file(&path) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => panic!("clear the store {}: {error}", path.display()),
+    }
+    std::fs::create_dir_all(&path)
+        .unwrap_or_else(|error| panic!("create the unwritable store {}: {error}", path.display()));
+}
+
 /// The development record of the project rooted at `root`, read the way a
 /// consumer reads it: `givn/history/events.jsonl`, one JSON object per line.
 /// Every line must parse as a JSON object — that is the store's own contract,
 /// so a malformed line fails the scenario instead of being skipped, and a
 /// missing store fails it too (the scenario ran a command that records).
 pub fn record_entries(root: &Path) -> Vec<Value> {
-    let path = root.join("givn/history/events.jsonl");
+    let path = store_file(root);
     let text = std::fs::read_to_string(&path)
         .unwrap_or_else(|error| panic!("read the development record {}: {error}", path.display()));
     text.lines()

@@ -944,7 +944,7 @@ name it.
 
 ## Task 2 — `A verification run is recorded as its own step` (`development-record`, added)
 
-- [ ] **Scenario: `A verification run is recorded as its own step`**
+- [x] **Scenario: `A verification run is recorded as its own step`**
   - Design constraints:
     - Capture point: `src/subprocess.rs::sh_streamed` is the single
       shell-execution choke point → one `step` entry per shell command with its
@@ -962,30 +962,128 @@ name it.
       the verification run, `duration_ms >= 1000`, and an `outcome`; the entry is
       parented to the `givn check tasks` command entry.
     - RED expected failure: the verification-step Then steps are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A verification run is recorded as its own step"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A verification run is recorded as its own step"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: A verification run is recorded as its own step
+           ✔  Given a project root with givn/ initialised
+           ✘  And a change "demo" with a verification command that takes measurable time
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:16:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+
+        thread 'main' (2013002) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT 101
+
+        Category: undefined step (a genuinely new Given — the fixture's measurable verification command —
+        plus the two new Then steps). Exit 101, not 0 and not a silent skip.
         ```
-  - [ ] **GREEN** — wire the choke point and the check boundary. Files:
+  - [x] **GREEN** — wire the choke point and the check boundary. Files:
         `src/subprocess.rs`, `src/cli/check.rs`, `src/history.rs` (if the span
         guard needs the parent link), the step file
         `tests/steps/development_record_steps.rs` and the support file's
         `commands.yaml` fixture. Compile first, re-run the same command → exit 0.
         Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.61s        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A verification run is recorded as its own step"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: A verification run is recorded as its own step
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" with a verification command that takes measurable time
+           ✔  When the user runs `givn check tasks --change demo`
+           ✔  Then the development record holds one entry for the verification run
+           ✔  And that entry carries a duration of at least one second
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT 0
+
+        Production files created/modified by this scenario:
+          src/subprocess.rs    the shell choke point records one `step` entry per shell command: the
+                               caller's existing label as the entry's `name`, the command's text as
+                               the bounded subject `label`, the duration measured with
+                               `Instant::now()..drop` — the same measurement shape
+                               `src/cli/archive.rs::run_scope` already uses — and `ok`/`failed` from
+                               the exit status. No caller gained a branch: hooks.rs/archive.rs/
+                               coverage_gate.rs call it unchanged.
+          src/cli/check.rs     the mandatory-check boundary is one `phase` entry (name "mandatory
+                               checks", label = the artifact id), measured across
+                               `run_mandatory_checks` and parented to the check command's entry
+          src/history.rs       `HistoryRecorder` now buffers entries (`record`) and flushes them in
+                               `finish`: the process's `command` entry is appended first, and every
+                               buffered entry follows it with `parent` = the command's minted id, so
+                               every parent link names an entry this process wrote; `Span` is the
+                               real `Instant::now()..drop` guard (kind/label/mark, records on drop,
+                               `unknown` when unmarked); `HistoryStore::append` returns the first
+                               minted id so the parent link needs no second id source
+          tests/steps/development_timeline_support.rs  `SLOW_VERIFY_COMMAND = "sleep 2"` (a real
+                               subprocess, never a mocked clock) + `declare_verify_command`, which
+                               writes the temp project's `verify.command` through the existing
+                               fixture helper `common::write_commands_yaml`
+          tests/steps/development_record_steps.rs      the new Given (change + measurable verification
+                               command) and the two Then bindings: exactly one `step` entry under the
+                               check command's id (which is also the parent-link assertion), its label
+                               names the verification run and is ≤ 120 characters; duration ≥ 1000 ms
+                               and a valid outcome
         ```
-  - [ ] **REFACTOR** — tighten the choke point so no caller gains an
+  - [x] **REFACTOR** — tighten the choke point so no caller gains an
         instrumentation branch, no behaviour change; re-run → still exit 0.
         Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        $ cargo fmt --all && cargo fmt --all -- --check                                  EXIT 0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.49s        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A verification run is recorded as its own step"
+        Feature: Development Record
+          Scenario: A verification run is recorded as its own step
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" with a verification command that takes measurable time
+           ✔  When the user runs `givn check tasks --change demo`
+           ✔  Then the development record holds one entry for the verification run
+           ✔  And that entry carries a duration of at least one second
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT 0
+
+        Cleanups, no behaviour change: the two places that built a `HistoryEntry` from scratch
+        (`finish` and `Span::drop`) now share `HistoryRecorder::entry` — the schema version, the end
+        timestamp, `givn` as source, no parent, no duration — so an entry's base shape has one home;
+        the choke point keeps its single guard site and its callers stay branch-free; the new test
+        code was formatted (`cargo fmt --all -- --check` was red before this step).
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+  - [x] **COMMIT** — `c3aa8dc5a547e28d35c40a53a1d5c94ca2209f11` — `feat(development-record): <release note>` with
         the scenario title `A verification run is recorded as its own step` in
         the body. Record the revision identifier.
+        ```
+        $ givn commit -m "feat(development-record): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        A verification run is recorded as its own step"
+        [13:18:56] committed revision on the Git backend
+        $ git rev-parse HEAD
+        c3aa8dc5a547e28d35c40a53a1d5c94ca2209f11
+        ```
+        One atomic revision: RED+GREEN+REFACTOR together — the delta spec (this scenario's `@wip`
+        removed), `src/subprocess.rs`, `src/cli/check.rs`, `src/history.rs`, both test files, and this
+        file's Task 1 revision record.
 
 ## Task 3 — `A record that cannot be written never fails the command it records` (`development-record`, added)
 
@@ -1008,23 +1106,145 @@ name it.
       silent fallback that writes elsewhere.
     - RED expected failure: the exit-0 step and the stderr-warning step are
       undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A record that cannot be written never fails the command it records"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A record that cannot be written never fails the command it records"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: A record that cannot be written never fails the command it records
+           ✔  Given a project root with givn/ initialised
+           ✘  And the development record cannot be written
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:24:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+
+        thread 'main' (2018555) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT 101
+
+        Category: undefined step — the fixture Given (`the development record cannot be written`) and
+        the stderr-warning Then do not exist yet, so the scenario fails instead of passing or
+        skipping (exit 101, never 0). Every other scenario kept its `@wip` tag.
         ```
-  - [ ] **GREEN** — implement the best-effort write path and the warning
+  - [x] **GREEN** — implement the best-effort write path and the warning
         text. Files: `src/history.rs`, `tests/steps/development_record_steps.rs`
         (plus the unwritable-store fixture in the support file). Compile first,
         re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A record that cannot be written never fails the command it records"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 3.34s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: A record that cannot be written never fails the command it records
+           ✔  Given a project root with givn/ initialised
+           ✔  And the development record cannot be written
+           ✔  When the user runs `givn status`
+           ✔  Then the command exits 0
+           ✔  And stderr warns that the development record could not be written
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT 0
+
+        Production files created/modified by this scenario: none — investigated, not skipped.
+        The best-effort arm and its single warning already exist: `HistoryRecorder::finish`
+        (src/history.rs) routes a failed append to `HistoryRecorder::warn`, which prints
+        `warning: the development record could not be written to <store path>: <error>`; that
+        arm is what Task 2's flush introduced. This scenario therefore pins the minimal
+        guarantee black-box rather than re-implementing it, and all GREEN work is the real
+        fixture plus real assertions (never a mocked recorder).
+
+        Discrimination proof — controlled omission (the guarantee already holds, so a green
+        run alone could also mean "the fixture never failed the write"). For exactly one run
+        the best-effort arm was replaced by a hard failure
+        (`Err(error) => { eprintln!("error: …"); std::process::exit(1); }`) and the scenario
+        went red:
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A record that cannot be written never fails the command it records"   # with the controlled omission applied
+        Feature: Development Record
+          Scenario: A record that cannot be written never fails the command it records
+           ✔  Given a project root with givn/ initialised
+           ✔  And the development record cannot be written
+           ✔  When the user runs `givn status`
+           ✘  Then the command exits 0
+              Step panicked. Captured output: expected exit 0, got Some(1): stderr=error: the development record could not be written: Is a directory (os error 21)
+        [Summary]
+        1 scenario (1 failed)
+        EXIT 101
+
+        The omission was reverted immediately (`git diff src/history.rs` is empty) and the
+        same command re-ran green (exit 0, pasted above). Together this proves the fixture
+        really fails the append (`EISDIR`) and the scenario really discriminates best-effort
+        from fail-fast.
+
+        Test/fixture files touched:
+          tests/steps/development_timeline_support.rs  `store_file` (the store's own path,
+                               shared with `record_entries`) and `make_record_unwritable`:
+                               the store's file is replaced by a directory, so the append fails
+                               with `EISDIR` deterministically — no `chmod`, so the fixture also
+                               holds when the suite runs as root. The fixture project records its
+                               own setup commands, so the helper clears the file it already wrote.
+          tests/steps/development_record_steps.rs      the Given (applies the fixture) and the
+                               Then: exactly one stderr line names the development record (no
+                               retry loop), it is a `warning:` naming the store path, and the
+                               store path is still the blocking directory — no entry, and no
+                               silent fallback that writes elsewhere.
         ```
-  - [ ] **REFACTOR** — ensure the warning is emitted from exactly one place and
+  - [x] **REFACTOR** — ensure the warning is emitted from exactly one place and
         no caller checks a recorder result; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        $ cargo fmt --all -- --check                                                 EXIT 0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.42s      EXIT 0
+
+        The two properties this step names, checked rather than asserted:
+        $ grep -rn "could not be written" src/
+        src/history.rs:275:            "warning: the development record could not be written to {}: {error}",
+        $ grep -n "pub fn record\|pub fn span\|pub fn finish\|fn warn\|self.warn(\|recorder.finish\|history::install" src/history.rs src/main.rs
+        src/history.rs:216:    pub fn record(&self, entry: HistoryEntry) {
+        src/history.rs:224:    pub fn span(&self, name: &str) -> Span<'_> {
+        src/history.rs:243:    pub fn finish(&self, outcome: &str, exit_code: i32) {
+        src/history.rs:250:            Err(error) => return self.warn(&error),
+        src/history.rs:259:            self.warn(&error);
+        src/history.rs:273:    fn warn(&self, error: &std::io::Error) {
+        src/main.rs:324:    let recorder = history::install(&command_name, &invocation_label());
+        src/main.rs:331:    recorder.finish(outcome, exit_code);
+        → one emitter (`warn`), reached only from `finish`; `record`, `span` and `finish` all
+        return `()`, so no caller can branch on a recorder result (main.rs drops the `()`).
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A record that cannot be written never fails the command it records"
+        Feature: Development Record
+          Scenario: A record that cannot be written never fails the command it records
+           ✔  Given a project root with givn/ initialised
+           ✔  And the development record cannot be written
+           ✔  When the user runs `givn status`
+           ✔  Then the command exits 0
+           ✔  And stderr warns that the development record could not be written
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT 0
+
+        Cleanups, no behaviour change: `store_file` is now the one place the fixtures write the
+        store's path (`record_entries` uses it instead of repeating the literal, so the read
+        path and the blocking fixture can never disagree); the step file's two `crate::steps`
+        imports are one `use` group. Nothing else in the GREEN diff needed cleaning — the
+        warning already had exactly one emitter, which is why this step is a proof step here.
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
         the scenario title `A record that cannot be written never fails the
