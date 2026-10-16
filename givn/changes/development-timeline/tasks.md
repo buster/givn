@@ -9686,6 +9686,55 @@ name it.
 
 ---
 
+## Final scope runs (2026-10-16, after Task E9)
+
+Both declared scopes were run on the complete delta, after Task E9's commit and
+with no `@wip` tag left anywhere in the delta (`grep -rn "@wip"
+givn/changes/development-timeline/specs/ | wc -l` → `0`):
+
+```
+$ GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e
+     PASS [   2.790s] (35/35) …inspect-development-history/development-record.feature::A verification run is recorded as its own step
+────────────
+     Summary [   3.611s] 35 tests run: 35 passed, 8 skipped
+NON_E2E_EXIT=0                                    # verify.command → 35 scenarios
+
+$ GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --e2e
+     PASS [   1.760s] (3/8) …development-report.feature::Consumer zooms the timeline to a shorter time range
+     PASS [   2.177s] (4/8) …development-report.feature::Consumer generates the development report for a change
+     PASS [   2.486s] (5/8) …development-report.feature::Consumer opens the report of a scope with no recorded activity
+     PASS [   2.995s] (6/8) …development-report.feature::Consumer opens the generated development report in a browser
+     PASS [   3.789s] (7/8) …development-report.feature::Consumer selects a timeline element and reads its details
+     PASS [   4.972s] (8/8) …agent-activity-reporting.feature::Consumer installs the agent reporter and its reported activity lands in the record
+────────────
+     Summary [   4.973s] 8 tests run: 8 passed, 35 skipped
+E2E_EXIT=0                                        # verify.e2e_command → 8 scenarios
+```
+
+The eight `@e2e` scenarios' evidence directories, as committed (each pair from
+its own scenario's revision; a full e2e scope run re-captures every pair, so the
+pairs were restored to their revisions' captures afterwards):
+
+```
+$ for d in givn/changes/development-timeline/evidence/visual/*/; do printf '%-72s %s\n' "$(basename $d)" "$(ls $d | tr '\n' ' ')"; done
+consumer-generates-the-development-report-for-a-change                   desktop.png mobile.png
+consumer-installs-the-agent-reporter-and-its-reported-activity-lands-in-the-record desktop.png mobile.png
+consumer-opens-the-generated-development-report-in-a-browser             desktop.png mobile.png
+consumer-opens-the-report-of-a-scope-with-no-recorded-activity           desktop--empty.png desktop.png mobile--empty.png mobile.png
+consumer-reads-the-development-record-as-machine-readable-output         desktop.png mobile.png
+consumer-runs-a-lifecycle-step-and-reads-its-recorded-actions            desktop.png mobile.png
+consumer-selects-a-timeline-element-and-reads-its-details                desktop.png mobile.png
+consumer-zooms-the-timeline-to-a-shorter-time-range                      desktop.png mobile.png
+```
+
+Every file is non-empty (so `src/integrity_hook.rs::check_visual_evidence`
+finds a capture for every `@e2e` scenario and both declared-state files for the
+empty-scope scenario), and `cargo fmt --all -- --check`,
+`cargo clippy --locked --all-targets -- -D warnings`, and `node --check` on the
+asset's extracted inline layer were green at every commit of the tier.
+
+---
+
 **Done when:** every box above is checked with its pasted evidence and revision
 identifier, `verify.command` (`./run-tests.sh --non-e2e`) and
 `verify.e2e_command` (`./run-tests.sh --e2e`) both exit 0 on the full suite, the
