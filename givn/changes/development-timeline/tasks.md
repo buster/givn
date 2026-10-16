@@ -5691,10 +5691,25 @@ name it.
         $ ... --exact "...::Reported token usage is recorded with the model that produced it"
         1 scenario (1 passed), 4 steps (4 passed)        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+  - [x] **COMMIT** — `506dfe273d2fe8b84efaaa2718f85d71c5feb6cf` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `Token usage read from the harness's own session
         record is recorded with its model` in the body. Record the revision
         identifier.
+        ```
+        $ GIVN_ATTRIBUTION_ACTIVE=1 GIVN_ATTRIBUTION_LLM=deepseek/deepseek-flash \
+          GIVN_ATTRIBUTION_REASONING=max GIVN_ATTRIBUTION_HARNESS=omp \
+          ./target/debug/givn commit -m "feat(agent-activity-reporting): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        Token usage read from the harness's own session record is recorded with its model"
+        [16:22:00] committed revision on the Git backend
+        EXIT=0
+
+        Revision 506dfe273d2fe8b84efaaa2718f85d71c5feb6cf touches exactly this
+        scenario's files: `src/cli/history.rs`, the two step files, the delta
+        `.feature`'s `@wip` removal, and this task file's evidence. The shim
+        asset is unchanged — the design keeps it a three-line pipe with no logic
+        beyond the pipe.
+        ```
 
 ## Task 25 — `The report ranks the longest single step first` (`development-report`, added)
 
