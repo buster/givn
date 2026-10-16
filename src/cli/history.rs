@@ -15,7 +15,7 @@ use anyhow::{Context, Result};
 use serde_json::Value;
 
 use crate::history::{
-    HistoryEntry, HistoryStore, Scope, bound_label, parse_rfc3339_ms, store_path,
+    HistoryEntry, HistoryStore, Scope, parse_rfc3339_ms, reported_label, store_path,
 };
 
 /// The intake payload: one reporter flush — the optional scope overrides and
@@ -87,6 +87,8 @@ impl IngestedEvent {
             "tool" => Err("missing required field `tool`".to_string()),
             "subagent" if self.subagent.is_some() => Ok(()),
             "subagent" => Err("missing required field `subagent`".to_string()),
+            "question" if self.label.is_some() => Ok(()),
+            "question" => Err("missing required field `label`".to_string()),
             kind => Err(format!("unknown kind `{kind}`")),
         }
     }
@@ -111,8 +113,24 @@ impl IngestedEvent {
                     self.map_subagent(scope, identity, batch);
                 }
             }
+            "question" => {
+                if let Some(question) = self.label.as_deref() {
+                    batch.push(self.question_entry(scope, question), batch.turn);
+                }
+            }
             _ => {}
         }
+    }
+
+    /// The one `question` entry a reported wait produces: the wait is its own
+    /// span, never merged into the turn around it, and its label is the
+    /// question's first line only — the complete question text is never stored.
+    fn question_entry(&self, scope: &Scope, question: &str) -> HistoryEntry {
+        let mut entry = HistoryEntry::reported(scope.clone(), "question", "question", &self.at);
+        entry.label = Some(reported_label("question", question));
+        entry.duration_ms = self.duration_ms;
+        entry.outcome = self.outcome_word();
+        entry
     }
 
     /// The one `tool` entry a reported tool call produces: the harness tool
@@ -120,7 +138,10 @@ impl IngestedEvent {
     /// bounded-label path, and the harness's own measured duration.
     fn tool_entry(&self, scope: &Scope, tool: &str) -> HistoryEntry {
         let mut entry = HistoryEntry::reported(scope.clone(), "tool", tool, &self.at);
-        entry.label = self.label.as_deref().map(bound_label);
+        entry.label = self
+            .label
+            .as_deref()
+            .map(|label| reported_label("tool", label));
         entry.duration_ms = self.duration_ms;
         entry.outcome = self.outcome_word();
         entry

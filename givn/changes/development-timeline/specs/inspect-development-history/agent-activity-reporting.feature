@@ -17,7 +17,7 @@ Feature: Agent Activity Reporting
     Then the record holds one entry for that subagent
     And that entry names the subagent and spans its start and its end
 
-  @givn.added @wip
+  @givn.added
   Scenario: A question wait is recorded with its duration
     Given a change "demo" with reported agent activity
     When the agent reports that it asked a question and resumed

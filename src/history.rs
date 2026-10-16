@@ -465,6 +465,18 @@ pub fn bound_label(subject: &str) -> String {
     bounded
 }
 
+/// The bounded subject label of a reported event: the record's one label path,
+/// so every reported subject is bounded the same way and each kind's own rule
+/// lives here — only a question's first line is kept, because the complete
+/// question text is never stored (D2).
+pub fn reported_label(kind: &str, subject: &str) -> String {
+    let subject = match kind {
+        "question" => subject.lines().next().unwrap_or_default(),
+        _ => subject,
+    };
+    bound_label(subject)
+}
+
 /// The project's store path: `givn/history/events.jsonl`.
 pub fn store_path(root: &Path) -> PathBuf {
     root.join("givn").join("history").join("events.jsonl")
