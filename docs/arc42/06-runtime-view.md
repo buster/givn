@@ -535,15 +535,19 @@ still stored, so a stale reporter degrades to rejected events rather than a
 corrupt record. The command exits `0` whenever the payload was read and `2` when
 stdin is not readable JSON at all.
 
-Three reporters feed that intake, one per supported harness, and each is
-installed beside the commit-attribution integration that harness already gets
-(`src/skills/targets.rs`). They differ only in where their input comes from:
+Four reporters feed that intake, one per supported harness, and each is
+installed in that harness's own generated locations (`src/skills/targets.rs`).
+Maki is the exception to "beside the commit-attribution integration that harness
+already gets": it has no attribution asset, so its three files (the module, the
+merged grants, and the merged `init.lua` fence) are its only integration. They
+differ only in where their input comes from:
 
 | Harness | Capture order |
 |---|---|
 | omp | one in-process session: `pi.on` handlers collect turn, tool, message, and question events plus `task:subagent:lifecycle` frames, buffered per turn and flushed at turn end and at `session_shutdown` (2 s budget) |
 | opencode | one in-process session: `setup(ctx)` registers the domain hooks and one `ctx.event.subscribe` iterable, buffers the events (which carry their own epoch-millisecond `created` timestamps) and flushes at step end and at `session.execution.*` |
 | Claude Code | one process per hook: each event's payload is piped to `givn history harness-hook --harness claude`, which maps it, consumes or writes the pending-state entry for its call id, reads the session record at `Stop`/`SubagentStop`/`SessionEnd` for token usage, and appends through the same intake path |
+| Maki | one in-process Lua plugin per session: `setup()` registers the autocmds, which fill a bounded buffer, and the flush writes the payload to a temporary file, runs `maki.fn.jobstart({ "sh", "-c", "cat <payload-file> | <givn> history ingest" })` and awaits it with `maki.fn.jobwait(id, timeout)` inside the callback that triggered it (turn end, session end, or a session reset), because an unawaited task-scope job is lost; the harness's own `duration_ms` is used where `ToolDone` supplies it, and a subagent span carries `data.usage = "unavailable"` because `TurnEnd` fires only for the main session |
 
 The asymmetry is deliberate and documented per harness in the change design:
 omp and opencode stamp their own timestamps where their events do not carry

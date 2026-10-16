@@ -63,16 +63,20 @@ directory exists, so even the current-state answer has nothing to say.
   rewritten.
 - **Every supported harness reports its own activity through the same intake.**
   "Supported" is the repository's own contract, not an assumption: the agent
-  targets are `opencode`, `agents`, `claude`, and `omp`, and three of them
-  execute the agent's work and therefore have activity to report — opencode,
-  Claude Code, and omp. Each receives its own generated reporter alongside the
-  commit-attribution integration it already gets, and every reporter delivers
-  through one Givn interface, so the record has one shape and one privacy bound
-  regardless of which harness produced the activity. The `agents` target is a
-  skills mirror that no harness executes; it receives no reporter, and the
-  report simply has no activity for it. A harness that cannot expose a signal
-  (token usage, subagent identity, or a question wait) contributes what it
-  does expose, and the report states the gap rather than inventing a value.
+  targets are `opencode`, `agents`, `claude`, `omp`, and `maki`, and four of
+  them execute the agent's work and therefore have activity to report —
+  opencode, Claude Code, omp, and Maki. Each receives its own generated reporter
+  in that harness's own location, and every reporter delivers through
+  one Givn interface, so the record has one shape and one privacy bound
+  regardless of which harness produced the activity. Maki receives Givn's normal
+  guidance too — skills in `.maki/skills/` and its own commands in
+  `.maki/commands/`, the only project command location Maki reads that Givn can
+  write — so a project that selects `maki` alone is fully equipped. The
+  `agents` target is a skills mirror that no harness executes; it receives no
+  reporter, and the report simply has no activity for it. A harness that cannot
+  expose a signal (token usage, subagent identity, or a question wait)
+  contributes what it does expose, and the report states the gap rather than
+  inventing a value.
 - **The developer asks for the report and reads it in a browser.** For a given
   change or ideation, Givn produces one interactive report: a zoomable timeline
   of the whole development, the phases in order, the longest steps, the
@@ -114,7 +118,8 @@ no second use case includes it.
   backfills them from revision history.
 - **No reporter outside the repository's supported harness set.** A harness the
   project does not support as an agent target gets no generated reporter, even
-  though the intake interface is not specific to any one harness.
+  though the intake interface is not specific to any one harness. Maki is in
+  that set; the set is the code's own target list, not a per-change choice.
 - **No remote or shared history.** Nothing is uploaded, aggregated across
   repositories, or published by continuous integration. The report is a local
   file.
