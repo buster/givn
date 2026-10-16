@@ -247,9 +247,12 @@ pub fn ignore_entries() -> Vec<String> {
         ".omp/commands/givn-*.md".to_string(),
         ".omp/commands/grill-*.md".to_string(),
         ".opencode/plugins/givn-attribution.js".to_string(),
+        ".opencode/plugins/givn-timeline.js".to_string(),
         ".claude/hooks/givn-attribution.sh".to_string(),
+        ".claude/hooks/givn-timeline.sh".to_string(),
         ".claude/settings.local.json".to_string(),
         ".omp/hooks/pre/givn-attribution.js".to_string(),
+        ".omp/hooks/pre/givn-timeline.js".to_string(),
         ".githooks/commit-msg".to_string(),
     ]
 }
@@ -260,9 +263,12 @@ pub fn ignore_entries() -> Vec<String> {
 pub fn is_rule_path(relative: &str) -> bool {
     if relative == ".githooks/commit-msg"
         || relative == ".opencode/plugins/givn-attribution.js"
+        || relative == ".opencode/plugins/givn-timeline.js"
         || relative == ".claude/hooks/givn-attribution.sh"
+        || relative == ".claude/hooks/givn-timeline.sh"
         || relative == ".claude/settings.local.json"
         || relative == ".omp/hooks/pre/givn-attribution.js"
+        || relative == ".omp/hooks/pre/givn-timeline.js"
     {
         return true;
     }
@@ -574,8 +580,11 @@ mod tests {
             ".opencode/commands/givn-design.md",
             ".opencode/commands/grill-me.md",
             ".opencode/plugins/givn-attribution.js",
+            ".opencode/plugins/givn-timeline.js",
             ".claude/hooks/givn-attribution.sh",
+            ".claude/hooks/givn-timeline.sh",
             ".claude/settings.local.json",
+            ".omp/hooks/pre/givn-timeline.js",
             ".githooks/commit-msg",
         ];
         for path in rules {

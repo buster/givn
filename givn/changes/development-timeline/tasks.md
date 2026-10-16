@@ -4983,13 +4983,58 @@ name it.
       `--exact` command.
     - RED expected failure: the guidance Then step is undefined for all three
       rows.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Every supported harness receives a development reporter"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Every supported harness receives a development reporter"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 4.95s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario Outline: Every supported harness receives a development reporter
+           ✔  Given a project root without a givn/ directory
+           ✔  When the consumer runs `givn init --agents omp`
+           ✔  Then the command exits 0
+           ✘  And the project's generated guidance for "omp" includes the development reporter
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:75:5
+              Step doesn't match any function
+          Scenario Outline: Every supported harness receives a development reporter
+           ✔  Given a project root without a givn/ directory
+           ✔  When the consumer runs `givn init --agents opencode`
+           ✔  Then the command exits 0
+           ✘  And the project's generated guidance for "opencode" includes the development reporter
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:75:5
+              Step doesn't match any function
+          Scenario Outline: Every supported harness receives a development reporter
+           ✔  Given a project root without a givn/ directory
+           ✔  When the consumer runs `givn init --agents claude`
+           ✔  Then the command exits 0
+           ✘  And the project's generated guidance for "claude" includes the development reporter
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:75:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        3 scenarios (3 failed)
+        12 steps (9 passed, 3 failed)
+
+        thread 'main' (2514704) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        3 steps failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — the guidance Then step matches no
+        function for every Examples row, exactly as the task predicts. The
+        `Given`/`When`/`Then the command exits 0` steps are the repository's
+        existing shared steps; `givn init --agents <target>` already exits 0
+        today, so the RED lands on the new assertion, which fails before the
+        reporter exists.
         ```
-  - [ ] **GREEN** — create the three assets, install them for their targets, and
+  - [x] **GREEN** — create the three assets, install them for their targets, and
         extend the Claude settings merge. Files:
         `assets/agent-integrations/omp/givn-timeline.js`,
         `assets/agent-integrations/opencode/givn-timeline.js`,
@@ -4999,12 +5044,125 @@ name it.
         syntax-check the assets (`node --check` for the two `.js` assets,
         `sh -n` for the shim), re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ node --check assets/agent-integrations/omp/givn-timeline.js
+        OMP OK
+        $ node --check assets/agent-integrations/opencode/givn-timeline.js
+        OPENCODE OK
+        $ sh -n assets/agent-integrations/claude/givn-timeline.sh
+        SH OK
+
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.19s
+        EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Every supported harness receives a development reporter"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 6.79s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario Outline: Every supported harness receives a development reporter
+           ✔  Given a project root without a givn/ directory
+           ✔  When the consumer runs `givn init --agents omp`
+           ✔  Then the command exits 0
+           ✔  And the project's generated guidance for "omp" includes the development reporter
+          Scenario Outline: Every supported harness receives a development reporter
+           ✔  Given a project root without a givn/ directory
+           ✔  When the consumer runs `givn init --agents opencode`
+           ✔  Then the command exits 0
+           ✔  And the project's generated guidance for "opencode" includes the development reporter
+          Scenario Outline: Every supported harness receives a development reporter
+           ✔  Given a project root without a givn/ directory
+           ✔  When the consumer runs `givn init --agents claude`
+           ✔  Then the command exits 0
+           ✔  And the project's generated guidance for "claude" includes the development reporter
+        [Summary]
+        1 feature
+        3 scenarios (3 passed)
+        12 steps (12 passed)
+        EXIT=0
+
+        Production files created/modified by this GREEN step:
+        - `assets/agent-integrations/omp/givn-timeline.js` (new — the omp
+          reporter: one buffer per session, `Date.now()` stamps for the tool,
+          turn, and subagent spans omp does not time, the `ask` tool's wait, and
+          a flush to `givn history ingest` at the turn boundary and at
+          `session_shutdown`);
+        - `assets/agent-integrations/opencode/givn-timeline.js` (new — the
+          opencode V2 plugin: `id: "givn-timeline"`, `setup(ctx)` registering
+          the tool/permission hooks beside one `ctx.event.subscribe` iterable
+          over the server's event stream, with the harness's own `created`
+          timestamps for the durations and one flush per step boundary);
+        - `assets/agent-integrations/claude/givn-timeline.sh` (new — the shim
+          that pipes its hook payload to the binary-side mapper);
+        - `src/skills/targets.rs` (modified — `sync_agent_integrations` installs
+          each reporter for its executing target, `managed_generated_paths`
+          lists the three reporter paths so `givn init`, `givn skills sync`, and
+          the managed upgrade keep them current, and `merge_claude_settings`
+          merges the reporter's per-event entries idempotently per
+          `(event, matcher, command)` beside — never over — the attribution
+          entry and user entries);
+        - `src/skills/rules.rs` (modified — `ignore_entries()` and
+          `is_rule_path()` carry the three reporter paths, so the `local-only`
+          policy keeps them out of a repository, and the rule-shape unit test
+          covers them);
+        - `tests/steps/agent_activity_reporting_steps.rs` (modified — the
+          guidance Then step reads the generated project file, asserts it is
+          the shipped reporter verbatim and delivers through the intake, and,
+          for Claude, that the shim is executable and the settings register
+          exactly the events the mapper reads).
+
+        Design-table notes (reported, not silently worked around): the omp and
+        opencode assets implement the design's tool/turn/subagent/question and
+        usage rows; the design's `session_start` session span and
+        `before_subagent_spawn` dispatch record have no scenario in this change
+        and no intake kind, and the opencode `session.usage.updated` /
+        `form.*` rows are not covered by any scenario — they are left for the
+        harness-driver bundle (Task E4) that owns those drivers.
         ```
-  - [ ] **REFACTOR** — one asset-to-target table instead of three bespoke
+  - [x] **REFACTOR** — one asset-to-target table instead of three bespoke
         branches; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        `sync_agent_integrations` is now one loop over the target's own
+        `AgentIntegration` table (`OPENCODE_INTEGRATIONS`, `OMP_INTEGRATIONS`,
+        `CLAUDE_INTEGRATIONS`, `Agents => &[]`), so each target's install set is
+        one place and the three `if targets.contains(…)` branches are gone. No
+        behaviour change: the same files land at the same paths with the same
+        executable bit, and the Claude settings merge still runs once for the
+        Claude target.
+
+        $ cargo fmt --all -- --check
+        (no output)
+        FMT OK
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.09s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Every supported harness receives a development reporter"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 5.76s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario Outline: Every supported harness receives a development reporter
+           ✔  Given a project root without a givn/ directory
+           ✔  When the consumer runs `givn init --agents omp`
+           ✔  Then the command exits 0
+           ✔  And the project's generated guidance for "omp" includes the development reporter
+          Scenario Outline: Every supported harness receives a development reporter
+           ✔  Given a project root without a givn/ directory
+           ✔  When the consumer runs `givn init --agents opencode`
+           ✔  Then the command exits 0
+           ✔  And the project's generated guidance for "opencode" includes the development reporter
+          Scenario Outline: Every supported harness receives a development reporter
+           ✔  Given a project root without a givn/ directory
+           ✔  When the consumer runs `givn init --agents claude`
+           ✔  Then the command exits 0
+           ✔  And the project's generated guidance for "claude" includes the development reporter
+        [Summary]
+        1 feature
+        3 scenarios (3 passed)
+        12 steps (12 passed)
+        EXIT=0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `Every supported harness receives a development

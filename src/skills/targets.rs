@@ -398,15 +398,18 @@ pub fn managed_generated_paths(project_root: &Path) -> Result<Vec<std::path::Pat
 
     if targets.contains(&AgentTarget::Opencode) {
         paths.push(project_root.join(".opencode/plugins/givn-attribution.js"));
+        paths.push(project_root.join(".opencode/plugins/givn-timeline.js"));
     }
 
     if targets.contains(&AgentTarget::Omp) {
         paths.push(project_root.join(".omp/hooks/pre/givn-attribution.js"));
+        paths.push(project_root.join(".omp/hooks/pre/givn-timeline.js"));
     }
 
     if targets.contains(&AgentTarget::Claude) {
         paths.push(project_root.join(".claude/settings.local.json"));
         paths.push(project_root.join(".claude/hooks/givn-attribution.sh"));
+        paths.push(project_root.join(".claude/hooks/givn-timeline.sh"));
     }
 
     for target in targets.iter().filter(|t| t.owns_commands()) {
@@ -432,38 +435,85 @@ pub fn managed_generated_paths(project_root: &Path) -> Result<Vec<std::path::Pat
     Ok(paths)
 }
 
+/// One generated agent integration: the asset shipped under
+/// `assets/agent-integrations/` and the project path it is installed at.
+struct AgentIntegration {
+    /// The project-relative install path.
+    relative: &'static str,
+    /// The asset path under `assets/`.
+    asset: &'static str,
+    /// Whether the installed file is executable.
+    executable: bool,
+}
+
+/// The integrations the opencode target receives.
+const OPENCODE_INTEGRATIONS: &[AgentIntegration] = &[
+    AgentIntegration {
+        relative: ".opencode/plugins/givn-attribution.js",
+        asset: "agent-integrations/opencode/givn-attribution.js",
+        executable: false,
+    },
+    AgentIntegration {
+        relative: ".opencode/plugins/givn-timeline.js",
+        asset: "agent-integrations/opencode/givn-timeline.js",
+        executable: false,
+    },
+];
+
+/// The integrations the omp target receives.
+const OMP_INTEGRATIONS: &[AgentIntegration] = &[
+    AgentIntegration {
+        relative: ".omp/hooks/pre/givn-attribution.js",
+        asset: "agent-integrations/omp/givn-attribution.js",
+        executable: false,
+    },
+    AgentIntegration {
+        relative: ".omp/hooks/pre/givn-timeline.js",
+        asset: "agent-integrations/omp/givn-timeline.js",
+        executable: false,
+    },
+];
+
+/// The integrations the claude target receives.
+const CLAUDE_INTEGRATIONS: &[AgentIntegration] = &[
+    AgentIntegration {
+        relative: ".claude/hooks/givn-attribution.sh",
+        asset: "agent-integrations/claude/givn-attribution.sh",
+        executable: true,
+    },
+    AgentIntegration {
+        relative: ".claude/hooks/givn-timeline.sh",
+        asset: "agent-integrations/claude/givn-timeline.sh",
+        executable: true,
+    },
+];
+
+/// The integrations one target receives: the table is the target's install
+/// set, so no branch here decides what a target gets.
+fn integrations_of(target: AgentTarget) -> &'static [AgentIntegration] {
+    match target {
+        AgentTarget::Opencode => OPENCODE_INTEGRATIONS,
+        AgentTarget::Omp => OMP_INTEGRATIONS,
+        AgentTarget::Claude => CLAUDE_INTEGRATIONS,
+        AgentTarget::Agents => &[],
+    }
+}
+
 fn sync_agent_integrations(project_root: &Path, targets: &[AgentTarget]) -> Result<()> {
-    if targets.contains(&AgentTarget::Opencode) {
-        write_embedded_file(
-            project_root,
-            ".opencode/plugins/givn-attribution.js",
-            "agent-integrations/opencode/givn-attribution.js",
-            false,
-        )?;
-        println!("  attribution integration: .opencode/plugins/givn-attribution.js");
-    }
-
-    if targets.contains(&AgentTarget::Omp) {
-        write_embedded_file(
-            project_root,
-            ".omp/hooks/pre/givn-attribution.js",
-            "agent-integrations/omp/givn-attribution.js",
-            false,
-        )?;
-        println!("  attribution integration: .omp/hooks/pre/givn-attribution.js");
-    }
-
-    if targets.contains(&AgentTarget::Claude) {
-        write_embedded_file(
-            project_root,
-            ".claude/hooks/givn-attribution.sh",
-            "agent-integrations/claude/givn-attribution.sh",
-            true,
-        )?;
-        merge_claude_settings(project_root)?;
-        println!(
-            "  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.local.json"
-        );
+    for target in targets {
+        for integration in integrations_of(*target) {
+            write_embedded_file(
+                project_root,
+                integration.relative,
+                integration.asset,
+                integration.executable,
+            )?;
+            println!("  integration: {}", integration.relative);
+        }
+        if *target == AgentTarget::Claude {
+            merge_claude_settings(project_root)?;
+            println!("  integration: .claude/settings.local.json");
+        }
     }
 
     Ok(())
@@ -494,6 +544,146 @@ fn write_embedded_file(
     Ok(())
 }
 
+/// The command the Claude development reporter's per-event registration runs:
+/// the installed shim, which pipes its payload to the binary-side mapper.
+const CLAUDE_TIMELINE_COMMAND: &str = "${CLAUDE_PROJECT_DIR}/.claude/hooks/givn-timeline.sh";
+
+/// One event the Claude development reporter registers for.
+struct ClaudeTimelineHook {
+    /// The Claude Code event name.
+    event: &'static str,
+    /// The matcher group's pattern: `*` matches every occurrence of the event.
+    matcher: &'static str,
+    /// Whether the hook runs in the background: the tool-level hooks never
+    /// slow the agent.
+    asynchronous: bool,
+    /// The synchronous flush points' own timeout in seconds, so a hung flush
+    /// cannot stall the turn (`SessionEnd` keeps the harness's 1.5 s budget).
+    timeout: Option<f64>,
+}
+
+/// The events the generated shim maps: the tool-level events stamp and close
+/// the tool spans, `PermissionRequest`/`Notification` stamp the waits the
+/// harness does not time, `SubagentStart`/`SubagentStop` span a subagent,
+/// `Stop` is the turn's usage flush point, and `SessionEnd` prunes the
+/// session's pending state.
+const CLAUDE_TIMELINE_HOOKS: &[ClaudeTimelineHook] = &[
+    ClaudeTimelineHook {
+        event: "PreToolUse",
+        matcher: "*",
+        asynchronous: true,
+        timeout: None,
+    },
+    ClaudeTimelineHook {
+        event: "PostToolUse",
+        matcher: "*",
+        asynchronous: true,
+        timeout: None,
+    },
+    ClaudeTimelineHook {
+        event: "PostToolUseFailure",
+        matcher: "*",
+        asynchronous: true,
+        timeout: None,
+    },
+    ClaudeTimelineHook {
+        event: "PermissionRequest",
+        matcher: "*",
+        asynchronous: true,
+        timeout: None,
+    },
+    ClaudeTimelineHook {
+        event: "Notification",
+        matcher: "*",
+        asynchronous: true,
+        timeout: None,
+    },
+    ClaudeTimelineHook {
+        event: "SubagentStart",
+        matcher: "*",
+        asynchronous: true,
+        timeout: None,
+    },
+    ClaudeTimelineHook {
+        event: "SubagentStop",
+        matcher: "*",
+        asynchronous: false,
+        timeout: Some(5.0),
+    },
+    ClaudeTimelineHook {
+        event: "Stop",
+        matcher: "*",
+        asynchronous: false,
+        timeout: Some(5.0),
+    },
+    ClaudeTimelineHook {
+        event: "SessionEnd",
+        matcher: "*",
+        asynchronous: false,
+        timeout: Some(1.5),
+    },
+];
+
+/// Whether one settings entry carries a command hook running `command`.
+fn points_at(entry: &serde_json::Value, command: &str) -> bool {
+    entry
+        .get("hooks")
+        .and_then(serde_json::Value::as_array)
+        .is_some_and(|hooks| {
+            hooks.iter().any(|hook| {
+                hook.get("command").and_then(serde_json::Value::as_str) == Some(command)
+            })
+        })
+}
+
+/// Merge one development-reporter hook entry idempotently per
+/// `(event, matcher, command)`: an entry of this reporter whose matcher no
+/// longer matches is dropped first (a changed matcher is re-applied), the
+/// current entry's handler options are re-applied, and a user's own entries —
+/// and the attribution entry — are never touched.
+fn merge_claude_timeline_hook(
+    hooks: &mut serde_json::Map<String, serde_json::Value>,
+    hook: &ClaudeTimelineHook,
+) -> Result<()> {
+    let entries = hooks
+        .entry(hook.event)
+        .or_insert_with(|| serde_json::json!([]))
+        .as_array_mut()
+        .ok_or_else(|| anyhow::anyhow!("Claude {} hooks must be an array", hook.event))?;
+    entries.retain(|entry| {
+        !points_at(entry, CLAUDE_TIMELINE_COMMAND)
+            || entry.get("matcher").and_then(serde_json::Value::as_str) == Some(hook.matcher)
+    });
+    let mut handler = serde_json::Map::new();
+    handler.insert("type".to_string(), serde_json::json!("command"));
+    handler.insert(
+        "command".to_string(),
+        serde_json::json!(CLAUDE_TIMELINE_COMMAND),
+    );
+    if hook.asynchronous {
+        handler.insert("async".to_string(), serde_json::json!(true));
+    }
+    if let Some(timeout) = hook.timeout {
+        handler.insert("timeout".to_string(), serde_json::json!(timeout));
+    }
+    let current = entries.iter_mut().find(|entry| {
+        entry.get("matcher").and_then(serde_json::Value::as_str) == Some(hook.matcher)
+            && points_at(entry, CLAUDE_TIMELINE_COMMAND)
+    });
+    match current {
+        Some(entry) => {
+            entry.as_object_mut().ok_or_else(|| {
+                anyhow::anyhow!("Claude {} hook entries must be JSON objects", hook.event)
+            })?["hooks"] = serde_json::json!([serde_json::Value::Object(handler)]);
+        }
+        None => entries.push(serde_json::json!({
+            "matcher": hook.matcher,
+            "hooks": [serde_json::Value::Object(handler)],
+        })),
+    }
+    Ok(())
+}
+
 fn merge_claude_settings(project_root: &Path) -> Result<()> {
     let path = project_root.join(".claude/settings.local.json");
     let mut settings = if path.exists() {
@@ -519,21 +709,18 @@ fn merge_claude_settings(project_root: &Path) -> Result<()> {
         .ok_or_else(|| anyhow::anyhow!("Claude PreToolUse hooks must be an array"))?;
 
     let command = "${CLAUDE_PROJECT_DIR}/.claude/hooks/givn-attribution.sh";
-    let already_present = entries.iter().any(|entry| {
-        entry
-            .get("hooks")
-            .and_then(serde_json::Value::as_array)
-            .is_some_and(|commands| {
-                commands.iter().any(|hook| {
-                    hook.get("command").and_then(serde_json::Value::as_str) == Some(command)
-                })
-            })
-    });
+    let already_present = entries.iter().any(|entry| points_at(entry, command));
     if !already_present {
         entries.push(serde_json::json!({
             "matcher": "Bash",
             "hooks": [{"type": "command", "command": command}]
         }));
+    }
+
+    // The development reporter's per-event registration, merged beside the
+    // attribution entry and beside any user entry.
+    for hook in CLAUDE_TIMELINE_HOOKS {
+        merge_claude_timeline_hook(hooks, hook)?;
     }
 
     if let Some(parent) = path.parent() {
