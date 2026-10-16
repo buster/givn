@@ -8305,7 +8305,7 @@ name it.
 
 ## Task E4 — `Consumer installs the agent reporter and its reported activity lands in the record` (`@e2e`, `agent-activity-reporting`, Scenario Outline, three Examples rows)
 
-- [ ] **Scenario: `Consumer installs the agent reporter and its reported activity lands in the record`** (Examples: `omp`, `opencode`, `claude`)
+- [x] **Scenario: `Consumer installs the agent reporter and its reported activity lands in the record`** (Examples: `omp`, `opencode`, `claude`)
   - Design constraints:
     - Matrix row: `agent-activity-reporting: report agent activity from a
       supported harness` — real interface **CLI (harness integration)**: install
@@ -8582,10 +8582,42 @@ name it.
         refreshed the evidence pair from the final code (39786/75066 bytes,
         360x780 and 1920x1080).
         ```
-  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+  - [x] **COMMIT** — `0b33499477da79845601aed8cc55e042d2f5f4b8` — `test(e2e): <release note>` with the scenario
         title `Consumer installs the agent reporter and its reported activity
         lands in the record` in the body (including the two evidence PNGs).
         Record the revision identifier.
+        ```
+        $ ./target/debug/givn commit -m "test(e2e): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        Consumer installs the agent reporter and its reported activity lands in the record"
+        [17:33:28] committed revision on the Git backend
+
+        $ git show --stat --format='%H' 0b334994
+        0b33499477da79845601aed8cc55e042d2f5f4b8
+         .../desktop.png                                    | Bin 0 -> 73034 bytes
+         .../mobile.png                                     | Bin 0 -> 39705 bytes
+         .../agent-activity-reporting.feature               |   2 +-
+         givn/changes/development-timeline/tasks.md         | 262 ++++++++++++++++++-
+         tests/steps/agent_activity_reporting_e2e_steps.rs  | 278 ++++++++++++++++++++-
+         tests/steps/development_timeline_support.rs        | 142 +++++++++--
+         tests/steps/mod.rs                                 |   4 -
+         7 files changed, 660 insertions(+), 28 deletions(-)
+
+        The revision is this scenario's RED+GREEN+REFACTOR as one atomic
+        commit: the `@wip` removal from the outline alone, its three steps with
+        the driver table and the reporter-delivery helper, the shared support
+        file's third driver (with the opencode driver's session-end handling and
+        the Task-E4 dead-code allowances removed), the two world-slot allowances
+        in `tests/steps/mod.rs`, this task file's evidence, and the outline's one
+        evidence pair.
+
+        One scope-run note, stated rather than hidden: `./run-tests.sh --e2e`
+        regenerates *every* scenario's evidence pair (each capture is the
+        report of that scenario's own record), so an e2e scope run during this
+        task re-wrote Tasks E2 and E3's committed pairs too; this revision
+        restores those two pairs to their own revisions' captures, so this
+        scenario's commit carries only this scenario's evidence.
+        ```
 
 ## Task E5 — `Consumer generates the development report for a change` (`@e2e`, `development-report`)
 
