@@ -70,8 +70,11 @@ jobs:
             cargo install git-cliff --version 2.13.1 --locked
           fi
 
+      - name: Install the pinned Playwright browser
+        run: ./setup-e2e-browser.sh
+
       - name: Run repository acceptance suites
         run: |
           set -euo pipefail
-          ./run-tests.sh
+          ./run-tests.sh --non-e2e
           ./run-tests.sh --e2e
