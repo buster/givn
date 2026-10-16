@@ -9470,9 +9470,33 @@ name it.
         scenarios / 10 steps, exit 0) — with its own committed evidence pair left
         untouched, restored to its revision's captures after the re-run.
         ```
-  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+  - [x] **COMMIT** — `35b80e06845efd9237ddff6015771de5af514c77` — `test(e2e): <release note>` with the scenario
         title `Consumer zooms the timeline to a shorter time range` in the body
         (including the two evidence PNGs). Record the revision identifier.
+        ```
+        $ ./target/debug/givn commit -m "test(e2e): Givn records the development process of every change and ideation — … opens in a browser.
+
+        Consumer zooms the timeline to a shorter time range"
+        [18:07:31] committed revision on the Git backend
+
+        $ git show --stat --format='%H' 35b80e06
+        35b80e06845efd9237ddff6015771de5af514c77
+         assets/timeline/report.html                        | 186 +++++++++++++++++++-
+         .../desktop.png                                    | Bin 0 -> 88869 bytes
+         .../mobile.png                                     | Bin 0 -> 49417 bytes
+         .../development-report.feature                     |   2 +-
+         givn/changes/development-timeline/tasks.md         | 141 ++++++++++++++-
+         tests/steps/development_report_e2e_steps.rs        | 191 +++++++++++++++++++++
+         6 files changed, 506 insertions(+), 14 deletions(-)
+
+        The revision is this scenario's RED+GREEN+REFACTOR as one atomic commit:
+        the `@wip` removal from this scenario alone, the zoom and its controls in
+        the asset, the scenario's When and Then with the shared control
+        expectations, this task file's evidence, and the scenario's one evidence
+        pair. No other scenario's tag, step, or capture is touched (the outline's
+        committed evidence pair was restored to its own revision's captures after
+        the re-run).
+        ```
 
 ## Task E9 — `Consumer opens the report of a scope with no recorded activity` (`@e2e`, `development-report`)
 
