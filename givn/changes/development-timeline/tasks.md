@@ -4900,10 +4900,50 @@ name it.
         109 steps (109 passed)
         EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+  - [x] **COMMIT** — `82579d36cf4c5893dc9d1ce4d1f23f23b750de70` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `The intake keeps the acceptable events of a
         payload with a rejected event` in the body. Record the revision
         identifier.
+        ```
+        One `givn commit` with the release note as the message subject and the
+        scenario title as the body:
+
+        $ GIVN_ATTRIBUTION_ACTIVE=1 GIVN_ATTRIBUTION_LLM=deepseek/deepseek-flash \
+          GIVN_ATTRIBUTION_REASONING=max GIVN_ATTRIBUTION_HARNESS=omp \
+          ./target/debug/givn commit -m "feat(agent-activity-reporting): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        The intake keeps the acceptable events of a payload with a rejected event" \
+          givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature \
+          givn/changes/development-timeline/tasks.md \
+          tests/steps/agent_activity_reporting_steps.rs
+        [15:53:24] committed revision on the Git backend
+
+        (The revision names its three paths: the shared checkout carried an
+        unrelated file another session had just created, which the stage-all form
+        would have swept into this scenario's revision. The first attempt was
+        un-made and re-created with the paths named here; the stray file was left
+        exactly as its author left it.)
+
+        $ git show --stat 82579d36cf4c5893dc9d1ce4d1f23f23b750de70
+        commit 82579d36cf4c5893dc9d1ce4d1f23f23b750de70
+        Author: buster <me@bstr.eu>
+        Date:   Fri Oct 16 15:53:24 2026 +0200
+
+            feat(agent-activity-reporting): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+            The intake keeps the acceptable events of a payload with a rejected event
+
+            Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../agent-activity-reporting.feature               |   2 +-
+         givn/changes/development-timeline/tasks.md         | 203 ++++++++++++++++++++-
+         tests/steps/agent_activity_reporting_steps.rs      | 142 ++++++++++++--
+         3 files changed, 324 insertions(+), 23 deletions(-)
+
+        One atomic revision for the scenario: the delta spec (`@wip` removed from
+        this scenario only), the fixture and its three assertions, and this file's
+        Task 20 record together.
+        ```
 
 ## Task 21 — `Every supported harness receives a development reporter` (`agent-activity-reporting`, added — Scenario Outline, three Examples rows)
 
