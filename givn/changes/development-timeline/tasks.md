@@ -1,8 +1,9 @@
 # Tasks: development-timeline
 
 Scenario-by-scenario RED→GREEN→REFACTOR→COMMIT loop. One section per executable
-scenario: the 35 non-`@e2e` scenario sections first, in `.feature` order (the one
-`@givn.modified` entry is reconciled in S2b, not as a scenario task), then the
+scenario: the 35 non-`@e2e` scenario sections first, in `.feature` order (the
+three `@givn.modified` entries are reconciled in S2b and Task 24a, not as
+scenario tasks), then the
 E2E setup task, then the 8 `@e2e` scenarios in the same order.
 
 Legend: an unchecked box means pending; a box is checked only when the pasted
@@ -19,13 +20,15 @@ copied verbatim from `proposal.md` §Release note):**
 > report that opens in a browser.
 
 **Delta inventory (verified mechanically against every delta `.feature` under
-`givn/changes/development-timeline/specs/`):** 44 executable scenario entries in
-4 features = 43 `@givn.added`, 1 `@givn.modified` (the S2b corpus-pin
-reconciliation), 0 `@givn.removed`; 36 non-`@e2e` + 8 `@e2e`. A `Scenario
+`givn/changes/development-timeline/specs/`):** 46 executable scenario entries in
+5 features = 43 `@givn.added`, 3 `@givn.modified` (the S2b corpus-pin
+reconciliation plus the two target-list reconciliations in Task 24a),
+0 `@givn.removed`; 38 non-`@e2e` + 8 `@e2e`. A `Scenario
 Outline` counts as one entry (its Examples rows are input variation, not
 additional scenarios). Every still-pending entry carries `@wip` today and stays
-`@wip` until its own RED step removes the tag from that one scenario; the one
-`@givn.modified` entry carries no `@wip` and is reconciled green in S2b.
+`@wip` until its own RED step removes the tag from that one scenario; the three
+`@givn.modified` entries carry no `@wip` and are reconciled green in S2b and
+Task 24a.
 
 | Feature (path relative to `GIVN_FEATURES`) | Entries | Non-`@e2e` | `@e2e` |
 |---|---|---|---|
@@ -33,17 +36,21 @@ additional scenarios). Every still-pending entry carries `@wip` today and stays
 | `inspect-development-history/agent-activity-reporting.feature` | 15 | 14 | 1 |
 | `inspect-development-history/development-report.feature` | 14 | 9 | 5 |
 | `fragments/adr-qualification-gate.feature` (`@givn.modified`) | 1 | 1 | 0 |
-| **Total** | **44** | **36** | **8** |
+| `initialize-project/initialize-a-project.feature` (`@givn.modified`, two scenarios) | 2 | 2 | 0 |
+| **Total** | **46** | **38** | **8** |
 
 **Work order (recorded choice).** `design.md` names no implementation sequencing
 section, so this file follows `.feature` order — the features in the inventory
 order above, scenarios in their in-file order — in three phases: Tasks 1–35
-(the 36 non-`@e2e` scenarios, numbered Tasks 1–33 plus **Task 11a** and **Task
+(the 38 non-`@e2e` scenarios, numbered Tasks 1–33 plus **Task 11a** and **Task
 24a**, both inserted with an `a` suffix so the later task numbers stay stable),
-Task E1 (E2E setup), Tasks E2–E9 (the `@e2e` scenarios, same feature order). The one `@givn.modified` entry
-is not a scenario task: ADR-073 raises the register count that the permanent
-`adr-qualification-gate` scenario pins, so setup item **S2b** carries the
-`@givn.modified` record and the permanent patch, before any scenario work.
+Task E1 (E2E setup), Tasks E2–E9 (the `@e2e` scenarios, same feature order). The
+three `@givn.modified` entries are not scenario tasks: ADR-073 raises the register
+count the permanent `adr-qualification-gate` scenario pins, and the new `maki`
+target extends the `all` targets list two permanent `initialize-a-project`
+scenarios pin, so setup item **S2b** carries the first reconciliation and **Task
+24a** carries the target-list reconciliation (both with their permanent patches),
+alongside the scenario work they belong to.
 
 ## Preconditions verified before writing this file (2026-10-16)
 
@@ -221,8 +228,8 @@ zoom transition and the panel animation.
   GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/<feature>.feature::<scenario title>"
   ```
   Scope commands: full delta `GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e`
-  (36 scenarios, `verify.command` after Task S2 — the 35 non-`@e2e` scenario
-  sections plus the `@givn.modified` entry) and
+  (38 scenarios, `verify.command` after Task S2 — the 35 non-`@e2e` scenario
+  sections plus the three `@givn.modified` entries) and
   `GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --e2e`
   (8 scenarios, `verify.e2e_command`). Run a `Scenario Outline`'s unit once: it
   executes all Examples rows in one process.
@@ -6041,6 +6048,24 @@ name it.
         file's evidence, and the refreshed `@e2e` visual evidence the scope run
         produced (12 screenshot pairs).
         ```
+  - **Corpus-pin reconciliation (2026-10-16, after the GREEN run above; no
+    evidence above is altered).** The `maki` target extends the `all` shorthand,
+    and two permanent scenarios in
+    `givn/specs/initialize-project/initialize-a-project.feature` pin that list —
+    "givn skills targets add accepts \"all\" as a shorthand for every target"
+    and "The --agents flag accepts \"all\" as a shorthand for every target" —
+    whose Then then read `opencode, agents, claude, omp`. This change therefore
+    carries both as `@givn.modified` records in
+    `givn/changes/development-timeline/specs/initialize-project/initialize-a-project.feature`
+    (verbatim copies with only the list changed to
+    `opencode, agents, claude, omp, maki`, no `@wip`) and patches the same two
+    scenarios in the permanent file, so the delta and the corpus agree now and at
+    merge. Same class as the S2b ADR-count reconciliation. The delta inventory is
+    now 46 entries (43 `@givn.added`, 3 `@givn.modified`, 38 non-`@e2e`, 8
+    `@e2e`), the per-feature table gained the `initialize-project` row (2/2/0),
+    and every pending scope count reads 38 vs 8; the header's "sections" wording
+    is unchanged because the two new entries are reconciliations, not scenario
+    sections.
 
 ## Task 25 — `The report ranks the longest single step first` (`development-report`, added)
 
@@ -7730,11 +7755,11 @@ name it.
       is a hard-stop, fix-before-continuing condition.
     - **Scenario-count proof (the subset must be real).** `verify.command` runs
       the `not @e2e` tag set and `verify.e2e_command` the `@e2e` set; with this
-      change in scope that is 36 vs 8 units, so the e2e count is strictly less
+      change in scope that is 38 vs 8 units, so the e2e count is strictly less
       than the full count. Prove it with the runner's own listing (or the
       summary line of each run) and paste both counts:
       `GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e`
-      → 36 scenarios, `GIVN_FEATURES=givn/changes/development-timeline/specs
+      → 38 scenarios, `GIVN_FEATURES=givn/changes/development-timeline/specs
       ./run-tests.sh --e2e` → 8 scenarios.
     - **Health check before any scenario step.** `npx --prefix tests/e2e
       playwright --version` reports 1.64.1 and the driver can launch Chromium and
@@ -10078,7 +10103,7 @@ asset's extracted inline layer were green at every commit of the tier.
 **Done when:** every box above is checked with its pasted evidence and revision
 identifier, `verify.command` (`./run-tests.sh --non-e2e`) and
 `verify.e2e_command` (`./run-tests.sh --e2e`) both exit 0 on the full suite, the
-e2e setup task's scenario-count proof is pasted (36 regular vs 8 `@e2e`, e2e
+e2e setup task's scenario-count proof is pasted (38 regular vs 8 `@e2e`, e2e
 strictly less), every `@e2e` scenario has committed `mobile.png` + `desktop.png`
 under its slug with the empty-scope scenario's `mobile--empty.png` /
 `desktop--empty.png`, and no `@wip` tag remains on any scenario this change
