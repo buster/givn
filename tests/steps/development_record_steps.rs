@@ -29,6 +29,9 @@ pub(crate) struct DevelopmentRecordState {
     /// The racing `givn` processes the last Given started, waiting to be
     /// waited for.
     pub(crate) racing: Option<Vec<std::process::Child>>,
+    /// The ideation topic the fixture declared, for the step that asserts on
+    /// "the ideation topic".
+    pub(crate) topic: Option<String>,
 }
 
 /// The byte-level form of "nothing earlier was rewritten": the store still
@@ -43,31 +46,38 @@ fn assert_store_prefix_unchanged(before: &[u8], after: &[u8]) {
     );
 }
 
+/// The one `command` entry the scenario's own command recorded, found by the
+/// command name the `the user runs …` step captured — never by position, so
+/// the fixture's own setup commands are never mistaken for it.
+fn recorded_command_entry<'a>(world: &GivnWorld, entries: &'a [Value]) -> &'a Value {
+    let command = world
+        .last_command
+        .clone()
+        .expect("no `givn` command has been run yet");
+    let recorded: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| entry["kind"] == json!("command") && entry["name"] == json!(command))
+        .collect();
+    assert_eq!(
+        recorded.len(),
+        1,
+        "expected exactly one `command` entry for `{command}`; the record holds: {entries:#?}"
+    );
+    recorded[0]
+}
+
 #[then("the development record holds one entry for that command")]
 fn record_holds_one_entry_for_command(world: &mut GivnWorld) {
     let env = world
         .env
         .as_ref()
         .expect("a project root is required first");
-    let command = world
-        .last_command
-        .clone()
-        .expect("no `givn` command has been run yet");
     let entries = support::record_entries(&env.root());
-    let matching: Vec<Value> = entries
-        .iter()
-        .filter(|entry| entry["kind"] == json!("command") && entry["name"] == json!(command))
-        .cloned()
-        .collect();
-    assert_eq!(
-        matching.len(),
-        1,
-        "expected exactly one `command` entry for `{command}`; the record holds: {entries:#?}"
-    );
+    let entry = recorded_command_entry(world, &entries).clone();
     world
         .development_record
         .get_or_insert_with(DevelopmentRecordState::default)
-        .last_entry = Some(matching[0].clone());
+        .last_entry = Some(entry);
 }
 
 #[given(regex = r#"^a change "([^"]+)" with a verification command that takes measurable time$"#)]
@@ -323,21 +333,8 @@ fn recorded_entry_names_the_project_as_its_scope(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    let command = world
-        .last_command
-        .clone()
-        .expect("no `givn` command has been run yet");
     let entries = support::record_entries(&env.root());
-    let recorded: Vec<&Value> = entries
-        .iter()
-        .filter(|entry| entry["kind"] == json!("command") && entry["name"] == json!(command))
-        .collect();
-    assert_eq!(
-        recorded.len(),
-        1,
-        "expected exactly one `command` entry for `{command}`; the record holds: {entries:#?}"
-    );
-    let scope = &recorded[0]["scope"];
+    let scope = &recorded_command_entry(world, &entries)["scope"];
     assert_eq!(
         scope["kind"],
         json!("project"),
@@ -464,5 +461,41 @@ fn every_parent_link_names_an_entry_in_the_record(world: &mut GivnWorld) {
         linked,
         support::RACING_ROUNDS * 2 * 2,
         "the record does not carry the racing runs' child links: {entries:#?}"
+    );
+}
+
+#[given(regex = r#"^an ideation topic "([^"]+)" whose session is unfinished$"#)]
+fn an_ideation_topic_whose_session_is_unfinished(world: &mut GivnWorld, topic: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    // The fixture is a project that has no change yet: the topic is what the
+    // project is working on, and only the topic can scope the activity.
+    support::assert_no_active_change(env);
+    support::declare_unfinished_ideation_topic(env, &topic);
+    world
+        .development_record
+        .get_or_insert_with(DevelopmentRecordState::default)
+        .topic = Some(topic);
+}
+
+#[then("the recorded entry names the ideation topic as its scope")]
+fn recorded_entry_names_the_ideation_topic_as_its_scope(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let topic = world
+        .development_record
+        .as_ref()
+        .and_then(|state| state.topic.clone())
+        .expect("the ideation fixture ran first");
+    let entries = support::record_entries(&env.root());
+    let scope = &recorded_command_entry(world, &entries)["scope"];
+    assert_eq!(
+        scope,
+        &json!({ "kind": "ideation", "id": topic }),
+        "the entry's scope does not name the unfinished ideation topic: {scope}"
     );
 }

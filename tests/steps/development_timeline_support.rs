@@ -43,16 +43,22 @@ pub fn project_name(env: &common::TestEnv) -> String {
         .to_string()
 }
 
-/// Assert the fixture project is bare in the recorder's sense: no directory
-/// under `givn/changes/` (every directory there is a change for
-/// `list_changes`) and no `givn/ideation/<topic>/session.md` — so the project
-/// fallback is exercised rather than assumed.
-pub fn assert_bare_project(env: &common::TestEnv) {
+/// Assert the fixture project has no change a recorder could bind to: no
+/// directory under `givn/changes/` (every directory there is a change for
+/// `list_changes`).
+pub fn assert_no_active_change(env: &common::TestEnv) {
     let changes = read_dir_names(&env.path("givn/changes"));
     assert!(
         changes.is_empty(),
         "the fixture project has changes: {changes:?}"
     );
+}
+
+/// Assert the fixture project is bare in the recorder's sense: no change and
+/// no ideation session, so the project fallback is exercised rather than
+/// assumed.
+pub fn assert_bare_project(env: &common::TestEnv) {
+    assert_no_active_change(env);
     for topic in read_dir_names(&env.path("givn/ideation")) {
         let session = env.path(&format!("givn/ideation/{topic}/session.md"));
         assert!(
@@ -61,6 +67,39 @@ pub fn assert_bare_project(env: &common::TestEnv) {
             session.display()
         );
     }
+}
+
+/// Build `givn/ideation/<topic>/session.md` as a written-but-unfinished
+/// session: the phase and progress lines the frame step writes, and no
+/// `## Completion` section (the section the handoff step appends). The builder
+/// is the fixture's, so Task 28 can report the same topic before any change
+/// exists.
+pub fn declare_unfinished_ideation_topic(env: &common::TestEnv, topic: &str) {
+    let session = env.path(&format!("givn/ideation/{topic}/session.md"));
+    let dir = session
+        .parent()
+        .expect("the session path has a directory")
+        .to_path_buf();
+    std::fs::create_dir_all(&dir)
+        .unwrap_or_else(|error| panic!("create the topic {}: {error}", dir.display()));
+    let body = "\
+# Ideation session: timeline-ideas
+
+## Phase
+
+frame
+
+## Progress
+
+- frame written
+- questions answered
+
+## Next steps
+
+- elaborate the use cases
+";
+    std::fs::write(&session, body)
+        .unwrap_or_else(|error| panic!("write the session {}: {error}", session.display()));
 }
 
 /// The names of a directory's entries, empty when the directory does not

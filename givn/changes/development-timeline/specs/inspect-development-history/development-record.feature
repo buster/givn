@@ -49,7 +49,7 @@ Feature: Development Record
     Then every entry in the development record has a distinct id
     And every parent link names an entry that exists in the record
 
-  @givn.added @wip
+  @givn.added
   Scenario: Activity during an ideation belongs to its topic scope
     Given a project root with givn/ initialised
     And an ideation topic "timeline-ideas" whose session is unfinished
