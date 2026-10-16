@@ -416,10 +416,7 @@ pub fn ingest() -> Result<()> {
     // store that predates the repository still becomes ignored.
     crate::history::ensure_ignored(&root);
     if let Err(error) = store.append_linked(&mut entries, &parents) {
-        eprintln!(
-            "warning: the development record could not be written to {}: {error}",
-            store.path().display()
-        );
+        crate::history::warn_unwritten(&store, &error);
     }
     Ok(())
 }

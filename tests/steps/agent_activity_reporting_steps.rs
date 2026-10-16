@@ -230,6 +230,65 @@ fn reports_an_event_that_does_not_match_the_intake_contract(world: &mut GivnWorl
     report(world, payload);
 }
 
+#[when("the agent reports a completed tool call")]
+fn reports_a_completed_tool_call_for_the_recorded_change(world: &mut GivnWorld) {
+    // The scenario's recorded history names the change; the reported call is the
+    // fixture's one completed tool call, handed to the real intake.
+    let change = recorded_change(world);
+    let payload = support::intake_payload(Some(&change), None, vec![tool_event()]);
+    report(world, payload);
+}
+
+#[then("the intake reports no failure to the agent")]
+fn intake_reports_no_failure_to_the_agent(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let out = crate::steps::output(world);
+    let stderr = crate::steps::stderr(world);
+    // The reporter's caller must not fail because the store could not be
+    // written: a non-zero exit is a hook error for Claude Code and exit 2
+    // blocks the tool, so the intake always exits 0.
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "the intake failed the agent action it reported (exit {:?}): {stderr}",
+        out.status.code()
+    );
+    // The failure stays visible — as a warning, never as a failed command.
+    let store = support::store_file(&env.root());
+    let failures: Vec<&str> = stderr
+        .lines()
+        .filter(|line| line.contains("could not be written"))
+        .collect();
+    assert!(
+        !failures.is_empty(),
+        "the write failure was not reported at all: {stderr:?}"
+    );
+    assert!(
+        failures.iter().all(|line| line.starts_with("warning:")),
+        "the write failure is not reported as a warning: {failures:#?}"
+    );
+    assert!(
+        failures
+            .iter()
+            .any(|line| line.contains(&store.display().to_string())),
+        "the warning does not name the store it could not write ({failures:#?}): {store:?}"
+    );
+    assert!(
+        !stderr.lines().any(|line| line.starts_with("error:")),
+        "the intake reported the write failure as an error: {stderr:?}"
+    );
+    // Do not turn this into a retry or queue feature: there is no second write
+    // location, so the blocked store path is still the blocking directory.
+    assert!(
+        store.is_dir(),
+        "the record was written somewhere other than the blocked store path {}",
+        store.display()
+    );
+}
+
 #[then("the intake names the rejected event")]
 fn intake_names_the_rejected_event(world: &mut GivnWorld) {
     let (rejected, position) = violating_event(world);
