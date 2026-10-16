@@ -68,14 +68,19 @@ block in `.git/info/exclude` for a Git worktree, writes Fossil's repository-leve
 managed entry list through `givn init`, `givn skills sync`, and `givn upgrade`.
 
 When `omp` is a selected target, initialization and synchronization also install
-`.omp/hooks/pre/givn-timeline.js` next to the attribution hook. The other two
+`.omp/hooks/pre/givn-timeline.js` next to the attribution hook. The other three
 targets that execute an agent get their own reporter the same way:
-`.opencode/plugins/givn-timeline.js` for `opencode`, and
+`.opencode/plugins/givn-timeline.js` for `opencode`,
 `.claude/hooks/givn-timeline.sh` plus one registered event per hook entry in
-`.claude/settings.local.json` for `claude`. The `agents` target is a skills
-mirror that no harness runs, so it receives no reporter. The browser tier's Node
-project under `tests/e2e/` is repository content and is not installed into a
-consumer project.
+`.claude/settings.local.json` for `claude`, and for `maki` its guidance
+(`.maki/skills/<name>/SKILL.md` and `.maki/commands/<name>.md`), the module
+`.maki/lua/givn-timeline.lua`, grants merged into `.maki/plugin.toml`, and a
+managed fail-soft `-- givn:begin:timeline` fence inside `.maki/init.lua` (Maki
+runs only that file, so a module under `lua/` stays inert until it is required
+and the fence is what loads it). The
+`agents` target is a skills mirror that no harness runs, so it receives no
+reporter. The browser tier's Node project under `tests/e2e/` is repository
+content and is not installed into a consumer project.
 
 Generated skills are written only to the persisted target selection. Givn may
 maintain its own fenced blocks in root `AGENTS.md`; all content outside those

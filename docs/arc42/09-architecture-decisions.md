@@ -61,6 +61,19 @@ their own `<target>/commands/` directory. The ownership rule — givn writes onl
 to configured target directories plus its own fenced blocks — is unchanged,
 so this extends the same boundary rather than deciding a new one.
 
+ADR-013 is amended a fourth time by the `development-timeline` change: the
+generated-guidance destinations gain `maki` (`.maki`) alongside `.opencode`,
+`.agents`, `.claude`, and `.omp`. It is a full target — Givn writes skills to
+`.maki/skills/` and commands to `.maki/commands/` (the only project command
+location Maki reads that Givn can write), so a `maki`-only selection is fully
+equipped — and it additionally receives the development reporter: the Lua module
+`.maki/lua/givn-timeline.lua`, grants merged into `.maki/plugin.toml`, and a
+managed fail-soft fence inside `.maki/init.lua`. Two of those files are merged
+user-owned configuration, so only the fenced region and the grant keys change.
+The ownership rule — givn writes only its own generated files plus its own
+fenced blocks, and all surrounding content stays user-owned — is unchanged, so
+this extends the same boundary rather than deciding a new one.
+
 ADR-071 is accepted by the `scm-backend` change: repository-state commands ask
 one selection seam which version-control system owns the project root. Detection
 uses the project's own markers (Git worktree first, then a Fossil checkout) and

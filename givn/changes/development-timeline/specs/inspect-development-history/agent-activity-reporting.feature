@@ -79,6 +79,7 @@ Feature: Agent Activity Reporting
       | omp      |
       | opencode |
       | claude   |
+      | maki     |
 
   @givn.added
   Scenario: The neutral skills target receives no development reporter
@@ -102,6 +103,17 @@ Feature: Agent Activity Reporting
     Then the record holds that turn's token usage
     And the usage names "claude-sonnet-5"
 
+  @givn.added @wip
+  Scenario: Maki's reporter keeps the harness's own tool duration and marks what its harness omits
+    Given a project with the generated Maki development reporter
+    When the Maki harness reports a completed tool call
+    Then the record holds that tool call with the duration the harness reported
+    When the Maki harness reports a tool call that never ran
+    Then the record holds that tool call without a measured duration
+    When the Maki harness reports a subagent that started and completed
+    Then the record holds that subagent's span
+    And the record marks that subagent's token usage as unavailable
+
   @givn.added @e2e
   Scenario Outline: Consumer installs the agent reporter and its reported activity lands in the record
     Given a project root with givn/ initialised
@@ -117,3 +129,4 @@ Feature: Agent Activity Reporting
       | omp      |
       | opencode |
       | claude   |
+      | maki     |

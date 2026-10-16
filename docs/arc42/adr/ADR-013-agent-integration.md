@@ -66,11 +66,27 @@ falling back to `opencode`. Synchronization keeps the `opencode` fallback for
 a configuration without a `skills:` block, so projects initialized by older
 versions stay runnable.
 
+The `development-timeline` change amended this decision again: the
+generated-guidance destinations gain `maki` (`.maki`), alongside `.opencode`,
+`.agents`, `.claude`, and `.omp`. It is a full target — skills to
+`.maki/skills/<name>/SKILL.md` and commands to `.maki/commands/<name>.md`, the
+only project command location Maki reads that Givn can write — so it is usable
+on its own, and it also receives the in-project development reporter: the Lua
+module under `.maki/lua/`, its grants merged into `.maki/plugin.toml`, and a
+managed `-- givn:begin:timeline` fence inside `.maki/init.lua` (Maki runs only
+that file, so a module under `lua/` stays inert until it is required). Only the
+fenced region and the grant keys are touched in those two user-owned files; all
+other content stays as the user wrote it. The ownership rule for surrounding
+content is unchanged.
+
 ### Consequences
 
-- Skills are written under selected `.opencode/`, `.agents/`, `.claude/`, and
-  `.omp/` locations; opencode and omp commands use their own
+- Skills are written under selected `.opencode/`, `.agents/`, `.claude/`,
+  `.omp/`, and `.maki/` locations; opencode, omp, and maki commands use their own
   `<target>/commands/` directory.
+- A selected `maki` target receives skills, commands, and the development
+  reporter; `.maki/init.lua` and `.maki/plugin.toml` are merged, never replaced,
+  so a hand-written Maki config keeps its content.
 - The always-on `givn-project` block and the `absolute-mode` block are separately managed when applicable.
 - Generated files are snapshots and are refreshed by `givn skills sync`.
 - Target selection is explicit project configuration; the interactive prompt

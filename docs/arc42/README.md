@@ -71,11 +71,14 @@ glossary. No ADR is introduced: the removed boundaries are product behaviour
 and release policy owned by the specs, the catalog, and the chapters above.
 
 The `development-timeline` change records ADR-073: Givn owns one append-only,
-scope-tagged development record and every supported harness — omp, opencode, and
-Claude Code — reports through one intake command instead of writing the record
-itself (the `agents` target is a skills mirror with no runtime). Durable facts
-live in chapters 2 (TC-34, TC-35), 3, 4, 5, 6.18, 7.3/7.4, 8.25, 10 (Q-98 to
-Q-102), 11 (R-83 to R-86, R-88, R-89, D-22, D-23), and the glossary; the record's ownership
+scope-tagged development record and every supported harness — omp, opencode,
+Claude Code, and Maki — reports through one intake command instead of writing the
+record itself (the `agents` target is a skills mirror with no runtime, and
+ADR-013 is amended to add `maki` as a full target — skills in `.maki/skills/`,
+commands in `.maki/commands/`, and the development reporter, with
+`.maki/init.lua` and `.maki/plugin.toml` merged rather than replaced). Durable facts
+live in chapters 2 (TC-34, TC-35, TC-36), 3, 4, 5, 6.18, 7.3/7.4, 8.25, 10 (Q-98 to
+Q-102), 11 (R-83 to R-86, R-88, R-89, R-90, D-22, D-23), and the glossary; the record's ownership
 boundary is deliberately separate from ADR-014's filesystem-derived state,
 ADR-013's generated-integration ownership, and ADR-028's gate boundary. The
 browser report and its visual contract are documented in

@@ -1,7 +1,7 @@
 # Tasks: development-timeline
 
 Scenario-by-scenario RED→GREEN→REFACTOR→COMMIT loop. One section per executable
-scenario: the 34 non-`@e2e` scenario sections first, in `.feature` order (the one
+scenario: the 35 non-`@e2e` scenario sections first, in `.feature` order (the one
 `@givn.modified` entry is reconciled in S2b, not as a scenario task), then the
 E2E setup task, then the 8 `@e2e` scenarios in the same order.
 
@@ -19,9 +19,9 @@ copied verbatim from `proposal.md` §Release note):**
 > report that opens in a browser.
 
 **Delta inventory (verified mechanically against every delta `.feature` under
-`givn/changes/development-timeline/specs/`):** 43 executable scenario entries in
-4 features = 42 `@givn.added`, 1 `@givn.modified` (the S2b corpus-pin
-reconciliation), 0 `@givn.removed`; 35 non-`@e2e` + 8 `@e2e`. A `Scenario
+`givn/changes/development-timeline/specs/`):** 44 executable scenario entries in
+4 features = 43 `@givn.added`, 1 `@givn.modified` (the S2b corpus-pin
+reconciliation), 0 `@givn.removed`; 36 non-`@e2e` + 8 `@e2e`. A `Scenario
 Outline` counts as one entry (its Examples rows are input variation, not
 additional scenarios). Every still-pending entry carries `@wip` today and stays
 `@wip` until its own RED step removes the tag from that one scenario; the one
@@ -30,17 +30,17 @@ additional scenarios). Every still-pending entry carries `@wip` today and stays
 | Feature (path relative to `GIVN_FEATURES`) | Entries | Non-`@e2e` | `@e2e` |
 |---|---|---|---|
 | `inspect-development-history/development-record.feature` | 14 | 12 | 2 |
-| `inspect-development-history/agent-activity-reporting.feature` | 14 | 13 | 1 |
+| `inspect-development-history/agent-activity-reporting.feature` | 15 | 14 | 1 |
 | `inspect-development-history/development-report.feature` | 14 | 9 | 5 |
 | `fragments/adr-qualification-gate.feature` (`@givn.modified`) | 1 | 1 | 0 |
-| **Total** | **43** | **35** | **8** |
+| **Total** | **44** | **36** | **8** |
 
 **Work order (recorded choice).** `design.md` names no implementation sequencing
 section, so this file follows `.feature` order — the features in the inventory
-order above, scenarios in their in-file order — in three phases: Tasks 1–34
-(the 35 non-`@e2e` scenarios, numbered Tasks 1–33 plus **Task 11a** inserted
-after Task 11 so the later task numbers stay stable), Task E1 (E2E setup), Tasks
-E2–E9 (the `@e2e` scenarios, same feature order). The one `@givn.modified` entry
+order above, scenarios in their in-file order — in three phases: Tasks 1–35
+(the 36 non-`@e2e` scenarios, numbered Tasks 1–33 plus **Task 11a** and **Task
+24a**, both inserted with an `a` suffix so the later task numbers stay stable),
+Task E1 (E2E setup), Tasks E2–E9 (the `@e2e` scenarios, same feature order). The one `@givn.modified` entry
 is not a scenario task: ADR-073 raises the register count that the permanent
 `adr-qualification-gate` scenario pins, so setup item **S2b** carries the
 `@givn.modified` record and the permanent patch, before any scenario work.
@@ -221,7 +221,7 @@ zoom transition and the panel animation.
   GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/<feature>.feature::<scenario title>"
   ```
   Scope commands: full delta `GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e`
-  (35 scenarios, `verify.command` after Task S2 — the 34 non-`@e2e` scenario
+  (36 scenarios, `verify.command` after Task S2 — the 35 non-`@e2e` scenario
   sections plus the `@givn.modified` entry) and
   `GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --e2e`
   (8 scenarios, `verify.e2e_command`). Run a `Scenario Outline`'s unit once: it
@@ -232,11 +232,12 @@ zoom transition and the panel animation.
   `tests/steps/agent_activity_reporting_steps.rs`,
   `tests/steps/development_report_steps.rs`. Shared, not per capability:
   `tests/steps/development_timeline_support.rs` (record fixtures, the
-  seeded-history builder, and the three harness drivers — a fake `pi` extension
+  seeded-history builder, and the four harness drivers — a fake `pi` extension
   context for omp, a fake plugin context capturing `session.hook` /
-  `tool.hook` / `shell.hook` plus the event subscription for opencode, and a
+  `tool.hook` / `shell.hook` plus the event subscription for opencode, a
   payload-on-stdin invocation of the generated Claude shim with a fixture
-  transcript). Every module is registered in `tests/steps/mod.rs` and
+  transcript, and for Maki the real-binary invocation plus the synthetic autocmd
+  driver). Every module is registered in `tests/steps/mod.rs` and
   `GivnWorld` gains one slot per capability. The `@e2e` step files
   (`tests/steps/development_record_e2e_steps.rs`,
   `tests/steps/agent_activity_reporting_e2e_steps.rs`,
@@ -687,7 +688,7 @@ name it.
         `tests/steps/agent_activity_reporting_steps.rs`,
         `tests/steps/development_report_steps.rs` and the shared
         `tests/steps/development_timeline_support.rs` (record fixtures, the
-        seeded-history builder, the three harness drivers). Skeleton = module
+        seeded-history builder, the four harness drivers). Skeleton = module
         doc comment, the `GivnWorld` state slot the capability needs, and the
         helper signatures the scenarios will call; step bindings are added
         scenario by scenario at RED.
@@ -5711,6 +5712,120 @@ name it.
         beyond the pipe.
         ```
 
+## Task 24a — `Maki's reporter keeps the harness's own tool duration and marks what its harness omits` (`agent-activity-reporting`, added)
+
+- [ ] **Scenario: `Maki's reporter keeps the harness's own tool duration and marks what its harness omits`**
+  - Design constraints:
+    - Wiring: add `AgentTarget::Maki` (canonical name `maki`, dir `.maki`) as a
+      **full target** — it writes skills to `.maki/skills/<name>/SKILL.md` and
+      commands to `.maki/commands/<name>.md`, so a `maki`-only selection is
+      equipped (Maki reads project commands only from `.maki/commands/` and
+      `.claude/commands/`, and Givn writes commands only for `opencode` and
+      `omp`). Register it in `src/config/overlay.rs::KNOWN_AGENT_TARGETS`, the
+      `--agents` help text, the `givn init` installation summary, and the
+      documented target lists (`README.md`), and extend `sync_agent_integrations`
+      + `managed_generated_paths` + `src/skills/rules.rs::ignore_entries`
+      (design §Architecture Impact).
+    - Path ownership (design §Maki, mirroring the `.claude/settings.local.json`
+      precedent): `.maki/lua/givn-timeline.lua`, `.maki/skills/**`, and
+      `.maki/commands/**` are managed generated paths (allowlist staging,
+      reconcile removal, `local-only` ignore entries); `.maki/init.lua` and
+      `.maki/plugin.toml` are **merged user-owned** files and never appear in
+      those lists, so no user-owned file silently becomes a strict rule.
+    - Assets and install path: `assets/agent-integrations/maki/givn-timeline.lua`
+      → `.maki/lua/givn-timeline.lua`; the reporter's grants **merged** into
+      `.maki/plugin.toml` (create with all six keys explicit — `fs_read`,
+      `fs_write`, `run` true and `net`, `env`, `agent` false — otherwise add only
+      the reporter's three keys idempotently, never removing or flipping a user
+      key, never touching surrounding content — the `merge_claude_settings`
+      precedent); and the managed fence in `.maki/init.lua`, created when absent:
+      `-- givn:begin:timeline` / `local ok, reporter = pcall(require,
+      "givn-timeline")` / `if ok and type(reporter) == "table" and reporter.setup
+      then reporter.setup() end` / `-- givn:end:timeline`. A bare
+      `pcall(require, "givn-timeline").setup()` is **wrong** (it indexes the
+      boolean status, raises, exits 1, and kills the rest of the user's
+      `init.lua`); the hand-placed start-package alternative is rejected because it
+      lives outside the project.
+    - Mapping (design §Maki, verified against the Lua API reference and the
+      installed 0.6.3): `ToolStart`/`ToolDone` with the host's `data.duration_ms`
+      when the call ran and the reporter's own `os.clock()` stamps otherwise (a
+      cancelled call is recorded **without** a duration, never as zero);
+      `TurnStart`/`TurnEnd`/`TurnError` for turns and the flush, with `data.text`
+      never stored; `AutoCompacting`/`CompactionDone` as `phase` entries without
+      `data.summary`; `SessionStatusChanged` (`needs_input` → wait open,
+      `working` → close) for question waits; `TaskStatusChanged` (`working` →
+      subagent span open, `done`/`error` → close) with
+      `data.usage = "unavailable"` on the entry; `ModelChanged` for the usage
+      entries' model; `SessionEnd`/`SessionReset` for the final flush.
+    - No timestamp exists in any Maki event, and `TurnEnd` fires once per turn and
+      only for the main session — so the subagent span carries the
+      `data.usage = "unavailable"` marker and the report's token column reads
+      unavailable; that asymmetry is what this scenario asserts.
+    - Reporter module discipline: keep every `maki.*` asynchronous call out of the
+      module body (top-level async breaks `pcall(require)`), and flush with
+      `maki.fn.jobstart({ "sh", "-c", "cat <payload-file> | <givn> history ingest" })`
+      awaited by `maki.fn.jobwait(id, <timeout>)` inside the callback that owns it
+      — there is no `maki.fn.system`, `jobstart` has no stdin option, and an
+      unawaited task-scope job is lost.
+    - Driver: the real binary with `maki --trust prompt` (verified: exit 0, loads
+      the project plugin, no model call, no network) asserting the plugin's load
+      marker; then a **test-only** driver whose `.maki/init.lua` requires the
+      generated reporter and calls its exported `setup()`/`run()` at top level and
+      which fires synthetic events with
+      `maki.api.exec_autocmds("<Event>", { data = { … } })`, so the reporter's real
+      callbacks call the real `givn history ingest`. The driver entry goes in
+      `tests/steps/agent_activity_reporting_e2e_steps.rs` (its driver table must
+      gain the `maki` row) with helpers in
+      `tests/steps/development_timeline_support.rs`. Do not use
+      `maki --trust -p "…"` (a real turn: model and network) and do not pass `-p`
+      to the `prompt` subcommand (the CLI rejects it with exit 2).
+    - Provisioning: the pinned `maki` v0.6.3 binary
+      (`maki-v0.6.3-x86_64-unknown-linux-musl.tar.gz` from the
+      `https://github.com/tontinton/maki/releases/download/v0.6.3/` release,
+      checksum-verified, extracted into a local bin directory) joins the
+      setup-script family and the CI/release prerequisites, alongside Node and
+      Chromium. The row is strictly required: a missing binary fails the `@e2e`
+      scope, it never skips.
+    - RED expected failure: all **eight** new step phrases are undefined — one
+      Given, three `When` (the three harness actions), and four `Then`/`And`
+      assertions.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Maki's reporter keeps the harness's own tool duration and marks what its harness omits"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the full target (skills, commands, and the
+        reporter), the two assets, the merged `.maki/plugin.toml` grants, the
+        managed fail-soft `init.lua` fence, the autocmd mapping, and the driver
+        steps. Files: `src/skills/targets.rs`, `src/skills/rules.rs` (including
+        `is_rule_path` with its `tracked_rule_paths` sibling — the strict-rule
+        classification for the managed `.maki` paths, never for the two merged
+        files), `src/cli/addons.rs` (the hard-coded addon-removal target lists
+        around lines 407 and 421, so a deselected addon's `.maki/skills/<addon>`
+        directory and `.maki/commands/<addon>.md` files are removed too),
+        `src/config/overlay.rs`, `src/cli/init.rs`, `src/main.rs` (the `--agents`
+        help), `README.md` (the target list), `assets/agent-integrations/maki/`,
+        `tests/steps/agent_activity_reporting_steps.rs`,
+        `tests/steps/agent_activity_reporting_e2e_steps.rs` (the driver table's
+        `maki` row), `tests/steps/development_timeline_support.rs` (the driver
+        helpers), the setup script that provisions the pinned `maki` v0.6.3
+        binary, and the CI/release workflow prerequisites. Compile first, re-run →
+        exit 0. Paste it, together with the `maki --trust prompt` load-proof
+        output.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — keep one install helper and one flush helper shared with
+        the other reporters; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+        with the scenario title `Maki's reporter keeps the harness's own tool
+        duration and marks what its harness omits` in the body. Record the
+        revision identifier.
+
 ## Task 25 — `The report ranks the longest single step first` (`development-report`, added)
 
 - [x] **Scenario: `The report ranks the longest single step first`**
@@ -7399,11 +7514,11 @@ name it.
       is a hard-stop, fix-before-continuing condition.
     - **Scenario-count proof (the subset must be real).** `verify.command` runs
       the `not @e2e` tag set and `verify.e2e_command` the `@e2e` set; with this
-      change in scope that is 35 vs 8 units, so the e2e count is strictly less
+      change in scope that is 36 vs 8 units, so the e2e count is strictly less
       than the full count. Prove it with the runner's own listing (or the
       summary line of each run) and paste both counts:
       `GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e`
-      → 35 scenarios, `GIVN_FEATURES=givn/changes/development-timeline/specs
+      → 36 scenarios, `GIVN_FEATURES=givn/changes/development-timeline/specs
       ./run-tests.sh --e2e` → 8 scenarios.
     - **Health check before any scenario step.** `npx --prefix tests/e2e
       playwright --version` reports 1.64.1 and the driver can launch Chromium and
@@ -7417,8 +7532,17 @@ name it.
       `./run-tests.sh --e2e` (today's bare `./run-tests.sh` plus
       `./run-tests.sh --e2e` would run the browser tier twice once the regular
       scope narrows). Node is already on both runners; the
-      Playwright-bundled Chromium download is the new prerequisite. Commit those
-      workflow edits with the e2e setup, not with a scenario.
+      Playwright-bundled Chromium download is the new prerequisite. The same
+      step also provisions the **pinned `maki` v0.6.3 binary**
+      (`maki-v0.6.3-x86_64-unknown-linux-musl.tar.gz` from
+      `https://github.com/tontinton/maki/releases/download/v0.6.3/`,
+      checksum-verified, extracted into a local bin dir), because Task 24a's
+      `@e2e` row runs the real harness and must never skip. The **browser-setup
+      edits** (the `./setup-e2e-browser.sh` step and the `--non-e2e`/`--e2e`
+      split, whose setup commit E1 already landed) stay with the e2e setup; the
+      Maki provisioning script entry and its CI/release lines belong to **Task
+      24a's own scenario commit**, whose GREEN/COMMIT fields are their single
+      home.
     - **Evidence capture mechanism (the visual gate reads it).** `design.md`'s
       Visual Design Contract declares `Interface: web`, `Viewports: mobile
       (360x780), desktop (1920x1080)`, `States: empty`. `src/integrity_hook.rs::check_visual_evidence`
@@ -7870,7 +7994,7 @@ name it.
         The commit carries the setup only: the browser toolchain and its pinned
         dependency, the driver and its Rust helper, the three per-capability
         `@e2e` step-file skeletons with their registrations and `GivnWorld`
-        slots, the three harness drivers, the CI/release prerequisites, and this
+        slots, the four harness drivers, the CI/release prerequisites, and this
         task file's evidence. No `@e2e` tag was touched, and
         `tests/e2e/node_modules` is never committed (`tests/e2e/.gitignore`).
         ```
@@ -9738,7 +9862,7 @@ asset's extracted inline layer were green at every commit of the tier.
 **Done when:** every box above is checked with its pasted evidence and revision
 identifier, `verify.command` (`./run-tests.sh --non-e2e`) and
 `verify.e2e_command` (`./run-tests.sh --e2e`) both exit 0 on the full suite, the
-e2e setup task's scenario-count proof is pasted (35 regular vs 8 `@e2e`, e2e
+e2e setup task's scenario-count proof is pasted (36 regular vs 8 `@e2e`, e2e
 strictly less), every `@e2e` scenario has committed `mobile.png` + `desktop.png`
 under its slug with the empty-scope scenario's `mobile--empty.png` /
 `desktop--empty.png`, and no `@wip` tag remains on any scenario this change

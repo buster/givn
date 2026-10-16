@@ -726,3 +726,208 @@ decision, scenario, or count changes.
   would remove the reader's double-take, if the design authority wants one.
 
 **DESIGN-REVIEW: PASS**
+
+## Re-review round 3 (2026-10-16, Maki extension: fourth harness reporter)
+
+**Why it ran.** With Tasks 1–24, Task 11a, and E1–E9 committed and the two prior
+design-review sign-offs recorded, the operator extended the change to a fourth
+supported harness: **Maki 0.6.3**, the one target whose reporter is a Lua plugin
+written in the harness's own language, with no attribution asset to sit beside.
+The design authority updated 18 artifacts (this change's `proposal.md`,
+`design.md`, `arc42.md`, delta feature and `tasks.md`, plus `docs/arc42/02`,
+`03`, `05`, `06`, `07`, `08`, `09`, `10`, `11`, `12` and `README.md`, ADR-013 and
+the ADR register — +529/−96 lines; no code, test, asset, config, or
+`design-review.md` edit). A fresh-context grill (high effort; no suite run; every
+probe in `/tmp/maki-load` and `/tmp/maki-drive`) interrogated the extension
+across seven verification items and eleven branches and returned **nine blockers
+(B1–B9) and thirteen non-blocking findings (M1–M13)**. Every one was answerable
+from the installed binary, the Lua API reference, or the codebase, so the four
+decisions the grill framed (D1–D4) were settled on reproduced evidence and no
+operator question arose. The correction round applied the nine blocker fixes and
+the four decisions; this hardening pass re-read each applied correction against
+the working tree, walked the grill's branches again, and wrote this record (it
+wrote nothing else).
+
+**The grill's reproduced findings, re-read by this pass (the probes were not
+re-run — read-only scope).**
+
+- **The exit-code clarification.** `maki --trust prompt` exits 0 and loads a
+  healthy project plugin in every stdio shape the grill tested (stdout and
+  stderr to files, `stdin </dev/null`, stdin closed, stdout discarded, inherited
+  pipes); exit 1 is the **init.lua-raise symptom** (`✖ load init.lua files` plus
+  the Lua traceback), not a redirection effect. That is what ties the load
+  proof's exit-0 assertion to the fence correction: the assertion can only hold
+  once the block stops raising. The same probe found no model or network call in
+  the `prompt` path (`strace` shows no `connect`/`socket`; the Maki log grew 0
+  bytes; ≈0.6 s wall time), and `maki --trust prompt -p …` is rejected by the
+  CLI (exit 2, `unexpected argument '-p'`) exactly as recorded; a real turn
+  (`maki --trust -p …`) stays out of the suite.
+- **The crash shapes, and the working driver.** Firing
+  `maki.api.exec_autocmds` from a *required module's* body aborts Maki (exit 134,
+  `Luau VM is suspended while GC is running`), and any `maki.*` asynchronous
+  call at module top level breaks `pcall(require)`
+  (`attempt to yield across metamethod/C-call boundary`); a job left unawaited
+  in a task scope is lost, while one awaited with `jobwait` inside the callback
+  that owns it always lands. The working shape was reproduced end to end: a
+  synthetic `ToolDone` dispatched the reporter's real callback, whose flush ran
+  `cat <payload> | <givn> history ingest` and appeared in
+  `givn history --change demo --json`; the same held for a real `-p` turn's
+  `SessionEnd`.
+- **The mapping-table verification — no issue found.** All 18 host events are
+  accounted for (12 recorded rows plus the 6 excluded bookkeeping events), every
+  field list matches the Lua API reference, the privacy rows hold
+  (`data.text`/`data.input`/`data.summary` are never stored), no event carries a
+  timestamp while only `ToolDone` supplies a host-measured duration, and the
+  reporter's own stamps are named (`os.clock()`, design.md:741).
+- **The install-path/gates findings (B1–B4).** The hyphenated module name is
+  fine (`require("givn-timeline")` resolves to `.maki/lua/givn-timeline.lua`);
+  absent files are created; a malformed `init.lua` logs its error and the block
+  never runs. The four blockers were exactly: the raising block (B1), the false
+  grants bound (B2), the clobbering install (B3), and the unstated
+  ownership/local-only membership (B4). One branch finding remains unrecorded:
+  a malformed `.maki/plugin.toml` denies everything with a warning, so the
+  reporter is silently inert — Maki's own semantics (see residual 6).
+- **The four settled decisions** (no operator question arose; each was settled
+  from the reproduced evidence, with its rejected alternatives):
+  - **D1 — `maki` is a full target**: skills to `.maki/skills/<name>/SKILL.md`
+    and commands to `.maki/commands/<name>.md` (Markdown with optional `---`
+    frontmatter and `$ARGUMENTS`), so a `maki`-only selection is equipped.
+    Rejected: keeping the "no skills write" choice and documenting the gap; and
+    a reporter-only target "unusable without another guidance-owning target".
+  - **D2 — `.maki/plugin.toml` is merged, never clobbered** (the
+    `merge_claude_settings` precedent): the three grants are added idempotently,
+    a user key is never removed or flipped, surrounding content is untouched,
+    and the Givn-created file names all six keys explicitly. Rejected: writing
+    the asset over the user's file with a warning; and refusing and telling the
+    user which grants to add.
+  - **D3 — a subagent entry whose harness cannot report its tokens carries
+    `data.usage = "unavailable"`** in the intake contract, so the record itself
+    carries the asymmetry the new scenario names. Rejected: restating the step
+    against the report's "unavailable" row or the absence of a usage entry.
+  - **D4 — the pinned `maki` v0.6.3 binary joins the setup-script family and
+    the CI/release prerequisites**, and the `@e2e` row stays strictly required.
+    Rejected: keeping the row required only where the binary is guaranteed (a
+    skip would violate `fail_on_skipped` and hide the very drift R-90 records);
+    and moving the row to a separately scoped, operator-run tier.
+
+**The applied corrections, verified against the working tree.**
+
+| # | Correction | Verified at |
+|---|---|---|
+| D1 | `maki` is a full target — skills to `.maki/skills/<name>/SKILL.md`, commands to `.maki/commands/<name>.md` ("the same shape Givn already renders…, so `.maki/commands/<name>.md` needs no new template"), and its guidance "is not a substitute for writing it"; every required enumeration names Maki | design.md:437-457, :464, :627-631; `proposal.md:64-76`; TC-36 (`docs/arc42/02:36`); `docs/arc42/03:33,:64`; `05:84`; `07:75-78`; `08:892-912`; `09:64-74`; `10:103`; `12:180-181`; `ADR-013:69-90`; `adr/README:70`; change `arc42.md` rows 2/3/5/7/8/9/11/12 and the Maki note; the code-side enumerations are named as implementation work in Task 24a (`:5718-5724`; GREEN `:5798-5806` names `README.md`, `src/cli/init.rs`, `src/config/overlay.rs::KNOWN_AGENT_TARGETS`, `src/main.rs` (the `--agents` help)) |
+| D2 | `.maki/plugin.toml` is merged, never clobbered; the created file names all six keys (`fs_read`/`fs_write`/`run` true, `net`/`env`/`agent` false); the "no net/env/agent bound" claim is gone from every artifact it lived in, replaced by the code's own call surface | design.md:650-659; Task 24a:5734-5737; `docs/arc42/02:36`; `ADR-013:75-76,:86-89` — no `net`/`env`/`agent` bound statement remains, and design.md:657-659 states the design does not claim a bound it cannot enforce |
+| B1 | the fence exists and its body is exactly the safe form, with the rejection rationale stated | design.md:633-647 ("`pcall(require, "givn-timeline").setup()` is **wrong** and was rejected after reproduction"); Task 24a:5740-5749; `arc42.md:131-132`; the only surviving occurrences of the wrong form are its rejection statements |
+| B4 | managed-generated vs merged user-owned membership and its consequences (allowlist staging, reconcile removal, `local-only` ignore entries and `givn commit`'s stage-all exclusion, no silent strict rule; merged files never force-staged, removed, or rewritten) | design.md:669-680, :1264-1265; Task 24a:5728-5733 — with residual 1 (`is_rule_path` not named) |
+| D3 | the intake rule carries `data.usage = "unavailable"` for a subagent entry the harness cannot measure, mirrored in the gap-honesty row, the autocmd mapping row, chapter 06's capture row, Task 24a and the scenario | design.md:397-402, :53, :705; `docs/arc42/06:547`; Task 24a:5748-5761; `agent-activity-reporting.feature:107-115` |
+| D4 | the pinned `maki-v0.6.3-x86_64-unknown-linux-musl.tar.gz` (release URL, checksum-verified, local bin dir) joins the setup-script family, the test-infrastructure paragraph, Task 24a/E1 and the CI/release requirements; the row is strictly required and never skips | design.md:750-757, :973, :986-990, :1046-1053, :1270; Task 24a:5781-5787, `:5798-5806`; `tasks.md:7529-7535`; Done-when `:9852-9858` |
+| B6/B8 | the driver shape is exactly the reproduced one and the two files are named: the **test-written** `.maki/init.lua` calls `setup()`/`run()` at top level; the module body stays free of `maki.*` async calls; starts are `os.clock()`; the flush is the payload file plus `maki.fn.jobstart({ "sh", "-c", "cat <payload-file> | <givn> history ingest" })` awaited by `maki.fn.jobwait(id, <timeout>)` inside the owning callback; no `maki.fn.system`/stdin claim survives | design.md:731-748, :770-790, :1057-1060; Task 24a:5762-5779; `tests/steps/agent_activity_reporting_e2e_steps.rs:137-142` panics on `maki` today, which is why its table is named to gain the row |
+
+**Minor findings (M1–M13), re-checked.** Applied: M1 ("All four deliver",
+design.md:471), M3 (the overview's Maki exception with "no attribution asset",
+design.md:16-20), M10 (Task 24a's RED note names
+all **eight** phrases — "one Given, three `When` … and four `Then`/`And`",
+`tasks.md:5788-5790`), M11 (the file list above), M12 (Maki as a full target, so
+the existing fan-out writes its skills and commands), M13 (`os.clock()` named).
+M4 is applied only in part: the proposal's bullet drops the
+"commit-attribution" qualifier (`proposal.md:69` now reads "beside the
+integration it already gets"), which stays loose for Maki — it receives no
+pre-existing integration — and rests on the following sentence's guidance
+statement; M5's phrase ("installed beside that harness's other integration")
+now sits beside ch.08's Maki paragraph, which states the exception.
+Counts verified mechanically: `tasks.md:4` ("the 35 non-`@e2e` scenario
+sections"), `:22-26` (44 = 43 `@givn.added` + 1 `@givn.modified`; 36 + 8),
+`:40-43` (Tasks 1–35 incl. Task 24a), `:224` (36 / 35), `:7509-7514` (36 vs 8),
+`:9855` (Done-when 36 vs 8); E1's historical 35-vs-8 evidence is intact
+(`tasks.md:7861-7872`, `43 in total`) and its dated pasted CI diffs
+(`:7900-7939`) name no Maki, as they predate the extension. Not applied — M2,
+M6, M7, M8, and M4 only in part — see residuals 2–5.
+
+**Residuals noted by this pass.** None is a question; none changes a mechanism,
+decision, scenario, count, or gate. The first two name work the Task 24a
+implementation must also touch; the rest are stale sentences or an omitted
+diagram node, recorded for the design authority's sweep.
+
+1. **Unnamed rule membership and addon removal.** `src/skills/rules.rs::is_rule_path`
+   (with the `tracked_rule_paths` discovery it feeds) is not named in `design.md`
+   or Task 24a for the new paths, although its sibling `ignore_entries()` is
+   (design.md:1265; Task 24a:5721-5723) and the existing three-reporter pattern
+   names both (`tasks.md:5106`). Likewise `src/cli/addons.rs:407` (skill addons)
+   and `:421` (command addons) keep hard-coded target lists, so `givn addons
+   disable <addon>` on a `maki` project would leave `.maki/skills/<addon>` and
+   `.maki/commands/<addon>.md` behind (and print a three-directory message); the
+   design's reconcile sentence (design.md:672-673) covers the sync/upgrade path
+   (`reconcile_addon_artifacts` fans out over the configured targets), not this
+   command's path.
+2. **The driver-count sentence was not updated (M2).** `design.md:903-909`
+   (§Step Definitions) and its copy in `tasks.md:233-238` (Global constraints)
+   still read "the three harness drivers — a fake `pi` … for omp, … for
+   opencode, and … the generated Claude shim", while the same design places the
+   Maki driver in that file (design.md:1057; Task 24a:5773-5778). Task S3's own
+   body (`tasks.md:690`, `:716`) is dated text for the skeleton it created and is
+   internally consistent.
+3. **Chapter 06's lead-in contradicts its own table.** `docs/arc42/06:538-539`
+   reads "Three reporters feed that intake, one per supported harness, and each
+   is installed beside the commit-attribution integration that harness already
+   gets" directly above the four-row table it introduces (the Maki row is
+   `:547`), and Maki has no attribution asset (design.md:456). One sentence
+   fixes it: "four", plus Maki's exception.
+4. **M6/M7/M8 unapplied.** `docs/arc42/11:71` (R-84) still reads "The three
+   generated reporters … the automated E2E fakes each harness context, so drift
+   is not detected by the suite" — Maki is the fourth, its own e2e runs the real
+   binary, and R-90 (`:76`) carries that drift; `docs/arc42/adr/ADR-073:111-115`
+   still reads "the same boundary now carries three reporters — omp, opencode,
+   and Claude Code" (the extension amended only ADR-013); and `arc42.md:98-99`'s
+   dated tally "Delta inventory is now 43 entries (35 non-`@e2e`, 8 `@e2e`)"
+   predates Task 24a's scenario, which the appended Maki note does not recount.
+5. **Smaller stale text from the same sweep.** The Architecture Impact mermaid
+   (`design.md:1237-1242`) still draws three harness reporters (no Maki node);
+   the "Shared wiring" paragraph (`design.md:466-470`) claims "every asset is
+   copied verbatim … added to `managed_generated_paths` … listed in
+   `ignore_entries()`", which does not hold for the Maki grants asset the same
+   table marks "(merged)" (`:464`, `:650-659`); the traceability clause at
+   `design.md:51` ("Maki needs no new guidance location because it reads the
+   existing skill and command paths") can be read as the refuted "no guidance
+   write" rationale, worth one clarifying word now that §Maki (:446-456) states
+   the opposite construction; and the proposal's generic "beside the integration
+   it already gets" (`proposal.md:69`) is loose for Maki, which receives no
+   pre-existing integration.
+6. **A malformed `.maki/plugin.toml` is not recorded.** The grill's branch-3
+   finding stands: Maki denies every permission with a warning for a file it
+   cannot parse, so the reporter is silently inert — the same class as the
+   folder-trust gate (design.md:682-690, R-90) and worth a one-line treatment.
+7. **Commit-slot wording.** `tasks.md:7534-7535` ("Commit those workflow edits
+   with the e2e setup, not with a scenario") now covers the Maki provisioning and
+   workflow edits too, while Task 24a lists the setup script and the CI/release
+   prerequisites among its own GREEN files (`:5798-5806`) and its COMMIT is the
+   scenario commit (`:5818-5821`); E1's setup commit has landed
+   (`1f03e66ed7db83f8082a0427e2b147129bf61e77`), so the sentence and Task 24a give
+   the same edits two homes.
+
+**Checks run by this pass.**
+
+- `givn lint --change development-timeline` → exit 2: 4 files checked, **1
+  finding** — the new scenario's `@wip` (the only `@wip` left; every other delta
+  scenario's tag has been removed by its committed task) — plus the pre-existing
+  `[SUBST] advisory` permanent-corpus subset matches; no parse error and no
+  error-kind finding.
+- Mechanical recount from the four delta features: **44** scenario entries
+  (43 `@givn.added` + 1 `@givn.modified`, 0 `@givn.removed`) = 14 + 15 + 14 + 1;
+  **36** non-`@e2e` (12/14/9/1) + **8** `@e2e` (2/1/5/0); `@wip` = 1.
+- Invariants re-checked: the use case's §Interactions table (8 rows) = the
+  design's Interaction Coverage Matrix (8 rows) = the 8 `@e2e` titles; Task 24a
+  carries the canonical `--exact` command (`:5792`) and is 0/5 unchecked
+  while Tasks 1–24, 11a and E1–E9 are checked with their evidence and revision
+  identifiers intact.
+- Diff scope: 18 modified files (+529/−96), 13 under `docs/arc42/**` and 5 in
+  the change directory; 0 untracked; no code, test, asset, or config change;
+  `evidence/visual/` untouched; `usecase.md` and the other three delta features
+  byte-identical to the reviewed revision; `proposal.md` touched only in its
+  harness bullet and its out-of-scope bullet; `tasks.md` hunks only in the
+  header inventory/work order, the scope-count line, Task 24a, E1's count and CI
+  lines, and the Done-when line; the two prior records in this file are
+  untouched.
+- No suite was run (read-only scope): the reproduced probe results above are the
+  grill's own evidence, re-read against the artifacts; the mapping table was not
+  re-fetched, and no Maki command was re-executed.
+
+**DESIGN-REVIEW: PASS**

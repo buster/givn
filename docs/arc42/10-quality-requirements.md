@@ -100,7 +100,7 @@ graph TD
 | Q-99 | Correctness | A scope's record is rendered after a restart, and again later. | The earlier entries are unchanged and in time order, and both renders of the same record produce the same pixels because the report reads only the embedded timestamps. |
 | Q-100 | Privacy | A developer inspects what one change's record holds. | Every entry carries metadata and a label bounded to 120 characters; no complete tool input, command line, or question text is present, and the store is outside repository history. |
 | Q-101 | Scale | A multi-day ideation leaves a record with tens of thousands of entries. | The report renders a bounded number of shapes: dense short activities collapse into per-bucket aggregate markers naming their count and combined duration, individual spans appear as the zoom narrows, and the summary and the longest-step ranking still cover the whole record. |
-| Q-102 | Agent ergonomics | A project selects any supported agent target and works through that harness. | The reporter generated for that harness (omp, opencode, or Claude Code) records its activity through the same intake and the same record shape; the neutral `agents` mirror receives no reporter, and a signal the harness's surface cannot deliver is recorded as missing rather than as zero. |
+| Q-102 | Agent ergonomics | A project selects any supported agent target and works through that harness. | The reporter generated for that harness (omp, opencode, Claude Code, or Maki) records its activity through the same intake and the same record shape; the neutral `agents` mirror receives no reporter, and a signal the harness's surface cannot deliver is recorded as missing rather than as zero. |
 
 ## 10.3 Verification Signals
 

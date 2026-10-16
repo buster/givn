@@ -13,9 +13,12 @@ The change has three layers, each with one owner:
 2. **The intake and the reporters** — a Givn-owned command
    (`givn history ingest`) that validates agent-reported events and appends
    them, plus one generated reporter per supported harness (omp, opencode,
-   Claude Code), each installed beside the commit-attribution integration that
-   harness already gets and each delivering through the one intake. The `agents`
-   target is a skills mirror with no runtime, so it has nothing to report.
+   Claude Code, Maki), each installed in that harness's own generated
+   guidance locations and each delivering through the one intake. (Maki is the
+   exception to "beside the attribution integration": it has no attribution
+   asset, so its reporter's three files are the only integration it receives.)
+   The `agents` target is a skills mirror with no runtime, so it has nothing to
+   report.
 3. **The report** — `givn timeline` reads the record for one scope and writes a
    single self-contained HTML file (`assets/timeline/report.html` + the report
    model). The browser screen is hand-authored inline CSS/JS/SVG: no
@@ -44,10 +47,10 @@ records. The record is a consumer of existing signals, never a new gate.
 | Extension: the report's empty state | The report model marks a scope with no entries `empty` and the screen renders the empty state | development-report: "The report shows the empty state for a scope with no recorded activity" (report level) and "Consumer opens the report of a scope with no recorded activity" (`@e2e` Web UI) |
 | Goal: see what was worked on and how long it took | The report ranks the longest steps, totals wait time and tokens, and counts subagent fan-out | development-report: "Consumer opens the generated development report in a browser" |
 | Persona `developer--primary-user` | The report is read by the developer; it answers the three questions the requester named (slowest step, agent fan-out, waiting) | development-report: "The report names the agent's fan-out into small subagents" |
-| Persona `agent--technical-role` | The intake is a machine contract: stdin JSON, stable exit codes, a rejected event reported without failing the caller; every supported harness reaches it the same way | agent-activity-reporting: "Consumer installs the agent reporter and its reported activity lands in the record" (outline over the three harnesses) |
-| Guarantee: every supported harness reports its own activity | One generated reporter per executing agent target (omp, opencode, Claude Code), all delivering through `givn history ingest`; the `agents` skills mirror gets none | agent-activity-reporting: "Every supported harness receives a development reporter" and "The neutral skills target receives no development reporter" |
-| Rule: a recorded duration is measured, never inferred | The harness's own `duration_ms` or `created` timestamp is used where it exists; otherwise the reporter stamps its own start (omp tool events, Claude pre-tool and permission waits) | agent-activity-reporting: "A wait the harness does not time is still recorded with a duration" |
-| Gap honesty: a harness that cannot deliver a signal | Token usage is read from the harness's own session record where no payload carries it (Claude) and rendered as unavailable where it is absent, never as zero | agent-activity-reporting: "Token usage read from the harness's own session record is recorded with its model" and "Absent token usage is recorded as unavailable" |
+| Persona `agent--technical-role` | The intake is a machine contract: stdin JSON, stable exit codes, a rejected event reported without failing the caller; every supported harness reaches it the same way | agent-activity-reporting: "Consumer installs the agent reporter and its reported activity lands in the record" (outline over the four harnesses) |
+| Guarantee: every supported harness reports its own activity | One generated reporter per executing agent target (omp, opencode, Claude Code, Maki), all delivering through `givn history ingest`; the `agents` skills mirror gets none; Maki also receives Givn's guidance in `.maki/`, because Maki reads project commands only from `.maki/commands/` and `.claude/commands/` | agent-activity-reporting: "Every supported harness receives a development reporter" and "The neutral skills target receives no development reporter" |
+| Rule: a recorded duration is measured, never inferred | The harness's own `duration_ms` or `created` timestamp is used where it exists; otherwise the reporter stamps its own start (omp and Maki tool events, Claude pre-tool and permission waits) | agent-activity-reporting: "A wait the harness does not time is still recorded with a duration" and "Maki's reporter keeps the harness's own tool duration and marks what its harness omits" |
+| Gap honesty: a harness that cannot deliver a signal | Token usage is read from the harness's own session record where no payload carries it (Claude), marked unavailable where the harness reports none for that kind (Maki's main-session-only turns), and never rendered as zero | agent-activity-reporting: "Token usage read from the harness's own session record is recorded with its model", "Absent token usage is recorded as unavailable", and "Maki's reporter keeps the harness's own tool duration and marks what its harness omits" |
 
 Actors in Gherkin stay the roles defined in the use case (Developer, Authoring
 agent); the Persona IDs above are review lenses, never Gherkin actors.
@@ -69,6 +72,7 @@ Node-based browser driver for the browser tier.
 | omp (reporter host) | 18.6.1 | verified 2026-10-16: the installed package `@oh-my-pi/pi-coding-agent` 18.6.1 under `~/.bun/install/global/node_modules`, whose shipped types are the contract the reporter is written against (external contract → R-84) |
 | opencode (reporter host) | 2.0.26, V2 plugin API | verified 2026-10-16: `opencode --version` (`opencode v2.0.26`) and the running CLI's own log (`~/.local/share/opencode/log/opencode.log`, `version=2.0.26`). The target API is **V2** per the official migration guide (`https://opencode.ai/v2/docs/build/plugins/migrate-v1`: V1 implementations do not run in V2; V2 default-exports `{ id, setup(ctx) }`; local V2 plugins live in `.opencode/plugins/`; a published plugin depends on `@opencode/plugin` at a version compatible with its CLI — npm `latest` 2.0.30, with 2.0.26 at the CLI's own tag). Hook names, payload types, event envelope, and `Tokens.Info` were read from the tagged upstream source at `v2.0.26` and cross-checked against the live `opencode.db` |
 | Claude Code (reporter host) | 2.1.266 | verified 2026-10-16: `claude --version` (`2.1.266 (Claude Code)`) with `~/.local/bin/claude → ~/.local/share/claude/versions/2.1.266`; the event set cross-checked against the changelog shipped with that build (`~/.claude/cache/changelog.md`, top section `## 2.1.266`), payload schemas from the published hook documentation (which describes a newer build and is used for schemas only), corroborated by real transcripts under `~/.claude/projects/-home-buster-projects-givn/*.jsonl` |
+| Maki (reporter host) | 0.6.3 | verified 2026-10-16: `maki --version` reports `maki 0.6.3` (installed at `/home/buster/.local/bin/maki`); the autocmd names and payload fields were read from the Lua API reference (`https://maki.sh/docs/lua-api/#maki-api-create_autocmd`) and the plugin layout and permission rules from the plugins guide (`https://maki.sh/docs/plugins/`), then confirmed with real probe projects (plugin load with `--trust`, skip without it, synthetic events through the real intake). The Lua surface is the harness's own, so drift is R-90 |
 | Report technology | hand-authored inline CSS + vanilla JS + inline SVG in one file | chosen over Mermaid, d3, or any CDN-delivered library: the report must render with no network, must not add a JavaScript dependency to a single-binary Rust project, and must be deterministic for screenshots. A second, third-party visual stack would also need its own version policy |
 
 **Why a Node driver is acceptable in a Rust repository.** The browser tier has
@@ -390,6 +394,12 @@ Rules the intake enforces, and the reason each exists:
 - `scope` is resolved from the optional `change`/`topic` overrides, falling back
   to `resolve_scope` (*Scope resolution and the report window*); a named scope
   that does not exist is a per-event rejection;
+- a `subagent` entry whose harness cannot report that subagent's tokens carries
+  `data.usage = "unavailable"` — the same marker the `turn` payload uses for
+  absent usage (the `Absent token usage is recorded as unavailable` rule) — so
+  the report's subagent token column reads "unavailable" instead of showing a
+  zero. Maki's reporter sets it, because Maki's `TurnEnd` covers only the main
+  session;
 - exit codes: `0` when the payload was read (rejected events are warnings), `2`
   when stdin is not readable JSON at all. A record that cannot be written warns
   and still exits `0` — the reporter's caller must not fail because Givn's disk
@@ -427,24 +437,42 @@ measures `Instant::now()..drop`. It never returns an error to its caller.
 
 ### The harness reporters
 
-The repository's agent targets are `opencode`, `agents`, `claude`, and `omp`
-(`src/skills/targets.rs::AgentTarget::ALL`). Three of them execute the agent's
-work and therefore have activity to report; the fourth is a skills mirror that
-no harness runs, so it receives no reporter — `sync_agent_integrations` writes
-integrations for exactly those three today.
+The repository's agent targets are `opencode`, `agents`, `claude`, `omp`, and
+`maki` (`src/skills/targets.rs::AgentTarget::ALL`). Four of them execute the
+agent's work and therefore have activity to report; the fifth is a skills mirror
+that no harness runs, so it receives no reporter — `sync_agent_integrations`
+writes integrations for exactly those four.
+
+Maki is the one target whose reporter is a **plugin written in the harness's own
+language**. Its guidance consumption overlaps the other targets but is not a
+substitute for writing it: Maki reads skills from `.maki/skills/`, `.claude/skills/`,
+`.opencode/skills/`, and `.agents/skills/`, and it reads *project commands* only
+from `.maki/commands/` and `.claude/commands/` — and Givn writes commands for
+neither `claude` nor any other target than `opencode` and `omp`. The `maki`
+target is therefore a full target: it owns skills (`SKILL.md` files, the
+convention every target shares) and commands (Markdown with optional `---`
+frontmatter and `$ARGUMENTS`, verified against
+`https://maki.sh/docs/commands/`), so it is usable on its own, and it also
+carries its reporter. It is the only reporter harness with **no attribution
+asset** to sit beside; its reporter files are the only integration it receives.
 
 | Harness | Asset | Install path | Registration | Process model |
 |---|---|---|---|---|
 | omp 18.6.1 | `assets/agent-integrations/omp/givn-timeline.js` | `.omp/hooks/pre/givn-timeline.js` | auto-discovered `pre` hook factory (no manifest) | in-process, one buffer for the session |
 | opencode 2.0.26 | `assets/agent-integrations/opencode/givn-timeline.js` | `.opencode/plugins/givn-timeline.js` | auto-discovered; `setup(ctx)` registers hooks plus one event subscription | in-process, one buffer for the session |
 | Claude Code 2.1.266 | `assets/agent-integrations/claude/givn-timeline.sh` | `.claude/hooks/givn-timeline.sh` + one entry per event in `.claude/settings.local.json` | command hook per event, merged into the project settings file | one process per hook invocation |
+| Maki 0.6.3 | `assets/agent-integrations/maki/givn-timeline.lua` + `assets/agent-integrations/maki/plugin.toml` | `.maki/skills/<name>/SKILL.md` and `.maki/commands/<name>.md` (guidance), `.maki/lua/givn-timeline.lua`, `.maki/plugin.toml` (merged), and a managed fence in `.maki/init.lua` (merged) | exported `setup()` called from the managed `init.lua` fence; it registers the autocmds | in-process, one buffer per Maki session |
 
-Shared wiring: every asset is copied verbatim by
-`src/skills/targets.rs::sync_agent_integrations`, added to
+Shared wiring: the reporter assets are copied verbatim by
+`src/skills/targets.rs::sync_agent_integrations`, the generated paths join
 `managed_generated_paths` (so `givn init`, `givn skills sync`, and the managed
-upgrade keep it current and the migration allowlist stages it), and listed in
-`src/skills/rules.rs::ignore_entries()` so the `local-only` policy keeps it out
-of a repository. All three deliver through `givn history ingest`, and none of
+upgrade keep them current and the migration allowlist stages them), and those
+paths are listed in `src/skills/rules.rs::ignore_entries()` so the `local-only`
+policy keeps them out of a repository. The two merged files are the exception to
+"copied verbatim": `.maki/lua/givn-timeline.lua` is copied, while
+`.maki/plugin.toml` and the fence inside `.maki/init.lua` are merged into
+user-owned files and therefore appear in neither list. All four reporters deliver
+through `givn history ingest`, and none of
 them knows the record's line format (ADR-073). Because a Claude hook is its own
 process, its payload mapping lives in the binary (`givn history harness-hook
 --harness claude`) and the generated asset stays a three-line `sh` shim that
@@ -591,6 +619,192 @@ agents, which are recorded as subagent spans like any other; and the two events
 the current documentation adds after this build (`PostToolBatch`,
 `UserPromptExpansion`) are not planned against.
 
+#### Maki — verified against the installed binary 0.6.3 (2026-10-16)
+
+**Install path and the loading decision.** A Maki plugin is reachable only
+through `init.lua`: it is "the only file maki runs", it `require()`s the modules
+under `lua/`, and nothing under `lua/` loads on its own. The `maki` target
+therefore writes its normal agent guidance *and* the reporter:
+
+| Generated path | Ownership | Purpose |
+|---|---|---|
+| `.maki/skills/<name>/SKILL.md` | managed generated | the workflow skills, in the location Maki reads (`/docs/skills/` also lists `.claude`, `.opencode`, and `.agents`, but Maki can be selected alone) |
+| `.maki/commands/<name>.md` | managed generated | the slash commands; Maki's discovery walks cwd → nearest `.git` root and reads `.maki/commands/` then `.claude/commands/` at each level, and the file is Markdown with optional `---` frontmatter (`name`, `description`, `argument-hint`) whose body substitutes `$ARGUMENTS` — the same shape Givn already renders for its command-owning targets, so `.maki/commands/<name>.md` needs no new template |
+| `.maki/lua/givn-timeline.lua` | managed generated | the reporter module (asset `agent-integrations/maki/givn-timeline.lua`) |
+| `.maki/plugin.toml` | **merged, user-owned** | the permission grants (see below) |
+| a managed fence inside `.maki/init.lua` | **merged, user-owned file** | the three-line block that loads the module |
+
+The managed `init.lua` fence is exactly:
+
+```lua
+-- givn:begin:timeline
+local ok, reporter = pcall(require, "givn-timeline")
+if ok and type(reporter) == "table" and reporter.setup then
+  reporter.setup()
+end
+-- givn:end:timeline
+```
+
+`pcall(require, "givn-timeline").setup()` is **wrong** and was rejected after
+reproduction: `pcall` returns a status *and* the value, so the call indexes a
+boolean, raises, exits 1, and kills the rest of the user's `init.lua`. The form
+above keeps the fence and fails soft. Givn owns only the fenced region, creates
+`.maki/init.lua` when it is absent, and never otherwise touches the file.
+
+`.maki/plugin.toml` is **merged, never clobbered** — the `merge_claude_settings`
+precedent: the reporter's grants are added idempotently per key, a key the user
+already wrote is never removed or flipped, and surrounding content is untouched.
+When Givn creates the file it writes the grants explicitly —
+`fs_read = true`, `fs_write = true`, `run = true`, and `net = false`,
+`env = false`, `agent = false` — so the created file is self-documenting. For a
+file the user owns, the truthful statement is the *code*'s: the reporter calls
+only `fs_read`, `fs_write`, and `run`, and Givn adds nothing else. (A
+self-written `plugin.toml` defaults every unnamed key to granted, which is why
+the created file names all six; the design does not claim a bound it cannot
+enforce on a user-edited file.) The `run` grant is what the intake call needs.
+
+Chosen over the alternative installation, a hand-placed *start package* under
+Maki's data directory (`<maki-data>/site/pack/…`, which loads at startup with no
+`init.lua` edit): a package lives outside the project, so a project-scoped
+reporter could not be installed, refreshed, or removed with the rest of that
+project's generated guidance, and every project on the machine would receive it
+whether it selected Maki or not.
+
+**Path ownership (mirroring the `.claude/settings.local.json` precedent).**
+`.maki/lua/givn-timeline.lua` and the `.maki/skills/**` and `.maki/commands/**`
+files are **managed generated paths**: they join `managed_generated_paths`, so
+`givn upgrade` stages them through its allowlist and the reconcile step removes
+them when the target or an addon is deselected; under the `local-only` policy
+they are also named in `ignore_entries` and excluded by `givn commit`'s
+stage-all path, exactly like the other targets' generated files.
+`.maki/init.lua` and `.maki/plugin.toml` are **not** generated paths: they are
+merged user files, so they are never force-staged, never removed, and never
+silently rewritten — matching how `.claude/settings.local.json` is handled as a
+managed-but-merged file. No `.maki` file becomes a strict rule without being
+named in that list. Three seams carry that membership in code:
+`src/skills/targets.rs::managed_generated_paths` (the allowlist),
+`src/skills/rules.rs::is_rule_path` with its `tracked_rule_paths` sibling (the
+strict-rule classification), and the addon-removal target lists in
+`src/cli/addons.rs` (around lines 407 and 421), which must remove a deselected
+addon's `.maki/skills/<addon>` directory and `.maki/commands/<addon>.md` files
+the same way they remove the other targets' — otherwise a disabled addon leaves
+its guidance behind in `.maki/`.
+
+**Folder trust is part of the contract.** Maki gates *automatic shared project
+configuration*: in an untrusted folder it prints `warning: skipped shared
+project config in <path> because the folder is not trusted; run maki trust add
+--yes PATH and restart Maki, or pass --trust to load it for one run` and loads
+nothing from `.maki/`. Verified with a probe project on 2026-10-16: the
+untrusted run loaded no plugin (no marker file), and the same project with
+`--trust` did. The reporter therefore runs exactly in the projects the developer
+has trusted for Maki; a project that never trusts `.maki/` gets no record — an
+empty timeline, not a failure (R-90).
+
+**Autocmd mapping** (names and payload fields read from the Lua API reference,
+`https://maki.sh/docs/lua-api/#maki-api-create_autocmd`, and confirmed against
+the installed 0.6.3 binary):
+
+| Maki autocmd | Reported |
+|---|---|
+| `ToolStart` (`data.tool_id`, `data.tool`) | tool start; **no host event carries a timestamp**, so the reporter stamps its own start in its in-memory pending state, keyed by `tool_id` |
+| `ToolDone` (`data.tool_id`, `data.tool`, `data.is_error`, `data.bytes`; `data.duration_ms` and `data.input` only for a call that actually ran) | tool end: the host's `duration_ms` is used when present, otherwise the reporter's own stamps, and a cancelled call is recorded without a duration (never as zero). The label is the tool name — `data.input` is never stored (the privacy bound) |
+| `TurnStart` (`data.text`) | turn start, stamped by the reporter; `data.text` is never stored (it is prompt content) |
+| `TurnEnd` (`data.reason`, `data.usage` — four token fields, cache included —, `data.cost`, `data.list_cost`, `data.context_size`, `data.context_window`, `data.num_turns`) | turn entry with usage and outcome; the flush boundary |
+| `TurnError` | turn entry with `outcome: failed` |
+| `AutoCompacting` / `CompactionDone` (`context_size`, `context_size_before`/`_after`, `data.summary`) | `phase` entries, so a compaction shows up as the long step it is; `data.summary` is never stored (content) |
+| `SessionStatusChanged` (`data.status` = `working`/`needs_input`/`idle`) | the question-wait derivation: `needs_input` opens a wait and the next `working` closes it, with the reporter's own measurement |
+| `TaskStatusChanged` (`data.id`, `data.name`, `data.status` = `working`/`done`/`error`) | subagent spans: `working` opens one, `done`/`error` closes it, and the entry carries `data.usage = "unavailable"` because Maki never reports a subagent's tokens (the intake's usage marker) |
+| `ModelChanged` (`data.model`, `data.previous_spec`) | the model attributed to subsequent usage entries, because no usage payload names a model |
+| `SessionEnd` (`data.reason`, `data.deadline_ms`) | session end, then the final flush. `deadline_ms` is the shared teardown grace period, and a job started inside a callback dies with the dispatch unless it is awaited, so the flush awaits its `givn history ingest` job with `maki.fn.jobwait` inside the callback |
+| `SessionReset` (TUI `/new`; same path as `SessionEnd` with `reason = "reset"`) | flush, then clear that session's buffer |
+| `SessionTitleChanged`, `SessionFocusChanged`, `TaskFocusChanged`, `PlanReady`, `InputChanged`, `FileIndexReady` | not recorded: session bookkeeping, UI focus, or a plan path with no timeline value |
+
+**Gaps (recorded, not invented).**
+
+- **No timestamps anywhere.** Every start comes from the reporter, and only
+  `ToolDone` can supply a host-measured duration.
+- **`TurnEnd` fires once per turn and only for the main session.** A subagent
+  turn therefore never yields a usage entry: per-subagent token usage is
+  unavailable through Maki, the subagent span is still recorded and carries
+  `data.usage = "unavailable"`, and the report's subagent token column reads
+  "unavailable" (R-90, and the report's missing-signal rule).
+- **Turn events are driver-dependent.** `TurnStart` and `PlanReady` come from
+  the TUI only and `maki-acp` runs its own loop, so a headless or ACP session can
+  deliver `TurnEnd` without `TurnStart`. The reporter never depends on
+  `TurnStart` for a turn's start: a turn is closed by `TurnEnd`/`TurnError`, and
+  its start falls back to the last observed activity, recorded as unmeasured
+  rather than invented.
+- **`FileIndexReady` carries no `session_id`** (it is about a directory) and is
+  not recorded; every other event carries `data.session_id`, which is what keeps
+  two concurrent sessions apart in the buffer.
+- **A malformed `.maki/plugin.toml` denies everything.** Maki denies every gated
+  call when the file cannot be parsed and logs a warning at load time, so the
+  reporter's intake call fails and the timeline is silently empty for that
+  project. That is the same class as the trust gate — the harness, not Givn,
+  decides — and the reporter's own warning plus the report's gap notice are what
+  make it visible; Givn never rewrites a user-owned file to "fix" it.
+- **The folder-trust gate** decides whether the reporter runs at all.
+
+**Failure discipline.** The module is defensive like the other three, and two
+constraints are reproduced, not assumed. First, **no `maki.*` asynchronous call
+may sit in the module body**: top-level async breaks `pcall(require)`, so the
+module only defines tables and functions at load time and every host call happens
+inside a callback or an explicit `run()` the loader calls. Second, the flush:
+`maki.fn.system` does not exist, `maki.fn.jobstart` has no stdin option, and a
+job left unawaited in a task scope is lost, so the flush writes the payload to a
+temporary file and runs
+`maki.fn.jobstart({ "sh", "-c", "cat <payload-file> | <givn> history ingest" })`
+followed by `maki.fn.jobwait(id, <timeout>)` **inside the callback that owns it**
+(the API's job-lifetime rule). Starts are stamped with `os.clock()`, the
+monotonic clock the probe used, because no host event carries a timestamp.
+`setup()` and every callback are wrapped so a `maki` error is logged once through
+`maki.log.error` and never propagates (raising inside a dispatch would break it),
+the buffer is bounded, a failed flush warns once and counts the dropped events,
+and the module exports its callback table so the test driver can drive a handler
+directly. The intake contract is unchanged: the same `givn history ingest`
+payload, validated per event.
+
+**Test driver.** Two real-binary steps, with no model call and no network. The
+binary itself is **provisioned and pinned** like the browser tier: the
+setup-script family (`./setup-e2e-browser.sh`'s sibling work, named in Task 24a's
+GREEN list and in the workflow requirements) downloads
+`maki-v0.6.3-x86_64-unknown-linux-musl.tar.gz` (≈31 MB) from
+`https://github.com/tontinton/maki/releases/download/v0.6.3/`, verifies its
+checksum, and extracts it into a local bin directory, and the row is strictly
+required — the `@e2e` scope fails on a skipped step, so a missing binary is a
+failure, never a skip.
+
+1. **load proof** — the step writes the project and runs the real binary as
+   `maki --trust prompt` (the `prompt` subcommand prints the rendered system
+   prompt and exits), then asserts the plugin's load marker and exit 0. Verified
+   on 2026-10-16: `maki --trust prompt` exits 0 and loads the project plugin,
+   the same directory without `--trust` is skipped, and
+   `maki --trust prompt -p "…"` is rejected by the CLI (exit 2, `unexpected
+   argument '-p'`) because `prompt` is a subcommand while `--trust` is a boolean
+   flag — the driver must not pass `-p` to that subcommand. A real turn
+   (`maki --trust -p "…"`, which does exit 0 and fire `SessionEnd` when it runs)
+   is deliberately **not** part of the suite: it needs a model and network.
+2. **mapping proof** — the exact working shape, reproduced during the grill:
+   - the **test-written** `.maki/init.lua` requires the reporter module and calls
+     its exported `setup()`/`run()` at top level (the shipped asset's own fence
+     stays the fail-soft `pcall` form); a module body must contain no `maki.*`
+     asynchronous call, because top-level async breaks `pcall(require)`;
+   - the driver fires synthetic events with
+     `maki.api.exec_autocmds("<Event>", { data = { … } })`, which "runs every
+     matching autocmd callback to completion before it returns", so the generated
+     reporter's real callbacks run against the real intake;
+   - the flush inside those callbacks is
+     `maki.fn.jobstart({ "sh", "-c", "cat <payload-file> | <givn> history ingest" })`
+     followed by `maki.fn.jobwait(id, <timeout>)`, because there is no
+     `maki.fn.system`, `jobstart` has no stdin option, and a job left unawaited in
+     a task scope is lost;
+   - the step then asserts `givn history --change demo --json`.
+
+   Driver and helpers live in `tests/steps/agent_activity_reporting_e2e_steps.rs`
+   with the shared support in `tests/steps/development_timeline_support.rs` — the
+   e2e step file must gain the `maki` entry, since its driver table would
+   otherwise panic on the row.
+
 #### Failure discipline per harness
 
 - **omp:** handlers never throw (a throw on `tool_call` is fail-closed and would
@@ -607,7 +821,12 @@ the current documentation adds after this build (`PostToolBatch`,
   so they never slow the agent; `Stop` and `SessionEnd` are synchronous with a
   short timeout so the final flush is bounded (`SessionEnd` shares a 1.5 s
   budget).
-- **All three:** the number of dropped events is counted and reported, so the
+- **Maki:** `setup()` and every autocmd callback are wrapped so a `maki` error is
+  logged once and never propagates into the dispatch; the buffer is bounded; the
+  flush is one awaited `maki.fn.jobstart` + `maki.fn.jobwait` pair with a short
+  timeout, awaited inside the callback that owns it so the job survives the
+  dispatch; a failed flush warns once and counts the dropped events.
+- **All four:** the number of dropped events is counted and reported, so the
   report shows a gap instead of a silently short timeline.
 
 #### What the report shows when a harness cannot deliver a signal
@@ -699,11 +918,12 @@ Missing data is rendered as missing, never as zero:
 | development-report | `tests/steps/development_report_steps.rs` | `tests/steps/development_report_e2e_steps.rs` |
 
 Shared, not per-capability: `tests/steps/development_timeline_support.rs`
-(record fixtures, the seeded-history builder, and the three harness drivers — a
+(record fixtures, the seeded-history builder, and the four harness drivers — a
 fake `pi` extension context for omp, a fake plugin context capturing
 `session.hook`/`tool.hook`/`shell.hook` plus the event subscription for
-opencode, and a payload-on-stdin invocation of the generated Claude shim with a
-fixture transcript) and
+opencode, a payload-on-stdin invocation of the generated Claude shim with a
+fixture transcript, and for Maki the real-binary invocation plus the synthetic
+autocmd driver) and
 `tests/common/browser.rs` (the Rust side of the browser driver). Every module is
 registered in `tests/steps/mod.rs`; `GivnWorld` gains one slot per capability.
 
@@ -768,8 +988,9 @@ surface):
 
 ```
 ./setup-e2e-browser.sh        # npm ci --prefix tests/e2e && npx --prefix tests/e2e playwright install chromium
+./setup-e2e-harness.sh        # pinned maki v0.6.3 binary: download, checksum-verify, extract (same setup-script family)
 ./run-tests.sh --non-e2e      # the regular scope: every non-@e2e scenario
-./run-tests.sh --e2e          # e2e scope, browser included
+./run-tests.sh --e2e          # e2e scope, browser and Maki included
 ```
 
 The regular scope is `--non-e2e` and not the bare `./run-tests.sh` form: the
@@ -780,17 +1001,19 @@ in this design):** `verify.command` in `givn/commands.yaml` changes from
 follows it; `verify.e2e_command` keeps `./run-tests.sh --e2e`, so the archive
 still produces a regular receipt and an e2e receipt separately.
 
-`./setup-e2e-browser.sh` is a new root-level script next to `run-tests.sh`,
-`measure-coverage.sh`, and `merge-coverages.sh`; it pins the Playwright version
-resolved at implementation time and installs only Chromium.
+`./setup-e2e-browser.sh` and `./setup-e2e-harness.sh` are new root-level scripts
+next to `run-tests.sh`, `measure-coverage.sh`, and `merge-coverages.sh`; the
+first pins the Playwright version resolved at implementation time and installs
+only Chromium, the second downloads the pinned `maki` v0.6.3 musl binary,
+verifies its checksum, and extracts it into a local bin directory.
 
 **Isolated network:** not applicable in the container sense — nothing in this
 system listens on a port and nothing is fetched over the network. The browser
 loads the generated report from a `file://` URL inside the temporary project
 root the scenario created, so no host service and no shared resource is
 involved, and a scenario cannot accidentally depend on a service "already
-running". `./setup-e2e-browser.sh` is the only step that touches the network,
-and it runs once, outside the suite.
+running". The two setup scripts are the only steps that touch the network, and
+they run once, outside the suite.
 
 **Digital twin per external/third-party dependency:** none. This system talks
 to no external service at test time or at run time: the report is a local file,
@@ -839,17 +1062,25 @@ unit/integration step files, one file per capability, plus the shared
 
 **Local test infrastructure:** the built `givn` binary in a `tempfile` project
 root; `node` on `PATH` (already required by the existing attribution E2E); the
-Playwright-installed Chromium; no server, port, database, or container, and no
-harness credentials. The browser scenarios generate the report into the
-temporary project root and open it from `file://`. The three harness reporters
+Playwright-installed Chromium; the **pinned `maki` binary** — v0.6.3, provisioned
+by the setup-script family from
+`https://github.com/tontinton/maki/releases/download/v0.6.3/maki-v0.6.3-x86_64-unknown-linux-musl.tar.gz`
+(≈31 MB), checksum-verified and extracted into a local bin directory — with no
+server, port, database, or container, and no harness credentials. The Maki row is
+strictly required: the `@e2e` scope fails on a skipped step, so a missing or
+wrong-version binary is a failure, never a skip. The browser scenarios generate
+the report into the
+temporary project root and open it from `file://`. The four harness reporters
 are driven through their own real entry point, never through a live model
-session:
+session, and the Maki driver lives in the same shared support file as the other
+three:
 
 | Harness | Driver |
 |---|---|
 | omp | `node` imports the generated `.omp/hooks/pre/givn-timeline.js`, calls its factory with a fake `pi` (`on`, `events.on`, `exec`, `getThinkingLevel`), fires synthetic tool/turn/subagent events, and the reporter calls the real `givn history ingest` |
 | opencode | `node` imports the generated `.opencode/plugins/givn-timeline.js`, calls `setup` with a fake `ctx` that captures `session.hook`/`tool.hook`/`shell.hook` registrations and an `event.subscribe` async iterable, emits the synthetic events, and the reporter calls the real `givn history ingest` |
 | Claude Code | the generated `.claude/hooks/givn-timeline.sh` shim is executed directly with a real hook payload on stdin (`PreToolUse`, `PostToolUse`, `AskUserQuestion`, `PermissionRequest`, `SubagentStart`/`Stop`, `Stop`), with `PATH` shimming `givn` to the built binary and a fixture transcript at `transcript_path`; the shim's real mapper runs in the binary |
+| Maki | the real `maki` binary loads the generated plugin (`maki --trust prompt`, exit 0, asserting the plugin's load marker without a model call), and a test-only driver module in `.maki/lua/` requires the generated reporter and fires synthetic autocmds with `maki.api.exec_autocmds("<Event>", { data = { … } })`, so the reporter's real callbacks call the real `givn history ingest` |
 
 **E2E framework choice and justification:** cucumber-rs (already the project's
 runner) plus Playwright as the browser driver. cucumber-rs drives the CLI
@@ -873,7 +1104,7 @@ Every row is one normalized inventory entry from
 |---|---|---|---|
 | development-record: run a lifecycle command | Consumer runs a lifecycle step and reads its recorded actions | CLI | `common::run_givn`: `givn status --change demo`, then `givn history --change demo --json`; the assertion reads the printed record |
 | development-record: read the development record | Consumer reads the development record as machine-readable output | CLI | `common::run_givn`: `givn history --change demo --json` against a seeded record; the assertion parses the printed entries |
-| agent-activity-reporting: report agent activity | Consumer installs the agent reporter and its reported activity lands in the record | CLI (harness integration) | one `@e2e` Scenario Outline with one Examples row per harness: install the project (`givn init --agents <target>`), then drive that harness's generated reporter through its real entry point — `node` with a fake `pi` for omp, `node` with a fake plugin context for opencode, and the generated Claude shim with a real hook payload on stdin (mapper in the binary) — emitting a tool call, a subagent start/stop, and a question wait; every reporter calls the real `givn history ingest`, and `givn history --change demo --json` is asserted |
+| agent-activity-reporting: report agent activity | Consumer installs the agent reporter and its reported activity lands in the record | CLI (harness integration) | one `@e2e` Scenario Outline with one Examples row per harness (omp, opencode, Claude Code, Maki): install the project (`givn init --agents <target>`), then drive that harness's generated reporter through its real entry point — `node` with a fake `pi` for omp, `node` with a fake plugin context for opencode, the generated Claude shim with a real hook payload on stdin (mapper in the binary), and for Maki the real binary loading the plugin (`maki --trust prompt`) plus a test-only Lua driver firing synthetic autocmds — emitting a tool call, a subagent start/stop, and a question wait; every reporter calls the real `givn history ingest`, and `givn history --change demo --json` is asserted |
 | development-report: generate the development report for a change | Consumer generates the development report for a change | CLI | `common::run_givn`: `givn timeline --change demo --out report.html`; the assertion reads the written file |
 | development-report: open the report in a browser | Consumer opens the generated development report in a browser | Web UI | Playwright: one `@e2e` Scenario Outline with a change row and a topic row — one normalized action with input variants, so it adds no second inventory row — `page.goto("file://<root>/report.html")`, then read the rendered heading, the timeline SVG, and the longest step's duration from the DOM |
 | development-report: select a timeline element | Consumer selects a timeline element and reads its details | Web UI | Playwright: click the longest step's span (or focus it and press Enter), then read the details panel's rendered text |
@@ -991,6 +1222,7 @@ process its tests start.
 | cucumber test runner (`tests/features_runner`) | `./measure-coverage.sh` pass 1 (`not @e2e`) and pass 2 (`@e2e`) | `cargo llvm-cov nextest --no-report --locked --test features_runner` (the instrumented build, not a plain `cargo test`) | llvm-cov profraw sets, cleaned between passes with `cargo llvm-cov clean --profraw-only`, then `cargo llvm-cov report --cobertura` to `coverage/non-e2e-cobertura.xml` and `coverage/e2e-cobertura.xml` | `./merge-coverages.sh` unions the two reports into `coverage/cobertura-coverage.xml` by `(filename, line)` | `src/history.rs::bound_label` and `src/cli/timeline.rs::build_report_model`, both exercised by the new scenarios |
 | `givn` CLI (the production binary) | `tests/features_runner` steps via `CARGO_BIN_EXE_givn` in a temp project root, and the generated Claude shim `.claude/hooks/givn-timeline.sh`, which execs that same binary through a `PATH` shim | the same `cargo llvm-cov` build; `measure-coverage.sh` first instrumented-builds `ready_fixture` so a cold replay cannot replace the instrumented binary mid-run | the child writes into the inherited `LLVM_PROFILE_FILE` set, so its lines land in the same pass's profraw set | same `./merge-coverages.sh` step | `src/history.rs::record` (every recorded command), `src/cli/history.rs::ingest`, and `src/cli/history.rs::map_harness_event` (exercised by the Claude mapping scenarios) |
 | `node` browser driver and harness drivers | the browser steps in the e2e pass (`tests/common/browser.rs` spawns `tests/e2e/browser-driver.mjs`) and the omp/opencode reporter steps, which run their generated assets with `node` against fake harness contexts | none — they are JavaScript test infrastructure outside the Rust coverage surface, and they are not production code | none | none (no profile to merge) | n/a — test-only drivers; they are named here so the process inventory is complete rather than silently omitted |
+| `maki` (the real harness binary, provisioned and pinned v0.6.3, load proof + driver host) | the Maki steps in the e2e pass: the setup script installs the pinned binary, `maki --trust prompt` loads the generated project plugin, and the test-only driver module fires synthetic autocmds inside that same process | none — the process is a third-party harness, not production code, so no Rust instrumentation applies | none | none (no profile to merge) | n/a — harness process. It is nonetheless a real interface under test (the reporter's autocmds run inside it), and the production path it exercises, `src/cli/history.rs::ingest`, is counted through the `givn` CLI row above because the flush invokes the built binary |
 
 The regular verification scope this change declares (`verify.command:
 ./run-tests.sh --non-e2e` in `givn/commands.yaml`) runs exactly the `not @e2e`
@@ -1024,10 +1256,12 @@ flowchart LR
     Omp["omp extension runner"] --> R1[".omp/hooks/pre/givn-timeline.js"]
     Oc["opencode plugin host"] --> R2[".opencode/plugins/givn-timeline.js"]
     Cc["Claude Code hook host"] --> R3[".claude/hooks/givn-timeline.sh"]
+    Maki["Maki Lua plugin host"] --> R4[".maki/lua/givn-timeline.lua<br/>+ merged grants and init.lua fence"]
   end
   R1 -->|stdin JSON| Ingest
   R2 -->|stdin JSON| Ingest
   R3 -->|stdin payload| Mapper
+  R4 -->|stdin JSON| Ingest
   Asset --> Browser["browser (Playwright in e2e)"]
 ```
 
@@ -1040,18 +1274,20 @@ flowchart LR
 | `assets/agent-integrations/omp/givn-timeline.js` | **new** — the omp reporter (`pi.on` handlers plus one event-bus subscription) |
 | `assets/agent-integrations/opencode/givn-timeline.js` | **new** — the opencode reporter (`setup(ctx)`: domain hooks plus one `ctx.event.subscribe` iterable) |
 | `assets/agent-integrations/claude/givn-timeline.sh` | **new** — the Claude Code shim that pipes its payload to the binary-side mapper |
+| `assets/agent-integrations/maki/givn-timeline.lua` + `assets/agent-integrations/maki/plugin.toml` | **new** — the Maki reporter module (its `setup()` registers the autocmds and exports its callbacks for the test driver) and the permission grants it needs (`fs_read`, `fs_write`, `run`) |
 | `docs/design/design-system.md` | **new** — the durable design system and the reference views |
 | `src/main.rs` | two new commands plus the recording wrapper around dispatch |
 | `src/subprocess.rs` | emit a `step` entry (label, duration, outcome) at the shell choke point |
 | `src/hooks.rs` | emit a `hook` entry per hook |
 | `src/cli/archive.rs` | emit `phase` entries at the existing gate boundaries; record the existing scope duration |
 | `src/cli/check.rs`, `src/cli/commit.rs` | phase and revision entries |
-| `src/skills/targets.rs` | install all three reporter assets for their targets; extend `merge_claude_settings` to merge the per-event Claude registration idempotently per `(event, matcher, command)` and to re-apply a changed matcher; register all three in `managed_generated_paths` |
-| `src/skills/rules.rs` | add the three reporter paths to `ignore_entries` so the `local-only` policy keeps them out of a repository |
+| `src/skills/targets.rs` | add `AgentTarget::Maki` (dir `.maki`, **no** command directory of its own format change: its commands reuse the shared Markdown template) that writes skills to `.maki/skills/` and commands to `.maki/commands/` so the target is usable alone; install the four reporter assets for their targets; merge the managed `-- givn:begin:timeline` fence into `.maki/init.lua` and merge the reporter's grants into `.maki/plugin.toml` (both user-owned files: create when absent, add idempotently, never remove or flip a user key, never touch surrounding content — the `merge_claude_settings` precedent); extend `merge_claude_settings` to merge the per-event Claude registration idempotently per `(event, matcher, command)`; register `.maki/lua/givn-timeline.lua` and the `.maki/skills/**` and `.maki/commands/**` files in `managed_generated_paths` (never `.maki/init.lua` or `.maki/plugin.toml`) |
+| `src/skills/rules.rs` | add the managed reporter and target paths to `ignore_entries` so the `local-only` policy keeps them out of a repository; leave `.maki/init.lua` and `.maki/plugin.toml` unlisted so no user-owned file silently becomes a strict rule |
+| `src/config/overlay.rs`, `src/cli/init.rs`, `README.md` | add `maki` to `KNOWN_AGENT_TARGETS`, to the `--agents` help text, to the init installation summary, and to every documented target list |
 | `tests/` | six new step files, one support file, `tests/common/browser.rs`, `tests/e2e/` (driver + `package.json`); the **fixture class** whose hand-written ignore content would otherwise commit the store (`tests/steps/run_execution_e2e_steps.rs::git_managed_project`, `tests/steps/release_0_3_0_e2e_steps.rs::git_project_with_version` and `::fossil_project_with_version`; minimal remedy: the record path joins each fixture's hand-written ignore content, or the store is removed before the fixture commit); and the **comparison-helper class** that must exclude the record directory (`tests/steps/scm_backend_selection_steps.rs::snapshot_tree`/`collect_tree` and `tests/steps/serve_extended_rules_steps.rs::project_files`/`collect_project_files`) |
-| `setup-e2e-browser.sh` | **new** — one-time browser installation |
+| `setup-e2e-browser.sh` | **new** — one-time browser installation (Node/Chromium); its sibling provisioning of the pinned `maki` v0.6.3 binary belongs to the same setup-script family |
 | `givn/commands.yaml` | `verify.command` narrows to `./run-tests.sh --non-e2e`; `verify.e2e_command` stays `./run-tests.sh --e2e` (the README's command table follows) |
-| `.github/workflows/ci.yml`, `.github/workflows/release.yml` | install Node/Chromium (`./setup-e2e-browser.sh`) before the first suite invocation, and run the regular scope as `./run-tests.sh --non-e2e` before the e2e scope |
+| `.github/workflows/ci.yml`, `.github/workflows/release.yml` | install Node/Chromium and the pinned `maki` v0.6.3 binary (the setup-script family) before the first suite invocation, and run the regular scope as `./run-tests.sh --non-e2e` before the e2e scope |
 
 ## Data Model Changes
 

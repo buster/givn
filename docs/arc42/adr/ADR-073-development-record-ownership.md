@@ -108,8 +108,8 @@ record that the report cannot read.
   knowledge of the file format, the schema, or the scope rules.
 - Good, because validation, the bounded-label rule, and the scope resolution
   live in one place, so the record's privacy boundary is auditable.
-- Good, because the same boundary now carries three reporters — omp, opencode,
-  and Claude Code — with no per-harness format work: each reporter is one
+- Good, because the same boundary now carries four reporters — omp, opencode,
+  Claude Code, and Maki — with no per-harness format work: each reporter is one
   generated asset, and the harnesses' material differences (in-process buffering
   versus one process per hook, timestamps present or absent on their events)
   stay behind the same intake.

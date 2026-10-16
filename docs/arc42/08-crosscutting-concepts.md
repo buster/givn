@@ -888,21 +888,30 @@ A second reporter therefore costs one generated asset and no format work, and a
 stale reporter degrades to rejected events with a warning instead of a corrupt
 store.
 
-**Reporters.** Three supported harnesses execute an agent and get a generated
-reporter — omp, opencode, and Claude Code — while the `agents` target is a
+**Reporters.** Four supported harnesses execute an agent and get a generated
+reporter — omp, opencode, Claude Code, and Maki — while the `agents` target is a
 skills mirror with no runtime and gets none. Each reporter is installed beside
-that harness's commit-attribution integration and is discovered by the
-harness's own convention (`pre` hook factory, plugin, or registered command
-hook); none of them imports a harness type package, so no dependency pin can
-drift under the asset. Their observable asymmetries, all derived from what the
+that harness's other integration and is discovered or registered by the
+harness's own convention (`pre` hook factory, plugin, registered command hook,
+or a managed fence in Maki's `init.lua`); those written in the harness's
+language import nothing from a type package, so no dependency pin can drift
+under the asset. Unlike the other three, Maki is also a full guidance target —
+it receives Givn's skills and its own commands in `.maki/`, because Maki reads
+project commands only from `.maki/commands/` and `.claude/commands/`, which Givn
+otherwise never writes — and its two configuration files (`.maki/init.lua`,
+`.maki/plugin.toml`) are merged, never replaced. Their observable asymmetries, all derived from what the
 installed versions actually expose, are deliberate: omp and opencode report
-in-process and stamp their own timestamps where their events carry none, while
-Claude Code runs one process per hook, so its mapping, its pending start
-timestamps, and its session-record token read live in the binary and its
-generated asset stays a thin shim. A signal a harness cannot deliver — token
-usage on a background subagent launch, a duration broken out of permission
-waiting — is recorded as missing, never as zero, and the summary states how many
-entries were unmeasured.
+in-process and stamp their own timestamps where their events carry none, Claude
+Code runs one process per hook so its mapping, pending start timestamps, and
+session-record token read live in the binary while its generated asset stays a
+thin shim, and Maki runs the reporter as a Lua plugin whose autocmds fire
+without any timestamp and whose `TurnEnd` covers only the main session. Maki
+additionally gates `.maki/` configuration on folder trust, so its reporter is
+active only in a project the developer has trusted for Maki. A signal a harness
+cannot deliver — token usage on a background subagent launch, a duration broken
+out of permission waiting, per-subagent tokens Maki never reports — is recorded
+as missing, never as zero, and the summary states how many entries were
+unmeasured.
 
 **Best-effort discipline.** Every write is best-effort: an unwritable store
 produces one warning and the recorded command keeps its own exit code, and a
