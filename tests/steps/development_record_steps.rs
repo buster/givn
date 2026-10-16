@@ -454,6 +454,39 @@ fn every_parent_link_names_an_entry_in_the_record(world: &mut GivnWorld) {
     );
 }
 
+#[given(regex = r#"^a change "([^"]+)" with a recorded history$"#)]
+fn change_with_a_recorded_history(world: &mut GivnWorld, id: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    for args in [
+        vec!["new".to_string(), id.clone()],
+        vec!["status".to_string(), "--change".to_string(), id.clone()],
+    ] {
+        let argv: Vec<&str> = args.iter().map(String::as_str).collect();
+        let out = common::run_givn(env, &argv);
+        assert!(
+            out.status.success(),
+            "givn {} failed: {}",
+            args.join(" "),
+            String::from_utf8_lossy(&out.stderr),
+        );
+    }
+    let entries = support::record_entries(&env.root());
+    assert!(
+        !entries.is_empty(),
+        "the fixture recorded no history at all: {entries:#?}"
+    );
+    // The store's bytes as they stand before the scenario's next command: the
+    // reading commands must leave exactly these bytes behind.
+    world
+        .development_record
+        .get_or_insert_with(DevelopmentRecordState::default)
+        .store_before = Some(support::store_bytes(&env.root()));
+    world.last_change_id = Some(id);
+}
+
 #[given(
     regex = r#"^a change "([^"]+)" with a command whose full text is longer than 120 characters$"#
 )]
@@ -566,6 +599,53 @@ fn record_holds_no_complete_command_text(world: &mut GivnWorld) {
     assert!(
         text.lines().any(|line| line.contains(label)),
         "the record does not carry the step's bounded label: {text}"
+    );
+}
+
+#[then("the development record holds no new entry")]
+fn record_holds_no_new_entry(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let before = world
+        .development_record
+        .as_ref()
+        .and_then(|state| state.store_before.clone())
+        .expect("the recorded-history fixture ran first");
+    let after = support::store_bytes(&env.root());
+    assert_eq!(
+        String::from_utf8_lossy(&before),
+        String::from_utf8_lossy(&after),
+        "the reading commands changed the record"
+    );
+    // The reads really happened: the report was written from the record, so
+    // the assertion above is about a render that ran, not about a no-op.
+    let out = world
+        .last_output
+        .as_ref()
+        .expect("no `givn` command has been run yet");
+    assert!(
+        out.status.success(),
+        "the report run failed: {}",
+        stderr(world)
+    );
+    let report = env.path("report.html");
+    let document = std::fs::read_to_string(&report).unwrap_or_else(|error| {
+        panic!(
+            "the report was not written to {}: {error}",
+            report.display()
+        )
+    });
+    assert!(
+        !document.contains("__GIVN_REPORT_DATA__"),
+        "the report still carries its unfilled data slot: {}",
+        report.display()
+    );
+    assert!(
+        document.contains("demo"),
+        "the report does not name the scope it renders: {}",
+        report.display()
     );
 }
 

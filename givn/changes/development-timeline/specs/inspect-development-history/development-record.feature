@@ -64,7 +64,7 @@ Feature: Development Record
     Then the recorded entry's label is at most 120 characters and marks the truncation
     And the record holds no complete command text
 
-  @givn.added @wip
+  @givn.added
   Scenario: Reading the development record does not extend it
     Given a project root with givn/ initialised
     And a change "demo" with a recorded history
