@@ -134,7 +134,15 @@
   .control:disabled { color: var(--color-text-muted); }
   .control:focus-visible, .details-close:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
   .range { color: var(--color-text-muted); font-size: var(--font-12); font-variant-numeric: tabular-nums; margin: 0; }
-  .timeline { display: block; width: 100%; height: auto; }
+  .timeline { display: block; width: 100%; height: auto; transform-origin: left center; }
+  /* The report's zoom transition: the token's duration, applied to the axis
+     whenever the visible range changes. The reduce block below removes it
+     entirely, which is what makes a zoom apply instantly. */
+  .timeline.zooming { animation: report-zoom var(--motion); }
+  @keyframes report-zoom {
+    from { transform: scaleX(.985); }
+    to { transform: scaleX(1); }
+  }
   .band-row { fill: var(--color-surface-raised); stroke: var(--color-border); }
   .tick { fill: var(--color-text-muted); font-size: var(--font-12); font-variant-numeric: tabular-nums; }
   .band-label { fill: var(--color-text-muted); font-size: var(--font-12); }
@@ -239,16 +247,23 @@
     1_000, 5_000, 15_000, 30_000, 60_000, 300_000, 900_000, 1_800_000,
     3_600_000, 10_800_000, 21_600_000, 43_200_000,
   ];
-  /* The zoom's own limit: the axis never reads finer than a second. */
+  /* The zoom's own limits: never narrower than a second, never wider than the
+     record's whole range. */
   const MIN_RANGE_MS = 1_000;
+  const ZOOM_IN_FACTOR = 0.5;
+  const ZOOM_OUT_FACTOR = 2;
 
   const entries = new Map(model.entries.map((entry) => [entry.id, entry]));
   const stages = new Map(model.stages.map((assignment) => [assignment.entry, assignment.stage]));
   const recorded = model.entries
     .map((entry) => Date.parse(entry.at))
     .filter((value) => Number.isFinite(value));
-  /* The record's own range: the window's bounds, never the wall clock. */
-  const range = { start: Math.min(...recorded), end: Math.max(...recorded) };
+  /* The record's own range: the bounds every zoom is clamped to, never the wall
+     clock. */
+  const bounds = { start: Math.min(...recorded), end: Math.max(...recorded) };
+  /* The visible window: the record's whole range until a zoom, a pan, or a fit
+     moves it through `applyRange`. */
+  let range = { start: bounds.start, end: bounds.end };
 
   /** One SVG element with its attributes — never markup text, so a recorded
       label can never become a node. */
@@ -567,6 +582,151 @@
     });
   }
 
+  /* ── The zoom ───────────────────────────────────────────────────────────
+     One range-state derivation (`applyRange`) that every path — the buttons,
+     the wheel, the drag, and a click on an aggregate marker — goes through, so
+     the visible range and its label can never disagree with the drawing. */
+
+  const section = timeline.closest(".timeline-section");
+  let controls = null;
+  let rangeLabel = null;
+
+  /** The visible range as the zoom control renders it: the times of day the
+      window covers, from the embedded timestamps alone. */
+  function rangeText() {
+    return "Visible range " + clock(range.start, true) + " → " + clock(range.end, true);
+  }
+
+  /** One labelled control button. */
+  function controlButton(id, label) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "control";
+    button.id = id;
+    button.textContent = label;
+    return button;
+  }
+
+  /** The zoom controls and the rendered range label: created only where there is
+      a timeline to zoom, so the empty state carries none of them. */
+  function buildControls() {
+    if (!section) return;
+    const group = document.createElement("div");
+    group.className = "controls";
+    group.setAttribute("role", "group");
+    group.setAttribute("aria-label", "Timeline zoom");
+    const zoomIn = controlButton("zoom-in", "Zoom in");
+    const zoomOut = controlButton("zoom-out", "Zoom out");
+    const fit = controlButton("zoom-fit", "Fit");
+    zoomIn.addEventListener("click", () => zoom(ZOOM_IN_FACTOR));
+    zoomOut.addEventListener("click", () => zoom(ZOOM_OUT_FACTOR));
+    fit.addEventListener("click", () => applyRange(bounds));
+    group.appendChild(zoomIn);
+    group.appendChild(zoomOut);
+    group.appendChild(fit);
+    rangeLabel = document.createElement("p");
+    rangeLabel.className = "range";
+    rangeLabel.id = "timeline-range";
+    group.appendChild(rangeLabel);
+    section.insertBefore(group, timeline);
+    controls = { zoomIn, zoomOut, fit };
+  }
+
+  /** The label's own state: the rendered range and the controls' limits. A
+      control at its limit is disabled, never silently inert. */
+  function updateControls() {
+    if (rangeLabel) {
+      rangeLabel.textContent = rangeText();
+      rangeLabel.setAttribute("data-range-start-ms", range.start);
+      rangeLabel.setAttribute("data-range-end-ms", range.end);
+    }
+    if (!controls) return;
+    const span = range.end - range.start;
+    const whole = bounds.end - bounds.start;
+    controls.zoomIn.disabled = span <= MIN_RANGE_MS;
+    controls.zoomOut.disabled = span >= whole;
+    controls.fit.disabled = span >= whole;
+  }
+
+  /** The zoom's own motion: the token's transition applied to the axis, restarted
+      on every range change. Under `prefers-reduced-motion: reduce` the style
+      sheet removes it entirely, which is what makes the change instant. */
+  function pulseZoom() {
+    timeline.classList.remove("zooming");
+    void timeline.getBoundingClientRect().width;
+    timeline.classList.add("zooming");
+    window.setTimeout(() => timeline.classList.remove("zooming"), 240);
+  }
+
+  /** Set the visible range: the one place a zoom, a pan, or a fit moves the
+      axis. The span stays inside the record's own range and above the smallest
+      readable window, the window stays inside the record's bounds, and every
+      observer of the range (the drawing, the label, the controls) is updated
+      here and nowhere else. */
+  function applyRange(next) {
+    const boundsSpan = Math.max(bounds.end - bounds.start, MIN_RANGE_MS);
+    const span = Math.min(Math.max(next.end - next.start, MIN_RANGE_MS), boundsSpan);
+    let start = Math.min(Math.max(next.start, bounds.start), bounds.end - span);
+    if (start < bounds.start) start = bounds.start;
+    range = { start, end: start + span };
+    render();
+    updateControls();
+    pulseZoom();
+  }
+
+  /** Zoom the visible range by `factor` (below one zooms in) around `anchor`
+      (the range's centre by default), so the anchor's own instant stays where
+      the reader put it. */
+  function zoom(factor, anchor) {
+    const span = range.end - range.start;
+    const nextSpan = Math.min(Math.max(span * factor, MIN_RANGE_MS), bounds.end - bounds.start || MIN_RANGE_MS);
+    const centre = anchor === undefined ? range.start + span / 2 : anchor;
+    const start = centre - (centre - range.start) * (nextSpan / span);
+    applyRange({ start, end: start + nextSpan });
+  }
+
+  /** The instant one client x coordinate points at, for the wheel and the drag. */
+  function instantAt(x) {
+    const box = timeline.getBoundingClientRect();
+    if (box.width === 0) return range.start;
+    const unit = (x - box.left) / box.width * GEOMETRY.width;
+    const fraction = (unit - GEOMETRY.labelWidth) / GEOMETRY.drawingWidth;
+    return range.start + Math.min(Math.max(fraction, 0), 1) * (range.end - range.start);
+  }
+
+  let dragging = null;
+
+  timeline.addEventListener(
+    "wheel",
+    (event) => {
+      event.preventDefault();
+      zoom(event.deltaY < 0 ? ZOOM_IN_FACTOR : ZOOM_OUT_FACTOR, instantAt(event.clientX));
+    },
+    { passive: false },
+  );
+
+  timeline.addEventListener("pointerdown", (event) => {
+    dragging = { x: event.clientX, range };
+  });
+
+  timeline.addEventListener("pointermove", (event) => {
+    if (!dragging) return;
+    const box = timeline.getBoundingClientRect();
+    if (box.width === 0) return;
+    const span = dragging.range.end - dragging.range.start;
+    const shift = (dragging.x - event.clientX) / box.width * GEOMETRY.width / GEOMETRY.drawingWidth * span;
+    applyRange({ start: dragging.range.start + shift, end: dragging.range.end + shift });
+  });
+
+  timeline.addEventListener("pointerup", () => {
+    dragging = null;
+  });
+  timeline.addEventListener("pointerleave", () => {
+    dragging = null;
+  });
+
+  if (section) section.addEventListener("dblclick", () => applyRange(bounds));
+
   /* ── The details panel ──────────────────────────────────────────────────
      One labelled region, opened by the one selection path the pointer and the
      keyboard both reach, so an opened panel is the same panel however it was
@@ -652,10 +812,22 @@
   }
 
   /** The one activation both the pointer and the keyboard reach: a click and an
-      `Enter`/`Space` on a span open the same panel through the same function. */
+      `Enter`/`Space` on a span open the same panel through the same function,
+      and a click on an aggregate marker zooms to the bucket it stands for
+      instead of pretending to be one entry. */
   function activate(event) {
     const span = spanOf(event);
-    if (span) select(span.dataset.entryId);
+    if (span) {
+      select(span.dataset.entryId);
+      return;
+    }
+    const target = event.target;
+    const marker = target && target.closest ? target.closest(".aggregate") : null;
+    if (marker) {
+      const start = Number(marker.dataset.bucketStartMs);
+      const end = Number(marker.dataset.bucketEndMs);
+      if (Number.isFinite(start) && Number.isFinite(end)) applyRange({ start, end });
+    }
   }
 
   timeline.addEventListener("click", activate);
@@ -672,6 +844,8 @@
     if (event.key === "Escape") clearSelection();
   });
 
+  buildControls();
+  updateControls();
   render();
 })();
 </script>

@@ -9302,7 +9302,7 @@ name it.
 
 ## Task E8 — `Consumer zooms the timeline to a shorter time range` (`@e2e`, `development-report`)
 
-- [ ] **Scenario: `Consumer zooms the timeline to a shorter time range`**
+- [x] **Scenario: `Consumer zooms the timeline to a shorter time range`**
   - Design constraints:
     - Matrix row: `development-report: zoom the timeline` — real interface
       **Web UI**, driving mechanism Playwright: click the zoom-in control, then
@@ -9325,23 +9325,150 @@ name it.
     - **Evidence:** `givn/changes/development-timeline/evidence/visual/consumer-zooms-the-timeline-to-a-shorter-time-range/`
       — `mobile.png` and `desktop.png` at the narrowed range, both viewports,
       animations disabled.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer zooms the timeline to a shorter time range"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer zooms the timeline to a shorter time range"
+        Feature: Development Report
+          Scenario: Consumer zooms the timeline to a shorter time range
+           ✔  Given an open development report with a recorded history
+           ✘  When the consumer zooms the timeline in
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:98:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+        error: test failed, to rerun pass `--test features_runner`
+        RED_EXIT=101
+
+        RED category: undefined step — the zoom When has no binding, and the
+        reused open-report Given really built and opened the fixture (the shared
+        artifact-transition record's own report), so the RED is the missing zoom
+        control, the missing rendered range state, and the missing before/after
+        assertion, never a vacuous setup.
         ```
-  - [ ] **GREEN** — implement zoom (control, axis range label, reduced-motion
+  - [x] **GREEN** — implement zoom (control, axis range label, reduced-motion
         behaviour) and the before/after assertion. Files:
         `assets/timeline/report.html`, `tests/steps/development_report_e2e_steps.rs`,
         plus the two evidence screenshots. Re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) + the two screenshot paths -->
+        $ node --check /tmp/report-layer.mjs      # the asset's inline layer, extracted
+        NODE_CHECK=0
+        $ cargo build --locked --tests
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 7.78s
+        TESTS_BUILD=0
+        $ cargo fmt --all -- --check        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.00s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer zooms the timeline to a shorter time range"
+        Feature: Development Report
+          Scenario: Consumer zooms the timeline to a shorter time range
+           ✔  Given an open development report with a recorded history
+           ✔  When the consumer zooms the timeline in
+           ✔  Then the browser shows a narrower time range than before
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        3 steps (3 passed)
+        GREEN_EXIT=0
+
+        Evidence pair (the narrowed range at both contract viewports, captured
+        after the assertions, animations disabled):
+        $ ls -l givn/changes/development-timeline/evidence/visual/consumer-zooms-the-timeline-to-a-shorter-time-range/
+        -rw-r--r-- 88869 desktop.png
+        -rw-r--r-- 49417 mobile.png
+        $ file …/*.png
+        …/mobile.png:  PNG image data, 360 x 780, 8-bit/color RGB, non-interlaced
+        …/desktop.png: PNG image data, 1920 x 1080, 8-bit/color RGB, non-interlaced
+        The desktop capture shows the three controls with their visible labels
+        (`Zoom in` / `Zoom out` / `Fit`), the rendered range label
+        `Visible range 09:15:00 → 12:05:00` (narrowed from the record's own
+        `07:50:00 → 13:30:00`), and the axis drawn to the narrowed window.
+
+        Production files (this scenario's own):
+        - `assets/timeline/report.html` — the zoom: the visible window as mutable
+          state inside the record's own bounds, the `applyRange(next)` derivation
+          every path goes through, `zoom(factor, anchor)` around the pointer's
+          own instant, the three labelled controls (`Zoom in` / `Zoom out` /
+          `Fit`, `disabled` at their limits) created only where a timeline
+          exists, the rendered range label (visible text plus
+          `data-range-start-ms` / `data-range-end-ms`), the wheel and drag paths
+          on the same axis, a click on an aggregate marker zooming to its
+          bucket, and the token's zoom transition (`report-zoom`, 120 ms) that
+          the reduced-motion block removes entirely.
+        - `tests/steps/development_report_e2e_steps.rs` — the scenario's When and
+          Then plus the two rendered-state probes (`rendered_range`,
+          `rendered_motion`), and the control expectations the other browser
+          steps share: every rendered control carries a visible text label, only
+          controls that are not `disabled` at their own limit are required to be
+          Tab-reachable, and the zoom-out limit reveals itself when the range
+          narrows.
+        - the two evidence screenshots above.
+
+        Rendered-state evidence, as the design demands: the assertion reads the
+        visible time range the page's own script produced, twice — the range the
+        browser showed before the click and the range it showed after — and
+        requires the second to be strictly narrower and its label to have
+        changed; the window's own bounds are asserted against the record's range
+        as well. Two limit-state facts are asserted against the live DOM rather
+        than assumed: the zoom-out control is `disabled` while the whole range is
+        shown and enabled once the range has narrowed. The motion contract is
+        asserted from the browser's computed style: the context emulates
+        `prefers-reduced-motion: reduce`, the zoom animation resolves to `none`
+        there, and the narrowed range above is what the change applied
+        instantly.
+
+        One honest note about the other browser scenario this step also touches:
+        with the zoom controls present, the change row's record is a single
+        instant wide, so all three controls are correctly `disabled` (there is
+        nothing to zoom) — the shared expectation therefore requires only the
+        controls a limit leaves enabled, which is what the two rows' runs show.
         ```
-  - [ ] **REFACTOR** — one range-state derivation for wheel, buttons, and
+  - [x] **REFACTOR** — one range-state derivation for wheel, buttons, and
         aggregation; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        One range-state derivation, literal in the asset: `applyRange(next)` is
+        the only place the visible window changes, and every interaction reaches
+        it — the buttons, the wheel, the drag, a double click, and a click on an
+        aggregate marker — so the drawing, the label, and the controls' limits
+        can never disagree with the window.
+        $ grep -n "function applyRange\|applyRange(" assets/timeline/report.html
+        623:    fit.addEventListener("click", () => applyRange(bounds));
+        666:  function applyRange(next) {
+        685:    applyRange({ start, end: start + nextSpan });
+        718:    applyRange({ start: dragging.range.start + shift, end: dragging.range.end + shift });
+        728:  if (section) section.addEventListener("dblclick", () => applyRange(bounds));
+        829:      if (Number.isFinite(start) && Number.isFinite(end)) applyRange({ start, end });
+
+        $ cargo fmt --all -- --check        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.00s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer zooms the timeline to a shorter time range"
+        Feature: Development Report
+          Scenario: Consumer zooms the timeline to a shorter time range
+           ✔  Given an open development report with a recorded history
+           ✔  When the consumer zooms the timeline in
+           ✔  Then the browser shows a narrower time range than before
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        3 steps (3 passed)
+        REFACTOR_EXIT=0
+
+        The re-run refreshed the evidence pair from the final code, and the
+        outline this scenario's control expectations live in re-ran green as well
+        (`Consumer opens the generated development report in a browser`, 2
+        scenarios / 10 steps, exit 0) — with its own committed evidence pair left
+        untouched, restored to its revision's captures after the re-run.
         ```
   - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
         title `Consumer zooms the timeline to a shorter time range` in the body
