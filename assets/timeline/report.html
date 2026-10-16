@@ -11,7 +11,8 @@
      The generator fills two markers below, each once, and nothing else:
      the view marker in the body — the model rendered as the page's own text,
      so the written file is readable without script — and the single JSON data
-     slot inside the report-model element. */
+     slot inside the report-model element. The inline script then builds the
+     interactive axis on top of that text view, from the same model. */
   :root {
     --color-surface: #ffffff;
     --color-surface-raised: #f5f6f8;
@@ -52,7 +53,8 @@
     font-size: var(--font-16);
     line-height: 1.45;
   }
-  main { padding: var(--space-4); }
+  header { padding: var(--space-4) var(--space-4) 0; }
+  main { padding: var(--space-3) var(--space-4) var(--space-4); }
   h1 { font-size: var(--font-28); margin: 0 0 var(--space-2); }
   h2 { font-size: var(--font-20); margin: var(--space-5) 0 var(--space-2); }
   .report-scope { color: var(--color-text-muted); margin: 0 0 var(--space-4); }
@@ -98,42 +100,474 @@
   .step-label { color: var(--color-text); }
   .step-duration { color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
   .details {
-    border-top: 1px solid var(--color-border);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-panel);
     box-shadow: var(--elevation-panel);
-    margin-top: var(--space-5);
-    padding: var(--space-3);
+    margin: var(--space-4) var(--space-4) var(--space-5);
+    padding: var(--space-4);
   }
   .details[hidden] { display: none; }
+  .details-close {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-span);
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--font-14);
+    padding: var(--space-1) var(--space-3);
+  }
+  .details-facts { display: grid; grid-template-columns: minmax(6rem, auto) 1fr; gap: var(--space-1) var(--space-3); margin: var(--space-3) 0 0; }
+  .details-facts dt { color: var(--color-text-muted); font-size: var(--font-12); }
+  .details-facts dd { margin: 0; font-variant-numeric: tabular-nums; }
   .timeline-section { margin-top: var(--space-5); }
+  .controls { align-items: center; display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-2) 0 var(--space-3); }
+  .control {
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-span);
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--font-14);
+    padding: var(--space-1) var(--space-3);
+  }
+  .control:disabled { color: var(--color-text-muted); }
+  .control:focus-visible, .details-close:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+  .range { color: var(--color-text-muted); font-size: var(--font-12); font-variant-numeric: tabular-nums; margin: 0; }
   .timeline { display: block; width: 100%; height: auto; }
   .band-row { fill: var(--color-surface-raised); stroke: var(--color-border); }
   .tick { fill: var(--color-text-muted); font-size: var(--font-12); font-variant-numeric: tabular-nums; }
   .band-label { fill: var(--color-text-muted); font-size: var(--font-12); }
+  .band-phases { fill: var(--color-text-muted); font-size: var(--font-12); }
   .band[data-band-kind="change"] .span-bar { fill: var(--color-band-command); }
   .band[data-band-kind="ideation"] .span-bar { fill: var(--color-band-agent); }
   .band[data-band-kind="project"] .span-bar { fill: var(--color-band-step); }
-  .span-bar { fill: var(--color-band-step); rx: var(--radius-span); }
-  .span:focus-visible .span-bar { outline: 2px solid var(--color-accent); }
-  .span-label { fill: var(--color-text); font-size: var(--font-12); }
+  .span { cursor: pointer; }
+  .span-bar { fill: var(--color-band-step); rx: var(--radius-span); stroke: transparent; stroke-width: 0; transition: stroke var(--motion); }
+  .span:focus-visible .span-bar, .span.selected .span-bar { stroke: var(--color-accent); stroke-width: 2; }
+  .span-label { fill: var(--color-text); font-size: var(--font-12); pointer-events: none; }
   .aggregate-bar { fill: var(--color-band-step); opacity: .8; rx: var(--radius-span); }
   .band[data-band-kind="change"] .aggregate-bar { fill: var(--color-band-command); }
   .band[data-band-kind="ideation"] .aggregate-bar { fill: var(--color-band-agent); }
   .band[data-band-kind="project"] .aggregate-bar { fill: var(--color-band-step); }
   .aggregate-label { fill: var(--color-text-muted); font-size: var(--font-12); }
+  /* Two columns from 720px: the summary beside the timeline. The desktop
+     viewport (1200px and above) puts the open details panel on the right. */
+  @media (max-width: 719px) {
+    /* Mobile (the 360x780 contract viewport): one column, with the band rows on
+       a horizontally scrollable time axis instead of a squeezed one. */
+    .timeline-section { overflow-x: auto; }
+    .timeline { min-width: 680px; }
+  }
+  @media (min-width: 720px) {
+    main {
+      column-gap: var(--space-5);
+      display: grid;
+      grid-template-columns: minmax(14rem, 20rem) minmax(0, 1fr);
+      align-items: start;
+    }
+    main > .report-scope, main > .empty-state { grid-column: 1 / -1; }
+    main > .summary { grid-column: 1; }
+    main > .timeline-section { grid-column: 2; margin-top: 0; }
+  }
+  @media (min-width: 1200px) {
+    body:has(#details-panel:not([hidden])) {
+      column-gap: var(--space-5);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 22rem;
+      grid-template-areas: "header header" "main aside";
+    }
+    body:has(#details-panel:not([hidden])) > header { grid-area: header; }
+    body:has(#details-panel:not([hidden])) > main { grid-area: main; }
+    body:has(#details-panel:not([hidden])) > aside { grid-area: aside; margin-left: 0; }
+  }
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; animation: none !important; }
   }
 </style>
 </head>
 <body>
-<main>
+<header>
   <h1 id="report-title">Development report</h1>
+</header>
+<main>
 <!--__GIVN_REPORT_VIEW__-->
-  <section class="details" role="region" aria-label="Details" hidden>
-    <button type="button" class="details-close">Close</button>
-  </section>
 </main>
+<aside class="details" id="details-panel" role="region" aria-label="Details" hidden>
+  <h2 class="details-title" id="details-title">Step details</h2>
+  <button type="button" class="details-close" id="details-close">Close</button>
+  <dl class="details-facts" id="details-facts"></dl>
+</aside>
 <script id="report-model" type="application/json">/*__GIVN_REPORT_DATA__*/</script>
+<script>
+/* The report's interactive layer: the timeline axis the browser really drives,
+   built from the model the generator embedded above. The axis is derived from
+   the record's own timestamps and never from the wall clock, so the same record
+   always renders identically; nothing here fetches, loads a remote resource, or
+   writes to the record. The empty state carries no timeline at all, so this
+   layer does nothing there: no axis, no controls. */
+(() => {
+  "use strict";
+
+  const SVG = "http://www.w3.org/2000/svg";
+  const modelElement = document.getElementById("report-model");
+  const timeline = document.querySelector("svg.timeline");
+  if (!modelElement || !timeline) return;
+  const model = JSON.parse(modelElement.textContent);
+  if (!model || model.empty) return;
+
+  /* The axis geometry, in the SVG's own units — the same contract the
+     generator's text view draws with. */
+  const GEOMETRY = {
+    width: 1000,
+    gutter: 12,
+    labelWidth: 168,
+    margin: 8,
+    drawingWidth: 1000 - 168 - 8,
+    axisHeight: 28,
+    bandHeight: 68,
+    phaseBaseline: 13,
+    minSpan: 2,
+    bucketPx: 16,
+    maxTicks: 6,
+    /* The width one 12-unit character of a span label occupies: the estimate
+       that decides whether a label is placeable beside its own bar. */
+    charWidth: 6.2,
+  };
+  /* The round times the axis may mark between two ticks, smallest first. */
+  const TICK_STEPS_MS = [
+    1_000, 5_000, 15_000, 30_000, 60_000, 300_000, 900_000, 1_800_000,
+    3_600_000, 10_800_000, 21_600_000, 43_200_000,
+  ];
+  /* The zoom's own limit: the axis never reads finer than a second. */
+  const MIN_RANGE_MS = 1_000;
+
+  const entries = new Map(model.entries.map((entry) => [entry.id, entry]));
+  const stages = new Map(model.stages.map((assignment) => [assignment.entry, assignment.stage]));
+  const recorded = model.entries
+    .map((entry) => Date.parse(entry.at))
+    .filter((value) => Number.isFinite(value));
+  /* The record's own range: the window's bounds, never the wall clock. */
+  const range = { start: Math.min(...recorded), end: Math.max(...recorded) };
+
+  /** One SVG element with its attributes — never markup text, so a recorded
+      label can never become a node. */
+  function element(name, attributes) {
+    const node = document.createElementNS(SVG, name);
+    for (const key of Object.keys(attributes || {})) {
+      const value = attributes[key];
+      if (value !== undefined && value !== null) node.setAttribute(key, String(value));
+    }
+    return node;
+  }
+
+  /** One SVG text element carrying its content. */
+  function text(content, attributes) {
+    const node = element("text", attributes);
+    node.textContent = content;
+    return node;
+  }
+
+  /** One entry's rendered end, in milliseconds, or null where the record's own
+      timestamp does not parse. */
+  function endOf(entry) {
+    const value = Date.parse(entry.at);
+    return Number.isFinite(value) ? value : null;
+  }
+
+  /** The visible window's scale: the range the reader sees mapped onto the
+      drawing width. */
+  function scale() {
+    return { start: range.start, span: Math.max(1, range.end - range.start) };
+  }
+
+  /** One recorded instant's x coordinate inside the visible range. */
+  function position(ms) {
+    const { start, span } = scale();
+    const fraction = (ms - start) / span;
+    const left = GEOMETRY.labelWidth;
+    const right = GEOMETRY.labelWidth + GEOMETRY.drawingWidth;
+    return Math.min(Math.max(left + fraction * GEOMETRY.drawingWidth, left), right);
+  }
+
+  /** The time one pixel of the drawing width spends on: the threshold below
+      which two entries cannot be told apart. */
+  function timePerPixel() {
+    return Math.max(1, Math.ceil(scale().span / GEOMETRY.drawingWidth));
+  }
+
+  /** One entry's drawn bar: a measured span starts at its recorded end minus its
+      duration, an entry the record does not time draws as the narrowest mark. */
+  function barOf(entry) {
+    const end = endOf(entry);
+    if (end === null) return { x: GEOMETRY.labelWidth, width: GEOMETRY.minSpan };
+    const start = entry.duration_ms === undefined || entry.duration_ms === null
+      ? end
+      : end - entry.duration_ms;
+    const x = position(start);
+    return { x, width: Math.max(position(end) - x, GEOMETRY.minSpan) };
+  }
+
+  /** The visible label of one entry: its bounded subject label, or its name. */
+  function visibleName(entry) {
+    return entry.label === undefined || entry.label === null ? entry.name : entry.label;
+  }
+
+  /** One recorded duration as the report renders it — a duration the record
+      does not carry is stated, never rendered as a zero. */
+  function durationText(entry) {
+    const ms = entry.duration_ms;
+    if (ms === undefined || ms === null) return "not measured";
+    if (ms < 1_000) return ms + " ms";
+    if (ms < 60_000) return Math.floor(ms / 1_000) + " s";
+    if (ms < 3_600_000) return Math.floor(ms / 60_000) + " m";
+    const minutes = Math.floor((ms % 3_600_000) / 60_000);
+    return Math.floor(ms / 3_600_000) + " h " + String(minutes).padStart(2, "0") + " m";
+  }
+
+  /** A recorded instant as the axis reads it: the time of day, from the
+      embedded timestamp alone. */
+  function clock(ms, seconds) {
+    const day = Math.floor(ms / 1_000) % 86_400;
+    const hh = String(Math.floor(day / 3_600)).padStart(2, "0");
+    const mm = String(Math.floor((day % 3_600) / 60)).padStart(2, "0");
+    if (!seconds) return hh + ":" + mm;
+    return hh + ":" + mm + ":" + String(day % 60).padStart(2, "0");
+  }
+
+  /** The axis's ticks: round instants across the visible range, in time order,
+      none of them outside it. */
+  function ticks() {
+    const { start, span } = scale();
+    const end = start + span;
+    const step = TICK_STEPS_MS.find((candidate) => span / candidate <= GEOMETRY.maxTicks);
+    if (step === undefined) return [];
+    const found = [];
+    let tick = Math.floor(start / step) * step;
+    while (tick <= end && found.length < GEOMETRY.maxTicks) {
+      if (tick >= start) found.push(tick);
+      tick += step;
+    }
+    return found;
+  }
+
+  /** One row's drawn marks, in the model's own order: a span for every entry
+      this window can tell apart, and one aggregate marker per band and time
+      bucket for the entries it cannot. */
+  function rowMarks(band, perPixel) {
+    const drawn = [];
+    const buckets = new Map();
+    const bucketMs = Math.ceil(perPixel * GEOMETRY.bucketPx);
+    for (const id of band.entries) {
+      const entry = entries.get(id);
+      if (!entry) continue;
+      const end = endOf(entry);
+      const extent = entry.duration_ms === undefined || entry.duration_ms === null
+        ? 0
+        : entry.duration_ms;
+      if (end === null || extent >= perPixel) {
+        drawn.push({ kind: "span", entry, bar: barOf(entry) });
+        continue;
+      }
+      const bucketStart = range.start + Math.floor((end - range.start) / bucketMs) * bucketMs;
+      const key = band.scope.kind + ":" + band.scope.id + ":" + bucketStart;
+      let marker = buckets.get(key);
+      if (marker === undefined) {
+        marker = { count: 0, duration: null, bucketStart, bucketEnd: bucketStart + bucketMs, drawn: false };
+        buckets.set(key, marker);
+      }
+      marker.count += 1;
+      if (entry.duration_ms !== undefined && entry.duration_ms !== null) {
+        marker.duration = (marker.duration || 0) + entry.duration_ms;
+      }
+      if (marker.drawn) continue;
+      marker.drawn = true;
+      const x = position(marker.bucketStart);
+      drawn.push({
+        kind: "aggregate",
+        marker,
+        bar: { x, width: Math.max(position(marker.bucketEnd) - x, GEOMETRY.minSpan) },
+      });
+    }
+    return drawn;
+  }
+
+  /** The inline text one mark carries, and whether it sits beside the bar
+      instead of inside it: a span narrower than its label omits the inline
+      label — the duration stays where it fits, and the accessible name always
+      keeps name and duration. */
+  function inlineText(mark, room, name, duration) {
+    const full = name + " · " + duration;
+    if (mark.bar.width >= full.length * GEOMETRY.charWidth) return { text: full, outside: false };
+    if (room >= full.length * GEOMETRY.charWidth) return { text: full, outside: true };
+    if (mark.bar.width >= duration.length * GEOMETRY.charWidth) return { text: duration, outside: false };
+    return { text: "", outside: false };
+  }
+
+  /** One span: the entry drawn on its row's axis, focusable, with its
+      accessible name always its name and its duration. */
+  function spanNode(mark, room, y) {
+    const entry = mark.entry;
+    const name = visibleName(entry);
+    const duration = durationText(entry);
+    const node = element("g", {
+      class: "span",
+      "data-entry-id": entry.id,
+      "data-kind": entry.kind,
+      "data-at": entry.at,
+      tabindex: 0,
+      "aria-label": name + ", " + duration,
+    });
+    if (entry.duration_ms !== undefined && entry.duration_ms !== null) {
+      node.setAttribute("data-duration-ms", entry.duration_ms);
+    }
+    const stage = stages.get(entry.id);
+    if (stage !== undefined && stage !== null) node.setAttribute("data-stage", stage);
+    const barY = y + GEOMETRY.bandHeight / 3;
+    const inline = inlineText(mark, room, name, duration);
+    if (inline.text !== name + " · " + duration) {
+      /* Whatever the bar had room to draw, the element's own text still carries
+         the step's name and its duration: the SVG title holds both where
+         nothing is drawn inline, and the name where only the duration fits. */
+      const title = element("title");
+      title.textContent = inline.text === "" ? name + " · " + duration : name;
+      node.appendChild(title);
+    }
+    node.appendChild(element("rect", {
+      class: "span-bar",
+      x: mark.bar.x.toFixed(1),
+      y: barY.toFixed(1),
+      width: mark.bar.width.toFixed(1),
+      height: 16,
+    }));
+    if (inline.text !== "") {
+      const x = inline.outside ? mark.bar.x + mark.bar.width + 4 : mark.bar.x + 4;
+      node.appendChild(text(inline.text, {
+        class: "span-label",
+        x: x.toFixed(1),
+        y: (barY + 12).toFixed(1),
+      }));
+    }
+    return node;
+  }
+
+  /** One aggregate marker: its bucket's own width, naming how many entries it
+      covers and their combined duration, in the same machine-readable
+      attributes the text view carries. */
+  function aggregateNode(mark, y) {
+    const marker = mark.marker;
+    const duration = marker.duration === null ? "not measured" : durationText({ duration_ms: marker.duration });
+    const covered = marker.count === 1 ? "1 entry" : marker.count + " entries";
+    const node = element("g", {
+      class: "aggregate",
+      "data-count": marker.count,
+      "data-bucket-start-ms": marker.bucketStart,
+      "data-bucket-end-ms": marker.bucketEnd,
+      "aria-label": covered + ", " + duration,
+    });
+    if (marker.duration !== null) node.setAttribute("data-duration-ms", marker.duration);
+    const barY = y + GEOMETRY.bandHeight / 3;
+    node.appendChild(element("rect", {
+      class: "aggregate-bar",
+      x: mark.bar.x.toFixed(1),
+      y: barY.toFixed(1),
+      width: mark.bar.width.toFixed(1),
+      height: 16,
+    }));
+    /* The marker's inline text follows the same density rule as a span's: the
+       count and the combined duration where the bucket has room for them, the
+       count alone where it has only that much, nothing where it has neither.
+       The accessible name always carries both. */
+    const full = marker.count + " · " + duration;
+    const count = String(marker.count);
+    const inline = mark.bar.width >= full.length * GEOMETRY.charWidth
+      ? full
+      : mark.bar.width >= count.length * GEOMETRY.charWidth ? count : "";
+    if (inline !== "") {
+      node.appendChild(text(inline, {
+        class: "aggregate-label",
+        x: (mark.bar.x + 4).toFixed(1),
+        y: (barY + 12).toFixed(1),
+      }));
+    }
+    return node;
+  }
+
+  /** One band row: its visible label, its phase names, and its marks. */
+  function bandRow(band, y, perPixel) {
+    const row = element("g", {
+      class: "band",
+      "data-band-kind": band.kind,
+      "data-band": band.scope.id,
+      "aria-label": band.label,
+    });
+    row.appendChild(element("rect", {
+      class: "band-row",
+      x: 0,
+      y,
+      width: GEOMETRY.width,
+      height: GEOMETRY.bandHeight,
+    }));
+    row.appendChild(text(band.label, {
+      class: "band-label",
+      x: GEOMETRY.gutter,
+      y: y + GEOMETRY.bandHeight / 4,
+    }));
+    if (band.stages && band.stages.length) {
+      row.appendChild(text(band.stages.join(" · "), {
+        class: "band-phases",
+        x: GEOMETRY.labelWidth.toFixed(1),
+        y: y + GEOMETRY.phaseBaseline,
+      }));
+    }
+    const marks = rowMarks(band, perPixel);
+    const rowEnd = GEOMETRY.labelWidth + GEOMETRY.drawingWidth;
+    marks.forEach((mark, index) => {
+      const next = marks[index + 1];
+      const limit = next === undefined ? rowEnd : next.bar.x;
+      const room = limit - (mark.bar.x + mark.bar.width);
+      row.appendChild(mark.kind === "span" ? spanNode(mark, room, y) : aggregateNode(mark, y));
+    });
+    return row;
+  }
+
+  /** The whole timeline, for the visible range. */
+  function render() {
+    while (timeline.firstChild) timeline.removeChild(timeline.firstChild);
+    const title = element("title", { id: "timeline-title" });
+    title.textContent = "Development timeline";
+    timeline.appendChild(title);
+    const height = GEOMETRY.axisHeight + model.bands.length * GEOMETRY.bandHeight + GEOMETRY.margin;
+    timeline.setAttribute("viewBox", "0 0 " + GEOMETRY.width + " " + height);
+    const perPixel = timePerPixel();
+    const axis = element("g", { class: "axis", "aria-hidden": "true" });
+    for (const tick of ticks()) {
+      const label = clock(tick);
+      /* A tick's label never runs outside the viewBox: the last tick is
+         anchored back so its own text still fits inside the axis. */
+      const right = GEOMETRY.width - GEOMETRY.margin - label.length * GEOMETRY.charWidth;
+      const x = Math.min(position(tick), right);
+      axis.appendChild(text(label, { class: "tick", "data-at-ms": tick, x: x.toFixed(1), y: 16 }));
+    }
+    timeline.appendChild(axis);
+    model.bands.forEach((band, index) => {
+      timeline.appendChild(bandRow(band, GEOMETRY.axisHeight + index * GEOMETRY.bandHeight, perPixel));
+    });
+  }
+
+  /** Set the visible range — the one place a zoom, a pan, or a fit moves the
+      axis, so every path derives its state the same way. */
+  function applyRange(next) {
+    const span = Math.max(MIN_RANGE_MS, Math.min(next.end - next.start, bounds.end - bounds.start || MIN_RANGE_MS));
+    let start = next.start;
+    if (start + span > bounds.end) start = bounds.end - span;
+    if (start < bounds.start) start = bounds.start;
+    range = { start, end: start + span };
+    render();
+  }
+
+  render();
+})();
+</script>
 </body>
 </html>

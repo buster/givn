@@ -1163,7 +1163,7 @@ fn render_summary(summary: &Summary) -> String {
     html.push('\n');
     if summary.unmeasured_durations > 0 {
         html.push_str(&format!(
-            "<p class=\"summary-note\" data-unmeasured-durations=\"{}\">{} not measured</p>\n",
+            "<p class=\"summary-note\" data-unmeasured-durations=\"{}\">{}</p>\n",
             summary.unmeasured_durations,
             unmeasured_note(summary.unmeasured_durations)
         ));
