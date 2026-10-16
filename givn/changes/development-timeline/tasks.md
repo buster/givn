@@ -6045,7 +6045,7 @@ name it.
 
 ## Task 27 — `The report totals token usage per turn and per subagent` (`development-report`, added)
 
-- [ ] **Scenario: `The report totals token usage per turn and per subagent`**
+- [x] **Scenario: `The report totals token usage per turn and per subagent`**
   - Design constraints:
     - Token totals come from the `usage`-kind entries (Task 15's `data` set:
       `input`, `output`, `cache_read`, `cache_write`, `total_tokens`, `model`,
@@ -6185,9 +6185,26 @@ name it.
         $ ... --exact "...::The report totals the time spent waiting for questions"
         1 feature, 1 scenario (1 passed), 3 steps (3 passed)        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `94b20d539a16879af55bcb58b657b71a6718e94e` — `feat(development-report): <release note>` with
         the scenario title `The report totals token usage per turn and per
         subagent` in the body. Record the revision identifier.
+        ```
+        $ GIVN_ATTRIBUTION_ACTIVE=1 GIVN_ATTRIBUTION_LLM=deepseek/deepseek-flash \
+          GIVN_ATTRIBUTION_REASONING=max GIVN_ATTRIBUTION_HARNESS=omp \
+          ./target/debug/givn commit -m "feat(development-report): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        The report totals token usage per turn and per subagent"
+        [16:39:37] committed revision on the Git backend
+        EXIT=0
+
+        Revision 94b20d539a16879af55bcb58b657b71a6718e94e touches exactly this
+        scenario's files: `src/cli/timeline.rs` (the usage roll-up, the
+        unavailable-turn count, and the token tiles/lists),
+        `tests/steps/development_report_steps.rs` (the usage fixture and the
+        three Then steps), the delta `.feature`'s `@wip` removal, and this task
+        file's evidence. The asset is unchanged — the tile, list, and note
+        primitives it already styles carry the new figures.
+        ```
 
 ## Task 28 — `The report of an ideation topic names the work done before the change exists` (`development-report`, added)
 
