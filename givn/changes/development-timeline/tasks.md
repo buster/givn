@@ -3330,7 +3330,7 @@ name it.
 
 ## Task 13 — `A subagent's activity is attributed to that subagent` (`agent-activity-reporting`, added)
 
-- [ ] **Scenario: `A subagent's activity is attributed to that subagent`**
+- [x] **Scenario: `A subagent's activity is attributed to that subagent`**
   - Design constraints:
     - Entry shape: `kind: "subagent"`, the subagent's identity in the event
       (`{"kind":"subagent","at":…,"agent":…,"subagent":…,"status":…,"duration_ms":…}`
@@ -3471,9 +3471,31 @@ name it.
         4 steps (4 passed)
         EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+  - [x] **COMMIT** — `1574c66aa30c758f02fbd816f853966526aa4238` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `A subagent's activity is attributed to that
         subagent` in the body. Record the revision identifier.
+        ```
+        $ GIVN_ATTRIBUTION_ACTIVE=1 … ./target/debug/givn commit -m "feat(agent-activity-reporting): <release note verbatim>\n\nA subagent's activity is attributed to that subagent"
+        [15:24:56] committed revision on the Git backend
+
+        $ git show --stat 1574c66aa30c758f02fbd816f853966526aa4238
+        commit 1574c66aa30c758f02fbd816f853966526aa4238
+        Author: buster <me@bstr.eu>
+        Date:   Fri Oct 16 15:24:56 2026 +0200
+
+            feat(agent-activity-reporting): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+            A subagent's activity is attributed to that subagent
+
+            Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../agent-activity-reporting.feature               |   2 +-
+         givn/changes/development-timeline/tasks.md         | 117 +++++++++-
+         src/cli/history.rs                                 | 245 +++++++++++++++++----
+         src/history.rs                                     |  46 +++-
+         tests/steps/agent_activity_reporting_steps.rs      | 218 ++++++++++++++++--
+         5 files changed, 551 insertions(+), 77 deletions(-)
+        ```
 
 ## Task 14 — `A question wait is recorded with its duration` (`agent-activity-reporting`, added)
 
