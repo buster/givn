@@ -133,16 +133,16 @@ impl HistoryStore {
             .collect())
     }
 
-    /// Append the entries in order (creating the store's directory on first
-    /// write), minting each `id` at append time under the store's exclusive
-    /// append lock, from the store's current last line. Returns the first id
-    /// minted, so a caller can parent its children to the entry it just wrote.
-    ///
-    /// One handle carries both halves: the lock is taken before the store's
-    /// last line is read and released only after the lines are written, so two
-    /// processes recording at the same time mint from different last lines and
-    /// neither can interleave its lines with the other's.
-    pub fn append(&self, entries: &mut [HistoryEntry]) -> std::io::Result<u64> {
+    /// Append the entries in order as `append` does, resolving each entry's
+    /// `parent` from the batch index of the entry it is nested in. Both the
+    /// parent and the child are minted by this same append and written under
+    /// the store's one append lock, so a recorded parent link always names an
+    /// entry this process wrote and can never dangle.
+    pub fn append_linked(
+        &self,
+        entries: &mut [HistoryEntry],
+        parents: &[Option<usize>],
+    ) -> std::io::Result<u64> {
         use std::io::{Read as _, Write as _};
 
         if let Some(parent) = self.path.parent() {
@@ -159,10 +159,27 @@ impl HistoryStore {
         let first_id = last_id(&text) + 1;
         for (offset, entry) in entries.iter_mut().enumerate() {
             entry.id = first_id + offset as u64;
+            if let Some(parent) = parents.get(offset).copied().flatten() {
+                entry.parent = Some(first_id + parent as u64);
+            }
             let line = serde_json::to_string(entry).map_err(std::io::Error::other)?;
             writeln!(file, "{line}")?;
         }
         Ok(first_id)
+    }
+
+    /// Append the entries in order (creating the store's directory on first
+    /// write), minting each `id` at append time under the store's exclusive
+    /// append lock, from the store's current last line. Returns the first id
+    /// minted, so a caller can parent its children to the entry it just wrote.
+    ///
+    /// One handle carries both halves: the lock is taken before the store's
+    /// last line is read and released only after the lines are written, so two
+    /// processes recording at the same time mint from different last lines and
+    /// neither can interleave its lines with the other's.
+    pub fn append(&self, entries: &mut [HistoryEntry]) -> std::io::Result<u64> {
+        let parents = vec![None; entries.len()];
+        self.append_linked(entries, &parents)
     }
 }
 
@@ -606,6 +623,15 @@ pub fn parse_rfc3339_ms(at: &str) -> Option<i64> {
             + i64::from(second) * 1_000
             + i64::from(millis),
     )
+}
+
+/// The measured duration between two reported timestamps, or `None` when
+/// either is unparsable or the span runs backwards — a negative span is never
+/// recorded as a duration.
+pub fn reported_duration_ms(start_at: &str, end_at: &str) -> Option<u64> {
+    let start = parse_rfc3339_ms(start_at)?;
+    let end = parse_rfc3339_ms(end_at)?;
+    u64::try_from(end - start).ok()
 }
 
 /// Days since 1970-01-01 for a civil date, after Howard Hinnant's

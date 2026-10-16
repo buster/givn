@@ -3348,23 +3348,128 @@ name it.
     - Assertion shape: exactly one entry for that subagent; it names the subagent
       and its duration covers the reported start and end.
     - RED expected failure: both Then steps are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A subagent's activity is attributed to that subagent"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A subagent's activity is attributed to that subagent"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 4.24s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: A subagent's activity is attributed to that subagent
+           ✔  Given a change "demo" with reported agent activity
+           ✔  When the agent reports a subagent that started and completed
+           ✘  Then the record holds one entry for that subagent
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:17:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+
+        thread 'main' (2348083) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — both Then steps are unbound (the first
+        Then matches no function; the scenario stops there, so `that entry names
+        the subagent and spans its start and its end` never runs). The `Given`
+        and the `When` drive the real fixture: `givn new demo` plus a reported
+        tool call, then the reported start/completion pair handed to
+        `givn history ingest`. The intake still rejects `subagent` as an unknown
+        kind at this point, which the `When` records without asserting — the RED
+        signal is the undefined Then.
         ```
-  - [ ] **GREEN** — implement the subagent event kind and its parent link.
+  - [x] **GREEN** — implement the subagent event kind and its parent link.
         Files: `src/cli/history.rs`, `src/history.rs`,
         `tests/steps/agent_activity_reporting_steps.rs`. Compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.07s
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A subagent's activity is attributed to that subagent"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 10.81s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: A subagent's activity is attributed to that subagent
+           ✔  Given a change "demo" with reported agent activity
+           ✔  When the agent reports a subagent that started and completed
+           ✔  Then the record holds one entry for that subagent
+           ✔  And that entry names the subagent and spans its start and its end
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
+
+        Regression check — the previous scenario still passes with the reworked
+        mapping:
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A reported tool call is recorded for its scope"
+        … 5 steps (5 passed), EXIT=0
+
+        Production files:
+        - `src/cli/history.rs` — the `subagent` validation row (`subagent` is the
+          event's identity) and its mapper: a start opens a span keyed by the
+          harness's own identity, its terminal status closes it into exactly one
+          entry whose `duration_ms` is the harness's own where the harness
+          reports one and otherwise the measured span between the two events,
+          whose `outcome` is mapped from `status` (`completed` → `ok`), and whose
+          `data` carries `subagent` (the harness's identity) plus `agent`. The
+          entry is nested in the turn enclosing the flush when the payload
+          reported one, through the batch's parent plan. Also the batch plan
+          (`IntakeBatch`/`SubagentStart`), `accept_event` writing into it, and
+          `ingest` appending through `append_linked`.
+        - `src/history.rs` — `HistoryStore::append_linked` (resolves each entry's
+          `parent` from the batch index of the entry it is nested in, both ids
+          minted by the same append under the store's lock; `append` delegates)
+          and `reported_duration_ms` (the measured span between two reported
+          timestamps).
+        - `tests/steps/agent_activity_reporting_steps.rs` — the fixture's `Given`
+          (change `demo` with one reported tool call), the `When` (the reported
+          start/completion pair for `Architect.Scout`), and both `Then` steps.
+        Note on the parent link: the rule is implemented as the batch's parent
+        plan (`append_linked`) threaded to the enclosing turn; this fixture
+        reports no turn, so the condition "reported inside a turn" does not fire
+        here — the turn kind that sets the batch's turn arrives with Task 15's
+        turn mapping.
         ```
-  - [ ] **REFACTOR** — express start/end pairing once (shared with the question
+  - [x] **REFACTOR** — express start/end pairing once (shared with the question
         wait path where the shape is identical); re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The pairing is now one mechanism — `OpenSpans::open`/`close`/`take_unclosed`
+        keyed by the harness's own call id, with `SpanStart` carrying the fields
+        only the opening event knows — used by the subagent mapper instead of an
+        inline map, so the identical shape (a start event plus a completion event
+        become one entry) has a single expression for both paired kinds.
+
+        $ cargo fmt --all -- --check
+        FMT_CLEAN
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.79s
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A subagent's activity is attributed to that subagent"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 8.66s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: A subagent's activity is attributed to that subagent
+           ✔  Given a change "demo" with reported agent activity
+           ✔  When the agent reports a subagent that started and completed
+           ✔  Then the record holds one entry for that subagent
+           ✔  And that entry names the subagent and spans its start and its end
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `A subagent's activity is attributed to that
