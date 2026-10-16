@@ -1,0 +1,2523 @@
+# Tasks: development-timeline
+
+Scenario-by-scenario RED→GREEN→REFACTOR→COMMIT loop. One section per executable
+scenario: the 33 non-`@e2e` scenarios first, in `.feature` order, then the E2E
+setup task, then the 8 `@e2e` scenarios in the same order.
+
+Legend: an unchecked box means pending; a box is checked only when the pasted
+evidence and the revision identifier are filled in. Check each box immediately
+after completing the step — tasks.md must always reflect true state; never
+batch-check boxes at the end. An unchecked box means that scenario is not done.
+
+**Release note (the shared message subject of every revision in this change,
+copied verbatim from `proposal.md` §Release note):**
+
+> Givn records the development process of every change and ideation — each step
+> it runs, the activity reported by every supported coding-agent harness,
+> question waits, and token usage — and renders it as an interactive timeline
+> report that opens in a browser.
+
+**Delta inventory (verified mechanically against every delta `.feature` under
+`givn/changes/development-timeline/specs/`):** 41 executable scenario entries in
+3 features = 41 `@givn.added`, 0 `@givn.modified`, 0 `@givn.removed`; 33
+non-`@e2e` + 8 `@e2e`. A `Scenario Outline` counts as one entry (its Examples
+rows are input variation, not additional scenarios). Every entry carries `@wip`
+today and stays `@wip` until its own RED step removes the tag from that one
+scenario.
+
+| Feature (path relative to `GIVN_FEATURES`) | Entries | Non-`@e2e` | `@e2e` |
+|---|---|---|---|
+| `inspect-development-history/development-record.feature` | 13 | 11 | 2 |
+| `inspect-development-history/agent-activity-reporting.feature` | 14 | 13 | 1 |
+| `inspect-development-history/development-report.feature` | 14 | 9 | 5 |
+| **Total** | **41** | **33** | **8** |
+
+**Work order (recorded choice).** `design.md` names no implementation sequencing
+section, so this file follows `.feature` order — the features in the inventory
+order above, scenarios in their in-file order — in three phases: Tasks 1–33
+(the non-`@e2e` scenarios), Task E1 (E2E setup), Tasks E2–E9 (the `@e2e`
+scenarios, same feature order).
+
+## Preconditions verified before writing this file (2026-10-16)
+
+- `givn status --change development-timeline --json` (read before writing this
+  file): `proposal` done, `specs` done, `design` done, `arc42-docs` done,
+  `design-review` done, `tasks` pending — this file is that artifact's
+  deliverable. The tasks precondition holds (design-review is `done`), and no
+  `design.md` edit un-gated it.
+- **Interaction-coverage pre-flight (the tasks instruction's mandatory check).**
+  The three sources were cross-checked row by row: the owning use case's
+  `specs/inspect-development-history/usecase.md` §Interactions (the durable pool
+  of interaction facts — no `.feature` file carries an inventory comment), the
+  `design.md` §Interaction Coverage Matrix, and the delta `@e2e` scenario
+  titles. They agree 1:1: **8 rows each**, no inventory row without a matrix
+  row, no matrix row without an existing `@e2e` scenario, and no `@e2e` scenario
+  without an inventory row. This file therefore schedules exactly 8 `@e2e`
+  sections and invents none.
+
+| # | `usecase.md` §Interactions — capability: consumer action | `design.md` matrix — real interface / driving mechanism | `@e2e` title (`.feature`) |
+|---|---|---|---|
+| 1 | development-record: run a lifecycle command | CLI / `common::run_givn`: `givn status --change demo`, then `givn history --change demo --json` | `Consumer runs a lifecycle step and reads its recorded actions` (`development-record.feature`) |
+| 2 | development-record: read the development record | CLI / `givn history --change demo --json` against a seeded record | `Consumer reads the development record as machine-readable output` (`development-record.feature`) |
+| 3 | agent-activity-reporting: report agent activity from a supported harness | CLI (harness integration) / one `@e2e` outline, one Examples row per harness, driving each generated reporter through its real entry point | `Consumer installs the agent reporter and its reported activity lands in the record` (`agent-activity-reporting.feature`) |
+| 4 | development-report: generate the development report for a change | CLI / `givn timeline --change demo --out report.html`, assertion reads the written file | `Consumer generates the development report for a change` (`development-report.feature`) |
+| 5 | development-report: open the report in a browser | Web UI / Playwright `page.goto("file://<root>/report.html")`, one outline with a `change` and a `topic` row | `Consumer opens the generated development report in a browser` (`development-report.feature`) |
+| 6 | development-report: open the report of a scope with no recorded activity | Web UI / Playwright: empty-state heading, no axis in the DOM | `Consumer opens the report of a scope with no recorded activity` (`development-report.feature`) |
+| 7 | development-report: select a timeline element | Web UI / Playwright: click the longest step's span (or focus + `Enter`), read the details panel | `Consumer selects a timeline element and reads its details` (`development-report.feature`) |
+| 8 | development-report: zoom the timeline | Web UI / Playwright: click the zoom-in control, compare the rendered range label before/after | `Consumer zooms the timeline to a shorter time range` (`development-report.feature`) |
+
+- **Guarantee/rule coverage.** Every guarantee, rule, and extension of the
+  owning use case is carried by at least one scheduled scenario (see the Domain
+  constraints table below); nothing is left to prose. The one deliberate
+  inventory-classification note: pan is an implementation detail of the zoomable
+  axis (design-review Q9), so it adds no inventory row, no matrix row, and no
+  `@e2e` scenario — the zoom scenario is the axis-state evidence.
+- **Design system present.** `docs/design/design-system.md` (the change's
+  declared design system, referenced by `design.md`'s Visual Design Contract
+  machine-read lines: `Interface: web`, `Viewports: mobile (360x780), desktop
+  (1920x1080)`, `States: empty`) is authored but untracked; Task P0 commits it.
+
+## Record and report contract (copied from `design.md`; no other source is needed)
+
+**Store.** One file per project: `givn/history/events.jsonl` — one JSON object
+per line, opened append-only, never rewritten, never reordered. Best-effort by
+construction: a write that cannot happen warns and continues, and never changes
+the outcome of the work it records.
+
+**Entry fields** (serde-serialized `HistoryEntry`): `schema` (integer schema
+version; a reader skips a line whose schema it does not know), `id` (integer,
+unique per project, minted **at append time under the store's exclusive append
+lock** from the store's current last line), `at` (RFC 3339 UTC end timestamp,
+millisecond precision), `scope`
+(`{"kind": "change"|"ideation"|"project", "id": "<change-id>|<topic-id>|<project-name>"}`),
+`source` (`givn` = Givn recorded it, `agent` = reported through the intake),
+`kind`, `name`, `label` (optional, the bounded subject label — ≤ 120 characters,
+truncation marked with `…`), `duration_ms` (optional; absent for a point entry),
+`outcome` (`ok`|`failed`|`skipped`|`unknown`), `parent` (optional id of the
+enclosing entry; a parent is only ever an id minted by the same process, so a
+parent link always names an existing entry), `data` (only where the report needs
+a non-generic value, e.g. `exit_code` on a step; `kind: "usage"` entries carry
+`{input, output, cache_read, cache_write, total_tokens, model, subagent}`).
+
+**Kinds:** `command`, `phase`, `hook`, `step`, `revision`, `session`, `turn`,
+`tool`, `subagent`, `question`, `usage`.
+
+**Scope resolution (`resolve_scope`)** binds every entry to exactly one scope
+from the project's own state, no marker file: exactly one active change (the
+rule `givn instructions <artifact>` already applies) → exactly one *unfinished*
+ideation topic (`givn/ideation/<topic>/session.md` exists and carries no
+`## Completion` section) → otherwise the project. Several candidates fall
+through (a recorder never guesses). The intake payload's `change` and `topic`
+are optional overrides: a present value wins over the resolution, the change
+wins over the topic, and a named scope that does not exist is a per-event
+rejection — never a silent fallback.
+
+**Capture points (self-instrumentation):** `src/main.rs` command dispatch → one
+`command` entry per `givn` invocation; `src/subprocess.rs::sh_streamed` (the
+single shell-execution choke point) → one `step` entry per shell command with
+its existing label and its measured duration; `src/hooks.rs::run_artifact_hooks`
+/ `run_archive_gate_hooks` → one `hook` entry per hook, parented to the command
+entry; `src/cli/archive.rs::run` → one `phase` entry per gate phase (the ten
+numbered phases) parented to the archive command; `src/cli/archive.rs::run_scope`
+→ the scope `duration_ms` that already exists becomes the step's duration;
+`src/cli/commit.rs::commit` → one `revision` entry per created revision
+(backend, revision id); `src/cli/check.rs::run` → the mandatory-check boundary
+as `phase` entries. Durations are measured with `std::time::Instant` around the
+step itself (`HistoryRecorder::span`), never inferred from two entries.
+
+**Deliberate exclusion:** `givn history` and `givn timeline` run **without** a
+recorder — reading the record never mutates it. Every other command, including
+`givn history ingest`, records normally.
+
+**Intake (`givn history ingest`):** reads one JSON object from stdin
+(`schema`, `reporter`, `session`, `change`, `topic`, `events`). An event whose
+`kind` is unknown, whose `at` is unparsable, or that lacks a required field for
+its kind is rejected **individually**: it is named on stderr and the remaining
+events are appended. Exit codes: `0` when the payload was read (rejected events
+are warnings), `2` when stdin is not readable JSON at all; a record that cannot
+be written warns and still exits `0`.
+
+**Process-per-hook pending state** (Claude Code): one file per session at
+`givn/history/pending/<harness>-<session-id>.json`, shaped
+`{<tool_use_id>: {started_at, kind, label}}` — written atomically before the tool
+runs, consumed by the matching end event, pruned by age (older than 24 h) and at
+session end, no payload content. Losing it costs a duration, never an entry.
+
+**Ignore block (D1):** Givn itself writes a managed `# givn:begin:history` block
+(independent of the `rules` policy) through the backend switch
+`src/skills/rules.rs::write_ignores` already uses — Git: `.gitignore` plus the
+worktree-local exclude file resolved with `git rev-parse --git-path
+info/exclude`; Fossil: `.fossil-settings/ignore-glob` plus the repository-local
+`ignore-glob` setting. Realized in `src/history.rs::store_path` and
+`src/history.rs::ensure_ignored`.
+
+**Report (`givn timeline`):** `givn timeline [--change <id>|--topic <id>] [--out
+<path>]`. With `--out` omitted the report goes to the default path
+`givn/history/reports/<scope>.html` (chapter 07's project footprint); the
+command prints the written path and gains **no** `--open` flag and **no** `--json`
+mode (the machine-readable view of the record is `givn history --json`). Flagless
+`givn timeline` renders the **project report**, whose "outside a scope" band
+carries every project-scope entry. Bands are the report's rows: one per archived
+change, one per change or ideation topic in flight, and the "outside a scope"
+band in the project report. Within every band spans are ordered by `at`, never
+by file position. Phase derivation: one `phase` entry is recorded when an
+artifact file of the change appears, and an entry belongs to the stage of the
+latest such transition at or before its own `at`; entries before the band's
+first transition stay in the opening stage, and a scope with no transitions gets
+one unnamed stage instead of an invented phase name. Aggregation: at the initial
+zoom, entries shorter than the time-per-pixel collapse into one aggregate marker
+per band and time bucket that names how many entries it covers and their
+combined duration; a click on an aggregate zooms to its bucket; the summary and
+the longest-step ranking always cover the full record. Rendering: the generator
+fills the asset's single data slot (`/*__GIVN_REPORT_DATA__*/`) with the JSON
+model; the inline script builds an SVG time axis, nests spans by `parent`, and
+wires zoom (wheel, buttons), pan (drag), selection (click/`Enter`) and the
+details panel — it never calls `fetch`, never loads a remote resource, and never
+uses `Date.now()`. Summary: total elapsed, ranked longest steps, entry count,
+question-wait total and count, subagent count and combined duration, token
+totals overall / per model / per subagent. Accessibility: a labelled `svg`
+inside `main`, every span focusable with an accessible name, the details panel a
+labelled region with a close control, `prefers-reduced-motion` disabling the
+zoom transition and the panel animation.
+
+## Global constraints (apply to every task)
+
+- **Runner and strict mode.** `tests/features_runner.rs` (cucumber-rs 0.23) is
+  the single runner for the permanent `givn/specs/` corpus and this change's
+  delta; there is no parallel hand-maintained test file. Strict mode is
+  `.fail_on_skipped()` on the Cucumber builder in **both** paths (the plain
+  `cargo test` path and the nextest `--exact` path) plus the non-zero exit when
+  `stats.failed > 0 || stats.skipped > 0`. Confirm both call sites before
+  starting and paste them in Task S1; never weaken either. An undefined step
+  therefore fails the runner — a scenario can never silently pass or skip.
+- **Canonical single-scenario command** (design.md §Step Definitions; use it for
+  every RED/GREEN/REFACTOR run — never `--name`, never an inference from
+  whole-suite output), with this scenario's relative feature path and title:
+
+  ```sh
+  GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/<feature>.feature::<scenario title>"
+  ```
+  Scope commands: full delta `GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e`
+  (33 scenarios, `verify.command` after Task S2) and
+  `GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --e2e`
+  (8 scenarios, `verify.e2e_command`). Run a `Scenario Outline`'s unit once: it
+  executes all Examples rows in one process.
+- **Step-definition ownership — one file per capability** (`design.md` §Step
+  Definitions). Unit/integration steps:
+  `tests/steps/development_record_steps.rs`,
+  `tests/steps/agent_activity_reporting_steps.rs`,
+  `tests/steps/development_report_steps.rs`. Shared, not per capability:
+  `tests/steps/development_timeline_support.rs` (record fixtures, the
+  seeded-history builder, and the three harness drivers — a fake `pi` extension
+  context for omp, a fake plugin context capturing `session.hook` /
+  `tool.hook` / `shell.hook` plus the event subscription for opencode, and a
+  payload-on-stdin invocation of the generated Claude shim with a fixture
+  transcript). Every module is registered in `tests/steps/mod.rs` and
+  `GivnWorld` gains one slot per capability. The `@e2e` step files
+  (`tests/steps/development_record_e2e_steps.rs`,
+  `tests/steps/agent_activity_reporting_e2e_steps.rs`,
+  `tests/steps/development_report_e2e_steps.rs`) and `tests/common/browser.rs`
+  are created in Task E1, never before — never one shared file for everything.
+- **Step bodies are never empty.** `{}`, bare `pass`, bare `return` are
+  indistinguishable from PASS and banned at every phase, not just RED. An
+  unimplemented Rust step uses exactly
+  `unimplemented!("TODO: development-timeline")`. A step body is exempt only
+  once it has a real assertion (GREEN) or performs a real reused setup action;
+  reuse is never an excuse for a new step to be empty.
+- **RED discipline.** Remove `@wip` from **this scenario only** (every other
+  scenario keeps it), run the canonical single-scenario command, paste the
+  output, and it MUST exit non-zero — exit 0 means the runner is not strict or a
+  step is empty: hard stop, fix before continuing. Record the RED category
+  honestly: for a genuinely new behaviour the undefined step / `unimplemented!()`
+  panic is the RED; where a scenario's contract already holds, prove
+  discrimination with a controlled omission in an isolated fixture, restore the
+  fixture immediately (`OLD_PRODUCT_RED` / `ORACLE_RED`, never a production
+  switch, exception, fake success, or source-text test).
+- **GREEN discipline.** Replace the stubs with real assertions and write the
+  minimum production code. Compiled language: run the compile step first
+  (`cargo build --locked`) and confirm it succeeds, then run the canonical
+  single-scenario command and paste the output — MUST exit zero. List every
+  production file created or modified; an empty list on a non-reuse scenario
+  means investigate, not proceed. The scenario's own `@wip` tag stays removed
+  from here on.
+- **REFACTOR discipline.** Clean up with no behaviour change, re-run the
+  canonical single-scenario command, paste the output — MUST still exit zero.
+  `cargo fmt --all -- --check` and `cargo clippy --locked --all-targets -- -D
+  warnings` are the repository's CI gates: keep them green from the scenario
+  that introduces the code.
+- **Commit discipline (resident rule).** One atomic commit for
+  RED+GREEN+REFACTOR per scenario via `givn commit -m "…"`:
+  `feat(<capability>): <release note>` for a regular scenario,
+  `test(e2e): <release note>` for an `@e2e` scenario — the release note above is
+  the message subject verbatim, and the scenario title goes in the message body.
+  Record the revision identifier immediately, never reuse one, and check the
+  scenario's box only once evidence and revision are filled in. No commit, or a
+  commit touching only the spec or a stub, means the task is not done.
+- **Production edit set** (`design.md` §Architecture Impact — the complete
+  change, nothing else): new `src/history.rs`, `src/cli/history.rs`,
+  `src/cli/timeline.rs`, `assets/timeline/report.html`,
+  `assets/agent-integrations/omp/givn-timeline.js`,
+  `assets/agent-integrations/opencode/givn-timeline.js`,
+  `assets/agent-integrations/claude/givn-timeline.sh`,
+  `docs/design/design-system.md`, `setup-e2e-browser.sh`, `tests/e2e/`
+  (driver + `package.json`); modified `src/main.rs` (two new commands plus the
+  recording wrapper around dispatch), `src/subprocess.rs`, `src/hooks.rs`,
+  `src/cli/archive.rs`, `src/cli/check.rs`, `src/cli/commit.rs`,
+  `src/skills/targets.rs`, `src/skills/rules.rs`, `tests/` (six step files, one
+  support file, `tests/common/browser.rs`), `givn/commands.yaml`,
+  `.github/workflows/ci.yml`, `.github/workflows/release.yml`. No new Rust
+  dependency, no second runner, no server, no port, no database.
+- **Never silently deviate from `design.md`.** The exact commands, file layout,
+  framework, and mechanisms above are design decisions, not suggestions. If one
+  turns out wrong, STOP — do not work around it. Update `design.md` with the
+  corrected decision (naming the exact mechanism/command/file), re-run
+  `design-review` (and reassess the arc42 chapter table), and only then resume
+  the task. Example: `verify.e2e_command` is never pointed at the same string as
+  `verify.command`, and one shared step file is never substituted for the
+  per-capability files `design.md` names.
+- **`@e2e` tags are immutable.** Never remove an `@e2e` tag; the `verify-e2e`
+  hook and `givn lint --change development-timeline` both detect tag removal by
+  cross-referencing this file. If e2e infrastructure blocks a scenario, fix the
+  infrastructure — never delete the tag.
+- **Visual evidence (the visual gate is change-wide).** Every `@e2e` scenario
+  commits final-state screenshots at both viewports under
+  `givn/changes/development-timeline/evidence/visual/<scenario-slug>/`:
+  `mobile.png` (360x780) and `desktop.png` (1920x1080) — including the CLI ones,
+  which commit the report they produced, rendered in the browser. The declared
+  `empty` state is captured by the empty-scope scenario as `mobile--empty.png`
+  and `desktop--empty.png`. `scenario_slug` follows
+  `givn::integrity_hook::scenario_slug`: lowercase ASCII, every run of
+  non-alphanumeric characters becomes one `-`, leading and trailing `-` removed.
+  Intermediate captures, if any, go to `reports/visual/` and are not review
+  evidence. `src/integrity_hook.rs::check_visual_evidence` fails the gate for a
+  missing or zero-byte file.
+- **Local runnability and digital twins.** One-time browser setup, then the
+  whole verification surface: `./setup-e2e-browser.sh` (installs the
+  Playwright-pinned Chromium), `./run-tests.sh --non-e2e`,
+  `./run-tests.sh --e2e`. No container, no listening port, no external service,
+  and no digital twin exists or is needed: the report and the record are local
+  files and the browser loads the report from a `file://` URL inside the
+  temporary project root the scenario created. `./setup-e2e-browser.sh` is the
+  only step that touches the network and it runs once, outside the suite.
+- **Coverage.** The addon is enabled (`measure_command: ./measure-coverage.sh`,
+  `merge_command: ./merge-coverages.sh`), so new code must be exercised in the
+  pass that owns it (`coverage/non-e2e-cobertura.xml`, `coverage/e2e-cobertura.xml`,
+  merged into `coverage/cobertura-coverage.xml`). The new scenarios keep the
+  existing tag split; no coverage-script change is required. Non-zero production
+  probes named by `design.md`: `src/history.rs::bound_label` and
+  `src/cli/timeline.rs::build_report_model` (Tasks 8 and 25), plus
+  `src/history.rs::record` (Task 1), `src/cli/history.rs::ingest` (Tasks 12–20)
+  and `src/cli/history.rs::map_harness_event` (Tasks 23–24).
+- **Personas are review lenses, never Gherkin actors.** The scenarios' actors
+  (`the user`, `the agent`, `the consumer`, `the developer`, `the harness`) stay
+  distinct from `developer--primary-user` and `agent--technical-role`.
+
+## Domain constraints (from the owning use case)
+
+`specs/inspect-development-history/usecase.md` — goal: "See how a change or an
+ideation was developed — which steps ran, what the agent did, where the time
+went — without reading raw logs." Actors: Developer; supporting Authoring agent
+(whichever harness runs it). Every scenario task below carries the row(s) that
+name it.
+
+| Task group | Use-case guarantee or rule | Scenario tasks | Persona impact |
+|---|---|---|---|
+| `development-record` recording | Recording never changes the outcome of the command it records (minimal guarantee) | Tasks 3, 18 | `agent--technical-role` never fails a command because the record failed. |
+| `development-record` recording | A recorded duration is measured, never inferred from two entries that disagree | Tasks 1, 2, 23, 24 | `developer--primary-user` can trust the durations the report ranks. |
+| `development-record` recording | The record is append-only: a recorded entry is never rewritten | Task 4 | `developer--primary-user` keeps history across restarts ("A record written before a restart is still in the report afterwards"). |
+| `development-record` scope | Every recorded entry belongs to exactly one scope: a change, an ideation topic, or the project | Tasks 1, 5, 7, E2 | `developer--primary-user` sees one scope's history, not a mixture. |
+| `development-record` privacy | The record keeps metadata plus one bounded label; the complete command text is never stored (D2) | Task 8 | `developer--primary-user`'s credentials and private code stay out of the store. |
+| `development-record` observation | Recording is the observation substrate: no gate, no proof, no exit code, no artifact lifecycle changes | Tasks 3, 6, 9, 21, 22 | `agent--technical-role` executes the same workflow; nothing it observes mutates. |
+| `development-record` reading | Reading the record never extends it (`givn history`, `givn timeline`) | Task 9 | `developer--primary-user` can re-read a report as often as wanted. |
+| `development-record` hygiene | One local project store, kept out of repository history through both backends' ignore destinations (D1) | Tasks 10, 11 | `developer--primary-user`'s telemetry never enters repository history; a Fossil project is covered too. |
+| `agent-activity-reporting` intake | Extension: a reported agent event that does not match the intake contract is rejected with a warning and the record is not corrupted; the previously recorded history is unchanged | Tasks 17, 20 | `agent--technical-role`'s stale reporter cannot damage the record. |
+| `agent-activity-reporting` intake | Extension: the record cannot be written → the reported agent action continues and reports its own outcome | Task 18 | `agent--technical-role`'s tool call is never blocked by Givn's disk. |
+| `agent-activity-reporting` intake | Every reported entry is scoped to the change (payload override wins; a named scope that does not exist is a per-event rejection) | Tasks 12–16 | `developer--primary-user` sees agent work under the right change. |
+| `agent-activity-reporting` intake | The intake is a machine contract: stdin JSON, stable exit codes (`0` read, `2` unparsable) | Tasks 19, 20 | `agent--technical-role` reacts to a deterministic exit code. |
+| `agent-activity-reporting` harnesses | Every supported harness reports its own activity through the same intake; the `agents` skills mirror receives no reporter | Tasks 21, 22, E4 | `agent--technical-role` reports from opencode, Claude Code, or omp identically; no invented activity for a mirror. |
+| `agent-activity-reporting` gap honesty | A signal a harness cannot deliver (a wait it does not time, token usage in its own session record) is recorded as measured/unavailable rather than zero, and the gap is stated | Tasks 16, 23, 24, 27, E4 | `developer--primary-user` never reads an invented value as a measurement. |
+| `development-report` goal | Success guarantee: the developer can see what was worked on and how long it took for the requested scope (ranked longest steps, question waits, subagent fan-out, token totals) | Tasks 25–30, E5–E9 | `developer--primary-user` answers "where did the time go?" without raw logs. |
+| `development-report` scope | An ideation topic is reportable before any change exists; the project report renders the "outside a scope" band (D5, design-review Q2/Q4) | Tasks 7, 28, E6 | `developer--primary-user` sees ideation work and work between changes. |
+| `development-report` ordering | Report ordering follows `at`, never store position (two writers make them differ) | Tasks 6, 29 | `developer--primary-user` reads a truthful sequence. |
+| `development-report` empty state | Extension: no activity recorded → the report renders an explicit empty state instead of a blank page or an error; no timeline axis | Tasks 32, E9 | `developer--primary-user` gets a truthful, non-alarming screen. |
+| `development-report` rendering | The report is one self-contained file: no server, no port, no network access, no third-party JavaScript, deterministic pixels | Tasks 31, E4–E9 | `developer--primary-user` opens a local file and can hand it to someone else. |
+| `development-report` rendering | A dense record is reported as aggregates instead of raw ticks, while the summary still counts every entry | Task 33 | `developer--primary-user` reads a long run without an unreadable axis. |
+
+## Strict-mode proof and setup (do first)
+
+- [ ] **P0 (planning, before the setup tasks). Commit the planning artifacts,
+      separate from any scenario work.**
+      The whole change directory is untracked today
+      (`givn/changes/development-timeline/**`, `docs/design/design-system.md`,
+      the arc42 chapter updates and `docs/arc42/adr/ADR-073-development-record-ownership.md`).
+      Commit exactly those plan/design files — `proposal.md`, `specs/**`,
+      `design.md`, `design-review.md`, `arc42.md`, `docs/design/design-system.md`,
+      the arc42 chapters + ADR-073, and this `tasks.md` — in one commit whose
+      subject names the change plan (`docs(development-timeline): …`), so the
+      first scenario commit cannot sweep the plan in and no scenario commit
+      touches only the spec. Evidence:
+      ```
+      <!-- paste: git status --porcelain before/after + the planning commit hash -->
+      ```
+- [ ] **S1. Prove strict mode on this change's runner (mandatory, non-zero exit
+      required).**
+      - Runner config: none to add — `tests/features_runner.rs` already carries
+        `.fail_on_skipped()` on the Cucumber builder in both entry paths (the
+        plain `cargo test` path and the nextest `--exact` path) and exits
+        non-zero when `stats.failed > 0 || stats.skipped > 0`. Paste both call
+        sites and the exit condition; never weaken them.
+      - **Probe A — an undefined step fails.** Create the throwaway probe
+        `givn/changes/development-timeline/probe/probe.feature` (outside
+        `specs/`, so nothing in the delta corpus, lint, or counts changes) with
+        one scenario carrying one step that has no binding, then run it scoped:
+        `GIVN_FEATURES=givn/changes/development-timeline/probe cargo test --locked --test features_runner`
+        → expect a non-zero exit (the unmatched step is skipped, and
+        `.fail_on_skipped()` turns that into a failure).
+      - **Probe B — an `unimplemented!()` stub fails.** Temporarily bind the
+        probe's step in `tests/steps/development_record_steps.rs` with exactly
+        `unimplemented!("TODO: development-timeline")`, re-run the scoped probe
+        command → expect a non-zero exit (the panic is a failed scenario, never
+        a silent pass).
+      - **Restore (back to a passing baseline, real scenarios still `@wip`).**
+        Delete `givn/changes/development-timeline/probe/` and the probe binding,
+        then confirm: the delta listing is unchanged —
+        `GIVN_FEATURES=givn/changes/development-timeline/specs GIVN_CUCUMBER_TAGS='' cargo nextest list --locked --test features_runner`
+        → 41 units, `GIVN_CUCUMBER_TAGS='not @e2e'` → 33, `GIVN_CUCUMBER_TAGS='@e2e'`
+        → 8 — with no probe title anywhere; every delta scenario still carries
+        `@wip` (41 tag lines); and the permanent scope still exits 0 —
+        `./run-tests.sh --non-e2e` (the same command Task S2 then declares as
+        `verify.command`). Paste every command with its output.
+      ```
+      <!-- paste: the two .fail_on_skipped() call sites + the exit condition, Probe A command/output, Probe B command/output, the restore listings + @wip count + baseline result -->
+      ```
+      If Probe A or B exits 0, stop and fix strictness before any scenario work.
+- [ ] **S2. Configure `verify.command` and document it as implementation work.**
+      - `givn/commands.yaml`: change `verify.command` from `./run-tests.sh` to
+        `./run-tests.sh --non-e2e`; leave `verify.e2e_command` as
+        `./run-tests.sh --e2e` (design.md §Local Runnability & Digital Twins).
+        The regular scope runs exactly the `not @e2e` tag set, so the regular
+        archive receipt no longer depends on a browser, and the two receipts
+        match the tags they claim.
+      - Document the same command in the project's command table — the
+        development-script list that names `run-tests.sh`,
+        `measure-coverage.sh`, and `merge-coverages.sh`, which in this
+        repository is `docs/reference.md` §Repository development scripts
+        (`README.md`'s documentation index points at it as the CLI/dev-script
+        reference; `design.md` calls this surface "the README's command table").
+        The table must show the regular scope as `./run-tests.sh --non-e2e`
+        beside `./run-tests.sh --e2e`.
+      - `./setup-e2e-browser.sh` does not exist yet; do **not** invent it here —
+        Task E1 owns it. The baseline run below must therefore be the
+        non-browser scope only.
+      - Paste `git diff givn/commands.yaml` plus the doc change and the exit-0
+        baseline: `./run-tests.sh --non-e2e` (permanent corpus, no
+        `GIVN_FEATURES` override).
+      ```
+      <!-- paste: commands.yaml diff, doc diff, ./run-tests.sh --non-e2e summary (exit 0) -->
+      ```
+- [ ] **S3. Create the step-definition skeletons — one file per capability
+      (design.md §Step Definitions).**
+      - Create `tests/steps/development_record_steps.rs`,
+        `tests/steps/agent_activity_reporting_steps.rs`,
+        `tests/steps/development_report_steps.rs` and the shared
+        `tests/steps/development_timeline_support.rs` (record fixtures, the
+        seeded-history builder, the three harness drivers). Skeleton = module
+        doc comment, the `GivnWorld` state slot the capability needs, and the
+        helper signatures the scenarios will call; step bindings are added
+        scenario by scenario at RED.
+      - Register all four in `tests/steps/mod.rs` and give `GivnWorld` one slot
+        per capability (the existing pattern: a state type owned by the
+        capability's module, held as an `Option<…State>` field).
+      - Do **not** create the `@e2e` step files or `tests/common/browser.rs`
+        here — Task E1 owns them.
+      - Confirm the harness still builds and the permanent scope stays green:
+        `cargo build --locked --tests` and `cargo clippy --locked --all-targets
+        -- -D warnings`.
+      ```
+      <!-- paste: the four module registrations, the GivnWorld slots, cargo build/clippy output -->
+      ```
+- [ ] **S4. Initialise the production module skeletons at the exact paths
+      `design.md` names.**
+      - `src/history.rs` — the record owner: `HistoryEntry` (the field set in
+        *Record and report contract*), `Scope` (`Change(id)`, `Ideation(id)`,
+        `Project(name)`), `HistoryStore` (append + read of
+        `givn/history/events.jsonl`, id minting under the append lock),
+        `HistoryRecorder` (`record`, `span`), `resolve_scope`, `bound_label`,
+        `PendingState`, `store_path`, `ensure_ignored`.
+      - `src/cli/history.rs` — `givn history` (read) + `givn history ingest`
+        (the one intake) + `givn history harness-hook --harness claude` (the raw
+        payload mapper and transcript reader); `IngestedEvent`, `HarnessPayload`,
+        `map_harness_event`.
+      - `src/cli/timeline.rs` — `ReportModel`, `build_report_model`,
+        `render_report`.
+      - `assets/timeline/report.html` — the self-contained asset: inline
+        CSS/JS/SVG, exactly one data slot `/*__GIVN_REPORT_DATA__*/`, no
+        third-party JavaScript, no CDN, no build step.
+      - Declare the modules so the crate compiles: `mod history;` in
+        `src/main.rs` and `pub mod history;` in `src/lib.rs`; `pub mod history;`
+        and `pub mod timeline;` in `src/cli/mod.rs`. Command dispatch wiring
+        (`src/main.rs` `Commands` variants) is added by the first scenario that
+        needs each command — a skeleton must not be reachable from a command
+        whose scenario has not been implemented.
+      - Skeleton bodies are `todo!("TODO: development-timeline")` on the
+        production side (`unimplemented!("TODO: development-timeline")` on the
+        step side). Keep them minimal — module doc, signatures, no unused
+        imports or helpers — so `cargo fmt --all -- --check`,
+        `cargo build --locked` and `cargo clippy --locked --all-targets -- -D
+        warnings` stay green (CI runs both). A skeleton may never survive the
+        scenario that covers it.
+      ```
+      <!-- paste: the module declarations, the three file listings, cargo build/clippy output -->
+      ```
+
+## Task 1 — `A recorded step keeps a measured duration and its outcome` (`development-record`, added)
+
+- [ ] **Scenario: `A recorded step keeps a measured duration and its outcome`**
+  - Design constraints:
+    - Feature `inspect-development-history/development-record.feature`; steps in
+      `tests/steps/development_record_steps.rs`; fixtures in
+      `tests/steps/development_timeline_support.rs` (which uses the existing
+      black-box seam `common::run_givn` — the compiled binary in a `tempfile`
+      project root — never an in-process library call).
+    - Capture point: `src/main.rs` command dispatch emits one `command` entry per
+      `givn` invocation — `kind: "command"`, `name` the command name,
+      `source: "givn"`, `scope` resolved by `resolve_scope` (given the change
+      `demo` with `proposal.md`, that is exactly one active change → change
+      scope `{"kind":"change","id":"demo"}`), `outcome` from the invocation
+      (`ok` on exit 0), `at` an RFC 3339 UTC end timestamp with millisecond
+      precision.
+    - `src/history.rs::HistoryRecorder` is created once per process, holds the
+      store path and the resolved scope, exposes `record(entry)` and
+      `span(name)`, mints `id` at append time under the store's append lock, and
+      never returns an error to its caller.
+    - Duration is *measured* (`std::time::Instant` around the step itself via the
+      `span` guard), never inferred from two entries or from wall-clock
+      arithmetic; the architecture already forbids a fake clock.
+    - Store: `givn/history/events.jsonl`, one JSON object per line, appended
+      only.
+    - Assertion shape: after the run, exactly one entry names this command; its
+      `duration_ms` is present and numeric; its `outcome` is `ok`. "Measured"
+      is asserted as a real non-fabricated number produced by the run, so the
+      step reads the store the way a consumer would (documented helper in the
+      support file), not a mocked recorder.
+    - RED expected failure: both Then steps are undefined → skipped → the
+      `.fail_on_skipped()` contract makes the runner exit non-zero.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A recorded step keeps a measured duration and its outcome"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — replace the stubs with the real assertions; implement the
+        record owner and the dispatch wrapper. Files: `src/history.rs`,
+        `src/main.rs`, `tests/steps/development_record_steps.rs`,
+        `tests/steps/development_timeline_support.rs`. Compile first
+        (`cargo build --locked`), then re-run the same command → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — remove duplication in the recorder/store surface and the
+        fixture helper, no behaviour change; re-run the same command → still
+        exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` (the
+        release note verbatim as the subject; body carries the scenario title
+        `A recorded step keeps a measured duration and its outcome`). Record the
+        revision identifier here, and check this box only when the evidence
+        above and the revision are filled in.
+
+## Task 2 — `A verification run is recorded as its own step` (`development-record`, added)
+
+- [ ] **Scenario: `A verification run is recorded as its own step`**
+  - Design constraints:
+    - Capture point: `src/subprocess.rs::sh_streamed` is the single
+      shell-execution choke point → one `step` entry per shell command with its
+      existing `label` (gate hook, verification scope, coverage pass) and its
+      measured duration. `givn check tasks --change demo` runs the declared
+      verification command through it.
+    - Second capture point involved: `src/cli/check.rs::run` records the
+      mandatory-check boundary as `phase` entries (parented to the command);
+      the verification scope's own `duration_ms` already exists and becomes the
+      step's duration (the same shape `src/cli/archive.rs::run_scope` uses).
+    - Fixture: `givn/commands.yaml` in the temp project declares a
+      `verify.command` that takes measurable time (a real subprocess sleeping at
+      least one second) — a real measurement, never a mocked clock.
+    - Assertion shape: one entry with `kind: "step"`, a bounded `label` naming
+      the verification run, `duration_ms >= 1000`, and an `outcome`; the entry is
+      parented to the `givn check tasks` command entry.
+    - RED expected failure: the verification-step Then steps are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A verification run is recorded as its own step"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — wire the choke point and the check boundary. Files:
+        `src/subprocess.rs`, `src/cli/check.rs`, `src/history.rs` (if the span
+        guard needs the parent link), the step file
+        `tests/steps/development_record_steps.rs` and the support file's
+        `commands.yaml` fixture. Compile first, re-run the same command → exit 0.
+        Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — tighten the choke point so no caller gains an
+        instrumentation branch, no behaviour change; re-run → still exit 0.
+        Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+        the scenario title `A verification run is recorded as its own step` in
+        the body. Record the revision identifier.
+
+## Task 3 — `A record that cannot be written never fails the command it records` (`development-record`, added)
+
+- [ ] **Scenario: `A record that cannot be written never fails the command it records`**
+  - Design constraints:
+    - Minimal guarantee of the owning use case: recording never changes the
+      outcome of the command it records. Every write is best-effort and
+      swallowed with a warning; the command's own exit code is untouched
+      (`src/history.rs::record`).
+    - Fixture: make the store unwritable inside the temp project — the support
+      file owns the mechanism; the recommended one is creating a directory at
+      the store path (`givn/history/events.jsonl/`) so the append fails
+      deterministically (`EISDIR`) without depending on file permissions (a
+      `chmod` fixture is unreliable when the suite runs as root). Record the
+      chosen mechanism in the step.
+    - Assertion shape: `givn status` exits 0 even though the record could not be
+      written; stderr carries a warning line naming the development record (and
+      the store path); no entry is written.
+    - The warning is the *only* observable effect: no re-run, no retry loop, no
+      silent fallback that writes elsewhere.
+    - RED expected failure: the exit-0 step and the stderr-warning step are
+      undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A record that cannot be written never fails the command it records"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the best-effort write path and the warning
+        text. Files: `src/history.rs`, `tests/steps/development_record_steps.rs`
+        (plus the unwritable-store fixture in the support file). Compile first,
+        re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — ensure the warning is emitted from exactly one place and
+        no caller checks a recorder result; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+        the scenario title `A record that cannot be written never fails the
+        command it records` in the body. Record the revision identifier.
+
+## Task 4 — `The record is append-only across commands` (`development-record`, added)
+
+- [ ] **Scenario: `The record is append-only across commands`**
+  - Design constraints:
+    - One JSONL line per entry, opened append-only: no rewrite, no reordering,
+      no compaction. `id` is minted at append time under the store's exclusive
+      append lock from the store's current last line.
+    - Claim discipline (design-review Q5): this scenario claims only that the
+      earlier entry is still present **unchanged** and that the new entry is
+      **appended without rewriting the store** — it deliberately does not claim
+      time ordering, because concurrent writers make file order and time order
+      differ (that rule is Task 29's).
+    - Assertion shape: read the store bytes before the second command, run
+      `givn status`, then assert the earlier line is byte-identical and the file
+      grew by exactly one appended line (previous bytes are a prefix of the new
+      bytes); also assert the earlier entry's own field values are unchanged when
+      read back.
+    - RED expected failure: the unchanged/append assertions are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record is append-only across commands"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the append path and the byte-prefix assertions;
+        Files: `src/history.rs`, `tests/steps/development_record_steps.rs`.
+        Compile first, re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — make the store the only writer of the file (no second
+        write path, no read-modify-write); re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+        the scenario title `The record is append-only across commands` in the
+        body. Record the revision identifier.
+
+## Task 5 — `Activity outside a change belongs to the project scope` (`development-record`, added)
+
+- [ ] **Scenario: `Activity outside a change belongs to the project scope`**
+  - Design constraints:
+    - `resolve_scope` binds every entry to exactly one scope from the project's
+      own state, in one order: change → ideation topic → project. Zero active
+      changes and no unfinished ideation topic → the **project** scope, written
+      as `{"kind":"project","id":"<project-name>"}`; the project name is the
+      project root's own name (as the project's own state derives it — read it
+      from the fixture root, never hard-coded).
+    - No marker file exists or will be created: the record derives scope from
+      the filesystem (the rule `givn instructions <artifact>` already applies for
+      the change case; `givn/ideation/<topic>/session.md` without `## Completion`
+      for the topic case).
+    - Fixture: a bare initialised project — no `givn/changes/*` change directory
+      and no `givn/ideation/*/session.md` — provided by the support file, so the
+      fallback is exercised rather than assumed.
+    - Assertion shape: the recorded entry for `givn status` names the project as
+      its scope (kind `project`, id equal to the fixture project name).
+    - RED expected failure: the scope Then step is undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Activity outside a change belongs to the project scope"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement `resolve_scope`'s fallback and the bare-project
+        fixture; Files: `src/history.rs`,
+        `tests/steps/development_record_steps.rs`,
+        `tests/steps/development_timeline_support.rs`. Compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — express the three scope cases as one rule in one place
+        (no duplicated "is a change active?" logic); re-run → still exit 0. Paste
+        it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+        the scenario title `Activity outside a change belongs to the project
+        scope` in the body. Record the revision identifier.
+
+## Task 6 — `Two writers never mint the same entry id` (`development-record`, added)
+
+- [ ] **Scenario: `Two writers never mint the same entry id`**
+  - Design constraints:
+    - Concurrency contract (design-review Q5): `id` is minted **at append time
+      under the store's exclusive append lock** from the store's current last
+      line — never from a count captured at process start, which is the duplicate
+      minting this scenario pins.
+    - `parent` links are scoped to ids minted by the same process, so every
+      parent link always names an entry that exists in the store; a cross-process
+      parent is not produced by construction.
+    - Fixture: two `givn` invocations overlap (one of them the intake flush shape
+      in the design — a command plus a `givn history ingest` payload), spawned
+      concurrently by the step; repeat a few rounds so the overlap is real rather
+      than lucky, and record the round count in the step.
+    - Assertion shape, over every round: every entry carries a distinct `id`, and
+      every `parent` value that appears resolves to an entry present in the
+      record; no line is lost (the file parses as one JSON object per line).
+    - Do not weaken this into a single-process test: the property is about two
+      processes, so the fixture must spawn two.
+    - RED expected failure: the distinct-id and parent-resolution Then steps are
+      undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Two writers never mint the same entry id"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the append lock and append-time id minting.
+        Files: `src/history.rs`, `tests/steps/development_record_steps.rs`,
+        `tests/steps/development_timeline_support.rs` (the concurrent-spawn
+        fixture). Compile first, re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — keep exactly one id-minting site and one lock scope;
+        re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+        the scenario title `Two writers never mint the same entry id` in the
+        body. Record the revision identifier.
+
+## Task 7 — `Activity during an ideation belongs to its topic scope` (`development-record`, added)
+
+- [ ] **Scenario: `Activity during an ideation belongs to its topic scope`**
+  - Design constraints:
+    - Ideation scope rule: exactly one **unfinished** topic —
+      `givn/ideation/<topic>/session.md` exists and carries no `## Completion`
+      section (the section the handoff step appends beside its "handoff
+      complete" phase line); the record then writes
+      `{"kind":"ideation","id":"<topic-id>"}`. Several unfinished topics fall
+      through to the project for the same ambiguity reason as several active
+      changes.
+    - This is what makes an ideation reportable before any change exists — the
+      guarantee Task 28 reports on.
+    - Fixture: `givn/ideation/timeline-ideas/session.md` **without** `## Completion`
+      (a written-but-unfinished session), plus no active change; the support file
+      owns the builder so Task 28 can reuse it.
+    - Assertion shape: the entry recorded for `givn status` names the ideation
+      topic `timeline-ideas` as its scope.
+    - RED expected failure: the topic-scope Then step is undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Activity during an ideation belongs to its topic scope"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the unfinished-topic rule in `resolve_scope`.
+        Files: `src/history.rs`, `tests/steps/development_record_steps.rs`,
+        `tests/steps/development_timeline_support.rs` (the ideation fixture
+        builder). Compile first, re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — share the "exactly one candidate, otherwise fall through"
+        shape between the change and topic cases; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+        the scenario title `Activity during an ideation belongs to its topic
+        scope` in the body. Record the revision identifier.
+
+## Task 8 — `A recorded label is bounded to 120 characters` (`development-record`, added)
+
+- [ ] **Scenario: `A recorded label is bounded to 120 characters`**
+  - Design constraints:
+    - Privacy bound (D2, design-review Q7): an entry keeps kind, timestamps,
+      duration, outcome, model, token counts, subagent identity, and a single
+      label derived from the subject and truncated to ≤ 120 characters with the
+      truncation marked (`…`). Complete tool inputs, complete command text, and
+      complete question text are **never** stored; a question's label is only its
+      first line.
+    - `src/history.rs::bound_label` is the only place raw subjects are touched —
+      it is a named non-zero production probe in `design.md` §Coverage Process
+      Boundaries, so the assertion must read the store the way a consumer does
+      (parse the JSONL), never a private field.
+    - Fixture: a change `demo` whose command text is longer than 120 characters
+      (a `verify.command` or an intake tool label with a long subject) so
+      truncation must happen; the step asserts the length in `chars()` (120
+      characters, not 120 bytes) and the `…` mark.
+    - Second assertion: the store's bytes contain no line carrying the complete
+      command text (the strong form of the guarantee: it is absent, not merely
+      truncated in the label field).
+    - RED expected failure: the bounded-label and absence Then steps are
+      undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A recorded label is bounded to 120 characters"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement `bound_label` and route every label through it
+        (command label, step label, tool label, question first line). Files:
+        `src/history.rs`, `src/subprocess.rs` (label source),
+        `tests/steps/development_record_steps.rs`. Compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one truncation implementation, no caller truncates
+        itself; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+        the scenario title `A recorded label is bounded to 120 characters` in
+        the body. Record the revision identifier.
+
+## Task 9 — `Reading the development record does not extend it` (`development-record`, added)
+
+- [ ] **Scenario: `Reading the development record does not extend it`**
+  - Design constraints:
+    - Deliberate exclusion (design-review Q8): `givn history` and `givn timeline`
+      run **without** a recorder — reading the record never mutates it, and an
+      inspection that appended an entry about itself would put the newest entry
+      into every report it produced and make the store's size depend on how often
+      it is read.
+    - The read path is `src/cli/history.rs` (`givn history --change demo --json`),
+      the render path is `src/cli/timeline.rs`
+      (`givn timeline --change demo --out report.html`); both are dispatched
+      from `src/main.rs` and must be excluded from the capture wrapper.
+    - Assertion shape: read the store's line count (and bytes) before, run both
+      commands, then assert the store holds exactly the same lines — no new
+      entry, no rewritten line — while `report.html` was still written.
+    - Note the scope widening for the record contract: this is the only scenario
+      that pins both reading commands, so the render must be exercised here too.
+    - RED expected failure: the no-new-entry Then step is undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Reading the development record does not extend it"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — register the two commands with the recorder excluded.
+        Files: `src/cli/history.rs`, `src/cli/timeline.rs`,
+        `tests/steps/development_record_steps.rs` (the report invocation reuses
+        the generic run-command step from `development_report_steps.rs` — never a
+        copy). `givn timeline` must already write its report file here (that is
+        what this scenario observes); its full model, ranking, and rendering are
+        built by Tasks 25–33. Compile first, re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — make the exclusion structural (the wrapper is not entered)
+        rather than a conditional inside the recorder; re-run → still exit 0.
+        Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+        the scenario title `Reading the development record does not extend it` in
+        the body. Record the revision identifier.
+
+## Task 10 — `The record stays out of the repository's own history` (`development-record`, added)
+
+- [ ] **Scenario: `The record stays out of the repository's own history`**
+  - Design constraints:
+    - D1: one local project store, kept out of repository history by a managed
+      `# givn:begin:history` ignore block written by Givn itself (independent of
+      the `rules` policy — the record is data, not generated rules), realized in
+      `src/history.rs::store_path` and `src/history.rs::ensure_ignored`.
+    - Git destinations, through the switch `src/skills/rules.rs::write_ignores`
+      already uses: `.gitignore` **plus** the worktree-local exclude file
+      resolved with `git rev-parse --git-path info/exclude`.
+    - The block is managed: re-running must not duplicate it, and user content
+      outside the block stays untouched.
+    - Fixture: the Git backend fixture (`BackendKind::Git` in
+      `tests/common/mod.rs`) with a real `git` worktree.
+    - Assertion shape: after `givn status --change demo`, the repository reports
+      no pending change for the development record (`git status --porcelain`
+      output contains no `givn/history/events.jsonl` entry, untracked or
+      modified), for a project where the record was written by the same command.
+    - No push, no commit: the scenario only proves the file is ignored.
+    - RED expected failure: the no-pending-change Then step is undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record stays out of the repository's own history"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement `ensure_ignored` over the existing backend switch.
+        Files: `src/history.rs`, `src/skills/rules.rs` (reuse/seam only — do not
+        merge the record into the rules block), the step file
+        `tests/steps/development_record_steps.rs`. Compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one destination table shared with the rules writer, no
+        duplicated Git/Fossil branches; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+        the scenario title `The record stays out of the repository's own history`
+        in the body. Record the revision identifier.
+
+## Task 11 — `A Fossil project ignores the record through its own ignore file` (`development-record`, added)
+
+- [ ] **Scenario: `A Fossil project ignores the record through its own ignore file`**
+  - Design constraints:
+    - Same D1 rule, Fossil arm: the managed `# givn:begin:history` block reaches
+      `.fossil-settings/ignore-glob` plus the repository-local `ignore-glob`
+      setting, so a Fossil project is covered through the same seam instead of a
+      Git-only file.
+    - Fixture: the `BackendKind::Fossil` fixture — a real `fossil` repository kept
+      outside the checkout (so it is never an `EXTRA` entry), created by
+      `tests/common/mod.rs`'s existing helper.
+    - Assertion shape: after `givn status --change demo`, the repository's ignore
+      glob names the development record (read the effective `ignore-glob`
+      setting, not the file we happened to write) and the record path is not
+      reported as a pending/extra change.
+    - The Fossil path must not be implemented as a Git-only branch plus a stub:
+      if the seam cannot express it, that is the design-review escalation in
+      *Global constraints*, not a silent skip.
+    - RED expected failure: the ignore-glob Then step is undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A Fossil project ignores the record through its own ignore file"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — extend `ensure_ignored` with the Fossil destinations. Files:
+        `src/history.rs`, `src/skills/rules.rs`, `tests/steps/development_record_steps.rs`.
+        Compile first, re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — keep the destination choice in one backend-keyed place;
+        re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+        the scenario title `A Fossil project ignores the record through its own
+        ignore file` in the body. Record the revision identifier.
+
+## Task 12 — `A reported tool call is recorded for its scope` (`agent-activity-reporting`, added)
+
+- [ ] **Scenario: `A reported tool call is recorded for its scope`**
+  - Design constraints:
+    - Intake: `givn history ingest` reads exactly one JSON object from stdin
+      (`schema`, `reporter`, `session`, `change`, `topic`, `events`). A present
+      `change` overrides the binary's own resolution (a named scope that does not
+      exist is a per-event rejection, never a silent fallback); `source` for
+      every ingested event is `agent`.
+    - Entry shape for a tool event: `kind: "tool"`, `name` the harness tool name,
+      `label` the bounded subject, `duration_ms` the measured duration (the
+      harness's own where it exists, otherwise the reporter's own stamps),
+      `outcome` mapped from the harness status, `parent` the enclosing turn when
+      the harness reports one and that id was minted by the same process.
+    - Per-kind validation lives in `src/cli/history.rs` (`IngestedEvent`): a
+      required field missing for the event's kind rejects that event alone.
+    - Regular scenarios drive the intake with a payload on stdin (the machine
+      contract); the harnesses' own reporter entry points are the `@e2e` tier
+      (Task E4) — never fake a harness here.
+    - Fixture: change `demo` with `proposal.md`; the payload names the change and
+      one `tool` event; steps in
+      `tests/steps/agent_activity_reporting_steps.rs`, payload builder in
+      `tests/steps/development_timeline_support.rs`.
+    - Assertion shape: exactly one `agent`-sourced entry for the tool call, naming
+      the tool and carrying the measured duration.
+    - RED expected failure: both Then steps are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A reported tool call is recorded for its scope"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement `givn history ingest` (payload read, per-event
+        validation, append). Files: `src/cli/history.rs`, `src/history.rs`,
+        `src/main.rs` (dispatch), `tests/steps/agent_activity_reporting_steps.rs`,
+        `tests/steps/development_timeline_support.rs`. Compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one event-mapping site per kind, no per-caller field
+        copying; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+        with the scenario title `A reported tool call is recorded for its scope`
+        in the body. Record the revision identifier.
+
+## Task 13 — `A subagent's activity is attributed to that subagent` (`agent-activity-reporting`, added)
+
+- [ ] **Scenario: `A subagent's activity is attributed to that subagent`**
+  - Design constraints:
+    - Entry shape: `kind: "subagent"`, the subagent's identity in the event
+      (`{"kind":"subagent","at":…,"agent":…,"subagent":…,"status":…,"duration_ms":…}`
+      — `data.subagent` carries the harness's own identity, e.g.
+      `Architect.Scout`), a measured `duration_ms` spanning start..end, and
+      `outcome` mapped from `status` (`completed` → `ok`).
+    - Nesting: a subagent reported inside a turn carries `parent` = that turn's
+      id; a parent is only ever an id minted by the same process, so the link
+      always resolves in the store.
+    - The subagent must remain an identifiable span, never collapsed into its
+      parent turn's duration — the report's fan-out view (Task 30) reads these
+      entries.
+    - Fixture: change `demo` with reported agent activity; one start and one
+      completion event for the same subagent.
+    - Assertion shape: exactly one entry for that subagent; it names the subagent
+      and its duration covers the reported start and end.
+    - RED expected failure: both Then steps are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A subagent's activity is attributed to that subagent"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the subagent event kind and its parent link.
+        Files: `src/cli/history.rs`, `src/history.rs`,
+        `tests/steps/agent_activity_reporting_steps.rs`. Compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — express start/end pairing once (shared with the question
+        wait path where the shape is identical); re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+        with the scenario title `A subagent's activity is attributed to that
+        subagent` in the body. Record the revision identifier.
+
+## Task 14 — `A question wait is recorded with its duration` (`agent-activity-reporting`, added)
+
+- [ ] **Scenario: `A question wait is recorded with its duration`**
+  - Design constraints:
+    - Entry shape: `kind: "question"`, `duration_ms` the wait duration (the
+      harness's own where it exists, else the reporter's stamps), `label` the
+      question's **first line only** — the complete question text is never
+      stored (D2). Example payload event:
+      `{"kind":"question","at":…,"label":"Which store should the record use?","duration_ms":480000}`.
+    - A wait must be its own span, never merged into the surrounding turn, so the
+      report can total waiting time (Task 26) — the requester's "waiting is
+      indistinguishable from working" problem.
+    - The wait's `outcome` is `ok` when the harness reports the resumed action.
+    - Fixture: change `demo` with reported agent activity; the agent asks and
+      resumes; the wait duration is a value the payload provides.
+    - Assertion shape: one entry for the question wait carrying the reported
+      duration and a bounded label whose content is the question's first line.
+    - RED expected failure: both Then steps are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A question wait is recorded with its duration"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the question event kind and the first-line label
+        rule. Files: `src/cli/history.rs`, `src/history.rs` (`bound_label`),
+        `tests/steps/agent_activity_reporting_steps.rs`. Compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — keep the first-line rule in the same bounded-label path as
+        every other label; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+        with the scenario title `A question wait is recorded with its duration`
+        in the body. Record the revision identifier.
+
+## Task 15 — `Reported token usage is recorded with the model that produced it` (`agent-activity-reporting`, added)
+
+- [ ] **Scenario: `Reported token usage is recorded with the model that produced it`**
+  - Design constraints:
+    - Entry shape: `kind: "usage"` carrying
+      `data: {input, output, cache_read, cache_write, total_tokens, model, subagent}`.
+      A turn event may carry the usage inline
+      (`{"kind":"turn", …, "usage": {…}}`); the appended usage entry is parented
+      to that turn and keeps the model name verbatim (e.g.
+      `deepseek/deepseek-flash`), never normalised or truncated.
+    - Usage is recorded per turn and per subagent, so the report can total it
+      overall, per model, and per subagent (Task 27).
+    - Fixture: change `demo` with reported agent activity; one completed turn
+      carrying input/output/cache counts and a model.
+    - Assertion shape: the turn's usage is present with the reported counts and
+      the model that produced it.
+    - RED expected failure: both Then steps are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Reported token usage is recorded with the model that produced it"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the usage event kind and the turn linkage. Files:
+        `src/cli/history.rs`, `src/history.rs`,
+        `tests/steps/agent_activity_reporting_steps.rs`. Compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one usage struct used by every harness path; re-run →
+        still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+        with the scenario title `Reported token usage is recorded with the model
+        that produced it` in the body. Record the revision identifier.
+
+## Task 16 — `Absent token usage is recorded as unavailable` (`agent-activity-reporting`, added)
+
+- [ ] **Scenario: `Absent token usage is recorded as unavailable`**
+  - Design constraints:
+    - Gap-honesty rule: missing data is recorded as missing, never as zero. A
+      turn event without a `usage` object leaves the turn entry intact and marks
+      the turn's usage unavailable — never a zero-filled usage entry, and never
+      a fabricated model.
+    - The report side of the same rule: the summary states how many turns were
+      unmeasured rather than summing them as zero (`design.md` §What the report
+      shows when a harness cannot deliver a signal). That rendering is asserted
+      by Task 27 / Task E5, not here.
+    - Fixture: change `demo` with reported agent activity; one completed turn
+      with no usage.
+    - Assertion shape: the turn is still recorded, and its usage is marked
+      unavailable (an explicit marker the read surface exposes — the design's
+      own word is "unavailable"), with no zero-valued counts anywhere for it.
+    - RED expected failure: both Then steps are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Absent token usage is recorded as unavailable"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the unavailable marker on the turn and keep the
+        turn entry. Files: `src/cli/history.rs`, `src/history.rs`,
+        `tests/steps/agent_activity_reporting_steps.rs`. Compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one "unmeasured" representation shared with the unmeasured
+        duration and unknown outcome states; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+        with the scenario title `Absent token usage is recorded as unavailable`
+        in the body. Record the revision identifier.
+
+## Task 17 — `A reported event that does not match the intake contract is rejected without corrupting the record` (`agent-activity-reporting`, added)
+
+- [ ] **Scenario: `A reported event that does not match the intake contract is rejected without corrupting the record`**
+  - Design constraints:
+    - Per-event validation and rejection: an event whose `kind` is unknown,
+      whose `at` is unparsable, or that lacks a required field for its kind is
+      rejected **individually** — named on stderr — while the remaining events
+      are still appended. The reporter must never be able to corrupt or block the
+      record.
+    - "The previously recorded history is unchanged" is the append-only property
+      observed at the *content* level: the seeded lines are byte-identical after
+      the rejected payload.
+    - Rejection is a warning path, not silent: the named event must be legible
+      enough for the reporter's author (kind and/or index), because the report
+      later surfaces the dropped count (design's record-gap notice).
+    - Fixture: change `demo` with a seeded record (support-file builder) and one
+      contract-violating event (for example an unknown `kind` or an unparsable
+      `at`).
+    - Assertion shape: stderr names the rejected event; the seed lines are
+      unchanged.
+    - RED expected failure: both Then steps are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A reported event that does not match the intake contract is rejected without corrupting the record"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement per-kind validation with named rejections. Files:
+        `src/cli/history.rs`, `tests/steps/agent_activity_reporting_steps.rs`,
+        `tests/steps/development_timeline_support.rs` (seeded-record builder).
+        Compile first, re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one validation table per kind, no ad-hoc checks in the
+        append path; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+        with the scenario title `A reported event that does not match the intake
+        contract is rejected without corrupting the record` in the body. Record
+        the revision identifier.
+
+## Task 18 — `A rejected report never fails the agent action it reports` (`agent-activity-reporting`, added)
+
+- [ ] **Scenario: `A rejected report never fails the agent action it reports`**
+  - Design constraints:
+    - Best-effort guarantee for the agent path: a record that cannot be written
+      warns and still exits `0` — the reporter's caller must not fail because
+      Givn's disk was full (design's intake exit-code rule). A non-zero exit is a
+      hook error for Claude Code, and exit `2` blocks the tool, so the failure
+      discipline is explicit: the mapper always exits `0`.
+    - Fixture: change `demo` with a recorded history plus the unwritable store
+      (the Task 3 fixture, reused from the support file), then a completed tool
+      call reported through the intake.
+    - Assertion shape: the intake reports no failure to the agent — exit code
+      `0`, with the write failure visible as a warning only.
+    - Do not turn this into a retry/queue feature: there is no retry path, no
+      spool file, no second write location.
+    - RED expected failure: the no-failure Then step is undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A rejected report never fails the agent action it reports"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — route the ingest write path through the same best-effort
+        recorder. Files: `src/cli/history.rs`, `src/history.rs`,
+        `tests/steps/agent_activity_reporting_steps.rs`. Compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one warning path for the agent-sourced and givn-sourced
+        write failures; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+        with the scenario title `A rejected report never fails the agent action
+        it reports` in the body. Record the revision identifier.
+
+## Task 19 — `The intake rejects a payload that is not readable JSON` (`agent-activity-reporting`, added)
+
+- [ ] **Scenario: `The intake rejects a payload that is not readable JSON`**
+  - Design constraints:
+    - Exit-code contract: `2` when stdin is not readable JSON at all (the
+      payload-level failure), `0` when the payload was read (per-event rejections
+      are warnings). Nothing in between: a stale reporter gets a distinguishable
+      code it can act on.
+    - "The development record gains no entry": the failed read must not write a
+      partial line, must not create the store, and must not leave a lock behind.
+    - Fixture: an initialised project root; the step pipes a non-JSON payload
+      (raw text) into `givn history ingest` through the real binary on stdin.
+    - Assertion shape: exit code exactly `2`; the record file's state is
+      unchanged (absent or byte-identical).
+    - RED expected failure: both Then steps are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::The intake rejects a payload that is not readable JSON"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the payload-level failure exit code. Files:
+        `src/cli/history.rs`, `tests/steps/agent_activity_reporting_steps.rs`.
+        Compile first, re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — make the two exit codes one enumerated outcome, not two
+        unrelated returns; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+        with the scenario title `The intake rejects a payload that is not
+        readable JSON` in the body. Record the revision identifier.
+
+## Task 20 — `The intake keeps the acceptable events of a payload with a rejected event` (`agent-activity-reporting`, added)
+
+- [ ] **Scenario: `The intake keeps the acceptable events of a payload with a rejected event`**
+  - Design constraints:
+    - Partial acceptance is the contract: one payload, one rejected event named
+      on stderr, exit `0`, and the acceptable event appended. A rejected event
+      never fails the whole batch (the reporter flushes a turn's buffer as one
+      payload, so failing the batch would lose the acceptable events).
+    - Assertion shape: exit code `0`; stderr names the rejected event; the record
+      holds exactly the acceptable event (one appended line, with the acceptable
+      event's kind and label), and the store's earlier bytes are a prefix of the
+      new file.
+    - Fixture: an initialised project root plus a two-event payload (one
+      contract-violating, one valid).
+    - This is the batch-level counterpart of Task 17's record-integrity check;
+      both must hold for the same validation table.
+    - RED expected failure: the exit-0, stderr and record Then steps are
+      undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::The intake keeps the acceptable events of a payload with a rejected event"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — keep the batch path appending per accepted event. Files:
+        `src/cli/history.rs`, `tests/steps/agent_activity_reporting_steps.rs`.
+        Compile first, re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — reuse Task 17's validation table without a second
+        code path; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+        with the scenario title `The intake keeps the acceptable events of a
+        payload with a rejected event` in the body. Record the revision
+        identifier.
+
+## Task 21 — `Every supported harness receives a development reporter` (`agent-activity-reporting`, added — Scenario Outline, three Examples rows)
+
+- [ ] **Scenario: `Every supported harness receives a development reporter`** (Examples: `omp`, `opencode`, `claude`)
+  - Design constraints:
+    - The repository's agent targets are `opencode`, `agents`, `claude`, `omp`
+      (`src/skills/targets.rs::AgentTarget::ALL`); three of them execute the
+      agent's work and therefore have activity to report — `omp`, `opencode`,
+      `claude`. `sync_agent_integrations` writes integrations for exactly those
+      three today and copies every asset **verbatim**.
+    - Assets and install paths (the design's table):
+      `assets/agent-integrations/omp/givn-timeline.js` →
+      `.omp/hooks/pre/givn-timeline.js` (auto-discovered `pre` hook factory, no
+      manifest); `assets/agent-integrations/opencode/givn-timeline.js` →
+      `.opencode/plugins/givn-timeline.js` (V2 plugin: default export
+      `{ id: "givn-timeline", async setup(ctx) }`, hooks plus one
+      `ctx.event.subscribe`); `assets/agent-integrations/claude/givn-timeline.sh`
+      → `.claude/hooks/givn-timeline.sh` plus one entry per event in
+      `.claude/settings.local.json` (command hooks shaped
+      `hooks.<Event>[{matcher, hooks:[{type:"command", command}]}]`).
+    - Wiring: all three assets are added to `managed_generated_paths` (so
+      `givn init`, `givn skills sync`, and the managed upgrade keep them current
+      and the migration allowlist stages them) and listed in
+      `src/skills/rules.rs::ignore_entries()` so the `local-only` policy keeps
+      them out of a repository.
+    - Claude registration merge: `merge_claude_settings` is extended to merge
+      this reporter's per-event entries idempotently per `(event, matcher,
+      command)` — so a changed matcher is re-applied — without touching user
+      entries or the attribution entry (which `PreToolUse` merging already
+      handles).
+    - Assertion shape: `givn init --agents <target>` exits 0 and the project's
+      generated guidance for `<target>` includes the development reporter at its
+      install path (for `claude`: the shim plus its per-event registration), read
+      from the generated project files — never asserted against the asset
+      template alone.
+    - The outline's three Examples rows run in one process under the canonical
+      `--exact` command.
+    - RED expected failure: the guidance Then step is undefined for all three
+      rows.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Every supported harness receives a development reporter"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — create the three assets, install them for their targets, and
+        extend the Claude settings merge. Files:
+        `assets/agent-integrations/omp/givn-timeline.js`,
+        `assets/agent-integrations/opencode/givn-timeline.js`,
+        `assets/agent-integrations/claude/givn-timeline.sh`,
+        `src/skills/targets.rs`, `src/skills/rules.rs`,
+        `tests/steps/agent_activity_reporting_steps.rs`. Compile first (Rust) and
+        syntax-check the assets (`node --check` for the two `.js` assets,
+        `sh -n` for the shim), re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one asset-to-target table instead of three bespoke
+        branches; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+        with the scenario title `Every supported harness receives a development
+        reporter` in the body. Record the revision identifier.
+
+## Task 22 — `The neutral skills target receives no development reporter` (`agent-activity-reporting`, added)
+
+- [ ] **Scenario: `The neutral skills target receives no development reporter`**
+  - Design constraints:
+    - The `agents` target is a skills mirror that no harness executes; it
+      receives **no** reporter. Installing one would claim activity that can
+      never arrive — the "a signal a harness cannot deliver is recorded as
+      missing rather than as zero" rule at the installation level.
+    - Assertion shape: `givn init --agents agents` exits 0 and no development
+      reporter is installed anywhere in the project — no
+      `.omp/hooks/pre/givn-timeline.js`, no `.opencode/plugins/givn-timeline.js`,
+      no `.claude/hooks/givn-timeline.sh`, and no reporter registration inside
+      `.claude/settings.local.json`.
+    - Fixture: a project root without a `givn/` directory (the uninitialised
+      fixture; `givn init` creates it) and the explicit
+      `--agents agents` selection (never the interactive prompt).
+    - RED expected failure: the no-reporter Then step is undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::The neutral skills target receives no development reporter"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — keep the reporter set keyed to the executing targets.
+        Files: `src/skills/targets.rs`,
+        `tests/steps/agent_activity_reporting_steps.rs`. Compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — let the target list (not a hard-coded check) decide which
+        targets receive a reporter, so a future target cannot silently inherit
+        one; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+        with the scenario title `The neutral skills target receives no
+        development reporter` in the body. Record the revision identifier.
+
+## Task 23 — `A wait the harness does not time is still recorded with a duration` (`agent-activity-reporting`, added)
+
+- [ ] **Scenario: `A wait the harness does not time is still recorded with a duration`**
+  - Design constraints:
+    - Claude Code facts: `PreToolUse` payloads carry **no** timestamp and no
+      duration, and `duration_ms` **excludes** time spent in permission prompts —
+      so a permission wait's duration must come from the reporter's own stamps.
+      `PermissionRequest` (`tool_name`, `tool_input`) and `Notification` with
+      `notification_type` `permission_prompt` / `idle_prompt` mark the start; the
+      matching completion consumes the pending entry.
+    - Pending state: `givn/history/pending/<harness>-<session-id>.json`, shaped
+      `{<tool_use_id>: {started_at, kind, label}}` — written atomically before the
+      tool runs, consumed by the matching end event, pruned by age (older than
+      24 h) and at session end, and it holds no payload content (only the opaque
+      harness id, the start time, the entry kind, and the same bounded label the
+      record would keep).
+    - The generated asset stays a three-line `sh` shim that pipes stdin to the
+      binary-side mapper `givn history harness-hook --harness claude`
+      (`src/cli/history.rs`: `HarnessPayload`, `map_harness_event`,
+      `PendingState`) — the same shape the attribution integration already uses.
+      `map_harness_event` is a named non-zero production probe.
+    - Failure discipline: every mapping step is best-effort and the mapper always
+      exits `0`; tool-level hooks are registered `async: true` so they never slow
+      the agent; `Stop` and `SessionEnd` are synchronous with a short timeout
+      (`SessionEnd` shares a 1.5 s budget).
+    - Driver (the design's real entry point, also used by the `@e2e` tier): run
+      the generated shim directly with a real hook payload on stdin, with `PATH`
+      shimming `givn` to the built binary and a fixture transcript at
+      `transcript_path`.
+    - Assertion shape: one wait entry exists for the permission request, with a
+      duration the reporter measured itself (a positive value consistent with the
+      stamped gap, not the harness's absent/excluding `duration_ms`).
+    - RED expected failure: both Then steps are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A wait the harness does not time is still recorded with a duration"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the pending-state stamps and the wait mapping.
+        Files: `src/cli/history.rs`, `src/history.rs` (`PendingState`),
+        `assets/agent-integrations/claude/givn-timeline.sh`,
+        `src/skills/targets.rs` (per-event registration),
+        `tests/steps/agent_activity_reporting_steps.rs` and the shim driver in
+        `tests/steps/development_timeline_support.rs`. Compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one pending-state read/write helper, one pruning rule;
+        re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+        with the scenario title `A wait the harness does not time is still
+        recorded with a duration` in the body. Record the revision identifier.
+
+## Task 24 — `Token usage read from the harness's own session record is recorded with its model` (`agent-activity-reporting`, added)
+
+- [ ] **Scenario: `Token usage read from the harness's own session record is recorded with its model`**
+  - Design constraints:
+    - Claude Code carries no token usage or cost in hook payloads, so usage is
+      read from the harness's own session record at `transcript_path`: assistant
+      entries carry
+      `message.usage.{input_tokens, cache_creation_input_tokens, cache_read_input_tokens, output_tokens, output_tokens_details.thinking_tokens}`
+      beside `message.model`, and `type:"cost-state"` entries carry the session
+      rollup per model.
+    - Collection points: usage is collected only at `Stop`, `SubagentStop`, and
+      `SessionEnd` — the session record is written asynchronously and may lag the
+      live turn, so it is never assumed current mid-turn.
+    - The mapping lives in the binary (`src/cli/history.rs`); the asset stays the
+      `sh` shim. A subagent's tokens come from its own transcript at
+      `SubagentStop`, and a background launch answering `status:
+      "async_launched"` contributes no usage from the tool response.
+    - Assertion shape: the `usage` entry for the turn carries the transcript's
+      counts and names `claude-sonnet-5` verbatim (the model that produced the
+      usage), with `outcome` reflecting the reported turn end.
+    - Fixture: a fixture transcript JSONL holding an assistant entry with usage
+      and the model name; the shim is invoked with a `Stop` payload naming that
+      `transcript_path`.
+    - RED expected failure: both Then steps are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Token usage read from the harness's own session record is recorded with its model"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the transcript reader and the usage mapping.
+        Files: `src/cli/history.rs`, `assets/agent-integrations/claude/givn-timeline.sh`
+        (no logic beyond the pipe), `tests/steps/agent_activity_reporting_steps.rs`
+        plus the fixture transcript in the support file. Compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one transcript reader shared by the turn and subagent
+        paths, defensive parsing kept; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+        with the scenario title `Token usage read from the harness's own session
+        record is recorded with its model` in the body. Record the revision
+        identifier.
+
+## Task 25 — `The report ranks the longest single step first` (`development-report`, added)
+
+- [ ] **Scenario: `The report ranks the longest single step first`**
+  - Design constraints:
+    - Command: `givn timeline --change demo --out report.html` (D4: an on-demand
+      command that writes one self-contained file and prints its path; no
+      `--open`, no `--json`). Default path when `--out` is omitted:
+      `givn/history/reports/<scope>.html`.
+    - Model and rendering: `src/cli/timeline.rs::build_report_model` turns the
+      record into `ReportModel` (scope, bands, entries, summary) and
+      `render_report` substitutes the JSON model into
+      `assets/timeline/report.html`'s single data slot
+      (`/*__GIVN_REPORT_DATA__*/`). `build_report_model` is a named non-zero
+      production probe.
+    - Summary content: total elapsed, the **ranked longest steps**, the entry
+      count, the question-wait total and count, the subagent count and combined
+      duration, token totals overall / per model / per subagent. Durations are
+      the recorded `duration_ms` values; unmeasured durations render "not
+      measured" and are not counted in the totals.
+    - Regular-scenario assertion rule: the command's own output is the written
+      report file, so the step reads that file — the JSON model in the data slot
+      and the rendered text — never the store alone. The browser traversal of the
+      same ranking is Task E6.
+    - Fixture: change `demo` whose seeded record holds steps of different
+      durations (support-file seeded-history builder).
+    - Report asset rules that must hold from this task on: no third-party
+      JavaScript, no CDN, no build step, inline CSS/JS/SVG, tokens from
+      `docs/design/design-system.md` carried inline, the dense-timeline direction
+      (D6).
+    - RED expected failure: the ranking Then step is undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report ranks the longest single step first"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the model's ranking and the renderer's summary.
+        Files: `src/cli/timeline.rs`, `assets/timeline/report.html`,
+        `src/main.rs` (dispatch), `tests/steps/development_report_steps.rs`,
+        `tests/steps/development_timeline_support.rs`. Compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one ranking implementation reused by the summary and the
+        axis; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title `The report ranks the longest single step first` in
+        the body. Record the revision identifier.
+
+## Task 26 — `The report totals the time spent waiting for questions` (`development-report`, added)
+
+- [ ] **Scenario: `The report totals the time spent waiting for questions`**
+  - Design constraints:
+    - Summary field: the question-wait **total** and **count** built from the
+      `question`-kind entries' measured durations (Task 14's entries). A wait
+      with an unmeasured duration renders "not measured" and is excluded from
+      the duration total while still counting as a wait (missing data is never
+      summed as zero).
+    - The wait total must be derived from the entries, not from turn durations:
+      waiting is its own span (the requester's "waiting is indistinguishable from
+      working" problem).
+    - Fixture: change `demo` whose record holds two question waits with known
+      durations, built by the support file's seeded-history builder.
+    - Assertion shape: the written report names the total wait duration and the
+      number of waits (rendered text and embedded model agree).
+    - RED expected failure: the totals Then step is undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report totals the time spent waiting for questions"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the wait total/count in the model and its summary
+        tile. Files: `src/cli/timeline.rs`, `assets/timeline/report.html`,
+        `tests/steps/development_report_steps.rs`. Compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one aggregation pass over the entries feeding every
+        summary number; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title `The report totals the time spent waiting for
+        questions` in the body. Record the revision identifier.
+
+## Task 27 — `The report totals token usage per turn and per subagent` (`development-report`, added)
+
+- [ ] **Scenario: `The report totals token usage per turn and per subagent`**
+  - Design constraints:
+    - Token totals come from the `usage`-kind entries (Task 15's `data` set:
+      `input`, `output`, `cache_read`, `cache_write`, `total_tokens`, `model`,
+      `subagent`): the report names the change's total tokens, the tokens of
+      every subagent, and the total per model that produced usage.
+    - Gap honesty: absent token usage renders "unavailable" and is never summed
+      as zero; the summary states how many turns were unmeasured rather than
+      folding them into the totals; a harness that exposes no per-subagent usage
+      contributes a subagent row whose token column reads "unavailable" while
+      session-level totals still include those tokens (Task 16's state renders
+      here).
+    - Fixture: change `demo` whose record holds reported usage for at least two
+      models and one subagent, plus one turn with unavailable usage.
+    - Assertion shape: the written report names the change total, each
+      subagent's tokens, every model's total, and the unmeasured-turn count.
+    - RED expected failure: the three Then steps are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report totals token usage per turn and per subagent"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the usage roll-ups and the unmeasured count.
+        Files: `src/cli/timeline.rs`, `assets/timeline/report.html`,
+        `tests/steps/development_report_steps.rs`. Compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one usage aggregation shared by the per-model and
+        per-subagent views; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title `The report totals token usage per turn and per
+        subagent` in the body. Record the revision identifier.
+
+## Task 28 — `The report of an ideation topic names the work done before the change exists` (`development-report`, added)
+
+- [ ] **Scenario: `The report of an ideation topic names the work done before the change exists`**
+  - Design constraints:
+    - Topic window: `givn timeline --topic timeline-ideas` renders the topic's
+      own entries — the part of an ideation that exists before any change
+      directory does (design-review Q4). Ideation reporting is not a special case
+      of the change path: a topic window is the topic's entries, and its band
+      carries the topic's session work.
+    - Bands are the report's rows: one per archived change, one per change or
+      topic in flight, and the "outside a scope" band in the project report.
+      Nothing is invented: the report names only what the record holds, so it
+      names no change that does not exist yet.
+    - Scope of the assertion: the report names the topic's steps under the topic
+      scope and names no non-existent change — the written file's model and text,
+      read from the command's own output.
+    - Fixture: an ideation topic `timeline-ideas` whose record holds the topic's
+      own steps (the `{"kind":"ideation","id":"timeline-ideas"}` scope from
+      Task 7) and no change directory.
+    - The open-report `@e2e` outline (Task E6) gains its `topic` Example from this
+      same action, so the fixture must be reusable rather than scenario-local.
+    - RED expected failure: both Then steps are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report of an ideation topic names the work done before the change exists"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the topic window and its band. Files:
+        `src/cli/timeline.rs`, `assets/timeline/report.html`,
+        `tests/steps/development_report_steps.rs`,
+        `tests/steps/development_timeline_support.rs` (topic fixture). Compile
+        first, re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one window-selection rule for change, topic, and project
+        (no third copy of the scope switch); re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title `The report of an ideation topic names the work done
+        before the change exists` in the body. Record the revision identifier.
+
+## Task 29 — `The report orders the timeline by recorded time, not by store position` (`development-report`, added)
+
+- [ ] **Scenario: `The report orders the timeline by recorded time, not by store position`**
+  - Design constraints:
+    - Ordering rule (design-review Q5): within every band the spans are ordered
+      by `at` (the entry's recorded end timestamp), never by the entry's line
+      position in the store — the store is append-only and concurrent writers
+      make file order and time order different things, while `at` is the only
+      ordering the record guarantees.
+    - Fixture: a record whose **file order** contradicts time order — an entry
+      appended after an entry carrying a later `at` (exactly what a late intake
+      flush produces). The step asserts the two orders differ, so the assertion
+      discriminates.
+    - Assertion shape: the report orders the entries by their recorded end time
+      (the model's ordered spans equal the entries sorted by `at`), and the
+      rendered axis/tick order agrees.
+    - Do not sort by `id` or by insertion: `id` is minted at append time under
+      the append lock and is therefore also file-ordered — that is the bug this
+      scenario exists to prevent.
+    - RED expected failure: the ordering Then step is undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report orders the timeline by recorded time, not by store position"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the `at` ordering in the model. Files:
+        `src/cli/timeline.rs`, `tests/steps/development_report_steps.rs`,
+        `tests/steps/development_timeline_support.rs` (the out-of-order seed).
+        Compile first, re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one ordering comparator applied to every band; re-run →
+        still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title `The report orders the timeline by recorded time, not
+        by store position` in the body. Record the revision identifier.
+
+## Task 30 — `The report names the agent's fan-out into small subagents` (`development-report`, added)
+
+- [ ] **Scenario: `The report names the agent's fan-out into small subagents`**
+  - Design constraints:
+    - Summary field: the number of subagents and their combined duration, from
+      the `subagent`-kind entries (Task 13). This is the view that makes "a dozen
+      tiny subagents whose combined overhead exceeds the work" visible — one of
+      the three questions the requester named.
+    - A subagent with an unmeasured duration renders "not measured" and is
+      excluded from the combined duration while still counting toward the
+      subagent count.
+    - Subagent spans nest inside the step or turn that spawned them (`parent`),
+      so the fan-out figure must be computed from the recorded spans, never by
+      inferring spawn relationships from label text.
+    - Fixture: change `demo` whose record holds many short subagents (support
+      file's seeded-history builder).
+    - Assertion shape: the written report names the number of subagents and their
+      combined duration.
+    - RED expected failure: the fan-out Then step is undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report names the agent's fan-out into small subagents"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the subagent count and combined duration. Files:
+        `src/cli/timeline.rs`, `assets/timeline/report.html`,
+        `tests/steps/development_report_steps.rs`. Compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — reuse Task 26's aggregation for the subagent durations;
+        re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title `The report names the agent's fan-out into small
+        subagents` in the body. Record the revision identifier.
+
+## Task 31 — `The report needs no network access to render` (`development-report`, added)
+
+- [ ] **Scenario: `The report needs no network access to render`**
+  - Design constraints:
+    - Self-containment (D4 + the report technology decision): one file with
+      inline CSS + vanilla JS + inline SVG, no third-party JavaScript, no CDN,
+      no server, no build step, no `fetch`, no remote resource of any kind, and
+      no `Date.now()` (the axis derives from the embedded timestamps, so the same
+      record always renders identically).
+    - Assertion shape — a resource-reference scan of the written file: no
+      `<script src=`, no `<link href=`, no `<img src=`, no `@import`, no
+      protocol-relative `//` resource URL, no `url(http…`, no `fetch(` and no
+      `XMLHttpRequest` anywhere in the document or its inline script. The SVG
+      namespace declaration (`xmlns="http://www.w3.org/2000/svg"`) is a namespace
+      URI, not a resource request — the assertion must not fail on it, and it
+      must not be "fixed" by removing the namespace.
+    - Second half of the claim, kept as the scenario's own evidence: the command
+      writes and prints the file with no network available (the suite runs with
+      no service to reach, which is the Local Runnability statement).
+    - Fixture: change `demo` with a recorded history (seeded builder).
+    - RED expected failure: the no-remote-resource Then step is undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report needs no network access to render"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — render the asset with zero external references. Files:
+        `assets/timeline/report.html`, `src/cli/timeline.rs` (escaping and the
+        data-slot substitution), `tests/steps/development_report_steps.rs`.
+        Compile/write the asset, re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — keep every style/script inline in one document, no
+        separate assets to load; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title `The report needs no network access to render` in the
+        body. Record the revision identifier.
+
+## Task 32 — `The report shows the empty state for a scope with no recorded activity` (`development-report`, added)
+
+- [ ] **Scenario: `The report shows the empty state for a scope with no recorded activity`**
+  - Design constraints:
+    - Extension of the owning use case: no activity is recorded for the
+      requested scope → the report renders an explicit empty state; it never
+      shows a blank page and never errors. The report model marks a scope with no
+      entries `empty`, and the screen renders the empty state.
+    - Design-system primitive (must hold): the empty state carries a heading, one
+      sentence explaining the state, and a way back to the report root; **no
+      chart axes are drawn**; the primitive's states are `empty` and `error`; a
+      summary tile with a zero value renders `0`, never a blank.
+    - This is the **regular, report-level** traversal of the declared `empty`
+      state; the browser traversal — and the state's evidence files — belong to
+      Task E9.
+    - Fixture: change `demo` with no recorded activity (no store, or an empty
+      store); the report is generated with `--out report.html`.
+    - Assertion shape: the written report shows the empty state for `demo` (the
+      model's `empty` marker plus the rendered empty-state text) and draws no
+      timeline axis for it (no axis markup/labels in the document).
+    - RED expected failure: both Then steps are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report shows the empty state for a scope with no recorded activity"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the `empty` marker and the empty-state rendering.
+        Files: `src/cli/timeline.rs`, `assets/timeline/report.html`,
+        `tests/steps/development_report_steps.rs`. Compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — let the empty state be one branch of the report root, not
+        a special-cased template; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title `The report shows the empty state for a scope with no
+        recorded activity` in the body. Record the revision identifier.
+
+## Task 33 — `A dense record is reported as aggregates instead of raw ticks` (`development-report`, added)
+
+- [ ] **Scenario: `A dense record is reported as aggregates instead of raw ticks`**
+  - Design constraints:
+    - Aggregation rule: the timeline never draws one shape per entry when that
+      would be unreadable. At the initial zoom, entries shorter than the
+      time-per-pixel of the visible range — dense agent ticks and short steps in
+      particular — collapse into **one aggregate marker per band and time
+      bucket** that names how many entries it covers and their combined duration;
+      a click on an aggregate zooms to its bucket instead of opening a details
+      panel for an entry that stands for many. Individual spans replace their
+      aggregate as the zoom narrows.
+    - The summary and the longest-step ranking always cover the **full record**,
+      never only the visible window.
+    - This is a rendering rule, not a second interaction: it adds no inventory
+      row, no matrix row, and no `@e2e` scenario — the zoom scenario (Task E8) is
+      the axis-state evidence.
+    - Fixture: change `demo` whose record holds hundreds of short agent
+      activities (the seeded builder), so the initial zoom must aggregate.
+    - Assertion shape: the model/markup carries aggregate markers naming their
+      covered-entry count and combined duration; no individual span is drawn for
+      those entries at the initial zoom; the summary's entry count still equals
+      the full record's entry count.
+    - RED expected failure: all three Then steps are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::A dense record is reported as aggregates instead of raw ticks"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the bucket aggregation and the aggregate marker.
+        Files: `src/cli/timeline.rs`, `assets/timeline/report.html`,
+        `tests/steps/development_report_steps.rs`. Compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one bucketing function used by the initial zoom and by
+        the replacement-on-zoom path; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title `A dense record is reported as aggregates instead of
+        raw ticks` in the body. Record the revision identifier.
+
+## Task E1 — E2E setup: local environment, browser tier, strictness, tags, evidence
+
+- [ ] **E2E setup task (no scenario is written until every box here is filled in)**
+  - Design constraints:
+    - **Local environment / Local Runnability.** One-time browser setup, then
+      the whole verification surface: `./setup-e2e-browser.sh`,
+      `./run-tests.sh --non-e2e`, `./run-tests.sh --e2e`. `setup-e2e-browser.sh`
+      is a new root-level script next to `run-tests.sh`, `measure-coverage.sh`,
+      and `merge-coverages.sh`; it runs
+      `npm ci --prefix tests/e2e && npx --prefix tests/e2e playwright install chromium`
+      and it is the **only** step in this change that touches the network.
+      Nothing listens on a port, nothing is fetched at run time, and **no digital
+      twin exists or is needed** (`design.md` states this explicitly rather than
+      leaving it blank): the record and the report are local files and the
+      browser loads the report from a `file://` URL inside the temporary project
+      root the scenario created, so no scenario can depend on a service that is
+      "already running".
+    - **E2E framework.** cucumber-rs (the project's existing runner) plus
+      Playwright as the browser driver. cucumber-rs drives the CLI directly (it
+      is the real interface); for the browser tier it drives Playwright through
+      the JSON-line driver — the default driver named by the design instruction.
+      An HTTP client would be wrong here: the report is a rendered HTML/JS
+      surface with an interactive SVG, so only a browser can click, zoom, and
+      read the rendered result. Node.js is resolved at setup time (the design
+      machine reported `v22.20.0`; Givn does not pin it); Playwright **1.64.1**
+      is pinned in `tests/e2e/package.json`; the browser under test is the
+      Chromium the resolved Playwright bundles (`npx playwright install
+      chromium`), never a system browser.
+    - **Driver (`tests/e2e/browser-driver.mjs`).** Starts **one** browser and
+      **one** context per scenario and accepts commands as JSON lines on stdin;
+      the Rust step helper owns the process for the scenario's lifetime and no
+      step opens a second context. It navigates with
+      `page.goto("file://…")` (the report is one file with inline script and no
+      imports, so there is no module resolution, no CORS, and no `fetch`), it
+      emulates `prefers-reduced-motion: reduce` for the context, it awaits
+      `document.fonts.ready` and a `requestIdleCallback` tick before a capture,
+      and it exits on stdin EOF and on a `quit` command.
+    - **Rust side (`tests/common/browser.rs`).** Spawns the driver, sends JSON
+      commands, captures screenshots, and turns a non-zero driver exit, a
+      timeout, or a JSON `{"error": …}` reply into a **failed** step — never into
+      a skipped one. It kills the child on drop, and the scenario's `TempDir`
+      removal is what deletes the report, so a stray browser cannot survive a
+      failure.
+    - **E2E step files — one per capability, separate from the unit/integration
+      files** (design.md §Step Definitions / §E2E Smoke Test Infrastructure):
+      `tests/steps/development_record_e2e_steps.rs`,
+      `tests/steps/agent_activity_reporting_e2e_steps.rs`,
+      `tests/steps/development_report_e2e_steps.rs`, plus the shared
+      `tests/common/browser.rs` helper. Register all three in
+      `tests/steps/mod.rs`; the shared harness drivers live in
+      `tests/steps/development_timeline_support.rs` and are reused (never
+      copied): omp — `node` imports the generated `.omp/hooks/pre/givn-timeline.js`,
+      calls its factory with a fake `pi` (`on`, `events.on`, `exec`,
+      `getThinkingLevel`) and fires synthetic tool/turn/subagent events;
+      opencode — `node` imports the generated
+      `.opencode/plugins/givn-timeline.js`, calls `setup` with a fake `ctx` that
+      captures `session.hook`/`tool.hook`/`shell.hook` plus an
+      `event.subscribe` async iterable, and emits the synthetic events; Claude
+      Code — the generated `.claude/hooks/givn-timeline.sh` shim is executed
+      directly with a real hook payload on stdin (`PreToolUse`, `PostToolUse`,
+      `AskUserQuestion`, `PermissionRequest`, `SubagentStart`/`Stop`, `Stop`),
+      `PATH` shimming `givn` to the built binary, with a fixture transcript at
+      `transcript_path`. Every reporter calls the real `givn history ingest`.
+    - **Local test infrastructure.** The built `givn` binary in a `tempfile`
+      project root; `node` on `PATH`; the Playwright-installed Chromium; no
+      server, port, database, or container, and no harness credentials.
+    - **Strictness proof for the e2e tier.** `GivnWorld::cucumber()
+      .fail_on_skipped()` plus the driver's error contract above. Run the same
+      probe procedure as Task S1 against an e2e step file (one temporary
+      `unimplemented!("TODO: development-timeline")` binding in the e2e tier,
+      executed through the browser or CLI path it guards) and paste the non-zero
+      exit; then remove the probe. A browser step must never degrade into a skip.
+    - **`verify.e2e_command`** stays exactly `./run-tests.sh --e2e` (the command
+      `design.md` §E2E Smoke Test Infrastructure names). It is never the same
+      string as `verify.command` (`./run-tests.sh --non-e2e`): if the two are
+      byte-identical the "e2e run" is silently re-running the whole suite, which
+      is a hard-stop, fix-before-continuing condition.
+    - **Scenario-count proof (the subset must be real).** `verify.command` runs
+      the `not @e2e` tag set and `verify.e2e_command` the `@e2e` set; with this
+      change in scope that is 33 vs 8 units, so the e2e count is strictly less
+      than the full count. Prove it with the runner's own listing (or the
+      summary line of each run) and paste both counts:
+      `GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e`
+      → 33 scenarios, `GIVN_FEATURES=givn/changes/development-timeline/specs
+      ./run-tests.sh --e2e` → 8 scenarios.
+    - **Health check before any scenario step.** `npx --prefix tests/e2e
+      playwright --version` reports 1.64.1 and the driver can launch Chromium and
+      load a `file://` page (a trivial smoke page in a `tempfile` root, or the
+      report generated by `givn timeline` for a seeded record). Paste the smoke
+      run's exit 0.
+    - **CI and release prerequisites (implementation requirements).**
+      `.github/workflows/ci.yml` and `.github/workflows/release.yml` gain
+      `./setup-e2e-browser.sh` **before their first suite invocation**, and the
+      regular workflow step runs `./run-tests.sh --non-e2e` followed by
+      `./run-tests.sh --e2e` (today's bare `./run-tests.sh` plus
+      `./run-tests.sh --e2e` would run the browser tier twice once the regular
+      scope narrows). Node is already on both runners; the
+      Playwright-bundled Chromium download is the new prerequisite. Commit those
+      workflow edits with the e2e setup, not with a scenario.
+    - **Evidence capture mechanism (the visual gate reads it).** `design.md`'s
+      Visual Design Contract declares `Interface: web`, `Viewports: mobile
+      (360x780), desktop (1920x1080)`, `States: empty`. `src/integrity_hook.rs::check_visual_evidence`
+      requires, for **every** delta `@e2e` scenario title, a non-empty
+      `givn/changes/development-timeline/evidence/visual/<scenario-slug>/mobile.png`
+      and `…/desktop.png`, plus a non-empty `<viewport>--empty.png` for the
+      declared `empty` state — so the CLI `@e2e` scenarios commit the report they
+      produced, rendered in the browser, at both viewports, and the empty-scope
+      scenario (Task E9) commits `mobile--empty.png` and `desktop--empty.png`
+      beside its final-state pair. `scenario_slug` follows
+      `givn::integrity_hook::scenario_slug` (lowercase ASCII, every run of
+      non-alphanumeric characters becomes one `-`, leading and trailing `-`
+      removed). The eight slugs: `consumer-runs-a-lifecycle-step-and-reads-its-recorded-actions`,
+      `consumer-reads-the-development-record-as-machine-readable-output`,
+      `consumer-installs-the-agent-reporter-and-its-reported-activity-lands-in-the-record`,
+      `consumer-generates-the-development-report-for-a-change`,
+      `consumer-opens-the-generated-development-report-in-a-browser`,
+      `consumer-selects-a-timeline-element-and-reads-its-details`,
+      `consumer-zooms-the-timeline-to-a-shorter-time-range`,
+      `consumer-opens-the-report-of-a-scope-with-no-recorded-activity`.
+      Intermediate captures, if any, go to `reports/visual/` and are not review
+      evidence. Capture happens with animations disabled (reduced motion) and the
+      report renders from embedded timestamps only, so a capture never depends on
+      timing.
+    - **Primary-assertion rule (canonical policy).** Read
+      `givn instructions specs --change development-timeline` before writing or
+      reviewing any e2e step: the browser scenarios assert on what the browser
+      rendered (DOM text, accessible names, the rendered range label), never on
+      the report file's raw bytes; the CLI scenarios assert on the subprocess's
+      stdout and the files it wrote; repository checks are secondary only. For
+      the browser tier the driver drives the real browser (click/type/navigate) —
+      an HTTP request or an in-page `fetch()` is never a substitute. On a
+      real-interface obstacle, apply `design.md`'s Anticipated Interface
+      Obstacles table rather than weakening the assertion.
+    - **`@e2e` tags are immutable**; nothing in this task or the following
+      sections may remove one.
+  - [ ] **Sub-task 1 — the local environment and the browser toolchain.**
+        Create `setup-e2e-browser.sh` and `tests/e2e/package.json` (Playwright
+        pinned to 1.64.1), run the script, and paste its output plus
+        `npx --prefix tests/e2e playwright --version`.
+        ```
+        <!-- paste: setup-e2e-browser.sh + playwright --version -->
+        ```
+  - [ ] **Sub-task 2 — the driver and the Rust browser helper.** Create
+        `tests/e2e/browser-driver.mjs` and `tests/common/browser.rs` with the
+        contracts above (one context per scenario, `file://` navigation,
+        reduced-motion emulation, deterministic capture, failure-never-skip
+        error contract).
+        ```
+        <!-- paste: the two files' key sections + a smoke run that exits 0 -->
+        ```
+  - [ ] **Sub-task 3 — the e2e step files and the harness drivers.** Create the
+        three `*_e2e_steps.rs` files, register them, wire the `GivnWorld` slots,
+        and extend `tests/steps/development_timeline_support.rs` with the three
+        harness drivers.
+        ```
+        <!-- paste: the registrations + `cargo build --locked --tests` output -->
+        ```
+  - [ ] **Sub-task 4 — the e2e strictness proof.** Temporary
+        `unimplemented!("TODO: development-timeline")` binding in the e2e tier,
+        run scoped, paste the non-zero exit, remove the probe, re-run the delta
+        listing to show the e2e unit count is unchanged.
+        ```
+        <!-- paste: probe command + output (non-zero), then the removal + count -->
+        ```
+  - [ ] **Sub-task 5 — `verify.e2e_command` and the scenario-count proof.**
+        Confirm `givn/commands.yaml` declares `verify.command:
+        ./run-tests.sh --non-e2e` (Task S2) and `verify.e2e_command:
+        ./run-tests.sh --e2e`; paste both scope runs' counts.
+        ```
+        <!-- paste: both commands' scenario counts (33 vs 8, e2e strictly less) + the two config lines -->
+        ```
+  - [ ] **Sub-task 6 — the local health check.** Run the driver against a
+        trivial `file://` page (or a freshly generated report) inside a temp
+        project root and paste the exit-0 smoke result.
+        ```
+        <!-- paste: the smoke command + output -->
+        ```
+  - [ ] **Sub-task 7 — CI/release browser prerequisites.** Add
+        `./setup-e2e-browser.sh` before the first suite invocation in
+        `.github/workflows/ci.yml` and `.github/workflows/release.yml`, and make
+        the regular workflow step `./run-tests.sh --non-e2e` before
+        `./run-tests.sh --e2e`.
+        ```
+        <!-- paste: both diffs -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the subject
+        `E2E setup: browser tier, strictness, tag scopes, evidence` — the e2e
+        setup lands as its own commit (never folded into a scenario), before the
+        first `@e2e` scenario's RED. Record the revision identifier.
+
+## Task E2 — `Consumer runs a lifecycle step and reads its recorded actions` (`@e2e`, `development-record`)
+
+- [ ] **Scenario: `Consumer runs a lifecycle step and reads its recorded actions`**
+  - Design constraints:
+    - Matrix row: `development-record: run a lifecycle command` — real interface
+      **CLI**, driving mechanism `common::run_givn`: `givn status --change demo`,
+      then `givn history --change demo --json`; the assertion reads the printed
+      record.
+    - Steps live in `tests/steps/development_record_e2e_steps.rs`; the record
+      read is the `givn history` read path in `src/cli/history.rs` (with
+      `givn history` excluded from recording, Task 9).
+    - Primary assertion: the subprocess's stdout — exit 0, the machine-readable
+      record names the `status` command for `demo`, and that command's entry
+      carries a duration. Repository/store checks are secondary.
+    - E2E command and driver: targeted run with the canonical `--exact` command
+      below; scope run `./run-tests.sh --e2e`; no browser driver for this
+      scenario (CLI interface) — the browser is used only for its evidence
+      capture.
+    - **Evidence (the change-wide visual gate):** this CLI scenario commits the
+      report it produced, rendered in the browser, at both viewports under
+      `givn/changes/development-timeline/evidence/visual/consumer-runs-a-lifecycle-step-and-reads-its-recorded-actions/`
+      — `mobile.png` (360x780) and `desktop.png` (1920x1080) — captured with
+      animations disabled via `tests/e2e/browser-driver.mjs`.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Consumer runs a lifecycle step and reads its recorded actions"`
+        → must exit non-zero (the e2e steps are undefined). Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the e2e steps on the real CLI. Files:
+        `tests/steps/development_record_e2e_steps.rs`,
+        `src/cli/history.rs` (any read-path gap), plus the two evidence
+        screenshots above. Compile first, re-run → exit 0; then run
+        `./run-tests.sh --e2e` at least once for this scenario's scope health.
+        Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) + the two screenshot paths -->
+        ```
+  - [ ] **REFACTOR** — reuse the shared run-helper instead of a second
+        invocation helper; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+        title `Consumer runs a lifecycle step and reads its recorded actions` in
+        the body (including the two evidence PNGs). Record the revision
+        identifier.
+
+## Task E3 — `Consumer reads the development record as machine-readable output` (`@e2e`, `development-record`)
+
+- [ ] **Scenario: `Consumer reads the development record as machine-readable output`**
+  - Design constraints:
+    - Matrix row: `development-record: read the development record` — real
+      interface **CLI**, driving mechanism `common::run_givn`:
+      `givn history --change demo --json` against a seeded record; the assertion
+      parses the printed entries.
+    - The machine-readable view is `givn history --json` (D4 dropped a JSON mode
+      on `givn timeline`): the output names every recorded entry with its `kind`,
+      its `scope`, and its `duration`.
+    - Steps in `tests/steps/development_record_e2e_steps.rs`; the seeded record
+      comes from the shared builder in
+      `tests/steps/development_timeline_support.rs`.
+    - Primary assertion: the subprocess's stdout, parsed as JSON — one entry per
+      recorded line, each with kind, scope, and duration; exit 0. Nothing about
+      the assertion may read the store privately instead.
+    - E2E command and driver: the canonical `--exact` command below; scope run
+      `./run-tests.sh --e2e`; CLI interface, no browser driving.
+    - **Evidence:** commit the report produced from the seeded record, rendered in
+      the browser, at both viewports under
+      `givn/changes/development-timeline/evidence/visual/consumer-reads-the-development-record-as-machine-readable-output/`
+      — `mobile.png` and `desktop.png`, animations disabled.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Consumer reads the development record as machine-readable output"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the JSON read output and the parsing steps. Files:
+        `src/cli/history.rs`, `tests/steps/development_record_e2e_steps.rs`,
+        plus the two evidence screenshots. Compile first, re-run → exit 0. Paste
+        it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) + the two screenshot paths -->
+        ```
+  - [ ] **REFACTOR** — one entry-to-JSON mapping shared by the read paths;
+        re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+        title `Consumer reads the development record as machine-readable output`
+        in the body (including the two evidence PNGs). Record the revision
+        identifier.
+
+## Task E4 — `Consumer installs the agent reporter and its reported activity lands in the record` (`@e2e`, `agent-activity-reporting`, Scenario Outline, three Examples rows)
+
+- [ ] **Scenario: `Consumer installs the agent reporter and its reported activity lands in the record`** (Examples: `omp`, `opencode`, `claude`)
+  - Design constraints:
+    - Matrix row: `agent-activity-reporting: report agent activity from a
+      supported harness` — real interface **CLI (harness integration)**: install
+      the project (`givn init --agents <target>`), then drive that harness's
+      **generated** reporter through its real entry point, and assert on
+      `givn history --change demo --json`. Every reporter calls the real
+      `givn history ingest`.
+    - Per-harness drivers (reused from `tests/steps/development_timeline_support.rs`,
+      never re-implemented): **omp** — `node` imports
+      `.omp/hooks/pre/givn-timeline.js` and calls its factory with a fake `pi`
+      (`on`, `events.on`, `exec`, `getThinkingLevel`), firing synthetic
+      tool/turn/subagent events; **opencode** — `node` imports
+      `.opencode/plugins/givn-timeline.js` and calls `setup(ctx)` with a fake
+      `ctx` capturing `session.hook`/`tool.hook`/`shell.hook` plus an
+      `event.subscribe` async iterable, then emits synthetic events;
+      **claude** — the generated `.claude/hooks/givn-timeline.sh` is executed
+      with a real hook payload on stdin, `PATH` shimming `givn` to the built
+      binary and a fixture transcript at `transcript_path` (the mapper runs in
+      the binary).
+    - Steps in `tests/steps/agent_activity_reporting_e2e_steps.rs`; the
+      installation itself goes through `givn init --agents <target>` (never a
+      hand-written file).
+    - Primary assertion: the subprocess's stdout for the real reporter run and
+      for `givn history --change demo --json` — the machine-readable record names
+      the tool call, the subagent, and the question wait.
+    - **Evidence:** one slug for the outline
+      (`consumer-installs-the-agent-reporter-and-its-reported-activity-lands-in-the-record/`)
+      — commit `mobile.png` and `desktop.png` from the record the run produced
+      (the three Examples runs write the same two paths; the committed pair must
+      be the non-empty output of the final run).
+    - `@e2e` tag stays; the outline's three rows are input variation of one
+      action, so they add no inventory row and no extra section.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Consumer installs the agent reporter and its reported activity lands in the record"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the three driver paths and the assertions. Files:
+        `tests/steps/agent_activity_reporting_e2e_steps.rs`,
+        `tests/steps/development_timeline_support.rs`,
+        `src/cli/history.rs`/`src/skills/targets.rs` for any gap the real
+        entry point exposes, plus the two evidence screenshots. Compile and
+        `node --check` the drivers first, re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) + the two screenshot paths -->
+        ```
+  - [ ] **REFACTOR** — one driver entry point per harness, invoked through the
+        same step helpers; re-run (all three rows) → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+        title `Consumer installs the agent reporter and its reported activity
+        lands in the record` in the body (including the two evidence PNGs).
+        Record the revision identifier.
+
+## Task E5 — `Consumer generates the development report for a change` (`@e2e`, `development-report`)
+
+- [ ] **Scenario: `Consumer generates the development report for a change`**
+  - Design constraints:
+    - Matrix row: `development-report: generate the development report for a
+      change` — real interface **CLI**, driving mechanism `common::run_givn`:
+      `givn timeline --change demo --out report.html`; the assertion reads the
+      written file.
+    - Phase derivation rule (asserted concretely here): Givn records one `phase`
+      entry when an artifact file of the change appears, and an entry belongs to
+      the stage of the latest such transition at or before its own `at`. The
+      fixture seeds a record whose **last recorded artifact transition is
+      `tasks.md`**, and the step recorded after that transition must land in the
+      **`implement`** phase.
+    - Assertions: exit 0; the command prints the path of the written report; the
+      report file exists and names the recorded phases; the post-transition step
+      is placed in the `implement` phase. Additional assertion allowed by the
+      same design decision: the default path form (flagless `givn timeline
+      --change demo`) writes and prints
+      `givn/history/reports/demo.html` — D4's named default.
+    - Steps in `tests/steps/development_report_e2e_steps.rs`; the seeded record
+      (including the phase transitions) comes from the shared builder.
+    - **Evidence:** `givn/changes/development-timeline/evidence/visual/consumer-generates-the-development-report-for-a-change/`
+      — `mobile.png` and `desktop.png` of the written report, rendered in the
+      browser, animations disabled.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer generates the development report for a change"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the printed path, the phase derivation, and the
+        default output path. Files: `src/cli/timeline.rs`,
+        `tests/steps/development_report_e2e_steps.rs`,
+        `tests/steps/development_timeline_support.rs`, plus the two evidence
+        screenshots. Compile first, re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) + the two screenshot paths -->
+        ```
+  - [ ] **REFACTOR** — one phase-derivation function used by the CLI and the
+        renderer; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+        title `Consumer generates the development report for a change` in the
+        body (including the two evidence PNGs). Record the revision identifier.
+
+## Task E6 — `Consumer opens the generated development report in a browser` (`@e2e`, `development-report`, Scenario Outline, `change` and `topic` rows)
+
+- [ ] **Scenario: `Consumer opens the generated development report in a browser`** (Examples: `change`, `topic`)
+  - Design constraints:
+    - Matrix row: `development-report: open the report in a browser` — real
+      interface **Web UI**, driving mechanism Playwright:
+      `page.goto("file://<root>/report.html")`, then read the rendered heading,
+      the timeline SVG, and the longest step's duration from the DOM. One outline
+      with a `change` row and a `topic` row: one normalized action with input
+      variants, so it adds no second inventory row (design-review Q4).
+    - Browser driving is real browser driving (navigate + read the rendered page)
+      — an HTTP request or an in-page `fetch()` is never a substitute. The
+      browser helper is `tests/common/browser.rs` over
+      `tests/e2e/browser-driver.mjs` (one context per scenario, `file://`
+      navigation, reduced-motion emulation).
+    - Primary assertion: what the browser rendered — the report heading and the
+      development timeline, and the longest recorded step with its duration
+      (DOM text and accessible names).
+    - Accessibility assertions from the Visual Design Contract belong to this
+      scenario's rendered surface (the design leaves their placement to the e2e
+      tier): the page has a real `title`, one `h1`, `header`/`main`/`aside`
+      landmarks, the timeline `svg` carries an accessible name, every control is
+      reachable by `Tab` with a visible focus ring, and every span exposes its
+      name plus its duration.
+    - Steps in `tests/steps/development_report_e2e_steps.rs`.
+    - **Evidence:** `givn/changes/development-timeline/evidence/visual/consumer-opens-the-generated-development-report-in-a-browser/`
+      — `mobile.png` and `desktop.png` (the populated report at both contract
+      viewports), animations disabled.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer opens the generated development report in a browser"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the browser-open steps and the report's heading,
+        timeline SVG, and accessible names. Files:
+        `tests/steps/development_report_e2e_steps.rs`,
+        `tests/common/browser.rs` / `tests/e2e/browser-driver.mjs` (any gap the
+        real driver exposes), `assets/timeline/report.html` (semantics and
+        labels), plus the two evidence screenshots. Compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) + the two screenshot paths -->
+        ```
+  - [ ] **REFACTOR** — one page-open helper shared by the browser scenarios;
+        re-run (both rows) → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+        title `Consumer opens the generated development report in a browser` in
+        the body (including the two evidence PNGs). Record the revision
+        identifier.
+
+## Task E7 — `Consumer selects a timeline element and reads its details` (`@e2e`, `development-report`)
+
+- [ ] **Scenario: `Consumer selects a timeline element and reads its details`**
+  - Design constraints:
+    - Matrix row: `development-report: select a timeline element` — real
+      interface **Web UI**, driving mechanism Playwright: **click** the longest
+      step's span (or focus it and press `Enter`), then read the details panel's
+      rendered text.
+    - Details-panel primitive (design system): a labelled region showing start,
+      end, duration, outcome, model, tokens, and the bounded label, with a
+      labelled close control (`Escape` closes it); selection is a focusable
+      element with a visible focus ring; the panel opens on `Enter`/`Space`.
+    - Primary assertion: the browser shows a details panel for that step naming
+      its start, its duration, and its outcome — read from the DOM after the real
+      click/keystroke, never by parsing the report file.
+    - Steps in `tests/steps/development_report_e2e_steps.rs`.
+    - **Evidence:** `givn/changes/development-timeline/evidence/visual/consumer-selects-a-timeline-element-and-reads-its-details/`
+      — `mobile.png` and `desktop.png` captured with the panel open at both
+      contract viewports, animations disabled.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer selects a timeline element and reads its details"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement selection and the details panel. Files:
+        `assets/timeline/report.html` (span focus/activation, panel markup and
+        labels), `tests/steps/development_report_e2e_steps.rs`, plus the two
+        evidence screenshots. Re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) + the two screenshot paths -->
+        ```
+  - [ ] **REFACTOR** — one selection path for mouse and keyboard; re-run → still
+        exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+        title `Consumer selects a timeline element and reads its details` in the
+        body (including the two evidence PNGs). Record the revision identifier.
+
+## Task E8 — `Consumer zooms the timeline to a shorter time range` (`@e2e`, `development-report`)
+
+- [ ] **Scenario: `Consumer zooms the timeline to a shorter time range`**
+  - Design constraints:
+    - Matrix row: `development-report: zoom the timeline` — real interface
+      **Web UI**, driving mechanism Playwright: click the zoom-in control, then
+      read the rendered range label before and after and assert it **narrowed**.
+    - **Rendered-state evidence (the change's own rendered-state proof):** the
+      assertion reads a value the page's own script produced (the visible time
+      range) and observes that it changed between two observations. Pan is an
+      implementation detail of the same axis (design-review Q9) and adds no
+      interaction, no row, and no scenario.
+    - Zoom control primitive: a visible text label (`Zoom in` / `Zoom out` /
+      `Fit`), never an icon alone, `disabled` at the zoom limit. The axis may not
+      read the wall clock: the report renders from embedded timestamps only (no
+      `Date.now()`), which is what makes the before/after comparison
+      deterministic.
+    - Motion: the zoom transition is `120 ms ease-out` and is removed entirely
+      under `prefers-reduced-motion: reduce` (which the driver emulates, and with
+      which the screenshots are captured) — assert the emulated preference and
+      that the zoom then applies instantly.
+    - Steps in `tests/steps/development_report_e2e_steps.rs`.
+    - **Evidence:** `givn/changes/development-timeline/evidence/visual/consumer-zooms-the-timeline-to-a-shorter-time-range/`
+      — `mobile.png` and `desktop.png` at the narrowed range, both viewports,
+      animations disabled.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer zooms the timeline to a shorter time range"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement zoom (control, axis range label, reduced-motion
+        behaviour) and the before/after assertion. Files:
+        `assets/timeline/report.html`, `tests/steps/development_report_e2e_steps.rs`,
+        plus the two evidence screenshots. Re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) + the two screenshot paths -->
+        ```
+  - [ ] **REFACTOR** — one range-state derivation for wheel, buttons, and
+        aggregation; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+        title `Consumer zooms the timeline to a shorter time range` in the body
+        (including the two evidence PNGs). Record the revision identifier.
+
+## Task E9 — `Consumer opens the report of a scope with no recorded activity` (`@e2e`, `development-report`)
+
+- [ ] **Scenario: `Consumer opens the report of a scope with no recorded activity`**
+  - Design constraints:
+    - Matrix row: `development-report: open the report of a scope with no
+      recorded activity` — real interface **Web UI**, driving mechanism
+      Playwright: generate the report for a scope with no recorded activity,
+      `page.goto("file://<root>/report.html")`, then read the rendered
+      empty-state heading and the absence of any axis from the DOM.
+    - This is the `@e2e` traversal of the contract's declared `empty` state
+      (design-review Q1): the empty state carries a heading, one sentence
+      explaining the state, and a way back to the report root; no chart axes are
+      drawn; the primitive's states are `empty` and `error`.
+    - Primary assertion: what the browser rendered — the empty state for `demo`
+      and no timeline axis (DOM-level absence), never file bytes.
+    - Steps in `tests/steps/development_report_e2e_steps.rs`.
+    - **Evidence (this scenario carries the declared state's captures):**
+      `givn/changes/development-timeline/evidence/visual/consumer-opens-the-report-of-a-scope-with-no-recorded-activity/`
+      — the final-state pair `mobile.png` + `desktop.png` **and** the state pair
+      `mobile--empty.png` + `desktop--empty.png`
+      (`<viewport>--<state>.png` in the same directory, the layout the integrity
+      hook enforces), animations disabled.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer opens the report of a scope with no recorded activity"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the empty-state browser assertions and capture
+        both pairs. Files: `assets/timeline/report.html`,
+        `tests/steps/development_report_e2e_steps.rs`, plus the four evidence
+        screenshots. Re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) + the four screenshot paths -->
+        ```
+  - [ ] **REFACTOR** — one empty-state branch shared with Task 32's
+        report-level rendering; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+        title `Consumer opens the report of a scope with no recorded activity` in
+        the body (including the four evidence PNGs). Record the revision
+        identifier.
+
+---
+
+**Done when:** every box above is checked with its pasted evidence and revision
+identifier, `verify.command` (`./run-tests.sh --non-e2e`) and
+`verify.e2e_command` (`./run-tests.sh --e2e`) both exit 0 on the full suite, the
+e2e setup task's scenario-count proof is pasted (33 regular vs 8 `@e2e`, e2e
+strictly less), every `@e2e` scenario has committed `mobile.png` + `desktop.png`
+under its slug with the empty-scope scenario's `mobile--empty.png` /
+`desktop--empty.png`, and no `@wip` tag remains on any scenario this change
+implements.

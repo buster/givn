@@ -29,7 +29,11 @@ Operating a project additionally requires the executable of its selected SCM
 backend on `PATH`: `git` for a Git worktree, `fossil` for a Fossil checkout. A
 project whose marker is present but whose executable is missing is refused by
 name before any mutation. The repository acceptance suite needs both `git` and
-`fossil` installed.
+`fossil` installed. Its browser tier additionally needs Node.js (the current
+LTS) and the Chromium build bundled with the resolved Playwright version, both
+installed by the one-time `./setup-e2e-browser.sh`; that script is the only
+step in the suite that touches the network, and no scenario needs a server, a
+port, or a database.
 
 ## 7.4 Project Footprint
 
@@ -49,6 +53,24 @@ givn/archive/
 
 The Arc42 addon currently enabled by default during `init` scaffolds the fixed
 `docs/arc42/` directory. It does not create a configurable output location.
+
+The development record adds one project-local directory, `givn/history/`: the
+append-only `events.jsonl` record, the generated reports under
+`givn/history/reports/`, and the small pending-state files under
+`givn/history/pending/` that a process-per-hook harness needs for its start
+timestamps. Givn keeps all of it out of repository history with its own fenced
+ignore block in the active backend's ignore file, independent of the `rules`
+policy, because the record is development data rather than generated rules.
+
+When `omp` is a selected target, initialization and synchronization also install
+`.omp/hooks/pre/givn-timeline.js` next to the attribution hook. The other two
+targets that execute an agent get their own reporter the same way:
+`.opencode/plugins/givn-timeline.js` for `opencode`, and
+`.claude/hooks/givn-timeline.sh` plus one registered event per hook entry in
+`.claude/settings.local.json` for `claude`. The `agents` target is a skills
+mirror that no harness runs, so it receives no reporter. The browser tier's Node
+project under `tests/e2e/` is repository content and is not installed into a
+consumer project.
 
 Generated skills are written only to the persisted target selection. Givn may
 maintain its own fenced blocks in root `AGENTS.md`; all content outside those

@@ -70,6 +70,17 @@ and legacy coverage commands are gone. Durable facts live in chapters 1, 2,
 glossary. No ADR is introduced: the removed boundaries are product behaviour
 and release policy owned by the specs, the catalog, and the chapters above.
 
+The `development-timeline` change records ADR-073: Givn owns one append-only,
+scope-tagged development record and every supported harness — omp, opencode, and
+Claude Code — reports through one intake command instead of writing the record
+itself (the `agents` target is a skills mirror with no runtime). Durable facts
+live in chapters 2 (TC-34, TC-35), 3, 4, 5, 6.18, 7.3/7.4, 8.25, 10 (Q-98 to
+Q-102), 11 (R-83 to R-86, R-88, D-22, D-23), and the glossary; the record's ownership
+boundary is deliberately separate from ADR-014's filesystem-derived state,
+ADR-013's generated-integration ownership, and ADR-028's gate boundary. The
+browser report and its visual contract are documented in
+`docs/design/design-system.md`.
+
 Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
 register](adr/README.md) for status, relationships, evidence, reserved IDs, and
 historical records.

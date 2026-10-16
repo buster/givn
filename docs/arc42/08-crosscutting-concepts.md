@@ -869,4 +869,103 @@ new-use-case path has a tied or below-floor top affinity; a no-signal report
 prints its reason and omits the ranked list. The recorded routing decision in
 the proposal remains the declaration.
 
+## 8.25 The Development Record and the Development Report
+
+Givn keeps one local, append-only record of the development process at
+`givn/history/events.jsonl`. Each line is one entry with an id, a timestamp, one
+scope, a kind, a bounded label, a measured duration, an outcome, and an optional
+parent. The record is not derived state and not a gate: `src/state.rs` keeps its
+filesystem-derived contract (ADR-014), and no gate reads the record. Entries are
+ordered by their `at` end timestamp rather than by position in the file, the
+`id` is minted at append time under the store's append lock (so two Givn
+processes appending at once never collide), and a `parent` link only ever names
+an id the same process minted.
+
+**Ownership.** ADR-073 fixes the boundary: the record's format has exactly one
+owner (`src/history.rs`), and harness integrations deliver activity through the
+one intake command `givn history ingest` rather than appending lines themselves.
+A second reporter therefore costs one generated asset and no format work, and a
+stale reporter degrades to rejected events with a warning instead of a corrupt
+store.
+
+**Reporters.** Three supported harnesses execute an agent and get a generated
+reporter — omp, opencode, and Claude Code — while the `agents` target is a
+skills mirror with no runtime and gets none. Each reporter is installed beside
+that harness's commit-attribution integration and is discovered by the
+harness's own convention (`pre` hook factory, plugin, or registered command
+hook); none of them imports a harness type package, so no dependency pin can
+drift under the asset. Their observable asymmetries, all derived from what the
+installed versions actually expose, are deliberate: omp and opencode report
+in-process and stamp their own timestamps where their events carry none, while
+Claude Code runs one process per hook, so its mapping, its pending start
+timestamps, and its session-record token read live in the binary and its
+generated asset stays a thin shim. A signal a harness cannot deliver — token
+usage on a background subagent launch, a duration broken out of permission
+waiting — is recorded as missing, never as zero, and the summary states how many
+entries were unmeasured.
+
+**Best-effort discipline.** Every write is best-effort: an unwritable store
+produces one warning and the recorded command keeps its own exit code, and a
+rejected reported event never fails the agent action it reports. The record
+reports its own gaps instead of hiding them — the reporter keeps the number of
+events it dropped when its buffer overflows or a flush fails, and the report
+renders a record-gap notice.
+
+**Scope rule.** Every entry belongs to exactly one scope: the active change, the
+active ideation topic, or the project. Resolution is change, then topic, then
+project, and each scope is claimed only when it is unambiguous — exactly one
+active change (the rule `givn instructions` already applies), then exactly one
+unfinished ideation topic (a topic whose `session.md` carries no handoff
+completion section); several candidates at one level fall through to the next,
+because a recorder never guesses between two. Work outside a change or an
+ideation is recorded rather than discarded, because "where did the time go" does
+not stop at the workflow boundary, and the project window renders it in the
+report's "outside a scope" band. The intake payload's `change`/`topic` are
+optional overrides; a named scope that does not exist is a rejected event, never
+a silent fallback.
+
+**Privacy bound.** An entry keeps metadata plus one label truncated to 120
+characters. Complete tool inputs, complete command lines, and complete question
+text are never stored. The bound lives in one function (`bound_label`), so the
+privacy rule has one enforcement site rather than one per capture point.
+
+**Ignore block.** Givn writes and maintains a fenced `# givn:begin:history`
+block through the same backend switch the rules writer uses: in a Git worktree
+in `.gitignore` plus the worktree-local exclude file (`git rev-parse --git-path
+info/exclude`), in a Fossil checkout in `.fossil-settings/ignore-glob` plus the
+repository-local `ignore-glob` setting. It applies under both rules policies,
+because the record is development data rather than a generated rule; this is a
+separate block from the `# givn:begin:rules` block so neither policy can
+silently drop the other's entries.
+
+**Report packaging.** `givn timeline` writes one self-contained HTML file from
+the embedded report asset: the CSS, JavaScript, and SVG are inline, the record
+model is substituted into a single data slot, and nothing is fetched. The
+document renders from the embedded timestamps alone, so a given record always
+produces the same pixels and the browser tier can assert rendered values
+deterministically. The report model is not published as JSON: the
+machine-readable view is `givn history --json`, which reads the record itself,
+and `givn timeline` writes its one HTML file and prints that file's path.
+
+**Scale.** A whole ideation can run for hours to days and produce hundreds of
+tasks and thousands of tool calls; the expected order of magnitude is at most
+10,000 entries and roughly 2 MB per long ideation. That stays a dependency-free
+append-only JSONL file: one append per entry, one sequential scan per report,
+and no embedded database — DuckDB would outweigh the feature inside a
+size-optimized binary, and SQLite would add a schema and migration surface for a
+workload of one append and one scan. No bottleneck has been measured, and the
+plain file is the interface external tools read directly. To stay readable at
+that size, the timeline never draws one shape per entry: at low zoom, dense
+short activities collapse into per-bucket aggregate markers naming their count
+and combined duration, individual spans appear as the zoom narrows, and the
+summary and ranking always cover the full record (D-23 tracks pruning and
+retention).
+
+**Browser tier.** The report is a Web UI, so its acceptance is browser-driven:
+the repository's e2e tier installs Node.js (current LTS) and Playwright's
+Chromium through `./setup-e2e-browser.sh`, and a JSON-line driver holds one
+browser context per scenario so page state, zoom level, and open panels persist
+across steps. The artifacts under test are the real generated report and the
+real `givn` binary; the driver never substitutes an API call for a click.
+
 *[Architecture documentation index](README.md)*

@@ -60,6 +60,7 @@ enabled addon settings and scaffolds durable Arc42 chapters.
 | FR-42 | Scaffold the run declaration on `givn init`, backfill it through the managed upgrade into existing projects, validate it with deterministic rules, render it into a managed README run block, and block `givn check review` and `givn archive` while it is unconfigured. |
 | FR-43 | Start the declared product with `givn run`: readiness probe against the declared path, one greppable ready line, `--port` and `--print` forms, forwarded child exit codes, and SIGINT/SIGTERM forwarding on unix. |
 | FR-44 | Never derive the product type or start command from repository content; the declaration is the single source of truth. |
+| FR-45 | Record every development step — commands, phases, hooks, verification runs, and the agent activity every supported harness reports through one intake — in an append-only, scope-tagged, best-effort local record, and render one scope's record as a self-contained interactive report. |
 
 ### Non-functional requirements
 

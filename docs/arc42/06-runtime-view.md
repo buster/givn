@@ -492,4 +492,73 @@ the ranked list, so the output never presents ranking noise as a
 recommendation. The recorded decision in the proposal remains the
 declaration; the command stays advisory.
 
+## 6.18 `givn history` and `givn timeline`
+
+Two flows share one local record at `givn/history/events.jsonl`, an append-only
+line-per-entry file whose entries carry an id, a timestamp, one scope (change,
+ideation, or project), a kind, a bounded label, a measured duration, an outcome,
+and an optional parent entry.
+
+Capture happens while other commands run, through a per-process recorder created
+by the command dispatcher:
+
+```mermaid
+sequenceDiagram
+  participant D as command dispatch
+  participant R as HistoryRecorder
+  participant S as givn/history/events.jsonl
+  participant H as hook / shell / gate
+  D->>R: resolve scope (change, ideation, project)
+  D->>S: command entry (start recorded in memory)
+  D->>H: run phase, hook, or shell step
+  H-->>R: label, duration, outcome
+  R->>S: step / hook / phase entry (parented to the command)
+  D->>S: command entry closed with duration and outcome
+```
+
+Every write is best-effort: a store that cannot be written produces one warning
+and the command keeps its own exit code. The store is opened append-only and is
+never rewritten; the fenced `# givn:begin:history` block in the active backend's
+ignore file keeps it out of repository history independently of the `rules`
+policy.
+
+`givn history ingest` is the one intake for reported agent activity: a harness
+reporter buffers its events and hands them over as one JSON payload. Each event
+is validated on its own; an event with an unknown kind, an unparsable timestamp,
+or a missing required field is named on stderr and the remaining events are
+still stored, so a stale reporter degrades to rejected events rather than a
+corrupt record. The command exits `0` whenever the payload was read and `2` when
+stdin is not readable JSON at all.
+
+Three reporters feed that intake, one per supported harness, and each is
+installed beside the commit-attribution integration that harness already gets
+(`src/skills/targets.rs`). They differ only in where their input comes from:
+
+| Harness | Capture order |
+|---|---|
+| omp | one in-process session: `pi.on` handlers collect turn, tool, message, and question events plus `task:subagent:lifecycle` frames, buffered per turn and flushed at turn end and at `session_shutdown` (2 s budget) |
+| opencode | one in-process session: `setup(ctx)` registers the domain hooks and one `ctx.event.subscribe` iterable, buffers the events (which carry their own epoch-millisecond `created` timestamps) and flushes at step end and at `session.execution.*` |
+| Claude Code | one process per hook: each event's payload is piped to `givn history harness-hook --harness claude`, which maps it, consumes or writes the pending-state entry for its call id, reads the session record at `Stop`/`SubagentStop`/`SessionEnd` for token usage, and appends through the same intake path |
+
+The asymmetry is deliberate and documented per harness in the change design:
+omp and opencode stamp their own timestamps where their events do not carry
+them (omp tool events), while Claude Code has real `duration_ms` on its
+post-tool events but none on its pre-tool events or permission waits, so those
+come from the binary-side pending state. None of the three can corrupt the
+record: the intake validates, and a signal a harness cannot deliver is rendered
+as missing rather than as zero.
+
+`givn timeline [--change <id>|--topic <id>] [--out <path>]` reads the record for
+one scope — or, with no scope flag, renders the project report, whose "outside a
+scope" band carries the project's own entries — builds the report model (bands,
+phases, ranked longest steps, question wait totals, subagent fan-out, token
+totals overall, per model, and per subagent), substitutes that model into the
+embedded report document's data slot, writes one self-contained HTML file (by
+default `givn/history/reports/<scope>.html`), and prints its path. The command
+opens nothing itself and publishes no JSON model: the machine-readable view of
+the record is `givn history --json`. The document contains its own CSS,
+JavaScript, and SVG: it loads nothing, and it renders from the embedded
+timestamps alone, so the same record always produces the same pixels. A scope
+with no recorded entries renders the empty state rather than an empty chart.
+
 *[Architecture documentation index](README.md)*

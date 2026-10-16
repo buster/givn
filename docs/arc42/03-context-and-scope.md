@@ -30,6 +30,7 @@ flowchart LR
 | Started product | Spawned by `givn run` from the declared start command; its output is inherited, its exit code forwarded, and its signals forwarded on unix. |
 | Automation caller around givn (for example the kiekste preview host) | Reads the run declaration and drives `givn run` through its machine contract (ready line, exit codes, port hand-off); it never guesses start information. |
 | CI | Runs static lint, configured test commands, mandatory checks, and archive/review gates. |
+| Coding-agent harness reporter | Each supported harness (opencode, Claude Code, omp) runs its own generated reporter inside its own runtime; it buffers that harness's activity (steps and token usage, tool calls, subagent spans, question and permission waits) and hands it to `givn history ingest`, keeps working when an event is rejected, and never writes the development record itself. |
 
 `AGENTS.md` is user-owned except for named givn fenced blocks. Givn may create or
 replace the content between matching markers such as
@@ -56,11 +57,16 @@ not alter other content.
 | `givn upgrade` on a project behind a declared migration route | in/out | Clean-checkout preflight through the selected backend, managed scaffold synchronization, and — when a route is declared — two backend revisions including the maintenance migration change; a project below the oldest source declared in the migration catalog (0.7.0) receives the managed refresh only. |
 | `assets/migrations/catalog.yaml` | in | Release-owned migration bundle policy used to resolve version gaps and aggregate ordered migration phases. |
 | `givn/archive/<id>/` | out | Archived change directory, its pending/proven verification receipt, and the raw per-scope runner results. |
-| Agent target directories | out | Selected `.opencode`, `.agents`, `.claude`, and `.omp` skill paths; opencode and omp commands use their own `<target>/commands` directory. |
-| OpenCode plugin boundary | in | The generated `.opencode/plugins/givn-attribution.js` receives the current session model through OpenCode's plugin hooks and contributes shell attribution variables. |
-| Claude hook boundary | in | The generated `.claude/hooks/givn-attribution.sh` receives Claude Code's PreToolUse JSON, resolves the current model through its transcript path, and rewrites Bash commands with exported attribution variables that remain available to compound commands and shell wrappers. |
-| omp hook boundary | in | The generated `.omp/hooks/pre/givn-attribution.js` is loaded by omp's extension runner as a `pre` hook; its `tool_call` handler rewrites a revision-creating Bash command with attribution exports carrying the live session model, thinking level, and the `omp` harness marker. |
+| Agent target directories | out | Selected `.opencode`, `.agents`, `.claude`, and `.omp` skill paths; opencode and omp commands use their own `<target>/commands` directory. `.agents` is a neutral skills mirror that no harness executes, so it receives neither an attribution integration nor a development reporter. |
+| OpenCode plugin boundary | in | The generated `.opencode/plugins/givn-attribution.js` receives the current session model through OpenCode's plugin hooks and contributes shell attribution variables. The generated `.opencode/plugins/givn-timeline.js` is a V2 plugin (default-exported definition with a stable id and `setup`, registered through the plugin context) that reports development activity — steps and their token usage, tool calls, subagent child sessions, permission and question waits — through `givn history ingest`. |
+| Claude hook boundary | in | The generated `.claude/hooks/givn-attribution.sh` receives Claude Code's PreToolUse JSON, resolves the current model through its transcript path, and rewrites Bash commands with exported attribution variables that remain available to compound commands and shell wrappers. The generated `.claude/hooks/givn-timeline.sh` is registered per event in `.claude/settings.local.json` and pipes its payload to `givn history harness-hook --harness claude`, which maps it to record entries and reads the session record for token usage. |
+| omp hook boundary | in | The generated `.omp/hooks/pre/givn-attribution.js` is loaded by omp's extension runner as a `pre` hook; its `tool_call` handler rewrites a revision-creating Bash command with attribution exports carrying the live session model, thinking level, and the `omp` harness marker. The generated `.omp/hooks/pre/givn-timeline.js` observes tool, turn, subagent, question, and message events and reports them through `givn history ingest`. |
 | Durable Arc42 path | out | Fixed `docs/arc42/`; no effective output-dir setting exists. |
+| `givn history ingest` | in | The one intake contract for reported agent activity: a JSON payload on stdin, per-event validation, a stable exit-code pair (`0` payload read, `2` unreadable stdin), and a rejected event named on stderr while the accepted ones are stored. |
+| `givn history` | out | The development record of one scope as text or `--json`: every entry with its kind, scope, duration, and outcome. |
+| `givn timeline` | out | The development report of one change, one ideation topic, or — with no scope flag — the project: one self-contained HTML file whose path is printed, written to `givn/history/reports/<scope>.html` unless `--out` names another path. The command prints the path and opens nothing itself. |
+| omp timeline hook boundary | in | The generated `.omp/hooks/pre/givn-timeline.js` is loaded by omp's extension runner next to the attribution hook; it observes tool, turn, subagent, question, and message events and reports them through `givn history ingest`. |
+| `givn/history/events.jsonl` | out | The append-only local development record, kept out of repository history by Givn's own fenced ignore block; it is read-only for the report and never a gate input. |
 
 ## 3.3 Scope
 
@@ -95,6 +101,12 @@ not alter other content.
   markers, no version control, a nested root, and a missing executable are
   refused by name before mutation.
 - Strict ADR qualification guidance and canonical routing of architecture rationale.
+- The development record and the report over it: best-effort append-only capture
+  of Givn's own commands, phases, hooks, verification steps, and revisions; one
+  intake contract for harness-reported agent activity including token usage; and
+  `givn timeline`, which renders one change or ideation as a self-contained
+  interactive report with ranked long steps, question waits, and subagent
+  fan-out (ADR-073).
 - Release metadata and the release-owned migration routes; the oldest
   source the migration catalog declares is 0.7.0.
 
