@@ -5747,16 +5747,26 @@ name it.
       `init.lua`); the hand-placed start-package alternative is rejected because it
       lives outside the project.
     - Mapping (design §Maki, verified against the Lua API reference and the
-      installed 0.6.3): `ToolStart`/`ToolDone` with the host's `data.duration_ms`
-      when the call ran and the reporter's own `os.clock()` stamps otherwise (a
-      cancelled call is recorded **without** a duration, never as zero);
+      installed 0.6.3, and aligned with the committed implementation):
+      `ToolStart`/`ToolDone` with the host's `data.duration_ms` when the call ran
+      and the reporter's own `os.clock()` stamps otherwise — a call that never
+      ran is detected by the absence of **both** `data.duration_ms` and
+      `data.input` and is recorded **without** a duration, never as zero; the
+      entry's label is the bounded subject of the call's input (the first of its
+      `command`, `file_path`, `path`, `pattern`, or `query`, cut to one line and
+      the record's 120-character bound) and the tool name when the call never ran
+      or carries no usable subject;
       `TurnStart`/`TurnEnd`/`TurnError` for turns and the flush, with `data.text`
-      never stored; `AutoCompacting`/`CompactionDone` as `phase` entries without
-      `data.summary`; `SessionStatusChanged` (`needs_input` → wait open,
-      `working` → close) for question waits; `TaskStatusChanged` (`working` →
+      never stored; `AutoCompacting`/`CompactionDone` as `phase` entries
+      (`compacting`, `compacted`) without `data.summary`; `SessionStatusChanged`
+      (`needs_input` → wait open, `working` → close) for question waits, labelled
+      with the harness's own bounded `data.title` or `needs input` when absent;
+      `TaskStatusChanged` (`working` →
       subagent span open, `done`/`error` → close) with
       `data.usage = "unavailable"` on the entry; `ModelChanged` for the usage
-      entries' model; `SessionEnd`/`SessionReset` for the final flush.
+      entries' model; `SessionEnd`/`SessionReset` for the final flush, which runs
+      with `scope = "plugin"` because the exported `run()` can execute at load
+      time where no task is active.
     - No timestamp exists in any Maki event, and `TurnEnd` fires once per turn and
       only for the main session — so the subagent span carries the
       `data.usage = "unavailable"` marker and the report's token column reads

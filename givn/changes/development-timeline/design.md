@@ -707,12 +707,12 @@ the installed 0.6.3 binary):
 | Maki autocmd | Reported |
 |---|---|
 | `ToolStart` (`data.tool_id`, `data.tool`) | tool start; **no host event carries a timestamp**, so the reporter stamps its own start in its in-memory pending state, keyed by `tool_id` |
-| `ToolDone` (`data.tool_id`, `data.tool`, `data.is_error`, `data.bytes`; `data.duration_ms` and `data.input` only for a call that actually ran) | tool end: the host's `duration_ms` is used when present, otherwise the reporter's own stamps, and a cancelled call is recorded without a duration (never as zero). The label is the tool name — `data.input` is never stored (the privacy bound) |
+| `ToolDone` (`data.tool_id`, `data.tool`, `data.is_error`, `data.bytes`; `data.duration_ms` and `data.input` only for a call that actually ran) | tool end. **Cancelled-call rule:** a call that never ran is detected by the absence of *both* `data.duration_ms` and `data.input` (the API reference marks both present only for a call that ran), and it is recorded **without** a duration — never as zero; a measured call that lacks a host duration still gets the reporter's own stamp. **Label rule:** the entry is labelled with the bounded subject of `data.input` — the first of its `command`, `file_path`, `path`, `pattern`, or `query` — and with the tool name when the call never ran or carries no usable subject; the subject is cut to its first line and to the record's 120-character bound (the privacy bound), so the full input is never stored |
 | `TurnStart` (`data.text`) | turn start, stamped by the reporter; `data.text` is never stored (it is prompt content) |
 | `TurnEnd` (`data.reason`, `data.usage` — four token fields, cache included —, `data.cost`, `data.list_cost`, `data.context_size`, `data.context_window`, `data.num_turns`) | turn entry with usage and outcome; the flush boundary |
 | `TurnError` | turn entry with `outcome: failed` |
-| `AutoCompacting` / `CompactionDone` (`context_size`, `context_size_before`/`_after`, `data.summary`) | `phase` entries, so a compaction shows up as the long step it is; `data.summary` is never stored (content) |
-| `SessionStatusChanged` (`data.status` = `working`/`needs_input`/`idle`) | the question-wait derivation: `needs_input` opens a wait and the next `working` closes it, with the reporter's own measurement |
+| `AutoCompacting` / `CompactionDone` (`context_size`, `context_size_before`/`_after`, `data.summary`) | `phase` entries labelled `compacting` and `compacted` (the second with `outcome: ok`), so a compaction shows up as the long step it is; `data.summary` is never stored (content) |
+| `SessionStatusChanged` (`data.status` = `working`/`needs_input`/`idle`) | the question-wait derivation: `needs_input` opens a wait and the next `working` closes it, with the reporter's own measurement. The wait's label is the harness's own bounded `data.title`, falling back to `needs input` when it is absent — Maki exposes no question text, so the record never invents one |
 | `TaskStatusChanged` (`data.id`, `data.name`, `data.status` = `working`/`done`/`error`) | subagent spans: `working` opens one, `done`/`error` closes it, and the entry carries `data.usage = "unavailable"` because Maki never reports a subagent's tokens (the intake's usage marker) |
 | `ModelChanged` (`data.model`, `data.previous_spec`) | the model attributed to subsequent usage entries, because no usage payload names a model |
 | `SessionEnd` (`data.reason`, `data.deadline_ms`) | session end, then the final flush. `deadline_ms` is the shared teardown grace period, and a job started inside a callback dies with the dispatch unless it is awaited, so the flush awaits its `givn history ingest` job with `maki.fn.jobwait` inside the callback |
@@ -753,9 +753,13 @@ inside a callback or an explicit `run()` the loader calls. Second, the flush:
 `maki.fn.system` does not exist, `maki.fn.jobstart` has no stdin option, and a
 job left unawaited in a task scope is lost, so the flush writes the payload to a
 temporary file and runs
-`maki.fn.jobstart({ "sh", "-c", "cat <payload-file> | <givn> history ingest" })`
+`maki.fn.jobstart({ "sh", "-c", "cat <payload-file> | <givn> history ingest" }, { scope = "plugin" })`
 followed by `maki.fn.jobwait(id, <timeout>)` **inside the callback that owns it**
-(the API's job-lifetime rule). Starts are stamped with `os.clock()`, the
+(the API's job-lifetime rule). The explicit `scope = "plugin"` is required: the
+exported `run()` can execute at load time, where no task is active and the
+default task scope raises `jobstart: no active task` (reproduced), and the
+`jobwait` in the same call still collects the job. Starts are stamped with
+`os.clock()`, the
 monotonic clock the probe used, because no host event carries a timestamp.
 `setup()` and every callback are wrapped so a `maki` error is logged once through
 `maki.log.error` and never propagates (raising inside a dispatch would break it),
@@ -794,10 +798,11 @@ failure, never a skip.
      matching autocmd callback to completion before it returns", so the generated
      reporter's real callbacks run against the real intake;
    - the flush inside those callbacks is
-     `maki.fn.jobstart({ "sh", "-c", "cat <payload-file> | <givn> history ingest" })`
+     `maki.fn.jobstart({ "sh", "-c", "cat <payload-file> | <givn> history ingest" }, { scope = "plugin" })`
      followed by `maki.fn.jobwait(id, <timeout>)`, because there is no
-     `maki.fn.system`, `jobstart` has no stdin option, and a job left unawaited in
-     a task scope is lost;
+     `maki.fn.system`, `jobstart` has no stdin option, a job left unawaited in a
+     task scope is lost, and the explicit plugin scope is what lets the flush
+     work when `run()` executes at load time (no active task);
    - the step then asserts `givn history --change demo --json`.
 
    Driver and helpers live in `tests/steps/agent_activity_reporting_e2e_steps.rs`
