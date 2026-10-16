@@ -98,7 +98,7 @@ Feature: Development Report
     When the consumer zooms the timeline in
     Then the browser shows a narrower time range than before
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer opens the report of a scope with no recorded activity
     Given a change "demo" with no recorded activity
     And the development report for "demo" has been generated

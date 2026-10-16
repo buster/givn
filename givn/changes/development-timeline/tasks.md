@@ -9500,7 +9500,7 @@ name it.
 
 ## Task E9 — `Consumer opens the report of a scope with no recorded activity` (`@e2e`, `development-report`)
 
-- [ ] **Scenario: `Consumer opens the report of a scope with no recorded activity`**
+- [x] **Scenario: `Consumer opens the report of a scope with no recorded activity`**
   - Design constraints:
     - Matrix row: `development-report: open the report of a scope with no
       recorded activity` — real interface **Web UI**, driving mechanism
@@ -9520,23 +9520,138 @@ name it.
       `mobile--empty.png` + `desktop--empty.png`
       (`<viewport>--<state>.png` in the same directory, the layout the integrity
       hook enforces), animations disabled.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer opens the report of a scope with no recorded activity"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer opens the report of a scope with no recorded activity"
+        Feature: Development Report
+          Scenario: Consumer opens the report of a scope with no recorded activity
+           ✔  Given a change "demo" with no recorded activity
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✘  Then the browser shows the empty state for "demo"
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:106:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        4 steps (3 passed, 1 failed)
+        error: test failed, to rerun pass `--test features_runner`
+        RED_EXIT=101
+
+        RED category: undefined step — the two Thens that read the rendered
+        empty state have no binding. The first three steps really ran (the
+        no-activity fixture, the real `givn timeline`, and the real browser
+        navigation), so the RED is the missing rendered-surface assertion and the
+        missing declared-state captures, never a vacuous setup.
         ```
-  - [ ] **GREEN** — implement the empty-state browser assertions and capture
+  - [x] **GREEN** — implement the empty-state browser assertions and capture
         both pairs. Files: `assets/timeline/report.html`,
         `tests/steps/development_report_e2e_steps.rs`, plus the four evidence
         screenshots. Re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) + the four screenshot paths -->
+        $ node --check /tmp/report-layer.mjs      # the asset's inline layer, extracted
+        NODE_CHECK=0
+        $ cargo build --locked --tests
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.24s
+        TESTS_BUILD=0
+        $ cargo fmt --all -- --check        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.98s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer opens the report of a scope with no recorded activity"
+        Feature: Development Report
+          Scenario: Consumer opens the report of a scope with no recorded activity
+           ✔  Given a change "demo" with no recorded activity
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✔  Then the browser shows the empty state for "demo"
+           ✔  And the browser draws no timeline axis for it
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        GREEN_EXIT=0
+
+        Evidence: the final-state pair and the declared `empty` state's pair, all
+        four non-empty and at the contract viewports, captured after the
+        assertions with animations disabled (the final state of this scenario *is*
+        the declared state, so both pairs show the empty report — the state pair
+        is the one the visual gate requires for the contract's `empty` state):
+        $ ls -l givn/changes/development-timeline/evidence/visual/consumer-opens-the-report-of-a-scope-with-no-recorded-activity/
+        -rw-r--r-- 29446 desktop--empty.png
+        -rw-r--r-- 29446 desktop.png
+        -rw-r--r-- 22571 mobile--empty.png
+        -rw-r--r-- 22567 mobile.png
+        $ file …/*.png
+        …/mobile.png:        PNG image data, 360 x 780, 8-bit/color RGB, non-interlaced
+        …/mobile--empty.png: PNG image data, 360 x 780, 8-bit/color RGB, non-interlaced
+        …/desktop.png:       PNG image data, 1920 x 1080, 8-bit/color RGB, non-interlaced
+        …/desktop--empty.png: PNG image data, 1920 x 1080, 8-bit/color RGB, non-interlaced
+        The captures show the rendered empty state: the heading, the one sentence
+        naming the scope, the way back to the report root — and no axis at all.
+
+        Production files (this scenario's own):
+        - `assets/timeline/report.html` — the interactive layer's own half of the
+          empty state: it is inert when the report draws no timeline, so the
+          `<svg class="timeline">` element is the one thing that decides whether
+          the axis, the controls, and the range label exist at all.
+        - `tests/steps/development_report_e2e_steps.rs` — the scenario's two
+          Thens and the `rendered_empty_state` probe: the empty state's
+          presence, its declared state, its heading, the one sentence naming the
+          scope, the labelled way back (with its `#report-title` target), and the
+          DOM-level absence of every axis marker — `svg`, `svg.timeline`,
+          `.band`, `.span`, `.tick`, `.aggregate`, and `.controls button` all
+          counted as zero in the browser's own DOM.
+        - the four evidence screenshots above.
         ```
-  - [ ] **REFACTOR** — one empty-state branch shared with Task 32's
+  - [x] **REFACTOR** — one empty-state branch shared with Task 32's
         report-level rendering; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        One empty-state branch, shared with Task 32's report-level rendering: the
+        generator renders either the timeline section or `render_empty_state` for
+        a scope with no activity, and the browser layer now states the same
+        condition once — `drawsTimeline` — instead of two early returns, so
+        "there is no timeline to draw" is one decision in each tier and the
+        browser's blindness in the empty state (no axis, no controls, no range
+        label) follows from the generator's own branch rather than from a second
+        rule of its own.
+        $ sed -n '219,231p' assets/timeline/report.html
+          const SVG = "http://www.w3.org/2000/svg";
+          const modelElement = document.getElementById("report-model");
+          const timeline = document.querySelector("svg.timeline");
+          const model = modelElement ? JSON.parse(modelElement.textContent) : null;
+          /* One condition for "this report draws a timeline": the generator renders the
+             timeline section only for a record with activity, and the empty state — the
+             same branch Task 32's scenario asserts at the report level — therefore
+             carries no axis, no controls, and no range label. The browser layer is inert
+             there instead of drawing over nothing. */
+          const drawsTimeline = Boolean(timeline && model && !model.empty);
+          if (!drawsTimeline) return;
+
+        $ cargo fmt --all -- --check        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.98s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer opens the report of a scope with no recorded activity"
+        Feature: Development Report
+          Scenario: Consumer opens the report of a scope with no recorded activity
+           ✔  Given a change "demo" with no recorded activity
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✔  Then the browser shows the empty state for "demo"
+           ✔  And the browser draws no timeline axis for it
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        REFACTOR_EXIT=0
         ```
   - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
         title `Consumer opens the report of a scope with no recorded activity` in

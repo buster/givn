@@ -969,3 +969,100 @@ fn browser_shows_a_narrower_time_range(world: &mut GivnWorld) {
     // contract viewports, captured after the assertions above.
     browser(world).capture_evidence(ZOOM_SCENARIO);
 }
+
+/// The `@e2e` browser scenario that opens the report of a scope with no
+/// recorded activity.
+const EMPTY_SCENARIO: &str = "Consumer opens the report of a scope with no recorded activity";
+
+/// The empty state the browser rendered, and the axis furniture it did *not*
+/// render — read from the browser's DOM, never from the report file.
+fn rendered_empty_state(driver: &mut BrowserDriver) -> Value {
+    driver.evaluate(
+        r#"(() => {
+  const state = document.getElementById("report-empty-state");
+  const link = state ? state.querySelector("a[href]") : null;
+  return {
+    present: state !== null,
+    declared: state ? state.dataset.state : null,
+    heading: state && state.querySelector("h2") ? state.querySelector("h2").textContent.trim() : null,
+    detail: state && state.querySelector(".empty-state-detail")
+      ? state.querySelector(".empty-state-detail").textContent.trim()
+      : null,
+    back: link ? link.textContent.trim() : null,
+    backHref: link ? link.getAttribute("href") : null,
+    scope: document.getElementById("report-scope")
+      ? document.getElementById("report-scope").textContent.trim()
+      : null,
+    axis: {
+      svg: document.querySelectorAll("svg").length,
+      timelines: document.querySelectorAll("svg.timeline").length,
+      bands: document.querySelectorAll(".band").length,
+      spans: document.querySelectorAll(".span").length,
+      ticks: document.querySelectorAll(".tick").length,
+      aggregates: document.querySelectorAll(".aggregate").length,
+      controls: document.querySelectorAll(".controls button").length,
+    },
+  };
+})()"#,
+    )
+}
+
+#[then(regex = r#"^the browser shows the empty state for "([^"]+)"$"#)]
+fn browser_shows_the_empty_state(world: &mut GivnWorld, id: String) {
+    let rendered = rendered_empty_state(browser(world));
+    assert_eq!(
+        rendered["present"],
+        json!(true),
+        "the browser renders no empty state at all: {rendered:#}"
+    );
+    assert_eq!(
+        rendered["declared"],
+        json!("empty"),
+        "the rendered empty state does not declare its own state: {rendered:#}"
+    );
+    assert_eq!(
+        rendered["heading"],
+        json!("No recorded activity"),
+        "the empty state carries no heading: {rendered:#}"
+    );
+    let detail = rendered["detail"].as_str().unwrap_or_default();
+    assert!(
+        detail.contains(&id) && detail.ends_with('.'),
+        "the empty state carries no sentence explaining the state for {id}: {detail:?}"
+    );
+    assert!(
+        !rendered["back"].as_str().unwrap_or_default().is_empty()
+            && rendered["backHref"] == json!("#report-title"),
+        "the empty state carries no labelled way back to the report root: {rendered:#}"
+    );
+    let scope = rendered["scope"].as_str().unwrap_or_default();
+    assert!(
+        scope.contains(&id),
+        "the rendered report does not name the scope it is about: {scope:?}"
+    );
+}
+
+#[then("the browser draws no timeline axis for it")]
+fn browser_draws_no_timeline_axis(world: &mut GivnWorld) {
+    let rendered = rendered_empty_state(browser(world));
+    for marker in [
+        "svg",
+        "timelines",
+        "bands",
+        "spans",
+        "ticks",
+        "aggregates",
+        "controls",
+    ] {
+        assert_eq!(
+            rendered["axis"][marker],
+            json!(0),
+            "the empty report draws {marker}: {rendered:#}"
+        );
+    }
+    // The declared state's captures, beside the final-state pair the visual gate
+    // reads for every @e2e scenario.
+    let driver = browser(world);
+    driver.capture_evidence(EMPTY_SCENARIO);
+    driver.capture_state_evidence(EMPTY_SCENARIO, "empty");
+}
