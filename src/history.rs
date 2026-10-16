@@ -322,26 +322,35 @@ impl Drop for Span<'_> {
     }
 }
 
-/// The scope every entry of this project resolves to: exactly one active
-/// change, else exactly one unfinished ideation topic, else the project.
+/// The scope every entry of this project resolves to: the first unambiguous
+/// candidate in the recorder's order — the active change, then the unfinished
+/// ideation topic — or the project itself. A candidate yields `None` when the
+/// project's own state is ambiguous; a recorder never guesses between
+/// candidates.
 pub fn resolve_scope(root: &Path) -> Scope {
-    if let Some(id) = single_active_change(root) {
-        return Scope::Change { id };
-    }
-    Scope::Project {
-        id: project_name(root),
-    }
+    let candidates: [fn(&Path) -> Option<Scope>; 1] = [change_scope];
+    candidates
+        .into_iter()
+        .find_map(|candidate| candidate(root))
+        .unwrap_or_else(|| Scope::Project {
+            id: project_name(root),
+        })
 }
 
-/// The project's single active change, when it has exactly one. Several active
-/// changes are ambiguous, and a recorder never guesses between them.
-fn single_active_change(root: &Path) -> Option<String> {
+/// The change scope, when exactly one change is active. Several active changes
+/// are ambiguous, and a recorder never guesses between them.
+fn change_scope(root: &Path) -> Option<Scope> {
     let manifest = crate::config::overlay::load_effective().ok()?;
     let changes = crate::state::list_changes(root, &manifest);
-    match changes.as_slice() {
-        [only] => Some(only.id.clone()),
-        _ => None,
-    }
+    single(changes.into_iter().map(|change| change.id)).map(|id| Scope::Change { id })
+}
+
+/// The exactly-one rule every scope case applies: exactly one candidate
+/// resolves the scope, zero or several candidates fall through to the next
+/// case.
+fn single<T>(mut candidates: impl Iterator<Item = T>) -> Option<T> {
+    let only = candidates.next()?;
+    candidates.next().is_none().then_some(only)
 }
 
 /// The project's own name: the name of its root directory.
