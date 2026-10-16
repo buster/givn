@@ -67,7 +67,7 @@ Feature: Agent Activity Reporting
     And stderr names the rejected event
     And the development record holds the acceptable event
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Every supported harness receives a development reporter
     Given a project root without a givn/ directory
     When the consumer runs `givn init --agents <target>`

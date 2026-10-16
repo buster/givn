@@ -216,6 +216,140 @@ fn violating_event(world: &GivnWorld) -> (Value, usize) {
         .expect("the fixture has not reported a contract-violating event yet")
 }
 
+/// The agent targets that receive a development reporter, with the project
+/// path each target's reporter is installed at — the design's asset table.
+const REPORTER_ASSETS: &[(&str, &str)] = &[
+    ("omp", ".omp/hooks/pre/givn-timeline.js"),
+    ("opencode", ".opencode/plugins/givn-timeline.js"),
+    ("claude", ".claude/hooks/givn-timeline.sh"),
+];
+
+/// The Claude Code events the development reporter registers for: the events
+/// its binary-side mapper reads, one settings entry each.
+const CLAUDE_REPORTER_EVENTS: [&str; 9] = [
+    "PreToolUse",
+    "PostToolUse",
+    "PostToolUseFailure",
+    "PermissionRequest",
+    "Notification",
+    "SubagentStart",
+    "SubagentStop",
+    "Stop",
+    "SessionEnd",
+];
+
+/// The command a Claude Code event registration runs.
+const CLAUDE_REPORTER_COMMAND: &str = "${CLAUDE_PROJECT_DIR}/.claude/hooks/givn-timeline.sh";
+
+/// Read one generated project file, asserting it exists and is not empty.
+fn generated_file(root: &std::path::Path, relative: &str, subject: &str) -> String {
+    let path = root.join(relative);
+    let content = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read the generated {subject} {}: {error}", path.display()));
+    assert!(
+        !content.trim().is_empty(),
+        "the generated {subject} {} is empty",
+        path.display()
+    );
+    content
+}
+
+/// Assert the generated Claude settings register the shim for every event the
+/// reporter's mapper reads, and for no other event: the registration set is
+/// the reporter's own contract.
+fn assert_claude_reporter_registration(root: &std::path::Path) {
+    let settings = generated_file(root, ".claude/settings.local.json", "Claude settings");
+    let settings: Value = serde_json::from_str(&settings)
+        .unwrap_or_else(|error| panic!("the generated Claude settings are not JSON: {error}"));
+    let hooks = settings["hooks"].as_object().unwrap_or_else(|| {
+        panic!("the generated Claude settings carry no hooks object: {settings}")
+    });
+    let mut registered = Vec::new();
+    for (event, entries) in hooks {
+        let entries = entries
+            .as_array()
+            .unwrap_or_else(|| panic!("the Claude `{event}` hooks are not an array: {entries}"));
+        for entry in entries {
+            let commands = entry["hooks"]
+                .as_array()
+                .unwrap_or_else(|| panic!("a Claude `{event}` entry carries no handlers: {entry}"));
+            for handler in commands {
+                if handler["command"].as_str() == Some(CLAUDE_REPORTER_COMMAND) {
+                    assert_eq!(
+                        handler["type"], "command",
+                        "the reporter's `{event}` registration is not a command hook: {entry}"
+                    );
+                    registered.push(event.clone());
+                }
+            }
+        }
+    }
+    registered.sort();
+    registered.dedup();
+    let mut expected: Vec<String> = CLAUDE_REPORTER_EVENTS
+        .iter()
+        .map(|event| (*event).to_string())
+        .collect();
+    expected.sort();
+    assert_eq!(
+        registered, expected,
+        "the generated Claude settings do not register the reporter for exactly its events"
+    );
+}
+
+#[then(
+    regex = r#"^the project's generated guidance for "([^"]+)" includes the development reporter$"#
+)]
+fn guidance_includes_the_development_reporter(world: &mut GivnWorld, target: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let root = env.root();
+    // The generated project file is read from the project, and it is the
+    // shipped reporter: the install copies the asset verbatim.
+    let (source, install) = REPORTER_ASSETS
+        .iter()
+        .find(|(name, _)| *name == target)
+        .unwrap_or_else(|| panic!("`{target}` is not a supported agent target"));
+    let installed = generated_file(&root, install, "development reporter");
+    let asset = match target.as_str() {
+        "omp" => include_str!("../../assets/agent-integrations/omp/givn-timeline.js"),
+        "opencode" => include_str!("../../assets/agent-integrations/opencode/givn-timeline.js"),
+        "claude" => include_str!("../../assets/agent-integrations/claude/givn-timeline.sh"),
+        other => unreachable!("unhandled reporter target `{other}`"),
+    };
+    assert_eq!(
+        installed, asset,
+        "the project's {source} reporter is not the shipped asset: {install}"
+    );
+    // The reporter delivers through the intake: the two supported harness
+    // entry points are the payload path and the raw-payload shim.
+    let delivery = match target.as_str() {
+        "claude" => "givn history harness-hook --harness claude",
+        _ => "givn history ingest",
+    };
+    assert!(
+        installed.contains(delivery),
+        "the project's {target} reporter does not deliver through `{delivery}`: {install}"
+    );
+    if target == "claude" {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = std::fs::metadata(root.join(install))
+                .expect("the generated shim")
+                .permissions()
+                .mode();
+            assert!(
+                mode & 0o111 != 0,
+                "the generated Claude shim is not executable: {install}"
+            );
+        }
+        assert_claude_reporter_registration(&root);
+    }
+}
+
 #[when("the agent reports an event that does not match the intake contract")]
 fn reports_an_event_that_does_not_match_the_intake_contract(world: &mut GivnWorld) {
     let change = recorded_change(world);
