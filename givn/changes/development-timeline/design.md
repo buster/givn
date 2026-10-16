@@ -661,13 +661,25 @@ Missing data is rendered as missing, never as zero:
   proven by the regular scenario "A dense record is reported as aggregates
   instead of raw ticks", which is a rendering rule rather than a second
   interaction, so it adds no `@e2e` scenario and no inventory row.
-- **Rendering**: the generator fills the asset's data slot
-  (`/*__GIVN_REPORT_DATA__*/`) with the JSON model; the file's inline script
-  builds an SVG time axis, nests spans by `parent`, and wires zoom (wheel,
-  buttons), pan (drag), selection (click/Enter) and the details panel. The
-  script never calls `fetch`, never loads a remote resource, and never uses
-  `Date.now()` — the axis is derived from the embedded timestamps, so the same
-  record always renders identically. Panning (drag) is an implementation detail
+- **Rendering**: the generator substitutes exactly two markers in the asset,
+  each once, and nothing else. (1) The **model payload element** —
+  `<script id="report-model" type="application/json">` — receives the JSON model
+  in place of the asset's `/*__GIVN_REPORT_DATA__*/` slot, with `<` escaped as
+  `\u003c` so a recorded label can never close the element; this is the
+  machine-readable model the asset's inline script parses and the e2e tiers
+  read. (2) The **text-view marker** `<!--__GIVN_REPORT_VIEW__-->` receives the
+  same model rendered as the file's own visible text — the scope line, then
+  either the empty state or the summary and the timeline's initial view (one
+  visible row per band, with the band's spans drawn on the shared axis) — so the
+  written file reads without script and the non-browser scenarios assert its
+  content directly. On top of that text view the inline script builds the
+  interactive SVG axis: it nests spans by `parent` and wires zoom (wheel,
+  buttons), pan (drag), selection (click/Enter) and the details panel, extended
+  by the aggregation rule above. The script never calls `fetch`, never loads a
+  remote resource, and never uses `Date.now()` — the axis is derived from the
+  embedded timestamps, so the same record always renders identically, and the
+  file stays one self-contained document with no server and no third-party
+  JavaScript. Panning (drag) is an implementation detail
   of that same axis: it only changes which part of the already-rendered range is
   in view, so it adds no interaction-inventory row and no `@e2e` scenario of its
   own — the zoom scenario is the axis-state evidence. `givn timeline` writes to
@@ -726,7 +738,7 @@ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test
 | `PendingState` | `struct` | Start timestamps for process-per-hook harnesses, keyed by the harness's own call id; written atomically, pruned by age and at session end |
 | `ReportModel` | `struct` | Everything the report screen renders: scope, bands, entries, summary |
 | `build_report_model` | `fn` | Record lines → `ReportModel` (phase derivation, ranking, totals) |
-| `render_report` | `fn` | `ReportModel` → the HTML document (data slot substitution, escaping) |
+| `render_report` | `fn` | `ReportModel` → the HTML document: the model payload element (JSON, `<` escaped) and the text-only initial view substituted once each, with every recorded string escaped |
 | `run_givn` (test) | `fn` | Existing harness: runs the compiled binary in a temp project root |
 
 ## Strict Mode (mandatory)
@@ -1024,7 +1036,7 @@ flowchart LR
 | `src/history.rs` | **new** — entry schema, store, scope resolution, bounded labels, pending state, and `ensure_ignored` with its ownership split (the recorder re-asserts `.git/info/exclude` on every write, writes Fossil's repository `ignore-glob` setting only while no managed file overrides it, and uses `.gitignore` only before a repository exists; the Fossil entry `givn/history/*` joins the managed list through `write_ignores`) |
 | `src/cli/history.rs` | **new** — `givn history` (read), `givn history ingest` (the one intake), and `givn history harness-hook --harness claude` (the raw-payload mapper and transcript reader for process-per-hook harnesses) |
 | `src/cli/timeline.rs` | **new** — report model and HTML rendering |
-| `assets/timeline/report.html` | **new** — the self-contained report asset (inline CSS/JS/SVG, one data slot) |
+| `assets/timeline/report.html` | **new** — the self-contained report asset (inline CSS/JS/SVG) with two substituted markers: the model payload element the script parses and the text-only initial view the file carries |
 | `assets/agent-integrations/omp/givn-timeline.js` | **new** — the omp reporter (`pi.on` handlers plus one event-bus subscription) |
 | `assets/agent-integrations/opencode/givn-timeline.js` | **new** — the opencode reporter (`setup(ctx)`: domain hooks plus one `ctx.event.subscribe` iterable) |
 | `assets/agent-integrations/claude/givn-timeline.sh` | **new** — the Claude Code shim that pipes its payload to the binary-side mapper |
