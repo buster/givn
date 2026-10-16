@@ -42,6 +42,13 @@ const REPORTED_SUBAGENT_START_AT: &str = "2026-10-16T09:11:43.021Z";
 const REPORTED_SUBAGENT_END_AT: &str = "2026-10-16T09:12:44.321Z";
 const REPORTED_SUBAGENT_SPAN_MS: u64 = 61_300;
 
+/// The question wait the fixture's agent reports: the complete question text
+/// the harness handed over (two lines, so the first-line rule discriminates)
+/// and the wait duration the payload provides.
+const REPORTED_QUESTION: &str = "Which store should the record use?\nDuckDB, SQLite, or the append-only JSONL — the design's storage rationale decides.";
+const REPORTED_QUESTION_WAIT_MS: u64 = 480_000;
+const REPORTED_QUESTION_AT: &str = "2026-10-16T09:13:45.501Z";
+
 /// The one completed tool call the fixture seeds as already-reported agent
 /// activity, and (for the tool scenario's own report) the call the assertions
 /// read.
@@ -175,6 +182,23 @@ fn reports_a_subagent_that_started_and_completed(world: &mut GivnWorld) {
                 "status": "completed",
             }),
         ],
+    );
+    report(world, payload);
+}
+
+#[when("the agent reports that it asked a question and resumed")]
+fn reports_a_question_wait(world: &mut GivnWorld) {
+    let change = reported_change(world);
+    let payload = support::intake_payload(
+        Some(&change),
+        None,
+        vec![json!({
+            "kind": "question",
+            "at": REPORTED_QUESTION_AT,
+            "label": REPORTED_QUESTION,
+            "duration_ms": REPORTED_QUESTION_WAIT_MS,
+            "status": "completed",
+        })],
     );
     report(world, payload);
 }
@@ -327,5 +351,74 @@ fn entry_names_the_subagent_and_spans_its_start_and_end(world: &mut GivnWorld) {
         entry["outcome"],
         json!("ok"),
         "a completed subagent is not recorded as ok: {entry}"
+    );
+}
+
+#[then("the record holds one entry for the question wait")]
+fn record_holds_one_entry_for_the_question_wait(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let entries = support::record_entries(&env.root());
+    let recorded: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| entry["source"] == json!("agent") && entry["kind"] == json!("question"))
+        .collect();
+    assert_eq!(
+        recorded.len(),
+        1,
+        "expected exactly one entry for the reported question wait; the record holds: {entries:#?}"
+    );
+    let entry = recorded[0].clone();
+    assert_eq!(
+        entry["scope"],
+        json!({"kind": "change", "id": reported_change(world)}),
+        "the question wait is not recorded for the change the payload named: {entry}"
+    );
+    world
+        .agent_activity_reporting
+        .get_or_insert_with(AgentActivityReportingState::default)
+        .last_entry = Some(entry);
+}
+
+#[then("that entry carries the wait duration")]
+fn entry_carries_the_wait_duration(world: &mut GivnWorld) {
+    let reported = reported_event(world, "question");
+    let entry = identified_entry(world);
+    assert_eq!(
+        entry["duration_ms"], reported["duration_ms"],
+        "the wait is not recorded with the reported duration: {entry}"
+    );
+    // The label is the question's first line only: the complete question text
+    // is never stored (D2).
+    let complete = reported["label"]
+        .as_str()
+        .expect("the fixture reports the complete question text");
+    let first_line = complete
+        .lines()
+        .next()
+        .expect("the fixture's question has a first line");
+    let label = entry["label"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the question entry carries no label: {entry}"));
+    assert_eq!(
+        label, first_line,
+        "the entry's label is not the question's first line: {entry}"
+    );
+    assert!(
+        label.chars().count() <= 120,
+        "the entry's label is not bounded to 120 characters: {entry}"
+    );
+    for line in complete.lines().skip(1) {
+        assert!(
+            !label.contains(line),
+            "the record kept more than the question's first line: {entry}"
+        );
+    }
+    assert_eq!(
+        entry["outcome"],
+        json!("ok"),
+        "a resumed wait is not recorded as ok: {entry}"
     );
 }

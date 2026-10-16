@@ -3515,23 +3515,109 @@ name it.
     - Assertion shape: one entry for the question wait carrying the reported
       duration and a bounded label whose content is the question's first line.
     - RED expected failure: both Then steps are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A question wait is recorded with its duration"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A question wait is recorded with its duration"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 6.65s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: A question wait is recorded with its duration
+           ✔  Given a change "demo" with reported agent activity
+           ✔  When the agent reports that it asked a question and resumed
+           ✘  Then the record holds one entry for the question wait
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:24:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+
+        thread 'main' (2360142) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — both Then steps are unbound (the first
+        Then matches no function; the scenario stops there, so `that entry
+        carries the wait duration` never runs). The `Given` and the `When` drive
+        the real fixture (a change with one reported tool call, then the reported
+        question wait handed to `givn history ingest`); the intake still rejects
+        `question` as an unknown kind at this point, which the `When` records
+        without asserting — the RED signal is the undefined Then.
         ```
-  - [ ] **GREEN** — implement the question event kind and the first-line label
+  - [x] **GREEN** — implement the question event kind and the first-line label
         rule. Files: `src/cli/history.rs`, `src/history.rs` (`bound_label`),
         `tests/steps/agent_activity_reporting_steps.rs`. Compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.35s
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A question wait is recorded with its duration"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 5.46s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: A question wait is recorded with its duration
+           ✔  Given a change "demo" with reported agent activity
+           ✔  When the agent reports that it asked a question and resumed
+           ✔  Then the record holds one entry for the question wait
+           ✔  And that entry carries the wait duration
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
+
+        Production files:
+        - `src/cli/history.rs` — the `question` validation row (`label` is the
+          event's identity) and its mapper: one `question` entry carrying the
+          reported wait duration, the outcome mapped from the reported resumed
+          status, and the label through the record's label path; the entry is its
+          own span (nested in the enclosing turn when the payload reported one,
+          never merged into it).
+        - `src/history.rs` — `bound_question_label`: the question's first line
+          only (the complete question text is never stored, D2), then the same
+          `bound_label` bound as every other label.
+        - `tests/steps/agent_activity_reporting_steps.rs` — the two `Then` steps
+          (the recorded wait's duration, and a label equal to the payload's own
+          first line with the complete text's later lines asserted absent).
         ```
-  - [ ] **REFACTOR** — keep the first-line rule in the same bounded-label path as
+  - [x] **REFACTOR** — keep the first-line rule in the same bounded-label path as
         every other label; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The per-kind label rule now lives in the one function every reported
+        subject goes through — `reported_label(kind, subject)` bounds the subject
+        through `bound_label` and keeps a question's first line only — and both
+        mappers (tool, question) call it, so no caller bounds a label itself.
+
+        $ cargo fmt --all -- --check
+        FMT_CLEAN
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.94s
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A question wait is recorded with its duration"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 6.11s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: A question wait is recorded with its duration
+           ✔  Given a change "demo" with reported agent activity
+           ✔  When the agent reports that it asked a question and resumed
+           ✔  Then the record holds one entry for the question wait
+           ✔  And that entry carries the wait duration
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `A question wait is recorded with its duration`
