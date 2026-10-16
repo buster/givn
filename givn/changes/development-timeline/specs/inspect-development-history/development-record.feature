@@ -56,7 +56,7 @@ Feature: Development Record
     When the user runs `givn status`
     Then the recorded entry names the ideation topic as its scope
 
-  @givn.added @wip
+  @givn.added
   Scenario: A recorded label is bounded to 120 characters
     Given a project root with givn/ initialised
     And a change "demo" with a command whose full text is longer than 120 characters

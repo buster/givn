@@ -1963,24 +1963,122 @@ name it.
       truncated in the label field).
     - RED expected failure: the bounded-label and absence Then steps are
       undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A recorded label is bounded to 120 characters"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A recorded label is bounded to 120 characters"
+        Feature: Development Record
+          Scenario: A recorded label is bounded to 120 characters
+           ✔  Given a project root with givn/ initialised
+           ✘  And a change "demo" with a command whose full text is longer than 120 characters
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:62:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+
+        thread 'main' (2055048) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT 101
+
+        RED category: undefined step — the bounded-label contract is genuinely new
+        (`bound_label` is still `todo!()` and no step binds the fixture), so the
+        runner fails at the first undefined step, not via an oracle omission.
         ```
-  - [ ] **GREEN** — implement `bound_label` and route every label through it
+  - [x] **GREEN** — implement `bound_label` and route every label through it
         (command label, step label, tool label, question first line). Files:
         `src/history.rs`, `src/subprocess.rs` (label source),
         `tests/steps/development_record_steps.rs`. Compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.37s
+        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A recorded label is bounded to 120 characters"
+        Feature: Development Record
+          Scenario: A recorded label is bounded to 120 characters
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" with a command whose full text is longer than 120 characters
+           ✔  When the user runs that command
+           ✔  Then the recorded entry's label is at most 120 characters and marks the truncation
+           ✔  And the record holds no complete command text
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT 0
+
+        Production files created/modified:
+        - `src/history.rs` — `bound_label` implemented (chars, `LABEL_LIMIT = 120`,
+          the mark inside the bound) and the two funnels that build or accept an
+          entry — `HistoryRecorder::entry` (command and `Span` entries) and
+          `HistoryRecorder::record` (caller-built entries) — bound every label
+          through it, so no raw subject can reach the store.
+        - `tests/steps/development_record_steps.rs` — the fixture's long command
+          (`LONG_VERIFY_COMMAND`, 130 characters, really executed), the
+          `the user runs that command` step (which runs `givn check tasks
+          --change demo` through the generic subprocess seam), and the two Then
+          steps (label bound + derivation + `…` mark; the store's bytes carry no
+          complete command text, checked non-vacuously against the recorded
+          bounded label).
+        `src/subprocess.rs` needed no change and has none: the shell choke point
+        already hands its label to `HistoryRecorder::span(..).label(command)`,
+        and `Span`'s entry is built by `HistoryRecorder::entry`, the funnel that
+        bounds it — a second bounding site there would be duplication, not the
+        labelled change.
         ```
-  - [ ] **REFACTOR** — one truncation implementation, no caller truncates
+  - [x] **REFACTOR** — one truncation implementation, no caller truncates
         itself; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        Cleanup: the "exactly one `step` entry under the check command" lookup
+        existed twice (Task 2's reading step and this task's assertions) and is now
+        the one `verified_step_entry` helper, which finds the entry through the
+        command's minted id — never by position. `bound_label` stays the only
+        truncation site in the crate:
+
+        $ grep -rn "truncat\|chars().take" src/ | grep -v "^src/history.rs"
+        src/overlap/fingerprint.rs:131: … chars().take_while(…) …     # unrelated: digit parsing
+        src/spec/route.rs:385:        candidates.truncate(10);        # unrelated: candidate list
+        $ grep -n "bound_label\|LABEL_LIMIT" src/history.rs
+        211:            label: label.map(|label| bound_label(&label)),
+        224:        entry.label = entry.label.map(|label| bound_label(&label));
+        398:pub const LABEL_LIMIT: usize = 120;
+        404:pub fn bound_label(subject: &str) -> String {
+        406:    let mut bounded: String = chars.by_ref().take(LABEL_LIMIT).collect();
+        → both funnels call the one implementation; no caller truncates itself.
+
+        $ cargo fmt --all -- --check                                 EXIT 0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.73s
+        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A recorded label is bounded to 120 characters"
+        Feature: Development Record
+          Scenario: A recorded label is bounded to 120 characters
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" with a command whose full text is longer than 120 characters
+           ✔  When the user runs that command
+           ✔  Then the recorded entry's label is at most 120 characters and marks the truncation
+           ✔  And the record holds no complete command text
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT 0
+
+        The shared helper's other caller still passes unchanged (no behaviour
+        change):
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A verification run is recorded as its own step"
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT 0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
         the scenario title `A recorded label is bounded to 120 characters` in
