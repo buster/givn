@@ -237,7 +237,7 @@ pub fn report_intake(env: &common::TestEnv, payload: &Value) -> std::process::Ou
 /// so a malformed line fails the scenario instead of being skipped, and a
 /// missing store fails it too (the scenario ran a command that records).
 pub fn record_entries(root: &Path) -> Vec<Value> {
-    parse_entries(&store_bytes(root))
+    entries_of(&store_bytes(root))
 }
 
 /// The store's raw bytes. "Append-only" and "never rewritten" are claims about
@@ -249,9 +249,11 @@ pub fn store_bytes(root: &Path) -> Vec<u8> {
         .unwrap_or_else(|error| panic!("read the development record {}: {error}", path.display()))
 }
 
-/// The entries of a store's bytes: one JSON object per line, every line
-/// required to parse.
-fn parse_entries(bytes: &[u8]) -> Vec<Value> {
+/// The entries of a record region: one JSON object per line, every line
+/// required to parse. Callers hand in a byte range of the store — the whole
+/// store, or the bytes appended after a snapshot — so the append-only claims
+/// are asserted on the bytes themselves.
+pub fn entries_of(bytes: &[u8]) -> Vec<Value> {
     let text = std::str::from_utf8(bytes)
         .unwrap_or_else(|error| panic!("the development record is not UTF-8: {error}"));
     text.lines()

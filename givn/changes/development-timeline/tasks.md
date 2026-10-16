@@ -3958,7 +3958,7 @@ name it.
 
 ## Task 17 — `A reported event that does not match the intake contract is rejected without corrupting the record` (`agent-activity-reporting`, added)
 
-- [ ] **Scenario: `A reported event that does not match the intake contract is rejected without corrupting the record`**
+- [x] **Scenario: `A reported event that does not match the intake contract is rejected without corrupting the record`**
   - Design constraints:
     - Per-event validation and rejection: an event whose `kind` is unknown,
       whose `at` is unparsable, or that lacks a required field for its kind is
@@ -3977,23 +3977,195 @@ name it.
     - Assertion shape: stderr names the rejected event; the seed lines are
       unchanged.
     - RED expected failure: both Then steps are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A reported event that does not match the intake contract is rejected without corrupting the record"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        The first run failed on the fixture itself: this scenario's first Given
+        is the change, and the shared `a change "demo" with a recorded history`
+        step expected a project root. The Given now brings up the init root when
+        the scenario did not name one (the rule the reported-activity Given
+        already applies, `tests/steps/development_record_steps.rs`), and the
+        fixture's `When` was written — a real setup action with its own
+        assertions, never a stub — so the RED lands on the new behaviour's
+        assertion step, which is the failure the task predicts:
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A reported event that does not match the intake contract is rejected without corrupting the record"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 6.60s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: A reported event that does not match the intake contract is rejected without corrupting the record
+           ✔  Given a change "demo" with a recorded history
+           ✔  When the agent reports an event that does not match the intake contract
+           ✘  Then the intake names the rejected event
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:45:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+
+        thread 'main' (2445051) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        (The first run of this scenario, before that fixture existed:)
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A reported event that does not match the intake contract is rejected without corrupting the record"
+        Feature: Agent Activity Reporting
+          Scenario: A reported event that does not match the intake contract is rejected without corrupting the record
+           ✘  Given a change "demo" with a recorded history
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:43:5
+              Matched: tests/steps/development_record_steps.rs:655:1
+              Step panicked. Captured output: a project root is required first
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        EXIT=101
+
+        RED category: undefined step — both Then steps are unbound (`the intake
+        names the rejected event` matches no function; the scenario stops there,
+        so `the previously recorded history is unchanged` never runs). The
+        `Given` and the `When` drive the real fixture — a change `demo` with a
+        recorded history (`givn new` + `givn status`), then one contract-
+        violating event (an unmapped `kind`) handed to the real
+        `givn history ingest` on stdin — and the `When` performs that setup
+        without asserting, so the RED signal is the undefined Then. The
+        production path the two Then steps assert already exists from Task 12
+        (`IngestedEvent::validate`, the intake's one validation table, reached
+        through `accept_event`), so the discrimination of both new assertions is
+        proven in the GREEN block below by a controlled omission in the fixture
+        (ORACLE_RED), restored immediately.
         ```
-  - [ ] **GREEN** — implement per-kind validation with named rejections. Files:
+  - [x] **GREEN** — implement per-kind validation with named rejections. Files:
         `src/cli/history.rs`, `tests/steps/agent_activity_reporting_steps.rs`,
         `tests/steps/development_timeline_support.rs` (seeded-record builder).
         Compile first, re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.18s
+        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A reported event that does not match the intake contract is rejected without corrupting the record"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 5.21s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: A reported event that does not match the intake contract is rejected without corrupting the record
+           ✔  Given a change "demo" with a recorded history
+           ✔  When the agent reports an event that does not match the intake contract
+           ✔  Then the intake names the rejected event
+           ✔  And the previously recorded history is unchanged
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT 0
+
+        Production files: **none for this scenario** — investigated, not
+        assumed. The contract the scenario asserts is already carried by the
+        intake Task 12 built, and this scenario drives exactly that path: the one
+        validation table per kind lives in `src/cli/history.rs::IngestedEvent::validate`
+        (unparsable `at`, unknown `kind`, a required field missing for its kind),
+        it is reached through the one gate into the append path
+        (`fn accept_event`), `fn warn_rejected` names the rejected event on
+        stderr by its 1-based payload position and its kind, and a payload whose
+        every event was rejected returns before the store is touched
+        (`if entries.is_empty() { return Ok(()); }`). `git log -S "unknown kind"
+        -- src/cli/history.rs` → `453ce716` (Task 12) is where the table was
+        written. No production line was added, so both new assertions were
+        proven load-bearing below.
+
+        Fixture and steps (`tests/steps/agent_activity_reporting_steps.rs`):
+        - `When the agent reports an event that does not match the intake
+          contract` — snapshots the record's bytes, then hands
+          `givn history ingest` (the real binary, payload on stdin) a payload
+          whose only event carries `kind: "teleport"`. The snapshot, the payload
+          and the violating event's position are kept in the capability's state,
+          so the assertions read what was really sent.
+        - `Then the intake names the rejected event` — exactly one `warning:`
+          line naming the rejection, carrying the event's 1-based position
+          (`event 1`) and its kind, and no `error:` line on stderr.
+        - `Then the previously recorded history is unchanged` — the snapshot
+          bytes are still the store's first bytes, byte for byte; everything the
+          payload appended is `givn`-sourced (the intake's own command entry,
+          which the design records normally); and the whole record holds no
+          agent-sourced entry, so the rejected event contributed nothing.
+        `tests/steps/development_timeline_support.rs` — `entries_of`, the
+        byte-region parser `record_entries` now shares, so a scenario can assert
+        the appended region alone instead of a re-serialized view.
+        `tests/steps/development_record_steps.rs` — the shared recorded-history
+        Given brings up its init root when the scenario's first Given is the
+        change (three lines, the same rule the reported-activity Given already
+        applied).
+        Fixture note: this scenario's "seeded record" is the shared recorded-
+        history fixture (real `givn new` + `givn status` runs); a builder that
+        writes chosen record lines by hand is not needed by any assertion here
+        and arrives with the report scenarios that need chosen durations
+        (Tasks 25+), never as unused scaffolding.
+
+        Discrimination (ORACLE_RED) — with production already holding, a
+        controlled omission in the isolated fixture proves each assertion fails
+        without its input property, and the fixture is restored immediately:
+
+        (a) the violating event made acceptable (a mapped `tool` event, so the
+            payload is read and nothing is rejected):
+        ✘  Then the intake names the rejected event
+           Step panicked. Captured output: assertion `left == right` failed: expected the payload's one contract-violating event to be named on stderr: []
+             left: 0
+            right: 1
+        EXIT=101
+
+        (b) an acceptable event added beside the violating one (the violating
+            event first, so it is still rejected and named):
+        ✔  Then the intake names the rejected event
+        ✘  And the previously recorded history is unchanged
+           Step panicked. Captured output: assertion `left == right` failed: the rejected event was recorded: {"at":"2026-10-16T09:12:44.321Z","duration_ms":1240,"id":4,"kind":"tool","label":"cargo test --locked --test features_runner","name":"bash","outcome":"ok","schema":1,"scope":{"id":"demo","kind":"change"},"source":"agent"}
+             left: String("agent")
+            right: String("givn")
+        EXIT=101
+
+        With the fixture restored the canonical run is green again (the run
+        pasted above, EXIT 0): the record really is untouched and the rejection
+        really is named.
         ```
-  - [ ] **REFACTOR** — one validation table per kind, no ad-hoc checks in the
+  - [x] **REFACTOR** — one validation table per kind, no ad-hoc checks in the
         append path; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The intake keeps exactly one validation table (`IngestedEvent::validate`
+        in `src/cli/history.rs`, one match arm per kind) and one gate into the
+        append path (`accept_event`), so there is no ad-hoc check in the append
+        path to remove and no production change was needed for this scenario.
+        The fixture side now reaches the capability's world slot through one
+        accessor instead of nine copies of the same `get_or_insert_with`:
+
+        $ cargo fmt --all -- --check
+        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.90s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A reported event that does not match the intake contract is rejected without corrupting the record"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 4.00s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: A reported event that does not match the intake contract is rejected without corrupting the record
+           ✔  Given a change "demo" with a recorded history
+           ✔  When the agent reports an event that does not match the intake contract
+           ✔  Then the intake names the rejected event
+           ✔  And the previously recorded history is unchanged
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT 0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `A reported event that does not match the intake

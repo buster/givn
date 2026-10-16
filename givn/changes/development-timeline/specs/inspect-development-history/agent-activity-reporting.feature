@@ -38,7 +38,7 @@ Feature: Agent Activity Reporting
     Then the record marks that turn's token usage as unavailable
     And the turn is still recorded
 
-  @givn.added @wip
+  @givn.added
   Scenario: A reported event that does not match the intake contract is rejected without corrupting the record
     Given a change "demo" with a recorded history
     When the agent reports an event that does not match the intake contract
