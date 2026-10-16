@@ -6011,10 +6011,26 @@ name it.
         8 steps (8 passed)
         EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+  - [x] **COMMIT** — `d098946c1e4a1fbc1c30dceac386a748f5aaeea3` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `Maki's reporter keeps the harness's own tool
         duration and marks what its harness omits` in the body. Record the
         revision identifier.
+        ```
+        $ GIVN_ATTRIBUTION_ACTIVE=1 GIVN_ATTRIBUTION_LLM=deepseek/deepseek-flash \
+          GIVN_ATTRIBUTION_REASONING=max GIVN_ATTRIBUTION_HARNESS=omp \
+          ./target/debug/givn commit -m "feat(agent-activity-reporting): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        Maki's reporter keeps the harness's own tool duration and marks what its harness omits"
+        [19:17:08] committed revision on the Git backend
+        EXIT=0
+
+        The revision carries the reporter assets, the full `maki` target, the
+        two merged files' code, the intake's `phase` kind and subagent
+        unavailable marker, the driver and its `maki` rows, the setup script and
+        the two workflow prerequisites, the scenario's `@wip` removal, this task
+        file's evidence, and the refreshed `@e2e` visual evidence the scope run
+        produced (12 screenshot pairs).
+        ```
 
 ## Task 25 — `The report ranks the longest single step first` (`development-report`, added)
 
