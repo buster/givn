@@ -7,6 +7,7 @@
 //! a harness's reported activity reaches the record, and it validates every
 //! event it is handed before anything is written.
 
+use std::collections::BTreeMap;
 use std::io::Read;
 use std::path::Path;
 
@@ -56,6 +57,17 @@ pub struct IngestedEvent {
     /// The harness's own outcome word (`kind: "tool"`).
     #[serde(default)]
     pub outcome: Option<String>,
+    /// The harness's own status word (`kind: "subagent"`): a terminal word
+    /// closes the span a start opened, a running word opens one.
+    #[serde(default)]
+    pub status: Option<String>,
+    /// The agent definition that ran the subagent (`kind: "subagent"`).
+    #[serde(default)]
+    pub agent: Option<String>,
+    /// The subagent's own identity, as the harness reports it
+    /// (`kind: "subagent"`, e.g. `Architect.Scout`).
+    #[serde(default)]
+    pub subagent: Option<String>,
 }
 
 impl IngestedEvent {
@@ -73,42 +85,101 @@ impl IngestedEvent {
         match self.kind.as_str() {
             "tool" if self.tool.is_some() => Ok(()),
             "tool" => Err("missing required field `tool`".to_string()),
+            "subagent" if self.subagent.is_some() => Ok(()),
+            "subagent" => Err("missing required field `subagent`".to_string()),
             kind => Err(format!("unknown kind `{kind}`")),
         }
     }
 
-    /// The record entries this event contributes, in payload order — empty when
-    /// the event is only the start of a span a later event closes. Only an
-    /// event [`IngestedEvent::validate`] accepted reaches this point, so a kind
-    /// the table rejects can never disappear silently.
-    fn entries(&self, scope: &Scope) -> Vec<HistoryEntry> {
+    /// Append this event's record plan to `batch`: one entry per reported span,
+    /// with each entry's parent expressed as the batch index of the entry it is
+    /// nested in — the store resolves the index to the id minted in the same
+    /// append, so a parent link can never dangle. Only an event
+    /// [`IngestedEvent::validate`] accepted reaches this point, so a kind the
+    /// table rejects can never disappear silently.
+    fn map(&self, scope: &Scope, batch: &mut IntakeBatch) {
         match self.kind.as_str() {
-            "tool" => self.tool_entry(scope).into_iter().collect(),
-            _ => Vec::new(),
+            // A reported span is nested in the turn enclosing the flush, when
+            // the payload reported one.
+            "tool" => {
+                if let Some(tool) = self.tool.as_deref() {
+                    batch.push(self.tool_entry(scope, tool), batch.turn);
+                }
+            }
+            "subagent" => {
+                if let Some(identity) = self.subagent.as_deref() {
+                    self.map_subagent(scope, identity, batch);
+                }
+            }
+            _ => {}
         }
     }
 
     /// The one `tool` entry a reported tool call produces: the harness tool
     /// name as the entry's name, the reported subject through the record's one
     /// bounded-label path, and the harness's own measured duration.
-    fn tool_entry(&self, scope: &Scope) -> Option<HistoryEntry> {
-        let tool = self.tool.as_deref()?;
+    fn tool_entry(&self, scope: &Scope, tool: &str) -> HistoryEntry {
         let mut entry = HistoryEntry::reported(scope.clone(), "tool", tool, &self.at);
         entry.label = self.label.as_deref().map(bound_label);
         entry.duration_ms = self.duration_ms;
-        entry.outcome = self.reported_outcome();
-        Some(entry)
+        entry.outcome = self.outcome_word();
+        entry
     }
 
-    /// The record outcome this event reports: its `outcome` word, and `unknown`
-    /// when it reports none — a reported word outside the record's vocabulary
-    /// is never promoted to a passing state.
-    fn reported_outcome(&self) -> String {
+    /// One reported subagent span: a completion closes the start this payload
+    /// reported (or stands alone when the harness measured the span itself),
+    /// and an unclosed start still becomes one unmeasured entry — losing a
+    /// duration never loses an entry.
+    fn map_subagent(&self, scope: &Scope, identity: &str, batch: &mut IntakeBatch) {
+        let Some(outcome) = self.reported_outcome() else {
+            // A start is remembered until its completion: one reported span
+            // yields one entry, never a pair.
+            batch.spans.open(
+                identity,
+                SpanStart {
+                    at: self.at.clone(),
+                    agent: self.agent.clone(),
+                    parent: batch.turn,
+                },
+            );
+            return;
+        };
+        let start = batch.spans.close(identity);
+        let agent = self
+            .agent
+            .clone()
+            .or_else(|| start.as_ref().and_then(|start| start.agent.clone()));
+        let mut entry = HistoryEntry::reported(scope.clone(), "subagent", identity, &self.at);
+        // The harness's own measured duration where it reports one, otherwise
+        // the span between the two reported events.
+        entry.duration_ms = self.duration_ms.or_else(|| {
+            start
+                .as_ref()
+                .and_then(|start| crate::history::reported_duration_ms(&start.at, &self.at))
+        });
+        entry.outcome = outcome.to_string();
+        entry.data = Some(subagent_data(agent.as_deref(), identity));
+        // The span is nested in the turn that reported it, when the payload
+        // reported one, else in the turn its start was reported inside.
+        let parent = start.and_then(|start| start.parent).or(batch.turn);
+        batch.push(entry, parent);
+    }
+
+    /// The record outcome this event reports, or `None` when it reports only a
+    /// state the record has no outcome for (a harness's own `started`/`running`
+    /// word).
+    fn reported_outcome(&self) -> Option<&'static str> {
         self.outcome
             .as_deref()
             .and_then(outcome_of)
-            .unwrap_or("unknown")
-            .to_string()
+            .or_else(|| self.status.as_deref().and_then(outcome_of))
+    }
+
+    /// The record outcome word the entry carries: the reported outcome, and
+    /// `unknown` when the event reports none — a reported word outside the
+    /// record's vocabulary is never promoted to a passing state.
+    fn outcome_word(&self) -> String {
+        self.reported_outcome().unwrap_or("unknown").to_string()
     }
 }
 
@@ -200,7 +271,11 @@ pub fn ingest() -> Result<()> {
     // override (a scope this project does not have is a per-event rejection,
     // never a silent fallback) or the project's own resolution.
     let scope = payload_scope(&root, &payload);
-    let mut entries = accepted_entries(&scope, payload.events);
+    let IntakeBatch {
+        mut entries,
+        parents,
+        ..
+    } = accepted_entries(&scope, payload.events);
     if entries.is_empty() {
         return Ok(());
     }
@@ -208,7 +283,7 @@ pub fn ingest() -> Result<()> {
     // The record's ignore entries are re-asserted on every record write, so a
     // store that predates the repository still becomes ignored.
     crate::history::ensure_ignored(&root);
-    if let Err(error) = store.append(&mut entries) {
+    if let Err(error) = store.append_linked(&mut entries, &parents) {
         eprintln!(
             "warning: the development record could not be written to {}: {error}",
             store.path().display()
@@ -251,39 +326,127 @@ fn payload_scope(root: &Path, payload: &IntakePayload) -> std::result::Result<Sc
     Ok(crate::history::resolve_scope(root))
 }
 
-/// The entries a payload contributes: every event is read in payload order,
-/// each accepted event contributes its entries, and each rejected event is
-/// named on stderr with the reason — the payload's remaining events are still
-/// processed, because a reporter must never be able to block or corrupt the
-/// record.
-fn accepted_entries(
-    scope: &std::result::Result<Scope, String>,
-    events: Vec<Value>,
-) -> Vec<HistoryEntry> {
-    let mut entries: Vec<HistoryEntry> = Vec::new();
+/// The record a payload contributes: every event is read in payload order, each
+/// accepted event contributes its entries to the batch plan, and each rejected
+/// event is named on stderr with the reason — the payload's remaining events
+/// are still processed, because a reporter must never be able to block or
+/// corrupt the record.
+fn accepted_entries(scope: &std::result::Result<Scope, String>, events: Vec<Value>) -> IntakeBatch {
+    let mut batch = IntakeBatch::default();
     for (index, raw) in events.into_iter().enumerate() {
         let kind = raw.get("kind").and_then(Value::as_str).map(str::to_owned);
-        match accepted_event(scope, raw) {
-            Ok(contributed) => entries.extend(contributed),
-            Err(reason) => warn_rejected(index, kind.as_deref(), &reason),
+        if let Err(reason) = accept_event(scope, raw, &mut batch) {
+            warn_rejected(index, kind.as_deref(), &reason);
         }
     }
-    entries
+    // A reported start the payload never completed still becomes one unmeasured
+    // entry.
+    if let Ok(scope) = scope {
+        batch.finish(scope);
+    }
+    batch
 }
 
-/// The entries one raw event contributes, or the reason it is rejected. Both
-/// gates an event passes live here — the payload's scope (a named scope this
-/// project does not have rejects every event) and the event's own validation
-/// ([`IngestedEvent::validate`]) — so no kind can reach the append path
-/// without them.
-fn accepted_event(
+/// Read one raw event into the batch plan, or return the reason it is rejected.
+/// Both gates an event passes live here — the payload's scope (a named scope
+/// this project does not have rejects every event) and the event's own
+/// validation ([`IngestedEvent::validate`]) — so no kind can reach the append
+/// path without them.
+fn accept_event(
     scope: &std::result::Result<Scope, String>,
     raw: Value,
-) -> std::result::Result<Vec<HistoryEntry>, String> {
+    batch: &mut IntakeBatch,
+) -> std::result::Result<(), String> {
     let scope = scope.as_ref().map_err(Clone::clone)?;
     let event: IngestedEvent = serde_json::from_value(raw).map_err(|error| error.to_string())?;
     event.validate()?;
-    Ok(event.entries(scope))
+    event.map(scope, batch);
+    Ok(())
+}
+
+/// The record one payload contributes, in payload order: the entries the store
+/// will append, each with the batch index of the entry it is nested in, plus
+/// the subagent starts still waiting for their completion and the turn
+/// enclosing this flush's later spans.
+#[derive(Debug, Default)]
+struct IntakeBatch {
+    entries: Vec<HistoryEntry>,
+    parents: Vec<Option<usize>>,
+    /// The batch index of the turn entry the payload reported, when it reported
+    /// one: a turn is the reporter's flush boundary, so every later span of the
+    /// same flush is nested in it.
+    turn: Option<usize>,
+    /// The open spans the payload reported, keyed by the harness's own call
+    /// id: its start and its completion become exactly one entry, never a pair.
+    spans: OpenSpans,
+}
+
+impl IntakeBatch {
+    /// Plan one entry, nested in the batch entry at `parent` when the payload
+    /// reported an enclosing entry.
+    fn push(&mut self, entry: HistoryEntry, parent: Option<usize>) {
+        self.parents.push(parent);
+        self.entries.push(entry);
+    }
+
+    /// Close the batch: a start the payload never closed still becomes one
+    /// unmeasured entry, with the outcome the record keeps for a duration it
+    /// does not have — losing a duration never loses an entry.
+    fn finish(&mut self, scope: &Scope) {
+        for (identity, start) in self.spans.take_unclosed() {
+            let mut entry = HistoryEntry::reported(scope.clone(), "subagent", &identity, &start.at);
+            entry.data = Some(subagent_data(start.agent.as_deref(), &identity));
+            self.push(entry, start.parent);
+        }
+    }
+}
+
+/// The open spans of one payload: a span whose start and completion are two
+/// reported events — the shape a subagent's lifecycle and a question wait
+/// share — is paired here once, keyed by the harness's own call id, so both
+/// kinds express the pairing through the same mechanism.
+#[derive(Debug, Default)]
+struct OpenSpans {
+    starts: BTreeMap<String, SpanStart>,
+}
+
+impl OpenSpans {
+    /// Open a span at the harness's own call id.
+    fn open(&mut self, id: &str, start: SpanStart) {
+        self.starts.insert(id.to_string(), start);
+    }
+
+    /// Close the span `id` names, returning the start that opened it.
+    fn close(&mut self, id: &str) -> Option<SpanStart> {
+        self.starts.remove(id)
+    }
+
+    /// Take the starts no completion closed.
+    fn take_unclosed(&mut self) -> BTreeMap<String, SpanStart> {
+        std::mem::take(&mut self.starts)
+    }
+}
+
+/// One reported span start: where the span opened, the agent definition that
+/// ran it (`kind: "subagent"`), and the turn it was reported inside (when the
+/// payload reported one).
+#[derive(Debug)]
+struct SpanStart {
+    at: String,
+    agent: Option<String>,
+    parent: Option<usize>,
+}
+
+/// The `data` a subagent entry carries: the subagent's own identity (the
+/// report's fan-out view groups by it) and the agent definition that ran it,
+/// where the harness reported one.
+fn subagent_data(agent: Option<&str>, identity: &str) -> Value {
+    let mut data = serde_json::Map::new();
+    if let Some(agent) = agent {
+        data.insert("agent".to_string(), Value::String(agent.to_string()));
+    }
+    data.insert("subagent".to_string(), Value::String(identity.to_string()));
+    Value::Object(data)
 }
 
 /// The intake's one rejection path: the rejected event is named on stderr by

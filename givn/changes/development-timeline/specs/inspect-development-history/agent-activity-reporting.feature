@@ -10,7 +10,7 @@ Feature: Agent Activity Reporting
     Then the development record holds one agent entry for that tool call
     And that entry names the tool and its measured duration
 
-  @givn.added @wip
+  @givn.added
   Scenario: A subagent's activity is attributed to that subagent
     Given a change "demo" with reported agent activity
     When the agent reports a subagent that started and completed
