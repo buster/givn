@@ -5841,10 +5841,18 @@ name it.
         end for the elapsed time, and the spans whose duration the record does
         not carry — and the superseded per-number scans (`elapsed_ms`, the
         `unmeasured_durations` filter) are gone. The ranking lives in the single
-        `ranked_steps` function the model's summary carries, so the summary list,
-        the axis (Task 29) and the details view all read the record's one
-        ranking instead of sorting again. No behaviour change: same ranking,
-        same totals, same rendered text.
+        `ranked_steps` function the model's summary carries (`longest_steps`), so
+        the summary list is the record's one ranking and no later view has to
+        sort a second time: Task 29's axis reads the same model, and Task 30's
+        subagent figures reuse the same aggregation shape. No behaviour change:
+        same ranking, same totals, same rendered text.
+
+        Scope note (recorded on review of this box's own wording): the first
+        draft said the axis "reads the ranking". It does not — the axis draws
+        every span from the window's `at` order (Task 29) and reads the model,
+        never a private sort; the ranking is what the summary list and the
+        details panel show. The wording above is the accurate one; no code
+        changed for this note.
 
         $ cargo fmt --all -- --check
         FMT OK
