@@ -795,7 +795,7 @@ name it.
 
 ## Task 1 — `A recorded step keeps a measured duration and its outcome` (`development-record`, added)
 
-- [ ] **Scenario: `A recorded step keeps a measured duration and its outcome`**
+- [x] **Scenario: `A recorded step keeps a measured duration and its outcome`**
   - Design constraints:
     - Feature `inspect-development-history/development-record.feature`; steps in
       `tests/steps/development_record_steps.rs`; fixtures in
@@ -825,7 +825,7 @@ name it.
       support file), not a mocked recorder.
     - RED expected failure: both Then steps are undefined → skipped → the
       `.fail_on_skipped()` contract makes the runner exit non-zero.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A recorded step keeps a measured duration and its outcome"`
         → must exit non-zero. Paste it.
         ```
@@ -854,7 +854,7 @@ name it.
         the scenario failed instead of passing or skipping — the `.fail_on_skipped()` contract is the one
         S1's Probe A proved live on this same runner.
         ```
-  - [ ] **GREEN** — replace the stubs with the real assertions; implement the
+  - [x] **GREEN** — replace the stubs with the real assertions; implement the
         record owner and the dispatch wrapper. Files: `src/history.rs`,
         `src/main.rs`, `tests/steps/development_record_steps.rs`,
         `tests/steps/development_timeline_support.rs`. Compile first
@@ -895,7 +895,7 @@ name it.
           tests/steps/mod.rs   GivnWorld gains `last_command`, set by the generic `the user runs …`
                                step, so "that command" is the command the scenario actually ran
         ```
-  - [ ] **REFACTOR** — remove duplication in the recorder/store surface and the
+  - [x] **REFACTOR** — remove duplication in the recorder/store surface and the
         fixture helper, no behaviour change; re-run the same command → still
         exit 0. Paste it.
         ```
@@ -925,11 +925,22 @@ name it.
         became `enumerate()` (clippy's `explicit_counter_loop` flagged the counter form, which is why
         clippy is pasted here — it was red for that one lint and is green now).
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` (the
+  - [x] **COMMIT** — `83fcaf172a55f6dc8b81183d7225b8917d9e8d80` — `feat(development-record): <release note>` (the
         release note verbatim as the subject; body carries the scenario title
         `A recorded step keeps a measured duration and its outcome`). Record the
         revision identifier here, and check this box only when the evidence
         above and the revision are filled in.
+        ```
+        $ givn commit -m "feat(development-record): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        A recorded step keeps a measured duration and its outcome"
+        [13:16:18] committed revision on the Git backend
+        $ git rev-parse HEAD
+        83fcaf172a55f6dc8b81183d7225b8917d9e8d80
+        ```
+        One atomic revision: RED+GREEN+REFACTOR together, touching the delta spec (this scenario's
+        `@wip` removed), the production files (`src/history.rs`, `src/main.rs`), the step files, and
+        this file's evidence — 7 files, not a spec-only or stub-only commit.
 
 ## Task 2 — `A verification run is recorded as its own step` (`development-record`, added)
 

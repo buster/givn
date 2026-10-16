@@ -51,14 +51,25 @@ pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
                 known.join(", ")
             );
         }
-        // Run mandatory checks first, then custom hooks.
-        run_mandatory_checks(
+        // Run mandatory checks first, then custom hooks. The mandatory-check
+        // boundary is one `phase` entry, parented to this command's entry.
+        let phase = crate::history::current().map(|recorder| {
+            recorder
+                .span("mandatory checks")
+                .kind("phase")
+                .label(artifact_id)
+        });
+        let checks = run_mandatory_checks(
             artifact_id,
             &manifest,
             &features_path,
             &project_root,
             change,
-        )?;
+        );
+        if let Some(phase) = phase {
+            phase.mark(if checks.is_ok() { "ok" } else { "failed" });
+        }
+        checks?;
         crate::hooks::run_artifact_hooks(artifact_id, &manifest, &features_path)
     } else {
         // Run hooks for all artifacts whose output exists.
