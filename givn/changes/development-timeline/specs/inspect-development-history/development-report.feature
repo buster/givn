@@ -35,7 +35,7 @@ Feature: Development Report
     When the developer generates the development report for "demo"
     Then the report orders the entries by their recorded end time
 
-  @givn.added @wip
+  @givn.added
   Scenario: The report names the agent's fan-out into small subagents
     Given a change "demo" whose record holds many short subagents
     When the developer generates the development report for "demo"
