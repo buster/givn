@@ -6865,6 +6865,22 @@ name it.
         appears anywhere — the same "nothing for the browser to fetch beyond the
         document itself" claim, aligned with the reviewed design. Revision of
         that step-file edit: see the alignment commit recorded below.
+        Alignment revision: `d08992027b8b4d9dcbbb4f0afcf9e73ef0eb3657` —
+        `fix(development-report): align the no-network assertion with the
+        design's inline script`.
+
+        Assertion adjusted 2026-10-16 (E-tier), recorded here without rewriting
+        the pasted evidence above: the "exactly one `<script` element (the
+        inline model)" count this block named was over-strict. `design.md`
+        §Report Generation requires the asset's *inline script* to build the
+        interactive axis from the model, so a design-conformant report
+        necessarily carries the model payload element **plus** that inline
+        interaction script. The Then step in
+        `tests/steps/development_report_steps.rs` now asserts exactly one
+        `<script id="report-model">` and that no `<script src` / `src="http"`
+        appears anywhere — the same "nothing for the browser to fetch beyond the
+        document itself" claim, aligned with the reviewed design. Revision of
+        that step-file edit: see the alignment commit recorded below.
 
         Nothing was split out to load: the report stays one document with its
         one inline `<style>` and its one inline model script, and the asset was
@@ -8848,7 +8864,7 @@ name it.
 
 ## Task E6 — `Consumer opens the generated development report in a browser` (`@e2e`, `development-report`, Scenario Outline, `change` and `topic` rows)
 
-- [ ] **Scenario: `Consumer opens the generated development report in a browser`** (Examples: `change`, `topic`)
+- [x] **Scenario: `Consumer opens the generated development report in a browser`** (Examples: `change`, `topic`)
   - Design constraints:
     - Matrix row: `development-report: open the report in a browser` — real
       interface **Web UI**, driving mechanism Playwright:
@@ -8906,7 +8922,7 @@ name it.
         The RED is therefore the missing fixture, generation, browser-open and
         rendered-surface assertion path, never a vacuous setup.
         ```
-  - [ ] **GREEN** — implement the browser-open steps and the report's heading,
+  - [x] **GREEN** — implement the browser-open steps and the report's heading,
         timeline SVG, and accessible names. Files:
         `tests/steps/development_report_e2e_steps.rs`,
         `tests/common/browser.rs` / `tests/e2e/browser-driver.mjs` (any gap the
@@ -8914,12 +8930,157 @@ name it.
         labels), plus the two evidence screenshots. Compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) + the two screenshot paths -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.91s
+        BUILD=0
+        $ node --check /tmp/report-layer.mjs      # the asset's inline layer, extracted
+        NODE_CHECK=0
+        $ cargo fmt --all -- --check
+        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.14s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer opens the generated development report in a browser"
+        Feature: Development Report
+          Scenario Outline: Consumer opens the generated development report in a browser
+           ✔  Given a change "demo" with a recorded history
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✔  Then the browser shows the report heading and the development timeline
+           ✔  And the browser shows the longest recorded step with its duration
+          Scenario Outline: Consumer opens the generated development report in a browser
+           ✔  Given a topic "demo" with a recorded history
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✔  Then the browser shows the report heading and the development timeline
+           ✔  And the browser shows the longest recorded step with its duration
+        [Summary]
+        1 feature
+        2 scenarios (2 passed)
+        10 steps (10 passed)
+        GREEN_EXIT=0
+
+        Evidence pair (the outline has one slug; the topic row runs last and
+        writes the pair the commit carries — the populated report at both
+        contract viewports, captured after the final assertion with animations
+        disabled by the driver):
+        $ ls -l givn/changes/development-timeline/evidence/visual/consumer-opens-the-generated-development-report-in-a-browser/
+        -rw-r--r-- 66470 desktop.png
+        -rw-r--r-- 44956 mobile.png
+        $ file …/*.png
+        …/mobile.png:  PNG image data, 360 x 780, 8-bit/color RGB, non-interlaced
+        …/desktop.png: PNG image data, 1920 x 1080, 8-bit/color RGB, non-interlaced
+
+        Production files (this scenario's own):
+        - `assets/timeline/report.html` — the whole interactive layer: the
+          script parses the model payload element, builds the axis, the band
+          rows, the phase line, the spans (focusable, with `data-entry-id`,
+          `data-kind`, `data-at`, `data-stage`, `data-duration-ms`, the
+          accessible name `<name>, <duration>`, and the label-omitted state
+          where the duration is drawn inline or the SVG title carries name and
+          duration), and the aggregate markers for the entries a window cannot
+          tell apart. It is built programmatically — no markup text, no
+          `class="…"` literal, no remote reference — so a recorded label can
+          never become a node and the empty-state document still carries none of
+          the axis markers Task 32's assertions look for. The landmarks the
+          contract names are real: `<header>` around the heading, `<main>` for
+          the view, `<aside>` for the details region; and the responsive rules
+          the design system's breakpoints state (mobile: the horizontally
+          scrollable axis; from 720px: the summary beside the timeline; from
+          1200px with the panel open: the panel on the right).
+        - `src/cli/timeline.rs` — one rendering defect the browser surfaced and
+          the visual baseline's "no visible content is duplicated" forbids: the
+          summary's unmeasured-duration note rendered "6 recorded duration not
+          measured not measured" (the helper's own text already ends in "not
+          measured" and the call site appended it again). The doubled phrase is
+          gone; the note still states every missing duration.
+        - `tests/steps/development_report_e2e_steps.rs` — this outline's steps:
+          the topic-row Given (the shared `seed_ideation_topic` fixture), the
+          report-generation Given for either scope, the browser-open When, and
+          the two Thens — the rendered heading/timeline/landmark/accessible-name
+          assertions with the Tab-reachability and visible-focus-ring check, and
+          the longest-recorded-step assertion (the record's own longest measured
+          entry, its accessible name, and the browser's own text for it).
+        - the two evidence screenshots above.
+
+        The accessibility assertions the design leaves to the e2e tier are
+        asserted here, at every interaction, by reading the browser's own DOM
+        and focus state: the page's real `title`, exactly one `h1`, the
+        `header`/`main`/`aside` landmarks, the timeline `svg`'s accessible name,
+        every drawn span's accessible name (`<name>, <duration>`) and
+        `tabindex`, and every span reached by real `Tab` presses with a focus
+        ring the browser really rendered (the accent stroke for a span, the
+        outline for a control) — never a class name the page wrote.
+
+        The two rows' records, stated plainly rather than implied: the change
+        row opens the record the shared Given really produced (`givn new demo` +
+        `givn status --change demo`, whose change scope holds the recorded
+        `status` command as its longest measured entry), and the topic row opens
+        the topic fixture's own steps (`givn instructions ideation · 20 s`,
+        `givn instructions eventstorming · 10 m`, `givn instructions usecase ·
+        2 m`). The longest recorded step the second Then names is therefore the
+        record's own longest measured entry in each row — read from the store,
+        never a fixture constant — and the browser is required to draw it and to
+        carry its name and duration in the element's own text and its accessible
+        name.
         ```
-  - [ ] **REFACTOR** — one page-open helper shared by the browser scenarios;
+  - [x] **REFACTOR** — one page-open helper shared by the browser scenarios;
         re-run (both rows) → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The page-open path is now one helper, `open_report`, used by this
+        outline's When and by the CLI evidence capture: one navigation through
+        the driver's `file://` URL, one context per scenario, no second page and
+        no second browser. Everything the browser tier reads stays in the
+        asset's single script, so there is one renderer to drive.
+        $ grep -n "fn open_report\|open_report(world)" tests/steps/development_report_e2e_steps.rs
+        149:fn open_report(world: &mut GivnWorld) {
+        165:    open_report(world);
+        482:    open_report(world);
+
+        $ cargo fmt --all -- --check        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.14s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer opens the generated development report in a browser"
+        Feature: Development Report
+          Scenario Outline: Consumer opens the generated development report in a browser
+           ✔  Given a change "demo" with a recorded history
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✔  Then the browser shows the report heading and the development timeline
+           ✔  And the browser shows the longest recorded step with its duration
+          Scenario Outline: Consumer opens the generated development report in a browser
+           ✔  Given a topic "demo" with a recorded history
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✔  Then the browser shows the report heading and the development timeline
+           ✔  And the browser shows the longest recorded step with its duration
+        [Summary]
+        1 feature
+        2 scenarios (2 passed)
+        10 steps (10 passed)
+        REFACTOR_EXIT=0
+
+        Both rows re-ran in the one process this outline unit is, and the
+        refactor refreshed the evidence pair from the final code (44956/66470
+        bytes, 360x780 and 1920x1080). The regular scope is untouched and still
+        green with the asset's new structure:
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e
+             Summary [   3.853s] 35 tests run: 35 passed, 8 skipped
+        NON_E2E_EXIT=0
+
+        Two visual corrections the browser's own rendering exposed while the
+        tier was driven (both in the asset, both visible in the evidence pair):
+        the axis' last tick label was clipped at the viewBox edge and is now
+        anchored back so its own text fits inside the axis, and the mobile
+        viewport squeezed the whole 1000-unit axis into 360px — it is now the
+        horizontally scrollable axis the design system's breakpoint table names
+        (`min-width: 680px` with `overflow-x: auto` below 720px), so the mobile
+        capture shows a readable axis instead of an unreadable squeeze.
         ```
   - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
         title `Consumer opens the generated development report in a browser` in

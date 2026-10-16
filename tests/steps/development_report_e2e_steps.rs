@@ -10,7 +10,10 @@
 
 use std::path::PathBuf;
 
-use cucumber::{given, then};
+use cucumber::{given, then, when};
+use serde_json::{Value, json};
+
+use givn::history::Scope;
 
 use super::GivnWorld;
 use super::development_timeline_support as support;
@@ -20,6 +23,9 @@ use crate::common::browser::{self, BrowserDriver};
 /// The `@e2e` CLI scenario that generates the report, spelled as the delta
 /// feature spells it because the visual gate slugifies exactly this text.
 const GENERATE_SCENARIO: &str = "Consumer generates the development report for a change";
+
+/// The `@e2e` browser outline that opens the report in a real browser.
+const OPEN_SCENARIO: &str = "Consumer opens the generated development report in a browser";
 
 /// The report's file name inside the scenario's own fixture root: what the
 /// `--out` invocation writes and what the browser scenarios then open.
@@ -39,6 +45,9 @@ pub(crate) struct DevelopmentReportE2eState {
     /// transitions the written report's assertions read their expectations
     /// from.
     pub(crate) seeded: Option<support::SeededReportHistory>,
+    /// The scope the scenario's report covers, where its Given named one: a
+    /// change, an ideation topic, or the project.
+    pub(crate) scope: Option<Scope>,
     /// The scenario's browser, started on the first browser step: one driver,
     /// one browser, one context, so a page state survives across the steps.
     pub(crate) browser: Option<BrowserDriver>,
@@ -137,6 +146,15 @@ fn attribute(markup: &str, name: &str) -> Option<String> {
         .map(str::to_string)
 }
 
+/// Open the report the scenario's own command wrote in the scenario's one
+/// browser: the page every browser step then drives. One navigation through the
+/// driver's `file://` URL — the report is one self-contained file, so there is
+/// no server and no port — and no step opens a second context.
+fn open_report(world: &mut GivnWorld) {
+    let url = browser::file_url(&report_path(world));
+    browser(world).goto(&url);
+}
+
 /// The change-wide visual gate's evidence for a CLI scenario: open the report
 /// the scenario's own command wrote in the real browser and capture the
 /// contract's pair (`mobile.png` 360x780, `desktop.png` 1920x1080) under
@@ -144,10 +162,8 @@ fn attribute(markup: &str, name: &str) -> Option<String> {
 /// assertion, animations disabled by the driver, from the scenario's one
 /// context.
 fn commit_evidence(world: &mut GivnWorld, scenario: &str) {
-    let path = report_path(world);
-    let driver = browser(world);
-    driver.goto(&browser::file_url(&path));
-    driver.capture_evidence(scenario);
+    open_report(world);
+    browser(world).capture_evidence(scenario);
 }
 
 #[given(
@@ -243,4 +259,339 @@ fn report_places_the_post_transition_step(world: &mut GivnWorld, phase: String) 
         "the report places the step in a phase its row does not name: {phase}"
     );
     commit_evidence(world, GENERATE_SCENARIO);
+}
+
+/// The scope the scenario's report covers: the one its Given named, or the
+/// change the shared recorded-history Given created and recorded.
+fn report_scope(world: &GivnWorld) -> Scope {
+    if let Some(scope) = world
+        .development_report_e2e
+        .as_ref()
+        .and_then(|state| state.scope.clone())
+    {
+        return scope;
+    }
+    let change = world
+        .last_change_id
+        .clone()
+        .expect("a change or topic with a recorded history is required first");
+    Scope::Change { id: change }
+}
+
+/// The scope's own identifier, as the scenario named it.
+fn scope_id(scope: &Scope) -> &str {
+    match scope {
+        Scope::Change { id } | Scope::Ideation { id } | Scope::Project { id } => id,
+    }
+}
+
+/// One scope's recorded kind, as the record names it.
+fn scope_kind(scope: &Scope) -> &'static str {
+    match scope {
+        Scope::Change { .. } => "change",
+        Scope::Ideation { .. } => "ideation",
+        Scope::Project { .. } => "project",
+    }
+}
+
+/// One scope's record, read back from the store as the fixture left it: the
+/// ground truth the browser's rendered text is asserted against, for the
+/// scenarios whose record another Given built.
+fn recorded_entries(world: &GivnWorld, scope: &Scope) -> Vec<Value> {
+    support::record_entries(&project_root(world).root())
+        .into_iter()
+        .filter(|entry| entry["scope"]["kind"] == json!(scope_kind(scope)))
+        .filter(|entry| entry["scope"]["id"] == json!(scope_id(scope)))
+        .collect()
+}
+
+/// The scope's longest measured entry: the step the record's own durations rank
+/// first, never a fixture constant.
+fn longest_measured(entries: &[Value]) -> Value {
+    entries
+        .iter()
+        .filter(|entry| entry["duration_ms"].is_u64())
+        .max_by_key(|entry| entry["duration_ms"].as_u64().unwrap_or_default())
+        .unwrap_or_else(|| panic!("the scope's record holds no measured entry: {entries:#?}"))
+        .clone()
+}
+
+/// One recorded entry's visible name: its bounded label, or its name where the
+/// record carries no label — the same derivation the report renders.
+fn visible_name(entry: &Value) -> String {
+    entry["label"]
+        .as_str()
+        .or_else(|| entry["name"].as_str())
+        .unwrap_or_else(|| panic!("the recorded entry names nothing: {entry:#}"))
+        .to_string()
+}
+
+/// One recorded duration as the report renders it.
+fn rendered_duration(entry: &Value) -> String {
+    givn::cli::timeline::format_duration(
+        entry["duration_ms"]
+            .as_u64()
+            .unwrap_or_else(|| panic!("the record measures no duration for the entry: {entry:#}")),
+    )
+}
+
+/// The structure the browser rendered: the document's own title, its headings
+/// and landmarks, the timeline's accessible name, and its drawn spans — read
+/// from the browser's DOM, never from the report file.
+fn rendered_structure(driver: &mut BrowserDriver) -> Value {
+    driver.evaluate(
+        r#"(() => {
+  const timeline = document.querySelector("svg.timeline");
+  return {
+    title: document.title,
+    headings: document.querySelectorAll("h1").length,
+    header: document.querySelectorAll("header").length,
+    main: document.querySelectorAll("main").length,
+    aside: document.querySelectorAll("aside").length,
+    timelines: document.querySelectorAll("svg.timeline").length,
+    timelineName: timeline ? timeline.getAttribute("aria-label") : null,
+    spans: [...document.querySelectorAll("svg.timeline .span")].map((span) => ({
+      id: span.dataset.entryId,
+      name: span.getAttribute("aria-label"),
+      tabindex: span.getAttribute("tabindex"),
+    })),
+  };
+})()"#,
+    )
+}
+
+/// What the browser focused for one `Tab` press, and the ring it rendered for
+/// that element: the assertion reads the element the browser really focused and
+/// the style it really applied, never a class name.
+fn focus_probe(driver: &mut BrowserDriver) -> Value {
+    driver.evaluate(
+        r##"(() => {
+  const active = document.activeElement;
+  if (!active || active === document.body) return { marker: "", outline: "none", stroke: "none" };
+  const marker = active.dataset && active.dataset.entryId
+    ? "span:" + active.dataset.entryId
+    : active.tagName.toLowerCase() + "#" + active.id;
+  const target = active.classList && active.classList.contains("span")
+    ? active.querySelector(".span-bar") || active
+    : active;
+  const style = getComputedStyle(target);
+  return {
+    marker: marker,
+    outline: style.outlineStyle + " " + style.outlineWidth,
+    stroke: style.stroke + " " + style.strokeWidth,
+  };
+})()"##,
+    )
+}
+
+/// Every expected control, and every drawn span, is reachable by a real `Tab`
+/// press in the browser's own focus order, and the focused element carries a
+/// visible ring — an outline for a control, the accent stroke for a span. The
+/// markers come from the browser's own `document.activeElement`, so the
+/// assertion never trusts a class name the page wrote.
+fn assert_every_control_is_tabbable(driver: &mut BrowserDriver, expected: &[String]) {
+    let mut seen: Vec<String> = Vec::new();
+    for _ in 0..expected.len() + 2 {
+        driver.press(None, "Tab");
+        let focused = focus_probe(driver);
+        let marker = focused["marker"].as_str().unwrap_or_default().to_string();
+        if marker.is_empty() {
+            continue;
+        }
+        let outline = focused["outline"].as_str().unwrap_or_default().to_string();
+        let stroke = focused["stroke"].as_str().unwrap_or_default().to_string();
+        let outlined = outline.starts_with("solid") && !outline.ends_with("0px");
+        assert!(
+            outlined || stroke.ends_with(" 2px"),
+            "the focused element {marker} draws no visible focus ring: outline={outline:?} stroke={stroke:?}"
+        );
+        if !seen.contains(&marker) {
+            seen.push(marker);
+        }
+        if seen.len() == expected.len() {
+            break;
+        }
+    }
+    for control in expected {
+        assert!(
+            seen.contains(control),
+            "the control {control} is not reachable by Tab: {seen:?}"
+        );
+    }
+}
+
+#[given(regex = r#"^a topic "([^"]+)" with a recorded history$"#)]
+fn topic_with_a_recorded_history(world: &mut GivnWorld, topic: String) {
+    if world.env.is_none() {
+        world.env = Some(common::make_init_root());
+    }
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let entries = support::seed_ideation_topic(env, &topic);
+    assert!(
+        !entries.is_empty(),
+        "the fixture seeded no topic record at all"
+    );
+    state(world).scope = Some(Scope::Ideation { id: topic });
+}
+
+#[given(regex = r#"^the development report for "([^"]+)" has been generated$"#)]
+fn report_has_been_generated(world: &mut GivnWorld, id: String) {
+    let scope = report_scope(world);
+    assert_eq!(
+        scope_id(&scope),
+        id,
+        "the scenario's report scope is not the scope it named"
+    );
+    let args: Vec<&str> = match &scope {
+        Scope::Change { .. } => vec!["timeline", "--change", &id, "--out", REPORT_FILE],
+        Scope::Ideation { .. } => vec!["timeline", "--topic", &id, "--out", REPORT_FILE],
+        Scope::Project { .. } => vec!["timeline", "--out", REPORT_FILE],
+    };
+    let out = common::run_givn(project_root(world), &args);
+    assert!(
+        out.status.success(),
+        "givn {} failed: {}{}",
+        args.join(" "),
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr),
+    );
+    let path = project_root(world).path(REPORT_FILE);
+    assert!(
+        path.is_file(),
+        "the command wrote no report at {}",
+        path.display()
+    );
+    let bytes = std::fs::metadata(&path)
+        .unwrap_or_else(|error| panic!("read the report {}: {error}", path.display()))
+        .len();
+    assert!(
+        bytes > 0,
+        "the command wrote an empty report at {}",
+        path.display()
+    );
+    let state = state(world);
+    state.report_path = Some(path);
+    state.scope = Some(scope);
+}
+
+#[when("the consumer opens the development report in a browser")]
+fn consumer_opens_the_report(world: &mut GivnWorld) {
+    open_report(world);
+}
+
+#[then("the browser shows the report heading and the development timeline")]
+fn browser_shows_the_heading_and_the_timeline(world: &mut GivnWorld) {
+    let structure = rendered_structure(browser(world));
+    assert_eq!(
+        structure["title"],
+        json!("Development report"),
+        "the page's own title is not the report's: {structure:#}"
+    );
+    assert_eq!(
+        structure["headings"],
+        json!(1),
+        "the report does not carry exactly one h1: {structure:#}"
+    );
+    assert_eq!(
+        browser(world).text("#report-title"),
+        "Development report",
+        "the rendered heading is not the report's"
+    );
+    for landmark in ["header", "main", "aside"] {
+        assert!(
+            structure[landmark].as_u64().unwrap_or_default() >= 1,
+            "the report renders no {landmark} landmark: {structure:#}"
+        );
+    }
+    assert_eq!(
+        structure["timelines"],
+        json!(1),
+        "the report renders no single timeline svg: {structure:#}"
+    );
+    assert_eq!(
+        structure["timelineName"],
+        json!("Development timeline"),
+        "the timeline svg carries no accessible name: {structure:#}"
+    );
+
+    // Every span the browser drew is exposed with its own accessible name —
+    // the design's baseline at every assertion — and is reachable by Tab with a
+    // visible focus ring.
+    let scope = report_scope(world);
+    let entries = recorded_entries(world, &scope);
+    let spans = structure["spans"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the browser drew no span list: {structure:#}"));
+    assert!(
+        !spans.is_empty(),
+        "the browser drew no span at all for the scope's {} recorded entries: {structure:#}",
+        entries.len()
+    );
+    let mut expected: Vec<String> = Vec::new();
+    for span in spans {
+        let id: u64 = span["id"]
+            .as_str()
+            .and_then(|value| value.parse().ok())
+            .unwrap_or_else(|| panic!("a drawn span names no entry id: {span:#}"));
+        let entry = entries
+            .iter()
+            .find(|entry| entry["id"].as_u64() == Some(id))
+            .unwrap_or_else(|| panic!("a drawn span names no recorded entry: {span:#}"));
+        assert_eq!(
+            span["name"],
+            json!(format!(
+                "{}, {}",
+                visible_name(entry),
+                rendered_duration(entry)
+            )),
+            "a drawn span does not expose its name and duration: {span:#}"
+        );
+        assert_eq!(
+            span["tabindex"],
+            json!("0"),
+            "a drawn span is not reachable by keyboard: {span:#}"
+        );
+        expected.push(format!("span:{id}"));
+    }
+    assert_every_control_is_tabbable(browser(world), &expected);
+}
+
+#[then("the browser shows the longest recorded step with its duration")]
+fn browser_shows_the_longest_recorded_step(world: &mut GivnWorld) {
+    let scope = report_scope(world);
+    let entries = recorded_entries(world, &scope);
+    let longest = longest_measured(&entries);
+    let id = longest["id"].as_u64().expect("the longest step has an id");
+    let name = visible_name(&longest);
+    let duration = rendered_duration(&longest);
+    let rendered = browser(world).evaluate(&format!(
+        r#"(() => {{
+  const span = [...document.querySelectorAll("svg.timeline .span")]
+    .find((candidate) => candidate.dataset.entryId === "{id}");
+  if (!span) return null;
+  return {{ name: span.getAttribute("aria-label"), text: span.textContent.trim() }};
+}})()"#
+    ));
+    assert!(
+        !rendered.is_null(),
+        "the browser draws no span for the record's longest step {id} ({name}, {duration})"
+    );
+    assert_eq!(
+        rendered["name"],
+        json!(format!("{name}, {duration}")),
+        "the longest recorded step's accessible name is not its name and duration: {rendered:#}"
+    );
+    let text = rendered["text"].as_str().unwrap_or_default();
+    assert!(
+        text.contains(&duration),
+        "the browser's own text for the longest recorded step names no duration: {text:?}"
+    );
+    assert!(
+        text.contains(&name),
+        "the browser's own text for the longest recorded step names no step: {text:?}"
+    );
+    commit_evidence(world, OPEN_SCENARIO);
 }
