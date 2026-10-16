@@ -1134,10 +1134,13 @@ name it.
         the stderr-warning Then do not exist yet, so the scenario fails instead of passing or
         skipping (exit 101, never 0). Every other scenario kept its `@wip` tag.
         ```
-  - [x] **GREEN** — implement the best-effort write path and the warning
-        text. Files: `src/history.rs`, `tests/steps/development_record_steps.rs`
-        (plus the unwritable-store fixture in the support file). Compile first,
-        re-run → exit 0. Paste it.
+  - [x] **GREEN** — the best-effort write path and its warning already exist
+        from Task 1 (commit `83fcaf17`, `src/history.rs`); this scenario pins
+        them, so this commit carries no production diff. Work here:
+        `tests/steps/development_record_steps.rs` plus the unwritable-store
+        fixture in the support file. RED category: contract already holds —
+        discrimination is proven by the controlled omission pasted below.
+        Compile first, re-run → exit 0. Paste it.
         ```
         $ cargo build --locked
             Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s        EXIT 0
@@ -1768,7 +1771,7 @@ name it.
 
 ## Task 7 — `Activity during an ideation belongs to its topic scope` (`development-record`, added)
 
-- [ ] **Scenario: `Activity during an ideation belongs to its topic scope`**
+- [x] **Scenario: `Activity during an ideation belongs to its topic scope`**
   - Design constraints:
     - Ideation scope rule: exactly one **unfinished** topic —
       `givn/ideation/<topic>/session.md` exists and carries no `## Completion`
@@ -1922,9 +1925,20 @@ name it.
         setup commands can never be mistaken for it. The scope steps also read only the scope out of
         that entry, which is what their titles claim.
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+  - [x] **COMMIT** — `56b05a26dd90ec1d17a6cb544df833dc8d9a5be6` — `feat(development-record): <release note>` with
         the scenario title `Activity during an ideation belongs to its topic
         scope` in the body. Record the revision identifier.
+        ```
+        $ givn commit -m "feat(development-record): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        Activity during an ideation belongs to its topic scope"
+        [13:35:57] committed revision on the Git backend
+        $ git rev-parse HEAD
+        56b05a26dd90ec1d17a6cb544df833dc8d9a5be6
+        ```
+        One atomic revision: RED+GREEN+REFACTOR together — the delta spec (this scenario's `@wip`
+        removed), `src/history.rs` (the topic candidate), both test files, and this file's Task 6
+        revision record.
 
 ## Task 8 — `A recorded label is bounded to 120 characters` (`development-record`, added)
 
