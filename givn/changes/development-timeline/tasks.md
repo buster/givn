@@ -18,25 +18,30 @@ copied verbatim from `proposal.md` §Release note):**
 > report that opens in a browser.
 
 **Delta inventory (verified mechanically against every delta `.feature` under
-`givn/changes/development-timeline/specs/`):** 41 executable scenario entries in
-3 features = 41 `@givn.added`, 0 `@givn.modified`, 0 `@givn.removed`; 33
-non-`@e2e` + 8 `@e2e`. A `Scenario Outline` counts as one entry (its Examples
-rows are input variation, not additional scenarios). Every entry carries `@wip`
-today and stays `@wip` until its own RED step removes the tag from that one
-scenario.
+`givn/changes/development-timeline/specs/`):** 42 executable scenario entries in
+4 features = 41 `@givn.added`, 1 `@givn.modified` (the S2b corpus-pin
+reconciliation), 0 `@givn.removed`; 34 non-`@e2e` + 8 `@e2e`. A `Scenario
+Outline` counts as one entry (its Examples rows are input variation, not
+additional scenarios). Every `@givn.added` entry carries `@wip` today and stays
+`@wip` until its own RED step removes the tag from that one scenario; the one
+`@givn.modified` entry carries no `@wip` and is reconciled green in S2b.
 
 | Feature (path relative to `GIVN_FEATURES`) | Entries | Non-`@e2e` | `@e2e` |
 |---|---|---|---|
 | `inspect-development-history/development-record.feature` | 13 | 11 | 2 |
 | `inspect-development-history/agent-activity-reporting.feature` | 14 | 13 | 1 |
 | `inspect-development-history/development-report.feature` | 14 | 9 | 5 |
-| **Total** | **41** | **33** | **8** |
+| `fragments/adr-qualification-gate.feature` (`@givn.modified`) | 1 | 1 | 0 |
+| **Total** | **42** | **34** | **8** |
 
 **Work order (recorded choice).** `design.md` names no implementation sequencing
 section, so this file follows `.feature` order — the features in the inventory
 order above, scenarios in their in-file order — in three phases: Tasks 1–33
 (the non-`@e2e` scenarios), Task E1 (E2E setup), Tasks E2–E9 (the `@e2e`
-scenarios, same feature order).
+scenarios, same feature order). The one `@givn.modified` entry is not a scenario
+task: ADR-073 raises the register count that the permanent
+`adr-qualification-gate` scenario pins, so setup item **S2b** carries the
+`@givn.modified` record and the permanent patch, before any scenario work.
 
 ## Preconditions verified before writing this file (2026-10-16)
 
@@ -345,7 +350,7 @@ name it.
 
 ## Strict-mode proof and setup (do first)
 
-- [ ] **P0 (planning, before the setup tasks). Commit the planning artifacts,
+- [x] **P0 (planning, before the setup tasks). Commit the planning artifacts,
       separate from any scenario work.**
       The whole change directory is untracked today
       (`givn/changes/development-timeline/**`, `docs/design/design-system.md`,
@@ -357,9 +362,47 @@ name it.
       first scenario commit cannot sweep the plan in and no scenario commit
       touches only the spec. Evidence:
       ```
-      <!-- paste: git status --porcelain before/after + the planning commit hash -->
+      $ git status --porcelain          # before
+       M docs/arc42/01-introduction-and-goals.md
+       M docs/arc42/02-architecture-constraints.md
+       M docs/arc42/03-context-and-scope.md
+       M docs/arc42/04-solution-strategy.md
+       M docs/arc42/05-building-block-view.md
+       M docs/arc42/06-runtime-view.md
+       M docs/arc42/07-deployment-view.md
+       M docs/arc42/08-crosscutting-concepts.md
+       M docs/arc42/09-architecture-decisions.md
+       M docs/arc42/10-quality-requirements.md
+       M docs/arc42/11-risks-and-technical-debt.md
+       M docs/arc42/12-glossary.md
+       M docs/arc42/README.md
+       M docs/arc42/adr/README.md
+      ?? docs/arc42/adr/ADR-073-development-record-ownership.md
+      ?? docs/design/
+      ?? givn/changes/
+
+      $ git add givn/changes/development-timeline docs/design/design-system.md docs/arc42
+      $ git commit -m "docs(development-timeline): plan the development record and timeline report"
+      [main 8ceaaba6] docs(development-timeline): plan the development record and timeline report
+       25 files changed, 5570 insertions(+), 6 deletions(-)
+       create mode 100644 docs/arc42/adr/ADR-073-development-record-ownership.md
+       create mode 100644 docs/design/design-system.md
+       create mode 100644 givn/changes/development-timeline/arc42.md
+       create mode 100644 givn/changes/development-timeline/design-review.md
+       create mode 100644 givn/changes/development-timeline/design.md
+       create mode 100644 givn/changes/development-timeline/proposal.md
+       create mode 100644 givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature
+       create mode 100644 givn/changes/development-timeline/specs/inspect-development-history/development-record.feature
+       create mode 100644 givn/changes/development-timeline/specs/inspect-development-history/development-report.feature
+       create mode 100644 givn/changes/development-timeline/specs/inspect-development-history/usecase.md
+       create mode 100644 givn/changes/development-timeline/tasks.md
+
+      $ git status --porcelain          # after
+      (empty)
+      $ git rev-parse HEAD
+      8ceaaba6cc754a4a0742fa05720bd5c48adec030
       ```
-- [ ] **S1. Prove strict mode on this change's runner (mandatory, non-zero exit
+- [x] **S1. Prove strict mode on this change's runner (mandatory, non-zero exit
       required).**
       - Runner config: none to add — `tests/features_runner.rs` already carries
         `.fail_on_skipped()` on the Cucumber builder in both entry paths (the
@@ -388,10 +431,78 @@ name it.
         `./run-tests.sh --non-e2e` (the same command Task S2 then declares as
         `verify.command`). Paste every command with its output.
       ```
-      <!-- paste: the two .fail_on_skipped() call sites + the exit condition, Probe A command/output, Probe B command/output, the restore listings + @wip count + baseline result -->
+      Strict-mode call sites (tests/features_runner.rs, both entry paths, never weakened):
+        plain `cargo test` path, line 54:  GivnWorld::cucumber()
+                                             .fail_on_skipped()          # line 55
+                                             .filter_run(features_path, ...)
+        exit condition, line 64:           if stats.failed > 0 || stats.skipped > 0 { std::process::exit(1); }
+        nextest `--exact` path, line 149:  GivnWorld::cucumber()
+                                             .with_default_cli()
+                                             .fail_on_skipped()          # line 151
+                                             .filter_run_and_exit(features_path(), ...)
+
+      Probe A — an undefined step fails:
+      $ GIVN_FEATURES=givn/changes/development-timeline/probe cargo test --locked --test features_runner
+      Feature: Strict-mode probe
+        Scenario: An undefined step fails the runner
+         ✘  Given a strict-mode probe step that has no binding
+            Step failed:
+            Defined: givn/changes/development-timeline/probe/probe.feature:5:5
+            Step doesn't match any function
+      [Summary]
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      error: test failed, to rerun pass `--test features_runner`
+      EXIT 1
+
+      Probe B — an `unimplemented!()` stub fails (binding added to
+      tests/steps/development_record_steps.rs as `fn strict_mode_probe_step(...) {
+      unimplemented!("TODO: development-timeline"); }`):
+      $ GIVN_FEATURES=givn/changes/development-timeline/probe cargo test --locked --test features_runner
+      Feature: Strict-mode probe
+        Scenario: An undefined step fails the runner
+         ✘  Given a strict-mode probe step that has no binding
+            Step failed:
+            Defined: givn/changes/development-timeline/probe/probe.feature:5:5
+            Matched: tests/steps/development_record_steps.rs:6:1
+            Step panicked. Captured output: not implemented: TODO: development-timeline
+      [Summary]
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      error: test failed, to rerun pass `--test features_runner`
+      EXIT 1
+
+      Restore (probe directory + probe binding deleted; identical to the pre-S1 state):
+      $ GIVN_FEATURES=givn/changes/development-timeline/specs GIVN_CUCUMBER_TAGS='' cargo nextest list --locked --test features_runner
+         Compiling givn v0.9.0 (/home/buster/projects/givn)
+          Finished `test` profile [unoptimized + debuginfo] target(s) in 5.82s
+      givn::features_runner <unit>          # 43 non-empty lines = 2 cargo lines + 41 scenario units
+      $ GIVN_FEATURES=givn/changes/development-timeline/specs GIVN_CUCUMBER_TAGS='not @e2e' cargo nextest list --locked --test features_runner
+          Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+      givn::features_runner <unit>          # 34 non-empty lines = 1 cargo line + 33 scenario units
+      $ GIVN_FEATURES=givn/changes/development-timeline/specs GIVN_CUCUMBER_TAGS='@e2e' cargo nextest list --locked --test features_runner
+          Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+      givn::features_runner <unit>          # 9 non-empty lines = 1 cargo line + 8 scenario units
+      $ GIVN_FEATURES=givn/changes/development-timeline/specs GIVN_CUCUMBER_TAGS='' cargo nextest list --locked --test features_runner | grep -c 'Strict-mode probe'
+      0
+      $ grep -rho '@wip' givn/changes/development-timeline/specs | wc -l
+      41
+      $ find givn/changes/development-timeline -type f
+      givn/changes/development-timeline/{arc42,design-review,design,proposal,tasks}.md
+      givn/changes/development-timeline/specs/inspect-development-history/{agent-activity-reporting,development-record,development-report}.feature
+      givn/changes/development-timeline/specs/inspect-development-history/usecase.md
+      (the probe/ directory is gone; delta units 41 = 41 `@givn.added` at this point)
+
+      Baseline note: `./run-tests.sh --non-e2e` (permanent corpus) was still red at this point for a
+      reason outside the delta — the P0 ADR-073 register row lifts the ADR register to 25 accepted
+      records while `givn/specs/fragments/adr-qualification-gate.feature` pinned 24 (assertion
+      `left: 25 right: 24`). The delta counts above are therefore the pre-reconciliation numbers;
+      S2b carries the `@givn.modified` record, the re-run listings (42 / 34 / 8) and the exit-0 baseline.
       ```
       If Probe A or B exits 0, stop and fix strictness before any scenario work.
-- [ ] **S2. Configure `verify.command` and document it as implementation work.**
+- [x] **S2. Configure `verify.command` and document it as implementation work.**
       - `givn/commands.yaml`: change `verify.command` from `./run-tests.sh` to
         `./run-tests.sh --non-e2e`; leave `verify.e2e_command` as
         `./run-tests.sh --e2e` (design.md §Local Runnability & Digital Twins).
@@ -413,9 +524,145 @@ name it.
         baseline: `./run-tests.sh --non-e2e` (permanent corpus, no
         `GIVN_FEATURES` override).
       ```
-      <!-- paste: commands.yaml diff, doc diff, ./run-tests.sh --non-e2e summary (exit 0) -->
+      $ git diff givn/commands.yaml
+      diff --git a/givn/commands.yaml b/givn/commands.yaml
+      index 781b8284..f4d732b9 100644
+      --- a/givn/commands.yaml
+      +++ b/givn/commands.yaml
+      @@ -1,6 +1,6 @@
+       # Project-owned command scripts. The README documents these same commands.
+       verify:
+      -  command: "./run-tests.sh"
+      +  command: "./run-tests.sh --non-e2e"
+         e2e_command: "./run-tests.sh --e2e"
+       
+       coverage:
+
+      $ git diff docs/reference.md
+      diff --git a/docs/reference.md b/docs/reference.md
+      index c031037b..223dc9de 100644
+      --- a/docs/reference.md
+      +++ b/docs/reference.md
+      @@ -169,8 +169,8 @@ Project command scripts live at the repo root and are referenced by
+       This repository's own verify commands:
+       
+       ```sh
+      -./run-tests.sh            # cargo test matrix across feature combinations
+      -./run-tests.sh --e2e      # @e2e-tagged subsets per feature combination
+      +./run-tests.sh --non-e2e  # the regular scope (verify.command): every non-@e2e scenario
+      +./run-tests.sh --e2e      # the e2e scope (verify.e2e_command): the @e2e scenarios, browser included
+       ./measure-coverage.sh     # writes non-E2E and E2E Cobertura reports
+       ./merge-coverages.sh      # writes merged report used by README badges/blocks
+       ```
+
+      Exit-0 baseline: `./run-tests.sh --non-e2e` (permanent corpus, no GIVN_FEATURES override) →
+      `Summary [  43.022s] 533 tests run: 533 passed, 94 skipped`, EXIT=0. Pasted in full under S2b,
+      which is where it first became green: the P0 ADR-073 register row broke the pin until the S2b
+      `@givn.modified` record and the permanent patch landed (see S2b's RED).
       ```
-- [ ] **S3. Create the step-definition skeletons — one file per capability
+- [x] **S2b. Reconcile the permanent ADR-register pin with ADR-073 (the delta's
+      one `@givn.modified` record).**
+      P0 added ADR-073 and its row in `docs/arc42/adr/README.md`, lifting the
+      active register to 25 accepted records, while
+      `givn/specs/fragments/adr-qualification-gate.feature` pinned 24 — so the
+      permanent scope failed. The repository's own precedent is
+      `retire-lint-command-adr` (f062c23f): a `@givn.modified` delta record next
+      to a patch of the permanent fragment scenario, in the same change. The
+      reconciliation is exactly that:
+      - new `givn/changes/development-timeline/specs/fragments/adr-qualification-gate.feature`
+        — `@givn.delta @adr-qualification-gate`, the Feature title copied
+        verbatim, and one `@givn.modified` scenario titled exactly `The
+        migration preserves independent architecture history across three
+        proposed decisions` copied verbatim from the permanent file with exactly
+        one change: `24` → `25`;
+      - `givn/specs/fragments/adr-qualification-gate.feature` — the same single
+        line (24 → 25);
+      - `proposal.md` §Capability Routing gains the `adr-qualification-gate` row
+        (`EXTEND adr-qualification-gate`) so the table matches the delta.
+      The three edits ride in the setup commit with S2–S4; no spec-only commit
+      exists. Evidence:
+      ```
+      RED — the permanent scope failed before the reconciliation (P0 only):
+      $ ./run-tests.sh --non-e2e
+      ...
+        FAIL [   0.803s] (121/533) givn::features_runner fragments/adr-qualification-gate.feature::The migration preserves independent architecture history across three proposed decisions
+      ────────────
+           Summary [  10.758s] 132/533 tests run: 131 passed, 1 failed, 94 skipped
+      error: test run failed
+      EXIT=100
+
+      reproduced in isolation:
+      $ cargo nextest run --no-fail-fast --locked --test features_runner -- 'fragments/adr-qualification-gate.feature::The migration preserves independent architecture history across three proposed decisions'
+         ✘  Then the final register has 24 accepted decisions and no proposed decisions
+            Step panicked. Captured output: assertion `left == right` failed: unexpected accepted ADR count
+              left: 25
+             right: 24
+
+      GREEN — the delta-scope targeted run of the modified record:
+      $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "fragments/adr-qualification-gate.feature::The migration preserves independent architecture history across three proposed decisions"
+      Feature: Strict qualification and canonical routing of architecture decisions
+        Scenario: The migration preserves independent architecture history across three proposed decisions
+         ✔  Given the remediation case carries the distinguishing marker "harness jib mandrel nozzle oboe yacht yarn zither"
+         ✔  Given the consolidated ADR register and canonical sources are available
+         ✔  When a maintainer compares the register with the canonical sources
+         ✔  Then the final register has 25 accepted decisions and no proposed decisions
+         ✔  And the change's migration manifest gives every assigned identifier exactly one disposition
+         ✔  And reserved identifiers `ADR-050` and `ADR-051` have no record
+         ✔  And non-ADR records are removed from the active register and ADR archive
+         ✔  And absorbed records are absent and their refinements remain readable
+         ✔  And superseded architectural records `ADR-019`, `ADR-042`, and `ADR-053` remain archived with replacement links
+         ✔  And `ADR-043` and `ADR-049` are absent because their behavior is owned by permanent specifications
+         ✔  And the superseded semantic-engine records remain archived with replacement links to their replacement record
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      11 steps (11 passed)
+      EXIT 0
+
+      GREEN — the S2 baseline (permanent corpus, no GIVN_FEATURES override):
+      $ ./run-tests.sh --non-e2e
+      ...
+           Summary [  43.022s] 533 tests run: 533 passed, 94 skipped
+      EXIT=0
+
+      post-reconciliation delta listings:
+      $ GIVN_FEATURES=givn/changes/development-timeline/specs GIVN_CUCUMBER_TAGS='' cargo nextest list --locked --test features_runner | grep -c 'givn::features_runner'
+      42
+      $ GIVN_FEATURES=givn/changes/development-timeline/specs GIVN_CUCUMBER_TAGS='not @e2e' cargo nextest list --locked --test features_runner | grep -c 'givn::features_runner'
+      34
+      $ GIVN_FEATURES=givn/changes/development-timeline/specs GIVN_CUCUMBER_TAGS='@e2e' cargo nextest list --locked --test features_runner | grep -c 'givn::features_runner'
+      8
+      $ grep -rho '@wip' givn/changes/development-timeline/specs | wc -l
+      41          # the 41 `@givn.added` entries; the 1 `@givn.modified` entry carries no `@wip`
+
+      $ git diff givn/specs/fragments/adr-qualification-gate.feature
+      -    Then  the final register has 24 accepted decisions and no proposed decisions
+      +    Then  the final register has 25 accepted decisions and no proposed decisions
+
+      $ cat givn/changes/development-timeline/specs/fragments/adr-qualification-gate.feature
+      @givn.delta @adr-qualification-gate
+
+      Feature: Strict qualification and canonical routing of architecture decisions
+
+        @givn.modified
+        Scenario: The migration preserves independent architecture history across three proposed decisions
+          Given  the remediation case carries the distinguishing marker "harness jib mandrel nozzle oboe yacht yarn zither"
+          Given  the consolidated ADR register and canonical sources are available
+          When  a maintainer compares the register with the canonical sources
+          Then  the final register has 25 accepted decisions and no proposed decisions
+          And  the change's migration manifest gives every assigned identifier exactly one disposition
+          And  reserved identifiers `ADR-050` and `ADR-051` have no record
+          And  non-ADR records are removed from the active register and ADR archive
+          And  absorbed records are absent and their refinements remain readable
+          And  superseded architectural records `ADR-019`, `ADR-042`, and `ADR-053` remain archived with replacement links
+          And  `ADR-043` and `ADR-049` are absent because their behavior is owned by permanent specifications
+          And  the superseded semantic-engine records remain archived with replacement links to their replacement record
+
+      $ givn lint --change development-timeline
+      givn lint: 4 file(s) checked, 41 finding(s)                  # the 41 @wip entries; no finding kind for the @givn.modified record
+      LINT_EXIT=2
+      ```
+- [x] **S3. Create the step-definition skeletons — one file per capability
       (design.md §Step Definitions).**
       - Create `tests/steps/development_record_steps.rs`,
         `tests/steps/agent_activity_reporting_steps.rs`,
@@ -434,9 +681,37 @@ name it.
         `cargo build --locked --tests` and `cargo clippy --locked --all-targets
         -- -D warnings`.
       ```
-      <!-- paste: the four module registrations, the GivnWorld slots, cargo build/clippy output -->
+      Module registrations (tests/steps/mod.rs):
+        line 15: pub mod agent_activity_reporting_steps;
+        line 27: pub mod development_record_steps;
+        line 28: pub mod development_report_steps;
+        line 29: pub mod development_timeline_support;
+
+      GivnWorld slots (tests/steps/mod.rs, the existing `Option<…State>` pattern, one per capability):
+        pub(crate) development_record: Option<development_record_steps::DevelopmentRecordState>,
+        pub(crate) agent_activity_reporting: Option<agent_activity_reporting_steps::AgentActivityReportingState>,
+        pub(crate) development_report: Option<development_report_steps::DevelopmentReportState>,
+
+      Skeleton shape: each capability file carries its module doc comment and its state type (derived
+      `Debug + Default`, the field the capability's steps will exchange); development_timeline_support.rs
+      carries the shared module doc naming the record fixtures, the seeded-history builder, and the three
+      harness drivers, which arrive with the scenarios that call them (a helper with no caller would be
+      the unused helper S4 forbids). No step bindings yet — they are added scenario by scenario at RED.
+      No `@e2e` step files and no `tests/common/browser.rs` (Task E1 owns them).
+      The GivnWorld slots and the three state types carry `#[allow(dead_code)]` with a comment naming S3
+      as their origin: nothing reads a slot before the capability's first scenario does, and that
+      scenario drops the allowance (otherwise `cargo clippy … -D warnings` is red on "field is never
+      read", as observed before the allowances were added).
+
+      $ cargo build --locked --tests
+          Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.07s        EXIT 0
+      $ cargo clippy --locked --all-targets -- -D warnings
+          Checking givn v0.9.0 (/home/buster/projects/givn)
+          Finished `dev` profile [unoptimized + debuginfo] target(s) in 7.29s       EXIT 0
+      $ cargo fmt --all -- --check
+      (no output)                                                                     EXIT 0
       ```
-- [ ] **S4. Initialise the production module skeletons at the exact paths
+- [x] **S4. Initialise the production module skeletons at the exact paths
       `design.md` names.**
       - `src/history.rs` — the record owner: `HistoryEntry` (the field set in
         *Record and report contract*), `Scope` (`Change(id)`, `Ideation(id)`,
@@ -467,7 +742,55 @@ name it.
         warnings` stay green (CI runs both). A skeleton may never survive the
         scenario that covers it.
       ```
-      <!-- paste: the module declarations, the three file listings, cargo build/clippy output -->
+      Module declarations:
+        src/main.rs:12    mod history;                       (binary copy; #[allow(dead_code)] + comment —
+                                                              not wired into dispatch until the command
+                                                              scenarios need it, per this task's rule)
+        src/lib.rs:14     pub mod history;
+        src/cli/mod.rs:16 pub mod history;                   (#[allow(dead_code)] skeleton allowance)
+        src/cli/mod.rs:33 pub mod timeline;                  (#[allow(dead_code)] skeleton allowance)
+
+      src/history.rs (163 lines) — every body `todo!("TODO: development-timeline")`:
+        16  pub struct HistoryEntry      { schema, id, at, scope, source, kind, name, label,
+                                           duration_ms, outcome, parent, data }   (the contract's field set)
+        50  pub enum Scope               { Change { id }, Ideation { id }, Project { id } }
+        66  pub struct HistoryStore      + impl HistoryStore { read, append }
+        91  pub struct HistoryRecorder   + impl HistoryRecorder { record, span }
+        115 pub struct Span              (the Instant guard)
+        121 pub fn resolve_scope(root: &Path) -> Scope
+        127 pub fn bound_label(subject: &str) -> String
+        132 pub fn store_path(root: &Path) -> PathBuf
+        138 pub fn ensure_ignored(root: &Path) -> std::io::Result<()>
+        149 pub struct PendingState      156 pub struct PendingStart { started_at, kind, label }
+
+      src/cli/history.rs (44 lines):
+        8   pub struct IngestedEvent     18  pub struct HarnessPayload
+        24  pub fn run(change, topic, json)     30  pub fn ingest()
+        36  pub fn harness_hook(harness)        42  pub fn map_harness_event(payload)
+
+      src/cli/timeline.rs (25 lines):
+        10  pub struct ReportModel       13  pub fn build_report_model()
+        18  pub fn render_report(model)  23  pub fn run(change, topic, out)
+
+      assets/timeline/report.html (35 lines): self-contained document — inline CSS, inline script, an
+      SVG timeline inside `main`, the labelled details region, `prefers-reduced-motion` disabling
+      transitions, and exactly one data slot at line 32: /*__GIVN_REPORT_DATA__*/ (no CDN, no
+      third-party JavaScript, no build step).
+
+      Allowance note: the S4 skeletons are declared but nothing reads them yet, so `cargo build` was red
+      with "function is never used" / "field is never read" in both the lib and the bin crate until the
+      allowances above were added (the lib warns for private fields of public structs, the bin for the
+      whole private module copy). Each says which task drops it; the scenario that first reads an item
+      removes its allowance.
+
+      $ cargo build --locked
+          Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.69s       EXIT 0
+      $ cargo clippy --locked --all-targets -- -D warnings
+          Checking givn v0.9.0 (/home/buster/projects/givn)
+          Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.55s       EXIT 0
+      $ cargo fmt --all -- --check        EXIT 0
+      $ cargo build --locked --tests
+          Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.91s       EXIT 0
       ```
 
 ## Task 1 — `A recorded step keeps a measured duration and its outcome` (`development-record`, added)

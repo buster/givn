@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Development report</title>
+<style>
+  /* The report asset is self-contained: inline CSS/JS/SVG, no CDN, no
+     third-party JavaScript, no build step. The generator substitutes the
+     single data slot below with the JSON model. */
+  :root { color-scheme: light dark; }
+  body { margin: 0; font-family: system-ui, sans-serif; }
+  main { padding: 1rem; }
+  .timeline { width: 100%; height: 40vh; }
+  .details { border-top: 1px solid currentColor; }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Development report</h1>
+  <svg class="timeline" role="img" aria-labelledby="timeline-title">
+    <title id="timeline-title">Development timeline</title>
+  </svg>
+  <section class="details" role="region" aria-label="Details" hidden>
+    <button type="button" class="details-close">Close</button>
+  </section>
+</main>
+<script>
+  /*__GIVN_REPORT_DATA__*/
+</script>
+</body>
+</html>

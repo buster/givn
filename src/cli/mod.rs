@@ -10,6 +10,10 @@ pub mod coverage_gate;
 pub mod eject;
 pub mod git;
 pub mod graph;
+// Skeletons (tasks.md S4): declared here so the crate compiles; wired into
+// dispatch by the scenarios that need each command.
+#[allow(dead_code)]
+pub mod history;
 pub mod init;
 pub mod instructions;
 pub mod lint;
@@ -24,4 +28,7 @@ pub mod run_block;
 pub mod skills;
 pub mod spec;
 pub mod status;
+// Skeleton (tasks.md S4): wired into dispatch by the report scenarios.
+#[allow(dead_code)]
+pub mod timeline;
 pub mod upgrade;

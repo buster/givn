@@ -1,6 +1,6 @@
 # Project-owned command scripts. The README documents these same commands.
 verify:
-  command: "./run-tests.sh"
+  command: "./run-tests.sh --non-e2e"
   e2e_command: "./run-tests.sh --e2e"
 
 coverage:

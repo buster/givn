@@ -5,6 +5,11 @@ mod error;
 mod fossil;
 mod gherkin;
 mod git;
+// Skeleton (tasks.md S4): the binary's copy of the record module is declared
+// here but not wired into dispatch until the scenarios that need it; drop this
+// allowance when `main` uses it.
+#[allow(dead_code)]
+mod history;
 mod hooks;
 mod integrity_hook;
 mod overlap;

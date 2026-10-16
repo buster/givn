@@ -11,6 +11,7 @@ pub mod error;
 pub mod fossil;
 pub mod gherkin;
 pub mod git;
+pub mod history;
 pub mod hooks;
 pub mod integrity_hook;
 pub mod overlap;
