@@ -4947,7 +4947,7 @@ name it.
 
 ## Task 21 — `Every supported harness receives a development reporter` (`agent-activity-reporting`, added — Scenario Outline, three Examples rows)
 
-- [ ] **Scenario: `Every supported harness receives a development reporter`** (Examples: `omp`, `opencode`, `claude`)
+- [x] **Scenario: `Every supported harness receives a development reporter`** (Examples: `omp`, `opencode`, `claude`)
   - Design constraints:
     - The repository's agent targets are `opencode`, `agents`, `claude`, `omp`
       (`src/skills/targets.rs::AgentTarget::ALL`); three of them execute the
@@ -5164,9 +5164,23 @@ name it.
         12 steps (12 passed)
         EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+  - [x] **COMMIT** — `ff3480e38b07189ca68f43a0402c28b5212ee395` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `Every supported harness receives a development
         reporter` in the body. Record the revision identifier.
+        ```
+        $ GIVN_ATTRIBUTION_ACTIVE=1 GIVN_ATTRIBUTION_LLM=deepseek/deepseek-flash \
+          GIVN_ATTRIBUTION_REASONING=max GIVN_ATTRIBUTION_HARNESS=omp \
+          ./target/debug/givn commit -m "feat(agent-activity-reporting): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        Every supported harness receives a development reporter"
+        [16:08:18] committed revision on the Git backend
+        EXIT=0
+
+        Revision ff3480e38b07189ca68f43a0402c28b5212ee395 touches exactly this
+        scenario's files: the three new assets, `src/skills/targets.rs`,
+        `src/skills/rules.rs`, `tests/steps/agent_activity_reporting_steps.rs`,
+        the delta `.feature`'s `@wip` removal, and this task file's evidence.
+        ```
 
 ## Task 22 — `The neutral skills target receives no development reporter` (`agent-activity-reporting`, added)
 
