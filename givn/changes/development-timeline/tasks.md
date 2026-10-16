@@ -4167,10 +4167,43 @@ name it.
         4 steps (4 passed)
         EXIT 0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+  - [x] **COMMIT** — `049e5664fa18768140ad5fdbd3552ff5ef9a2902` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `A reported event that does not match the intake
         contract is rejected without corrupting the record` in the body. Record
         the revision identifier.
+        ```
+        One `givn commit` with the release note as the message subject and the
+        scenario title as the body:
+
+        $ GIVN_ATTRIBUTION_ACTIVE=1 GIVN_ATTRIBUTION_LLM=deepseek/deepseek-flash \
+          GIVN_ATTRIBUTION_REASONING=max GIVN_ATTRIBUTION_HARNESS=omp \
+          ./target/debug/givn commit -m "feat(agent-activity-reporting): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        A reported event that does not match the intake contract is rejected without corrupting the record"
+        [15:43:10] committed revision on the Git backend
+
+        $ git show --stat 049e5664fa18768140ad5fdbd3552ff5ef9a2902
+        commit 049e5664fa18768140ad5fdbd3552ff5ef9a2902
+        Author: buster <me@bstr.eu>
+        Date:   Fri Oct 16 15:43:10 2026 +0200
+
+            feat(agent-activity-reporting): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+            A reported event that does not match the intake contract is rejected without corrupting the record
+
+            Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../agent-activity-reporting.feature               |   2 +-
+         givn/changes/development-timeline/tasks.md         | 186 ++++++++++++++++++-
+         tests/steps/agent_activity_reporting_steps.rs      | 198 ++++++++++++++++++---
+         tests/steps/development_record_steps.rs            |   7 +
+         tests/steps/development_timeline_support.rs        |  10 +-
+         5 files changed, 365 insertions(+), 38 deletions(-)
+
+        One atomic revision for the scenario: the delta spec (`@wip` removed from
+        this scenario only), the fixture steps, and this file's Task 17 record
+        together.
+        ```
 
 ## Task 18 — `A rejected report never fails the agent action it reports` (`agent-activity-reporting`, added)
 
