@@ -102,6 +102,9 @@ pub struct GivnWorld {
     /// The change id parsed from the last `givn new <id>` command, for steps
     /// that refer to "the proposal.md" without naming the path.
     last_change_id: Option<String>,
+    /// The command name of the last `givn` invocation (`status`, `new`, …),
+    /// for steps that assert on "that command".
+    last_command: Option<String>,
     /// Override content written by the override Given step, for the
     /// "equals the project override content byte for byte" step.
     override_content: Option<String>,
@@ -462,6 +465,7 @@ pub(crate) fn world_envs(_world: &GivnWorld) -> Vec<(&'static str, &'static str)
 #[when(regex = r"^the user runs `([^`]+)`$")]
 fn user_runs(world: &mut GivnWorld, cmd: String) {
     let args = parse_command(&cmd);
+    world.last_command = args.first().cloned();
     let env = world
         .env
         .as_ref()

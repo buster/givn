@@ -6,8 +6,9 @@ mod fossil;
 mod gherkin;
 mod git;
 // Skeleton (tasks.md S4): the binary's copy of the record module is declared
-// here but not wired into dispatch until the scenarios that need it; drop this
-// allowance when `main` uses it.
+// here and `main` uses it; this allowance covers the skeleton items the
+// scenarios further down the task list have not wired yet (the step capture,
+// the bounded label, and the ignore block) — drop it when they are.
 #[allow(dead_code)]
 mod history;
 mod hooks;
@@ -22,7 +23,7 @@ mod subprocess;
 
 use std::path::PathBuf;
 
-use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
+use clap::{CommandFactory, FromArgMatches, Parser, Subcommand, ValueEnum};
 use clap_complete::{Shell, generate};
 
 /// givn — from Given to done.
@@ -314,13 +315,31 @@ enum SpecFormat {
 }
 
 fn main() {
-    let cli = Cli::parse();
+    let matches = Cli::command().get_matches();
+    let command_name = matches.subcommand_name().unwrap_or("givn").to_string();
+    let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
 
+    // The recording wrapper: one `command` entry per invocation, measured
+    // around dispatch and written after it, best-effort (src/history.rs).
+    let recorder = history::install(&command_name, &invocation_label());
     let result = dispatch(cli);
+    let (outcome, exit_code) = if result.is_ok() {
+        ("ok", 0)
+    } else {
+        ("failed", 1)
+    };
+    recorder.finish(outcome, exit_code);
+
     if let Err(e) = result {
         eprintln!("error: {e:#}");
         std::process::exit(1);
     }
+}
+
+/// The invocation's own text (arguments after the program name), the command
+/// entry's bounded subject label.
+fn invocation_label() -> String {
+    std::env::args().skip(1).collect::<Vec<String>>().join(" ")
 }
 
 fn dispatch(cli: Cli) -> anyhow::Result<()> {

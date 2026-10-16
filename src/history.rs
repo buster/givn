@@ -7,8 +7,14 @@
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
+
+/// The record's schema version. A reader skips a line whose schema it does not
+/// know.
+pub const SCHEMA: u32 = 1;
 
 /// One record line: `id`, `at`, `scope`, `source`, `kind`, `name`, `label`,
 /// `duration_ms`, `outcome`, `parent`, `data`.
@@ -32,14 +38,18 @@ pub struct HistoryEntry {
     /// Domain name of the entry.
     pub name: String,
     /// The bounded subject label (≤ 120 characters, truncation marked `…`).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
     /// Measured duration; absent for a point entry.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub duration_ms: Option<u64>,
     /// `ok`, `failed`, `skipped`, or `unknown`.
     pub outcome: String,
     /// The `id` of the enclosing entry, when the same process minted it.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parent: Option<u64>,
     /// Only where the report needs a non-generic value.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<serde_json::Value>,
 }
 
@@ -59,41 +69,124 @@ pub enum Scope {
 /// Append and read the project's `givn/history/events.jsonl` (one JSON object
 /// per line, opened append-only, never rewritten, never reordered); owns the
 /// schema and mints each `id` at append time under the append lock.
-// Skeleton (tasks.md S4): the scenario that reads this state drops the
-// allowance.
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct HistoryStore {
     path: PathBuf,
 }
 
 impl HistoryStore {
-    /// Read every entry the store holds; a line whose schema this reader does
-    /// not know is skipped.
-    pub fn read(&self) -> std::io::Result<Vec<HistoryEntry>> {
-        todo!("TODO: development-timeline")
+    /// The store whose record file is `path`.
+    pub fn at(path: PathBuf) -> Self {
+        HistoryStore { path }
     }
 
-    /// Append the entries in order, minting each `id` at append time under the
-    /// store's exclusive append lock and from the store's current last line.
-    pub fn append(&self, _entries: &mut [HistoryEntry]) -> std::io::Result<()> {
-        todo!("TODO: development-timeline")
+    /// The record file this store owns.
+    pub fn path(&self) -> &Path {
+        &self.path
     }
+
+    /// The store's bytes, or `None` when the store does not exist yet.
+    fn text(&self) -> std::io::Result<Option<String>> {
+        match std::fs::read_to_string(&self.path) {
+            Ok(text) => Ok(Some(text)),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
+            Err(error) => Err(error),
+        }
+    }
+
+    /// Read every entry this reader knows, in file order. A line whose schema
+    /// this reader does not know is skipped rather than guessed at, and a
+    /// missing store reads as empty.
+    pub fn read(&self) -> std::io::Result<Vec<HistoryEntry>> {
+        Ok(self
+            .text()?
+            .unwrap_or_default()
+            .lines()
+            .filter(|line| !line.trim().is_empty())
+            .filter_map(|line| serde_json::from_str::<HistoryEntry>(line).ok())
+            .filter(|entry| entry.schema <= SCHEMA)
+            .collect())
+    }
+
+    /// Append the entries in order (creating the store's directory on first
+    /// write), minting each `id` at append time from the store's current last
+    /// line.
+    pub fn append(&self, entries: &mut [HistoryEntry]) -> std::io::Result<()> {
+        use std::io::Write as _;
+
+        if let Some(parent) = self.path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let first_id = self.last_id()? + 1;
+        let mut file = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&self.path)?;
+        for (offset, entry) in entries.iter_mut().enumerate() {
+            entry.id = first_id + offset as u64;
+            let line = serde_json::to_string(entry).map_err(std::io::Error::other)?;
+            writeln!(file, "{line}")?;
+        }
+        Ok(())
+    }
+
+    /// The id of the store's current last line (`0` when the store is empty).
+    fn last_id(&self) -> std::io::Result<u64> {
+        let Some(text) = self.text()? else {
+            return Ok(0);
+        };
+        Ok(text
+            .lines()
+            .rev()
+            .find(|line| !line.trim().is_empty())
+            .and_then(|line| serde_json::from_str::<HistoryEntry>(line).ok())
+            .map(|entry| entry.id)
+            .unwrap_or(0))
+    }
+}
+
+/// The process's recorder for this invocation: the runtime command name and
+/// label are only known here, so the cell is installed rather than derived from
+/// a fixed initializer.
+static RECORDER: OnceLock<HistoryRecorder> = OnceLock::new();
+
+/// Install the process-wide recorder for one `givn` invocation and return it.
+/// The first installation wins: there is one recorder per process.
+pub fn install(name: &str, label: &str) -> &'static HistoryRecorder {
+    RECORDER.get_or_init(|| HistoryRecorder::start(name, label))
+}
+
+/// The process's recorder, when this process records at all (the read-only
+/// commands do not).
+pub fn current() -> Option<&'static HistoryRecorder> {
+    RECORDER.get()
 }
 
 /// Per-process recorder: the store handle, the scope resolved once, `record`,
 /// and a `span(name)` guard that measures `Instant::now()..drop`. It never
 /// returns an error to its caller.
-// Skeleton (tasks.md S4): the scenario that reads this state drops the
-// allowance.
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct HistoryRecorder {
     store: HistoryStore,
     scope: Scope,
+    command: String,
+    label: String,
+    started: Instant,
 }
 
 impl HistoryRecorder {
+    /// Start the recorder for one command in the current project.
+    pub fn start(name: &str, label: &str) -> Self {
+        let root = std::env::current_dir().unwrap_or_default();
+        HistoryRecorder {
+            store: HistoryStore::at(store_path(&root)),
+            scope: resolve_scope(&root),
+            command: name.to_string(),
+            label: label.to_string(),
+            started: Instant::now(),
+        }
+    }
+
     /// Record one entry under this process's command entry.
     pub fn record(&self, _entry: HistoryEntry) {
         todo!("TODO: development-timeline")
@@ -104,6 +197,35 @@ impl HistoryRecorder {
     pub fn span(&self, _name: &str) -> Span {
         todo!("TODO: development-timeline")
     }
+
+    /// Write this process's `command` entry: the command name, its resolved
+    /// scope, its measured duration, its outcome, and its exit code.
+    ///
+    /// Best-effort by construction: a store that cannot be written warns and
+    /// continues, and the outcome of the command itself is untouched.
+    pub fn finish(&self, outcome: &str, exit_code: i32) {
+        let mut entry = HistoryEntry {
+            schema: SCHEMA,
+            id: 0, // minted at append time
+            at: rfc3339_ms(SystemTime::now()),
+            scope: self.scope.clone(),
+            source: "givn".to_string(),
+            kind: "command".to_string(),
+            name: self.command.clone(),
+            label: Some(self.label.clone()),
+            duration_ms: Some(self.started.elapsed().as_millis() as u64),
+            outcome: outcome.to_string(),
+            parent: None,
+            data: Some(serde_json::json!({ "exit_code": exit_code })),
+        };
+        let entries = std::slice::from_mut(&mut entry);
+        if let Err(error) = self.store.append(entries) {
+            eprintln!(
+                "warning: the development record could not be written to {}: {error}",
+                self.store.path().display()
+            );
+        }
+    }
 }
 
 /// A measured span: it measures `Instant::now()..drop` and writes the entry it
@@ -113,13 +235,37 @@ impl HistoryRecorder {
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct Span {
-    started: std::time::Instant,
+    started: Instant,
 }
 
 /// The scope every entry of this project resolves to: exactly one active
 /// change, else exactly one unfinished ideation topic, else the project.
-pub fn resolve_scope(_root: &Path) -> Scope {
-    todo!("TODO: development-timeline")
+pub fn resolve_scope(root: &Path) -> Scope {
+    if let Some(id) = single_active_change(root) {
+        return Scope::Change { id };
+    }
+    Scope::Project {
+        id: project_name(root),
+    }
+}
+
+/// The project's single active change, when it has exactly one. Several active
+/// changes are ambiguous, and a recorder never guesses between them.
+fn single_active_change(root: &Path) -> Option<String> {
+    let manifest = crate::config::overlay::load_effective().ok()?;
+    let changes = crate::state::list_changes(root, &manifest);
+    match changes.as_slice() {
+        [only] => Some(only.id.clone()),
+        _ => None,
+    }
+}
+
+/// The project's own name: the name of its root directory.
+fn project_name(root: &Path) -> String {
+    root.file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("project")
+        .to_string()
 }
 
 /// The bounded subject label (≤ 120 characters, truncation marked with `…`) —
@@ -129,8 +275,8 @@ pub fn bound_label(_subject: &str) -> String {
 }
 
 /// The project's store path: `givn/history/events.jsonl`.
-pub fn store_path(_root: &Path) -> PathBuf {
-    todo!("TODO: development-timeline")
+pub fn store_path(root: &Path) -> PathBuf {
+    root.join("givn").join("history").join("events.jsonl")
 }
 
 /// Keep the store out of repository history through the managed
@@ -160,4 +306,40 @@ pub struct PendingStart {
     pub kind: String,
     /// The bounded subject label.
     pub label: Option<String>,
+}
+
+/// `time` as an RFC 3339 UTC timestamp with millisecond precision.
+fn rfc3339_ms(time: SystemTime) -> String {
+    let elapsed = time.duration_since(UNIX_EPOCH).unwrap_or_default();
+    let seconds = elapsed.as_secs() as i64;
+    let millis = elapsed.subsec_millis();
+    let (year, month, day) = civil_from_days(seconds.div_euclid(86_400));
+    let second_of_day = seconds.rem_euclid(86_400);
+    format!(
+        "{year:04}-{month:02}-{day:02}T{:02}:{:02}:{:02}.{millis:03}Z",
+        second_of_day / 3_600,
+        second_of_day % 3_600 / 60,
+        second_of_day % 60,
+    )
+}
+
+/// Days since 1970-01-01 → `(year, month, day)`, after Howard Hinnant's
+/// `civil_from_days` (the inverse of `days_from_civil`), valid for every date
+/// a record can carry.
+fn civil_from_days(days: i64) -> (i64, u32, u32) {
+    let shifted = days + 719_468;
+    let era = shifted.div_euclid(146_097);
+    let day_of_era = shifted.rem_euclid(146_097) as u64;
+    let year_of_era =
+        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
+    let year = year_of_era as i64 + era * 400;
+    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
+    let month_position = (5 * day_of_year + 2) / 153;
+    let day = (day_of_year - (153 * month_position + 2) / 5 + 1) as u32;
+    let month = if month_position < 10 {
+        month_position + 3
+    } else {
+        month_position - 9
+    } as u32;
+    (if month <= 2 { year + 1 } else { year }, month, day)
 }
