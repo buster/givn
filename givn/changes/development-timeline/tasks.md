@@ -7263,11 +7263,32 @@ name it.
         $ ... --exact "...::The report needs no network access to render"                  → 1 passed, 3 steps  EXIT=0
         $ ... --exact "...::The report shows the empty state for a scope with no recorded activity" → 1 passed, 4 steps  EXIT=0
         ```
-  - [x] **COMMIT** — `PENDING` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `24f5525166c1a5c976acb6af726f2f56d1ebee49` — `feat(development-report): <release note>` with
         the scenario title `A dense record is reported as aggregates instead of
         raw ticks` in the body. Record the revision identifier.
         ```
-        <!-- paste the commit output + the revision's file list -->
+        $ ./target/debug/givn commit -m "feat(development-report): Givn records the development process of every change and ideation — … opens in a browser.
+
+        A dense record is reported as aggregates instead of raw ticks"
+        [17:01:25] committed revision on the Git backend
+        EXIT=0
+
+        $ git show --stat --format='%H' 24f55251
+        24f5525166c1a5c976acb6af726f2f56d1ebee49
+
+         assets/timeline/report.html                        |   5 +
+         .../development-report.feature                     |   2 +-
+         givn/changes/development-timeline/tasks.md         | 149 +++++++++-
+         src/cli/timeline.rs                                | 194 ++++++++++++-
+         tests/steps/development_report_steps.rs            | 305 +++++++++++++++++++++
+         5 files changed, 640 insertions(+), 15 deletions(-)
+
+        Revision 24f55251 touches production source (`src/cli/timeline.rs` — the
+        `Aggregate` model, the one bucketing, the threshold read from
+        `TimeScale::time_per_pixel`, and the marker markup;
+        `assets/timeline/report.html` — the marker's style), the scenario's test
+        steps and dense fixture, the delta `.feature`'s `@wip` removal, and this
+        task file's evidence — never the spec alone.
         ```
 
 ## Task E1 — E2E setup: local environment, browser tier, strictness, tags, evidence
