@@ -558,7 +558,9 @@ one scope — or, with no scope flag, renders the project report, whose "outside
 scope" band carries the project's own entries — builds the report model (bands,
 phases, ranked longest steps, question wait totals, subagent fan-out, token
 totals overall, per model, and per subagent), substitutes that model into the
-embedded report document's data slot, writes one self-contained HTML file (by
+embedded report document twice — as the machine-readable model payload element
+the document's inline script parses, and as the text-only initial view the
+written file itself carries — writes one self-contained HTML file (by
 default `givn/history/reports/<scope>.html`), and prints its path. The command
 opens nothing itself and publishes no JSON model: the machine-readable view of
 the record is `givn history --json`. The document contains its own CSS,

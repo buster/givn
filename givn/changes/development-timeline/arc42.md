@@ -183,7 +183,10 @@ them:
 - chapter 03's `givn timeline` interface row and chapter 08's report-packaging
   paragraph drop the `--open` and `--json` surface the design no longer
   declares (the printed default path under `givn/history/reports/` is named
-  instead), and chapter 08's scope, ordering, and ignore paragraphs follow the
+  instead), and chapter 08's report-packaging paragraph names the document's two
+  substituted markers — the machine-readable model payload element the inline
+  script parses and the text-only initial view the file carries — instead of a
+  single data slot, and chapter 08's scope, ordering, and ignore paragraphs follow the
   hardened record contract (exactly-one-scope resolution, append-time ids,
   ordering by `at`);
 - chapter 11 keeps the **R-87** gap with a one-line note: the identifier was

@@ -969,9 +969,10 @@ a tracked file's modification anyway. The Fossil entry is `givn/history/*`, not
 
 **Report packaging.** `givn timeline` writes one self-contained HTML file from
 the embedded report asset: the CSS, JavaScript, and SVG are inline, the record
-model is substituted into a single data slot, and nothing is fetched. The
-document renders from the embedded timestamps alone, so a given record always
-produces the same pixels and the browser tier can assert rendered values
+model arrives as one machine-readable payload element (which the file's own
+script parses) plus the text-only initial view the file carries, and nothing is
+fetched. The document renders from the embedded timestamps alone, so a given
+record always produces the same pixels and the browser tier can assert rendered values
 deterministically. The report model is not published as JSON: the
 machine-readable view is `givn history --json`, which reads the record itself,
 and `givn timeline` writes its one HTML file and prints that file's path.
