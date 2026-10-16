@@ -3179,24 +3179,117 @@ name it.
     - Assertion shape: exactly one `agent`-sourced entry for the tool call, naming
       the tool and carrying the measured duration.
     - RED expected failure: both Then steps are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A reported tool call is recorded for its scope"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A reported tool call is recorded for its scope"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 5.02s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: A reported tool call is recorded for its scope
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  When the agent reports a completed tool call for "demo"
+           ✘  Then the development record holds one agent entry for that tool call
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:10:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        4 steps (3 passed, 1 failed)
+
+        thread 'main' (2329307) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — both Then steps are unbound (`the development
+        record holds one agent entry for that tool call` matches no function; the
+        scenario stops there, so `that entry names the tool and its measured
+        duration` never runs). The `When` step drove the real binary's
+        `history ingest` entry point; the subcommand is not wired yet, which the
+        step records without asserting — the RED signal is the undefined Then.
         ```
-  - [ ] **GREEN** — implement `givn history ingest` (payload read, per-event
+  - [x] **GREEN** — implement `givn history ingest` (payload read, per-event
         validation, append). Files: `src/cli/history.rs`, `src/history.rs`,
         `src/main.rs` (dispatch), `tests/steps/agent_activity_reporting_steps.rs`,
         `tests/steps/development_timeline_support.rs`. Compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.40s
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A reported tool call is recorded for its scope"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 4.93s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: A reported tool call is recorded for its scope
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  When the agent reports a completed tool call for "demo"
+           ✔  Then the development record holds one agent entry for that tool call
+           ✔  And that entry names the tool and its measured duration
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
+
+        Production files:
+        - `src/cli/history.rs` — `IntakePayload` (the one stdin read),
+          `IngestedEvent` with the per-kind validation table (`kind` must be a
+          mapped kind, `at` must parse as RFC 3339 UTC, a `tool` event must name
+          its tool), the `tool` mapping to an `agent`-sourced entry, the
+          payload-scope resolution (named `change`/`topic` override, missing
+          named scope = per-event rejection, otherwise `resolve_scope`), the
+          per-event stderr rejection naming, and the best-effort append.
+        - `src/history.rs` — `HistoryEntry::reported` (the agent-source entry
+          shape) and `parse_rfc3339_ms` + `days_from_civil`/`days_in_month` (the
+          record's one timestamp parser, which is also the `at` validation).
+        - `src/main.rs` — the `history ingest` subcommand, its dispatch, and the
+          recorder engagement rule (the read view still records nothing; the
+          intake records normally).
+        - `tests/steps/agent_activity_reporting_steps.rs` — the `When` and the
+          two `Then` steps, asserting against the payload's own values.
+        - `tests/steps/development_timeline_support.rs` — `intake_payload` and
+          `report_intake` (the real binary's stdin machine contract).
         ```
-  - [ ] **REFACTOR** — one event-mapping site per kind, no per-caller field
+  - [x] **REFACTOR** — one event-mapping site per kind, no per-caller field
         copying; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The accept-or-reject gate moved into one function, so both gates an
+        event passes (the payload's scope, the event's own validation) live on
+        one path into the append:
+
+        $ cargo fmt --all && cargo fmt --all -- --check
+        FMT_CLEAN
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 7.62s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A reported tool call is recorded for its scope"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 4.99s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: A reported tool call is recorded for its scope
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  When the agent reports a completed tool call for "demo"
+           ✔  Then the development record holds one agent entry for that tool call
+           ✔  And that entry names the tool and its measured duration
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `A reported tool call is recorded for its scope`

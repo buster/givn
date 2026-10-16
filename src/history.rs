@@ -66,6 +66,31 @@ pub enum Scope {
     Project { id: String },
 }
 
+impl HistoryEntry {
+    /// One entry the agent intake reports: `agent` as its source, the reported
+    /// end timestamp, the intake's resolved scope, `unknown` until the mapping
+    /// sets the reported outcome, and no `id` — the store mints it at append
+    /// time. A caller sets `label` through [`bound_label`] (or
+    /// [`bound_question_label`]), the record's one label path, so no raw
+    /// subject can reach the store.
+    pub fn reported(scope: Scope, kind: &str, name: &str, at: &str) -> Self {
+        HistoryEntry {
+            schema: SCHEMA,
+            id: 0,
+            at: at.to_string(),
+            scope,
+            source: "agent".to_string(),
+            kind: kind.to_string(),
+            name: name.to_string(),
+            label: None,
+            duration_ms: None,
+            outcome: "unknown".to_string(),
+            parent: None,
+            data: None,
+        }
+    }
+}
+
 /// Append and read the project's `givn/history/events.jsonl` (one JSON object
 /// per line, opened append-only, never rewritten, never reordered); owns the
 /// schema and mints each `id` at append time under the append lock.
@@ -528,4 +553,81 @@ fn civil_from_days(days: i64) -> (i64, u32, u32) {
         month_position - 9
     } as u32;
     (if month <= 2 { year + 1 } else { year }, month, day)
+}
+
+/// A reported `at` as milliseconds since the Unix epoch, or `None` when the
+/// text is not an RFC 3339 UTC timestamp (`YYYY-MM-DDThh:mm:ss[.fff]Z`, the
+/// form every reporter produces). This is the record's one timestamp parser:
+/// the intake validates each reported `at` through it and measures a reported
+/// span by subtracting two of them.
+pub fn parse_rfc3339_ms(at: &str) -> Option<i64> {
+    let (date, time) = at.split_once('T')?;
+    let mut date_parts = date.split('-');
+    let year: i64 = date_parts.next()?.parse().ok()?;
+    let month: u32 = date_parts.next()?.parse().ok()?;
+    let day: u32 = date_parts.next()?.parse().ok()?;
+    if date_parts.next().is_some() || month == 0 || month > 12 || day == 0 {
+        return None;
+    }
+    if day > days_in_month(year, month) {
+        return None;
+    }
+    let time = time.strip_suffix('Z')?;
+    let (clock, fraction) = match time.split_once('.') {
+        Some((clock, fraction)) => (clock, Some(fraction)),
+        None => (time, None),
+    };
+    let mut clock_parts = clock.split(':');
+    let hour: u32 = clock_parts.next()?.parse().ok()?;
+    let minute: u32 = clock_parts.next()?.parse().ok()?;
+    let second: u32 = clock_parts.next()?.parse().ok()?;
+    if clock_parts.next().is_some() || hour > 23 || minute > 59 || second > 60 {
+        return None;
+    }
+    let millis = match fraction {
+        None => 0,
+        Some(fraction) => {
+            if fraction.is_empty()
+                || fraction.len() > 9
+                || !fraction.bytes().all(|byte| byte.is_ascii_digit())
+            {
+                return None;
+            }
+            let mut millis = 0u32;
+            for byte in fraction.bytes().chain(std::iter::repeat(b'0')).take(3) {
+                millis = millis * 10 + u32::from(byte - b'0');
+            }
+            millis
+        }
+    };
+    let days = days_from_civil(year, month, day);
+    Some(
+        ((days * 24 + i64::from(hour)) * 60 + i64::from(minute)) * 60 * 1_000
+            + i64::from(second) * 1_000
+            + i64::from(millis),
+    )
+}
+
+/// Days since 1970-01-01 for a civil date, after Howard Hinnant's
+/// `days_from_civil` — the exact inverse of [`civil_from_days`].
+fn days_from_civil(year: i64, month: u32, day: u32) -> i64 {
+    let year = if month <= 2 { year - 1 } else { year };
+    let era = year.div_euclid(400);
+    let year_of_era = year - era * 400;
+    let month_position = i64::from(month) + if month > 2 { -3 } else { 9 };
+    let day_of_year = (153 * month_position + 2) / 5 + i64::from(day) - 1;
+    let day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year;
+    era * 146_097 + day_of_era - 719_468
+}
+
+/// The number of days in `month` of `year`, so a reported date is validated
+/// against the calendar rather than a flat `1..=31` range.
+fn days_in_month(year: i64, month: u32) -> u32 {
+    match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) => 29,
+        2 => 28,
+        _ => 0,
+    }
 }

@@ -2,7 +2,7 @@
 
 Feature: Agent Activity Reporting
 
-  @givn.added @wip
+  @givn.added
   Scenario: A reported tool call is recorded for its scope
     Given a project root with givn/ initialised
     And a change "demo" exists with artifact "proposal.md"
