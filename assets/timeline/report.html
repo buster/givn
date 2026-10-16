@@ -325,6 +325,11 @@
     return Math.floor(ms / 3_600_000) + " h " + String(minutes).padStart(2, "0") + " m";
   }
 
+  /** One token count as the report renders it, thousands separated. */
+  function countText(tokens) {
+    return String(tokens).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
   /** A recorded instant as the axis reads it: the time of day, from the
       embedded timestamp alone. */
   function clock(ms, seconds) {
@@ -551,20 +556,121 @@
     }
     timeline.appendChild(axis);
     model.bands.forEach((band, index) => {
-      timeline.appendChild(bandRow(band, GEOMETRY.axisHeight + index * GEOMETRY.bandHeight, perPixel));
+      const row = bandRow(band, GEOMETRY.axisHeight + index * GEOMETRY.bandHeight, perPixel);
+      if (selected !== null) {
+        const span = [...row.querySelectorAll(".span")].find(
+          (node) => Number(node.dataset.entryId) === selected,
+        );
+        if (span) span.classList.add("selected");
+      }
+      timeline.appendChild(row);
     });
   }
 
-  /** Set the visible range — the one place a zoom, a pan, or a fit moves the
-      axis, so every path derives its state the same way. */
-  function applyRange(next) {
-    const span = Math.max(MIN_RANGE_MS, Math.min(next.end - next.start, bounds.end - bounds.start || MIN_RANGE_MS));
-    let start = next.start;
-    if (start + span > bounds.end) start = bounds.end - span;
-    if (start < bounds.start) start = bounds.start;
-    range = { start, end: start + span };
-    render();
+  /* ── The details panel ──────────────────────────────────────────────────
+     One labelled region, opened by the one selection path the pointer and the
+     keyboard both reach, so an opened panel is the same panel however it was
+     opened. */
+
+  const panel = document.getElementById("details-panel");
+  const facts = document.getElementById("details-facts");
+  const closeControl = document.getElementById("details-close");
+  let selected = null;
+
+  /** One row of the panel: the fact's written label and its rendered value. */
+  function fact(label, value) {
+    const term = document.createElement("dt");
+    term.textContent = label;
+    const definition = document.createElement("dd");
+    definition.textContent = value;
+    return [term, definition];
   }
+
+  /** The facts the panel shows for one entry: its bounded label, its start, its
+      end, its duration, its outcome, and the model and tokens the record
+      reports for it. A value the record does not carry is stated as missing,
+      never rendered as a zero. */
+  function panelFacts(entry) {
+    const end = endOf(entry);
+    const duration = entry.duration_ms === undefined || entry.duration_ms === null
+      ? null
+      : entry.duration_ms;
+    const start = end === null ? null : end - (duration || 0);
+    const data = entry.data === undefined || entry.data === null ? {} : entry.data;
+    return [
+      ["Label", visibleName(entry)],
+      ["Start", start === null ? "not recorded" : clock(start, true)],
+      ["End", end === null ? "not recorded" : clock(end, true)],
+      ["Duration", durationText(entry)],
+      ["Outcome", typeof entry.outcome === "string" ? entry.outcome : "unknown"],
+      ["Model", typeof data.model === "string" ? data.model : "not reported"],
+      [
+        "Tokens",
+        typeof data.total_tokens === "number" ? countText(data.total_tokens) : "unavailable",
+      ],
+    ];
+  }
+
+  /** Bring the panel up to date for one entry — the one place the region's
+      content is written. */
+  function fillPanel(entry) {
+    if (!facts) return;
+    while (facts.firstChild) facts.removeChild(facts.firstChild);
+    for (const [label, value] of panelFacts(entry)) {
+      for (const node of fact(label, value)) facts.appendChild(node);
+    }
+  }
+
+  /** Select one entry: the report's one selection path. The pointer's click and
+      the keyboard's `Enter`/`Space` both reach it, and it is the only place the
+      panel opens and a span is marked selected. */
+  function select(entryId) {
+    const entry = entries.get(Number(entryId));
+    if (!entry || !panel) return;
+    selected = Number(entryId);
+    fillPanel(entry);
+    panel.hidden = false;
+    for (const span of timeline.querySelectorAll(".span")) {
+      span.classList.toggle("selected", Number(span.dataset.entryId) === selected);
+    }
+  }
+
+  /** Close the panel: the close control and `Escape` both reach it. */
+  function clearSelection() {
+    selected = null;
+    if (panel) panel.hidden = true;
+    if (facts) {
+      while (facts.firstChild) facts.removeChild(facts.firstChild);
+    }
+    for (const span of timeline.querySelectorAll(".span")) span.classList.remove("selected");
+  }
+
+  /** The span one event happened on, wherever inside the span it landed. */
+  function spanOf(event) {
+    const target = event.target;
+    return target && target.closest ? target.closest(".span") : null;
+  }
+
+  /** The one activation both the pointer and the keyboard reach: a click and an
+      `Enter`/`Space` on a span open the same panel through the same function. */
+  function activate(event) {
+    const span = spanOf(event);
+    if (span) select(span.dataset.entryId);
+  }
+
+  timeline.addEventListener("click", activate);
+
+  timeline.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+      event.preventDefault();
+      activate(event);
+    }
+  });
+
+  if (closeControl) closeControl.addEventListener("click", clearSelection);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") clearSelection();
+  });
 
   render();
 })();

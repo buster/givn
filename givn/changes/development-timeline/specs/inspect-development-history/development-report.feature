@@ -85,7 +85,7 @@ Feature: Development Report
       | change |
       | topic  |
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer selects a timeline element and reads its details
     Given an open development report with a recorded history
     When the consumer selects the longest recorded step
