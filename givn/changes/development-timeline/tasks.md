@@ -4415,9 +4415,43 @@ name it.
         A reported event that does not match the intake contract is rejected without corrupting the record => EXIT=0
         A rejected report never fails the agent action it reports => EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+  - [x] **COMMIT** — `fad0df07dd13d4502b6dbedce882862578855177` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `A rejected report never fails the agent action
         it reports` in the body. Record the revision identifier.
+        ```
+        One `givn commit` with the release note as the message subject and the
+        scenario title as the body:
+
+        $ GIVN_ATTRIBUTION_ACTIVE=1 GIVN_ATTRIBUTION_LLM=deepseek/deepseek-flash \
+          GIVN_ATTRIBUTION_REASONING=max GIVN_ATTRIBUTION_HARNESS=omp \
+          ./target/debug/givn commit -m "feat(agent-activity-reporting): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        A rejected report never fails the agent action it reports"
+        [15:46:07] committed revision on the Git backend
+
+        $ git show --stat fad0df07dd13d4502b6dbedce882862578855177
+        commit fad0df07dd13d4502b6dbedce882862578855177
+        Author: buster <me@bstr.eu>
+        Date:   Fri Oct 16 15:46:07 2026 +0200
+
+            feat(agent-activity-reporting): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+            A rejected report never fails the agent action it reports
+
+            Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../agent-activity-reporting.feature               |   2 +-
+         givn/changes/development-timeline/tasks.md         | 189 ++++++++++++++++++++-
+         src/cli/history.rs                                 |   5 +-
+         src/history.rs                                     |  25 +--
+         tests/steps/agent_activity_reporting_steps.rs      |  59 +++++++
+         5 files changed, 257 insertions(+), 23 deletions(-)
+
+        One atomic revision for the scenario: the delta spec (`@wip` removed from
+        this scenario only), the step and its assertion, the one warning path
+        (`src/history.rs::warn_unwritten`, used by the recorder and the intake),
+        and this file's Task 18 record together.
+        ```
 
 ## Task 19 — `The intake rejects a payload that is not readable JSON` (`agent-activity-reporting`, added)
 
