@@ -27,6 +27,31 @@ pub(crate) struct AgentActivityReportingState {
     /// The contract-violating event the last payload reported, with its 1-based
     /// position in the payload: the event the intake's rejection must name.
     pub(crate) violating_event: Option<(Value, usize)>,
+    /// The last run of the generated Claude shim, as the driver observed it.
+    pub(crate) harness_run: Option<HarnessRun>,
+}
+
+/// One run of the generated Claude shim: the wall time the driver's two hook
+/// invocations spanned, so a duration assertion compares the record against the
+/// run itself rather than a constant.
+#[derive(Debug)]
+pub(crate) struct HarnessRun {
+    /// The driver's own measured span of the two invocations.
+    gap_ms: u64,
+}
+
+/// The wait the driver injects between the permission request and the
+/// completion: long enough that a reporter-measured duration is unmistakable
+/// beside the harness's own 40 ms `duration_ms`.
+const HARNESS_WAIT_GAP: std::time::Duration = std::time::Duration::from_millis(600);
+
+/// The run the driver observed.
+fn harness_run(world: &GivnWorld) -> &HarnessRun {
+    world
+        .agent_activity_reporting
+        .as_ref()
+        .and_then(|state| state.harness_run.as_ref())
+        .expect("the harness has not reported a permission request yet")
 }
 
 /// The capability's state, created on first use: every fixture and assertion
@@ -1223,5 +1248,131 @@ fn entry_carries_the_wait_duration(world: &mut GivnWorld) {
         entry["outcome"],
         json!("ok"),
         "a resumed wait is not recorded as ok: {entry}"
+    );
+}
+
+#[given("a project with the generated Claude Code development reporter")]
+fn project_with_generated_claude_reporter(world: &mut GivnWorld) {
+    // The reporter is installed by the real `givn init --agents claude`, never
+    // a hand-written file: the scenario drives what the generator produced.
+    let env = crate::common::make_bare_root();
+    support::initialize_with_claude_reporter(&env);
+    world.env = Some(env);
+}
+
+#[when("the harness reports a permission request and then completion of that same tool call")]
+fn reports_a_permission_request_and_completion(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let started = std::time::Instant::now();
+    let request = support::report_harness_hook(env, &support::permission_request_payload());
+    assert!(
+        request.status.success(),
+        "the permission request hook failed (exit {:?}): {}",
+        request.status.code(),
+        String::from_utf8_lossy(&request.stderr)
+    );
+    // The wait the harness cannot report: the reporter's own stamps are the
+    // only measurement, so the driver really waits between the two hooks.
+    std::thread::sleep(HARNESS_WAIT_GAP);
+    let completion = support::report_harness_hook(env, &support::tool_completion_payload());
+    let gap_ms = started.elapsed().as_millis() as u64;
+    assert!(
+        completion.status.success(),
+        "the completion hook failed (exit {:?}): {}",
+        completion.status.code(),
+        String::from_utf8_lossy(&completion.stderr)
+    );
+    world.last_output = Some(completion);
+    state(world).harness_run = Some(HarnessRun { gap_ms });
+}
+
+#[then("the record holds one wait entry for the permission request")]
+fn record_holds_one_wait_entry_for_the_permission_request(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let entries = support::record_entries(&env.root());
+    let waits: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| entry["source"] == json!("agent") && entry["kind"] == json!("question"))
+        .collect();
+    assert_eq!(
+        waits.len(),
+        1,
+        "expected exactly the permission wait in the record; the record holds: {entries:#?}"
+    );
+    let entry = waits[0].clone();
+    let label = entry["label"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the wait entry carries no label: {entry}"));
+    assert!(
+        label.contains("permission request"),
+        "the wait entry does not name the permission request: {entry}"
+    );
+    assert!(
+        label.contains(support::WAIT_TOOL),
+        "the wait entry does not name the tool it waited for: {entry}"
+    );
+    assert_eq!(
+        entry["outcome"],
+        json!("ok"),
+        "a wait whose tool call completed is not recorded as ok: {entry}"
+    );
+    state(world).last_entry = Some(entry);
+}
+
+#[then("that entry carries a duration measured by the reporter itself")]
+fn entry_carries_a_reporter_measured_duration(world: &mut GivnWorld) {
+    let entry = identified_entry(world);
+    let run_gap_ms = harness_run(world).gap_ms;
+    let duration = entry["duration_ms"]
+        .as_u64()
+        .unwrap_or_else(|| panic!("the wait entry carries no measured duration: {entry}"));
+    assert!(
+        duration > 0,
+        "the measured wait is not a positive duration: {entry}"
+    );
+    // The harness's own duration for that call excludes time spent in the
+    // permission prompt, so the recorded wait is never that value.
+    assert_ne!(
+        duration,
+        support::HARNESS_TOOL_MS,
+        "the wait reuses the harness's excluding `duration_ms`: {entry}"
+    );
+    // Consistent with the driver's own run: the two shim invocations spanned
+    // `run_gap_ms`, the reporter stamped the first and measured at the second.
+    assert!(
+        duration * 2 >= run_gap_ms,
+        "the recorded wait ({duration} ms) does not cover the gap the driver ran ({run_gap_ms} ms): {entry}"
+    );
+    assert!(
+        duration <= run_gap_ms + 1_000,
+        "the recorded wait ({duration} ms) overshoots the gap the driver ran ({run_gap_ms} ms): {entry}"
+    );
+    // The tool entry the same completion reported keeps the harness's own
+    // duration: the wait's measurement is the wait's alone.
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let entries = support::record_entries(&env.root());
+    let tools: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| entry["source"] == json!("agent") && entry["kind"] == json!("tool"))
+        .collect();
+    assert_eq!(
+        tools.len(),
+        1,
+        "expected exactly the completed tool call in the record; the record holds: {entries:#?}"
+    );
+    assert_eq!(
+        tools[0]["duration_ms"],
+        json!(support::HARNESS_TOOL_MS),
+        "the tool entry did not keep the harness's own duration: {}",
+        tools[0]
     );
 }

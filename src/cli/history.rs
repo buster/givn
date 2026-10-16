@@ -9,14 +9,14 @@
 
 use std::collections::BTreeMap;
 use std::io::Read;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use serde_json::Value;
 
 use crate::history::{
-    HistoryEntry, HistoryStore, OUTCOME_UNKNOWN, Scope, USAGE_UNAVAILABLE, parse_rfc3339_ms,
-    reported_label, store_path,
+    HistoryEntry, HistoryStore, OUTCOME_UNKNOWN, PendingStart, PendingState, Scope,
+    USAGE_UNAVAILABLE, parse_rfc3339_ms, reported_label, store_path,
 };
 
 /// The intake's payload-level failure exit code: stdin was not readable JSON
@@ -357,13 +357,375 @@ fn outcome_of(word: &str) -> Option<&'static str> {
 }
 
 /// One raw hook payload from a process-per-hook harness, with the fields the
-/// mapper reads.
-// Skeleton (tasks.md S4): wired by the agent-activity-reporting scenarios.
-#[allow(dead_code)]
+/// mapper reads (the Claude Code payload's own field names).
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct HarnessPayload {
+    /// The harness event this payload reports (`PreToolUse`, `PostToolUse`,
+    /// `Stop`, `SessionEnd`, …).
+    #[serde(default)]
+    pub hook_event_name: Option<String>,
     /// The harness's own session id (the pending-state file key).
-    pub session_id: String,
+    #[serde(default)]
+    pub session_id: Option<String>,
+    /// The harness tool name, on tool events.
+    #[serde(default)]
+    pub tool_name: Option<String>,
+    /// The tool's own input, on tool events.
+    #[serde(default)]
+    pub tool_input: Option<Value>,
+    /// The harness's own call id, on tool events.
+    #[serde(default)]
+    pub tool_use_id: Option<String>,
+    /// The harness's own measured duration, on completion events.
+    #[serde(default)]
+    pub duration_ms: Option<u64>,
+    /// The notification type, on `Notification`.
+    #[serde(default)]
+    pub notification_type: Option<String>,
+}
+
+impl HarnessPayload {
+    /// The event this payload reports, empty when it names none.
+    fn event(&self) -> &str {
+        self.hook_event_name.as_deref().unwrap_or_default()
+    }
+}
+
+/// The Claude Code question tool: its own PreToolUse/PostToolUse pair is the
+/// question wait, and its payload carries the question text.
+const QUESTION_TOOL: &str = "AskUserQuestion";
+
+/// The pending key a permission wait opens when the harness names no tool (a
+/// `Notification` permission prompt).
+const PERMISSION_WAIT_KEY: &str = "permission";
+
+/// The pending key an idle prompt opens.
+const IDLE_WAIT_KEY: &str = "idle";
+
+/// The pending-state kind a tool start produces.
+const PENDING_KIND_TOOL: &str = "tool";
+
+/// The pending-state kind a wait start produces.
+const PENDING_KIND_QUESTION: &str = "question";
+
+/// The pending key a permission request opens: the harness names the tool, not
+/// the call, so the tool name is the harness's own identity for that wait.
+fn permission_key(tool: &str) -> String {
+    format!("permission:{tool}")
+}
+
+/// The measured span between a pending start and `now`, or `None` when the
+/// start's stamp is unreadable — an unmeasured wait is never invented.
+fn measured_from(start: Option<&PendingStart>, now_ms: i64) -> Option<u64> {
+    start
+        .and_then(|start| parse_rfc3339_ms(&start.started_at))
+        .and_then(|at| u64::try_from(now_ms.saturating_sub(at)).ok())
+}
+
+/// The bounded subject label of a tool call from the harness's own input: the
+/// command for a shell call, the path for a file call, the tool name
+/// otherwise. The complete input is never stored (D2).
+fn tool_subject(tool: &str, input: Option<&Value>) -> String {
+    let input = input.and_then(Value::as_object);
+    let subject = input.and_then(|input| {
+        ["command", "file_path", "path", "pattern", "query"]
+            .into_iter()
+            .find_map(|key| input.get(key).and_then(Value::as_str))
+    });
+    crate::history::bound_label(subject.unwrap_or(tool))
+}
+
+/// The question text of an `AskUserQuestion` call, as the record's bounded
+/// label path keeps it (the first line only).
+fn question_subject(input: Option<&Value>) -> Option<String> {
+    let question = input
+        .and_then(Value::as_object)
+        .and_then(|input| input.get("questions"))
+        .and_then(Value::as_array)
+        .and_then(|questions| questions.first())
+        .and_then(|first| first.get("question"))
+        .and_then(Value::as_str)?;
+    Some(reported_label("question", question))
+}
+
+/// One reported event from the mapper's own reading of the harness's payload.
+fn reported_event(kind: &str, at: &str) -> IngestedEvent {
+    IngestedEvent {
+        kind: kind.to_string(),
+        at: at.to_string(),
+        tool: None,
+        label: None,
+        duration_ms: None,
+        outcome: None,
+        status: None,
+        agent: None,
+        subagent: None,
+        turn: None,
+        model: None,
+        usage: None,
+    }
+}
+
+/// Raw harness payload → record events plus pending-state updates; the Claude
+/// mapper's only entry point, also usable by a future shell-based harness.
+///
+/// Every mapping step is best-effort: a payload shape the mapper cannot read
+/// contributes no event, and the caller still exits `0`, because a non-zero
+/// hook exit is a hook error for the harness.
+pub fn map_harness_event(
+    payload: &HarnessPayload,
+    pending: &mut PendingState,
+) -> Result<Vec<IngestedEvent>> {
+    Ok(match payload.event() {
+        "PreToolUse" => {
+            map_pre_tool_use(payload, pending);
+            Vec::new()
+        }
+        "PostToolUse" | "PostToolUseFailure" => map_tool_end(payload, pending),
+        "PermissionRequest" => {
+            map_permission_request(payload, pending);
+            Vec::new()
+        }
+        "Notification" => {
+            map_notification(payload, pending);
+            Vec::new()
+        }
+        "SessionEnd" => {
+            // Session end prunes the whole session's pending state: a start
+            // whose end never arrived costs a duration, never an entry.
+            pending.clear();
+            Vec::new()
+        }
+        _ => Vec::new(),
+    })
+}
+
+/// The tool's own start: `PreToolUse` carries no timestamp and no duration, so
+/// the reporter's own stamp is the only start the tool span can have. An
+/// `AskUserQuestion` start is a question wait instead of a tool span.
+fn map_pre_tool_use(payload: &HarnessPayload, pending: &mut PendingState) {
+    let (Some(tool), Some(call)) = (payload.tool_name.as_deref(), payload.tool_use_id.as_deref())
+    else {
+        return;
+    };
+    let (kind, label) = if tool == QUESTION_TOOL {
+        (
+            PENDING_KIND_QUESTION,
+            question_subject(payload.tool_input.as_ref()),
+        )
+    } else {
+        (
+            PENDING_KIND_TOOL,
+            Some(tool_subject(tool, payload.tool_input.as_ref())),
+        )
+    };
+    pending.open(
+        call,
+        PendingStart {
+            started_at: crate::history::now_rfc3339(),
+            kind: kind.to_string(),
+            label,
+        },
+    );
+}
+
+/// The tool's own end: the harness's measured `duration_ms` where it reports
+/// one, the reporter's stamped start otherwise — and the permission or idle
+/// wait the same completion closes, whose duration the harness's own
+/// `duration_ms` excludes.
+fn map_tool_end(payload: &HarnessPayload, pending: &mut PendingState) -> Vec<IngestedEvent> {
+    let at = crate::history::now_rfc3339();
+    let now = crate::history::now_ms();
+    let tool = payload
+        .tool_name
+        .clone()
+        .unwrap_or_else(|| "tool".to_string());
+    let failed = payload.event() == "PostToolUseFailure";
+    let start = payload
+        .tool_use_id
+        .as_deref()
+        .and_then(|call| pending.take(call));
+    let wait = pending.take_first(&[
+        permission_key(&tool),
+        PERMISSION_WAIT_KEY.to_string(),
+        IDLE_WAIT_KEY.to_string(),
+    ]);
+    let mut events = Vec::new();
+    if start
+        .as_ref()
+        .is_some_and(|start| start.kind == PENDING_KIND_QUESTION)
+    {
+        let mut question = reported_event("question", &at);
+        question.label = Some(
+            start
+                .as_ref()
+                .and_then(|start| start.label.clone())
+                .unwrap_or_else(|| QUESTION_TOOL.to_string()),
+        );
+        question.duration_ms = payload
+            .duration_ms
+            .or_else(|| measured_from(start.as_ref(), now));
+        question.outcome = Some(if failed { "failed" } else { "ok" }.to_string());
+        events.push(question);
+    } else {
+        let mut tool_event = reported_event("tool", &at);
+        tool_event.tool = Some(tool.clone());
+        tool_event.label = Some(
+            start
+                .as_ref()
+                .and_then(|start| start.label.clone())
+                .unwrap_or_else(|| tool_subject(&tool, payload.tool_input.as_ref())),
+        );
+        tool_event.duration_ms = payload
+            .duration_ms
+            .or_else(|| measured_from(start.as_ref(), now));
+        tool_event.outcome = Some(if failed { "failed" } else { "ok" }.to_string());
+        events.push(tool_event);
+    }
+    if let Some(wait) = wait {
+        // The wait the harness does not time: `duration_ms` excludes time spent
+        // in permission prompts, so the reporter's own stamps are the
+        // measurement.
+        let mut question = reported_event("question", &at);
+        question.label = wait.label.clone().or_else(|| Some(tool.clone()));
+        question.duration_ms = measured_from(Some(&wait), now);
+        question.outcome = Some("ok".to_string());
+        events.push(question);
+    }
+    events
+}
+
+/// A permission request: the harness reports the tool (and its input), never a
+/// call id or a timestamp, so the wait opens under the tool's own name.
+fn map_permission_request(payload: &HarnessPayload, pending: &mut PendingState) {
+    let key = payload
+        .tool_name
+        .as_deref()
+        .map(permission_key)
+        .unwrap_or_else(|| PERMISSION_WAIT_KEY.to_string());
+    let label = match payload.tool_name.as_deref() {
+        Some(tool) => format!("permission request: {tool}"),
+        None => "permission request".to_string(),
+    };
+    pending.open(
+        &key,
+        PendingStart {
+            started_at: crate::history::now_rfc3339(),
+            kind: PENDING_KIND_QUESTION.to_string(),
+            label: Some(label),
+        },
+    );
+}
+
+/// A notification: a permission prompt or an idle prompt opens the wait the
+/// next completion closes.
+fn map_notification(payload: &HarnessPayload, pending: &mut PendingState) {
+    let (key, label) = match payload.notification_type.as_deref() {
+        Some("permission_prompt") => (PERMISSION_WAIT_KEY, "permission request"),
+        Some("idle_prompt") => (IDLE_WAIT_KEY, "idle wait"),
+        _ => return,
+    };
+    pending.open(
+        key,
+        PendingStart {
+            started_at: crate::history::now_rfc3339(),
+            kind: PENDING_KIND_QUESTION.to_string(),
+            label: Some(label.to_string()),
+        },
+    );
+}
+
+/// One process-per-hook session's pending state: the file the harness's own
+/// session id names, read once per invocation, and the one write path every
+/// hook shares — prune by age, then one atomic store, so no caller can forget
+/// either step.
+struct PendingSession {
+    path: PathBuf,
+    state: PendingState,
+}
+
+impl PendingSession {
+    /// Read the session's state. A missing or unreadable file is an empty
+    /// state: losing it costs a duration, never an entry.
+    fn read(root: &Path, harness: &str, session_id: &str) -> Self {
+        let path = crate::history::pending_path(root, harness, session_id);
+        let state = PendingState::load(&path);
+        PendingSession { path, state }
+    }
+
+    /// The starts this invocation maps against.
+    fn state(&mut self) -> &mut PendingState {
+        &mut self.state
+    }
+
+    /// Write the state back: the record's one pruning rule (by age) and one
+    /// atomic store, which removes the file when nothing is open.
+    fn write(mut self) {
+        self.state.prune(crate::history::now_ms());
+        if let Err(error) = self.state.store(&self.path) {
+            eprintln!(
+                "warning: the pending state could not be written to {}: {error}",
+                self.path.display()
+            );
+        }
+    }
+}
+
+/// `givn history harness-hook --harness <name>` — map one raw harness payload
+/// from stdin into the record (the process-per-hook entry point).
+///
+/// Best-effort by construction: every mapping step is contained and the command
+/// always exits `0`, because a non-zero hook exit is a hook error for the
+/// harness and exit `2` blocks the tool.
+pub fn harness_hook(harness: &str) -> Result<()> {
+    let Ok(root) = std::env::current_dir() else {
+        return Ok(());
+    };
+    let mut text = String::new();
+    if std::io::stdin().read_to_string(&mut text).is_err() {
+        return Ok(());
+    }
+    let payload: HarnessPayload = match serde_json::from_str(&text) {
+        Ok(payload) => payload,
+        Err(error) => {
+            eprintln!("warning: the {harness} hook payload could not be read: {error}");
+            return Ok(());
+        }
+    };
+    let mut session = payload
+        .session_id
+        .as_deref()
+        .map(|session| PendingSession::read(&root, harness, session));
+    let mut sessionless = PendingState::default();
+    let pending = match session.as_mut() {
+        Some(session) => session.state(),
+        None => &mut sessionless,
+    };
+    let events = match map_harness_event(&payload, pending) {
+        Ok(events) => events,
+        Err(error) => {
+            eprintln!("warning: the {harness} hook payload could not be mapped: {error:#}");
+            return Ok(());
+        }
+    };
+    if let Some(session) = session {
+        session.write();
+    }
+    if events.is_empty() {
+        return Ok(());
+    }
+    let scope = crate::history::resolve_scope(&root);
+    let mut batch = IntakeBatch::default();
+    for event in events {
+        event.map(&scope, &mut batch);
+    }
+    batch.finish(&scope);
+    crate::history::ensure_ignored(&root);
+    let store = HistoryStore::at(store_path(&root));
+    if let Err(error) = store.append_linked(&mut batch.entries, &batch.parents) {
+        crate::history::warn_unwritten(&store, &error);
+    }
+    Ok(())
 }
 
 /// The scope a read covers: the change the caller named, the topic the caller
@@ -631,20 +993,4 @@ fn warn_rejected(index: usize, kind: Option<&str>, reason: &str) {
         index + 1,
         kind.unwrap_or("<none>"),
     );
-}
-
-/// `givn history harness-hook --harness <name>` — map one raw harness payload
-/// from stdin into the record (the process-per-hook entry point).
-// Skeleton (tasks.md S4): wired into dispatch by the harness scenarios.
-#[allow(dead_code)]
-pub fn harness_hook(_harness: &str) -> Result<()> {
-    todo!("TODO: development-timeline")
-}
-
-/// Raw harness payload → record events plus pending-state updates; the Claude
-/// mapper's only entry point, also usable by a future shell-based harness.
-// Skeleton (tasks.md S4): called by `harness_hook` once it is wired.
-#[allow(dead_code)]
-pub fn map_harness_event(_payload: &HarnessPayload) -> Result<Vec<IngestedEvent>> {
-    todo!("TODO: development-timeline")
 }

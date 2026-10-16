@@ -5334,7 +5334,7 @@ name it.
 
 ## Task 23 — `A wait the harness does not time is still recorded with a duration` (`agent-activity-reporting`, added)
 
-- [ ] **Scenario: `A wait the harness does not time is still recorded with a duration`**
+- [x] **Scenario: `A wait the harness does not time is still recorded with a duration`**
   - Design constraints:
     - Claude Code facts: `PreToolUse` payloads carry **no** timestamp and no
       duration, and `duration_ms` **excludes** time spent in permission prompts —
@@ -5365,13 +5365,37 @@ name it.
       duration the reporter measured itself (a positive value consistent with the
       stamped gap, not the harness's absent/excluding `duration_ms`).
     - RED expected failure: both Then steps are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A wait the harness does not time is still recorded with a duration"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A wait the harness does not time is still recorded with a duration"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: A wait the harness does not time is still recorded with a duration
+           ✘  Given a project with the generated Claude Code development reporter
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:92:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+
+        thread 'main' (2525595) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — both Then steps are unbound and the
+        scenario's own Given/When are unbound too; the harness-hook entry point
+        (`givn history harness-hook --harness claude`, whose mapper is
+        `todo!()`), the pending state, the shim driver, and the assertions are
+        all still missing.
         ```
-  - [ ] **GREEN** — implement the pending-state stamps and the wait mapping.
+  - [x] **GREEN** — implement the pending-state stamps and the wait mapping.
         Files: `src/cli/history.rs`, `src/history.rs` (`PendingState`),
         `assets/agent-integrations/claude/givn-timeline.sh`,
         `src/skills/targets.rs` (per-event registration),
@@ -5379,16 +5403,142 @@ name it.
         `tests/steps/development_timeline_support.rs`. Compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.39s
+        BUILD=0
+        $ cargo build --locked --tests
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 11.92s
+        TESTS=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A wait the harness does not time is still recorded with a duration"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 3.35s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: A wait the harness does not time is still recorded with a duration
+           ✔  Given a project with the generated Claude Code development reporter
+           ✔  When the harness reports a permission request and then completion of that same tool call
+           ✔  Then the record holds one wait entry for the permission request
+           ✔  And that entry carries a duration measured by the reporter itself
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
+
+        The mapped record, from a scratch run of the same real entry point
+        (first payload, a 0.7 s wait, then the completion; `givn` on `PATH` is
+        this build):
+
+        $ printf '%s' '{"hook_event_name":"PermissionRequest","session_id":"s1","tool_name":"Bash","tool_input":{"command":"cargo test --locked"}}' | .claude/hooks/givn-timeline.sh
+        req exit=0
+        $ cat givn/history/pending/claude-s1.json
+        {"starts":{"permission:Bash":{"started_at":"2026-10-16T14:15:03.054Z","kind":"question","label":"permission request: Bash"}}}
+        $ sleep 0.7; printf '%s' '{"hook_event_name":"PostToolUse","session_id":"s1","tool_name":"Bash","tool_use_id":"toolu_1","tool_input":{"command":"cargo test --locked"},"duration_ms":40,"tool_response":{}}' | .claude/hooks/givn-timeline.sh
+        end exit=0
+        (the pending file is consumed and removed)
+        $ grep '"source": "agent"' givn/history/events.jsonl
+        {"schema": 1, "id": 3, ..., "source": "agent", "kind": "tool", "name": "Bash", "label": "cargo test --locked", "duration_ms": 40, "outcome": "ok", ...}
+        {"schema": 1, "id": 4, ..., "source": "agent", "kind": "question", "name": "question", "label": "permission request: Bash", "duration_ms": 824, "outcome": "ok", ...}
+
+        The wait carries the reporter's own measurement (824 ms for a 0.7 s
+        wait), never the harness's 40 ms `duration_ms`, which the tool entry
+        keeps — the discrimination the two Then steps assert.
+
+        Production files created/modified by this GREEN step:
+        - `src/history.rs` (modified — `PendingState` implemented: `load`,
+          `open`, `take`, `take_first`, `prune` by the 24 h age, `clear`, and an
+          atomic `store` that removes the file when nothing is open; plus
+          `pending_path` for
+          `givn/history/pending/<harness>-<session-id>.json` and the
+          `now_rfc3339`/`now_ms` stamps the mapper measures with);
+        - `src/cli/history.rs` (modified — `HarnessPayload` carries the Claude
+          payload's fields; `map_harness_event` stamps the tool/question starts,
+          closes the tool's own span with the harness's `duration_ms`, consumes
+          the permission/idle wait a completion closes and measures it from the
+          reporter's own stamps, and prunes everything at `SessionEnd`), and
+          `harness_hook` is the always-exit-0 process-per-hook entry point;
+        - `src/main.rs` (modified — the `givn history harness-hook --harness
+          <name>` subcommand wired into dispatch, the entry point the generated
+          shim pipes to; Task S4 deferred this wiring to "the first scenario
+          that needs each command", and this is that scenario; the recording
+          wrapper's read-only exemption is unchanged, so the hook invocation
+          records like every other non-read command);
+        - `assets/agent-integrations/claude/givn-timeline.sh` (created in
+          Task 21; unchanged here — the design requires a three-line shim with
+          no logic beyond the pipe);
+        - `src/skills/targets.rs` (the per-event registration landed with
+          Task 21's Claude settings merge; unchanged here);
+        - `tests/steps/development_timeline_support.rs` (modified — the Claude
+          shim driver: `givn init --agents claude`, the generated shim executed
+          directly with a `PATH`-shimmed `givn`, and the permission-request /
+          completion payloads);
+        - `tests/steps/agent_activity_reporting_steps.rs` (modified — the
+          scenario's Given/When and both Then steps, and the driver-gap state
+          the duration assertion compares against).
+
+        Scope note: an earlier draft of this GREEN step also landed Task 24's
+        material (the transcript reader, the `Stop` turn mapping, the
+        `SubagentStop` usage hand-off, and Task 24's steps/fixture). That is
+        Task 24's own GREEN work, so it was removed from this scenario's commit
+        and its scenario commit; this commit carries exactly the wait mapping
+        this scenario asserts.
         ```
-  - [ ] **REFACTOR** — one pending-state read/write helper, one pruning rule;
+  - [x] **REFACTOR** — one pending-state read/write helper, one pruning rule;
         re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        `harness_hook` no longer reads, prunes, and writes the state inline:
+        `PendingSession::read(root, harness, session_id)` owns the one read (the
+        path the session id names, a missing or unreadable file as an empty
+        state) and `PendingSession::write()` owns the one write (the record's
+        single pruning rule — `PendingState::prune` with the 24 h
+        `PENDING_MAX_AGE_MS` — then one atomic store, which removes the file when
+        nothing is open). A payload without a session id maps against an empty
+        state and writes nothing. No behaviour change: the same stamps, the same
+        one store, and the same file removed when the wait closes.
+
+        $ cargo fmt --all -- --check
+        FMT OK
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.40s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::A wait the harness does not time is still recorded with a duration"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 12.10s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: A wait the harness does not time is still recorded with a duration
+           ✔  Given a project with the generated Claude Code development reporter
+           ✔  When the harness reports a permission request and then completion of that same tool call
+           ✔  Then the record holds one wait entry for the permission request
+           ✔  And that entry carries a duration measured by the reporter itself
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+  - [x] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `A wait the harness does not time is still
         recorded with a duration` in the body. Record the revision identifier.
+        ```
+        $ GIVN_ATTRIBUTION_ACTIVE=1 GIVN_ATTRIBUTION_LLM=deepseek/deepseek-flash \
+          GIVN_ATTRIBUTION_REASONING=max GIVN_ATTRIBUTION_HARNESS=omp \
+          ./target/debug/givn commit -m "feat(agent-activity-reporting): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        A wait the harness does not time is still recorded with a duration"
+        [16:16:30] committed revision on the Git backend
+        EXIT=0
+
+        Revision 6160eac363bab1d8128fed183b7828ce1063a66f was the first commit
+        of this scenario; it was withdrawn (soft reset, own unpushed revision)
+        because it also carried Task 24's material, and replaced by the
+        Task 23-only revision recorded above. The delta `.feature`'s `@wip`
+        removal and this task file's evidence ride with the revision.
+        ```
 
 ## Task 24 — `Token usage read from the harness's own session record is recorded with its model` (`agent-activity-reporting`, added)
 
