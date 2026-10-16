@@ -198,7 +198,7 @@ impl HistoryRecorder {
     /// A fresh entry in this process's scope: the values every entry starts
     /// with — the schema version, its end timestamp, `givn` as the source, no
     /// parent, and no measured duration. The store mints the `id` at append
-    /// time.
+    /// time. Every label a caller hands in is bounded here.
     fn entry(&self, kind: &str, name: &str, label: Option<String>) -> HistoryEntry {
         HistoryEntry {
             schema: SCHEMA,
@@ -208,7 +208,7 @@ impl HistoryRecorder {
             source: "givn".to_string(),
             kind: kind.to_string(),
             name: name.to_string(),
-            label,
+            label: label.map(|label| bound_label(&label)),
             duration_ms: None,
             outcome: "unknown".to_string(),
             parent: None,
@@ -217,8 +217,11 @@ impl HistoryRecorder {
     }
 
     /// Record one entry under this process's command entry: it is written by
-    /// the flush, after the command entry, which is this process's parent.
-    pub fn record(&self, entry: HistoryEntry) {
+    /// the flush, after the command entry, which is this process's parent. A
+    /// caller-built entry's label is bounded here too, so no raw subject can
+    /// reach the store.
+    pub fn record(&self, mut entry: HistoryEntry) {
+        entry.label = entry.label.map(|label| bound_label(&label));
         if let Ok(mut pending) = self.pending.lock() {
             pending.push(entry);
         }
@@ -391,10 +394,21 @@ fn project_name(root: &Path) -> String {
         .to_string()
 }
 
+/// The longest label the record keeps, in characters (never bytes).
+pub const LABEL_LIMIT: usize = 120;
+
 /// The bounded subject label (≤ 120 characters, truncation marked with `…`) —
-/// the only place raw subjects are touched.
-pub fn bound_label(_subject: &str) -> String {
-    todo!("TODO: development-timeline")
+/// the only place raw subjects are touched. A subject at or under the limit is
+/// kept verbatim; a longer one keeps the first `LABEL_LIMIT - 1` characters and
+/// marks the truncation, so the marked label is itself within the limit.
+pub fn bound_label(subject: &str) -> String {
+    let mut chars = subject.chars();
+    let mut bounded: String = chars.by_ref().take(LABEL_LIMIT).collect();
+    if chars.next().is_some() {
+        bounded.pop();
+        bounded.push('…');
+    }
+    bounded
 }
 
 /// The project's store path: `givn/history/events.jsonl`.

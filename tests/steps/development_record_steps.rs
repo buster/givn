@@ -34,6 +34,11 @@ pub(crate) struct DevelopmentRecordState {
     pub(crate) topic: Option<String>,
 }
 
+/// The verification command the bounded-label fixture declares: it really runs
+/// (so its step entry is measured) and its complete text is longer than the
+/// record's label limit, so the complete text must not survive into the store.
+pub(crate) const LONG_VERIFY_COMMAND: &str = "sleep 1 # 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789";
+
 /// The byte-level form of "nothing earlier was rewritten": the store still
 /// begins with the bytes it held before the scenario's next command. Both
 /// append-only steps state the property through this one assertion.
@@ -104,22 +109,7 @@ fn record_holds_one_entry_for_the_verification_run(world: &mut GivnWorld) {
         .as_ref()
         .expect("a project root is required first");
     let entries = support::record_entries(&env.root());
-    let command = entries
-        .iter()
-        .find(|entry| entry["kind"] == json!("command") && entry["name"] == json!("check"))
-        .unwrap_or_else(|| panic!("no `command` entry for the check invocation: {entries:#?}"));
-    let command_id = command["id"].clone();
-    let steps: Vec<Value> = entries
-        .iter()
-        .filter(|entry| entry["kind"] == json!("step") && entry["parent"] == command_id)
-        .cloned()
-        .collect();
-    assert_eq!(
-        steps.len(),
-        1,
-        "expected exactly one `step` entry under the check command; the record holds: {entries:#?}"
-    );
-    let step = &steps[0];
+    let step = verified_step_entry(world, &entries).clone();
     let label = step["label"]
         .as_str()
         .unwrap_or_else(|| panic!("the verification step carries no label: {step}"));
@@ -134,7 +124,7 @@ fn record_holds_one_entry_for_the_verification_run(world: &mut GivnWorld) {
     world
         .development_record
         .get_or_insert_with(DevelopmentRecordState::default)
-        .last_entry = Some(step.clone());
+        .last_entry = Some(step);
 }
 
 #[then("that entry carries a duration of at least one second")]
@@ -461,6 +451,121 @@ fn every_parent_link_names_an_entry_in_the_record(world: &mut GivnWorld) {
         linked,
         support::RACING_ROUNDS * 2 * 2,
         "the record does not carry the racing runs' child links: {entries:#?}"
+    );
+}
+
+#[given(
+    regex = r#"^a change "([^"]+)" with a command whose full text is longer than 120 characters$"#
+)]
+fn change_with_a_command_longer_than_the_label_limit(world: &mut GivnWorld, id: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    assert!(
+        LONG_VERIFY_COMMAND.chars().count() > 120,
+        "the fixture's command text must exceed the record's label limit: {LONG_VERIFY_COMMAND}"
+    );
+    let out = common::run_givn(env, &["new", &id]);
+    assert!(
+        out.status.success(),
+        "givn new {id} failed: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+    support::declare_verify_command(env, LONG_VERIFY_COMMAND);
+    world.last_change_id = Some(id);
+}
+
+#[when("the user runs that command")]
+fn user_runs_that_command(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let change = world
+        .last_change_id
+        .clone()
+        .expect("the long-command fixture ran first");
+    let out = common::run_givn(env, &["check", "tasks", "--change", &change]);
+    world.last_command = Some("check".to_string());
+    world.last_output = Some(out);
+}
+
+/// The one `step` entry the fixture's own run recorded as the child of the
+/// `check` command's entry — found through the command's minted id, never by
+/// position.
+fn verified_step_entry<'a>(world: &GivnWorld, entries: &'a [Value]) -> &'a Value {
+    let command = recorded_command_entry(world, entries);
+    let steps: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| entry["kind"] == json!("step") && entry["parent"] == command["id"])
+        .collect();
+    assert_eq!(
+        steps.len(),
+        1,
+        "expected exactly one `step` entry under the check command; the record holds: {entries:#?}"
+    );
+    steps[0]
+}
+
+#[then("the recorded entry's label is at most 120 characters and marks the truncation")]
+fn recorded_label_is_at_most_120_characters_and_marks_the_truncation(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let entries = support::record_entries(&env.root());
+    let step = verified_step_entry(world, &entries).clone();
+    let label = step["label"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the step entry carries no label: {step}"));
+    assert!(
+        label.chars().count() <= 120,
+        "the label is not bounded to 120 characters ({}): {step}",
+        label.chars().count()
+    );
+    let truncated = label
+        .strip_suffix('…')
+        .unwrap_or_else(|| panic!("the label does not mark its truncation: {step}"));
+    assert!(
+        LONG_VERIFY_COMMAND.starts_with(truncated),
+        "the label is not derived from the command text: {step}"
+    );
+    assert_ne!(
+        label, LONG_VERIFY_COMMAND,
+        "the label kept the complete command text: {step}"
+    );
+    // The bound is a character count, not a byte count: the label is measured
+    // the way a consumer measures it.
+    assert_eq!(
+        truncated.chars().count() + 1,
+        label.chars().count(),
+        "the truncation mark is not part of the bounded label: {step}"
+    );
+}
+
+#[then("the record holds no complete command text")]
+fn record_holds_no_complete_command_text(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let bytes = support::store_bytes(&env.root());
+    let text = String::from_utf8_lossy(&bytes);
+    assert!(
+        !text.contains(LONG_VERIFY_COMMAND),
+        "the store carries the complete command text: {text}"
+    );
+    // Not a vacuous claim: the fixture's own run is in the store, with the
+    // truncated label as its only trace of the command.
+    let entries = support::record_entries(&env.root());
+    let step = verified_step_entry(world, &entries).clone();
+    let label = step["label"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the step entry carries no label: {step}"));
+    assert!(
+        text.lines().any(|line| line.contains(label)),
+        "the record does not carry the step's bounded label: {text}"
     );
 }
 
