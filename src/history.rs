@@ -333,7 +333,7 @@ impl Drop for Span<'_> {
 /// project's own state is ambiguous; a recorder never guesses between
 /// candidates.
 pub fn resolve_scope(root: &Path) -> Scope {
-    let candidates: [fn(&Path) -> Option<Scope>; 1] = [change_scope];
+    let candidates: [fn(&Path) -> Option<Scope>; 2] = [change_scope, topic_scope];
     candidates
         .into_iter()
         .find_map(|candidate| candidate(root))
@@ -348,6 +348,31 @@ fn change_scope(root: &Path) -> Option<Scope> {
     let manifest = crate::config::overlay::load_effective().ok()?;
     let changes = crate::state::list_changes(root, &manifest);
     single(changes.into_iter().map(|change| change.id)).map(|id| Scope::Change { id })
+}
+
+/// The ideation scope, when exactly one topic's session is unfinished — the
+/// topic a project that has no active change is still working on. Several
+/// unfinished topics are ambiguous, and a recorder never guesses between them.
+fn topic_scope(root: &Path) -> Option<Scope> {
+    let unfinished = std::fs::read_dir(root.join("givn").join("ideation"))
+        .ok()?
+        .flatten()
+        .filter(|entry| entry.path().is_dir())
+        .filter(|entry| topic_is_unfinished(&entry.path()))
+        .map(|entry| entry.file_name().to_string_lossy().into_owned());
+    single(unfinished).map(|id| Scope::Ideation { id })
+}
+
+/// Whether a topic is still in flight: `givn/ideation/<topic>/session.md`
+/// exists and carries no `## Completion` section — the section the handoff
+/// step appends beside its own phase line.
+fn topic_is_unfinished(topic_dir: &Path) -> bool {
+    let Ok(session) = std::fs::read_to_string(topic_dir.join("session.md")) else {
+        return false;
+    };
+    !session
+        .lines()
+        .any(|line| line.trim_start().starts_with("## Completion"))
 }
 
 /// The exactly-one rule every scope case applies: exactly one candidate

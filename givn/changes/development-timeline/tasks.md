@@ -1567,7 +1567,7 @@ name it.
 
 ## Task 6 — `Two writers never mint the same entry id` (`development-record`, added)
 
-- [ ] **Scenario: `Two writers never mint the same entry id`**
+- [x] **Scenario: `Two writers never mint the same entry id`**
   - Design constraints:
     - Concurrency contract (design-review Q5): `id` is minted **at append time
       under the store's exclusive append lock** from the store's current last
@@ -1751,9 +1751,20 @@ name it.
         behind the lock's back), so the lock covers exactly one read-and-append scope; the test
         code was formatted. One id-minting site and one lock scope, verified by the greps above.
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+  - [x] **COMMIT** — `e7c44231cc1816a0ad17637da2bc89529691a60d` — `feat(development-record): <release note>` with
         the scenario title `Two writers never mint the same entry id` in the
         body. Record the revision identifier.
+        ```
+        $ givn commit -m "feat(development-record): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        Two writers never mint the same entry id"
+        [13:33:42] committed revision on the Git backend
+        $ git rev-parse HEAD
+        e7c44231cc1816a0ad17637da2bc89529691a60d
+        ```
+        One atomic revision: RED+GREEN+REFACTOR together — the delta spec (this scenario's `@wip`
+        removed), `src/history.rs` (the append lock), both test files (the barrier fixture and the
+        concurrency assertions), and this file's Task 5 revision record.
 
 ## Task 7 — `Activity during an ideation belongs to its topic scope` (`development-record`, added)
 
@@ -1774,23 +1785,142 @@ name it.
     - Assertion shape: the entry recorded for `givn status` names the ideation
       topic `timeline-ideas` as its scope.
     - RED expected failure: the topic-scope Then step is undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Activity during an ideation belongs to its topic scope"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Activity during an ideation belongs to its topic scope"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: Activity during an ideation belongs to its topic scope
+           ✔  Given a project root with givn/ initialised
+           ✘  And an ideation topic "timeline-ideas" whose session is unfinished
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:55:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+
+        thread 'main' (2036342) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT 101
+
+        Category: undefined step — the ideation fixture Given and the topic-scope Then do not
+        exist yet. Every other scenario kept its `@wip` tag.
         ```
-  - [ ] **GREEN** — implement the unfinished-topic rule in `resolve_scope`.
+  - [x] **GREEN** — implement the unfinished-topic rule in `resolve_scope`.
         Files: `src/history.rs`, `tests/steps/development_record_steps.rs`,
         `tests/steps/development_timeline_support.rs` (the ideation fixture
         builder). Compile first, re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.35s       EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Activity during an ideation belongs to its topic scope"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 7.95s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: Activity during an ideation belongs to its topic scope
+           ✔  Given a project root with givn/ initialised
+           ✔  And an ideation topic "timeline-ideas" whose session is unfinished
+           ✔  When the user runs `givn status`
+           ✔  Then the recorded entry names the ideation topic as its scope
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT 0
+
+        Discrimination proof — controlled omission (the new candidate is what the scenario pins):
+        `resolve_scope`'s candidate list was reduced to `[change_scope]` for exactly one run, and
+        the scenario went red because the entry then fell through to the project scope:
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Activity during an ideation belongs to its topic scope"   # with the topic candidate omitted
+        Feature: Development Record
+          Scenario: Activity during an ideation belongs to its topic scope
+           ✔  Given a project root with givn/ initialised
+           ✔  And an ideation topic "timeline-ideas" whose session is unfinished
+           ✔  When the user runs `givn status`
+           ✘  Then the recorded entry names the ideation topic as its scope
+              Step panicked. Captured output: assertion `left == right` failed: the entry's scope does not name the unfinished ideation topic: {"id":".tmp8DUFmw","kind":"project"}
+                left: Object {"id": String(".tmp8DUFmw"), "kind": String("project")}
+               right: Object {"id": String("timeline-ideas"), "kind": String("ideation")}
+        [Summary]
+        1 scenario (1 failed)
+        EXIT 101
+
+        The omission was reverted immediately (the git diff of `src/history.rs` is back to the
+        topic arm) and the same command re-ran green (exit 0, pasted above).
+
+        Production files created/modified by this scenario:
+          src/history.rs       `resolve_scope` gains the second candidate — `topic_scope`, which
+                               binds the scope to `{"kind":"ideation","id":"<topic>"}` when
+                               exactly one topic under `givn/ideation/` has a `session.md`
+                               without a `## Completion` section (`topic_is_unfinished`); several
+                               unfinished topics are ambiguous and fall through to the project,
+                               the same rule the change case applies.
+        Test/fixture files touched:
+          tests/steps/development_timeline_support.rs  `declare_unfinished_ideation_topic` (the
+                               builder Task 28 reuses: `givn/ideation/<topic>/session.md` with the
+                               frame phase and progress lines, no `## Completion`) and the split
+                               `assert_no_active_change` / `assert_bare_project`, so the topic
+                               fixture can assert "no active change" without claiming the project is
+                               bare.
+          tests/steps/development_record_steps.rs      the Given (asserts no change is active, builds
+                               the topic, remembers its id) and the Then: exactly one `command`
+                               entry for the command the scenario ran, whose whole scope object
+                               equals `{"kind":"ideation","id":"timeline-ideas"}` — the scope comes
+                               from the fixture's topic, not from a literal in the assertion.
         ```
-  - [ ] **REFACTOR** — share the "exactly one candidate, otherwise fall through"
+  - [x] **REFACTOR** — share the "exactly one candidate, otherwise fall through"
         shape between the change and topic cases; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        $ cargo fmt --all -- --check                                                   EXIT 0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.63s        EXIT 0
+
+        The shape is one list and one rule, verified rather than asserted:
+        $ grep -n "candidates:\|fn single<\|single(" src/history.rs
+        src/history.rs:336:    let candidates: [fn(&Path) -> Option<Scope>; 2] = [change_scope, topic_scope];
+        src/history.rs:350:    single(changes.into_iter().map(|change| change.id)).map(|id| Scope::Change { id })
+        src/history.rs:363:    single(unfinished).map(|id| Scope::Ideation { id })
+        src/history.rs:381:fn single<T>(mut candidates: impl Iterator<Item = T>) -> Option<T> {
+        → both cases produce candidates and hand them to the same `single`; neither repeats
+        "exactly one, otherwise fall through".
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --tags "not @e2e and not @wip"   # every scenario this bundle has greened, one process
+        [Summary]
+        2 features
+        8 scenarios (8 passed)
+        44 steps (44 passed)
+        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Activity during an ideation belongs to its topic scope"
+        Feature: Development Record
+          Scenario: Activity during an ideation belongs to its topic scope
+           ✔  Given a project root with givn/ initialised
+           ✔  And an ideation topic "timeline-ideas" whose session is unfinished
+           ✔  When the user runs `givn status`
+           ✔  Then the recorded entry names the ideation topic as its scope
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT 0
+
+        Cleanups, no behaviour change: the "exactly one `command` entry for the command the
+        scenario ran" block existed three times (Task 1's reading step and both scope steps) and is
+        now one `recorded_command_entry` helper, so every step finds the entry the same way — by
+        the command name the `the user runs …` step captured, never by position, so a fixture's own
+        setup commands can never be mistaken for it. The scope steps also read only the scope out of
+        that entry, which is what their titles claim.
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
         the scenario title `Activity during an ideation belongs to its topic
