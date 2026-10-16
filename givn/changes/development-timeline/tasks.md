@@ -7093,7 +7093,7 @@ name it.
 
 ## Task 33 — `A dense record is reported as aggregates instead of raw ticks` (`development-report`, added)
 
-- [ ] **Scenario: `A dense record is reported as aggregates instead of raw ticks`**
+- [x] **Scenario: `A dense record is reported as aggregates instead of raw ticks`**
   - Design constraints:
     - Aggregation rule: the timeline never draws one shape per entry when that
       would be unreadable. At the initial zoom, entries shorter than the
@@ -7115,27 +7115,160 @@ name it.
       those entries at the initial zoom; the summary's entry count still equals
       the full record's entry count.
     - RED expected failure: all three Then steps are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::A dense record is reported as aggregates instead of raw ticks"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::A dense record is reported as aggregates instead of raw ticks"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: A dense record is reported as aggregates instead of raw ticks
+           ✘  Given a change "demo" whose record holds hundreds of short agent activities
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:59:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+
+        thread 'main' (2621424) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — the dense-record Given matches no
+        function (all three Then steps are unbound too). The contract did not
+        hold before this revision: the report drew one `<g class="span">` per
+        entry, so a record of hundreds of short activities produced hundreds of
+        2 px marks — an unreadable axis, and exactly the failure this scenario
+        exists to prevent.
         ```
-  - [ ] **GREEN** — implement the bucket aggregation and the aggregate marker.
+  - [x] **GREEN** — implement the bucket aggregation and the aggregate marker.
         Files: `src/cli/timeline.rs`, `assets/timeline/report.html`,
         `tests/steps/development_report_steps.rs`. Compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 7.29s
+        BUILD=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::A dense record is reported as aggregates instead of raw ticks"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 16.80s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: A dense record is reported as aggregates instead of raw ticks
+           ✔  Given a change "demo" whose record holds hundreds of short agent activities
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report collapses the short agent activities into aggregate markers
+           ✔  And each aggregate marker names how many entries it covers and their total duration
+           ✔  And the report summary still counts every recorded entry
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
+
+        Production files created/modified by this GREEN step:
+        - `src/cli/timeline.rs` (modified — `Aggregate` (the band's scope, the
+          bucket's own bounds, the covered entry ids, their combined measured
+          duration) and `ReportModel::aggregates`; the one bucketing
+          `aggregates_for` plus its threshold `collapses` ("the entry's drawn
+          extent is shorter than the time one pixel of the window spends on"),
+          read from the one place that derives it, `TimeScale::time_per_pixel`;
+          `DRAWING_WIDTH` and `AGGREGATE_BUCKET_PX` (16 units, so the initial
+          zoom draws at most the drawing width divided by 16 markers per band —
+          a bounded number of shapes for a record of any size);
+          `TimeScale::bucket` (a marker's bucket tiled onto the axis, never
+          narrower than the minimum mark); `render_band` drawing each entry as
+          its own span or as the marker standing for it, once per bucket; and
+          `render_aggregate`, the marker's markup — `data-count`,
+          `data-duration-ms`, `data-bucket-start-ms`/`data-bucket-end-ms` (the
+          zoom path's own inputs), an accessible name, and no `data-entry-id`
+          (a marker never pretends to be one entry's span));
+        - `assets/timeline/report.html` (modified — the marker's style: the
+          band's own hue at .8 opacity and the muted label, in the tokens the
+          design system declares);
+        - `tests/steps/development_report_steps.rs` (modified — the dense
+          fixture (240 activities, 4 s apart, 250 ms each, seeded through the
+          builder), the drawn-marker reader, and all three Then steps);
+        - `src/cli/timeline.rs`'s summary path is deliberately untouched: the
+          summary and the longest-step ranking still read the whole record, so
+          the aggregation can only ever change what is *drawn*, never what is
+          counted.
+
+        The fixture's numbers: 240 activities over 956 s → the window's
+        time-per-pixel is 1 160 ms, every activity is 250 ms (far below it), the
+        bucket is 18 560 ms, and the report draws 52 markers standing for the
+        240 entries (1 marker covering 3 entries, 18 covering 4, 33 covering 5);
+        the entries tile still reads 240. Checked independently of the scenario
+        against a scratch project root holding the same 240 activities:
+        `grep -c '<g class="aggregate"' report.html` → 52,
+        `grep -c '<g class="span"' report.html` → 0, and the markers'
+        `data-count` attributes sum to 240.
         ```
-  - [ ] **REFACTOR** — one bucketing function used by the initial zoom and by
+  - [x] **REFACTOR** — one bucketing function used by the initial zoom and by
         the replacement-on-zoom path; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        There is exactly one bucketing and both the initial zoom and the
+        replacement path read it: `aggregates_for` computes the markers once in
+        `build_report_model`, they travel in the model (`ReportModel::aggregates`
+        — scope, bucket bounds, covered ids, combined duration), and
+        `render_band` draws whatever the model carries. Nothing re-buckets at
+        render time, and the future zoom path has the marker — its bucket, its
+        covered ids, its duration — already in hand, so as the zoom narrows an
+        individual span can only replace the aggregate that already stands for
+        it, never a second, differently-bucketed grouping. The row's pass was
+        tightened too: the band's markers are indexed by the entries they cover
+        once per band (`BTreeMap<u64, &Aggregate>`), instead of searching the
+        window's markers for every entry, so the drawing pass is one lookup per
+        entry. No behaviour change: the same markers, the same shapes, the same
+        numbers.
+
+        $ cargo fmt --all -- --check
+        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 9.40s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::A dense record is reported as aggregates instead of raw ticks"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: A dense record is reported as aggregates instead of raw ticks
+           ✔  Given a change "demo" whose record holds hundreds of short agent activities
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report collapses the short agent activities into aggregate markers
+           ✔  And each aggregate marker names how many entries it covers and their total duration
+           ✔  And the report summary still counts every recorded entry
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
+
+        Regression runs — the eight committed report scenarios whose shared
+        model, renderer, and drawing pass this revision touched:
+
+        $ ... --exact "...::The report ranks the longest single step first"                → 1 passed, 3 steps  EXIT=0
+        $ ... --exact "...::The report totals the time spent waiting for questions"        → 1 passed, 3 steps  EXIT=0
+        $ ... --exact "...::The report totals token usage per turn and per subagent"       → 1 passed, 5 steps  EXIT=0
+        $ ... --exact "...::The report of an ideation topic names the work done before the change exists" → 1 passed, 4 steps  EXIT=0
+        $ ... --exact "...::The report orders the timeline by recorded time, not by store position" → 1 passed, 3 steps  EXIT=0
+        $ ... --exact "...::The report names the agent's fan-out into small subagents"     → 1 passed, 3 steps  EXIT=0
+        $ ... --exact "...::The report needs no network access to render"                  → 1 passed, 3 steps  EXIT=0
+        $ ... --exact "...::The report shows the empty state for a scope with no recorded activity" → 1 passed, 4 steps  EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `PENDING` — `feat(development-report): <release note>` with
         the scenario title `A dense record is reported as aggregates instead of
         raw ticks` in the body. Record the revision identifier.
+        ```
+        <!-- paste the commit output + the revision's file list -->
+        ```
 
 ## Task E1 — E2E setup: local environment, browser tier, strictness, tags, evidence
 

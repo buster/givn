@@ -68,8 +68,36 @@ pub struct ReportModel {
     /// sentence naming the state, and a way back to the report root — instead
     /// of a blank page, an error, or an axis drawn over nothing.
     pub empty: bool,
+    /// The initial zoom's aggregate markers: the entries too short to draw one
+    /// shape per entry, grouped one marker per band and time bucket. The
+    /// summary and the longest-step ranking are computed over the whole record
+    /// and never over these.
+    pub aggregates: Vec<Aggregate>,
     /// The summary: the numbers the report states about the whole window.
     pub summary: Summary,
+}
+
+/// One aggregate marker: the entries of one band and one time bucket that the
+/// timeline collapses at the initial zoom, because drawing one shape per entry
+/// would be unreadable. It names how many entries it covers and their combined
+/// measured duration, and it carries the bucket's own bounds, so a click on it
+/// can zoom to that bucket instead of opening a details panel for one entry
+/// that stands for many.
+#[derive(Debug, Serialize)]
+pub struct Aggregate {
+    /// The scope of the band the marker belongs to.
+    pub scope: Scope,
+    /// The bucket's first instant (inclusive), milliseconds since the Unix
+    /// epoch — the same clock the records' `at` carries.
+    pub bucket_start_ms: i64,
+    /// The bucket's end (exclusive), milliseconds.
+    pub bucket_end_ms: i64,
+    /// The entries the marker stands for, in the model's own order — the ids
+    /// of spans that are *not* drawn individually at the initial zoom.
+    pub entries: Vec<u64>,
+    /// The covered entries' combined measured duration; `None` when the record
+    /// measured none of them, never zero.
+    pub duration_ms: Option<u64>,
 }
 
 /// One band: a row of the report covering one scope — one archived change, one
@@ -328,19 +356,88 @@ pub struct RankedStep {
     pub duration_ms: u64,
 }
 
-/// Record lines → `ReportModel` (bands, ordering, ranking, totals).
+/// Record lines → `ReportModel` (bands, ordering, ranking, totals, and the
+/// initial zoom's aggregates).
 pub fn build_report_model(scope: Option<Scope>, entries: Vec<HistoryEntry>) -> ReportModel {
     let entries = ordered_by_recorded_time(entries);
     let bands = bands_for(scope.as_ref(), &entries);
     let summary = Summary::of(&entries);
     let empty = entries.is_empty();
+    // The one bucketing: the markers the initial view draws are computed here,
+    // from the window the bands were built from, and carried in the model — so
+    // the zoom path reads the aggregate that already stands for an entry
+    // instead of bucketing a second time.
+    let aggregates = aggregates_for(&bands, &entries, &TimeScale::of(&entries));
     ReportModel {
         scope,
         bands,
         entries,
         empty,
+        aggregates,
         summary,
     }
+}
+
+/// The window's aggregates: the report's one bucketing, used by the initial
+/// zoom's markup and by any later zoom that replaces an individual span with
+/// the marker already standing for it.
+///
+/// At the initial zoom an entry is drawn on the axis [`TimeScale`] maps the
+/// window onto; an entry whose drawn extent is shorter than the time one pixel
+/// of that axis spends on — dense agent ticks and short steps in particular —
+/// cannot be told apart from its neighbours, so it collapses into one marker
+/// per band and time bucket. The bucket's bounds are the report's own buckets,
+/// aligned to the window's start, so the markers of a band tile its axis and
+/// every entry falls into exactly one of them.
+fn aggregates_for(bands: &[Band], entries: &[HistoryEntry], scale: &TimeScale) -> Vec<Aggregate> {
+    let time_per_pixel = scale.time_per_pixel();
+    let bucket_ms = (time_per_pixel as f64 * AGGREGATE_BUCKET_PX).ceil() as i64;
+    let mut aggregates: Vec<Aggregate> = Vec::new();
+    for band in bands {
+        for id in &band.entries {
+            let Some(entry) = entries.iter().find(|entry| entry.id == *id) else {
+                continue;
+            };
+            // An entry whose instant the record cannot read has no bucket to
+            // fall into and stays an individual span.
+            let Some(at) = crate::history::parse_rfc3339_ms(&entry.at) else {
+                continue;
+            };
+            if !collapses(entry, time_per_pixel) {
+                continue;
+            }
+            let bucket_start_ms =
+                scale.start_ms + (at - scale.start_ms).div_euclid(bucket_ms) * bucket_ms;
+            match aggregates.iter_mut().find(|marker| {
+                marker.scope == band.scope && marker.bucket_start_ms == bucket_start_ms
+            }) {
+                Some(marker) => {
+                    marker.entries.push(entry.id);
+                    add_measured(&mut marker.duration_ms, entry.duration_ms);
+                }
+                None => aggregates.push(Aggregate {
+                    scope: band.scope.clone(),
+                    bucket_start_ms,
+                    bucket_end_ms: bucket_start_ms + bucket_ms,
+                    entries: vec![entry.id],
+                    duration_ms: entry.duration_ms,
+                }),
+            }
+        }
+    }
+    aggregates
+}
+
+/// Whether one entry collapses into an aggregate at the initial zoom: its drawn
+/// extent — the duration it was measured with, or nothing at all for an entry
+/// the record does not time — is shorter than the time one pixel of the window
+/// spends on. An entry this short is a tick, not a span a reader can place.
+fn collapses(entry: &HistoryEntry, time_per_pixel_ms: i64) -> bool {
+    let extent = entry
+        .duration_ms
+        .and_then(|duration| i64::try_from(duration).ok())
+        .unwrap_or_default();
+    extent < time_per_pixel_ms
 }
 
 /// The window's entries in the record's own order: by `at`, the entry's
@@ -541,9 +638,19 @@ const GUTTER: f64 = 12.0;
 const LABEL_WIDTH: f64 = 168.0;
 const MARGIN: f64 = 8.0;
 
+/// The axis's drawing width: the band rows' spans, the ticks, and the aggregate
+/// markers all map the window onto this many units.
+const DRAWING_WIDTH: f64 = WIDTH as f64 - LABEL_WIDTH - MARGIN;
+
 /// One band row's height and the narrowest mark a span draws as.
 const BAND_HEIGHT: u64 = 56;
 const MIN_SPAN: f64 = 2.0;
+
+/// The width one aggregate marker covers on the axis, in the SVG's own units.
+/// The initial zoom draws at most one marker per bucket and band, so a record
+/// of tens of thousands of entries renders a bounded number of shapes — the
+/// drawing width divided by this — instead of one per entry.
+const AGGREGATE_BUCKET_PX: f64 = 16.0;
 
 /// The axis strip above the band rows, and the most ticks the initial view
 /// draws, so a report of any length carries a readable axis.
@@ -582,7 +689,7 @@ fn render_timeline(model: &ReportModel) -> String {
     svg.push_str(&render_axis(&scale));
     for (index, band) in model.bands.iter().enumerate() {
         let y = AXIS_HEIGHT + index as u64 * BAND_HEIGHT;
-        svg.push_str(&render_band(y, band, &model.entries, &scale));
+        svg.push_str(&render_band(y, band, model, &scale));
     }
     svg.push_str("</svg>\n</section>");
     svg
@@ -606,8 +713,11 @@ fn render_axis(scale: &TimeScale) -> String {
 }
 
 /// One band row: the row's visible label (visible text, never an internal kind
-/// name) and one span per entry the band covers, in the model's own order.
-fn render_band(y: u64, band: &Band, entries: &[HistoryEntry], scale: &TimeScale) -> String {
+/// name) and, per entry the band covers, in the model's own order, either the
+/// entry's own span or — where the entry collapsed at the initial zoom — the
+/// aggregate marker standing for it, drawn once per bucket and never alongside
+/// an individual span for an entry it covers.
+fn render_band(y: u64, band: &Band, model: &ReportModel, scale: &TimeScale) -> String {
     let mut svg = format!(
         "<g class=\"band\" data-band-kind=\"{}\" data-band=\"{}\" aria-label=\"{}\">\n<rect class=\"band-row\" x=\"0\" y=\"{y}\" width=\"{WIDTH}\" height=\"{BAND_HEIGHT}\"></rect>\n<text class=\"band-label\" x=\"{GUTTER}\" y=\"{}\">{}</text>\n",
         escape(&band.kind),
@@ -616,14 +726,68 @@ fn render_band(y: u64, band: &Band, entries: &[HistoryEntry], scale: &TimeScale)
         y + BAND_HEIGHT / 4,
         escape(&band.label),
     );
+    // The band's markers, indexed by the entries they stand for: the row's one
+    // drawing pass reads the index instead of searching the window's markers
+    // for every entry, and every covered entry reaches exactly the marker the
+    // model carries.
+    let mut covered: BTreeMap<u64, &Aggregate> = BTreeMap::new();
+    for marker in model
+        .aggregates
+        .iter()
+        .filter(|marker| marker.scope == band.scope)
+    {
+        for id in &marker.entries {
+            covered.insert(*id, marker);
+        }
+    }
+    let mut drawn_buckets: Vec<i64> = Vec::new();
     for id in &band.entries {
-        let Some(entry) = entries.iter().find(|entry| entry.id == *id) else {
+        let Some(entry) = model.entries.iter().find(|entry| entry.id == *id) else {
             continue;
         };
-        svg.push_str(&render_span(entry, y, scale));
+        match covered.get(id) {
+            Some(marker) => {
+                if drawn_buckets.contains(&marker.bucket_start_ms) {
+                    continue;
+                }
+                drawn_buckets.push(marker.bucket_start_ms);
+                svg.push_str(&render_aggregate(marker, y, scale));
+            }
+            None => svg.push_str(&render_span(entry, y, scale)),
+        }
     }
     svg.push_str("</g>\n");
     svg
+}
+
+/// One aggregate marker: its bucket's own width on the axis, naming how many
+/// entries it covers and their combined duration — in the machine-readable
+/// attributes the zoom path reads and in its accessible name. A click on a
+/// marker zooms to its bucket instead of opening a details panel for one entry
+/// that stands for many, which is why the marker never pretends to be a span:
+/// it carries no `data-entry-id`.
+fn render_aggregate(marker: &Aggregate, y: u64, scale: &TimeScale) -> String {
+    let count = marker.entries.len();
+    let duration = marker
+        .duration_ms
+        .map_or_else(|| "not measured".to_string(), format_duration);
+    let covered = if count == 1 {
+        "1 entry".to_string()
+    } else {
+        format!("{count} entries")
+    };
+    let duration_attribute = marker
+        .duration_ms
+        .map_or_else(String::new, |ms| format!(" data-duration-ms=\"{ms}\""));
+    let (x, width) = scale.bucket(marker);
+    let bar_y = y as f64 + BAND_HEIGHT as f64 / 3.0;
+    format!(
+        "<g class=\"aggregate\" data-count=\"{count}\"{duration_attribute} data-bucket-start-ms=\"{}\" data-bucket-end-ms=\"{}\" aria-label=\"{covered}, {duration}\">\n<rect class=\"aggregate-bar\" x=\"{x:.1}\" y=\"{bar_y:.1}\" width=\"{width:.1}\" height=\"16\"></rect>\n<text class=\"aggregate-label\" x=\"{:.1}\" y=\"{:.1}\">{count} · {duration}</text>\n</g>\n",
+        marker.bucket_start_ms,
+        marker.bucket_end_ms,
+        x + 4.0,
+        bar_y + 12.0,
+    )
 }
 
 /// One span: the entry drawn on the row's axis, with its accessible name always
@@ -706,6 +870,24 @@ impl TimeScale {
         let x = self.x(start);
         let width = (self.x(end) - x).max(MIN_SPAN);
         (x, width)
+    }
+
+    /// The x and width one aggregate's bucket draws at: the bucket's own
+    /// instants mapped onto the axis, so the markers of a band tile its axis
+    /// instead of overlapping, and a bucket never draws narrower than the
+    /// narrowest mark.
+    fn bucket(&self, marker: &Aggregate) -> (f64, f64) {
+        let x = self.x(marker.bucket_start_ms);
+        let width = (self.x(marker.bucket_end_ms) - x).max(MIN_SPAN);
+        (x, width)
+    }
+
+    /// The time one pixel of the drawing width spends on at the initial zoom.
+    /// An entry drawn shorter than this cannot be told apart from its
+    /// neighbours, which is the aggregation rule's threshold — and the report's
+    /// one place that reads it.
+    fn time_per_pixel(&self) -> i64 {
+        (self.span_ms as f64 / DRAWING_WIDTH).ceil() as i64
     }
 
     /// The axis's ticks: round instants across the window's range, in time

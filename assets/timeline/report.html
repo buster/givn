@@ -116,6 +116,11 @@
   .span-bar { fill: var(--color-band-step); rx: var(--radius-span); }
   .span:focus-visible .span-bar { outline: 2px solid var(--color-accent); }
   .span-label { fill: var(--color-text); font-size: var(--font-12); }
+  .aggregate-bar { fill: var(--color-band-step); opacity: .8; rx: var(--radius-span); }
+  .band[data-band-kind="change"] .aggregate-bar { fill: var(--color-band-command); }
+  .band[data-band-kind="ideation"] .aggregate-bar { fill: var(--color-band-agent); }
+  .band[data-band-kind="project"] .aggregate-bar { fill: var(--color-band-step); }
+  .aggregate-label { fill: var(--color-text-muted); font-size: var(--font-12); }
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; animation: none !important; }
   }
