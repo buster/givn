@@ -6062,23 +6062,128 @@ name it.
     - Assertion shape: the written report names the change total, each
       subagent's tokens, every model's total, and the unmeasured-turn count.
     - RED expected failure: the three Then steps are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report totals token usage per turn and per subagent"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report totals token usage per turn and per subagent"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 10.17s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report totals token usage per turn and per subagent
+           ✔  Given a change "demo" whose record holds reported token usage
+           ✔  When the developer generates the development report for "demo"
+           ✘  Then the report names the total tokens for the change
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:21:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+
+        thread 'main' (2571417) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — the scenario's three Then steps all match
+        no function, and the run stops at the first. The fixture Given (two turns
+        with reported usage for two different models, one subagent whose span owns
+        its own usage, one subagent the harness reports no usage for, and one turn
+        whose usage the record marks unavailable) and the report-generating When
+        are in place, so the RED is the missing token roll-up: the report at this
+        revision states no token figure at all.
         ```
-  - [ ] **GREEN** — implement the usage roll-ups and the unmeasured count.
+  - [x] **GREEN** — implement the usage roll-ups and the unmeasured count.
         Files: `src/cli/timeline.rs`, `assets/timeline/report.html`,
         `tests/steps/development_report_steps.rs`. Compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.48s
+        BUILD=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report totals token usage per turn and per subagent"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 16.69s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report totals token usage per turn and per subagent
+           ✔  Given a change "demo" whose record holds reported token usage
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report names the total tokens for the change
+           ✔  And the report names the tokens of every subagent
+           ✔  And the report names the token total for every model that produced the usage
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
+
+        Production files created/modified by this GREEN step:
+        - `src/cli/timeline.rs` (modified — `Summary` gains `tokens_total`,
+          `tokens_by_model`, `tokens_by_subagent` and `unmeasured_turns`;
+          `TokenRollUp` is the usage aggregation (`data.total_tokens` summed per
+          model the entry names, per subagent span the entry belongs to);
+          `usage_unavailable` reads Task 15's `data.usage: "unavailable"` marker
+          so a turn without reported usage is counted, never summed as zero;
+          `format_count` renders exact counts; the Tokens tile, the
+          unmeasured-turns note, and the two token lists join the summary);
+        - `assets/timeline/report.html` (unchanged — the new rows are the same
+          tile/list/summary-note primitives, in the tokens the asset carries
+          inline; no style was missing);
+        - `tests/steps/development_report_steps.rs` (modified — the usage
+          fixture Given with its `TurnFixture`/`SubagentFixture`/`UsageCounts`
+          shapes, the seeded-usage readers, and the three Then steps, whose
+          expectations are the fixture's own reported counts).
         ```
-  - [ ] **REFACTOR** — one usage aggregation shared by the per-model and
+  - [x] **REFACTOR** — one usage aggregation shared by the per-model and
         per-subagent views; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The roll-up now owns both views' row shapes: `TokenRollUp::model_rows`
+        and `TokenRollUp::subagent_rows` build the `TokenTotal` rows the summary
+        carries, so the per-model and the per-subagent view can never be built
+        from two differently-shaped scans. The `data.subagent` read moved into
+        `usage_named_subagent`, the one place that decides whether a usage entry
+        names a subagent (used by `usage_belongs_to`, which joins span identity
+        and parent link). The total still comes from the summary's single pass
+        through the same `usage_total` accessor the roll-up uses. No behaviour
+        change: same totals, same rows, same rendered text.
+
+        $ cargo fmt --all -- --check
+        FMT OK
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.32s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report totals token usage per turn and per subagent"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 5.72s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report totals token usage per turn and per subagent
+           ✔  Given a change "demo" whose record holds reported token usage
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report names the total tokens for the change
+           ✔  And the report names the tokens of every subagent
+           ✔  And the report names the token total for every model that produced the usage
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
+
+        Regression runs of the two committed scenarios this step's shared
+        summary code touches:
+
+        $ ... --exact "...::The report ranks the longest single step first"
+        1 feature, 1 scenario (1 passed), 3 steps (3 passed)        EXIT=0
+        $ ... --exact "...::The report totals the time spent waiting for questions"
+        1 feature, 1 scenario (1 passed), 3 steps (3 passed)        EXIT=0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
         the scenario title `The report totals token usage per turn and per

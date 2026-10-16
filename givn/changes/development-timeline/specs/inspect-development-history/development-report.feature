@@ -14,7 +14,7 @@ Feature: Development Report
     When the developer generates the development report for "demo"
     Then the report names the total wait duration and the number of waits
 
-  @givn.added @wip
+  @givn.added
   Scenario: The report totals token usage per turn and per subagent
     Given a change "demo" whose record holds reported token usage
     When the developer generates the development report for "demo"
