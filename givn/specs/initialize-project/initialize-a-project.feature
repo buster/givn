@@ -45,7 +45,7 @@ Feature: initialize-a-project
     And  givn skills targets in givn/config.yaml equal "opencode"
     When  the user runs `givn skills targets add all`
     Then  the command exits 0
-    And  givn skills targets in givn/config.yaml equal "opencode, agents, claude, omp"
+    And  givn skills targets in givn/config.yaml equal "opencode, agents, claude, omp, maki"
     And  the file ".agents/skills/givn-propose/SKILL.md" exists
     And  the file ".claude/skills/givn-propose/SKILL.md" exists
     And  the file ".omp/skills/givn-propose/SKILL.md" exists
@@ -166,7 +166,7 @@ Feature: initialize-a-project
     And  the file ".claude/skills/givn-propose/SKILL.md" exists
     And  the file ".agents/skills/givn-propose/SKILL.md" exists
     And  the file ".omp/skills/givn-propose/SKILL.md" exists
-    And  givn skills targets in givn/config.yaml equal "opencode, agents, claude, omp"
+    And  givn skills targets in givn/config.yaml equal "opencode, agents, claude, omp, maki"
 
   Scenario: An unknown agent name in the --agents flag is dropped with a hint
     Given a project root without a givn/ directory
