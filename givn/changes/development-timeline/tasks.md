@@ -9122,7 +9122,7 @@ name it.
 
 ## Task E7 — `Consumer selects a timeline element and reads its details` (`@e2e`, `development-report`)
 
-- [ ] **Scenario: `Consumer selects a timeline element and reads its details`**
+- [x] **Scenario: `Consumer selects a timeline element and reads its details`**
   - Design constraints:
     - Matrix row: `development-report: select a timeline element` — real
       interface **Web UI**, driving mechanism Playwright: **click** the longest
@@ -9139,23 +9139,139 @@ name it.
     - **Evidence:** `givn/changes/development-timeline/evidence/visual/consumer-selects-a-timeline-element-and-reads-its-details/`
       — `mobile.png` and `desktop.png` captured with the panel open at both
       contract viewports, animations disabled.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer selects a timeline element and reads its details"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer selects a timeline element and reads its details"
+        Feature: Development Report
+          Scenario: Consumer selects a timeline element and reads its details
+           ✘  Given an open development report with a recorded history
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:90:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        error: test failed, to rerun pass `--test features_runner`
+        RED_EXIT=101
+
+        RED category: undefined step — the scenario's own first Given has no
+        binding, so the run fails before the report is even generated. The RED
+        is the missing open-report fixture, selection step, and details-panel
+        assertion path; the panel's markup exists in the asset but nothing opens
+        it without the selection the GREEN below adds.
         ```
-  - [ ] **GREEN** — implement selection and the details panel. Files:
+  - [x] **GREEN** — implement selection and the details panel. Files:
         `assets/timeline/report.html` (span focus/activation, panel markup and
         labels), `tests/steps/development_report_e2e_steps.rs`, plus the two
         evidence screenshots. Re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) + the two screenshot paths -->
+        $ node --check /tmp/report-layer.mjs      # the asset's inline layer, extracted
+        NODE_CHECK=0
+        $ cargo build --locked --tests
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.44s
+        TESTS_BUILD=0
+        $ cargo fmt --all -- --check        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.14s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer selects a timeline element and reads its details"
+        Feature: Development Report
+          Scenario: Consumer selects a timeline element and reads its details
+           ✔  Given an open development report with a recorded history
+           ✔  When the consumer selects the longest recorded step
+           ✔  Then the browser shows a details panel for that step
+           ✔  And the panel names its start, its duration, and its outcome
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        GREEN_EXIT=0
+
+        Evidence pair (the panel open at both contract viewports, captured after
+        the final assertion, animations disabled; the page is brought to the
+        panel the assertion read, because at the mobile viewport the panel is a
+        full-width sheet below the timeline):
+        $ ls -l givn/changes/development-timeline/evidence/visual/consumer-selects-a-timeline-element-and-reads-its-details/
+        -rw-r--r-- 104180 desktop.png
+        -rw-r--r--  42881 mobile.png
+        $ file …/*.png
+        …/mobile.png:  PNG image data, 360 x 780, 8-bit/color RGB, non-interlaced
+        …/desktop.png: PNG image data, 1920 x 1080, 8-bit/color RGB, non-interlaced
+
+        Production files (this scenario's own):
+        - `assets/timeline/report.html` — the selection and the details panel:
+          `select(entryId)` fills the panel's facts (the bounded label, start,
+          end, duration, outcome, and the model and tokens the record reports —
+          each missing value stated, never a zero), unhides the labelled region,
+          and marks the span selected; `clearSelection` closes it; the pointer's
+          click and the keyboard's `Enter`/`Space` reach the one activation, and
+          `Escape` closes the panel wherever the focus is.
+        - `tests/common/browser.rs` — `scroll_into_view` and
+          `capture_evidence_from`, so a capture shows the state the scenario
+          asserted even where that state sits below the fold at the mobile
+          viewport (`capture_evidence` is the same helper anchored at the report
+          title).
+        - `tests/steps/development_report_e2e_steps.rs` — the scenario's four
+          steps: the open-report Given (the shared artifact-transition fixture,
+          generated and opened), the selection When (a real click, then
+          `Escape`, then `Enter` on the focused span — both activation paths),
+          and the two Thens, whose expectations come from the record (the
+          scope's longest measured entry, its own recorded end minus its
+          duration as the start, its duration, and its outcome).
+        - the two evidence screenshots above.
+
+        What the assertion reads, precisely: the panel's own DOM — that it is
+        open, that it is the labelled region (`role="region"`,
+        `aria-label="Details"`), that its close control carries the visible label
+        `Close`, that its text names the selected step, and that its facts carry
+        the start the record implies (`13:00:00`), the measured duration
+        (`30 m`), and the recorded outcome (`ok`) with their written labels. The
+        start comes from the embedded timestamps (the browser's own clock of the
+        record), never from the wall clock.
         ```
-  - [ ] **REFACTOR** — one selection path for mouse and keyboard; re-run → still
+  - [x] **REFACTOR** — one selection path for mouse and keyboard; re-run → still
         exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        One selection path, literal in the asset: `select(entryId)` is the only
+        place the panel opens and a span is marked, and both the pointer and the
+        keyboard reach it through the one `activate(event)` handler — the
+        keyboard listener now only filters its keys instead of repeating the
+        activation.
+        $ grep -n "function select\|function activate\|addEventListener(\"click\", activate)\|addEventListener(\"keydown\"" assets/timeline/report.html
+        629:  function select(entryId) {
+        656:  function activate(event) {
+        661:  timeline.addEventListener("click", activate);
+        663:  timeline.addEventListener("keydown", (event) => {
+
+        $ cargo fmt --all -- --check        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.00s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer selects a timeline element and reads its details"
+        Feature: Development Report
+          Scenario: Consumer selects a timeline element and reads its details
+           ✔  Given an open development report with a recorded history
+           ✔  When the consumer selects the longest recorded step
+           ✔  Then the browser shows a details panel for that step
+           ✔  And the panel names its start, its duration, and its outcome
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        REFACTOR_EXIT=0
+
+        The re-run refreshed the evidence pair from the final code (42881/104180
+        bytes, 360x780 and 1920x1080). The desktop capture shows the panel as the
+        design system's right-hand side panel with the selected span stroke-marked
+        in the accent colour, and the mobile capture shows the same panel as the
+        full-width sheet below the timeline.
         ```
   - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
         title `Consumer selects a timeline element and reads its details` in the

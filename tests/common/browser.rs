@@ -213,12 +213,34 @@ impl BrowserDriver {
         );
     }
 
+    /// Bring `selector` into view: the report's own scrolling, so a state that
+    /// sits below the fold is the state a capture then shows.
+    pub fn scroll_into_view(&mut self, selector: &str) {
+        self.command(
+            "evaluate",
+            json!({
+                "script": format!(
+                    "document.querySelector({selector:?}).scrollIntoView({{ block: 'start' }})"
+                )
+            }),
+        );
+    }
+
     /// Capture one scenario's evidence pair at both contract viewports, under
     /// `evidence/visual/<scenario-slug>/` — the layout the change's visual gate
     /// reads.
     pub fn capture_evidence(&mut self, scenario: &str) {
+        self.capture_evidence_from(scenario, "#report-title");
+    }
+
+    /// Capture one scenario's evidence pair with the page scrolled to `anchor`
+    /// at each viewport first: the state the capture must show is the state the
+    /// scenario asserted, even where it sits below the fold at the mobile
+    /// viewport.
+    pub fn capture_evidence_from(&mut self, scenario: &str, anchor: &str) {
         for (viewport, width, height) in VIEWPORTS {
             self.viewport(width, height);
+            self.scroll_into_view(anchor);
             self.screenshot(&evidence_file(scenario, viewport));
         }
     }

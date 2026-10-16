@@ -595,3 +595,186 @@ fn browser_shows_the_longest_recorded_step(world: &mut GivnWorld) {
     );
     commit_evidence(world, OPEN_SCENARIO);
 }
+
+/// The `@e2e` browser scenario that selects a timeline element.
+const SELECT_SCENARIO: &str = "Consumer selects a timeline element and reads its details";
+
+/// The span the browser draws for the scope's longest measured entry, with its
+/// own selector — the element both activation paths then drive.
+fn longest_span(world: &mut GivnWorld) -> (Value, String) {
+    let scope = report_scope(world);
+    let entries = recorded_entries(world, &scope);
+    let longest = longest_measured(&entries);
+    let id = longest["id"].as_u64().expect("the longest step has an id");
+    let drawn = browser(world).evaluate(
+        r#"(() => {
+  const spans = [...document.querySelectorAll("svg.timeline .span")];
+  const widths = spans.map((span) => Number(span.dataset.durationMs || -1));
+  const longest = spans[widths.indexOf(Math.max(...widths))];
+  return longest ? { id: longest.dataset.entryId } : null;
+})()"#,
+    );
+    assert!(
+        !drawn.is_null(),
+        "the browser draws no span for the record's longest step {id}"
+    );
+    assert_eq!(
+        drawn["id"],
+        json!(id.to_string()),
+        "the browser's longest drawn span is not the record's longest measured entry: {drawn:#} vs {longest:#}"
+    );
+    (
+        longest,
+        format!("svg.timeline .span[data-entry-id=\"{id}\"]"),
+    )
+}
+
+/// The details panel the browser rendered: whether it is open, the label it
+/// carries, the close control's own visible label, and the facts it shows —
+/// read from the browser's DOM, never from the report file.
+fn details_panel(driver: &mut BrowserDriver) -> Value {
+    driver.evaluate(
+        r#"(() => {
+  const panel = document.getElementById("details-panel");
+  const close = document.getElementById("details-close");
+  if (!panel) return { open: false, label: null, close: null, text: "" };
+  return {
+    open: !panel.hidden,
+    label: panel.getAttribute("aria-label"),
+    role: panel.getAttribute("role"),
+    close: close ? close.textContent.trim() : null,
+    text: panel.innerText,
+  };
+})()"#,
+    )
+}
+
+#[given("an open development report with a recorded history")]
+fn open_report_with_a_recorded_history(world: &mut GivnWorld) {
+    if world.env.is_none() {
+        world.env = Some(common::make_init_root());
+    }
+    let seeded = {
+        let env = world
+            .env
+            .as_ref()
+            .expect("a project root is required first");
+        support::seed_report_history(env, "demo", "tasks.md")
+    };
+    state(world).seeded = Some(seeded);
+    state(world).scope = Some(Scope::Change {
+        id: "demo".to_string(),
+    });
+    report_has_been_generated(world, "demo".to_string());
+    open_report(world);
+}
+
+#[when("the consumer selects the longest recorded step")]
+fn consumer_selects_the_longest_recorded_step(world: &mut GivnWorld) {
+    let (_, selector) = longest_span(world);
+    // The pointer's own path: a real click on the span opens the panel.
+    browser(world).click(&selector);
+    let opened = details_panel(browser(world));
+    assert_eq!(
+        opened["open"],
+        json!(true),
+        "a real click on the step's span did not open the details panel: {opened:#}"
+    );
+    // The keyboard's own path: `Escape` closes the panel, and focusing the span
+    // and pressing `Enter` opens the same panel again.
+    browser(world).press(None, "Escape");
+    let closed = details_panel(browser(world));
+    assert_eq!(
+        closed["open"],
+        json!(false),
+        "Escape did not close the details panel: {closed:#}"
+    );
+    browser(world).press(Some(&selector), "Enter");
+    let reopened = details_panel(browser(world));
+    assert_eq!(
+        reopened["open"],
+        json!(true),
+        "Enter on the focused step's span did not open the details panel: {reopened:#}"
+    );
+}
+
+#[then("the browser shows a details panel for that step")]
+fn browser_shows_a_details_panel(world: &mut GivnWorld) {
+    let (longest, _) = longest_span(world);
+    let panel = details_panel(browser(world));
+    assert_eq!(
+        panel["open"],
+        json!(true),
+        "the browser shows no open details panel: {panel:#}"
+    );
+    assert_eq!(
+        panel["role"],
+        json!("region"),
+        "the details panel is not the labelled region the design system names: {panel:#}"
+    );
+    assert_eq!(
+        panel["label"],
+        json!("Details"),
+        "the details panel carries no accessible label: {panel:#}"
+    );
+    assert_eq!(
+        panel["close"],
+        json!("Close"),
+        "the details panel's close control carries no visible label: {panel:#}"
+    );
+    let text = panel["text"].as_str().unwrap_or_default();
+    assert!(
+        text.contains(&visible_name(&longest)),
+        "the details panel is not about the step the consumer selected: {text:?}"
+    );
+}
+
+#[then("the panel names its start, its duration, and its outcome")]
+fn panel_names_start_duration_and_outcome(world: &mut GivnWorld) {
+    let (longest, _) = longest_span(world);
+    let panel = details_panel(browser(world));
+    let text = panel["text"].as_str().unwrap_or_default();
+    let end = givn::history::parse_rfc3339_ms(longest["at"].as_str().unwrap_or_default())
+        .expect("the selected step records a readable end");
+    let duration = longest["duration_ms"]
+        .as_u64()
+        .expect("the selected step was measured");
+    let start_ms = end - i64::try_from(duration).expect("the duration fits in milliseconds");
+    let start = time_of_day(start_ms);
+    assert!(
+        text.contains(&start),
+        "the panel names no start ({start}) for the selected step: {text:?}"
+    );
+    let duration = givn::cli::timeline::format_duration(duration);
+    assert!(
+        text.contains(&duration),
+        "the panel names no duration ({duration}) for the selected step: {text:?}"
+    );
+    let outcome = longest["outcome"]
+        .as_str()
+        .expect("the recorded step carries its outcome");
+    assert!(
+        text.contains(outcome),
+        "the panel names no outcome ({outcome}) for the selected step: {text:?}"
+    );
+    assert!(
+        text.contains("Duration") && text.contains("Start") && text.contains("Outcome"),
+        "the panel's facts carry no written labels: {text:?}"
+    );
+    // The visual gate's evidence for this scenario: the panel open, at both
+    // contract viewports, with the page brought to the panel the assertion above
+    // read (it sits below the fold at the mobile viewport).
+    browser(world).capture_evidence_from(SELECT_SCENARIO, "#details-panel");
+}
+
+/// One recorded instant as the report's own clock reads it: the time of day of
+/// the embedded UTC timestamp, seconds included.
+fn time_of_day(at_ms: i64) -> String {
+    let seconds = at_ms.div_euclid(1_000).rem_euclid(86_400);
+    format!(
+        "{:02}:{:02}:{:02}",
+        seconds / 3_600,
+        seconds % 3_600 / 60,
+        seconds % 60
+    )
+}
