@@ -118,21 +118,44 @@ is already required on `PATH` by the existing omp/OpenCode attribution E2E.
   in *Scope resolution and the report window* below.
 - **Decides D1: one local project store, kept out of repository history.**
   Approved by the operator on 2026-10-16. The record lives at
-  `givn/history/events.jsonl` and Givn keeps it out of repository history with
-  a managed `# givn:begin:history` ignore block written by Givn itself
-  (independent of the `rules` policy, because the record is data, not generated
-  rules). The block follows the backend switch the rules writer already uses
-  (`src/skills/rules.rs::write_ignores`): in a Git worktree `.gitignore` plus
-  the worktree-local exclude file (resolved with
-  `git rev-parse --git-path info/exclude`), in a Fossil checkout
-  `.fossil-settings/ignore-glob` plus the repository-local `ignore-glob`
-  setting — so a Fossil project is covered through the same seam instead of a
-  Git-only file. Rejected: committing the record with the change, because agent
-  telemetry would enter repository history permanently and could then only be
-  removed with a history rewrite; and a user-level store outside the project,
-  because it is invisible to project review and is lost with the home
-  directory. Realized in `src/history.rs::store_path` and
-  `src/history.rs::ensure_ignored`.
+  `givn/history/events.jsonl`, and keeping it out of repository history is split
+  by who owns the destination:
+
+  **The rule.** The recorder never writes a versioned file; the record path
+  reaches the versioned destinations only through the commands that own them
+  (`givn init`, `givn skills sync`, `givn upgrade` — the existing
+  `write_ignores` path), while the recorder asserts the never-dirty
+  destinations on every write.
+
+  | State of the project | Destination | Written by |
+  |---|---|---|
+  | A Git worktree exists | the `# givn:begin:history` block in `.git/info/exclude`, resolved with `git rev-parse --git-path info/exclude` and **re-asserted idempotently on every record write** (best effort); never `.gitignore` | the recorder |
+  | No repository exists yet (`givn init` in a bare directory) | the `# givn:begin:history` block in `.gitignore` as the scaffold-time safety net | the recorder at its first write (nothing is tracked yet; the user commits the scaffold) |
+  | A Fossil checkout exists and `.fossil-settings/ignore-glob` is **absent** | the repository-level `ignore-glob` setting (`fossil settings --value ignore-glob` … `fossil settings ignore-glob <value>`), never-tracked and effective while no file overrides it | the recorder |
+  | A Fossil checkout exists and `.fossil-settings/ignore-glob` is **present** | the record path is part of the **managed entry list inside that file**; a committed file overrides the repository setting, so writing the setting alone would leave the store an `EXTRA` | the owning commands (`givn init`, `givn skills sync`, `givn upgrade`) through `write_ignores` — never the recorder at plain-command time |
+
+  The Fossil entry form is **`givn/history/*`**, not `givn/history`: a Fossil
+  glob must match the entire path and `*` crosses `/`, so a bare directory path
+  matches nothing. Repository existence is decided by the backend markers at the
+  project root — the same markers `scm::select` reads — and **never** by whether
+  `scm::select` succeeds, because select also bails for a nested root, both
+  markers at the root, or a missing executable; a select-keyed branch would
+  write a versioned file while a worktree exists.
+
+  **Why the never-dirty constraint holds.** A recorder runs at command start, so
+  a write to a versioned ignore file would dirty the working tree before the
+  command did anything, and `givn upgrade`'s clean-checkout precondition
+  (`src/cli/migration.rs`: "automatic managed upgrade requires a clean checkout")
+  would refuse a project that did nothing wrong; for a store that was already
+  committed, no ignore destination could suppress its modification either. The
+  ownership split is what keeps the versioned write inside a command that owns
+  and commits that file. Rejected: committing the record with the change,
+  because agent telemetry would enter repository history permanently and could
+  then only be removed with a history rewrite; and a user-level store outside
+  the project, because it is invisible to project review and is lost with the
+  home directory. Realized in `src/history.rs::store_path`,
+  `src/history.rs::ensure_ignored`, and the existing
+  `src/skills/rules.rs::write_ignores` call sites.
 - **Decides D2: metadata plus a bounded 120-character label.** Approved by the
   operator on 2026-10-16. An entry keeps kind, timestamps, duration, outcome,
   model, token counts, subagent identity, and a single label derived from the
@@ -259,6 +282,36 @@ dependency and no export step. If a real run ever measures slowness, the record
 file is the interface: a later change can add an index, a derived store, or a
 compaction command behind the same file contract without changing what is
 recorded (D-23).
+
+### Ignoring the store without dirtying the worktree
+
+`ensure_ignored` runs on **every** record write (not only when the store is
+created, so a store that predates the repository still becomes ignored) and it
+never writes a versioned file. The destinations split by ownership:
+
+| State of the project | Destination | Writer |
+|---|---|---|
+| Git worktree | `.git/info/exclude` block, re-asserted idempotently on every write | the recorder |
+| No repository yet | `.gitignore` block (scaffold-time safety net) | the recorder at its first write |
+| Fossil checkout, no `.fossil-settings/ignore-glob` file | the repository-level `ignore-glob` setting (never-tracked, effective while no file overrides it) | the recorder |
+| Fossil checkout with `.fossil-settings/ignore-glob` present | `givn/history/*` in that file's managed entry list | `givn init` / `givn skills sync` / `givn upgrade` through the existing `write_ignores` |
+
+Two details matter. The Fossil entry is `givn/history/*`, not `givn/history`,
+because a Fossil glob must match the whole path and `*` crosses `/` (a bare
+directory path matches nothing). And the Fossil destinations are a
+**deduplicated entry list without fence markers** — only the two Git
+destinations are fenced `# givn:begin:history` blocks — so re-running either
+one never duplicates an entry and user entries stay untouched.
+
+Repository existence is decided by the backend markers at the project root, the
+same markers `scm::select` reads, never by `scm::select` succeeding: select also
+bails for a nested root, both markers at the root, or a missing executable, and
+a select-keyed branch would write a versioned file while a worktree exists.
+
+The result is the property the change promises: the record stays ignored, no
+command can dirty a worktree through an ignore write, `givn upgrade`'s
+clean-checkout precondition is never affected, and a clean clone becomes ignored
+on its first Givn command.
 
 ### Pending state for process-per-hook harnesses
 
@@ -938,7 +991,7 @@ flowchart LR
 
 | Module / asset | Change |
 |---|---|
-| `src/history.rs` | **new** — entry schema, store, scope resolution, bounded labels, pending state, ignore block |
+| `src/history.rs` | **new** — entry schema, store, scope resolution, bounded labels, pending state, and `ensure_ignored` with its ownership split (the recorder re-asserts `.git/info/exclude` on every write, writes Fossil's repository `ignore-glob` setting only while no managed file overrides it, and uses `.gitignore` only before a repository exists; the Fossil entry `givn/history/*` joins the managed list through `write_ignores`) |
 | `src/cli/history.rs` | **new** — `givn history` (read), `givn history ingest` (the one intake), and `givn history harness-hook --harness claude` (the raw-payload mapper and transcript reader for process-per-hook harnesses) |
 | `src/cli/timeline.rs` | **new** — report model and HTML rendering |
 | `assets/timeline/report.html` | **new** — the self-contained report asset (inline CSS/JS/SVG, one data slot) |
@@ -953,7 +1006,7 @@ flowchart LR
 | `src/cli/check.rs`, `src/cli/commit.rs` | phase and revision entries |
 | `src/skills/targets.rs` | install all three reporter assets for their targets; extend `merge_claude_settings` to merge the per-event Claude registration idempotently per `(event, matcher, command)` and to re-apply a changed matcher; register all three in `managed_generated_paths` |
 | `src/skills/rules.rs` | add the three reporter paths to `ignore_entries` so the `local-only` policy keeps them out of a repository |
-| `tests/` | six new step files, one support file, `tests/common/browser.rs`, `tests/e2e/` (driver + `package.json`) |
+| `tests/` | six new step files, one support file, `tests/common/browser.rs`, `tests/e2e/` (driver + `package.json`), and the **fixture class** whose hand-written ignore content would otherwise commit the store: `tests/steps/run_execution_e2e_steps.rs::git_managed_project`, `tests/steps/release_0_3_0_e2e_steps.rs::git_project_with_version`, and `tests/steps/release_0_3_0_e2e_steps.rs::fossil_project_with_version`. Minimal remedy per fixture: the record path (`givn/history/*`) joins the fixture's hand-written ignore content, or the store is removed before the fixture's commit |
 | `setup-e2e-browser.sh` | **new** — one-time browser installation |
 | `givn/commands.yaml` | `verify.command` narrows to `./run-tests.sh --non-e2e`; `verify.e2e_command` stays `./run-tests.sh --e2e` (the README's command table follows) |
 | `.github/workflows/ci.yml`, `.github/workflows/release.yml` | install Node/Chromium (`./setup-e2e-browser.sh`) before the first suite invocation, and run the regular scope as `./run-tests.sh --non-e2e` before the e2e scope |

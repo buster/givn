@@ -75,7 +75,7 @@ scope-tagged development record and every supported harness — omp, opencode, a
 Claude Code — reports through one intake command instead of writing the record
 itself (the `agents` target is a skills mirror with no runtime). Durable facts
 live in chapters 2 (TC-34, TC-35), 3, 4, 5, 6.18, 7.3/7.4, 8.25, 10 (Q-98 to
-Q-102), 11 (R-83 to R-86, R-88, D-22, D-23), and the glossary; the record's ownership
+Q-102), 11 (R-83 to R-86, R-88, R-89, D-22, D-23), and the glossary; the record's ownership
 boundary is deliberately separate from ADR-014's filesystem-derived state,
 ADR-013's generated-integration ownership, and ADR-028's gate boundary. The
 browser report and its visual contract are documented in

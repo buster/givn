@@ -12,7 +12,7 @@
 | # | Chapter | Affected? | Reason | Summary of change (if Yes) |
 |---|---|---|---|---|
 | 1 | 01 introduction-and-goals | Yes | The change adds a product functional requirement: Givn itself records the development process and renders it as a report, so the requirements overview gains a row. | FR-45 added for the development record and the development report. |
-| 2 | 02 architecture-constraints | Yes | Two new durable technical constraints: the record is local, append-only, best-effort and never a gate; the report is one self-contained file with no server, port, remote resource, or third-party JavaScript. | TC-34 and TC-35 added. |
+| 2 | 02 architecture-constraints | Yes | Two new durable technical constraints: the record is local, append-only, best-effort and never a gate, kept out of repository history by an ownership split (the recorder only ever writes never-tracked destinations on every write; the versioned Fossil list is written by the owning commands) so recording can never dirty a worktree; the report is one self-contained file with no server, port, remote resource, or third-party JavaScript. | TC-34 (corrected ignore rule) and TC-35 added. |
 | 3 | 03 context-and-scope | Yes | A new external entity (each supported harness's reporter), six new interfaces (`givn history ingest`, `givn history`, `givn timeline`, plus the reporter boundary for opencode, Claude Code, and omp), and the record file join the context; the scope gains the record and the report. | External entity, interface rows (the three harness boundaries extended), and in-scope bullets added; `.agents` recorded as a skills mirror with no runtime; the new use case `inspect-development-history` is named. |
 | 4 | 04 solution-strategy | Yes | The strategy table gains the development record and report concern, because it spans capture, storage, intake, and rendering. | "Development record" row added to 4.1. |
 | 5 | 05 building-block-view | Yes | New building blocks: `history` (record model and store), `cli::history` (read, the one intake, and the process-per-hook harness mapper), `cli::timeline` (report model and rendering), the embedded timeline asset, and the three embedded harness reporter assets. | Diagram node plus five responsibility rows added. |
@@ -21,8 +21,8 @@
 | 8 | 08 crosscutting-concepts | Yes | The record's ownership, the three harness reporters and their documented asymmetries, best-effort discipline, scope rule, privacy bound, ignore block, scale rule, report packaging, and browser tier are cross-cutting concepts every capture point and future reporter must respect. | New section 8.25 added, including the reporters, scale, and missing-data paragraphs. |
 | 9 | 09 architecture-decisions | Yes | One new qualified decision (ADR-073): record ownership and the single intake interface — now carrying three harness reporters. Two further candidates were evaluated and routed to canonical artifacts instead of ADRs. | ADR-073 created and extended, register row and chapter-09 paragraph added. |
 | 10 | 10-quality-requirements | Yes | New quality scenarios for intake rejection, record/render reproducibility, the record's privacy bound, rendering a multi-day record at scale, and harness parity. | Q-98 to Q-102 added. |
-| 11 | 11 risks-and-technical-debt | Yes | Unbounded store growth, per-harness contract drift (including the younger opencode V2 API), best-effort loss, the new browser tier in the archive gate, and the Claude Code surface gaps are risks; pruning and repair paths are deliberate debt. | R-83 to R-86 and R-88, D-22, D-23 added. |
-| 12 | 12-glossary | Yes | New domain terms: development record, record entry, development scope, intake, agent reporter, bounded label, record gap, development report, band, question wait, aggregate marker, subagent span, pending state, reporter gap. | Fourteen glossary entries added with anti-terms. |
+| 11 | 11 risks-and-technical-debt | Yes | Unbounded store growth, per-harness contract drift (including the younger opencode V2 API), best-effort loss, the new browser tier in the archive gate, the Claude Code surface gaps, and the never-dirty ignore rule (a versioned ignore write would have broken `givn upgrade`'s clean-checkout precondition — reproduced by this change's own implementation, with a Fossil residual) are risks; pruning and repair paths are deliberate debt. | R-83 to R-86, R-88, R-89 (refined), D-22, D-23 added; R-87 retired as inaccurate. |
+| 12 | 12-glossary | Yes | New domain terms: development record, record entry, development scope, intake, agent reporter, bounded label, record gap, development report, band, question wait, aggregate marker, subagent span, pending state, reporter gap. | Fourteen glossary entries added with anti-terms, and the existing `Ignore block` entry widened to cover the rules block and the record entry. |
 
 ## Notes
 
@@ -63,6 +63,26 @@ surface was verified against the installed artifact rather than memory:
 The extension adds no new ADR candidate: it extends ADR-073's intake boundary to
 three reporters behind one intake, which is recorded as a consequence of that
 record rather than as a parallel decision.
+
+**Ignore-mechanism correction (same pass, 2026-10-16).** The fresh design
+re-review re-opened the store's ignore mechanism (findings F1-F11, question Q-A)
+and the operator settled Q-A on **option 2**: the record path joins the managed
+ignore file rather than relying on the repository setting alone, because a
+committed `.fossil-settings/ignore-glob` overrides that setting and Givn's rules
+writer already writes that file in every managed Fossil checkout — the
+setting-only arm would have left the store an `EXTRA` exactly in the projects
+Givn manages. The settled rule is the ownership split recorded in TC-34, in the
+design's D1 entry, and in the tasks: **the recorder never writes a versioned
+file**, it re-asserts the never-tracked Git destination on every write, and the
+record path reaches the versioned Fossil destination only through the commands
+that own it (`givn init`, `givn skills sync`, `givn upgrade`). The Fossil entry
+form is `givn/history/*` (a bare directory path matches nothing under Fossil's
+whole-path globs), repository existence is read from the backend markers rather
+than from backend selection succeeding, and the affected permanent fixtures are
+a class (`git_managed_project`, `git_project_with_version`,
+`fossil_project_with_version`) whose ignore content gains the record path. The
+hazard and its Fossil residual are R-89; the glossary's `Ignore block` entry now
+covers both the rules block and the record entry.
 
 The ADR candidates were evaluated in order and only the first qualified:
 
@@ -138,11 +158,14 @@ them:
 - chapter 01 gains **FR-45** (the record and the report as a product
   functional requirement) — the previous "no product goal changes" row was
   self-contradicting, since the change adds requirements to the product;
-- chapter 02's **TC-34** names both ignore destinations of the record's fenced
-  block (`.gitignore` plus the worktree-local exclude for Git;
-  `.fossil-settings/ignore-glob` plus the repository-local setting for Fossil),
-  so the constraint matches the backend switch `src/skills/rules.rs` already
-  implements;
+- chapter 02's **TC-34** states the corrected ignore rule: the recorder never
+  writes a versioned file (it re-asserts `.git/info/exclude` on every write and
+  writes Fossil's repository `ignore-glob` setting only while no managed file
+  overrides it; `.gitignore` only before a repository exists), and inside a
+  Fossil checkout that has `.fossil-settings/ignore-glob` the entry
+  `givn/history/*` belongs to that file's managed list through the owning
+  commands — because a versioned write at recorder start would dirty the
+  worktree and break `givn upgrade`'s clean-checkout precondition;
 - chapter 03's `givn timeline` interface row and chapter 08's report-packaging
   paragraph drop the `--open` and `--json` surface the design no longer
   declares (the printed default path under `givn/history/reports/` is named
