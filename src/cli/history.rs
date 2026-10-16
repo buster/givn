@@ -15,7 +15,8 @@ use anyhow::{Context, Result};
 use serde_json::Value;
 
 use crate::history::{
-    HistoryEntry, HistoryStore, Scope, parse_rfc3339_ms, reported_label, store_path,
+    HistoryEntry, HistoryStore, OUTCOME_UNKNOWN, Scope, USAGE_UNAVAILABLE, parse_rfc3339_ms,
+    reported_label, store_path,
 };
 
 /// The intake payload: one reporter flush — the optional scope overrides and
@@ -204,6 +205,12 @@ impl IngestedEvent {
         let mut entry = HistoryEntry::reported(scope.clone(), "turn", &name, &self.at);
         entry.duration_ms = self.duration_ms;
         entry.outcome = self.outcome_word();
+        if self.usage.is_none() {
+            // Gap honesty: a turn the harness did not measure is still a turn,
+            // and its usage is marked unavailable — never a zero-filled usage
+            // entry and never a fabricated model.
+            entry.data = Some(serde_json::json!({ "usage": USAGE_UNAVAILABLE }));
+        }
         let turn = batch.push(entry, batch.turn);
         batch.turn = Some(turn);
         if let Some(usage) = &self.usage {
@@ -299,10 +306,12 @@ impl IngestedEvent {
     }
 
     /// The record outcome word the entry carries: the reported outcome, and
-    /// `unknown` when the event reports none — a reported word outside the
-    /// record's vocabulary is never promoted to a passing state.
+    /// [`OUTCOME_UNKNOWN`] when the event reports none — a reported word
+    /// outside the record's vocabulary is never promoted to a passing state.
     fn outcome_word(&self) -> String {
-        self.reported_outcome().unwrap_or("unknown").to_string()
+        self.reported_outcome()
+            .unwrap_or(OUTCOME_UNKNOWN)
+            .to_string()
     }
 }
 
@@ -313,7 +322,7 @@ fn outcome_of(word: &str) -> Option<&'static str> {
         "ok" | "completed" | "complete" | "success" | "succeeded" => Some("ok"),
         "failed" | "failure" | "error" | "errored" => Some("failed"),
         "skipped" | "cancelled" | "canceled" | "interrupted" | "aborted" => Some("skipped"),
-        "unknown" => Some("unknown"),
+        OUTCOME_UNKNOWN => Some(OUTCOME_UNKNOWN),
         _ => None,
     }
 }

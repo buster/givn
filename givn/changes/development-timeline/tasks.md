@@ -3818,23 +3818,117 @@ name it.
       unavailable (an explicit marker the read surface exposes — the design's
       own word is "unavailable"), with no zero-valued counts anywhere for it.
     - RED expected failure: both Then steps are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Absent token usage is recorded as unavailable"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Absent token usage is recorded as unavailable"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 5.81s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: Absent token usage is recorded as unavailable
+           ✔  Given a change "demo" with reported agent activity
+           ✔  When the agent reports a completed turn without token usage
+           ✘  Then the record marks that turn's token usage as unavailable
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:38:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+
+        thread 'main' (2384114) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — both Then steps are unbound (the first
+        Then matches no function; the scenario stops there, so `the turn is still
+        recorded` never runs). The `Given` and the `When` drive the real fixture
+        (a change with one reported tool call, then the reported completed turn
+        without any usage handed to `givn history ingest`); at this point the
+        turn kind is mapped but records no marker, which the `When` records
+        without asserting — the RED signal is the undefined Then.
         ```
-  - [ ] **GREEN** — implement the unavailable marker on the turn and keep the
+  - [x] **GREEN** — implement the unavailable marker on the turn and keep the
         turn entry. Files: `src/cli/history.rs`, `src/history.rs`,
         `tests/steps/agent_activity_reporting_steps.rs`. Compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.09s
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Absent token usage is recorded as unavailable"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 5.56s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: Absent token usage is recorded as unavailable
+           ✔  Given a change "demo" with reported agent activity
+           ✔  When the agent reports a completed turn without token usage
+           ✔  Then the record marks that turn's token usage as unavailable
+           ✔  And the turn is still recorded
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
+
+        Production files:
+        - `src/cli/history.rs` — the turn mapper marks a turn whose event carries
+          no `usage` with `data.usage: "unavailable"` while keeping the turn
+          entry itself (name, measured duration, mapped outcome); no usage entry
+          is appended and no model is stored for it.
+        - `tests/steps/agent_activity_reporting_steps.rs` — the two `Then` steps:
+          the explicit `unavailable` marker (with a scan asserting no usage entry
+          exists, no zero-valued count is recorded anywhere, and no model was
+          invented) and the turn's own identity (the reported `at`, duration and
+          outcome, `agent` source, the change scope).
+        Note: `src/history.rs` is unchanged by this scenario's GREEN; its
+        unmeasured-signal vocabulary is unified by the REFACTOR below.
         ```
-  - [ ] **REFACTOR** — one "unmeasured" representation shared with the unmeasured
+  - [x] **REFACTOR** — one "unmeasured" representation shared with the unmeasured
         duration and unknown outcome states; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The record's three absences now have one home and one vocabulary
+        (`src/history.rs`): an unmeasured duration is absent (no `duration_ms`),
+        an unreported outcome is `OUTCOME_UNKNOWN`, and a turn the harness never
+        measured carries `data.usage: USAGE_UNAVAILABLE`. The entry constructors,
+        the span guard, the intake's outcome fallback and the turn marker all use
+        those constants instead of their own literals.
+
+        $ cargo fmt --all -- --check
+        FMT_CLEAN
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.78s
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Absent token usage is recorded as unavailable"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: Absent token usage is recorded as unavailable
+           ✔  Given a change "demo" with reported agent activity
+           ✔  When the agent reports a completed turn without token usage
+           ✔  Then the record marks that turn's token usage as unavailable
+           ✔  And the turn is still recorded
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
+
+        Regression check — all five bundle scenarios still green:
+        $ for s in "A reported tool call is recorded for its scope" …; do …; done
+        A reported tool call is recorded for its scope => EXIT=0
+        A subagent's activity is attributed to that subagent => EXIT=0
+        A question wait is recorded with its duration => EXIT=0
+        Reported token usage is recorded with the model that produced it => EXIT=0
+        Absent token usage is recorded as unavailable => EXIT=0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `Absent token usage is recorded as unavailable`

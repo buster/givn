@@ -31,7 +31,7 @@ Feature: Agent Activity Reporting
     Then the record holds that turn's token usage
     And the usage names the model that produced it
 
-  @givn.added @wip
+  @givn.added
   Scenario: Absent token usage is recorded as unavailable
     Given a change "demo" with reported agent activity
     When the agent reports a completed turn without token usage

@@ -194,6 +194,24 @@ fn reports_a_subagent_that_started_and_completed(world: &mut GivnWorld) {
     report(world, payload);
 }
 
+#[when("the agent reports a completed turn without token usage")]
+fn reports_a_turn_without_token_usage(world: &mut GivnWorld) {
+    let change = reported_change(world);
+    let payload = support::intake_payload(
+        Some(&change),
+        None,
+        vec![json!({
+            "kind": "turn",
+            "at": REPORTED_TURN_AT,
+            "turn": REPORTED_TURN,
+            "duration_ms": REPORTED_TURN_MS,
+            "model": REPORTED_MODEL,
+            "status": "completed",
+        })],
+    );
+    report(world, payload);
+}
+
 #[when("the agent reports a completed turn with token usage")]
 fn reports_a_turn_with_token_usage(world: &mut GivnWorld) {
     let change = reported_change(world);
@@ -384,6 +402,98 @@ fn entry_names_the_subagent_and_spans_its_start_and_end(world: &mut GivnWorld) {
         entry["outcome"],
         json!("ok"),
         "a completed subagent is not recorded as ok: {entry}"
+    );
+}
+
+#[then("the record marks that turn's token usage as unavailable")]
+fn record_marks_the_turns_usage_unavailable(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let entries = support::record_entries(&env.root());
+    let turns: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| entry["kind"] == json!("turn"))
+        .collect();
+    assert_eq!(
+        turns.len(),
+        1,
+        "expected exactly one recorded turn; the record holds: {entries:#?}"
+    );
+    let entry = turns[0].clone();
+    assert_eq!(
+        entry["data"]["usage"],
+        json!("unavailable"),
+        "the turn's absent usage is not marked unavailable: {entry}"
+    );
+    // No zero-valued counts anywhere for it: no usage entry was fabricated, no
+    // recorded `data` carries a zero count, and no model was invented.
+    const COUNT_KEYS: [&str; 5] = [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "total_tokens",
+    ];
+    let usages: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| entry["kind"] == json!("usage"))
+        .collect();
+    assert!(
+        usages.is_empty(),
+        "a usage entry was fabricated for an unmeasured turn: {usages:#?}"
+    );
+    for recorded in &entries {
+        for key in COUNT_KEYS {
+            assert_ne!(
+                recorded["data"][key],
+                json!(0),
+                "a zero-valued `{key}` count was recorded: {recorded}"
+            );
+        }
+        assert!(
+            recorded["data"].get("model").is_none(),
+            "a model was recorded for an unmeasured turn: {recorded}"
+        );
+    }
+    world
+        .agent_activity_reporting
+        .get_or_insert_with(AgentActivityReportingState::default)
+        .last_entry = Some(entry);
+}
+
+#[then("the turn is still recorded")]
+fn the_turn_is_still_recorded(world: &mut GivnWorld) {
+    let reported = reported_event(world, "turn");
+    let entry = identified_entry(world);
+    assert_eq!(
+        entry["kind"],
+        json!("turn"),
+        "the reported turn was not recorded: {entry}"
+    );
+    assert_eq!(
+        entry["source"],
+        json!("agent"),
+        "the recorded turn is not an agent-reported entry: {entry}"
+    );
+    assert_eq!(
+        entry["scope"],
+        json!({"kind": "change", "id": reported_change(world)}),
+        "the turn is not recorded for the change the payload named: {entry}"
+    );
+    assert_eq!(
+        entry["at"], reported["at"],
+        "the recorded turn is not the reported one: {entry}"
+    );
+    assert_eq!(
+        entry["duration_ms"], reported["duration_ms"],
+        "the turn's own measured duration was not kept: {entry}"
+    );
+    assert_eq!(
+        entry["outcome"],
+        json!("ok"),
+        "a completed turn is not recorded as ok: {entry}"
     );
 }
 
