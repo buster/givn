@@ -6701,11 +6701,34 @@ name it.
         $ ... --exact "...::The report totals the time spent waiting for questions"
         1 feature, 1 scenario (1 passed), 3 steps (3 passed)        EXIT=0
         ```
-  - [x] **COMMIT** — `PENDING` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `51d0165d195d37820f467a9c2fe3e1a830d259c2` — `feat(development-report): <release note>` with
         the scenario title `The report names the agent's fan-out into small
         subagents` in the body. Record the revision identifier.
         ```
-        <!-- paste the commit output + the revision's file list -->
+        $ ./target/debug/givn commit -m "feat(development-report): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        The report names the agent's fan-out into small subagents"
+        [16:52:20] committed revision on the Git backend
+        EXIT=0
+
+        $ git show --format='%H%n%B' --stat 51d0165d
+        51d0165d195d37820f467a9c2fe3e1a830d259c2
+        feat(development-report): Givn records the development process of every change and ideation — … opens in a browser.
+
+        The report names the agent's fan-out into small subagents
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../development-report.feature                     |   2 +-
+         givn/changes/development-timeline/tasks.md         | 125 ++++++++++++++++--
+         src/cli/timeline.rs                                |  54 +++++++-
+         tests/steps/development_report_steps.rs            | 145 +++++++++++++++++++++
+         4 files changed, 311 insertions(+), 15 deletions(-)
+
+        Revision 51d0165d touches production source (`src/cli/timeline.rs` — the
+        summary's subagent count, combined duration and unmeasured count, and the
+        subagents tile), the scenario's test steps, the delta `.feature`'s `@wip`
+        removal, and this task file's evidence — never the spec alone.
         ```
 
 ## Task 31 — `The report needs no network access to render` (`development-report`, added)
