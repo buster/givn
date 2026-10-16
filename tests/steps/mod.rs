@@ -166,8 +166,8 @@ pub struct GivnWorld {
     #[allow(dead_code)]
     pub(crate) agent_activity_reporting:
         Option<agent_activity_reporting_steps::AgentActivityReportingState>,
-    /// State for the `development-report` scenarios (the generated report).
-    #[allow(dead_code)]
+    /// State for the `development-report` scenarios (the generated report and
+    /// the record its Given seeded).
     pub(crate) development_report: Option<development_report_steps::DevelopmentReportState>,
 }
 

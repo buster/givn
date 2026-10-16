@@ -2,7 +2,7 @@
 
 Feature: Development Report
 
-  @givn.added @wip
+  @givn.added
   Scenario: The report ranks the longest single step first
     Given a change "demo" whose record holds steps of different durations
     When the developer generates the development report for "demo"
