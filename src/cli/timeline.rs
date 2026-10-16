@@ -30,6 +30,11 @@ const REPORT_ASSET: &str = include_str!("../../assets/timeline/report.html");
 /// summary's longest-step ranking is about.
 const STEP: &str = "step";
 
+/// The recorded `phase` kind: one entry per artifact file whose appearance
+/// marks a workflow stage's work as done, and per gate phase the archive and
+/// check runs record.
+const PHASE: &str = "phase";
+
 /// The recorded `question` kind: a wait for an answer, its own recorded span.
 const QUESTION: &str = "question";
 
@@ -73,6 +78,11 @@ pub struct ReportModel {
     /// summary and the longest-step ranking are computed over the whole record
     /// and never over these.
     pub aggregates: Vec<Aggregate>,
+    /// The stage each entry worked in: the report's one phase derivation, read
+    /// by the band rows' phase names, by every span's `data-stage`, and by the
+    /// browser tier's phase placement assertion. A scope whose record carries
+    /// no artifact transition has no name here — never an invented phase name.
+    pub stages: Vec<StageAssignment>,
     /// The summary: the numbers the report states about the whole window.
     pub summary: Summary,
 }
@@ -113,6 +123,9 @@ pub struct Band {
     pub label: String,
     /// The band's spans: the ids of its entries, in the model's own order.
     pub entries: Vec<u64>,
+    /// The band's phases: the stages its entries worked in, in the workflow's
+    /// own order, drawn as the row's visible phase names.
+    pub stages: Vec<String>,
 }
 
 impl Band {
@@ -124,6 +137,7 @@ impl Band {
             kind: row.kind.to_string(),
             label: row.label,
             entries,
+            stages: Vec::new(),
         }
     }
 }
@@ -360,7 +374,19 @@ pub struct RankedStep {
 /// initial zoom's aggregates).
 pub fn build_report_model(scope: Option<Scope>, entries: Vec<HistoryEntry>) -> ReportModel {
     let entries = ordered_by_recorded_time(entries);
-    let bands = bands_for(scope.as_ref(), &entries);
+    let mut bands = bands_for(scope.as_ref(), &entries);
+    // The one phase derivation: every band's entries are placed in the stage
+    // their own `at` reached, and the row's phase names are read back from the
+    // same assignment — so a span's `data-stage` and its row's phase line can
+    // never disagree.
+    let stages = stage_assignments(&bands, &entries);
+    let phases: Vec<Vec<String>> = bands
+        .iter()
+        .map(|band| band_phases(band, &stages))
+        .collect();
+    for (band, phases) in bands.iter_mut().zip(phases) {
+        band.stages = phases;
+    }
     let summary = Summary::of(&entries);
     let empty = entries.is_empty();
     // The one bucketing: the markers the initial view draws are computed here,
@@ -374,6 +400,7 @@ pub fn build_report_model(scope: Option<Scope>, entries: Vec<HistoryEntry>) -> R
         entries,
         empty,
         aggregates,
+        stages,
         summary,
     }
 }
@@ -492,6 +519,142 @@ fn bands_for(scope: Option<&Scope>, entries: &[HistoryEntry]) -> Vec<Band> {
         }
     }
     bands
+}
+
+/// The change workflow's stages, in the order a change works through them: the
+/// phase names a band's row carries.
+const WORKFLOW_STAGES: [&str; 9] = [
+    "propose",
+    "specs",
+    "design",
+    "arc42",
+    "design-review",
+    "tasks",
+    "implement",
+    "review",
+    "archive",
+];
+
+/// Each stage's own artifact, in [`WORKFLOW_STAGES`]' own order: the file whose
+/// appearance is one recorded `phase` transition — and therefore opens the
+/// stage that follows the stage it belongs to, so `tasks.md` appearing opens
+/// `implement`. A stage that produces no artifact of its own (`implement`,
+/// `archive`) is `None`, and the artifact of the stage before it opens the next
+/// stage that has one.
+const STAGE_ARTIFACTS: [Option<&str>; 9] = [
+    Some("proposal.md"),
+    Some("specs"),
+    Some("design.md"),
+    Some("arc42.md"),
+    Some("design-review.md"),
+    Some("tasks.md"),
+    None,
+    Some("review.md"),
+    None,
+];
+
+/// The stage one recorded artifact's appearance opens. An artifact the workflow
+/// does not record opens no stage at all: a record's own labels never invent a
+/// phase name.
+fn stage_opened_by(artifact: &str) -> Option<&'static str> {
+    let index = STAGE_ARTIFACTS
+        .iter()
+        .position(|known| *known == Some(artifact))?;
+    WORKFLOW_STAGES.get(index + 1).copied()
+}
+
+/// One recorded artifact transition: the `phase` entry whose label — or name,
+/// where the record carries no label — names a workflow artifact, and the
+/// instant the artifact appeared.
+fn artifact_transition(entry: &HistoryEntry) -> Option<(i64, &'static str)> {
+    if entry.kind != PHASE {
+        return None;
+    }
+    let artifact = entry.label.as_deref().unwrap_or(&entry.name);
+    Some((
+        crate::history::parse_rfc3339_ms(&entry.at)?,
+        stage_opened_by(artifact)?,
+    ))
+}
+
+/// One entry's derived stage: the workflow stage the record places it in, so a
+/// span can be read under its phase. `stage` is `None` for the unnamed stage a
+/// scope whose record carries no artifact transition gets.
+#[derive(Debug, Serialize)]
+pub struct StageAssignment {
+    /// The entry's own id.
+    pub entry: u64,
+    /// The stage's name, absent for the unnamed stage.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stage: Option<String>,
+}
+
+impl ReportModel {
+    /// The stage one entry worked in, as the model's one derivation placed it:
+    /// the single accessor the CLI's rendering and the browser tier's phase
+    /// placement both read, so a second derivation can never disagree with the
+    /// assignment the model carries.
+    fn stage_of(&self, entry: u64) -> Option<&str> {
+        self.stages
+            .iter()
+            .find(|assignment| assignment.entry == entry)
+            .and_then(|assignment| assignment.stage.as_deref())
+    }
+}
+
+/// Every band's entries with the stage they worked in: an entry belongs to the
+/// stage the latest artifact transition at or before its own `at` opened, and
+/// an entry recorded before the record's first transition stays in the
+/// workflow's opening stage. A scope whose record carries no transition gets
+/// one unnamed stage instead of an invented phase name. This is the report's
+/// one derivation of a phase: the model carries its result, so neither the
+/// renderer nor the browser script derives a stage a second time.
+fn stage_assignments(bands: &[Band], entries: &[HistoryEntry]) -> Vec<StageAssignment> {
+    let mut assignments = Vec::new();
+    for band in bands {
+        let mut transitions: Vec<(i64, &str)> = band
+            .entries
+            .iter()
+            .filter_map(|id| entries.iter().find(|entry| entry.id == *id))
+            .filter_map(artifact_transition)
+            .collect();
+        transitions.sort_by_key(|(at, _)| *at);
+        for id in &band.entries {
+            let Some(entry) = entries.iter().find(|entry| entry.id == *id) else {
+                continue;
+            };
+            let opened = crate::history::parse_rfc3339_ms(&entry.at).and_then(|at| {
+                transitions
+                    .iter()
+                    .rev()
+                    .find(|(transition_at, _)| *transition_at <= at)
+                    .map(|(_, stage)| (*stage).to_string())
+            });
+            let stage = match opened {
+                Some(stage) => Some(stage),
+                None if transitions.is_empty() => None,
+                None => Some(WORKFLOW_STAGES[0].to_string()),
+            };
+            assignments.push(StageAssignment { entry: *id, stage });
+        }
+    }
+    assignments
+}
+
+/// One band's phases: the stages its entries worked in, in the workflow's own
+/// order and without repetition — the names the row's phase line shows and the
+/// browser script draws from the same list.
+fn band_phases(band: &Band, assignments: &[StageAssignment]) -> Vec<String> {
+    WORKFLOW_STAGES
+        .iter()
+        .filter(|stage| {
+            assignments.iter().any(|assignment| {
+                assignment.stage.as_deref() == Some(**stage)
+                    && band.entries.contains(&assignment.entry)
+            })
+        })
+        .map(|stage| (*stage).to_string())
+        .collect()
 }
 
 /// One scope as the report shows it: the class the screen styles a band row by,
@@ -642,9 +805,14 @@ const MARGIN: f64 = 8.0;
 /// markers all map the window onto this many units.
 const DRAWING_WIDTH: f64 = WIDTH as f64 - LABEL_WIDTH - MARGIN;
 
-/// One band row's height and the narrowest mark a span draws as.
-const BAND_HEIGHT: u64 = 56;
+/// One band row's height: the row's visible phase names on top, the band's
+/// spans beneath them.
+const BAND_HEIGHT: u64 = 68;
 const MIN_SPAN: f64 = 2.0;
+
+/// The baseline the band row's phase names sit on, measured from the row's own
+/// top: above the row's spans and below the row's top edge.
+const PHASE_BASELINE: u64 = 13;
 
 /// The width one aggregate marker covers on the axis, in the SVG's own units.
 /// The initial zoom draws at most one marker per bucket and band, so a record
@@ -684,7 +852,7 @@ fn render_timeline(model: &ReportModel) -> String {
     let scale = TimeScale::of(&model.entries);
     let height = AXIS_HEIGHT + model.bands.len() as u64 * BAND_HEIGHT + MARGIN as u64;
     let mut svg = format!(
-        "<section class=\"timeline-section\" aria-label=\"Development timeline\">\n<svg class=\"timeline\" role=\"img\" aria-labelledby=\"timeline-title\" viewBox=\"0 0 {WIDTH} {height}\">\n<title id=\"timeline-title\">Development timeline</title>\n"
+        "<section class=\"timeline-section\" aria-label=\"Development timeline\">\n<svg class=\"timeline\" role=\"img\" aria-label=\"Development timeline\" viewBox=\"0 0 {WIDTH} {height}\">\n<title id=\"timeline-title\">Development timeline</title>\n"
     );
     svg.push_str(&render_axis(&scale));
     for (index, band) in model.bands.iter().enumerate() {
@@ -726,6 +894,15 @@ fn render_band(y: u64, band: &Band, model: &ReportModel, scale: &TimeScale) -> S
         y + BAND_HEIGHT / 4,
         escape(&band.label),
     );
+    // The band's phases: the stages its entries worked in, in the workflow's
+    // own order — the row's visible phase names, above the row's spans.
+    if !band.stages.is_empty() {
+        svg.push_str(&format!(
+            "<text class=\"band-phases\" x=\"{LABEL_WIDTH:.1}\" y=\"{}\">{}</text>\n",
+            y + PHASE_BASELINE,
+            escape(&band.stages.join(" · ")),
+        ));
+    }
     // The band's markers, indexed by the entries they stand for: the row's one
     // drawing pass reads the index instead of searching the window's markers
     // for every entry, and every covered entry reaches exactly the marker the
@@ -753,7 +930,10 @@ fn render_band(y: u64, band: &Band, model: &ReportModel, scale: &TimeScale) -> S
                 drawn_buckets.push(marker.bucket_start_ms);
                 svg.push_str(&render_aggregate(marker, y, scale));
             }
-            None => svg.push_str(&render_span(entry, y, scale)),
+            None => {
+                let stage = model.stage_of(entry.id);
+                svg.push_str(&render_span(entry, y, scale, stage));
+            }
         }
     }
     svg.push_str("</g>\n");
@@ -791,14 +971,18 @@ fn render_aggregate(marker: &Aggregate, y: u64, scale: &TimeScale) -> String {
 }
 
 /// One span: the entry drawn on the row's axis, with its accessible name always
-/// its label and its duration.
-fn render_span(entry: &HistoryEntry, y: u64, scale: &TimeScale) -> String {
+/// its label and its duration, and its own stage as the machine-readable
+/// placement the phase assertion reads.
+fn render_span(entry: &HistoryEntry, y: u64, scale: &TimeScale, stage: Option<&str>) -> String {
     let label = visible_label(entry);
     let duration = duration_text(entry);
     let (x, width) = scale.span(entry);
     let bar_y = y as f64 + BAND_HEIGHT as f64 / 3.0;
+    let stage_attribute = stage.map_or_else(String::new, |stage| {
+        format!(" data-stage=\"{}\"", escape(stage))
+    });
     format!(
-        "<g class=\"span\" data-entry-id=\"{}\" data-kind=\"{}\" data-at=\"{}\" aria-label=\"{}, {}\">\n<rect class=\"span-bar\" x=\"{x:.1}\" y=\"{bar_y:.1}\" width=\"{width:.1}\" height=\"16\"></rect>\n<text class=\"span-label\" x=\"{:.1}\" y=\"{:.1}\">{}</text>\n</g>\n",
+        "<g class=\"span\" data-entry-id=\"{}\" data-kind=\"{}\" data-at=\"{}\"{stage_attribute} aria-label=\"{}, {}\">\n<rect class=\"span-bar\" x=\"{x:.1}\" y=\"{bar_y:.1}\" width=\"{width:.1}\" height=\"16\"></rect>\n<text class=\"span-label\" x=\"{:.1}\" y=\"{:.1}\">{}</text>\n</g>\n",
         entry.id,
         escape(&entry.kind),
         escape(&entry.at),

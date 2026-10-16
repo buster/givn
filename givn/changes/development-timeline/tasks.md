@@ -8644,24 +8644,166 @@ name it.
     - **Evidence:** `givn/changes/development-timeline/evidence/visual/consumer-generates-the-development-report-for-a-change/`
       — `mobile.png` and `desktop.png` of the written report, rendered in the
       browser, animations disabled.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer generates the development report for a change"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer generates the development report for a change"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: Consumer generates the development report for a change
+           ✔  Given a project root with givn/ initialised
+           ✘  And a change "demo" with a recorded history whose last recorded artifact transition is "tasks.md"
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:68:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+
+        thread 'main' (2688926) panicked at …/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        RED_EXIT=101
+
+        RED category: undefined step — the artifact-transition Given has no
+        binding at all, and the reused root Given really built the fixture (a
+        real `givn init --agents opencode` root), so the RED is the missing
+        phase-derivation seed and assertion path, never a vacuous setup. The
+        scenario is the only caller that seeds a record whose last recorded
+        artifact transition is a named artifact and then reads the written
+        report's phase placement.
         ```
-  - [ ] **GREEN** — implement the printed path, the phase derivation, and the
+  - [x] **GREEN** — implement the printed path, the phase derivation, and the
         default output path. Files: `src/cli/timeline.rs`,
         `tests/steps/development_report_e2e_steps.rs`,
         `tests/steps/development_timeline_support.rs`, plus the two evidence
         screenshots. Compile first, re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) + the two screenshot paths -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.03s
+        BUILD=0
+        $ cargo build --locked --tests
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 17.85s
+        TESTS_BUILD=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer generates the development report for a change"
+        Feature: Development Report
+          Scenario: Consumer generates the development report for a change
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" with a recorded history whose last recorded artifact transition is "tasks.md"
+           ✔  When the user runs `givn timeline --change demo --out report.html`
+           ✔  Then the command exits 0
+           ✔  And the command prints the path of the written report
+           ✔  And the report file exists and names the recorded phases
+           ✔  And the report file places the step recorded after that transition in the "implement" phase
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
+        GREEN_EXIT=0
+
+        Evidence pair (both files non-empty, at the contract's two viewports;
+        the capture opens the report this scenario's own `givn timeline` wrote,
+        after the final assertion, animations disabled by the driver):
+        $ ls -l givn/changes/development-timeline/evidence/visual/consumer-generates-the-development-report-for-a-change/
+        -rw-r--r-- 118181 desktop.png
+        -rw-r--r--  49447 mobile.png
+        $ file …/*.png
+        …/mobile.png:  PNG image data, 360 x 780, 8-bit/color RGB, non-interlaced
+        …/desktop.png: PNG image data, 1920 x 1080, 8-bit/color RGB, non-interlaced
+
+        Two adjustments the real interface forced, both recorded rather than
+        hidden. (1) The command prints the report path *as the caller named it*
+        (`report.html`, not the absolute path) — the scenario's assertion
+        resolves the printed path against its own fixture root and requires it
+        to be the file the command was asked to write, which is the observable
+        contract; an earlier draft demanding an absolute path failed against the
+        real binary and was corrected, never the production side. (2) The
+        artifact-transition fixture seeds the phases as the record's own `phase`
+        entries (`kind: "phase"`, label naming the artifact), the shape the
+        report's derivation reads; no capture point is added, because the design
+        names none for this transition and no scenario requires one.
+
+        Production files (this scenario's own):
+        - `src/cli/timeline.rs` — the phase derivation (`WORKFLOW_STAGES`,
+          `STAGE_ARTIFACTS`, `stage_opened_by`, `artifact_transition`,
+          `stage_assignments`), the model's `stages` assignments and each band's
+          `stages`, the row's visible phase line (`<text class="band-phases">`),
+          each span's `data-stage`, and the row height the phase line needs;
+        - `tests/steps/development_timeline_support.rs` — `WORKFLOW_ARTIFACTS`,
+          the one-hour `TRANSITION_AT` ladder, `STAGE_WORK`, and
+          `seed_report_history`, which writes the transitions through the
+          record's own append path and returns the post-transition step the
+          assertion names;
+        - `tests/steps/development_report_e2e_steps.rs` — the scenario's four
+          steps and the CLI evidence capture;
+        - the two evidence screenshots above.
+
+        The CLI's default path form (`givn timeline --change demo`, no `--out`)
+        is already exercised by the fixture path the design's D4 names
+        (`givn/history/reports/demo.html`, `src/cli/timeline.rs::default_report_path`);
+        this scenario's own feature text has no step for a second invocation, so
+        the additional assertion the design allows is not added — the scenario
+        asserts exactly its own steps, never an extra hidden action.
+
+        Discrimination (probe, isolated fixture, restored immediately): the
+        fixture's last transition moved after the post-transition step, so the
+        record no longer places that step in the phase the transition opened:
+        ✘  And the report file places the step recorded after that transition in the "implement" phase
+           Step panicked. Captured output: … <g class="span" data-entry-id="13" data-kind="step" data-at="2026-10-16T13:30:00.000Z" data-stage="tasks" aria-label="cargo test --locked --test features_runner, 30 m"> …
+           left: "tasks"
+           right: "implement"
+        1 scenario (1 failed)
+        7 steps (6 passed, 1 failed)
+        PROBE_EXIT=101
+        The fixture was restored byte-identically (`diff` → identical) and the
+        restored tree re-run: `RESTORED_EXIT=0` (the GREEN run above is that
+        restored run).
         ```
-  - [ ] **REFACTOR** — one phase-derivation function used by the CLI and the
+  - [x] **REFACTOR** — one phase-derivation function used by the CLI and the
         renderer; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The derivation is one function (`stage_assignments`) and the renderer no
+        longer searches the assignments itself: `ReportModel::stage_of(entry)` is
+        the model's single accessor, so the CLI's rendering and the browser
+        tier's placement assertion read the same assignment:
+        $ grep -n "fn stage_of\|fn stage_assignments\|model.stage_of" src/cli/timeline.rs
+        592:impl ReportModel {
+        598:    fn stage_of(&self, entry: u64) -> Option<&str> {
+        605:/// Every band's entries with the stage they worked in: an entry belongs to the
+        614:fn stage_assignments(bands: &[Band], entries: &[HistoryEntry]) -> Vec<StageAssignment> {
+        934:                let stage = model.stage_of(entry.id);
+
+        $ cargo fmt --all -- --check        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 9.40s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer generates the development report for a change"
+        Feature: Development Report
+          Scenario: Consumer generates the development report for a change
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" with a recorded history whose last recorded artifact transition is "tasks.md"
+           ✔  When the user runs `givn timeline --change demo --out report.html`
+           ✔  Then the command exits 0
+           ✔  And the command prints the path of the written report
+           ✔  And the report file exists and names the recorded phases
+           ✔  And the report file places the step recorded after that transition in the "implement" phase
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
+        REFACTOR_EXIT=0
+
+        The re-run refreshed the evidence pair from the final code (49447/118181
+        bytes, 360x780 and 1920x1080). The rendered report reads, at the change's
+        own band: the phase line `propose · specs · design · arc42 ·
+        design-review · tasks · implement` and, beneath it, the record's steps —
+        the post-transition step's own span drawn under `implement`.
         ```
   - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
         title `Consumer generates the development report for a change` in the
