@@ -1364,6 +1364,122 @@ fn report_references_no_remote_resource(world: &mut GivnWorld) {
     );
 }
 
+/// The empty state the written report renders: the region between its own
+/// section start and close, so an assertion reads the state's own markup rather
+/// than a phrase that happens to appear anywhere in the document.
+fn empty_state_region(document: &str) -> String {
+    let start = document
+        .find("<section class=\"empty-state\"")
+        .unwrap_or_else(|| panic!("the report renders no empty state: {document}"));
+    let region = &document[start..];
+    let end = region
+        .find("</section>")
+        .expect("the empty state section is never closed");
+    region[..end].to_string()
+}
+
+#[given(regex = r#"^a change "([^"]+)" with no recorded activity$"#)]
+fn change_with_no_recorded_activity(world: &mut GivnWorld, id: String) {
+    let env = project_root(world);
+    run_fixture_command(env, &["new", &id]);
+    // The fixture's own claim: the change exists and its record holds nothing —
+    // the setup commands' own entries are removed, so the scope's record is
+    // empty rather than filtered by accident.
+    support::clear_record(env);
+    assert!(
+        !env.root()
+            .join("givn")
+            .join("history")
+            .join("events.jsonl")
+            .exists(),
+        "the fixture's record is empty"
+    );
+    world.last_change_id = Some(id);
+}
+
+#[then(regex = r#"^the report shows the empty state for "([^"]+)"$"#)]
+fn report_shows_the_empty_state_for(world: &mut GivnWorld, id: String) {
+    let document = report_text(world);
+    let model = report_model(&document);
+
+    // The fixture's own claim: the requested scope recorded nothing, so the
+    // empty state is the report of a really empty record, not of a filtered one.
+    let scope = Scope::Change { id: id.clone() };
+    let recorded: Vec<&HistoryEntry> = seeded(world)
+        .iter()
+        .filter(|entry| entry.scope == scope)
+        .collect();
+    assert!(
+        recorded.is_empty(),
+        "the fixture's scope recorded activity: {recorded:#?}"
+    );
+    assert_eq!(
+        model["empty"],
+        json!(true),
+        "the model does not mark the scope empty: {model:#?}"
+    );
+    assert_eq!(
+        model["summary"]["entries"],
+        json!(0),
+        "the empty report still counts recorded entries: {model:#?}"
+    );
+
+    // The rendered state: a heading, one sentence naming the scope, and a way
+    // back to the report root.
+    let empty = empty_state_region(&document);
+    assert!(
+        empty.contains("<h2"),
+        "the empty state carries no heading: {empty}"
+    );
+    assert!(
+        empty.contains("No recorded activity"),
+        "the empty state's heading does not name the state: {empty}"
+    );
+    assert!(
+        empty.contains(&id),
+        "the empty state does not name the scope it is about: {empty}"
+    );
+    assert!(
+        empty.contains("Back to the report root") && empty.contains("href=\"#report-title\""),
+        "the empty state offers no way back to the report root: {empty}"
+    );
+    assert!(
+        document.contains("<h1 id=\"report-title\">"),
+        "the report has no root heading to return to: {document}"
+    );
+}
+
+#[then("the report draws no timeline axis for it")]
+fn report_draws_no_timeline_axis_for_it(world: &mut GivnWorld) {
+    let document = report_text(world);
+    for marker in [
+        "<svg",
+        "class=\"timeline-section\"",
+        "class=\"axis\"",
+        "class=\"tick\"",
+        "class=\"band\"",
+        "class=\"span\"",
+    ] {
+        assert!(
+            !document.contains(marker),
+            "the empty report draws {marker}: {document}"
+        );
+    }
+    // No axis, and no other blank chart furniture either: the document is still
+    // one complete report, its root heading intact.
+    assert!(
+        document.starts_with("<!doctype html>") && document.trim_end().ends_with("</html>"),
+        "the report is not one complete document: {document}"
+    );
+    // The model agrees: the empty report carries no rows to draw.
+    let model = report_model(&document);
+    assert_eq!(
+        model["bands"].as_array().map(Vec::len),
+        Some(0),
+        "the empty report still carries bands: {model:#?}"
+    );
+}
+
 #[then("the report names the total wait duration and the number of waits")]
 fn report_names_the_total_wait_duration_and_the_number_of_waits(world: &mut GivnWorld) {
     let document = report_text(world);

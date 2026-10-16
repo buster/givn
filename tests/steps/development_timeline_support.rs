@@ -450,6 +450,20 @@ fn spawn_recording_command(env: &common::TestEnv) -> std::process::Child {
         .expect("spawn a racing givn process")
 }
 
+/// Remove the fixture's development record, so the project really holds no
+/// recorded activity for any scope. The fixture's claim "no recorded activity"
+/// is then the record's own state — the setup commands the fixture ran left
+/// entries behind, and a report about a scope that recorded nothing must not
+/// see them.
+pub fn clear_record(env: &common::TestEnv) {
+    let path = store_file(&env.root());
+    match std::fs::remove_file(&path) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => panic!("clear the store {}: {error}", path.display()),
+    }
+}
+
 /// The development record file of the project rooted at `root`:
 /// `givn/history/events.jsonl`, the store's own path.
 pub fn store_file(root: &Path) -> PathBuf {

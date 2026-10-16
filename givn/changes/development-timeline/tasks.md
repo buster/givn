@@ -6915,7 +6915,7 @@ name it.
 
 ## Task 32 — `The report shows the empty state for a scope with no recorded activity` (`development-report`, added)
 
-- [ ] **Scenario: `The report shows the empty state for a scope with no recorded activity`**
+- [x] **Scenario: `The report shows the empty state for a scope with no recorded activity`**
   - Design constraints:
     - Extension of the owning use case: no activity is recorded for the
       requested scope → the report renders an explicit empty state; it never
@@ -6934,27 +6934,140 @@ name it.
       model's `empty` marker plus the rendered empty-state text) and draws no
       timeline axis for it (no axis markup/labels in the document).
     - RED expected failure: both Then steps are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report shows the empty state for a scope with no recorded activity"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report shows the empty state for a scope with no recorded activity"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report shows the empty state for a scope with no recorded activity
+           ✘  Given a change "demo" with no recorded activity
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:52:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+
+        thread 'main' (2615618) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — the empty-record Given matches no
+        function, and the two Then steps (the empty state, the absent axis) are
+        unbound too, so the run stops on the first one. The contract did not hold
+        before this revision: `ReportModel` had no `empty` marker at all, the
+        report root always rendered the summary and the timeline, and a
+        scope-with-no-entries report was written as a timeline section whose
+        band row carried no spans — a blank axis rather than a stated state.
         ```
-  - [ ] **GREEN** — implement the `empty` marker and the empty-state rendering.
+  - [x] **GREEN** — implement the `empty` marker and the empty-state rendering.
         Files: `src/cli/timeline.rs`, `assets/timeline/report.html`,
         `tests/steps/development_report_steps.rs`. Compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
-        ```
-  - [ ] **REFACTOR** — let the empty state be one branch of the report root, not
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.82s
+        BUILD=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report shows the empty state for a scope with no recorded activity"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 8.65s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report shows the empty state for a scope with no recorded activity
+           ✔  Given a change "demo" with no recorded activity
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report shows the empty state for "demo"
+           ✔  And the report draws no timeline axis for it
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
+
+        Production files created/modified by this GREEN step:
+        - `src/cli/timeline.rs` (modified — `ReportModel` gains the `empty`
+          marker (`build_report_model`: the window holds no entry), `bands_for`
+          returns no rows for an empty window so the two branches agree that
+          there is nothing to draw, `render_view` branches on the marker, and
+          `render_empty_state` renders the state: the heading "No recorded
+          activity", one sentence naming the scope, and the link back to the
+          report root (`#report-title`). No summary and no `render_timeline`
+          call on this branch, so no axis, tick, band, or span markup is
+          written at all);
+        - `assets/timeline/report.html` (modified — the `.empty-state`
+          primitive's styles: the raised surface, the border, the panel radius,
+          the 24 px padding, the muted sentence, and the accent-coloured way
+          back — the tokens the design system's empty state uses);
+        - `tests/steps/development_report_steps.rs` (modified — the
+          no-recorded-activity Given, the empty-state region reader, and both
+          Then steps);
+        - `tests/steps/development_timeline_support.rs` (modified — the
+          `clear_record` fixture helper: the change exists and the record holds
+          nothing, so "no recorded activity" is the record's own state and not
+          an accidental filter).
+  - [x] **REFACTOR** — let the empty state be one branch of the report root, not
         a special-cased template; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The empty state is now visibly one branch of the one report root and
+        nothing else: `render_view` derives the scope's line once, writes it,
+        and then either appends `render_empty_state` — the same markup for every
+        scope that records nothing — or the summary and the timeline. The empty
+        state no longer re-derives the scope line from the model (the second
+        `scope_line` call is gone; the function takes the root's already-derived
+        line), so a scope can still be named in exactly one way, and no
+        template, no second root, and no per-scope special case exists. The
+        model side keeps the matching invariant: `bands_for` yields no rows for
+        an empty window, so `empty`, the absent rows, and the absent axis are one
+        fact stated in three places at most once each. No behaviour change: the
+        same markup, the same text, the same numbers.
+
+        $ cargo fmt --all -- --check
+        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.47s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report shows the empty state for a scope with no recorded activity"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report shows the empty state for a scope with no recorded activity
+           ✔  Given a change "demo" with no recorded activity
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report shows the empty state for "demo"
+           ✔  And the report draws no timeline axis for it
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
+
+        Regression runs of the seven committed report scenarios whose shared
+        model and renderer this revision touched (the `empty` marker, the
+        `bands_for` invariant, and the report root's branch):
+
+        $ ... --exact "...::The report ranks the longest single step first"                → 1 passed, 3 steps  EXIT=0
+        $ ... --exact "...::The report totals the time spent waiting for questions"        → 1 passed, 3 steps  EXIT=0
+        $ ... --exact "...::The report totals token usage per turn and per subagent"       → 1 passed, 5 steps  EXIT=0
+        $ ... --exact "...::The report of an ideation topic names the work done before the change exists" → 1 passed, 4 steps  EXIT=0
+        $ ... --exact "...::The report orders the timeline by recorded time, not by store position" → 1 passed, 3 steps  EXIT=0
+        $ ... --exact "...::The report names the agent's fan-out into small subagents"     → 1 passed, 3 steps  EXIT=0
+        $ ... --exact "...::The report needs no network access to render"                  → 1 passed, 3 steps  EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `PENDING` — `feat(development-report): <release note>` with
         the scenario title `The report shows the empty state for a scope with no
         recorded activity` in the body. Record the revision identifier.
+        ```
+        <!-- paste the commit output + the revision's file list -->
+        ```
 
 ## Task 33 — `A dense record is reported as aggregates instead of raw ticks` (`development-report`, added)
 
