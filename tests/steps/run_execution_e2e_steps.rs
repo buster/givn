@@ -185,8 +185,11 @@ fn git_managed_project(world: &mut GivnWorld) {
         .expect("read fixture commands.yaml");
     let stripped = common::remove_top_level_key(&commands, "run");
     std::fs::write(env.path("givn/commands.yaml"), stripped).expect("write commands.yaml");
-    std::fs::write(env.path(".gitignore"), ".opencode/\nAGENTS.md\n")
-        .expect("ignore generated agent files");
+    std::fs::write(
+        env.path(".gitignore"),
+        ".opencode/\nAGENTS.md\ngivn/history/\n",
+    )
+    .expect("ignore generated agent files and the development record");
     git_fixture(&env, &["init"]);
     git_fixture(&env, &["config", "user.name", "Givn Run Test"]);
     git_fixture(&env, &["config", "user.email", "givn-run@example.test"]);
