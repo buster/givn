@@ -2080,9 +2080,22 @@ name it.
         5 steps (5 passed)
         EXIT 0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+  - [x] **COMMIT** — `0c8cd7707a81993fb551fe21261014fc02dba60a` — `feat(development-record): <release note>` with
         the scenario title `A recorded label is bounded to 120 characters` in
         the body. Record the revision identifier.
+        ```
+        $ givn commit -m "feat(development-record): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        A recorded label is bounded to 120 characters"
+        [13:47:59] committed revision on the Git backend
+        $ git rev-parse HEAD
+        0c8cd7707a81993fb551fe21261014fc02dba60a
+
+        One atomic revision: RED+GREEN+REFACTOR together — the delta spec (this
+        scenario's `@wip` removed), `src/history.rs` (the bounded label),
+        `tests/steps/development_record_steps.rs` (fixture, steps, shared
+        lookup), and this file's Task 8 record.
+        ```
 
 ## Task 9 — `Reading the development record does not extend it` (`development-record`, added)
 
@@ -2103,13 +2116,45 @@ name it.
     - Note the scope widening for the record contract: this is the only scenario
       that pins both reading commands, so the render must be exercised here too.
     - RED expected failure: the no-new-entry Then step is undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Reading the development record does not extend it"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        The first run of this scenario failed on the fixture's own undefined
+        Given (`a change "demo" with a recorded history`, "Step doesn't match any
+        function", EXIT 101); the fixture step — a real setup action with its own
+        assertions, never a stub — was then written so the RED lands on the new
+        behaviour's assertion step, which is the failure the task predicts:
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Reading the development record does not extend it"
+        Feature: Development Record
+          Scenario: Reading the development record does not extend it
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" with a recorded history
+           ✔  When the user runs `givn history --change demo --json`
+           ✔  And the user runs `givn timeline --change demo --out report.html`
+           ✘  Then the development record holds no new entry
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:73:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        5 steps (4 passed, 1 failed)
+
+        thread 'main' (2060686) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT 101
+
+        RED category: undefined step — the no-new-entry contract is genuinely
+        new (`givn history` and `givn timeline` exist only as `todo!()`
+        skeletons), so the runner fails on the undefined Then step. The failure
+        is not vacuous: both reading commands ran (the generic step captures
+        their output), the record was seeded first, and no assertion step
+        existed to check it.
         ```
-  - [ ] **GREEN** — register the two commands with the recorder excluded.
+  - [x] **GREEN** — register the two commands with the recorder excluded.
         Files: `src/cli/history.rs`, `src/cli/timeline.rs`,
         `tests/steps/development_record_steps.rs` (the report invocation reuses
         the generic run-command step from `development_report_steps.rs` — never a
@@ -2117,13 +2162,103 @@ name it.
         what this scenario observes); its full model, ranking, and rendering are
         built by Tasks 25–33. Compile first, re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.89s
+        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Reading the development record does not extend it"
+        Feature: Development Record
+          Scenario: Reading the development record does not extend it
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" with a recorded history
+           ✔  When the user runs `givn history --change demo --json`
+           ✔  And the user runs `givn timeline --change demo --out report.html`
+           ✔  Then the development record holds no new entry
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT 0
+
+        Production files created/modified:
+        - `src/cli/history.rs` — `run` (the read view: ordered record lines of the
+          resolved or named scope, JSON array under `--json`, one human line per
+          entry otherwise) plus the shared `scope_for`/`entries_in_scope` read
+          helpers; the intake/mapper skeletons keep their not-yet-wired allowances
+          (now attached to the items, since this task wires the read command).
+        - `src/cli/timeline.rs` — `run` (writes the self-contained document to
+          `--out` or the default `givn/history/reports/<scope>.html`, prints the
+          path, returns it), `render_report` (fills the asset's single
+          `/*__GIVN_REPORT_DATA__*/` slot with the serialized model), and
+          `build_report_model` carrying the scope and the record lines Tasks 25–33
+          will extend with bands, phase derivation, ranking, and totals.
+        - `src/main.rs` — the `history` and `timeline` subcommands and their
+          dispatch, plus the recorder decision: the wrapper is not entered for
+          either command (`records(&cli.command)`), so reading cannot extend the
+          record.
+        - `src/cli/mod.rs` — the S4 skeleton allowances on the `history` and
+          `timeline` modules are dropped: both modules are wired now.
+        - `tests/steps/development_record_steps.rs` — the `a change "demo" with a
+          recorded history` fixture (real `givn new` + `givn status` runs, then a
+          byte snapshot of the store) and the `the development record holds no new
+          entry` step: the store's bytes are still exactly the snapshot's, the
+          report run succeeded, `report.html` exists with the data slot filled and
+          the scope it renders named in it. The report invocation uses the generic
+          `the user runs …` step — no report step is written here.
+        Non-vacuity: the Then step fails when the record grows (any recorded entry
+        changes the bytes), when the report command fails, and when the document
+        still carries its unfilled slot; the store snapshot plus the written
+        report together prove the reads really ran.
         ```
-  - [ ] **REFACTOR** — make the exclusion structural (the wrapper is not entered)
+  - [x] **REFACTOR** — make the exclusion structural (the wrapper is not entered)
         rather than a conditional inside the recorder; re-run → still exit 0.
         Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The exclusion now derives from the parsed command
+        (`fn records(command: &Commands) -> bool`) rather than from a name
+        comparison, and `HistoryRecorder::install` is simply not called for the
+        two reading commands — the wrapper is never entered:
+
+        $ grep -n "fn records" -A 8 src/main.rs
+        374:/// Whether this invocation records. `givn history` and `givn timeline` are
+        375:/// deliberately not recorded — reading the record never mutates it — so the
+        376:/// recording wrapper is not entered for them at all: an inspection that
+        377:/// appended an entry about itself would put the newest entry into every report
+        378:/// it produced (design-review Q8).
+        379:fn records(command: &Commands) -> bool {
+        380:    !matches!(
+        381:        command,
+        382:        Commands::History { .. } | Commands::Timeline { .. }
+        383:    )
+        384:}
+
+        $ cargo fmt --all -- --check                                    EXIT 0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.40s
+        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Reading the development record does not extend it"
+        Feature: Development Record
+          Scenario: Reading the development record does not extend it
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" with a recorded history
+           ✔  When the user runs `givn history --change demo --json`
+           ✔  And the user runs `givn timeline --change demo --out report.html`
+           ✔  Then the development record holds no new entry
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT 0
+
+        The recorder plumbing changed for every command, so the whole greened
+        delta was re-run in one process as well:
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --tags "not @e2e and not @wip"
+        [Summary]
+        2 features
+        10 scenarios (10 passed)
+        54 steps (54 passed)
+        EXIT 0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
         the scenario title `Reading the development record does not extend it` in

@@ -129,6 +129,37 @@ enum Commands {
         #[arg(long)]
         json: bool,
     },
+    /// Read the development record (ADR-073): one scope's recorded entries.
+    ///
+    /// Reading never records: this command runs without a recorder, so the
+    /// store keeps exactly the lines it had.
+    History {
+        /// Change identifier — limit the read to that change.
+        #[arg(long)]
+        change: Option<String>,
+        /// Ideation topic identifier — limit the read to that topic.
+        #[arg(long)]
+        topic: Option<String>,
+        /// Emit the record as JSON (the machine-readable view).
+        #[arg(long)]
+        json: bool,
+    },
+    /// Render the development report (ADR-073) into one self-contained HTML
+    /// document and print its path.
+    ///
+    /// Reading never records: this command runs without a recorder, so the
+    /// store keeps exactly the lines it had.
+    Timeline {
+        /// Change identifier — report that change.
+        #[arg(long)]
+        change: Option<String>,
+        /// Ideation topic identifier — report that topic.
+        #[arg(long)]
+        topic: Option<String>,
+        /// Write the report here (default: `givn/history/reports/<scope>.html`).
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
     /// Archive a completed change (gated: runs hooks of apply.requires artifacts).
     Archive {
         /// Change identifier.
@@ -320,20 +351,36 @@ fn main() {
     let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
 
     // The recording wrapper: one `command` entry per invocation, measured
-    // around dispatch and written after it, best-effort (src/history.rs).
-    let recorder = history::install(&command_name, &invocation_label());
+    // around dispatch and written after it, best-effort (src/history.rs). It
+    // is not entered at all for the two reading commands.
+    let recorder =
+        records(&cli.command).then(|| history::install(&command_name, &invocation_label()));
     let result = dispatch(cli);
     let (outcome, exit_code) = if result.is_ok() {
         ("ok", 0)
     } else {
         ("failed", 1)
     };
-    recorder.finish(outcome, exit_code);
+    if let Some(recorder) = &recorder {
+        recorder.finish(outcome, exit_code);
+    }
 
     if let Err(e) = result {
         eprintln!("error: {e:#}");
         std::process::exit(1);
     }
+}
+
+/// Whether this invocation records. `givn history` and `givn timeline` are
+/// deliberately not recorded — reading the record never mutates it — so the
+/// recording wrapper is not entered for them at all: an inspection that
+/// appended an entry about itself would put the newest entry into every report
+/// it produced (design-review Q8).
+fn records(command: &Commands) -> bool {
+    !matches!(
+        command,
+        Commands::History { .. } | Commands::Timeline { .. }
+    )
 }
 
 /// The invocation's own text (arguments after the program name), the command
@@ -371,6 +418,14 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             cli::check::run(artifact.as_deref(), change.as_deref())
         }
         Commands::Status { change, json } => cli::status::run(change.as_deref(), json),
+        Commands::History {
+            change,
+            topic,
+            json,
+        } => cli::history::run(change.as_deref(), topic.as_deref(), json),
+        Commands::Timeline { change, topic, out } => {
+            cli::timeline::run(change.as_deref(), topic.as_deref(), out.as_deref()).map(|_| ())
+        }
         Commands::Graph { change, json } => cli::graph::run(change.as_deref(), json),
         Commands::Archive { change, verbose } => cli::archive::run(&change, verbose),
         Commands::Eject { target, force } => cli::eject::run(&target, force),
