@@ -20,6 +20,22 @@ pub(crate) struct AgentActivityReportingState {
     pub(crate) change: Option<String>,
     pub(crate) last_payload: Option<Value>,
     pub(crate) last_entry: Option<Value>,
+    /// The record bytes as they stood before the last payload was handed to
+    /// the real intake, so a following step can assert the record's
+    /// append-only property at the content level.
+    pub(crate) store_before: Option<Vec<u8>>,
+    /// The contract-violating event the last payload reported, with its 1-based
+    /// position in the payload: the event the intake's rejection must name.
+    pub(crate) violating_event: Option<(Value, usize)>,
+}
+
+/// The capability's state, created on first use: every fixture and assertion
+/// of this capability reaches the payload and the entry it last read through
+/// it.
+fn state(world: &mut GivnWorld) -> &mut AgentActivityReportingState {
+    world
+        .agent_activity_reporting
+        .get_or_insert_with(AgentActivityReportingState::default)
 }
 
 /// The tool call the fixture's agent reports: the harness tool name, the
@@ -134,10 +150,158 @@ fn report(world: &mut GivnWorld, payload: Value) {
     let out = support::report_intake(env, &payload);
     world.last_output = Some(out);
     world.last_command = Some("history".to_string());
+    state(world).last_payload = Some(payload);
+}
+
+/// The change the fixture's recorded history built: the change the shared
+/// `a change "…" with a recorded history` Given created and this capability's
+/// payloads report into.
+fn recorded_change(world: &GivnWorld) -> String {
+    world
+        .last_change_id
+        .clone()
+        .expect("a change with a recorded history is required first")
+}
+
+/// Snapshot the record as it stands before the next payload is handed over.
+/// The append-only property is asserted on these bytes, so the "before" state
+/// is read from the store itself, never re-derived from the payload.
+fn snapshot_record(world: &mut GivnWorld) -> Vec<u8> {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let bytes = support::store_bytes(&env.root());
+    state(world).store_before = Some(bytes.clone());
+    bytes
+}
+
+/// The record bytes the last payload was handed against.
+fn recorded_before(world: &GivnWorld) -> Vec<u8> {
     world
         .agent_activity_reporting
-        .get_or_insert_with(AgentActivityReportingState::default)
-        .last_payload = Some(payload);
+        .as_ref()
+        .and_then(|state| state.store_before.clone())
+        .expect("no record was read before the last payload")
+}
+
+/// The event the fixture reports that the intake contract does not know: a
+/// `kind` no entry maps. The intake must reject exactly this event — named on
+/// stderr — and leave the record it inherited untouched.
+fn contract_violating_event() -> Value {
+    json!({
+        "kind": "teleport",
+        "at": REPORTED_TOOL_AT,
+        "label": "an event the intake contract does not know",
+    })
+}
+
+/// The intake's rejection lines on stderr: what the reporter's author reads to
+/// fix the payload.
+fn rejection_lines(world: &GivnWorld) -> Vec<String> {
+    String::from_utf8_lossy(&crate::steps::output(world).stderr)
+        .lines()
+        .filter(|line| line.contains("rejected"))
+        .map(str::to_owned)
+        .collect()
+}
+
+/// The fixture's violating event, with its 1-based position in the payload —
+/// the two things the intake's rejection must name.
+fn violating_event(world: &GivnWorld) -> (Value, usize) {
+    world
+        .agent_activity_reporting
+        .as_ref()
+        .and_then(|state| state.violating_event.clone())
+        .expect("the fixture has not reported a contract-violating event yet")
+}
+
+#[when("the agent reports an event that does not match the intake contract")]
+fn reports_an_event_that_does_not_match_the_intake_contract(world: &mut GivnWorld) {
+    let change = recorded_change(world);
+    snapshot_record(world);
+    let violating = contract_violating_event();
+    // The fixture knows the event it reports as violating and where in the
+    // payload it sits, so the assertion reads what was really sent rather than
+    // re-deriving it from the intake's own behaviour.
+    let position = 1;
+    state(world).violating_event = Some((violating.clone(), position));
+    let payload = support::intake_payload(Some(&change), None, vec![violating]);
+    report(world, payload);
+}
+
+#[then("the intake names the rejected event")]
+fn intake_names_the_rejected_event(world: &mut GivnWorld) {
+    let (rejected, position) = violating_event(world);
+    let kind = rejected["kind"]
+        .as_str()
+        .expect("the fixture's violating event names its kind");
+    let rejections = rejection_lines(world);
+    assert_eq!(
+        rejections.len(),
+        1,
+        "expected the payload's one contract-violating event to be named on stderr: {rejections:#?}"
+    );
+    let line = &rejections[0];
+    assert!(
+        line.starts_with("warning:"),
+        "the rejection is not reported as a warning: {line}"
+    );
+    assert!(
+        line.contains(&format!("event {position}")),
+        "the rejection does not name the rejected event's position {position}: {line}"
+    );
+    assert!(
+        line.contains(kind),
+        "the rejection does not name the rejected event's kind `{kind}`: {line}"
+    );
+    let stderr = crate::steps::stderr(world);
+    let errors: Vec<&str> = stderr
+        .lines()
+        .filter(|line| line.starts_with("error:"))
+        .collect();
+    assert!(
+        errors.is_empty(),
+        "the rejected event was reported as a failure of the intake: {errors:#?}"
+    );
+}
+
+#[then("the previously recorded history is unchanged")]
+fn previously_recorded_history_is_unchanged(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let before = recorded_before(world);
+    let after = support::store_bytes(&env.root());
+    // The append-only property at the content level: the bytes that were
+    // recorded before the rejected payload are still the store's first bytes,
+    // byte for byte.
+    assert!(
+        after.starts_with(&before),
+        "the recorded history was rewritten by the rejected payload:\nbefore: {}\nafter: {}",
+        String::from_utf8_lossy(&before),
+        String::from_utf8_lossy(&after)
+    );
+    // What the payload appended is the intake's own command entry, never the
+    // rejected event: nothing agent-reported entered the record.
+    let appended = support::entries_of(&after[before.len()..]);
+    for entry in &appended {
+        assert_eq!(
+            entry["source"],
+            json!("givn"),
+            "the rejected event was recorded: {entry}"
+        );
+    }
+    let entries = support::record_entries(&env.root());
+    let reported: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| entry["source"] == json!("agent"))
+        .collect();
+    assert!(
+        reported.is_empty(),
+        "the rejected payload contributed an agent entry: {reported:#?}"
+    );
 }
 
 #[given(regex = r#"^a change "([^"]+)" with reported agent activity$"#)]
@@ -162,10 +326,7 @@ fn change_with_reported_agent_activity(world: &mut GivnWorld, id: String) {
         "the intake failed: {}",
         String::from_utf8_lossy(&out.stderr)
     );
-    world
-        .agent_activity_reporting
-        .get_or_insert_with(AgentActivityReportingState::default)
-        .change = Some(id);
+    state(world).change = Some(id);
 }
 
 #[when("the agent reports a subagent that started and completed")]
@@ -282,10 +443,7 @@ fn record_holds_one_agent_entry_for_tool_call(world: &mut GivnWorld) {
         json!({"kind": "change", "id": reported_payload(world)["change"]}),
         "the reported tool call is not recorded for the change the payload named: {entry}"
     );
-    world
-        .agent_activity_reporting
-        .get_or_insert_with(AgentActivityReportingState::default)
-        .last_entry = Some(entry);
+    state(world).last_entry = Some(entry);
 }
 
 #[then("that entry names the tool and its measured duration")]
@@ -361,10 +519,7 @@ fn record_holds_one_entry_for_that_subagent(world: &mut GivnWorld) {
         json!({"kind": "change", "id": reported_change(world)}),
         "the reported subagent is not recorded for the change the payload named: {entry}"
     );
-    world
-        .agent_activity_reporting
-        .get_or_insert_with(AgentActivityReportingState::default)
-        .last_entry = Some(entry);
+    state(world).last_entry = Some(entry);
 }
 
 #[then("that entry names the subagent and spans its start and its end")]
@@ -457,10 +612,7 @@ fn record_marks_the_turns_usage_unavailable(world: &mut GivnWorld) {
             "a model was recorded for an unmeasured turn: {recorded}"
         );
     }
-    world
-        .agent_activity_reporting
-        .get_or_insert_with(AgentActivityReportingState::default)
-        .last_entry = Some(entry);
+    state(world).last_entry = Some(entry);
 }
 
 #[then("the turn is still recorded")]
@@ -542,10 +694,7 @@ fn record_holds_the_turns_token_usage(world: &mut GivnWorld) {
             "the usage entry does not carry the reported `{key}` count: {entry}"
         );
     }
-    world
-        .agent_activity_reporting
-        .get_or_insert_with(AgentActivityReportingState::default)
-        .last_entry = Some(entry);
+    state(world).last_entry = Some(entry);
 }
 
 #[then("the usage names the model that produced it")]
@@ -590,10 +739,7 @@ fn record_holds_one_entry_for_the_question_wait(world: &mut GivnWorld) {
         json!({"kind": "change", "id": reported_change(world)}),
         "the question wait is not recorded for the change the payload named: {entry}"
     );
-    world
-        .agent_activity_reporting
-        .get_or_insert_with(AgentActivityReportingState::default)
-        .last_entry = Some(entry);
+    state(world).last_entry = Some(entry);
 }
 
 #[then("that entry carries the wait duration")]

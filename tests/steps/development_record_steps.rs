@@ -654,6 +654,13 @@ fn project_root_initialised_under_git(world: &mut GivnWorld) {
 
 #[given(regex = r#"^a change "([^"]+)" with a recorded history$"#)]
 fn change_with_a_recorded_history(world: &mut GivnWorld, id: String) {
+    // When this is the scenario's first Given the scenario did not name a
+    // project root itself (the agent-activity-reporting and development-report
+    // scenarios that start from a recorded history), the fixture brings up the
+    // same init root the root Given builds.
+    if world.env.is_none() {
+        world.env = Some(common::make_init_root());
+    }
     let env = world
         .env
         .as_ref()
