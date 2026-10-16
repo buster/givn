@@ -62,7 +62,7 @@ Feature: Development Report
     And each aggregate marker names how many entries it covers and their total duration
     And the report summary still counts every recorded entry
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer generates the development report for a change
     Given a project root with givn/ initialised
     And a change "demo" with a recorded history whose last recorded artifact transition is "tasks.md"

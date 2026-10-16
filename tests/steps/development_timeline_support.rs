@@ -178,6 +178,140 @@ pub fn seed_out_of_order_steps(env: &common::TestEnv, scope: &Scope) -> Vec<Hist
     history.seed(env)
 }
 
+/// The change workflow's artifact transitions, in the order Givn records them:
+/// one `phase` entry per artifact file whose appearance marks a stage's work as
+/// done — and therefore opens the stage that follows it. The report scenarios
+/// seed the record's transitions from this list, up to the artifact the
+/// scenario names.
+pub const WORKFLOW_ARTIFACTS: [&str; 7] = [
+    "proposal.md",
+    "specs",
+    "design.md",
+    "arc42.md",
+    "design-review.md",
+    "tasks.md",
+    "review.md",
+];
+
+/// The recorded end of each transition in [`WORKFLOW_ARTIFACTS`], one hour
+/// apart: a report's phase names stay readable at the initial zoom, and a
+/// scenario's own steps fall between two transitions.
+const TRANSITION_AT: [&str; 7] = [
+    "2026-10-16T08:00:00.000Z",
+    "2026-10-16T09:00:00.000Z",
+    "2026-10-16T10:00:00.000Z",
+    "2026-10-16T11:00:00.000Z",
+    "2026-10-16T12:00:00.000Z",
+    "2026-10-16T13:00:00.000Z",
+    "2026-10-16T14:00:00.000Z",
+];
+
+/// The work the fixture's record holds: one measured step per workflow stage,
+/// recorded after the transition that opened the stage and before the next one.
+/// The first row is the opening stage's own work (recorded before the record's
+/// first transition); the last row is the step the CLI report scenario's
+/// assertion names — recorded after the record's last transition — and it is
+/// also the record's longest measured step, so the browser scenarios select it
+/// as the longest recorded step.
+const STAGE_WORK: [(&str, &str, u64); 7] = [
+    (
+        "givn instructions propose",
+        "2026-10-16T07:50:00.000Z",
+        300_000,
+    ),
+    (
+        "givn instructions specs",
+        "2026-10-16T08:30:00.000Z",
+        600_000,
+    ),
+    (
+        "givn instructions design",
+        "2026-10-16T09:30:00.000Z",
+        900_000,
+    ),
+    (
+        "givn instructions arc42",
+        "2026-10-16T10:30:00.000Z",
+        120_000,
+    ),
+    (
+        "givn skills design-review",
+        "2026-10-16T11:30:00.000Z",
+        600_000,
+    ),
+    (
+        "givn instructions tasks",
+        "2026-10-16T12:30:00.000Z",
+        300_000,
+    ),
+    (
+        "cargo test --locked --test features_runner",
+        "2026-10-16T13:30:00.000Z",
+        1_800_000,
+    ),
+];
+
+/// The record one report scenario renders: the written steps and the artifact
+/// transitions the scenario's own assertions name.
+#[derive(Debug, Clone)]
+pub struct SeededReportHistory {
+    /// The step recorded after the record's last transition: the one the
+    /// `implement` phase's assertion names.
+    pub post_transition_step: HistoryEntry,
+    /// The artifact transitions the record carries, in the order they appeared.
+    pub transitions: Vec<String>,
+}
+
+/// Seed the fixture project's record with a change's recorded history: one
+/// artifact transition per workflow artifact up to `last_artifact`, and one
+/// measured step per stage those transitions opened. The change itself is
+/// created with the real `givn new`, the transitions are written as the
+/// record's own `phase` entries — the shape the report's phase derivation reads
+/// — and every entry goes into the store through the store's own append path.
+pub fn seed_report_history(
+    env: &common::TestEnv,
+    change: &str,
+    last_artifact: &str,
+) -> SeededReportHistory {
+    let out = common::run_givn(env, &["new", change]);
+    assert!(
+        out.status.success(),
+        "givn new {change} failed: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+    let last = WORKFLOW_ARTIFACTS
+        .iter()
+        .position(|artifact| *artifact == last_artifact)
+        .unwrap_or_else(|| {
+            panic!("the workflow records no artifact `{last_artifact}`: {WORKFLOW_ARTIFACTS:?}")
+        });
+    let scope = Scope::Change {
+        id: change.to_string(),
+    };
+    let mut history = SeededHistory::new();
+    let mut transitions = Vec::new();
+    for (index, artifact) in WORKFLOW_ARTIFACTS[..=last].iter().enumerate() {
+        let transition = history.point(&scope, "phase", artifact, TRANSITION_AT[index]);
+        history.label(transition, artifact);
+        transitions.push(artifact.to_string());
+    }
+    let work = last + 1;
+    assert!(
+        work < STAGE_WORK.len(),
+        "the fixture records no step for the stage `{last_artifact}` opens"
+    );
+    let mut steps = Vec::new();
+    for (label, at, duration_ms) in STAGE_WORK[..=work].iter() {
+        let step = history.span(&scope, "step", label, at, *duration_ms);
+        steps.push(history.label(step, label));
+    }
+    let entries = history.seed(env);
+    SeededReportHistory {
+        post_transition_step: entries[steps[work]].clone(),
+        transitions,
+    }
+}
+
 /// The names of a directory's entries, empty when the directory does not
 /// exist.
 fn read_dir_names(dir: &Path) -> Vec<String> {
