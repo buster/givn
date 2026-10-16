@@ -102,7 +102,7 @@ Feature: Agent Activity Reporting
     Then the record holds that turn's token usage
     And the usage names "claude-sonnet-5"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario Outline: Consumer installs the agent reporter and its reported activity lands in the record
     Given a project root with givn/ initialised
     And the change agent target "<target>" installs the development reporter

@@ -703,9 +703,6 @@ fn seeded_entry(scope: &Scope, kind: &str, name: &str, at: &str) -> HistoryEntry
 /// harness's own events: the synthetic session the agent-activity-reporting
 /// scenarios report, expressed once so the omp and the opencode driver consume
 /// the same vocabulary instead of two hand-rolled event streams.
-// Task E1 creates the driver vocabulary; Task E4's scenario is the first
-// caller, and that scenario removes this allowance.
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum HarnessActivity {
     /// One completed tool call.
@@ -746,7 +743,6 @@ pub enum HarnessActivity {
     Shutdown,
 }
 
-#[allow(dead_code)] // Task E4 drives it.
 impl HarnessActivity {
     /// The activity as the driver scripts consume it.
     fn as_json(&self) -> Value {
@@ -784,7 +780,6 @@ impl HarnessActivity {
 
 /// The session id every driver reports under: one session per driver run, so
 /// the record's intake sees one reporter session.
-#[allow(dead_code)] // Task E4's drivers report under it.
 pub const DRIVER_SESSION: &str = "givn-timeline-driver";
 
 /// Drive the project's *generated* omp reporter through its real entry point:
@@ -793,7 +788,6 @@ pub const DRIVER_SESSION: &str = "givn-timeline-driver";
 /// `getThinkingLevel`), and fires `activities` at the reporter's own harness
 /// events. The reporter's real `givn history ingest` reaches the compiled
 /// binary through the `PATH` shim.
-#[allow(dead_code)] // Task E4 drives it.
 pub fn drive_omp_reporter(
     env: &common::TestEnv,
     activities: &[HarnessActivity],
@@ -820,7 +814,6 @@ pub fn drive_omp_reporter(
 /// `event.subscribe` async iterable, and emits the synthetic events the
 /// activities name through that same stream. The reporter's real
 /// `givn history ingest` reaches the compiled binary through the `PATH` shim.
-#[allow(dead_code)] // Task E4 drives it.
 pub fn drive_opencode_reporter(
     env: &common::TestEnv,
     activities: &[HarnessActivity],
@@ -840,12 +833,126 @@ pub fn drive_opencode_reporter(
     )
 }
 
+/// Drive the project's *generated* Claude Code development reporter through its
+/// real entry point: the generated `.claude/hooks/givn-timeline.sh` shim, run
+/// once per harness event with a real hook payload on stdin and the `givn`
+/// `PATH` shim in front (`report_harness_hook`). The shim execs `givn history
+/// harness-hook --harness claude`, so the payload reaches the binary's own
+/// mapper exactly as it does in a live session.
+///
+/// Every invocation is asserted to have exited `0` here — a non-zero hook exit
+/// is a hook error for the harness — and the last invocation's output is
+/// returned, so the scenario's own assertion reads what the reporter process
+/// produced. A `Turn` activity writes the harness's session record the shim's
+/// mapper reads the turn's usage from (`write_transcript_with_usage`): Claude
+/// Code reports a turn's usage through that record, never inline.
+pub fn drive_claude_reporter(
+    env: &common::TestEnv,
+    activities: &[HarnessActivity],
+) -> std::process::Output {
+    let shim = env.path(".claude/hooks/givn-timeline.sh");
+    assert!(
+        shim.is_file(),
+        "the generated Claude reporter is missing: {}",
+        shim.display()
+    );
+    let mut last = None;
+    for activity in activities {
+        for payload in claude_payloads(env, activity) {
+            let event = payload["hook_event_name"]
+                .as_str()
+                .unwrap_or("unknown event")
+                .to_string();
+            let out = report_harness_hook(env, &payload);
+            assert!(
+                out.status.success(),
+                "the generated Claude reporter failed on `{event}` (exit {:?}): {}{}",
+                out.status.code(),
+                String::from_utf8_lossy(&out.stdout),
+                String::from_utf8_lossy(&out.stderr),
+            );
+            last = Some(out);
+        }
+    }
+    last.expect("the driver reported no harness event")
+}
+
+/// The Claude Code hook payloads one activity reaches the generated shim
+/// through: the harness's own event names and field shapes, in the order a live
+/// session sends them. `Turn` names the session record the harness writes
+/// asynchronously (written here for the model the activity reports) and
+/// `Shutdown` is the harness's session end; the activity's inline `usage` is
+/// the omp/opencode shape and belongs to those drivers, so the Claude path
+/// reports through its record instead.
+fn claude_payloads(env: &common::TestEnv, activity: &HarnessActivity) -> Vec<Value> {
+    let tool_call = |event: &str, tool: &str, id: &str, input: Value| {
+        serde_json::json!({
+            "hook_event_name": event,
+            "session_id": DRIVER_SESSION,
+            "tool_name": tool,
+            "tool_use_id": id,
+            "tool_input": input,
+        })
+    };
+    match activity {
+        HarnessActivity::Tool { id, tool, args } => {
+            let mut completion = tool_call("PostToolUse", tool, id, args.clone());
+            completion["duration_ms"] = Value::from(CLAUDE_TOOL_MS);
+            completion["tool_response"] = serde_json::json!({});
+            vec![tool_call("PreToolUse", tool, id, args.clone()), completion]
+        }
+        HarnessActivity::Question { id, question } => {
+            let input = serde_json::json!({ "questions": [{ "question": question }] });
+            let mut completion = tool_call("PostToolUse", CLAUDE_QUESTION_TOOL, id, input.clone());
+            completion["duration_ms"] = Value::from(CLAUDE_TOOL_MS);
+            completion["tool_response"] = serde_json::json!({});
+            vec![
+                tool_call("PreToolUse", CLAUDE_QUESTION_TOOL, id, input),
+                completion,
+            ]
+        }
+        HarnessActivity::Subagent { id, agent } => vec![
+            serde_json::json!({
+                "hook_event_name": "SubagentStart",
+                "session_id": DRIVER_SESSION,
+                "agent_id": id,
+                "agent_type": agent,
+            }),
+            serde_json::json!({
+                "hook_event_name": "SubagentStop",
+                "session_id": DRIVER_SESSION,
+                "agent_id": id,
+                "agent_type": agent,
+            }),
+        ],
+        HarnessActivity::Turn { model, .. } => {
+            let transcript = write_transcript_with_usage(env, model);
+            vec![serde_json::json!({
+                "hook_event_name": "Stop",
+                "session_id": DRIVER_SESSION,
+                "transcript_path": transcript.path.display().to_string(),
+            })]
+        }
+        HarnessActivity::Shutdown => vec![serde_json::json!({
+            "hook_event_name": "SessionEnd",
+            "session_id": DRIVER_SESSION,
+        })],
+    }
+}
+
+/// The Claude Code question tool: its own `PreToolUse`/`PostToolUse` pair is
+/// the question wait the binary's mapper records.
+const CLAUDE_QUESTION_TOOL: &str = "AskUserQuestion";
+
+/// The harness's own `duration_ms` for a completed tool call: Claude Code times
+/// its tools, and its completion payload is where the number arrives.
+const CLAUDE_TOOL_MS: u64 = 40;
+
 /// Write one driver script into the fixture root and run it with `node`: the
 /// driver's working directory is the project root (so a relative intake
 /// invocation and the record both land where the scenario reads them) and its
 /// `PATH` carries the `givn` shim. A driver that cannot run at all fails the
 /// scenario's fixture, never its assertion.
-#[allow(dead_code)] // Reached through the two drivers above.
 fn run_node_driver(
     env: &common::TestEnv,
     script_name: &str,
@@ -884,7 +991,6 @@ fn run_node_driver(
 
 /// The omp driver's script: the fake `pi` extension context the design names,
 /// the reporter's own harness events, and nothing else.
-#[allow(dead_code)] // The omp driver's script, run by `drive_omp_reporter`.
 const OMP_DRIVER: &str = r#"import { spawnSync } from "node:child_process"
 import { pathToFileURL } from "node:url"
 
@@ -933,7 +1039,6 @@ for (const activity of activities) {
 /// The opencode driver's script: the fake plugin context the design names
 /// (`session.hook`/`tool.hook`/`shell.hook` plus the `event.subscribe` async
 /// iterable the driver itself feeds), and the reporter's own event shapes.
-#[allow(dead_code)] // The opencode driver's script, run by `drive_opencode_reporter`.
 const OPENCODE_DRIVER: &str = r#"import { pathToFileURL } from "node:url"
 
 const activities = JSON.parse(process.env.GIVN_DRIVER_ACTIVITIES)
@@ -978,6 +1083,12 @@ const emit = async (event) => {
   // the next event of the same session.
   await new Promise((resolve) => setTimeout(resolve, 25))
 }
+// The session's own boundary event: it is what makes the reporter materialize
+// and flush, so the driver's activities and its session end share one shape.
+const boundary = async () => {
+  await emit({ type: "session.execution.succeeded", created: stamp(), data: { sessionID: session } })
+  await new Promise((resolve) => setTimeout(resolve, 200))
+}
 for (const activity of activities) {
   if (activity.kind === "tool") {
     await emit({ type: "session.tool.called", created: stamp(), data: { sessionID: session, id: activity.id, name: activity.tool, input: activity.args } })
@@ -991,12 +1102,15 @@ for (const activity of activities) {
   } else if (activity.kind === "turn") {
     await emit({ type: "session.step.started", created: stamp(), data: { sessionID: session, assistantMessageID: `step-${activity.index}` } })
     await emit({ type: "session.step.ended", created: stamp(), data: { sessionID: session, assistantMessageID: `step-${activity.index}`, model: activity.model, tokens: activity.usage } })
+  } else if (activity.kind === "shutdown") {
+    await boundary()
   }
 }
-// One final boundary: the reporter materializes whatever never closed and
-// flushes the last payload.
-await emit({ type: "session.execution.succeeded", created: stamp(), data: { sessionID: session } })
-await new Promise((resolve) => setTimeout(resolve, 200))
+// The session's own end: a driver whose activities did not report it still
+// closes with one final boundary — the reporter materializes whatever never
+// closed and flushes the last payload — so the record receives the buffer
+// either way.
+if (!activities.some((activity) => activity.kind === "shutdown")) await boundary()
 closed = true
 if (wake) {
   const resolve = wake

@@ -8071,7 +8071,7 @@ name it.
 
 ## Task E3 — `Consumer reads the development record as machine-readable output` (`@e2e`, `development-record`)
 
-- [ ] **Scenario: `Consumer reads the development record as machine-readable output`**
+- [x] **Scenario: `Consumer reads the development record as machine-readable output`**
   - Design constraints:
     - Matrix row: `development-record: read the development record` — real
       interface **CLI**, driving mechanism `common::run_givn`:
@@ -8276,10 +8276,32 @@ name it.
         1920x1080 and 360x780), so the committed pair is this scenario's own
         output, not the earlier iteration's.
         ```
-  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+  - [x] **COMMIT** — `64a5dca3bebcfb9920181edcdb09304e2e87b29a` — `test(e2e): <release note>` with the scenario
         title `Consumer reads the development record as machine-readable output`
         in the body (including the two evidence PNGs). Record the revision
         identifier.
+        ```
+        $ ./target/debug/givn commit -m "test(e2e): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        Consumer reads the development record as machine-readable output"
+        [17:26:21] committed revision on the Git backend
+
+        $ git show --stat --format='%H' 64a5dca3
+        64a5dca3bebcfb9920181edcdb09304e2e87b29a
+         .../desktop.png                    | Bin 47086 -> 46816 bytes
+         .../mobile.png                     | Bin 32176 -> 32172 bytes
+         .../development-record.feature     |   2 +-
+         givn/changes/development-timeline/tasks.md         | 221 ++++++++++++++++++++-
+         tests/steps/development_record_e2e_steps.rs        |  82 +++++++-
+         5 files changed, 290 insertions(+), 15 deletions(-)
+
+        The revision is this scenario's RED+GREEN+REFACTOR as one atomic commit:
+        the `@wip` removal from this scenario alone, its Then step with the
+        extracted assertion helpers, this task file's evidence, and its own
+        re-captured evidence pair (the sibling slug's pair is untouched here —
+        the pair this commit rewrites is
+        `consumer-reads-the-development-record-as-machine-readable-output/`).
+        ```
 
 ## Task E4 — `Consumer installs the agent reporter and its reported activity lands in the record` (`@e2e`, `agent-activity-reporting`, Scenario Outline, three Examples rows)
 
@@ -8316,25 +8338,249 @@ name it.
       be the non-empty output of the final run).
     - `@e2e` tag stays; the outline's three rows are input variation of one
       action, so they add no inventory row and no extra section.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Consumer installs the agent reporter and its reported activity lands in the record"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Consumer installs the agent reporter and its reported activity lands in the record"
+        Feature: Agent Activity Reporting
+          Scenario Outline: Consumer installs the agent reporter and its reported activity lands in the record
+           ✔  Given a project root with givn/ initialised
+           ✘  And the change agent target "omp" installs the development reporter
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:108:5
+              Step doesn't match any function
+          Scenario Outline: Consumer installs the agent reporter and its reported activity lands in the record
+           ✔  Given a project root with givn/ initialised
+           ✘  And the change agent target "opencode" installs the development reporter
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:108:5
+              Step doesn't match any function
+          Scenario Outline: Consumer installs the agent reporter and its reported activity lands in the record
+           ✔  Given a project root with givn/ initialised
+           ✘  And the change agent target "claude" installs the development reporter
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:108:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        3 scenarios (3 failed)
+        6 steps (3 passed, 3 failed)
+        error: test failed, to rerun pass `--test features_runner`
+        RED_EXIT=101
+
+        RED category: undefined step — the outline's own Given, When, and Then
+        are unbound (`the change agent target "…" installs the development
+        reporter` matches no function), and all three Examples rows fail on it
+        in the one process this unit runs. The reused first Given really built
+        the fixture (a real `givn init --agents opencode` root), so the RED is
+        the missing install/drive/assert path, never a vacuous setup: this
+        scenario is the only caller that installs each target's reporter and
+        then drives the generated asset, which is what the GREEN below adds.
         ```
-  - [ ] **GREEN** — implement the three driver paths and the assertions. Files:
+  - [x] **GREEN** — implement the three driver paths and the assertions. Files:
         `tests/steps/agent_activity_reporting_e2e_steps.rs`,
         `tests/steps/development_timeline_support.rs`,
         `src/cli/history.rs`/`src/skills/targets.rs` for any gap the real
         entry point exposes, plus the two evidence screenshots. Compile and
         `node --check` the drivers first, re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) + the two screenshot paths -->
+        The two node driver scripts the support file writes into the fixture
+        root, checked before they were driven (`node --check` needs a file; the
+        scripts were extracted from their raw strings into /tmp):
+        $ node --check /tmp/omp-driver.mjs        CHECK_OK
+        $ node --check /tmp/opencode-driver.mjs   CHECK_OK
+
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.03s
+        BUILD=0
+        $ cargo fmt --all -- --check        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.46s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Consumer installs the agent reporter and its reported activity lands in the record"
+        Feature: Agent Activity Reporting
+          Scenario Outline: Consumer installs the agent reporter and its reported activity lands in the record
+           ✔  Given a project root with givn/ initialised
+           ✔  And the change agent target "omp" installs the development reporter
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  When the installed "omp" reporter reports a completed tool call, a subagent, and a question wait
+           ✔  And the user runs `givn history --change demo --json`
+           ✔  Then the command exits 0
+           ✔  And the machine-readable record names the tool call, the subagent, and the question wait
+          Scenario Outline: … (opencode row)
+           ✔  … the change agent target "opencode" installs the development reporter
+           ✔  When the installed "opencode" reporter reports a completed tool call, a subagent, and a question wait
+           ✔  Then the machine-readable record names the tool call, the subagent, and the question wait
+          Scenario Outline: … (claude row)
+           ✔  … the change agent target "claude" installs the development reporter
+           ✔  When the installed "claude" reporter reports a completed tool call, a subagent, and a question wait
+           ✔  Then the machine-readable record names the tool call, the subagent, and the question wait
+        [Summary]
+        1 feature
+        3 scenarios (3 passed)
+        21 steps (21 passed)
+        GREEN_EXIT=0
+
+        Scope health (`./run-tests.sh --e2e`, the `verify.e2e_command`):
+             PASS [   2.574s] (7/8) …Consumer reads the development record as machine-readable output
+             PASS [   5.322s] (8/8) …Consumer installs the agent reporter and its reported activity lands in the record
+             Summary [   5.323s] 8 tests run: 3 passed, 5 failed, 35 skipped
+        E2E_EXIT=100
+        (the five failures are Tasks E5–E9, whose steps are still their own
+        unbound RED; Tasks E2, E3, E4 pass.) The regular scope is untouched by
+        this scenario's shared-file edits and stays green:
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e
+             Summary [   3.976s] 35 tests run: 35 passed, 8 skipped
+        NON_E2E_EXIT=0
+
+        The evidence pair (one slug for the outline; the three Examples rows
+        write the same two paths, so the committed pair is always a run's own
+        output — here the claude row, the last one to write):
+        $ ls -l givn/changes/development-timeline/evidence/visual/consumer-installs-the-agent-reporter-and-its-reported-activity-lands-in-the-record/
+        -rw-r--r-- 1 buster buster 39786 Oct 16 17:31 mobile.png
+        -rw-r--r-- 1 buster buster 75066 Oct 16 17:31 desktop.png
+        $ file …/*.png
+        …/mobile.png:  PNG image data, 360 x 780, 8-bit/color RGB, non-interlaced
+        …/desktop.png: PNG image data, 1920 x 1080, 8-bit/color RGB, non-interlaced
+
+        The rendered report proves the record the reporter really delivered:
+        `Entries 13`, `Waiting 40 ms (1 wait)`, `Subagents 8 ms (1 subagent)`,
+        `Tokens 22,095`, `Tokens per model: claude-sonnet-5 22,095`, `Tokens per
+        subagent: Architect.Scout unavailable` — the reported tool call, the
+        subagent, the question wait, the turn, and the usage read from the
+        session record, all at both viewports.
+
+        Production files: **none for this scenario** — investigated, not
+        assumed. The three layer the scenario exercises already exist:
+        `givn init --agents <target>` writes each target's generated reporter
+        (`src/skills/targets.rs`, whose integration table names the same three
+        assets), every reporter delivers through the real intake
+        (`givn history ingest` for omp and opencode, the generated Claude shim's
+        `givn history harness-hook --harness claude` for the third —
+        `src/cli/history.rs`), and the mapper's per-event kinds land as the
+        entries the assertion reads (Tasks 12–24). No gap was exposed, so no
+        production line was added.
+
+        One install fact the fixture has to honour (and the step documents):
+        `givn init --agents <target>` on an *already initialised* root keeps the
+        existing `givn/config.yaml` and its recorded `skills.targets`, so the
+        flag decides nothing there and no reporter is written; the Given
+        therefore runs the same real command with `--force`, which is what makes
+        init re-select the targets and install the reporter. Verified against
+        the real binary before the step was written:
+        $ givn init --agents opencode; givn init --agents omp; ls .omp/hooks/pre/
+        ls: cannot access '.omp/hooks/pre/': No such file or directory
+        $ givn init --force --agents omp; ls .omp/hooks/pre/
+        givn-attribution.js  givn-timeline.js
+
+        Files this scenario adds/changes (test infrastructure and the fixture,
+        never production):
+        - `tests/steps/agent_activity_reporting_e2e_steps.rs` — the outline's
+          three steps: the install Given (`givn init --force --agents <target>`),
+          the drive When (one driver entry point per harness, chosen by the
+          Examples row), and the assertion Then, which reads the reporter run's
+          own output and then requires the three entries in the machine-readable
+          record from `givn history --change demo --json` — the tool call by
+          name and label, the subagent by identity and agent definition, the
+          question wait by the question it asked, each with a measured duration
+          and the change's scope. `reported_activity()` is the one vocabulary
+          list all three harnesses are driven with.
+        - `tests/steps/development_timeline_support.rs` — the third harness
+          driver, `drive_claude_reporter` (the generated shim executed once per
+          harness event with a real payload on stdin, `PATH`-shimmed `givn`,
+          and the session record written for a `Turn`, because Claude Code
+          reports a turn's usage through its record and never inline), plus the
+          opencode driver's own session-end handling (a `shutdown` activity
+          emits the boundary the reporter flushes on, with the unconditional
+          final boundary kept as the fallback) — and the Task-E4 `#[allow
+          (dead_code)]` allowances on the vocabulary, the drivers, and their
+          scripts removed, because this scenario is now their caller.
+        - `tests/steps/mod.rs` — the two `#[allow(dead_code)]` allowances on the
+          `development_record_e2e` and `agent_activity_reporting_e2e` world slots
+          removed: Tasks E2/E3/E4 read them (`development_report_e2e` keeps its
+          allowance for Tasks E5–E9).
+        - the two evidence screenshots above.
+
+        Discrimination (ORACLE_RED) — the reporters and the intake already
+        exist, so the assertion's own discrimination is proven by a controlled
+        omission in the isolated fixture (the driver's activity list), restored
+        immediately:
+
+        the reported spans omitted (only the session's turn boundary and end
+        driven), so the record holds none of them and the assertion must fail:
+        ✘  Then the machine-readable record names the tool call, the subagent, and the question wait
+           Step panicked. Captured output: the machine-readable record holds no `tool` entry: [
+        (the same failure on all three Examples rows)
+        3 scenarios (3 failed)
+        21 steps (18 passed, 3 failed)
+        PROBE_EXIT=101
+
+        The probe was removed and the restored tree re-run: `RESTORED_EXIT=0`
+        (the GREEN run above is that restored run).
         ```
-  - [ ] **REFACTOR** — one driver entry point per harness, invoked through the
+  - [x] **REFACTOR** — one driver entry point per harness, invoked through the
         same step helpers; re-run (all three rows) → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The property is now literal in the fixture: each harness has exactly one
+        driver entry point in the shared support file, all three with the same
+        signature, and the scenario reaches them through one table instead of a
+        per-target branch of its own:
+
+        $ grep -n "pub fn drive_" tests/steps/development_timeline_support.rs
+        791:pub fn drive_omp_reporter(
+        817:pub fn drive_opencode_reporter(
+        849:pub fn drive_claude_reporter(
+
+        $ grep -n "driver_for\|let output = driver" tests/steps/agent_activity_reporting_e2e_steps.rs
+        136:fn driver_for(target: &str) -> fn(&TestEnv, &[HarnessActivity]) -> Output {
+        138:        "omp" => support::drive_omp_reporter,
+        139:        "opencode" => support::drive_opencode_reporter,
+        140:        "claude" => support::drive_claude_reporter,
+        193:    let driver = driver_for(&target);
+        194:    let output = driver(env, &activities);
+
+        The three drivers share the same vocabulary (`reported_activity()` is
+        built once and handed to whichever one the row names) and the same
+        failure discipline (a driver that cannot run fails the fixture, never
+        the assertion). The reporter's own outcome moved out of the Then step
+        into `assert_reporter_delivered`, so the step reads as its three parts:
+        the reporter's run, the CLI's returned record, and the record's own
+        three entries.
+
+        $ cargo fmt --all -- --check        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.81s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Consumer installs the agent reporter and its reported activity lands in the record"
+        Feature: Agent Activity Reporting
+          Scenario Outline: … (omp row)
+           ✔  Given a project root with givn/ initialised
+           ✔  And the change agent target "omp" installs the development reporter
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  When the installed "omp" reporter reports a completed tool call, a subagent, and a question wait
+           ✔  And the user runs `givn history --change demo --json`
+           ✔  Then the command exits 0
+           ✔  And the machine-readable record names the tool call, the subagent, and the question wait
+          Scenario Outline: … (opencode row)
+           ✔  When the installed "opencode" reporter reports a completed tool call, a subagent, and a question wait
+           ✔  Then the machine-readable record names the tool call, the subagent, and the question wait
+          Scenario Outline: … (claude row)
+           ✔  When the installed "claude" reporter reports a completed tool call, a subagent, and a question wait
+           ✔  Then the machine-readable record names the tool call, the subagent, and the question wait
+        [Summary]
+        1 feature
+        3 scenarios (3 passed)
+        21 steps (21 passed)
+        REFACTOR_EXIT=0
+
+        All three rows re-ran in the one process this unit is, and the refactor
+        refreshed the evidence pair from the final code (39786/75066 bytes,
+        360x780 and 1920x1080).
         ```
   - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
         title `Consumer installs the agent reporter and its reported activity
