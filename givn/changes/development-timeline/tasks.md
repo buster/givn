@@ -4455,7 +4455,7 @@ name it.
 
 ## Task 19 — `The intake rejects a payload that is not readable JSON` (`agent-activity-reporting`, added)
 
-- [ ] **Scenario: `The intake rejects a payload that is not readable JSON`**
+- [x] **Scenario: `The intake rejects a payload that is not readable JSON`**
   - Design constraints:
     - Exit-code contract: `2` when stdin is not readable JSON at all (the
       payload-level failure), `0` when the payload was read (per-event rejections
@@ -4468,22 +4468,174 @@ name it.
     - Assertion shape: exit code exactly `2`; the record file's state is
       unchanged (absent or byte-identical).
     - RED expected failure: both Then steps are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::The intake rejects a payload that is not readable JSON"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        (The first run, before the fixture's `When` existed:)
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::The intake rejects a payload that is not readable JSON"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: The intake rejects a payload that is not readable JSON
+           ✔  Given a project root with givn/ initialised
+           ✘  When the agent pipes a payload that is not JSON into `givn history ingest`
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:58:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+
+        thread 'main' (2468814) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        The `When` — a real setup action, never a stub: it snapshots the record's
+        bytes and pipes the truncated payload into the real binary's stdin — was
+        then written so the RED lands on the new behaviour's assertion step,
+        which is the failure the task predicts:
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::The intake rejects a payload that is not readable JSON"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 7.20s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: The intake rejects a payload that is not readable JSON
+           ✔  Given a project root with givn/ initialised
+           ✔  When the agent pipes a payload that is not JSON into `givn history ingest`
+           ✘  Then the intake exits 2
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:59:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+
+        thread 'main' (2471051) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — both Then steps are unbound (`the intake
+        exits 2` matches no function; the scenario stops there, so `the
+        development record gains no entry` never runs). This scenario's contract
+        is genuinely new (the exit-code contract of `design.md` §Intake payload),
+        so the undefined step is the RED; the same payload already exited `1`
+        before this scenario's change, which is the OLD_PRODUCT_RED pasted in the
+        GREEN block below.
         ```
-  - [ ] **GREEN** — implement the payload-level failure exit code. Files:
+  - [x] **GREEN** — implement the payload-level failure exit code. Files:
         `src/cli/history.rs`, `tests/steps/agent_activity_reporting_steps.rs`.
         Compile first, re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.29s
+        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::The intake rejects a payload that is not readable JSON"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 6.59s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: The intake rejects a payload that is not readable JSON
+           ✔  Given a project root with givn/ initialised
+           ✔  When the agent pipes a payload that is not JSON into `givn history ingest`
+           ✔  Then the intake exits 2
+           ✔  And the development record gains no entry
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT 0
+
+        Production files:
+        - `src/cli/history.rs` — `INTAKE_UNREADABLE_PAYLOAD` (the payload-level
+          code) and `ingest`'s read: a payload that is not readable JSON prints
+          the diagnosis and exits with that code instead of returning an error
+          through the generic `1` path, so the process exits before the
+          recording wrapper runs and the refused payload records nothing.
+        - `tests/steps/agent_activity_reporting_steps.rs` — the `When` fixture
+          (snapshot the record, pipe the truncated payload through the real
+          binary's stdin) and the two `Then` steps: `out.status.code() ==
+          Some(2)`, and the store's bytes still exactly the snapshot's with no
+          `.lock`/`.tmp` left in `givn/history/`.
+        - `tests/steps/development_timeline_support.rs` — `report_intake_raw`,
+          the payload-on-stdin invocation that is not JSON (the JSON case is the
+          existing `report_intake`).
+
+        Discrimination (OLD_PRODUCT_RED) — the same fixture run against the
+        pre-change write path (`let payload = read_payload()?;`, restored
+        immediately) fails the new assertion, so the scenario discriminates the
+        behaviour it introduces rather than an already-holding contract:
+
+        $ # the one production line temporarily restored to its pre-change form
+        ✘  Then the intake exits 2
+           Step panicked. Captured output: assertion `left == right` failed: the intake did not report the payload-level failure with its own exit code (exit Some(1)): error: parse the intake payload as one JSON object: EOF while parsing an object at line 1 column 63
+
+             left: Some(1)
+            right: Some(2)
+        EXIT=101
+
+        (The old path also went on to record the intake's own command entry
+        through the generic error path, which is what `the development record
+        gains no entry` refuses: the new path exits inside dispatch, before the
+        recording wrapper runs.)
         ```
-  - [ ] **REFACTOR** — make the two exit codes one enumerated outcome, not two
+  - [x] **REFACTOR** — make the two exit codes one enumerated outcome, not two
         unrelated returns; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The two codes are now one enumeration returned to the dispatcher:
+        `src/cli/history.rs::IntakeOutcome` (`Read` → 0,
+        `UnreadablePayload` → `INTAKE_UNREADABLE_PAYLOAD`) with
+        `IntakeOutcome::exit_code`, `ingest() -> Result<IntakeOutcome>`, and
+        `src/main.rs`'s dispatch arm exiting with the reported code — the same
+        shape `lint` and `readme check` already use — so the intake's whole
+        machine contract lives in one place instead of an inline
+        `std::process::exit`.
+
+        $ cargo fmt --all && cargo fmt --all -- --check
+        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 10.11s
+        CLIPPY=0
+
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.98s
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::The intake rejects a payload that is not readable JSON"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 11.34s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: The intake rejects a payload that is not readable JSON
+           ✔  Given a project root with givn/ initialised
+           ✔  When the agent pipes a payload that is not JSON into `givn history ingest`
+           ✔  Then the intake exits 2
+           ✔  And the development record gains no entry
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT 0
+
+        The exit-0 side of the same contract (a payload that was read exits 0)
+        is exercised by the greened scenarios of this bundle:
+        $ for t in "…::A reported event that does not match the intake contract is rejected without corrupting the record" \
+                   "…::A rejected report never fails the agent action it reports" \
+                   "…::A reported tool call is recorded for its scope" \
+                   "…::The intake rejects a payload that is not readable JSON"; do …; done
+        A reported event that does not match the intake contract is rejected without corrupting the record => EXIT=0
+        A rejected report never fails the agent action it reports => EXIT=0
+        A reported tool call is recorded for its scope => EXIT=0
+        The intake rejects a payload that is not readable JSON => EXIT=0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `The intake rejects a payload that is not

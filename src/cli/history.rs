@@ -19,6 +19,35 @@ use crate::history::{
     reported_label, store_path,
 };
 
+/// The intake's payload-level failure exit code: stdin was not readable JSON
+/// at all. Every payload that was read exits `0`, however many events it
+/// rejected — the two codes are the intake's whole machine contract, so a
+/// stale reporter can tell "Givn refused my payload" from "Givn read it".
+pub const INTAKE_UNREADABLE_PAYLOAD: i32 = 2;
+
+/// The intake's outcome as its machine contract sees it: one enumeration for
+/// both codes, never two unrelated returns. Only an unreadable payload is a
+/// failure — rejected events and a store that cannot be written are warnings —
+/// so a reporter's caller can branch on exactly one thing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IntakeOutcome {
+    /// The payload was read; every rejected event and every unwritable store
+    /// was a warning.
+    Read,
+    /// Stdin was not readable JSON at all; nothing was written.
+    UnreadablePayload,
+}
+
+impl IntakeOutcome {
+    /// The process exit code this outcome reports.
+    pub fn exit_code(self) -> i32 {
+        match self {
+            IntakeOutcome::Read => 0,
+            IntakeOutcome::UnreadablePayload => INTAKE_UNREADABLE_PAYLOAD,
+        }
+    }
+}
+
 /// The intake payload: one reporter flush — the optional scope overrides and
 /// the events the reporter buffered.
 ///
@@ -395,10 +424,22 @@ pub fn run(change: Option<&str>, topic: Option<&str>, json: bool) -> Result<()> 
 ///
 /// A rejected event is named on stderr and the payload's remaining events are
 /// still appended, and a store that cannot be written warns instead of failing:
-/// the intake never changes the outcome of the agent action it reports.
-pub fn ingest() -> Result<()> {
+/// the intake never changes the outcome of the agent action it reports. Only
+/// the payload itself is a failure: stdin that is not readable JSON at all
+/// reports [`IntakeOutcome::UnreadablePayload`], so the reporter's caller gets
+/// a code it can act on, and nothing is written.
+pub fn ingest() -> Result<IntakeOutcome> {
     let root = std::env::current_dir().context("resolve the project root")?;
-    let payload = read_payload()?;
+    let payload = match read_payload() {
+        Ok(payload) => payload,
+        Err(error) => {
+            // The payload-level failure: distinguishable from every accepted
+            // payload (any number of rejected events), and the store is
+            // untouched because nothing is written before the payload parses.
+            eprintln!("error: {error:#}");
+            return Ok(IntakeOutcome::UnreadablePayload);
+        }
+    };
     // The scope every accepted event is recorded under: the payload's named
     // override (a scope this project does not have is a per-event rejection,
     // never a silent fallback) or the project's own resolution.
@@ -409,7 +450,7 @@ pub fn ingest() -> Result<()> {
         ..
     } = accepted_entries(&scope, payload.events);
     if entries.is_empty() {
-        return Ok(());
+        return Ok(IntakeOutcome::Read);
     }
     let store = HistoryStore::at(store_path(&root));
     // The record's ignore entries are re-asserted on every record write, so a
@@ -418,7 +459,7 @@ pub fn ingest() -> Result<()> {
     if let Err(error) = store.append_linked(&mut entries, &parents) {
         crate::history::warn_unwritten(&store, &error);
     }
-    Ok(())
+    Ok(IntakeOutcome::Read)
 }
 
 /// The intake's one stdin read: exactly one JSON object. Nothing is written

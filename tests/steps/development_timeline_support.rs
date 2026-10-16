@@ -231,6 +231,14 @@ pub fn report_intake(env: &common::TestEnv, payload: &Value) -> std::process::Ou
     common::run_givn_with_stdin_and_envs(env, &["history", "ingest"], &payload.to_string(), &[])
 }
 
+/// Hand one raw stdin payload to the real intake: the payload-level case,
+/// where the text is not one JSON object at all. The output is returned, never
+/// asserted here — the scenario's own Then steps read the exit code and the
+/// record the intake left behind.
+pub fn report_intake_raw(env: &common::TestEnv, payload: &str) -> std::process::Output {
+    common::run_givn_with_stdin_and_envs(env, &["history", "ingest"], payload, &[])
+}
+
 /// The development record of the project rooted at `root`, read the way a
 /// consumer reads it: `givn/history/events.jsonl`, one JSON object per line.
 /// Every line must parse as a JSON object — that is the store's own contract,
