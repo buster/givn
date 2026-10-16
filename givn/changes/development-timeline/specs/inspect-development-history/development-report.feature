@@ -22,7 +22,7 @@ Feature: Development Report
     And the report names the tokens of every subagent
     And the report names the token total for every model that produced the usage
 
-  @givn.added @wip
+  @givn.added
   Scenario: The report of an ideation topic names the work done before the change exists
     Given an ideation topic "timeline-ideas" whose record holds the topic's own steps
     When the developer generates the development report for the topic "timeline-ideas"

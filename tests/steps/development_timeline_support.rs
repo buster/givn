@@ -103,6 +103,42 @@ frame
         .unwrap_or_else(|error| panic!("write the session {}: {error}", session.display()));
 }
 
+/// The steps an ideation topic's record holds: the work the topic did while it
+/// was elaborated — before any change directory exists — as the record's own
+/// `step` entries.
+const IDEATION_STEPS: [(&str, &str, u64); 3] = [
+    ("ideation", "givn instructions ideation", 20_000),
+    ("eventstorming", "givn instructions eventstorming", 600_000),
+    ("elaboration", "givn instructions usecase", 120_000),
+];
+
+/// The recorded end each of [`IDEATION_STEPS`] carries, in the same order.
+const IDEATION_STEP_AT: [&str; 3] = [
+    "2026-10-16T08:00:00.000Z",
+    "2026-10-16T08:30:00.000Z",
+    "2026-10-16T09:00:00.000Z",
+];
+
+/// Seed the fixture project's record with `topic`'s own steps, under the topic
+/// scope Task 7 records: the session the frame step wrote (no `## Completion`
+/// section), and one measured step entry per action the topic's own work ran.
+/// The fixture is the support file's rather than a scenario's, so the browser
+/// tier's topic row reports the same topic through the same action. The
+/// project must hold no change — a topic's work exists before any change
+/// directory does.
+pub fn seed_ideation_topic(env: &common::TestEnv, topic: &str) -> Vec<HistoryEntry> {
+    declare_unfinished_ideation_topic(env, topic);
+    let scope = Scope::Ideation {
+        id: topic.to_string(),
+    };
+    let mut history = SeededHistory::new();
+    for (index, (name, label, duration_ms)) in IDEATION_STEPS.into_iter().enumerate() {
+        let entry = history.span(&scope, "step", name, IDEATION_STEP_AT[index], duration_ms);
+        history.label(entry, label);
+    }
+    history.seed(env)
+}
+
 /// The names of a directory's entries, empty when the directory does not
 /// exist.
 fn read_dir_names(dir: &Path) -> Vec<String> {

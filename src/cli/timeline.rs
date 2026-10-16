@@ -84,10 +84,11 @@ pub struct Band {
 impl Band {
     /// The band of one scope over the given entry ids.
     fn of(scope: &Scope, entries: Vec<u64>) -> Self {
+        let row = scope_row(scope);
         Band {
             scope: scope.clone(),
-            kind: scope_kind(scope).to_string(),
-            label: scope_label(scope),
+            kind: row.kind.to_string(),
+            label: row.label,
             entries,
         }
     }
@@ -335,29 +336,38 @@ fn bands_for(scope: Option<&Scope>, entries: &[HistoryEntry]) -> Vec<Band> {
     bands
 }
 
-/// The scope's identifier: the report's default file name and the name every
-/// rendered scope label shows.
-fn scope_id(scope: &Scope) -> &str {
-    match scope {
-        Scope::Change { id } | Scope::Ideation { id } | Scope::Project { id } => id,
-    }
+/// One scope as the report shows it: the class the screen styles a band row by,
+/// the row's visible label, and the identifier the default file name uses. This
+/// is the report's one derivation of a scope — the window selection, the band
+/// rows, and the default path all read it — so a change, a topic, and the
+/// project can never be named or labelled in two different ways.
+struct ScopeRow {
+    /// The scope class (`change`, `ideation`, `project`); never visible text.
+    kind: &'static str,
+    /// The row's visible label.
+    label: String,
+    /// The scope's own identifier.
+    id: String,
 }
 
-/// The band's scope class, the CSS hook the screen styles a band row by.
-fn scope_kind(scope: &Scope) -> &'static str {
+/// The report's own view of one scope.
+fn scope_row(scope: &Scope) -> ScopeRow {
     match scope {
-        Scope::Change { .. } => "change",
-        Scope::Ideation { .. } => "ideation",
-        Scope::Project { .. } => "project",
-    }
-}
-
-/// The visible label of one scope: visible text, never an internal kind name.
-fn scope_label(scope: &Scope) -> String {
-    match scope {
-        Scope::Change { id } => format!("Change: {id}"),
-        Scope::Ideation { id } => format!("Ideation topic: {id}"),
-        Scope::Project { id } => format!("Outside a scope: {id}"),
+        Scope::Change { id } => ScopeRow {
+            kind: "change",
+            label: format!("Change: {id}"),
+            id: id.clone(),
+        },
+        Scope::Ideation { id } => ScopeRow {
+            kind: "ideation",
+            label: format!("Ideation topic: {id}"),
+            id: id.clone(),
+        },
+        Scope::Project { id } => ScopeRow {
+            kind: "project",
+            label: format!("Outside a scope: {id}"),
+            id: id.clone(),
+        },
     }
 }
 
@@ -430,7 +440,9 @@ pub fn render_report(model: &ReportModel) -> String {
         .replacen(DATA_SLOT, &json_for_slot(&data), 1)
 }
 
-/// The model as the page's own text: the scope line and the summary.
+/// The model as the page's own text: the scope line, the summary, and the
+/// timeline's initial view — the bands, one visible row per scope the window
+/// covers, with the band's spans drawn on the report's time axis.
 fn render_view(model: &ReportModel) -> String {
     let mut view = String::new();
     view.push_str(&format!(
@@ -438,13 +450,150 @@ fn render_view(model: &ReportModel) -> String {
         escape(&scope_line(model.scope.as_ref()))
     ));
     view.push_str(&render_summary(&model.summary));
+    view.push('\n');
+    view.push_str(&render_timeline(model));
     view
+}
+
+/// The timeline's drawing width and the left gutter the band rows' labels
+/// occupy, in the SVG's own units.
+const WIDTH: u64 = 1000;
+const GUTTER: f64 = 12.0;
+const LABEL_WIDTH: f64 = 168.0;
+const MARGIN: f64 = 8.0;
+
+/// One band row's height and the narrowest mark a span draws as.
+const BAND_HEIGHT: u64 = 56;
+const MIN_SPAN: f64 = 2.0;
+
+/// The timeline section: one row per band, each row naming its scope and
+/// drawing its spans across the window's time range. A window with no bands
+/// draws no timeline at all.
+fn render_timeline(model: &ReportModel) -> String {
+    if model.bands.is_empty() {
+        return String::new();
+    }
+    let scale = TimeScale::of(&model.entries);
+    let height = u64::try_from(model.bands.len()).unwrap_or_default() * BAND_HEIGHT + MARGIN as u64;
+    let mut svg = format!(
+        "<section class=\"timeline-section\" aria-label=\"Development timeline\">\n<svg class=\"timeline\" role=\"img\" aria-labelledby=\"timeline-title\" viewBox=\"0 0 {WIDTH} {height}\">\n<title id=\"timeline-title\">Development timeline</title>\n"
+    );
+    for (index, band) in model.bands.iter().enumerate() {
+        let y = index as u64 * BAND_HEIGHT;
+        svg.push_str(&render_band(y, band, &model.entries, &scale));
+    }
+    svg.push_str("</svg>\n</section>");
+    svg
+}
+
+/// One band row: the row's visible label (visible text, never an internal kind
+/// name) and one span per entry the band covers, in the model's own order.
+fn render_band(y: u64, band: &Band, entries: &[HistoryEntry], scale: &TimeScale) -> String {
+    let mut svg = format!(
+        "<g class=\"band\" data-band-kind=\"{}\" data-band=\"{}\" aria-label=\"{}\">\n<rect class=\"band-row\" x=\"0\" y=\"{y}\" width=\"{WIDTH}\" height=\"{BAND_HEIGHT}\"></rect>\n<text class=\"band-label\" x=\"{GUTTER}\" y=\"{}\">{}</text>\n",
+        escape(&band.kind),
+        escape(&scope_row(&band.scope).id),
+        escape(&band.label),
+        y + BAND_HEIGHT / 4,
+        escape(&band.label),
+    );
+    for id in &band.entries {
+        let Some(entry) = entries.iter().find(|entry| entry.id == *id) else {
+            continue;
+        };
+        svg.push_str(&render_span(entry, y, scale));
+    }
+    svg.push_str("</g>\n");
+    svg
+}
+
+/// One span: the entry drawn on the row's axis, with its accessible name always
+/// its label and its duration.
+fn render_span(entry: &HistoryEntry, y: u64, scale: &TimeScale) -> String {
+    let label = visible_label(entry);
+    let duration = duration_text(entry);
+    let (x, width) = scale.span(entry);
+    let bar_y = y as f64 + BAND_HEIGHT as f64 / 3.0;
+    format!(
+        "<g class=\"span\" data-entry-id=\"{}\" data-kind=\"{}\" data-at=\"{}\" aria-label=\"{}, {}\">\n<rect class=\"span-bar\" x=\"{x:.1}\" y=\"{bar_y:.1}\" width=\"{width:.1}\" height=\"16\"></rect>\n<text class=\"span-label\" x=\"{:.1}\" y=\"{:.1}\">{}</text>\n</g>\n",
+        entry.id,
+        escape(&entry.kind),
+        escape(&entry.at),
+        escape(&label),
+        escape(&duration),
+        x + 4.0,
+        bar_y + 12.0,
+        escape(&format!("{label} · {duration}")),
+    )
+}
+
+/// The duration one entry renders: its measured duration, or the record's own
+/// word for a duration it does not have.
+fn duration_text(entry: &HistoryEntry) -> String {
+    entry
+        .duration_ms
+        .map_or_else(|| "not measured".to_string(), format_duration)
+}
+
+/// The report's time axis: the window's recorded range, mapped onto the
+/// timeline's drawing width. The axis is derived from the embedded timestamps
+/// alone — never from the wall clock — so the same record always renders
+/// identically.
+#[derive(Debug, Clone, Copy)]
+struct TimeScale {
+    /// The window's earliest recorded end.
+    start_ms: i64,
+    /// The window's span, never zero (a window that spans no time draws every
+    /// span at its start).
+    span_ms: i64,
+}
+
+impl TimeScale {
+    /// The scale over the window's entries.
+    fn of(entries: &[HistoryEntry]) -> Self {
+        let mut times = entries
+            .iter()
+            .filter_map(|entry| crate::history::parse_rfc3339_ms(&entry.at));
+        let first = times.next().unwrap_or_default();
+        let (mut start, mut end) = (first, first);
+        for time in times {
+            start = start.min(time);
+            end = end.max(time);
+        }
+        TimeScale {
+            start_ms: start,
+            span_ms: (end - start).max(1),
+        }
+    }
+
+    /// The x coordinate of one recorded instant.
+    fn x(&self, at_ms: i64) -> f64 {
+        let fraction = (at_ms - self.start_ms) as f64 / self.span_ms as f64;
+        let x = LABEL_WIDTH + fraction * (WIDTH as f64 - LABEL_WIDTH - MARGIN);
+        x.clamp(LABEL_WIDTH, WIDTH as f64 - MARGIN)
+    }
+
+    /// The x and width one entry's span draws at: a measured span starts at its
+    /// recorded end minus its duration, and an entry the record does not time
+    /// draws as the narrowest visible mark.
+    fn span(&self, entry: &HistoryEntry) -> (f64, f64) {
+        let Some(end) = crate::history::parse_rfc3339_ms(&entry.at) else {
+            return (LABEL_WIDTH, MIN_SPAN);
+        };
+        let start = match entry.duration_ms {
+            Some(duration_ms) => end - i64::try_from(duration_ms).unwrap_or_default(),
+            None => end,
+        };
+        let x = self.x(start);
+        let width = (self.x(end) - x).max(MIN_SPAN);
+        (x, width)
+    }
 }
 
 /// The report's scope line: the scope the report covers, named by its own id.
 fn scope_line(scope: Option<&Scope>) -> String {
     match scope {
-        Some(scope) => scope_label(scope),
+        Some(scope) => scope_row(scope).label,
         None => "Project report".to_string(),
     }
 }
@@ -664,7 +813,7 @@ pub fn run(change: Option<&str>, topic: Option<&str>, out: Option<&Path>) -> Res
 /// The report's default path: `givn/history/reports/<scope>.html`.
 fn default_report_path(root: &Path, scope: Option<&Scope>) -> PathBuf {
     let id = match scope {
-        Some(scope) => scope_id(scope).to_string(),
+        Some(scope) => scope_row(scope).id,
         None => "project".to_string(),
     };
     root.join("givn")
