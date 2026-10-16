@@ -178,6 +178,16 @@ pub fn tool_completion_payload() -> Value {
     })
 }
 
+/// The turn's end: the harness names the session record it wrote
+/// asynchronously beside the session id.
+pub fn stop_payload(transcript: &Path) -> Value {
+    serde_json::json!({
+        "hook_event_name": "Stop",
+        "session_id": HARNESS_SESSION,
+        "transcript_path": transcript.display().to_string(),
+    })
+}
+
 /// Run the generated Claude shim with one real hook payload on stdin, through
 /// its real entry point: the shim is executed directly and its `givn` is
 /// `PATH`-shimmed to the compiled binary, so the payload reaches the
@@ -230,6 +240,68 @@ pub fn report_harness_hook(env: &common::TestEnv, payload: &Value) -> std::proce
     child
         .wait_with_output()
         .unwrap_or_else(|error| panic!("wait for the generated shim: {error}"))
+}
+
+/// The fixture session record one Claude Code scenario reads its token usage
+/// from, with the values the record must then carry.
+#[derive(Debug)]
+pub struct TranscriptFixture {
+    /// The transcript file the `Stop` payload names.
+    pub path: PathBuf,
+    /// The usage the record must carry, in the record's own `data` keys.
+    pub counts: Value,
+    /// The model that produced the usage.
+    pub model: String,
+}
+
+/// Write a fixture transcript holding one turn's assistant usage in the
+/// harness's own shape: a user prompt entry, then the assistant entry whose
+/// `message.usage` and `message.model` the reader must find.
+pub fn write_transcript_with_usage(env: &common::TestEnv, model: &str) -> TranscriptFixture {
+    let path = env.path("transcript.jsonl");
+    let input = 12_043u64;
+    let output = 812u64;
+    let cache_read = 9_000u64;
+    let cache_write = 240u64;
+    let text = format!(
+        "{}\n{}\n",
+        serde_json::json!({
+            "type": "user",
+            "sessionId": HARNESS_SESSION,
+            "message": {
+                "role": "user",
+                "content": [{"type": "text", "text": "Implement the change"}],
+            },
+        }),
+        serde_json::json!({
+            "type": "assistant",
+            "sessionId": HARNESS_SESSION,
+            "message": {
+                "role": "assistant",
+                "model": model,
+                "usage": {
+                    "input_tokens": input,
+                    "output_tokens": output,
+                    "cache_read_input_tokens": cache_read,
+                    "cache_creation_input_tokens": cache_write,
+                    "output_tokens_details": {"thinking_tokens": 160},
+                },
+            },
+        }),
+    );
+    std::fs::write(&path, text)
+        .unwrap_or_else(|error| panic!("write the fixture transcript {}: {error}", path.display()));
+    TranscriptFixture {
+        path,
+        counts: serde_json::json!({
+            "input": input,
+            "output": output,
+            "cache_read": cache_read,
+            "cache_write": cache_write,
+            "total_tokens": input + output + cache_read + cache_write,
+        }),
+        model: model.to_string(),
+    }
 }
 
 /// The number of concurrent rounds the two-writer fixture races: on every

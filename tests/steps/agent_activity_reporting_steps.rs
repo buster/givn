@@ -29,6 +29,9 @@ pub(crate) struct AgentActivityReportingState {
     pub(crate) violating_event: Option<(Value, usize)>,
     /// The last run of the generated Claude shim, as the driver observed it.
     pub(crate) harness_run: Option<HarnessRun>,
+    /// The fixture session record the last Claude scenario wrote, with the
+    /// usage the record must carry.
+    pub(crate) transcript: Option<support::TranscriptFixture>,
 }
 
 /// One run of the generated Claude shim: the wall time the driver's two hook
@@ -52,6 +55,15 @@ fn harness_run(world: &GivnWorld) -> &HarnessRun {
         .as_ref()
         .and_then(|state| state.harness_run.as_ref())
         .expect("the harness has not reported a permission request yet")
+}
+
+/// The fixture session record the last Given wrote.
+fn transcript_fixture(world: &GivnWorld) -> &support::TranscriptFixture {
+    world
+        .agent_activity_reporting
+        .as_ref()
+        .and_then(|state| state.transcript.as_ref())
+        .expect("the harness's session record is required first")
 }
 
 /// The capability's state, created on first use: every fixture and assertion
@@ -1119,6 +1131,23 @@ fn the_turn_is_still_recorded(world: &mut GivnWorld) {
 
 #[then("the record holds that turn's token usage")]
 fn record_holds_the_turns_token_usage(world: &mut GivnWorld) {
+    // One step text, two scenarios: the reported-payload turn (the intake's
+    // inline usage) and the Claude Code turn (usage read from the harness's own
+    // session record). The scenario's own fixture decides which turn it is.
+    if world
+        .agent_activity_reporting
+        .as_ref()
+        .and_then(|state| state.transcript.as_ref())
+        .is_some()
+    {
+        return assert_transcript_turn_usage(world);
+    }
+    assert_reported_turn_usage(world);
+}
+
+/// The reported-payload turn's usage: the counts the payload carried, recorded
+/// for the change the payload named and parented to its turn.
+fn assert_reported_turn_usage(world: &mut GivnWorld) {
     let env = world
         .env
         .as_ref()
@@ -1374,5 +1403,104 @@ fn entry_carries_a_reporter_measured_duration(world: &mut GivnWorld) {
         json!(support::HARNESS_TOOL_MS),
         "the tool entry did not keep the harness's own duration: {}",
         tools[0]
+    );
+}
+
+#[given(regex = r#"^the harness's session record holds assistant token usage for "([^"]+)"$"#)]
+fn session_record_holds_assistant_usage(world: &mut GivnWorld, model: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let fixture = support::write_transcript_with_usage(env, &model);
+    state(world).transcript = Some(fixture);
+}
+
+#[when("the harness reports the end of a turn with that session record's path")]
+fn reports_the_end_of_a_turn(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let transcript = transcript_fixture(world).path.clone();
+    let out = support::report_harness_hook(env, &support::stop_payload(&transcript));
+    assert!(
+        out.status.success(),
+        "the turn-end hook failed (exit {:?}): {}",
+        out.status.code(),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    world.last_output = Some(out);
+}
+
+/// The Claude Code turn's usage: the counts the harness's own session record
+/// reported, parented to the turn the `Stop` payload ended.
+fn assert_transcript_turn_usage(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let counts = transcript_fixture(world)
+        .counts
+        .as_object()
+        .expect("the fixture's counts")
+        .clone();
+    let entries = support::record_entries(&env.root());
+    let turns: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| entry["source"] == json!("agent") && entry["kind"] == json!("turn"))
+        .collect();
+    assert_eq!(
+        turns.len(),
+        1,
+        "expected exactly the reported turn in the record; the record holds: {entries:#?}"
+    );
+    assert_eq!(
+        turns[0]["outcome"],
+        json!("ok"),
+        "the reported turn end is not recorded as ok: {}",
+        turns[0]
+    );
+    let usages: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| entry["source"] == json!("agent") && entry["kind"] == json!("usage"))
+        .collect();
+    assert_eq!(
+        usages.len(),
+        1,
+        "expected exactly one usage entry for the turn; the record holds: {entries:#?}"
+    );
+    let usage = usages[0].clone();
+    assert_eq!(
+        usage["parent"], turns[0]["id"],
+        "the usage entry is not parented to the turn that produced it: {usage}"
+    );
+    for (key, count) in &counts {
+        assert_eq!(
+            usage["data"][key], *count,
+            "the usage entry does not carry the session record's `{key}`: {usage}"
+        );
+    }
+    assert_eq!(
+        usage["outcome"],
+        json!("ok"),
+        "the usage does not carry the reported turn end's outcome: {usage}"
+    );
+    state(world).last_entry = Some(usage);
+}
+
+#[then(regex = r#"^the usage names "([^"]+)"$"#)]
+fn usage_names_the_model(world: &mut GivnWorld, model: String) {
+    let entry = identified_entry(world);
+    let fixture_model = transcript_fixture(world).model.clone();
+    assert_eq!(
+        entry["data"]["model"],
+        json!(model),
+        "the usage does not name the model that produced it: {entry}"
+    );
+    assert_eq!(
+        entry["data"]["model"],
+        json!(fixture_model),
+        "the usage does not name the session record's own model: {entry}"
     );
 }
