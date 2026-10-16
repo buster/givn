@@ -254,6 +254,14 @@ enum HistoryCommands {
     /// Read one reported payload from stdin (the agent intake) and append the
     /// events it accepts.
     Ingest,
+    /// Map one raw harness hook payload from stdin (the process-per-hook
+    /// entry point: the harness runs every hook as its own process, so the
+    /// generated shim pipes its payload here).
+    HarnessHook {
+        /// The harness whose payload is read (`claude`).
+        #[arg(long)]
+        harness: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -444,6 +452,7 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
                 }
                 Ok(())
             }
+            Some(HistoryCommands::HarnessHook { harness }) => cli::history::harness_hook(&harness),
             None => cli::history::run(change.as_deref(), topic.as_deref(), json),
         },
         Commands::Timeline { change, topic, out } => {

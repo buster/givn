@@ -497,6 +497,35 @@ pub fn store_path(root: &Path) -> PathBuf {
     root.join("givn").join("history").join("events.jsonl")
 }
 
+/// One process-per-hook session's pending state:
+/// `givn/history/pending/<harness>-<session-id>.json` — the harness's own
+/// session id names the file, so two sessions never share start stamps.
+pub fn pending_path(root: &Path, harness: &str, session_id: &str) -> PathBuf {
+    root.join("givn")
+        .join("history")
+        .join("pending")
+        .join(format!("{harness}-{session_id}.json"))
+}
+
+/// The current instant as the record's RFC 3339 UTC timestamp (millisecond
+/// precision) — the stamp a process-per-hook reporter writes into its pending
+/// state, and the `at` of the entries its mapper produces.
+pub fn now_rfc3339() -> String {
+    rfc3339_ms(SystemTime::now())
+}
+
+/// The current instant as milliseconds since the Unix epoch.
+pub fn now_ms() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|elapsed| elapsed.as_millis() as i64)
+        .unwrap_or_default()
+}
+
+/// The age after which a pending start is dropped: a start whose end never
+/// arrived cannot produce a duration forever.
+pub const PENDING_MAX_AGE_MS: i64 = 24 * 60 * 60 * 1000;
+
 /// The fence of the record's own managed block. The record is development
 /// data, not a generated rule, so it never shares the `# givn:begin:rules`
 /// block.
@@ -543,12 +572,73 @@ pub fn ensure_ignored(root: &Path) {
 /// Start timestamps for process-per-hook harnesses, keyed by the harness's own
 /// call id: written atomically, pruned by age and at session end, no payload
 /// content.
-// Skeleton (tasks.md S4): the scenario that reads this state drops the
-// allowance.
-#[allow(dead_code)]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct PendingState {
     starts: BTreeMap<String, PendingStart>,
+}
+
+impl PendingState {
+    /// The state one session recorded, or an empty state when the file is
+    /// missing, unreadable, or not the state's shape: losing the file costs a
+    /// duration, never an entry.
+    pub fn load(path: &Path) -> Self {
+        std::fs::read_to_string(path)
+            .ok()
+            .and_then(|text| serde_json::from_str(&text).ok())
+            .unwrap_or_default()
+    }
+
+    /// Open one start at the harness's own call id, replacing a stale start for
+    /// the same id: a re-stamped call measures from its latest start.
+    pub fn open(&mut self, id: &str, start: PendingStart) {
+        self.starts.insert(id.to_string(), start);
+    }
+
+    /// Consume the start `id` names, so one start produces at most one
+    /// duration.
+    pub fn take(&mut self, id: &str) -> Option<PendingStart> {
+        self.starts.remove(id)
+    }
+
+    /// Consume the first start of the given keys, in order: the harness's own
+    /// call id first, then the wait keys a completion can close.
+    pub fn take_first(&mut self, ids: &[String]) -> Option<PendingStart> {
+        ids.iter().find_map(|id| self.take(id))
+    }
+
+    /// Drop every start older than the record's pending age, and any start
+    /// whose stamp is unreadable.
+    pub fn prune(&mut self, now_ms: i64) {
+        self.starts.retain(|_, start| {
+            parse_rfc3339_ms(&start.started_at)
+                .is_some_and(|at| now_ms.saturating_sub(at) <= PENDING_MAX_AGE_MS)
+        });
+    }
+
+    /// Forget every start: session end prunes the whole file.
+    pub fn clear(&mut self) {
+        self.starts.clear();
+    }
+
+    /// Write the state atomically (one temp file, then a rename), so a reader
+    /// never sees half a file. An empty state removes the file instead of
+    /// leaving an empty one behind.
+    pub fn store(&self, path: &Path) -> std::io::Result<()> {
+        if self.starts.is_empty() {
+            return match std::fs::remove_file(path) {
+                Ok(()) => Ok(()),
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+                Err(error) => Err(error),
+            };
+        }
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let text = serde_json::to_string(self).map_err(std::io::Error::other)?;
+        let temporary = path.with_extension("tmp");
+        std::fs::write(&temporary, text)?;
+        std::fs::rename(&temporary, path)
+    }
 }
 
 /// One pending start: when it began, the entry kind it will produce, and the

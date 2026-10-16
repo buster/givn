@@ -87,7 +87,7 @@ Feature: Agent Activity Reporting
     Then the command exits 0
     And no development reporter is installed for that project
 
-  @givn.added @wip
+  @givn.added
   Scenario: A wait the harness does not time is still recorded with a duration
     Given a project with the generated Claude Code development reporter
     When the harness reports a permission request and then completion of that same tool call
