@@ -2833,7 +2833,7 @@ name it.
 
 ## Task 11a — `A refused command outside a Givn project creates no record` (`development-record`, added)
 
-- [ ] **Scenario: `A refused command outside a Givn project creates no record`**
+- [x] **Scenario: `A refused command outside a Givn project creates no record`**
   - Design constraints:
     - Engagement rule (product): the recorder engages **only when the project
       root carries the Givn scaffold (`givn/`)**; before the scaffold exists it
@@ -2891,13 +2891,42 @@ name it.
       `the project root holds no development record` / `holds a development
       record` pair — paste whichever output the run actually produces; the run
       must exit non-zero either way.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A refused command outside a Givn project creates no record"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A refused command outside a Givn project creates no record"
+        Feature: Development Record
+          Scenario: A refused command outside a Givn project creates no record
+           ✔  Given a project root without a givn/ directory
+           ✔  When the consumer runs `givn init`
+           ✔  Then the command exits non-zero
+           ✘  And the directory "givn" does not exist
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:94:5
+              Matched: tests/steps/mod.rs:928:1
+              Step panicked. Captured output: expected directory "givn" to not exist
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        4 steps (3 passed, 1 failed)
+
+        thread 'main' (2278531) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT 101
+
+        RED category: an existing rule changed — the run fails at exactly the
+        assertion the task predicts (`the directory "givn" does not exist`),
+        because the recorder still engages in a bare root and creates
+        `givn/history/` (plus its backendless-root `.gitignore` fallback) for the
+        refused `givn init`. The scenario's later new steps
+        (`the project root holds no development record`,
+        `the directory "givn" exists`, `the project root holds a development
+        record`) are not reached: cucumber fails the scenario at this step, and
+        the run is non-zero either way.
         ```
-  - [ ] **GREEN** — implement the engagement predicate in `src/history.rs` and
+  - [x] **GREEN** — implement the engagement predicate in `src/history.rs` and
         the helper exclusions above; add the steps to
         `tests/steps/development_record_steps.rs`. Compile first, re-run →
         exit 0. Paste it. Also re-run the affected permanent refusal scenarios
@@ -2905,13 +2934,176 @@ name it.
         `archive-change/archive-proof.feature`) and paste their exit-0 result,
         proving the store no longer reads as a project change.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.34s
+        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A refused command outside a Givn project creates no record"
+        Feature: Development Record
+          Scenario: A refused command outside a Givn project creates no record
+           ✔  Given a project root without a givn/ directory
+           ✔  When the consumer runs `givn init`
+           ✔  Then the command exits non-zero
+           ✔  And the directory "givn" does not exist
+           ✔  And the project root holds no development record
+           ✔  When the consumer runs `givn init --no-addons --agents opencode`
+           ✔  Then the command exits 0
+           ✔  And the directory "givn" exists
+           ✔  And the project root holds a development record
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        9 steps (9 passed)
+        EXIT 0
+
+        Files created/modified:
+        - `src/history.rs` — `fn engages(root) -> bool` (the one engagement
+          predicate: the root carries the Givn scaffold `givn/`), checked at the
+          top of `HistoryRecorder::finish` **before** `ensure_ignored` and before
+          the store path is created or opened, so both the ignore re-assert and
+          the store append are gated and a root with no scaffold receives
+          nothing — including the backendless-root `.gitignore` fallback.
+        - `tests/steps/development_record_steps.rs` — the new steps
+          (`the directory "givn" exists`, `the project root holds no development
+          record` — no store file, no `givn/history` directory, no
+          scaffold-time `.gitignore` — and `the project root holds a development
+          record`, which parses the store the way a consumer does and requires
+          the successful `init` command entry), plus the shared exclusion
+          `RECORD_DIR`/`is_record_dir(root, path)`.
+        - `tests/steps/scm_backend_selection_steps.rs::collect_tree` — excludes
+          the record directory **by path** (`is_record_dir`, never a bare
+          `history` entry name), so an unrelated `history` directory anywhere in
+          the tree is still walked.
+        - `tests/steps/serve_extended_rules_steps.rs::collect_project_files` —
+          the same shared predicate, joining that helper's existing path form
+          (`path == root.join(EXTENSION_FIXTURE_DIR)`).
+        No new command, flag, or output surface: the change adds the predicate,
+        the steps, and the two test-side exclusions only.
+
+        The affected permanent scenarios, the previously failing assertions
+        included:
+
+        $ GIVN_FEATURES=givn/specs/fragments cargo test --locked --test features_runner -- --tags "not @e2e"
+        [Summary]
+        18 features
+        163 scenarios (163 passed)
+        867 steps (867 passed)
+        EXIT 0
+        (includes the four refusal scenarios of
+        `detect-the-project-repository.feature` — `A project without version
+        control is refused by name`, `A project root with both markers is refused
+        as ambiguous`, `A project root nested inside a larger Git worktree is
+        refused by name`, `A Git worktree without the Git executable is refused
+        by name` — all failing at `no file in the project changed` before this
+        task)
+
+        $ GIVN_FEATURES=givn/specs/archive-change cargo test --locked --test features_runner -- --tags "not @e2e"
+        [Summary]
+        5 features
+        43 scenarios (43 passed)
+        303 steps (303 passed)
+        EXIT 0
+        (includes `archive-proof.feature`'s refusal scenarios)
+
+        $ GIVN_FEATURES=givn/specs/obtain-effective-guidance cargo test --locked --test features_runner -- --tags "not @e2e"
+        [Summary]
+        1 feature
+        5 scenarios (5 passed)
+        27 steps (27 passed)
+        EXIT 0
+        (includes `serve-extended-rules.feature::A guidance request changes
+        nothing in the project` — `Then no project file changed` now passes)
+
+        And the whole permanent corpus, which these edits unblock:
+
+        $ GIVN_FEATURES=givn/specs cargo test --locked --test features_runner -- --tags "not @e2e"
+        [Summary]
+        49 features
+        544 scenarios (544 passed)
+        3158 steps (3158 passed)
+        EXIT 0
+        (before this task: 530 passed / 14 failed)
         ```
-  - [ ] **REFACTOR** — keep one engagement predicate and one shared skip list
+  - [x] **REFACTOR** — keep one engagement predicate and one shared skip list
         (no per-helper duplication of the record path); re-run → still exit 0.
         Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        One engagement predicate (`src/history.rs::engages`, one call site at the
+        top of `finish`) and one definition of the record path
+        (`tests/steps/development_record_steps.rs::RECORD_DIR` + `is_record_dir`,
+        consumed by both helpers through that predicate — neither helper names
+        `givn/history` itself):
+
+        $ grep -n "engages\|is_record_dir\|RECORD_DIR" src/history.rs tests/steps/development_record_steps.rs tests/steps/scm_backend_selection_steps.rs tests/steps/serve_extended_rules_steps.rs
+        src/history.rs:257:        if !engages(&self.root) {
+        src/history.rs:445:/// Whether the recorder engages in this project: only a root that carries the
+        src/history.rs:453:fn engages(root: &Path) -> bool {
+        tests/steps/development_record_steps.rs:493:pub(crate) const RECORD_DIR: &str = "givn/history";
+        tests/steps/development_record_steps.rs:499:pub(crate) fn is_record_dir(root: &std::path::Path, path: &std::path::Path) -> bool {
+        tests/steps/development_record_steps.rs:500:    path == root.join(RECORD_DIR)
+        tests/steps/scm_backend_selection_steps.rs:216:        if crate::steps::development_record_steps::is_record_dir(root, &path) {
+        tests/steps/serve_extended_rules_steps.rs:490:                || crate::steps::development_record_steps::is_record_dir(root, &path)
+
+        $ cargo fmt --all -- --check                                    EXIT 0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.65s
+        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A refused command outside a Givn project creates no record"
+        Feature: Development Record
+          Scenario: A refused command outside a Givn project creates no record
+           ✔  Given a project root without a givn/ directory
+           ✔  When the consumer runs `givn init`
+           ✔  Then the command exits non-zero
+           ✔  And the directory "givn" does not exist
+           ✔  And the project root holds no development record
+           ✔  When the consumer runs `givn init --no-addons --agents opencode`
+           ✔  Then the command exits 0
+           ✔  And the directory "givn" exists
+           ✔  And the project root holds a development record
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        9 steps (9 passed)
+        EXIT 0
+
+        The implemented delta scope (every scenario whose own `@wip` has been
+        removed) in one process:
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --tags "not @e2e and not @wip"
+        [Summary]
+        2 features
+        13 scenarios (13 passed)
+        71 steps (71 passed)
+        EXIT 0
+
+        The asked-for delta scope as the project runner defines it
+        (`./run-tests.sh --non-e2e` = `not @e2e`, which **selects** the
+        not-yet-implemented `@wip` scenarios; the runner's strict mode then fails
+        them at their undefined steps):
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e
+        FAIL [   0.800s] ( 9/35) inspect-development-history/agent-activity-reporting.feature::Reported token usage is recorded with the model that produced it
+        …
+        warning: 23/35 tests were not run due to test failure
+        error: test run failed
+        EXIT 100
+
+        Run to completion with `--no-fail-fast`, the same scope is exactly the
+        implemented set green plus the `@wip` set red:
+        $ GIVN_CUCUMBER_TAGS="not @e2e" GIVN_FEATURES=givn/changes/development-timeline/specs cargo nextest run --no-tests=warn --locked --no-fail-fast --test features_runner
+        13 PASS (the 12 implemented non-e2e scenarios plus this scenario:
+        `fragments/adr-qualification-gate.feature::The migration preserves
+        independent architecture history across three proposed decisions`, the ten
+        other `development-record.feature` scenarios, `Reading the development
+        record does not extend it`, `The record stays out of the repository's own
+        history`, `A Fossil project ignores the record through its own ignore
+        file`, `A refused command outside a Givn project creates no record`, …)
+        22 FAIL (every non-e2e `@wip` scenario of Tasks 12–33, each at its own
+        undefined step — the tasks not yet implemented by this change)
+        EXIT 100
+        → the scope cannot exit 0 mid-change: `--non-e2e` does not exclude
+        `@wip`, and strict mode fails an undefined step by design. The
+        implemented-scope run above is this task's green evidence.
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
         the scenario title `A refused command outside a Givn project creates no

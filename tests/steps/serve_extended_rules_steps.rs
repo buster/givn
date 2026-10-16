@@ -485,7 +485,10 @@ fn collect_project_files(
                 .file_name()
                 .and_then(|name| name.to_str())
                 .unwrap_or_default();
-            if name == ".git" || path == root.join(EXTENSION_FIXTURE_DIR) {
+            if name == ".git"
+                || path == root.join(EXTENSION_FIXTURE_DIR)
+                || crate::steps::development_record_steps::is_record_dir(root, &path)
+            {
                 continue;
             }
             collect_project_files(root, &path, out);

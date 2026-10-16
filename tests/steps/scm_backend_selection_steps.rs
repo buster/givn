@@ -210,6 +210,12 @@ fn collect_tree(root: &std::path::Path, dir: &std::path::Path, out: &mut Vec<(Pa
         ) {
             continue;
         }
+        // The record is Givn runtime state, not project content: a legitimate
+        // command entry would otherwise read as "the project changed". Compared
+        // by path, so an unrelated `history` directory is never dropped.
+        if crate::steps::development_record_steps::is_record_dir(root, &path) {
+            continue;
+        }
         if path.is_dir() {
             collect_tree(root, &path, out);
         } else if let Ok(content) = std::fs::read(&path) {

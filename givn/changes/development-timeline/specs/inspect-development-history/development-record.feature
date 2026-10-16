@@ -86,7 +86,7 @@ Feature: Development Record
     When the user runs `givn status --change demo`
     Then the repository's ignore glob names the development record
 
-  @givn.added @wip
+  @givn.added
   Scenario: A refused command outside a Givn project creates no record
     Given a project root without a givn/ directory
     When the consumer runs `givn init`
