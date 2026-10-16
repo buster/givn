@@ -12,13 +12,13 @@
 | # | Chapter | Affected? | Reason | Summary of change (if Yes) |
 |---|---|---|---|---|
 | 1 | 01 introduction-and-goals | Yes | The change adds a product functional requirement: Givn itself records the development process and renders it as a report, so the requirements overview gains a row. | FR-45 added for the development record and the development report. |
-| 2 | 02 architecture-constraints | Yes | Two new durable technical constraints: the record is local, append-only, best-effort and never a gate, kept out of repository history by an ownership split (the recorder only ever writes never-tracked destinations on every write; the versioned Fossil list is written by the owning commands) so recording can never dirty a worktree; the report is one self-contained file with no server, port, remote resource, or third-party JavaScript. | TC-34 (corrected ignore rule) and TC-35 added. |
+| 2 | 02 architecture-constraints | Yes | Two new durable technical constraints: the record is local, append-only, best-effort and never a gate, engages only once the Givn scaffold exists, and is kept out of repository history by an ownership split (the recorder only ever writes never-tracked destinations on every write; the versioned Fossil list is written by the owning commands) so recording can never dirty a worktree; the report is one self-contained file with no server, port, remote resource, or third-party JavaScript. | TC-34 (corrected ignore rule and engagement rule) and TC-35 added. |
 | 3 | 03 context-and-scope | Yes | A new external entity (each supported harness's reporter), six new interfaces (`givn history ingest`, `givn history`, `givn timeline`, plus the reporter boundary for opencode, Claude Code, and omp), and the record file join the context; the scope gains the record and the report. | External entity, interface rows (the three harness boundaries extended), and in-scope bullets added; `.agents` recorded as a skills mirror with no runtime; the new use case `inspect-development-history` is named. |
 | 4 | 04 solution-strategy | Yes | The strategy table gains the development record and report concern, because it spans capture, storage, intake, and rendering. | "Development record" row added to 4.1. |
 | 5 | 05 building-block-view | Yes | New building blocks: `history` (record model and store), `cli::history` (read, the one intake, and the process-per-hook harness mapper), `cli::timeline` (report model and rendering), the embedded timeline asset, and the three embedded harness reporter assets. | Diagram node plus five responsibility rows added. |
 | 6 | 06 runtime-view | Yes | Two new flows: best-effort capture while other commands run, and the intake/report flow, including the per-harness capture order for the three reporters. | New section 6.18 with a mermaid capture sequence and a per-harness capture table. |
 | 7 | 07 deployment-view | Yes | The project footprint gains `givn/history/` (record, reports, pending state), one generated reporter per executing agent target (`.omp/hooks/pre/`, `.opencode/plugins/`, `.claude/hooks/` plus its settings registration), and the repository-only `tests/e2e/` Node project; the acceptance suite gains a Node/Chromium prerequisite installed outside the suite. | 7.3 target environments and 7.4 project footprint updated. |
-| 8 | 08 crosscutting-concepts | Yes | The record's ownership, the three harness reporters and their documented asymmetries, best-effort discipline, scope rule, privacy bound, ignore block, scale rule, report packaging, and browser tier are cross-cutting concepts every capture point and future reporter must respect. | New section 8.25 added, including the reporters, scale, and missing-data paragraphs. |
+| 8 | 08 crosscutting-concepts | Yes | The record's ownership, the engagement rule, the runtime-state status of the store, the three harness reporters and their documented asymmetries, best-effort discipline, scope rule, privacy bound, ignore entry, scale rule, report packaging, and browser tier are cross-cutting concepts every capture point and future reporter must respect. | New section 8.25 added, including the engagement, runtime-state, reporters, scale, and missing-data paragraphs. |
 | 9 | 09 architecture-decisions | Yes | One new qualified decision (ADR-073): record ownership and the single intake interface — now carrying three harness reporters. Two further candidates were evaluated and routed to canonical artifacts instead of ADRs. | ADR-073 created and extended, register row and chapter-09 paragraph added. |
 | 10 | 10-quality-requirements | Yes | New quality scenarios for intake rejection, record/render reproducibility, the record's privacy bound, rendering a multi-day record at scale, and harness parity. | Q-98 to Q-102 added. |
 | 11 | 11 risks-and-technical-debt | Yes | Unbounded store growth, per-harness contract drift (including the younger opencode V2 API), best-effort loss, the new browser tier in the archive gate, the Claude Code surface gaps, and the never-dirty ignore rule (a versioned ignore write would have broken `givn upgrade`'s clean-checkout precondition — reproduced by this change's own implementation, with a Fossil residual) are risks; pruning and repair paths are deliberate debt. | R-83 to R-86, R-88, R-89 (refined), D-22, D-23 added; R-87 retired as inaccurate. |
@@ -83,6 +83,20 @@ a class (`git_managed_project`, `git_project_with_version`,
 `fossil_project_with_version`) whose ignore content gains the record path. The
 hazard and its Fossil residual are R-89; the glossary's `Ignore block` entry now
 covers both the rules block and the record entry.
+
+**Recorder engagement and test-state exclusion (same pass, 2026-10-16).**
+Implementation found a second class after Tasks 10-11 landed, and the artifacts
+now record both halves. (1) **Product rule:** the recorder engages only when the
+project root carries the Givn scaffold, so a refused command in a bare root
+creates neither `givn/` nor the store, while a scaffolded project records every
+command including refusals and failures (the rule keys on the scaffold, not on
+the VCS markers). It has its own delta scenario, `A refused command outside a
+Givn project creates no record`, and Task 11a. (2) **Test-side class:** the
+store is Givn runtime state, so the acceptance suite's project-state comparison
+helpers exclude `givn/history/**` — `scm_backend_selection_steps.rs::snapshot_tree`/`collect_tree`
+and `serve_extended_rules_steps.rs::project_files`/`collect_project_files`; the
+other tree walkers never reach the record directory. Delta inventory is now 43
+entries (35 non-`@e2e`, 8 `@e2e`).
 
 The ADR candidates were evaluated in order and only the first qualified:
 

@@ -924,6 +924,20 @@ report's "outside a scope" band. The intake payload's `change`/`topic` are
 optional overrides; a named scope that does not exist is a rejected event, never
 a silent fallback.
 
+**Engagement.** The recorder engages only when the project root carries the Givn
+scaffold (`givn/`). Before the scaffold exists it writes nothing and creates no
+directory, so a refused `givn init` in a bare directory leaves that root exactly
+as it was; a successful `givn init` creates the scaffold and then records. The
+rule keys on the scaffold and never on the VCS markers: once `givn/` exists,
+every command records — including refusals and failures — and a scaffolded
+project without a usable backend still records.
+
+**Runtime state, not project content.** The store and its pending state are Givn
+runtime state. The acceptance suite's project-state comparison helpers therefore
+exclude `givn/history/**` when they check that a command "changed nothing": the
+exclusion is scoped to the record directory, so no other path's behavior
+changes, and a legitimate command entry no longer reads as a modified project.
+
 **Privacy bound.** An entry keeps metadata plus one label truncated to 120
 characters. Complete tool inputs, complete command lines, and complete question
 text are never stored. The bound lives in one function (`bound_label`), so the
