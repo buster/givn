@@ -91,6 +91,16 @@
     padding: var(--space-3);
   }
   .details[hidden] { display: none; }
+  .timeline-section { margin-top: var(--space-5); }
+  .timeline { display: block; width: 100%; height: auto; }
+  .band-row { fill: var(--color-surface-raised); stroke: var(--color-border); }
+  .band-label { fill: var(--color-text-muted); font-size: var(--font-12); }
+  .band[data-band-kind="change"] .span-bar { fill: var(--color-band-command); }
+  .band[data-band-kind="ideation"] .span-bar { fill: var(--color-band-agent); }
+  .band[data-band-kind="project"] .span-bar { fill: var(--color-band-step); }
+  .span-bar { fill: var(--color-band-step); rx: var(--radius-span); }
+  .span:focus-visible .span-bar { outline: 2px solid var(--color-accent); }
+  .span-label { fill: var(--color-text); font-size: var(--font-12); }
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; animation: none !important; }
   }

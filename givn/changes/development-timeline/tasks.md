@@ -6228,24 +6228,136 @@ name it.
     - The open-report `@e2e` outline (Task E6) gains its `topic` Example from this
       same action, so the fixture must be reusable rather than scenario-local.
     - RED expected failure: both Then steps are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report of an ideation topic names the work done before the change exists"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report of an ideation topic names the work done before the change exists"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+        warning: constant `IDEATION_TOPIC` is never used
+           --> tests/steps/development_timeline_support.rs:117:11
+        …
+        warning: `givn` (test "features_runner") generated 1 warning
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 7.01s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report of an ideation topic names the work done before the change exists
+           ✔  Given an ideation topic "timeline-ideas" whose record holds the topic's own steps
+           ✔  When the developer generates the development report for the topic "timeline-ideas"
+           ✘  Then the report names the topic's steps under the topic scope
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:29:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+
+        thread 'main' (2579764) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — both Then steps match no function, and the
+        run stops at the first. The fixture Given (a written-but-unfinished topic
+        session, the topic's own step entries under the topic scope, and no
+        change directory at all) and the topic-generating When are in place, so
+        the RED is the missing topic window: the report at this revision renders
+        the scope line and the summary but no band row at all. The `IDEATION_TOPIC`
+        constant the fixture had drafted went unused and was dropped with this
+        GREEN step rather than kept as dead weight.
         ```
-  - [ ] **GREEN** — implement the topic window and its band. Files:
+  - [x] **GREEN** — implement the topic window and its band. Files:
         `src/cli/timeline.rs`, `assets/timeline/report.html`,
         `tests/steps/development_report_steps.rs`,
         `tests/steps/development_timeline_support.rs` (topic fixture). Compile
         first, re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 10.26s
+        BUILD=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report of an ideation topic names the work done before the change exists"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 16.61s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report of an ideation topic names the work done before the change exists
+           ✔  Given an ideation topic "timeline-ideas" whose record holds the topic's own steps
+           ✔  When the developer generates the development report for the topic "timeline-ideas"
+           ✔  Then the report names the topic's steps under the topic scope
+           ✔  And the report names no change that does not exist yet
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
+
+        Production files created/modified by this GREEN step:
+        - `src/cli/timeline.rs` (modified — the report's timeline section:
+          `render_timeline`/`render_band`/`render_span` draw one visible row per
+          band, each naming its scope and one span per covered entry, and the
+          report's `TimeScale` maps the window's recorded range onto the drawing
+          width from the embedded timestamps alone; `duration_text` is the one
+          duration-or-"not measured" renderer the rows share with the summary,
+          so a span's accessible name is always `<label>, <duration>`);
+        - `assets/timeline/report.html` (modified — the timeline, band row, and
+          span styles in the design system's tokens, with one band hue per band
+          class and the reduced-motion rule the report already carried);
+        - `tests/steps/development_report_steps.rs` (modified — the topic Given,
+          the topic-generating When, the timeline-region reader, and both Then
+          steps: the band's own coverage, the steps drawn under their band, and
+          the no-invented-change claim);
+        - `tests/steps/development_timeline_support.rs` (modified — the reusable
+          topic fixture: `seed_ideation_topic` writes the written-but-unfinished
+          session and seeds the topic's own measured steps through the one
+          builder, so the browser tier's topic row reports the same topic).
         ```
-  - [ ] **REFACTOR** — one window-selection rule for change, topic, and project
+  - [x] **REFACTOR** — one window-selection rule for change, topic, and project
         (no third copy of the scope switch); re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The scope switch now has one home: `scope_row(scope)` derives a scope's
+        class, its visible label, and its identifier, and the three callers that
+        used to carry their own `match` — `Band::of`, `scope_line`, and
+        `default_report_path` (plus the band row's `data-band` attribute) — all
+        read that one row. The window selection itself stays one function:
+        `bands_for` gives a named scope its single band (a change, a topic — the
+        same rule, no topic special case) and groups an unnamed report's entries
+        by the scope each belongs to, so the project report's "outside a scope"
+        band is the same derivation. No behaviour change: same bands, same
+        labels, same default path.
+
+        $ cargo fmt --all -- --check
+        FMT OK
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.82s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report of an ideation topic names the work done before the change exists"
+        Feature: Development Report
+          Scenario: The report of an ideation topic names the work done before the change exists
+           ✔  Given an ideation topic "timeline-ideas" whose record holds the topic's own steps
+           ✔  When the developer generates the development report for the topic "timeline-ideas"
+           ✔  Then the report names the topic's steps under the topic scope
+           ✔  And the report names no change that does not exist yet
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
+
+        Regression runs of the three committed scenarios this step's shared
+        window-selection code touches:
+
+        $ ... --exact "...::The report ranks the longest single step first"
+        1 feature, 1 scenario (1 passed), 3 steps (3 passed)        EXIT=0
+        $ ... --exact "...::The report totals the time spent waiting for questions"
+        1 feature, 1 scenario (1 passed), 3 steps (3 passed)        EXIT=0
+        $ ... --exact "...::The report totals token usage per turn and per subagent"
+        1 feature, 1 scenario (1 passed), 5 steps (5 passed)        EXIT=0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
         the scenario title `The report of an ideation topic names the work done

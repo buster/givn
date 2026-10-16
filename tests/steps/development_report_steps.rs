@@ -454,6 +454,36 @@ fn change_with_reported_token_usage(world: &mut GivnWorld, id: String) {
     world.last_change_id = Some(id);
 }
 
+#[given(regex = r#"^an ideation topic "([^"]+)" whose record holds the topic's own steps$"#)]
+fn ideation_topic_with_its_own_steps(world: &mut GivnWorld, topic: String) {
+    let seeded = {
+        let env = project_root(world);
+        // The scenario's own claim: the topic's work exists before any change
+        // directory does.
+        support::assert_no_active_change(env);
+        support::seed_ideation_topic(env, &topic)
+    };
+    state(world).seeded = seeded;
+}
+
+#[when(regex = r#"^the developer generates the development report for the topic "([^"]+)"$"#)]
+fn generate_report_for_topic(world: &mut GivnWorld, topic: String) {
+    let report = {
+        let env = project_root(world);
+        run_fixture_command(
+            env,
+            &["timeline", "--topic", &topic, "--out", "report.html"],
+        );
+        env.path("report.html")
+    };
+    assert!(
+        report.is_file(),
+        "the command wrote no report at {}",
+        report.display()
+    );
+    state(world).report_path = Some(report);
+}
+
 #[when(regex = r#"^the developer generates the development report for "([^"]+)"$"#)]
 fn generate_report_for_change(world: &mut GivnWorld, id: String) {
     let report = {
@@ -798,6 +828,154 @@ fn report_names_the_token_total_for_every_model(world: &mut GivnWorld) {
             "the rendered per-model list does not name {name}'s total: {rendered}"
         );
     }
+}
+
+/// The timeline section of the written report: the region the band rows live
+/// in, so an assertion reads the steps *under* their band rather than anywhere
+/// in the document.
+fn timeline_region(document: &str) -> String {
+    let start = document
+        .find("<section class=\"timeline-section\"")
+        .expect("the report draws no timeline");
+    let region = &document[start..];
+    let end = region
+        .find("</section>")
+        .expect("the timeline section is never closed");
+    region[..end].to_string()
+}
+
+#[then("the report names the topic's steps under the topic scope")]
+fn report_names_the_topics_steps_under_the_topic_scope(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let steps: Vec<&HistoryEntry> = seeded(world)
+        .iter()
+        .filter(|entry| entry.kind == "step")
+        .collect();
+    assert_eq!(
+        steps.len(),
+        3,
+        "the topic fixture holds its own steps: {steps:#?}"
+    );
+
+    assert_eq!(
+        model["scope"]["kind"],
+        json!("ideation"),
+        "the report is not scoped to the topic: {model:#?}"
+    );
+    let topic = model["scope"]["id"]
+        .as_str()
+        .expect("the report names the topic")
+        .to_string();
+    let bands = model["bands"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the model carries no bands: {model:#?}"));
+    assert_eq!(
+        bands.len(),
+        1,
+        "the topic's report is the topic's own band: {model:#?}"
+    );
+    let band = &bands[0];
+    assert_eq!(
+        band["kind"],
+        json!("ideation"),
+        "the band is not the topic's"
+    );
+    assert_eq!(band["scope"]["id"], json!(topic));
+    let band_label = band["label"]
+        .as_str()
+        .expect("the band carries its visible label")
+        .to_string();
+    assert!(
+        band_label.contains(&topic),
+        "the band's label does not name the topic: {band_label}"
+    );
+    let band_entries: Vec<u64> = band["entries"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the band covers no entries: {band:#?}"))
+        .iter()
+        .map(|entry| entry.as_u64().expect("a band entry id"))
+        .collect();
+    let step_ids: Vec<u64> = steps.iter().map(|step| step.id).collect();
+    assert_eq!(
+        band_entries, step_ids,
+        "the band does not cover exactly the topic's own steps: {model:#?}"
+    );
+
+    // The rendered timeline names the band and, inside it, every step: its
+    // label and its recorded duration.
+    let timeline = timeline_region(&document);
+    assert!(
+        timeline.contains(&band_label),
+        "the timeline does not name the topic band: {timeline}"
+    );
+    let band_at = timeline
+        .find(&format!("data-band=\"{topic}\""))
+        .unwrap_or_else(|| panic!("the timeline draws no band for the topic: {timeline}"));
+    for step in &steps {
+        let label = step.label.clone().expect("the fixture labels its steps");
+        let duration = format_duration(step.duration_ms.expect("the fixture measures its steps"));
+        let at = timeline
+            .find(&label)
+            .unwrap_or_else(|| panic!("the timeline does not name the step {label}: {timeline}"));
+        assert!(
+            at > band_at,
+            "the step {label} is not drawn under the topic band: {timeline}"
+        );
+        assert!(
+            timeline.contains(&duration),
+            "the timeline does not name the step's duration {duration}: {timeline}"
+        );
+    }
+}
+
+#[then("the report names no change that does not exist yet")]
+fn report_names_no_change_that_does_not_exist_yet(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let topic = model["scope"]["id"].clone();
+    for entry in model["entries"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the model carries no entries: {model:#?}"))
+    {
+        assert_eq!(
+            entry["scope"]["kind"],
+            json!("ideation"),
+            "the report carries an entry outside the topic: {entry}"
+        );
+        assert_eq!(
+            entry["scope"]["id"], topic,
+            "the report carries an entry outside the topic: {entry}"
+        );
+    }
+    for band in model["bands"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the model carries no bands: {model:#?}"))
+    {
+        assert_ne!(
+            band["kind"],
+            json!("change"),
+            "the report invents a change band: {band}"
+        );
+        assert_ne!(
+            band["scope"]["kind"],
+            json!("change"),
+            "the report invents a change scope: {band}"
+        );
+    }
+    assert!(
+        !document.contains("Change:"),
+        "the report names a change that does not exist: {document}"
+    );
+
+    // The claim's other half: the fixture project really holds no change, so a
+    // change band could only have been invented.
+    support::assert_no_active_change(
+        world
+            .env
+            .as_ref()
+            .expect("a project root is required first"),
+    );
 }
 
 #[then("the report names the total wait duration and the number of waits")]
