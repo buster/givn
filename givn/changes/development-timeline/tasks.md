@@ -7062,11 +7062,33 @@ name it.
         $ ... --exact "...::The report names the agent's fan-out into small subagents"     → 1 passed, 3 steps  EXIT=0
         $ ... --exact "...::The report needs no network access to render"                  → 1 passed, 3 steps  EXIT=0
         ```
-  - [x] **COMMIT** — `PENDING` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `77f7f73bc00516dd0f08dd8a1a1132ef68ad84e4` — `feat(development-report): <release note>` with
         the scenario title `The report shows the empty state for a scope with no
         recorded activity` in the body. Record the revision identifier.
         ```
-        <!-- paste the commit output + the revision's file list -->
+        $ ./target/debug/givn commit -m "feat(development-report): Givn records the development process of every change and ideation — … opens in a browser.
+
+        The report shows the empty state for a scope with no recorded activity"
+        [16:57:13] committed revision on the Git backend
+        EXIT=0
+
+        $ git show --stat --format='%H' 77f7f73b
+        77f7f73bc00516dd0f08dd8a1a1132ef68ad84e4
+
+         assets/timeline/report.html                        |  14 +++
+         .../development-report.feature                     |   2 +-
+         givn/changes/development-timeline/tasks.md         | 131 +++++++++++++++++++--
+         src/cli/timeline.rs                                |  42 ++++++-
+         tests/steps/development_report_steps.rs            | 116 ++++++++++++++++++
+         tests/steps/development_timeline_support.rs        |  14 +++
+         6 files changed, 303 insertions(+), 16 deletions(-)
+
+        Revision 77f7f73b touches production source (`src/cli/timeline.rs` — the
+        `empty` marker, the `bands_for` invariant, the report root's branch, and
+        `render_empty_state`; `assets/timeline/report.html` — the empty-state
+        styles), the scenario's test steps and fixture helper, the delta
+        `.feature`'s `@wip` removal, and this task file's evidence — never the
+        spec alone.
         ```
 
 ## Task 33 — `A dense record is reported as aggregates instead of raw ticks` (`development-report`, added)
