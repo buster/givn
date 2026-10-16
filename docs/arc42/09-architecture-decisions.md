@@ -87,6 +87,21 @@ files. The archive consumes the Fossil backend, and the resume path republishes
 a candidate whose publication a backend hook rejected. The witness-bounded
 consequence is carried by R-65 in chapter 11.
 
+ADR-073 is accepted by the `development-timeline` change: Givn owns the
+development record and its format, and harness integrations report activity
+through one intake command instead of writing the record themselves. The
+record is append-only, scope-tagged (change, ideation, or project), written
+best-effort so it can never change the outcome of the work it records, bounded
+to metadata and a truncated label, and kept out of repository history by its
+own fenced ignore block. Every supported harness that executes an agent (omp,
+opencode, Claude Code) gets one generated reporter against that same intake,
+while the `agents` skills mirror gets none; a process-per-hook harness maps its
+raw payloads in the binary and keeps its start timestamps in pending state. The
+rejected alternatives (each integration writing lines itself, and reading the
+harness's private session log at report time) stay readable in the record. The
+compatibility surface of a stale installed reporter and the accepted record
+gaps are carried by R-84, R-88, and D-22 in chapter 11.
+
 Individual ADRs preserve decision rationale and links. Current architecture
 facts remain in the relevant Arc42 chapters or implementation; the register is
 not a second copy of those facts.

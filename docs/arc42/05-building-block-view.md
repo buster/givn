@@ -30,6 +30,7 @@ flowchart TD
     G --> GITMOD[git worktree wrapper]
     G --> FOSSIL[fossil checkout wrapper]
     G --> PROOF[proof receipts and runner results]
+    G --> HIST[development record and report]
     G --> ASSET[embedded assets]
     G --> TEST[repository acceptance tests]
     G --> COV[spec coverage inventory and migration comparison]
@@ -54,6 +55,8 @@ flowchart TD
 | `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks; named review also runs the overlap gate. Review executes `integrity` and the run-declaration check; scenario execution belongs to the archive verification. `givn check rules` reports tracked and reachable-history rules and exits non-zero on a violation. |
 | `cli::archive` | Check archive prerequisites, run the run-declaration gate before the README completeness gate (independent of the readme addon), run the README completeness gate when the readme addon is enabled, select permanent verification for no-product-delta maintenance changes, run configured hooks, merge deltas, publish the archive candidate revision through the selected backend, run the regular and E2E verification scopes once against the candidate, run the optional coverage gate, refresh managed blocks, record the verification receipt, and publish the evidence-only finalization revision. |
 | `cli::status` and `cli::graph` | Render manifest-aware filesystem state, dependencies, optional flags, gates, and hooks; status and instructions surface unproven archive candidates with their resume command. |
+| `cli::history` | Read one scope's development record as text or machine-readable JSON; own the single intake contract for reported agent activity (validate each event, store the accepted ones, name a rejected one on stderr, exit `0` whenever the payload was read); and map a raw process-per-hook harness payload (Claude Code) into record events, holding that harness's start timestamps in pending state and reading its session record for token usage. |
+| `cli::timeline` | Build the report model for one change or ideation (bands, phases, ranked long steps, question-wait totals, subagent fan-out, token totals) and render it into one self-contained HTML file whose path is printed. |
 | `cli::eject` | Materialize an embedded facet, skill, or manifest into project-owned `givn/` content. |
 | `cli::commit` | Create one attributed revision through the selected backend: stage the named paths (or, under the `local-only` policy, every pending project path except `AGENTS.md` and the strict rules), stamp the managed attribution trailer when context is active, and commit; refuse a project without a backend by name. |
 | `cli::readme` | Scaffold the README from the marked template with the development and run managed blocks, run the deterministic completeness check behind `givn readme check`, and refresh the development and run managed blocks from the effective command file at archive time. |
@@ -78,8 +81,11 @@ flowchart TD
 | `overlap::analysis` | Find title duplicates, shape matches, subsets, long scenarios, dispositions, and net-delta receipts. |
 | `hooks` | Execute configured hooks with `GIVN_FEATURES`; built-in hook names are resolved and cannot be made allow-failure. |
 | Embedded attribution assets | Provide the checked-in `.githooks/commit-msg` hook and the generated OpenCode/Claude/omp harness integrations. |
+| Embedded harness reporter assets | Provide one development-activity reporter per supported harness: `agent-integrations/omp/givn-timeline.js` (pre-hook factory), `agent-integrations/opencode/givn-timeline.js` (plugin with hooks and an event subscription), and `agent-integrations/claude/givn-timeline.sh` (per-event command hook shim). |
+| Embedded timeline asset | Provide the development report's document with inline CSS, JavaScript, and SVG and one data slot: no third-party JavaScript, no CDN, no build step, and no remote resource at render time. |
 | `integrity_hook` | Check revision-identifier/task evidence, promised step-definition files, Arc42 affected-file edits, coverage configuration, the review-level README impact decision, and — for a declared visual interface — the visual verdict, the persona disposition with its ID resolved against the project persona collection, the final-state and per-state evidence completeness, plus the operator decision for any recorded deferral. |
 | `state` | Derive status from artifact paths, markers, skip files, and the manifest graph; expose archive provenance (legacy/pending/proven) from the receipt. |
+| `history` | Own the development record: the entry schema, the single append-only local store, the exactly-one-scope rule (change, ideation, project), the bounded label rule, the per-process recorder used by the capture points, and the fenced ignore block that keeps the store out of repository history. |
 | `scm` | Select the version-control backend for the project root (a Git worktree first, then a Fossil checkout), enforce the project-boundary rule, refuse absence, ambiguity, a nested root, or a missing executable by name before any mutation, and expose the shared revision, clean-state, publication, and revision-content operations. |
 | `fossil` | Implement the Fossil checkout handle: revision identity from `fossil info`, the clean-state witness from `fossil changes --differ` (including `EXTRA` entries), witness-bounded publication through `fossil addremove` plus `fossil commit`, allowlist staging through `fossil add [--force]`, and revision-content checks through `fossil cat`. |
 | `git` | Git backend implementation: root-bound worktree prerequisite, clean-state witness, HEAD resolution, scoped staging, and scoped commits for the archive boundary and the selection seam. |

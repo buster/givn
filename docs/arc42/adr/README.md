@@ -27,7 +27,7 @@ owning documents.
 ## Active Register
 
 The active register contains only independent durable architecture decisions:
-24 accepted records. The fifteen semantic-engine records were
+25 accepted records. The fifteen semantic-engine records were
 superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 [`archive/`](archive/) by the `drop-embedding-features` change.
 
@@ -57,6 +57,7 @@ superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 | [ADR-070](ADR-070-forward-only-archive-proof.md) | accepted | Publish archives forward-only and bind proof to a committed candidate | publication boundary and durable receipt contract |
 | [ADR-071](ADR-071-scm-backend-selection.md) | accepted | Select the SCM backend from project markers through one seam | component boundary and backend-selection contract |
 | [ADR-072](ADR-072-witness-bounded-publication.md) | accepted | Publish revisions through the SCM seam with witness-bounded commits | publication contract and candidate-exactness invariant |
+| [ADR-073](ADR-073-development-record-ownership.md) | accepted | Own the development record and report harness activity through one intake interface | record-ownership and intake-contract boundary |
 
 ## Relationships
 
@@ -68,6 +69,7 @@ superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 | ADR-071 (amended by maintain-project) | The seam decision now also governs the managed upgrade and migration bundles on Fossil: allowlist staging, pending-change detection, and commit run on both backends. |
 | ADR-013 (amended by require-agent-target, refined by keep-agent-prompt-open) | Initialization requires an explicitly selected target set: the interactive prompt opens with `opencode` marked and re-asks until something is marked, while a non-terminal empty selection is refused before the first write; synchronization keeps the fallback for a configuration without a `skills:` block. |
 | ADR-023 (amended by 0.3.0) | The versioned-config decision now also governs managed-only commits, catalog-selected migrations, aggregate plans, and their clean-worktree boundary. |
+| ADR-073 (related to ADR-014, ADR-013, ADR-028) | The development record is a durable journal deliberately outside ADR-014's filesystem-derived state, delivered as one generated agent integration under ADR-013's ownership rule, and explicitly outside ADR-028's gate boundary — the record is never a gate input. |
 
 ## Evidence
 
@@ -79,6 +81,7 @@ superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 | SCM backend selection | [`src/scm.rs`](../../../src/scm.rs), [`src/cli/migration.rs`](../../../src/cli/migration.rs), [`givn/specs/fragments/detect-the-project-repository.feature`](../../../givn/specs/fragments/detect-the-project-repository.feature) |
 | Agent ownership | [`src/skills/targets.rs`](../../../src/skills/targets.rs), [`src/cli/agents_block.rs`](../../../src/cli/agents_block.rs), [`src/cli/absolute_mode.rs`](../../../src/cli/absolute_mode.rs) |
 | Release migration | [`src/cli/migration.rs`](../../../src/cli/migration.rs), [`assets/migrations/catalog.yaml`](../../../assets/migrations/catalog.yaml), [`docs/migrations/README.md`](../../migrations/README.md), and release migration feature scenarios |
+| Development record and report | [`src/history.rs`](../../../src/history.rs), [`src/cli/history.rs`](../../../src/cli/history.rs), [`src/cli/timeline.rs`](../../../src/cli/timeline.rs), [`assets/timeline/report.html`](../../../assets/timeline/report.html), [`assets/agent-integrations/omp/givn-timeline.js`](../../../assets/agent-integrations/omp/givn-timeline.js), and the `inspect-development-history` scenarios |
 | PR #27 measurements | [`semantic-duplicates-real-model-analysis.md`](../../archive/analysis/semantic-duplicates-real-model-analysis.md) and its linked benchmark/manual reports; raw JSON reports are local and ephemeral under the paths stated there. |
 
 ## Archived ADRs

@@ -15,6 +15,7 @@ is in the [ADR register](adr/README.md); mechanics are in [chapter 8](08-crosscu
 | Domain ownership | Explicit `usecase.md` documents own capabilities; reusable behavior is represented by typed fragments. |
 | Ideation continuity | Stable use-case IDs, confirmed Persona references, and explicit Handoff connect topic state to proposals and permanent specs. |
 | State | Filesystem-derived from effective artifact paths, markers, and `.givn-skip`. |
+| Development record | One append-only, scope-tagged local record of what Givn and the coding agent did, written best-effort by Givn's own capture points and by harnesses through a single intake command (ADR-073); `givn timeline` renders one scope as a self-contained interactive report. |
 | SCM backend | One selection seam probes the project root: a Git worktree selects Git; a Fossil checkout selects Fossil; both markers, no version control, a nested root, or a missing executable are refused by name before mutation. The archive and the managed upgrade run on the selected backend. No configuration key declares the backend. ADR-071 records the boundary. |
 | Agent integration | Selected `.opencode`, `.agents`, `.claude`, and `.omp` targets; only givn-owned fenced blocks may be changed in `AGENTS.md`. |
 | Commit attribution | `givn commit` is the SCM-neutral commit path; on Git a checked-in message hook additionally stamps raw commits, while a Fossil checkout relies on `givn commit`. OpenCode, Claude, and omp adapters provide best-effort runtime values without making human commits a gate. |
