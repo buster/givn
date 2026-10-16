@@ -350,6 +350,70 @@ fn guidance_includes_the_development_reporter(world: &mut GivnWorld, target: Str
     }
 }
 
+#[then("no development reporter is installed for that project")]
+fn no_development_reporter_is_installed(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let root = env.root();
+    // The design's install paths, and anywhere else in the project: a reporter
+    // installed under another path would still claim activity that can never
+    // arrive.
+    for (target, install) in REPORTER_ASSETS {
+        assert!(
+            !root.join(install).exists(),
+            "the neutral `agents` target installed the {target} reporter at {install}"
+        );
+    }
+    let mut reporters = Vec::new();
+    collect_reporter_files(&root, &root, &mut reporters);
+    assert!(
+        reporters.is_empty(),
+        "a development reporter is installed somewhere in the project: {reporters:#?}"
+    );
+    // No registration either: the settings file a Claude reporter would be
+    // registered in must not name the shim.
+    let settings = root.join(".claude/settings.local.json");
+    if settings.exists() {
+        let content = std::fs::read_to_string(&settings)
+            .unwrap_or_else(|error| panic!("read {}: {error}", settings.display()));
+        assert!(
+            !content.contains("givn-timeline"),
+            "the neutral `agents` target registered a development reporter: {}",
+            settings.display()
+        );
+    }
+}
+
+/// Collect the development reporter files installed anywhere under `dir`, so
+/// "no reporter is installed for that project" is asserted on the project tree
+/// rather than on the four paths the design names.
+fn collect_reporter_files(root: &std::path::Path, dir: &std::path::Path, found: &mut Vec<String>) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if name == ".git" {
+            continue;
+        }
+        if path.is_dir() {
+            collect_reporter_files(root, &path, found);
+            continue;
+        }
+        if name.ends_with("givn-timeline.js") || name.ends_with("givn-timeline.sh") {
+            found.push(
+                path.strip_prefix(root)
+                    .unwrap_or(&path)
+                    .to_string_lossy()
+                    .into_owned(),
+            );
+        }
+    }
+}
+
 #[when("the agent reports an event that does not match the intake contract")]
 fn reports_an_event_that_does_not_match_the_intake_contract(world: &mut GivnWorld) {
     let change = recorded_change(world);

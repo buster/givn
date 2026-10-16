@@ -396,20 +396,17 @@ pub fn managed_generated_paths(project_root: &Path) -> Result<Vec<std::path::Pat
         }
     }
 
-    if targets.contains(&AgentTarget::Opencode) {
-        paths.push(project_root.join(".opencode/plugins/givn-attribution.js"));
-        paths.push(project_root.join(".opencode/plugins/givn-timeline.js"));
-    }
-
-    if targets.contains(&AgentTarget::Omp) {
-        paths.push(project_root.join(".omp/hooks/pre/givn-attribution.js"));
-        paths.push(project_root.join(".omp/hooks/pre/givn-timeline.js"));
-    }
-
-    if targets.contains(&AgentTarget::Claude) {
-        paths.push(project_root.join(".claude/settings.local.json"));
-        paths.push(project_root.join(".claude/hooks/givn-attribution.sh"));
-        paths.push(project_root.join(".claude/hooks/givn-timeline.sh"));
+    // The integration files come from the same per-target table the installer
+    // uses, and a target's registration file from its own registration row, so
+    // this allowlist can never drift from what `sync` writes — and the target
+    // list decides every row.
+    for target in &targets {
+        for integration in integrations_of(*target) {
+            paths.push(project_root.join(integration.relative));
+        }
+        if let Some(registration) = registration_of(*target) {
+            paths.push(project_root.join(registration.file));
+        }
     }
 
     for target in targets.iter().filter(|t| t.owns_commands()) {
@@ -499,6 +496,25 @@ fn integrations_of(target: AgentTarget) -> &'static [AgentIntegration] {
     }
 }
 
+/// A target's registration: the file the merge writes and the merge that
+/// writes it. A registration is merged rather than copied from an asset, so it
+/// is a row of its own and never appears as an installed file.
+struct TargetRegistration {
+    file: &'static str,
+    merge: fn(&Path) -> Result<()>,
+}
+
+/// The registration a target owns, when it has one.
+fn registration_of(target: AgentTarget) -> Option<TargetRegistration> {
+    match target {
+        AgentTarget::Claude => Some(TargetRegistration {
+            file: ".claude/settings.local.json",
+            merge: merge_claude_settings,
+        }),
+        _ => None,
+    }
+}
+
 fn sync_agent_integrations(project_root: &Path, targets: &[AgentTarget]) -> Result<()> {
     for target in targets {
         for integration in integrations_of(*target) {
@@ -510,9 +526,9 @@ fn sync_agent_integrations(project_root: &Path, targets: &[AgentTarget]) -> Resu
             )?;
             println!("  integration: {}", integration.relative);
         }
-        if *target == AgentTarget::Claude {
-            merge_claude_settings(project_root)?;
-            println!("  integration: .claude/settings.local.json");
+        if let Some(registration) = registration_of(*target) {
+            (registration.merge)(project_root)?;
+            println!("  integration: {}", registration.file);
         }
     }
 
@@ -860,6 +876,36 @@ mod tests {
             assert!(
                 Assets::get(&key).is_some(),
                 "embedded command template missing: {key}"
+            );
+        }
+    }
+
+    /// The development reporter set is keyed to the targets that execute the
+    /// agent's work: `opencode`, `claude`, and `omp` each receive one reporter,
+    /// the neutral `agents` skills mirror receives none, and every reporter
+    /// row's asset is really embedded — an installed reporter is never a
+    /// dangling path.
+    #[test]
+    fn only_executing_targets_receive_a_development_reporter() {
+        let mut reporters: Vec<(&str, &str)> = Vec::new();
+        for target in AgentTarget::ALL {
+            for integration in integrations_of(target) {
+                if integration.asset.contains("givn-timeline") {
+                    reporters.push((target.name(), integration.asset));
+                }
+            }
+        }
+        let mut names: Vec<&str> = reporters.iter().map(|(name, _)| *name).collect();
+        names.sort_unstable();
+        assert_eq!(
+            names,
+            ["claude", "omp", "opencode"],
+            "the reporter set is not keyed to the executing targets: {reporters:#?}"
+        );
+        for (name, asset) in &reporters {
+            assert!(
+                Assets::get(asset).is_some(),
+                "the {name} reporter's asset is not embedded: {asset}"
             );
         }
     }
