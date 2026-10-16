@@ -7293,7 +7293,7 @@ name it.
 
 ## Task E1 — E2E setup: local environment, browser tier, strictness, tags, evidence
 
-- [ ] **E2E setup task (no scenario is written until every box here is filled in)**
+- [x] **E2E setup task (no scenario is written until every box here is filled in)**
   - Design constraints:
     - **Local environment / Local Runnability.** One-time browser setup, then
       the whole verification surface: `./setup-e2e-browser.sh`,
@@ -7808,10 +7808,43 @@ name it.
         twice once the regular scope narrows. Both workflow edits ride in this
         setup commit, never in a scenario commit.
         ```
-  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the subject
+  - [x] **COMMIT** — `1f03e66ed7db83f8082a0427e2b147129bf61e77` — `test(e2e): <release note>` with the subject
         `E2E setup: browser tier, strictness, tag scopes, evidence` — the e2e
         setup lands as its own commit (never folded into a scenario), before the
         first `@e2e` scenario's RED. Record the revision identifier.
+        ```
+        $ ./target/debug/givn commit -m "test(e2e): Givn records the development process of every change and ideation — … opens in a browser.
+
+        E2E setup: browser tier, strictness, tag scopes, evidence"
+        [17:11:37] committed revision on the Git backend
+        EXIT=0
+
+        $ git show --stat --format='%H' 1f03e66e
+        1f03e66ed7db83f8082a0427e2b147129bf61e77
+
+         .github/workflows/ci.yml                          |   5 +-
+         .github/workflows/release.yml                     |   6 +-
+         givn/changes/development-timeline/tasks.md        | 360 +++++++++++++++++++++-
+         setup-e2e-browser.sh                              |  17 +
+         tests/common/browser.rs                           | 301 ++++++++++++++++++
+         tests/common/mod.rs                               |   1 +
+         tests/e2e/.gitignore                              |   4 +
+         tests/e2e/browser-driver.mjs                      | 165 ++++++++++
+         tests/e2e/package-lock.json                       |  42 +++
+         tests/e2e/package.json                            |  10 +
+         tests/steps/agent_activity_reporting_e2e_steps.rs |  21 ++
+         tests/steps/development_record_e2e_steps.rs       |  22 ++
+         tests/steps/development_report_e2e_steps.rs       |  27 ++
+         tests/steps/development_timeline_support.rs       | 352 ++++++++++++++++++++-
+         14 files changed, 1326 insertions(+), 33 deletions(-)
+
+        The commit carries the setup only: the browser toolchain and its pinned
+        dependency, the driver and its Rust helper, the three per-capability
+        `@e2e` step-file skeletons with their registrations and `GivnWorld`
+        slots, the three harness drivers, the CI/release prerequisites, and this
+        task file's evidence. No `@e2e` tag was touched, and
+        `tests/e2e/node_modules` is never committed (`tests/e2e/.gitignore`).
+        ```
 
 ## Task E2 — `Consumer runs a lifecycle step and reads its recorded actions` (`@e2e`, `development-record`)
 
