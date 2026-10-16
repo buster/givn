@@ -829,7 +829,30 @@ name it.
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A recorded step keeps a measured duration and its outcome"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A recorded step keeps a measured duration and its outcome"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: A recorded step keeps a measured duration and its outcome
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  When the user runs `givn status --change demo`
+           ✘  Then the development record holds one entry for that command
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:10:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        4 steps (3 passed, 1 failed)
+
+        thread 'main' (2006625) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT 101
+
+        Category: undefined step (the genuinely new behaviour). The two Then bindings did not exist, so
+        the scenario failed instead of passing or skipping — the `.fail_on_skipped()` contract is the one
+        S1's Probe A proved live on this same runner.
         ```
   - [ ] **GREEN** — replace the stubs with the real assertions; implement the
         record owner and the dispatch wrapper. Files: `src/history.rs`,
@@ -837,13 +860,70 @@ name it.
         `tests/steps/development_timeline_support.rs`. Compile first
         (`cargo build --locked`), then re-run the same command → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.87s          EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A recorded step keeps a measured duration and its outcome"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: A recorded step keeps a measured duration and its outcome
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  When the user runs `givn status --change demo`
+           ✔  Then the development record holds one entry for that command
+           ✔  And that entry carries a measured duration and its outcome
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT 0
+
+        Production files created/modified by this scenario:
+          src/history.rs       NEW content behind the S4 skeleton — HistoryStore (path/read/append, the
+                               append minting ids from the store's last line), HistoryRecorder
+                               (start/finish + the process-wide install/current cell), resolve_scope
+                               (one active change → change scope, else the project), store_path,
+                               rfc3339_ms + civil_from_days (the RFC 3339 UTC ms `at`)
+          src/main.rs          the recording wrapper around dispatch: the clap subcommand name and the
+                               invocation text, one `command` entry per invocation with duration,
+                               outcome, and exit code (data.exit_code)
+          tests/steps/development_timeline_support.rs  record_entries — the store read the way a
+                               consumer reads it (parse the JSONL, never the recorder's state)
+          tests/steps/development_record_steps.rs      the two Then bindings: exactly one `command`
+                               entry for the command the scenario ran; duration present + numeric
+                               (< 600 s) and `outcome` = `ok`
+          tests/steps/mod.rs   GivnWorld gains `last_command`, set by the generic `the user runs …`
+                               step, so "that command" is the command the scenario actually ran
         ```
   - [ ] **REFACTOR** — remove duplication in the recorder/store surface and the
         fixture helper, no behaviour change; re-run the same command → still
         exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.45s       EXIT 0
+        $ cargo fmt --all -- --check                                                 EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A recorded step keeps a measured duration and its outcome"
+        Feature: Development Record
+          Scenario: A recorded step keeps a measured duration and its outcome
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  When the user runs `givn status --change demo`
+           ✔  Then the development record holds one entry for that command
+           ✔  And that entry carries a measured duration and its outcome
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT 0
+
+        Cleanups, no behaviour change: `HistoryStore::text()` is now the single missing-file rule that
+        `read()` and `last_id()` share (the "store does not exist yet" arm existed twice);
+        `last_id()` mints from the store's last line instead of parsing every line through `read()`;
+        the speculative, unused `scope()`/`store()` accessors were deleted; the id counter in `append`
+        became `enumerate()` (clippy's `explicit_counter_loop` flagged the counter form, which is why
+        clippy is pasted here — it was red for that one lint and is green now).
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` (the
         release note verbatim as the subject; body carries the scenario title

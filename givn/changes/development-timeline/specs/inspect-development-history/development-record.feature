@@ -2,7 +2,7 @@
 
 Feature: Development Record
 
-  @givn.added @wip
+  @givn.added
   Scenario: A recorded step keeps a measured duration and its outcome
     Given a project root with givn/ initialised
     And a change "demo" exists with artifact "proposal.md"

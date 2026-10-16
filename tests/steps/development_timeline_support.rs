@@ -13,3 +13,25 @@
 //!   plugin context capturing `session.hook` / `tool.hook` / `shell.hook` plus
 //!   the event subscription for opencode, and a payload-on-stdin invocation of
 //!   the generated Claude shim with a fixture transcript.
+
+use std::path::Path;
+
+use serde_json::Value;
+
+/// The development record of the project rooted at `root`, read the way a
+/// consumer reads it: `givn/history/events.jsonl`, one JSON object per line.
+/// Every line must parse as a JSON object — that is the store's own contract,
+/// so a malformed line fails the scenario instead of being skipped, and a
+/// missing store fails it too (the scenario ran a command that records).
+pub fn record_entries(root: &Path) -> Vec<Value> {
+    let path = root.join("givn/history/events.jsonl");
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read the development record {}: {error}", path.display()));
+    text.lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| {
+            serde_json::from_str::<Value>(line)
+                .unwrap_or_else(|error| panic!("store line is not a JSON object: {error}\n{line}"))
+        })
+        .collect()
+}
