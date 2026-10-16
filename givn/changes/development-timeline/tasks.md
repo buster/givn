@@ -3802,7 +3802,7 @@ name it.
 
 ## Task 16 — `Absent token usage is recorded as unavailable` (`agent-activity-reporting`, added)
 
-- [ ] **Scenario: `Absent token usage is recorded as unavailable`**
+- [x] **Scenario: `Absent token usage is recorded as unavailable`**
   - Design constraints:
     - Gap-honesty rule: missing data is recorded as missing, never as zero. A
       turn event without a `usage` object leaves the turn entry intact and marks
@@ -3930,9 +3930,31 @@ name it.
         Reported token usage is recorded with the model that produced it => EXIT=0
         Absent token usage is recorded as unavailable => EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+  - [x] **COMMIT** — `82a4ed81882248d06ce2658eb7faed02819a7601` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `Absent token usage is recorded as unavailable`
         in the body. Record the revision identifier.
+        ```
+        $ GIVN_ATTRIBUTION_ACTIVE=1 … ./target/debug/givn commit -m "feat(agent-activity-reporting): <release note verbatim>\n\nAbsent token usage is recorded as unavailable"
+        [15:31:28] committed revision on the Git backend
+
+        $ git show --stat 82a4ed81882248d06ce2658eb7faed02819a7601
+        commit 82a4ed81882248d06ce2658eb7faed02819a7601
+        Author: buster <me@bstr.eu>
+        Date:   Fri Oct 16 15:31:28 2026 +0200
+
+            feat(agent-activity-reporting): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+            Absent token usage is recorded as unavailable
+
+            Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../agent-activity-reporting.feature               |   2 +-
+         givn/changes/development-timeline/tasks.md         | 106 ++++++++++++++++++--
+         src/cli/history.rs                                 |  19 +++-
+         src/history.rs                                     |  18 +++-
+         tests/steps/agent_activity_reporting_steps.rs      | 110 +++++++++++++++++++++
+         5 files changed, 240 insertions(+), 15 deletions(-)
+        ```
 
 ## Task 17 — `A reported event that does not match the intake contract is rejected without corrupting the record` (`agent-activity-reporting`, added)
 
