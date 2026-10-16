@@ -8,8 +8,8 @@ use cucumber::{given, then};
 use serde_json::{Value, json};
 
 use crate::common;
-use crate::steps::GivnWorld;
 use crate::steps::development_timeline_support as support;
+use crate::steps::{GivnWorld, stderr};
 
 /// State for the development-record scenarios: the entry the last reading
 /// step identified, so a following step can assert on "that entry".
@@ -140,4 +140,53 @@ fn entry_carries_a_measured_duration_and_its_outcome(world: &mut GivnWorld) {
         "implausible measured duration {duration_ms} ms: {entry}"
     );
     assert_eq!(entry["outcome"], json!("ok"), "unexpected outcome: {entry}");
+}
+
+#[given("the development record cannot be written")]
+fn record_cannot_be_written(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    // The store path itself is blocked (a directory where the file belongs), so
+    // the append fails the way a full or read-only disk fails it — a real
+    // failure of the real write path, never a simulated one.
+    support::make_record_unwritable(env);
+}
+
+#[then("stderr warns that the development record could not be written")]
+fn stderr_warns_that_the_record_could_not_be_written(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let store = support::store_file(&env.root());
+    let lines = stderr(world);
+    let warnings: Vec<&str> = lines
+        .lines()
+        .filter(|line| line.contains("development record"))
+        .collect();
+    assert_eq!(
+        warnings.len(),
+        1,
+        "expected exactly one warning naming the development record (no retry loop): {lines:?}"
+    );
+    let warning = warnings[0];
+    assert!(
+        warning.starts_with("warning:") && warning.contains("could not be written"),
+        "the line is not a warning that the record could not be written: {warning}"
+    );
+    assert!(
+        warning.contains(&store.display().to_string()),
+        "the warning does not name the store path {}: {warning}",
+        store.display()
+    );
+    // The warning is the only observable effect: no silent fallback wrote the
+    // entry elsewhere, so the store path is still the blocking directory and
+    // the record holds no entry.
+    assert!(
+        store.is_dir(),
+        "the append wrote to the blocked store path {}",
+        store.display()
+    );
 }

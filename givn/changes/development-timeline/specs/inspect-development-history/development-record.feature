@@ -18,7 +18,7 @@ Feature: Development Record
     Then the development record holds one entry for the verification run
     And that entry carries a duration of at least one second
 
-  @givn.added @wip
+  @givn.added
   Scenario: A record that cannot be written never fails the command it records
     Given a project root with givn/ initialised
     And the development record cannot be written
