@@ -8,7 +8,7 @@ Feature: Development Report
     When the developer generates the development report for "demo"
     Then the report ranks the longest step first
 
-  @givn.added @wip
+  @givn.added
   Scenario: The report totals the time spent waiting for questions
     Given a change "demo" whose record holds two question waits
     When the developer generates the development report for "demo"

@@ -5905,23 +5905,123 @@ name it.
     - Assertion shape: the written report names the total wait duration and the
       number of waits (rendered text and embedded model agree).
     - RED expected failure: the totals Then step is undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report totals the time spent waiting for questions"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report totals the time spent waiting for questions"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 5.17s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report totals the time spent waiting for questions
+           ✔  Given a change "demo" whose record holds two question waits
+           ✔  When the developer generates the development report for "demo"
+           ✘  Then the report names the total wait duration and the number of waits
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:15:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+
+        thread 'main' (2563738) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — the totals Then step matches no function,
+        and the run stops exactly there. The fixture Given (two question waits
+        with known durations, nested in one measured turn whose duration differs
+        from their sum) and the report-generating When are in place, so the RED
+        is the missing wait total, and the report at this revision carries no
+        wait figure at all rather than a wrong one.
         ```
-  - [ ] **GREEN** — implement the wait total/count in the model and its summary
+  - [x] **GREEN** — implement the wait total/count in the model and its summary
         tile. Files: `src/cli/timeline.rs`, `assets/timeline/report.html`,
         `tests/steps/development_report_steps.rs`. Compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.25s
+        BUILD=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report totals the time spent waiting for questions"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 6.50s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report totals the time spent waiting for questions
+           ✔  Given a change "demo" whose record holds two question waits
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report names the total wait duration and the number of waits
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        3 steps (3 passed)
+        EXIT=0
+
+        Production files created/modified by this GREEN step:
+        - `src/cli/timeline.rs` (modified — `Summary` gains `waits`,
+          `unmeasured_waits` and `wait_ms`, accumulated from the `question`
+          entries inside the summary's one pass; `wait_note`/`wait_count` render
+          the tile's note; the Waiting tile joins the summary section. The total
+          is the waits' own `duration_ms` sum, never the enclosing turn's
+          duration, and a wait without a measured duration counts as a wait and
+          is never added as zero);
+        - `assets/timeline/report.html` (unchanged — the tiles' styles already
+          carry the waiting tile: one `.tile` primitive in the design system's
+          tokens, and the note reuses the muted/warn text styles);
+        - `tests/steps/development_report_steps.rs` (modified — the wait fixture
+          Given, the tile reader, and the totals Then step: control on the
+          fixture's turn duration, model/rendered agreement, and the count).
         ```
-  - [ ] **REFACTOR** — one aggregation pass over the entries feeding every
+  - [x] **REFACTOR** — one aggregation pass over the entries feeding every
         summary number; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The measured-total rule got its one home: `add_measured` adds a recorded
+        duration to a running `Option<u64>` and reports whether the record
+        measured it at all, so the wait total (and the subagent and token totals
+        the next scenarios add) can never add a missing duration as zero. The
+        summary's single pass is unchanged: `Summary::of` walks the window's
+        entries once and every figure — count, elapsed, unmeasured durations,
+        waits, wait total — comes out of that one scan. No behaviour change: the
+        same total, the same count, the same note.
+
+        $ cargo fmt --all -- --check
+        FMT OK
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.55s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report totals the time spent waiting for questions"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 4.99s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report totals the time spent waiting for questions
+           ✔  Given a change "demo" whose record holds two question waits
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report names the total wait duration and the number of waits
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        3 steps (3 passed)
+        EXIT=0
+
+        Regression run of the scenario this step's shared summary pass touches
+        (the aggregation and the rendered summary):
+
+        $ ... --exact "...::The report ranks the longest single step first"
+        Feature: Development Report
+          Scenario: The report ranks the longest single step first
+           ✔  Given a change "demo" whose record holds steps of different durations
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report ranks the longest step first
+        1 feature, 1 scenario (1 passed), 3 steps (3 passed)        EXIT=0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
         the scenario title `The report totals the time spent waiting for
