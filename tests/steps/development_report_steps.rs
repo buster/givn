@@ -8,7 +8,7 @@
 use std::path::PathBuf;
 
 use cucumber::{given, then, when};
-use givn::cli::timeline::format_duration;
+use givn::cli::timeline::{format_count, format_duration};
 use givn::history::{HistoryEntry, Scope};
 use serde_json::{Value, json};
 
@@ -94,6 +94,147 @@ const WAIT_FIXTURE: [(&str, &str, u64); 2] = [
 /// scenario's control: a wait is its own span, so the wait total must be the
 /// waits' durations and never the enclosing turn's.
 const WAIT_TURN: (&str, u64) = ("2026-10-16T09:20:00.000Z", 1_200_000);
+
+/// The token counts one reported usage carries, in the record's own `data` keys.
+#[derive(Debug, Clone, Copy)]
+struct UsageCounts {
+    input: u64,
+    output: u64,
+    cache_read: u64,
+    cache_write: u64,
+}
+
+impl UsageCounts {
+    /// The usage's own total — the count the report's roll-ups add up.
+    fn total(&self) -> u64 {
+        self.input + self.output + self.cache_read + self.cache_write
+    }
+
+    /// The `data` a `usage` entry carries: every count the harness reported, the
+    /// model that produced it, and the subagent whose span owns it.
+    fn data(&self, model: &str, subagent: Option<&str>) -> Value {
+        let mut data = json!({
+            "input": self.input,
+            "output": self.output,
+            "cache_read": self.cache_read,
+            "cache_write": self.cache_write,
+            "total_tokens": self.total(),
+            "model": model,
+        });
+        if let Some(subagent) = subagent {
+            data["subagent"] = json!(subagent);
+        }
+        data
+    }
+}
+
+/// One reported usage: the model that produced it, its counts, and the subagent
+/// whose span owns it where the usage belongs to a subagent.
+#[derive(Debug, Clone, Copy)]
+struct UsageFixture {
+    model: &'static str,
+    counts: UsageCounts,
+    subagent: Option<&'static str>,
+}
+
+/// One turn the fixture's record holds: its recorded end, its measured duration,
+/// and the usage the harness reported for it. `None` is the turn whose usage the
+/// harness never reported — the record marks that turn's usage unavailable, and
+/// the report must state it rather than fold it in as zero.
+#[derive(Debug, Clone, Copy)]
+struct TurnFixture {
+    at: &'static str,
+    duration_ms: u64,
+    usage: Option<UsageFixture>,
+}
+
+/// One subagent the fixture's record holds: its identity, the agent definition
+/// that ran it, its recorded end and measured duration, and its own usage where
+/// the harness reports one.
+#[derive(Debug, Clone, Copy)]
+struct SubagentFixture {
+    identity: &'static str,
+    agent: &'static str,
+    at: &'static str,
+    duration_ms: u64,
+    usage: Option<UsageFixture>,
+}
+
+/// The first model's counts: one turn's usage.
+const SONNET_COUNTS: UsageCounts = UsageCounts {
+    input: 12_043,
+    output: 812,
+    cache_read: 9_000,
+    cache_write: 240,
+};
+
+/// The second model's counts: a second model really produced usage.
+const CODEX_COUNTS: UsageCounts = UsageCounts {
+    input: 4_000,
+    output: 600,
+    cache_read: 400,
+    cache_write: 0,
+};
+
+/// The subagent's own counts: the usage its own span owns.
+const SCOUT_COUNTS: UsageCounts = UsageCounts {
+    input: 2_400,
+    output: 300,
+    cache_read: 300,
+    cache_write: 0,
+};
+
+/// The turns the token fixture's record holds, in the order the store holds
+/// them: two turns with reported usage for two different models, and one turn
+/// whose usage the harness never reported.
+const TOKEN_TURNS: [TurnFixture; 3] = [
+    TurnFixture {
+        at: "2026-10-16T09:20:00.000Z",
+        duration_ms: 600_000,
+        usage: None,
+    },
+    TurnFixture {
+        at: "2026-10-16T09:40:00.000Z",
+        duration_ms: 900_000,
+        usage: Some(UsageFixture {
+            model: "claude-sonnet-5",
+            counts: SONNET_COUNTS,
+            subagent: None,
+        }),
+    },
+    TurnFixture {
+        at: "2026-10-16T10:00:00.000Z",
+        duration_ms: 300_000,
+        usage: Some(UsageFixture {
+            model: "gpt-5-codex",
+            counts: CODEX_COUNTS,
+            subagent: None,
+        }),
+    },
+];
+
+/// The subagents the token fixture's record holds: one whose own span carries a
+/// usage entry, and one the harness reports no usage for at all.
+const TOKEN_SUBAGENTS: [SubagentFixture; 2] = [
+    SubagentFixture {
+        identity: "Scout",
+        agent: "Architect",
+        at: "2026-10-16T10:10:00.000Z",
+        duration_ms: 240_000,
+        usage: Some(UsageFixture {
+            model: "claude-sonnet-5",
+            counts: SCOUT_COUNTS,
+            subagent: Some("Scout"),
+        }),
+    },
+    SubagentFixture {
+        identity: "Helper",
+        agent: "Scout",
+        at: "2026-10-16T10:12:00.000Z",
+        duration_ms: 60_000,
+        usage: None,
+    },
+];
 
 /// State for the development-report scenarios: the report the last generation
 /// step wrote, so a following step reads the file the command produced rather
@@ -269,6 +410,50 @@ fn change_with_two_question_waits(world: &mut GivnWorld, id: String) {
     world.last_change_id = Some(id);
 }
 
+#[given(regex = r#"^a change "([^"]+)" whose record holds reported token usage$"#)]
+fn change_with_reported_token_usage(world: &mut GivnWorld, id: String) {
+    let scope = Scope::Change { id: id.clone() };
+    let seeded = {
+        let env = project_root(world);
+        run_fixture_command(env, &["new", &id]);
+        let mut history = support::SeededHistory::new();
+        for turn in TOKEN_TURNS {
+            let reported = history.span(&scope, "turn", "turn", turn.at, turn.duration_ms);
+            let Some(usage) = turn.usage else {
+                // The turn the harness reported no usage for: the record marks
+                // the usage unavailable, never as a zero-filled report.
+                history.data(reported, json!({ "usage": "unavailable" }));
+                continue;
+            };
+            let entry = history.point(&scope, "usage", usage.model, turn.at);
+            history.data(entry, usage.counts.data(usage.model, usage.subagent));
+            history.nested_in(entry, reported);
+        }
+        for subagent in TOKEN_SUBAGENTS {
+            let span = history.span(
+                &scope,
+                "subagent",
+                subagent.identity,
+                subagent.at,
+                subagent.duration_ms,
+            );
+            history.data(
+                span,
+                json!({ "agent": subagent.agent, "subagent": subagent.identity }),
+            );
+            let Some(usage) = subagent.usage else {
+                continue;
+            };
+            let entry = history.point(&scope, "usage", usage.model, subagent.at);
+            history.data(entry, usage.counts.data(usage.model, usage.subagent));
+            history.nested_in(entry, span);
+        }
+        history.seed(env)
+    };
+    state(world).seeded = seeded;
+    world.last_change_id = Some(id);
+}
+
 #[when(regex = r#"^the developer generates the development report for "([^"]+)"$"#)]
 fn generate_report_for_change(world: &mut GivnWorld, id: String) {
     let report = {
@@ -371,6 +556,248 @@ fn report_ranks_the_longest_step_first(world: &mut GivnWorld) {
         document.contains("not measured"),
         "the report does not state a missing duration as not measured: {document}"
     );
+}
+
+/// The generated list named `id` as the report renders it: its whole markup.
+fn list(document: &str, id: &str) -> String {
+    let marker = format!("id=\"{id}\"");
+    let start = document
+        .find(&marker)
+        .unwrap_or_else(|| panic!("the report holds no `{id}` list"));
+    let region = &document[start..];
+    let end = region
+        .find("</ul>")
+        .or_else(|| region.find("</ol>"))
+        .expect("the list is never closed");
+    region[..end].to_string()
+}
+
+/// The seeded usage entries, read the way the report reads them.
+fn seeded_usage(world: &GivnWorld) -> Vec<&HistoryEntry> {
+    seeded(world)
+        .iter()
+        .filter(|entry| entry.kind == "usage")
+        .collect()
+}
+
+/// The tokens one seeded entry reports (`data.total_tokens`).
+fn reported_tokens(entry: &HistoryEntry) -> Option<u64> {
+    entry.data.as_ref()?.get("total_tokens")?.as_u64()
+}
+
+/// The model one seeded `usage` entry names as the producer of its counts.
+fn reported_model(entry: &HistoryEntry) -> Option<&str> {
+    entry.data.as_ref()?.get("model")?.as_str()
+}
+
+/// The subagent one seeded `usage` entry names as the owner of its counts.
+fn named_subagent(entry: &HistoryEntry) -> Option<&str> {
+    entry.data.as_ref()?.get("subagent")?.as_str()
+}
+
+/// Whether a seeded usage entry belongs to one seeded subagent span — the same
+/// two links the record carries: the span's own id as the entry's parent, or
+/// the span's identity in the entry's `data.subagent`.
+fn belongs_to(usage: &HistoryEntry, span: &HistoryEntry) -> bool {
+    usage.parent == Some(span.id) || named_subagent(usage) == Some(span.name.as_str())
+}
+
+/// Whether one seeded turn is the turn whose token usage the harness never
+/// reported.
+fn turn_usage_unavailable(entry: &HistoryEntry) -> bool {
+    entry.kind == "turn"
+        && entry
+            .data
+            .as_ref()
+            .and_then(|data| data.get("usage"))
+            .and_then(|value| value.as_str())
+            == Some("unavailable")
+}
+
+/// The `usage` rows of a generated token list, as `(name, tokens)` pairs.
+fn token_rows(document: &str, id: &str, attribute: &str) -> Vec<(String, Option<u64>)> {
+    let marker = format!("{attribute}=\"");
+    list(document, id)
+        .split("<li ")
+        .skip(1)
+        .map(|row| {
+            let name = row
+                .split(&marker)
+                .nth(1)
+                .and_then(|value| value.split('"').next())
+                .unwrap_or_else(|| panic!("a token row names no account: {row}"));
+            let value = row
+                .split("class=\"token-value\">")
+                .nth(1)
+                .and_then(|value| value.split('<').next())
+                .unwrap_or_else(|| panic!("a token row carries no value: {row}"));
+            (name.to_string(), parse_token_value(value))
+        })
+        .collect()
+}
+
+/// The tokens a rendered row names, or `None` for the "unavailable" marker.
+fn parse_token_value(value: &str) -> Option<u64> {
+    if value == "unavailable" {
+        return None;
+    }
+    Some(
+        value
+            .replace(',', "")
+            .parse()
+            .unwrap_or_else(|error| panic!("a token row's value is not a count: {value}: {error}")),
+    )
+}
+
+#[then("the report names the total tokens for the change")]
+fn report_names_the_total_tokens_for_the_change(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let total: u64 = seeded_usage(world)
+        .iter()
+        .filter_map(|entry| reported_tokens(entry))
+        .sum();
+    assert_eq!(
+        model["summary"]["tokens_total"],
+        json!(total),
+        "the model's token total is not the usage the record reports: {model:#?}"
+    );
+    let rendered = tile(&document, "tokens");
+    assert!(
+        rendered.contains(&format_count(total)),
+        "the tokens tile does not name the change's total ({total}): {rendered}"
+    );
+
+    // The turn whose usage the harness never reported is stated, never folded
+    // into the totals as a zero-filled usage.
+    let unavailable = seeded(world)
+        .iter()
+        .filter(|entry| turn_usage_unavailable(entry))
+        .count();
+    assert_eq!(
+        unavailable, 1,
+        "the fixture holds exactly one turn without reported usage"
+    );
+    assert_eq!(
+        model["summary"]["unmeasured_turns"],
+        json!(unavailable),
+        "the model does not count the turns without reported usage: {model:#?}"
+    );
+    assert!(
+        document.contains("unavailable"),
+        "the report does not state the unmeasured turn's usage as unavailable: {document}"
+    );
+}
+
+#[then("the report names the tokens of every subagent")]
+fn report_names_the_tokens_of_every_subagent(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let usage = seeded_usage(world);
+    let spans: Vec<&HistoryEntry> = seeded(world)
+        .iter()
+        .filter(|entry| entry.kind == "subagent")
+        .collect();
+    assert_eq!(
+        spans.len(),
+        2,
+        "the fixture holds two recorded subagents: {spans:#?}"
+    );
+
+    let mut expected: Vec<(String, Option<u64>)> = Vec::new();
+    for span in &spans {
+        let owned = usage
+            .iter()
+            .filter(|entry| belongs_to(entry, span))
+            .filter_map(|entry| reported_tokens(entry))
+            .reduce(|total, tokens| total + tokens);
+        assert!(
+            !expected.iter().any(|(name, _)| name == &span.name.clone()),
+            "the fixture's subagent identities are distinct"
+        );
+        expected.push((span.name.clone(), owned));
+    }
+    let rows = token_rows(&document, "tokens-by-subagent", "data-subagent");
+    let mut sorted = expected.clone();
+    sorted.sort_by(|a, b| a.0.cmp(&b.0));
+    assert_eq!(
+        rows, sorted,
+        "the rendered subagent rows disagree with the usage the record reports: {document}"
+    );
+    let modelled = model["summary"]["tokens_by_subagent"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the model holds no subagent tokens: {model:#?}"));
+    assert_eq!(
+        modelled.len(),
+        expected.len(),
+        "the model invents or drops a subagent row: {model:#?}"
+    );
+    for (name, tokens) in &expected {
+        let row = modelled
+            .iter()
+            .find(|row| row["name"] == json!(name))
+            .unwrap_or_else(|| panic!("the model holds no row for {name}: {model:#?}"));
+        assert_eq!(
+            row["tokens"].as_u64(),
+            *tokens,
+            "the model's row for {name} is not the usage its span owns: {row}"
+        );
+    }
+    assert!(
+        document.contains("unavailable"),
+        "a subagent the harness reports no usage for does not read unavailable: {document}"
+    );
+}
+
+#[then("the report names the token total for every model that produced the usage")]
+fn report_names_the_token_total_for_every_model(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let mut expected: std::collections::BTreeMap<String, u64> = std::collections::BTreeMap::new();
+    for entry in seeded_usage(world) {
+        let (Some(model_name), Some(tokens)) = (reported_model(entry), reported_tokens(entry))
+        else {
+            continue;
+        };
+        *expected.entry(model_name.to_string()).or_default() += tokens;
+    }
+    assert_eq!(
+        expected.len(),
+        2,
+        "the fixture reports usage for two models: {expected:#?}"
+    );
+
+    let modelled = model["summary"]["tokens_by_model"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the model holds no per-model tokens: {model:#?}"));
+    assert_eq!(
+        modelled.len(),
+        expected.len(),
+        "the model invents or drops a model row: {model:#?}"
+    );
+    for (name, tokens) in &expected {
+        let row = modelled
+            .iter()
+            .find(|row| row["name"] == json!(name))
+            .unwrap_or_else(|| panic!("the model holds no row for {name}: {model:#?}"));
+        assert_eq!(
+            row["tokens"].as_u64(),
+            Some(*tokens),
+            "the model's total for {name} is not the usage that model produced: {row}"
+        );
+    }
+
+    let rendered = list(&document, "tokens-by-model");
+    for (name, tokens) in &expected {
+        assert!(
+            rendered.contains(name.as_str()),
+            "the rendered per-model list does not name {name}: {rendered}"
+        );
+        assert!(
+            rendered.contains(&format_count(*tokens)),
+            "the rendered per-model list does not name {name}'s total: {rendered}"
+        );
+    }
 }
 
 #[then("the report names the total wait duration and the number of waits")]

@@ -4,12 +4,13 @@
 //! Like `givn history`, this command runs without a recorder: rendering a
 //! report must never extend the record it renders.
 
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use serde::Serialize;
 
-use crate::history::{HistoryEntry, Scope};
+use crate::history::{HistoryEntry, Scope, USAGE_UNAVAILABLE};
 
 /// The asset's view marker: the model rendered as the page's own text — the
 /// scope line and the summary. The generator fills it, so the written file
@@ -30,6 +31,15 @@ const STEP: &str = "step";
 
 /// The recorded `question` kind: a wait for an answer, its own recorded span.
 const QUESTION: &str = "question";
+
+/// The recorded `turn` kind: one agent turn.
+const TURN: &str = "turn";
+
+/// The recorded `subagent` kind: one subagent span.
+const SUBAGENT: &str = "subagent";
+
+/// The recorded `usage` kind: the token usage one harness reported.
+const USAGE: &str = "usage";
 
 /// Whether a kind records a *measured span*, so an absent duration is a
 /// duration the record does not have — never a point entry, which records an
@@ -105,8 +115,17 @@ pub struct Summary {
     pub unmeasured_waits: usize,
     /// The total of the waits the record measured, or `None` when it measured
     /// none of them.
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub wait_ms: Option<u64>,
+    /// The tokens every reported usage adds up to, or `None` when the record
+    /// reports no usage at all.
+    pub tokens_total: Option<u64>,
+    /// The tokens each model that produced usage accounts for.
+    pub tokens_by_model: Vec<TokenTotal>,
+    /// The tokens each recorded subagent accounts for; a subagent the harness
+    /// reports no usage for reads "unavailable", never a zero.
+    pub tokens_by_subagent: Vec<TokenTotal>,
+    /// The turns whose token usage the harness never reported.
+    pub unmeasured_turns: usize,
 }
 
 impl Summary {
@@ -133,13 +152,141 @@ impl Summary {
                     summary.unmeasured_waits += 1;
                 }
             }
+            if entry.kind == USAGE {
+                add_measured(&mut summary.tokens_total, usage_total(entry));
+            }
+            if usage_unavailable(entry) {
+                summary.unmeasured_turns += 1;
+            }
         }
         summary.elapsed_ms = earliest
             .zip(latest)
             .and_then(|(earliest, latest)| u64::try_from(latest - earliest).ok());
         summary.longest_steps = ranked_steps(entries);
+        let tokens = TokenRollUp::of(entries);
+        summary.tokens_by_model = tokens.model_rows();
+        summary.tokens_by_subagent = tokens.subagent_rows();
         summary
     }
+}
+
+/// One token total: the model or subagent it belongs to and the tokens the
+/// record reports for it. `None` is an account the record reports no usage for:
+/// the row renders "unavailable" rather than a zero.
+#[derive(Debug, Serialize)]
+pub struct TokenTotal {
+    /// The model's or subagent's own name, as the record reports it.
+    pub name: String,
+    /// The tokens the record reports for this account.
+    pub tokens: Option<u64>,
+}
+
+/// The window's usage roll-up: one total per model that produced usage, and one
+/// row per recorded subagent. Both views are the same aggregation over the same
+/// `usage` entries — grouped by the model an entry names, and by the subagent
+/// span an entry belongs to — so the two views can never disagree about a
+/// count, and a session-level usage is never split across subagents by
+/// guesswork.
+#[derive(Debug, Default)]
+struct TokenRollUp {
+    by_model: BTreeMap<String, u64>,
+    by_subagent: BTreeMap<String, Option<u64>>,
+}
+
+impl TokenRollUp {
+    /// The window's entries → both views.
+    fn of(entries: &[HistoryEntry]) -> Self {
+        let usage: Vec<&HistoryEntry> =
+            entries.iter().filter(|entry| entry.kind == USAGE).collect();
+        let mut rollup = TokenRollUp::default();
+        for entry in &usage {
+            let Some(tokens) = usage_total(entry) else {
+                continue;
+            };
+            if let Some(model) = usage_model(entry) {
+                *rollup.by_model.entry(model.to_string()).or_default() += tokens;
+            }
+        }
+        for span in entries.iter().filter(|entry| entry.kind == SUBAGENT) {
+            let owned = usage
+                .iter()
+                .filter(|entry| usage_belongs_to(entry, span))
+                .filter_map(|entry| usage_total(entry))
+                .reduce(|total, tokens| total + tokens);
+            match owned {
+                Some(tokens) => {
+                    let row = rollup
+                        .by_subagent
+                        .entry(span.name.clone())
+                        .or_insert(Some(0));
+                    *row = row.map(|total| total + tokens);
+                }
+                None => {
+                    rollup.by_subagent.entry(span.name.clone()).or_insert(None);
+                }
+            }
+        }
+        rollup
+    }
+
+    /// The per-model view the summary carries, one row per model that produced
+    /// usage.
+    fn model_rows(&self) -> Vec<TokenTotal> {
+        self.by_model
+            .iter()
+            .map(|(name, tokens)| TokenTotal {
+                name: name.clone(),
+                tokens: Some(*tokens),
+            })
+            .collect()
+    }
+
+    /// The per-subagent view the summary carries, one row per recorded
+    /// subagent; a subagent the record reports no usage for keeps `None`.
+    fn subagent_rows(&self) -> Vec<TokenTotal> {
+        self.by_subagent
+            .iter()
+            .map(|(name, tokens)| TokenTotal {
+                name: name.clone(),
+                tokens: *tokens,
+            })
+            .collect()
+    }
+}
+
+/// The tokens one `usage` entry reports (`data.total_tokens`), or `None` where
+/// the record reports none — never read as a zero.
+fn usage_total(entry: &HistoryEntry) -> Option<u64> {
+    entry.data.as_ref()?.get("total_tokens")?.as_u64()
+}
+
+/// The model one `usage` entry names as the producer of its counts.
+fn usage_model(entry: &HistoryEntry) -> Option<&str> {
+    entry.data.as_ref()?.get("model")?.as_str()
+}
+
+/// The subagent one `usage` entry names as the owner of its counts.
+fn usage_named_subagent(entry: &HistoryEntry) -> Option<&str> {
+    entry.data.as_ref()?.get("subagent")?.as_str()
+}
+
+/// Whether one usage entry belongs to one subagent span: the entry is nested in
+/// the span (the record's own parent link), or it names the span's identity.
+fn usage_belongs_to(usage: &HistoryEntry, span: &HistoryEntry) -> bool {
+    usage.parent == Some(span.id) || usage_named_subagent(usage) == Some(span.name.as_str())
+}
+
+/// Whether one entry is a turn whose token usage the harness never reported:
+/// the record marks the turn's `data.usage` unavailable, so the report states
+/// the gap instead of folding the turn in as zero.
+fn usage_unavailable(entry: &HistoryEntry) -> bool {
+    entry.kind == TURN
+        && entry
+            .data
+            .as_ref()
+            .and_then(|data| data.get("usage"))
+            .and_then(|value| value.as_str())
+            == Some(crate::history::USAGE_UNAVAILABLE)
 }
 
 /// One ranked step: the recorded step and the duration it was measured with.
@@ -331,11 +478,27 @@ fn render_summary(summary: &Summary) -> String {
         Some(&wait_note(summary)),
     ));
     html.push('\n');
+    html.push_str(&tile(
+        "tokens",
+        "Tokens",
+        &summary
+            .tokens_total
+            .map_or_else(|| USAGE_UNAVAILABLE.to_string(), format_count),
+        None,
+    ));
+    html.push('\n');
     if summary.unmeasured_durations > 0 {
         html.push_str(&format!(
             "<p class=\"summary-note\" data-unmeasured-durations=\"{}\">{} not measured</p>\n",
             summary.unmeasured_durations,
             unmeasured_note(summary.unmeasured_durations)
+        ));
+    }
+    if summary.unmeasured_turns > 0 {
+        html.push_str(&format!(
+            "<p class=\"summary-note\" data-unmeasured-turns=\"{}\">{}</p>\n",
+            summary.unmeasured_turns,
+            unmeasured_turns_note(summary.unmeasured_turns)
         ));
     }
     html.push_str("<h2>Longest steps</h2>\n");
@@ -349,8 +512,66 @@ fn render_summary(summary: &Summary) -> String {
             format_duration(step.duration_ms),
         ));
     }
-    html.push_str("</ol>\n</section>");
+    html.push_str("</ol>\n");
+    html.push_str("<h2>Tokens per model</h2>\n");
+    html.push_str(&token_list(
+        "tokens-by-model",
+        "data-model",
+        &summary.tokens_by_model,
+    ));
+    html.push('\n');
+    html.push_str("<h2>Tokens per subagent</h2>\n");
+    html.push_str(&token_list(
+        "tokens-by-subagent",
+        "data-subagent",
+        &summary.tokens_by_subagent,
+    ));
+    html.push_str("\n</section>");
     html
+}
+
+/// One token list: one row per model or subagent, naming the account and the
+/// tokens the record reports for it. A row the record reports no usage for
+/// renders "unavailable", never a zero.
+fn token_list(id: &str, attribute: &str, totals: &[TokenTotal]) -> String {
+    let mut html = format!("<ul class=\"token-totals\" id=\"{id}\">\n");
+    for total in totals {
+        html.push_str(&format!(
+            "<li {attribute}=\"{}\"><span class=\"token-name\">{}</span><span class=\"token-value\">{}</span></li>\n",
+            escape(&total.name),
+            escape(&total.name),
+            total
+                .tokens
+                .map_or_else(|| USAGE_UNAVAILABLE.to_string(), format_count),
+        ));
+    }
+    html.push_str("</ul>");
+    html
+}
+
+/// An exact count as the report renders it (thousands separated). A summary
+/// figure that hid its magnitude behind a rounded unit would be worse than a
+/// long one.
+pub fn format_count(count: u64) -> String {
+    let digits = count.to_string();
+    let mut formatted = String::with_capacity(digits.len() + digits.len() / 3);
+    for (index, digit) in digits.char_indices() {
+        if index > 0 && (digits.len() - index).is_multiple_of(3) {
+            formatted.push(',');
+        }
+        formatted.push(digit);
+    }
+    formatted
+}
+
+/// The note the turns without reported usage render as: the count and the
+/// missing data's own word, never a silent zero.
+fn unmeasured_turns_note(turns: usize) -> String {
+    if turns == 1 {
+        "1 turn without token usage: unavailable".to_string()
+    } else {
+        format!("{turns} turns without token usage: unavailable")
+    }
 }
 
 /// The waiting tile's note: how many waits the record holds, and — where the
