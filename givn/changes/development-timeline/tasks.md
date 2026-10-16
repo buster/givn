@@ -6560,7 +6560,7 @@ name it.
 
 ## Task 30 — `The report names the agent's fan-out into small subagents` (`development-report`, added)
 
-- [ ] **Scenario: `The report names the agent's fan-out into small subagents`**
+- [x] **Scenario: `The report names the agent's fan-out into small subagents`**
   - Design constraints:
     - Summary field: the number of subagents and their combined duration, from
       the `subagent`-kind entries (Task 13). This is the view that makes "a dozen
@@ -6577,27 +6577,136 @@ name it.
     - Assertion shape: the written report names the number of subagents and their
       combined duration.
     - RED expected failure: the fan-out Then step is undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report names the agent's fan-out into small subagents"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report names the agent's fan-out into small subagents"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report names the agent's fan-out into small subagents
+           ✘  Given a change "demo" whose record holds many short subagents
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:40:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+
+        thread 'main' (2604757) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — neither the fan-out Given nor the
+        subagent-count Then matches a function, so the run stops on the first
+        unbound step. The scenario's contract did not hold before this revision:
+        the summary carried no subagent count and no combined subagent duration
+        at all (`Summary` had waits and tokens only), so the model could not
+        name a fan-out even if the step had been bound.
         ```
-  - [ ] **GREEN** — implement the subagent count and combined duration. Files:
+  - [x] **GREEN** — implement the subagent count and combined duration. Files:
         `src/cli/timeline.rs`, `assets/timeline/report.html`,
         `tests/steps/development_report_steps.rs`. Compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.86s
+        BUILD=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report names the agent's fan-out into small subagents"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 8.06s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report names the agent's fan-out into small subagents
+           ✔  Given a change "demo" whose record holds many short subagents
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report names the number of subagents and their combined duration
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        3 steps (3 passed)
+        EXIT=0
+
+        Production files created/modified by this GREEN step:
+        - `src/cli/timeline.rs` (modified — `Summary` gains `subagents` (the
+          count of recorded `subagent`-kind spans), `subagent_ms` (their combined
+          measured duration, `None` while the record measured none) and
+          `unmeasured_subagents` (the spans the record does not time);
+          `Summary::of` fills them in the one pass it already makes over the
+          window, through the same `add_measured` totals Task 23/26 introduced so
+          an unmeasured subagent is never added as zero; `render_summary` gains
+          the `subagents` tile — its value the combined duration (or "not
+          measured"), its note the fan-out's size through `subagent_note` /
+          `subagent_count`. The fan-out is computed from the recorded
+          `subagent` entries only: no label is read, no spawn relationship is
+          inferred);
+        - `tests/steps/development_report_steps.rs` (modified — the fan-out
+          fixture (`FAN_OUT_SUBAGENTS`, six short subagents nested in one turn,
+          one of them untimed), the Given that seeds it through the
+          seeded-history builder's own append path, and the Then step, which
+          derives the expected count and combined duration from the seeded
+          record, proves the fixture's spawn relation is the record's `parent`
+          link (no subagent label names the turn) and reads the rendered tile);
+        - `assets/timeline/report.html` — unchanged: the new tile is the
+          existing `.tile` / `.tile-note` primitive, so the asset needed no new
+          style and the scenario's report is still one self-contained file.
+
+        The fixture's numbers: six subagents (20 s, 15 s, 12 s, 8 s, one
+        unmeasured, 5 s) nested in a 1 200 s turn → the tile reads
+        `1 m` with the note `6 subagents · 1 not measured`, never the turn's
+        20 m, and the combined duration (60 s) is deliberately neither the
+        turn's duration nor a per-subagent guess.
         ```
-  - [ ] **REFACTOR** — reuse Task 26's aggregation for the subagent durations;
+  - [x] **REFACTOR** — reuse Task 26's aggregation for the subagent durations;
         re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The waits tile and the subagents tile now share one counted-noun helper:
+        `wait_count` and `subagent_count` are replaced by `counted(count, noun)`,
+        and both notes are the same shape — the count plus `· N not measured`
+        only where the record withholds a duration — so the two views cannot
+        drift apart in wording or in the zero-vs-unmeasured rule. No behaviour
+        change: same values, same notes for every record.
+
+        $ cargo fmt --all -- --check
+        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.29s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report names the agent's fan-out into small subagents"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 20.00s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report names the agent's fan-out into small subagents
+           ✔  Given a change "demo" whose record holds many short subagents
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report names the number of subagents and their combined duration
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        3 steps (3 passed)
+        EXIT=0
+
+        Regression run of the scenario whose aggregation the refactor touched
+        (the waits tile reads its count through the same helper now):
+
+        $ ... --exact "...::The report totals the time spent waiting for questions"
+        1 feature, 1 scenario (1 passed), 3 steps (3 passed)        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `PENDING` — `feat(development-report): <release note>` with
         the scenario title `The report names the agent's fan-out into small
         subagents` in the body. Record the revision identifier.
+        ```
+        <!-- paste the commit output + the revision's file list -->
+        ```
 
 ## Task 31 — `The report needs no network access to render` (`development-report`, added)
 

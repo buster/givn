@@ -236,6 +236,40 @@ const TOKEN_SUBAGENTS: [SubagentFixture; 2] = [
     },
 ];
 
+/// The subagents the fan-out fixture's record holds: the identity each span ran
+/// under, the agent definition that ran it, its recorded end, and the duration
+/// the harness measured for it. `None` is a subagent the record does not time —
+/// it still counts toward the fan-out and never toward the combined duration.
+const FAN_OUT_SUBAGENTS: [(&str, &str, &str, Option<u64>); 6] = [
+    ("Scout", "explore", "2026-10-16T09:02:00.000Z", Some(20_000)),
+    ("Scout", "explore", "2026-10-16T09:05:00.000Z", Some(15_000)),
+    (
+        "Architect",
+        "design",
+        "2026-10-16T09:08:00.000Z",
+        Some(12_000),
+    ),
+    ("Scout", "explore", "2026-10-16T09:11:00.000Z", Some(8_000)),
+    ("Reviewer", "review", "2026-10-16T09:14:00.000Z", None),
+    (
+        "Helper",
+        "implement",
+        "2026-10-16T09:17:00.000Z",
+        Some(5_000),
+    ),
+];
+
+/// The turn the fan-out fixture's subagents were spawned from: its recorded end
+/// and the duration it was measured with. The turn's label names no subagent
+/// and no subagent's label names the turn, so the record's own `parent` link is
+/// the only spawn relationship in the fixture — a report that inferred the
+/// fan-out from label text cannot pass.
+const FAN_OUT_TURN: (&str, u64) = ("2026-10-16T09:20:00.000Z", 1_200_000);
+
+/// The turn's bounded subject label, the text a label-scanning fan-out would
+/// have to match to find its spawned subagents.
+const FAN_OUT_TURN_LABEL: &str = "implement the fan-out summary";
+
 /// State for the development-report scenarios: the report the last generation
 /// step wrote, so a following step reads the file the command produced rather
 /// than the store, and the record the scenario's Given seeded, so the
@@ -1095,6 +1129,117 @@ fn report_orders_the_entries_by_their_recorded_end_time(world: &mut GivnWorld) {
     assert!(
         ticks.windows(2).all(|pair| pair[0] < pair[1]),
         "the drawn axis ticks are not ascending in time: {ticks:?}"
+    );
+}
+
+#[given(regex = r#"^a change "([^"]+)" whose record holds many short subagents$"#)]
+fn change_with_many_short_subagents(world: &mut GivnWorld, id: String) {
+    let scope = Scope::Change { id: id.clone() };
+    let seeded = {
+        let env = project_root(world);
+        run_fixture_command(env, &["new", &id]);
+        let mut history = support::SeededHistory::new();
+        let turn = history.span(&scope, "turn", "turn", FAN_OUT_TURN.0, FAN_OUT_TURN.1);
+        history.label(turn, FAN_OUT_TURN_LABEL);
+        for (index, (identity, agent, at, duration)) in FAN_OUT_SUBAGENTS.into_iter().enumerate() {
+            let subagent = match duration {
+                Some(duration_ms) => history.span(&scope, "subagent", identity, at, duration_ms),
+                None => history.point(&scope, "subagent", identity, at),
+            };
+            history.label(subagent, &format!("{agent} subagent {index}"));
+            history.data(subagent, json!({ "agent": agent, "subagent": identity }));
+            history.nested_in(subagent, turn);
+            assert_eq!(
+                subagent,
+                turn + 1 + index,
+                "the fixture nests every subagent in its spawning turn"
+            );
+        }
+        history.seed(env)
+    };
+    state(world).seeded = seeded;
+    world.last_change_id = Some(id);
+}
+
+#[then("the report names the number of subagents and their combined duration")]
+fn report_names_the_number_of_subagents_and_their_combined_duration(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let subagents: Vec<&HistoryEntry> = seeded(world)
+        .iter()
+        .filter(|entry| entry.kind == "subagent")
+        .collect();
+    assert!(
+        subagents.len() >= 3,
+        "the fixture must hold a fan-out of several subagents: {subagents:#?}"
+    );
+    let combined: u64 = subagents.iter().filter_map(|entry| entry.duration_ms).sum();
+    let unmeasured = subagents
+        .iter()
+        .filter(|entry| entry.duration_ms.is_none())
+        .count();
+    assert_eq!(
+        unmeasured, 1,
+        "the fixture holds one subagent the record does not time"
+    );
+
+    // The fan-out is the recorded spans: every subagent is a span the record
+    // nests in its spawning turn, and no subagent's label names that turn (nor
+    // does the turn's label name a subagent), so a report that inferred the
+    // spawn relationship from label text would find none of them.
+    let turn = seeded(world)
+        .iter()
+        .find(|entry| entry.kind == "turn")
+        .expect("the fixture nests its subagents in a turn");
+    for subagent in &subagents {
+        assert_eq!(
+            subagent.parent,
+            Some(turn.id),
+            "a subagent is not nested in the recorded turn: {subagent:#?}"
+        );
+        let label = subagent.label.as_deref().unwrap_or_default();
+        assert!(
+            !label.contains(FAN_OUT_TURN_LABEL),
+            "a subagent's label names its spawning turn: {label}"
+        );
+    }
+
+    assert_eq!(
+        model["summary"]["subagents"],
+        json!(subagents.len()),
+        "the model does not count the recorded subagents: {model:#?}"
+    );
+    assert_eq!(
+        model["summary"]["subagent_ms"],
+        json!(combined),
+        "the model's combined subagent duration is not the durations the record measured: {model:#?}"
+    );
+    assert_eq!(
+        model["summary"]["unmeasured_subagents"],
+        json!(unmeasured),
+        "the model does not state the subagents the record does not time: {model:#?}"
+    );
+    assert_ne!(
+        combined, FAN_OUT_TURN.1,
+        "the fixture must make the subagents' combined duration and the turn's distinguishable"
+    );
+
+    let rendered = tile(&document, "subagents");
+    assert!(
+        rendered.contains(&format!("{} subagents", subagents.len())),
+        "the subagents tile does not name the fan-out's size: {rendered}"
+    );
+    assert!(
+        rendered.contains(&format_duration(combined)),
+        "the subagents tile does not name the subagents' combined duration: {rendered}"
+    );
+    assert!(
+        !rendered.contains(&format_duration(FAN_OUT_TURN.1)),
+        "the subagents tile shows the spawning turn's duration instead of the subagents': {rendered}"
+    );
+    assert!(
+        rendered.contains("not measured"),
+        "the untimed subagent is not stated as not measured: {rendered}"
     );
 }
 

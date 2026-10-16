@@ -118,6 +118,17 @@ pub struct Summary {
     /// The total of the waits the record measured, or `None` when it measured
     /// none of them.
     pub wait_ms: Option<u64>,
+    /// The recorded subagent spans the window holds — the agent's fan-out. The
+    /// count comes from the record's own `subagent` entries, never from a spawn
+    /// relationship inferred out of label text.
+    pub subagents: usize,
+    /// The combined duration of the subagents the record measured, or `None`
+    /// when it measured none of them. A subagent the record does not time is
+    /// excluded from the total while still counting as a subagent.
+    pub subagent_ms: Option<u64>,
+    /// The subagent spans the record does not time; the combined duration never
+    /// adds them as zero.
+    pub unmeasured_subagents: usize,
     /// The tokens every reported usage adds up to, or `None` when the record
     /// reports no usage at all.
     pub tokens_total: Option<u64>,
@@ -147,6 +158,12 @@ impl Summary {
                 summary.waits += 1;
                 if !add_measured(&mut summary.wait_ms, entry.duration_ms) {
                     summary.unmeasured_waits += 1;
+                }
+            }
+            if entry.kind == SUBAGENT {
+                summary.subagents += 1;
+                if !add_measured(&mut summary.subagent_ms, entry.duration_ms) {
+                    summary.unmeasured_subagents += 1;
                 }
             }
             if entry.kind == USAGE {
@@ -731,6 +748,15 @@ fn render_summary(summary: &Summary) -> String {
     ));
     html.push('\n');
     html.push_str(&tile(
+        "subagents",
+        "Subagents",
+        &summary
+            .subagent_ms
+            .map_or_else(|| "not measured".to_string(), format_duration),
+        Some(&subagent_note(summary)),
+    ));
+    html.push('\n');
+    html.push_str(&tile(
         "tokens",
         "Tokens",
         &summary
@@ -830,19 +856,35 @@ fn unmeasured_turns_note(turns: usize) -> String {
 /// record does not time some of them — that they are not measured, so a missing
 /// duration is never read as a zero wait.
 fn wait_note(summary: &Summary) -> String {
-    let mut note = wait_count(summary.waits);
+    let mut note = counted(summary.waits, "wait");
     if summary.unmeasured_waits > 0 {
         note.push_str(&format!(" · {} not measured", summary.unmeasured_waits));
     }
     note
 }
 
-/// `n waits`, in the singular for one.
-fn wait_count(waits: usize) -> String {
-    if waits == 1 {
-        "1 wait".to_string()
+/// The subagents tile's note: how many subagent spans the record holds — the
+/// agent's fan-out, so "a dozen tiny subagents whose combined overhead exceeds
+/// the work" is visible — and, where the record does not time some of them,
+/// that they are not measured, so a missing duration is never read as a
+/// zero-length subagent.
+fn subagent_note(summary: &Summary) -> String {
+    let mut note = counted(summary.subagents, "subagent");
+    if summary.unmeasured_subagents > 0 {
+        note.push_str(&format!(" · {} not measured", summary.unmeasured_subagents));
+    }
+    note
+}
+
+/// A counted noun as the report renders it: the count and the noun, in the
+/// singular for one. Every duration the summary totals renders its count this
+/// way, so a waiter, a subagent, and any later span kind can never disagree
+/// about how a count reads.
+fn counted(count: usize, noun: &str) -> String {
+    if count == 1 {
+        format!("1 {noun}")
     } else {
-        format!("{waits} waits")
+        format!("{count} {noun}s")
     }
 }
 
