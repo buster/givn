@@ -8621,7 +8621,7 @@ name it.
 
 ## Task E5 — `Consumer generates the development report for a change` (`@e2e`, `development-report`)
 
-- [ ] **Scenario: `Consumer generates the development report for a change`**
+- [x] **Scenario: `Consumer generates the development report for a change`**
   - Design constraints:
     - Matrix row: `development-report: generate the development report for a
       change` — real interface **CLI**, driving mechanism `common::run_givn`:
@@ -8805,9 +8805,33 @@ name it.
         design-review · tasks · implement` and, beneath it, the record's steps —
         the post-transition step's own span drawn under `implement`.
         ```
-  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+  - [x] **COMMIT** — `ec81a9c34c9fc5aa084dcbf61de8e00c803dcfe6` — `test(e2e): <release note>` with the scenario
         title `Consumer generates the development report for a change` in the
         body (including the two evidence PNGs). Record the revision identifier.
+        ```
+        $ ./target/debug/givn commit -m "test(e2e): Givn records the development process of every change and ideation — … opens in a browser.
+
+        Consumer generates the development report for a change"
+        [17:49:41] committed revision on the Git backend
+
+        $ git show --stat --format='%H' ec81a9c3
+        ec81a9c34c9fc5aa084dcbf61de8e00c803dcfe6
+         .../desktop.png                                    | Bin 0 -> 118181 bytes
+         .../mobile.png                                     | Bin 0 -> 49447 bytes
+         .../development-report.feature                     |   2 +-
+         givn/changes/development-timeline/tasks.md         | 154 +++++++++++++-
+         src/cli/timeline.rs                                | 200 +++++++++++++++++-
+         tests/steps/development_report_e2e_steps.rs        | 235 ++++++++++++++++++++-
+         tests/steps/development_timeline_support.rs        | 134 ++++++++++++
+         7 files changed, 702 insertions(+), 23 deletions(-)
+
+        The revision is this scenario's RED+GREEN+REFACTOR as one atomic
+        commit: the `@wip` removal from this scenario alone, the phase
+        derivation and its rendering in `src/cli/timeline.rs`, the scenario's
+        own steps with the shared fixture builder, this task file's evidence,
+        and the scenario's one evidence pair. No other scenario's tag, step, or
+        capture is touched.
+        ```
 
 ## Task E6 — `Consumer opens the generated development report in a browser` (`@e2e`, `development-report`, Scenario Outline, `change` and `topic` rows)
 
