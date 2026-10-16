@@ -5890,7 +5890,7 @@ name it.
 
 ## Task 26 — `The report totals the time spent waiting for questions` (`development-report`, added)
 
-- [ ] **Scenario: `The report totals the time spent waiting for questions`**
+- [x] **Scenario: `The report totals the time spent waiting for questions`**
   - Design constraints:
     - Summary field: the question-wait **total** and **count** built from the
       `question`-kind entries' measured durations (Task 14's entries). A wait
@@ -6023,9 +6023,25 @@ name it.
            ✔  Then the report ranks the longest step first
         1 feature, 1 scenario (1 passed), 3 steps (3 passed)        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `8dbdb6abff389ee7dce1bcac3d997ada5a730ea6` — `feat(development-report): <release note>` with
         the scenario title `The report totals the time spent waiting for
         questions` in the body. Record the revision identifier.
+        ```
+        $ GIVN_ATTRIBUTION_ACTIVE=1 GIVN_ATTRIBUTION_LLM=deepseek/deepseek-flash \
+          GIVN_ATTRIBUTION_REASONING=max GIVN_ATTRIBUTION_HARNESS=omp \
+          ./target/debug/givn commit -m "feat(development-report): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        The report totals the time spent waiting for questions"
+        [16:35:44] committed revision on the Git backend
+        EXIT=0
+
+        Revision 8dbdb6abff389ee7dce1bcac3d997ada5a730ea6 touches exactly this
+        scenario's files: `src/cli/timeline.rs` (the wait fields and the Waiting
+        tile), `tests/steps/development_report_steps.rs` (the wait fixture Given
+        and the totals Then), the delta `.feature`'s `@wip` removal, and this
+        task file's evidence. The asset is unchanged — the tile primitive the
+        design system already styles carries the new tile.
+        ```
 
 ## Task 27 — `The report totals token usage per turn and per subagent` (`development-report`, added)
 
