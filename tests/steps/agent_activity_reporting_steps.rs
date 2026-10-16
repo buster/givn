@@ -259,6 +259,7 @@ const REPORTER_ASSETS: &[(&str, &str)] = &[
     ("omp", ".omp/hooks/pre/givn-timeline.js"),
     ("opencode", ".opencode/plugins/givn-timeline.js"),
     ("claude", ".claude/hooks/givn-timeline.sh"),
+    ("maki", ".maki/lua/givn-timeline.lua"),
 ];
 
 /// The Claude Code events the development reporter registers for: the events
@@ -354,6 +355,7 @@ fn guidance_includes_the_development_reporter(world: &mut GivnWorld, target: Str
         "omp" => include_str!("../../assets/agent-integrations/omp/givn-timeline.js"),
         "opencode" => include_str!("../../assets/agent-integrations/opencode/givn-timeline.js"),
         "claude" => include_str!("../../assets/agent-integrations/claude/givn-timeline.sh"),
+        "maki" => include_str!("../../assets/agent-integrations/maki/givn-timeline.lua"),
         other => unreachable!("unhandled reporter target `{other}`"),
     };
     assert_eq!(
@@ -384,6 +386,46 @@ fn guidance_includes_the_development_reporter(world: &mut GivnWorld, target: Str
             );
         }
         assert_claude_reporter_registration(&root);
+    }
+    if target == "maki" {
+        assert_maki_merged_files(&root);
+    }
+}
+
+/// The Maki reporter is reachable only through `.maki/init.lua`: assert the
+/// generated project carries the exact fail-soft fence (never the
+/// `pcall(require, …).setup()` form, which indexes the boolean status) and the
+/// `.maki/plugin.toml` grants the reporter's calls, with all six keys named on
+/// the created file.
+fn assert_maki_merged_files(root: &std::path::Path) {
+    let init = generated_file(root, ".maki/init.lua", "Maki init.lua");
+    let fence = [
+        "-- givn:begin:timeline",
+        "local ok, reporter = pcall(require, \"givn-timeline\")",
+        "if ok and type(reporter) == \"table\" and reporter.setup then",
+        "  reporter.setup()",
+        "end",
+        "-- givn:end:timeline",
+    ];
+    assert!(
+        init.contains(&fence.join("\n")),
+        "the generated Maki init.lua fence is not the fail-soft body: {init:?}"
+    );
+    let grants = generated_file(root, ".maki/plugin.toml", "Maki plugin.toml");
+    for (key, value) in [
+        ("fs_read", "true"),
+        ("fs_write", "true"),
+        ("run", "true"),
+        ("net", "false"),
+        ("env", "false"),
+        ("agent", "false"),
+    ] {
+        assert!(
+            grants
+                .lines()
+                .any(|line| line.trim() == format!("{key} = {value}")),
+            "the generated Maki plugin.toml does not name `{key} = {value}`: {grants:?}"
+        );
     }
 }
 
@@ -1277,6 +1319,260 @@ fn entry_carries_the_wait_duration(world: &mut GivnWorld) {
         entry["outcome"],
         json!("ok"),
         "a resumed wait is not recorded as ok: {entry}"
+    );
+}
+
+#[given("a project with the generated Maki development reporter")]
+fn project_with_generated_maki_reporter(world: &mut GivnWorld) {
+    // The reporter is installed by the real `givn init --agents maki`, never a
+    // hand-written file, and it is driven through the real `maki` binary.
+    let env = crate::common::make_bare_root();
+    support::initialize_with_maki_reporter(&env);
+    world.env = Some(env);
+}
+
+/// The completed tool call the Maki fixture reports: the harness's own call id,
+/// the tool, and the measured duration `ToolDone` carries for a call that ran.
+const MAKI_TOOL: &str = "Bash";
+const MAKI_TOOL_CALL: &str = "maki-tool-1";
+const MAKI_TOOL_SUBJECT: &str = "cargo test --locked --test features_runner";
+const MAKI_TOOL_MS: u64 = 1240;
+
+/// The tool call the Maki fixture reports that never ran: `ToolDone` without
+/// `duration_ms` and without `input` — a cancelled call, whose entry must carry
+/// no measured duration at all.
+const MAKI_CANCELLED_TOOL: &str = "Edit";
+const MAKI_CANCELLED_CALL: &str = "maki-tool-2";
+
+/// The subagent the Maki fixture reports, under the harness's own task id and
+/// the agent definition's name.
+const MAKI_SUBAGENT: &str = "maki-task-7";
+const MAKI_SUBAGENT_AGENT: &str = "Explore";
+
+/// The Maki project's root, as the scenario's Given left it.
+fn maki_project(world: &GivnWorld) -> &crate::common::TestEnv {
+    world
+        .env
+        .as_ref()
+        .expect("a project root is required first")
+}
+
+/// The record's entries the Maki scenario reads: the store the reporters really
+/// wrote, one JSON object per line.
+fn maki_entries(world: &GivnWorld) -> Vec<Value> {
+    support::record_entries(&maki_project(world).root())
+}
+
+#[when("the Maki harness reports a completed tool call")]
+fn maki_reports_a_completed_tool_call(world: &mut GivnWorld) {
+    let env = maki_project(world);
+    support::run_maki_driver(
+        env,
+        &[
+            (
+                "ToolStart",
+                serde_json::json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "tool_id": MAKI_TOOL_CALL,
+                    "tool": MAKI_TOOL,
+                }),
+            ),
+            (
+                "ToolDone",
+                serde_json::json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "tool_id": MAKI_TOOL_CALL,
+                    "tool": MAKI_TOOL,
+                    "is_error": false,
+                    "bytes": 12,
+                    "duration_ms": MAKI_TOOL_MS,
+                    "input": { "command": MAKI_TOOL_SUBJECT },
+                }),
+            ),
+        ],
+    );
+}
+
+#[then("the record holds that tool call with the duration the harness reported")]
+fn record_holds_the_tool_call_with_the_reported_duration(world: &mut GivnWorld) {
+    let entries = maki_entries(world);
+    let recorded: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| {
+            entry["source"] == json!("agent")
+                && entry["kind"] == json!("tool")
+                && entry["label"] == json!(MAKI_TOOL_SUBJECT)
+        })
+        .collect();
+    assert_eq!(
+        recorded.len(),
+        1,
+        "expected exactly the reported tool call in the record; the record holds: {entries:#?}"
+    );
+    let entry = recorded[0];
+    assert_eq!(
+        entry["name"],
+        json!(MAKI_TOOL),
+        "the recorded tool call does not name the tool: {entry}"
+    );
+    assert_eq!(
+        entry["duration_ms"],
+        json!(MAKI_TOOL_MS),
+        "the tool call does not keep the harness's own duration: {entry}"
+    );
+    assert_eq!(
+        entry["outcome"],
+        json!("ok"),
+        "a completed tool call is not recorded as ok: {entry}"
+    );
+}
+
+#[when("the Maki harness reports a tool call that never ran")]
+fn maki_reports_a_tool_call_that_never_ran(world: &mut GivnWorld) {
+    let env = maki_project(world);
+    // A cancelled call: the harness reports the tool and the outcome, and
+    // neither a duration nor an input.
+    support::run_maki_driver(
+        env,
+        &[
+            (
+                "ToolStart",
+                serde_json::json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "tool_id": MAKI_CANCELLED_CALL,
+                    "tool": MAKI_CANCELLED_TOOL,
+                }),
+            ),
+            (
+                "ToolDone",
+                serde_json::json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "tool_id": MAKI_CANCELLED_CALL,
+                    "tool": MAKI_CANCELLED_TOOL,
+                    "is_error": false,
+                    "bytes": 0,
+                }),
+            ),
+        ],
+    );
+}
+
+#[then("the record holds that tool call without a measured duration")]
+fn record_holds_the_tool_call_without_a_measured_duration(world: &mut GivnWorld) {
+    let entries = maki_entries(world);
+    let recorded: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| {
+            entry["source"] == json!("agent")
+                && entry["kind"] == json!("tool")
+                && entry["name"] == json!(MAKI_CANCELLED_TOOL)
+        })
+        .collect();
+    assert_eq!(
+        recorded.len(),
+        1,
+        "expected exactly the never-run tool call in the record; the record holds: {entries:#?}"
+    );
+    let entry = recorded[0];
+    // Gap honesty: a duration the harness never measured is absent, never zero.
+    assert!(
+        entry.get("duration_ms").is_none(),
+        "the never-run tool call was recorded with a fabricated duration: {entry}"
+    );
+    assert_eq!(
+        entry["label"],
+        json!(MAKI_CANCELLED_TOOL),
+        "the never-run tool call is not labelled with the tool it never ran: {entry}"
+    );
+}
+
+#[when("the Maki harness reports a subagent that started and completed")]
+fn maki_reports_a_subagent(world: &mut GivnWorld) {
+    let env = maki_project(world);
+    support::run_maki_driver(
+        env,
+        &[
+            (
+                "TaskStatusChanged",
+                serde_json::json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "id": MAKI_SUBAGENT,
+                    "name": MAKI_SUBAGENT_AGENT,
+                    "status": "working",
+                }),
+            ),
+            (
+                "TaskStatusChanged",
+                serde_json::json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "id": MAKI_SUBAGENT,
+                    "name": MAKI_SUBAGENT_AGENT,
+                    "status": "done",
+                }),
+            ),
+        ],
+    );
+}
+
+#[then("the record holds that subagent's span")]
+fn record_holds_the_subagents_span(world: &mut GivnWorld) {
+    let entries = maki_entries(world);
+    let recorded: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| {
+            entry["source"] == json!("agent")
+                && entry["kind"] == json!("subagent")
+                && entry["name"] == json!(MAKI_SUBAGENT)
+        })
+        .collect();
+    assert_eq!(
+        recorded.len(),
+        1,
+        "expected exactly the reported subagent span in the record; the record holds: {entries:#?}"
+    );
+    let entry = recorded[0];
+    assert_eq!(
+        entry["data"]["agent"],
+        json!(MAKI_SUBAGENT_AGENT),
+        "the subagent span does not name the agent definition that ran it: {entry}"
+    );
+    assert!(
+        entry["duration_ms"].is_u64(),
+        "the subagent span carries no measured duration: {entry}"
+    );
+    assert_eq!(
+        entry["outcome"],
+        json!("ok"),
+        "a completed subagent is not recorded as ok: {entry}"
+    );
+}
+
+#[then("the record marks that subagent's token usage as unavailable")]
+fn record_marks_the_subagents_usage_unavailable(world: &mut GivnWorld) {
+    let entries = maki_entries(world);
+    let entry = entries
+        .iter()
+        .find(|entry| {
+            entry["source"] == json!("agent")
+                && entry["kind"] == json!("subagent")
+                && entry["name"] == json!(MAKI_SUBAGENT)
+        })
+        .unwrap_or_else(|| panic!("the reported subagent span is missing: {entries:#?}"));
+    // Maki's `TurnEnd` covers the main session only, so a subagent's tokens are
+    // unavailable through this harness: the span says so, and no zero-filled
+    // usage entry is fabricated for it.
+    assert_eq!(
+        entry["data"]["usage"],
+        json!("unavailable"),
+        "the subagent span does not mark its token usage unavailable: {entry}"
+    );
+    let usages: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| entry["source"] == json!("agent") && entry["kind"] == json!("usage"))
+        .collect();
+    assert!(
+        usages.is_empty(),
+        "a usage entry was fabricated for a subagent Maki never measured: {usages:#?}"
     );
 }
 

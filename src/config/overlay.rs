@@ -126,7 +126,7 @@ pub fn load_effective() -> Result<Manifest> {
 }
 
 /// The known agent target names (canonical, no leading dot).
-pub const KNOWN_AGENT_TARGETS: [&str; 4] = ["opencode", "agents", "claude", "omp"];
+pub const KNOWN_AGENT_TARGETS: [&str; 5] = ["opencode", "agents", "claude", "omp", "maki"];
 
 /// The resolved generated-rules policy.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

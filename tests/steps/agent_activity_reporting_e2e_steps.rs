@@ -138,6 +138,7 @@ fn driver_for(target: &str) -> fn(&TestEnv, &[HarnessActivity]) -> Output {
         "omp" => support::drive_omp_reporter,
         "opencode" => support::drive_opencode_reporter,
         "claude" => support::drive_claude_reporter,
+        "maki" => support::drive_maki_reporter,
         other => panic!("no development reporter is known for the agent target `{other}`"),
     }
 }

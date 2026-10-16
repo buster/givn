@@ -253,6 +253,10 @@ pub fn ignore_entries() -> Vec<String> {
         ".claude/settings.local.json".to_string(),
         ".omp/hooks/pre/givn-attribution.js".to_string(),
         ".omp/hooks/pre/givn-timeline.js".to_string(),
+        ".maki/lua/givn-timeline.lua".to_string(),
+        ".maki/skills/givn-*/".to_string(),
+        ".maki/commands/givn-*.md".to_string(),
+        ".maki/commands/grill-*.md".to_string(),
         ".githooks/commit-msg".to_string(),
     ]
 }
@@ -269,10 +273,14 @@ pub fn is_rule_path(relative: &str) -> bool {
         || relative == ".claude/settings.local.json"
         || relative == ".omp/hooks/pre/givn-attribution.js"
         || relative == ".omp/hooks/pre/givn-timeline.js"
+        || relative == ".maki/lua/givn-timeline.lua"
     {
         return true;
     }
-    for prefix in [".opencode/commands/", ".omp/commands/"] {
+    // The two merged Maki files (`.maki/plugin.toml`, `.maki/init.lua`) are
+    // user-owned: they are deliberately absent here, so a merged file never
+    // becomes a strict rule.
+    for prefix in [".opencode/commands/", ".omp/commands/", ".maki/commands/"] {
         if let Some(name) = relative.strip_prefix(prefix) {
             return name.starts_with("givn-") || name.starts_with("grill-");
         }
@@ -282,6 +290,7 @@ pub fn is_rule_path(relative: &str) -> bool {
         ".agents/skills/",
         ".claude/skills/",
         ".omp/skills/",
+        ".maki/skills/",
     ] {
         if let Some(rest) = relative.strip_prefix(prefix) {
             return rest.starts_with("givn-");
@@ -585,6 +594,9 @@ mod tests {
             ".claude/hooks/givn-timeline.sh",
             ".claude/settings.local.json",
             ".omp/hooks/pre/givn-timeline.js",
+            ".maki/lua/givn-timeline.lua",
+            ".maki/skills/givn-propose/SKILL.md",
+            ".maki/commands/givn-design.md",
             ".githooks/commit-msg",
         ];
         for path in rules {

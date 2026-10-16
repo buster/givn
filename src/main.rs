@@ -42,7 +42,7 @@ enum Commands {
         #[arg(long)]
         no_addons: bool,
         /// Agents to install skills/commands to, comma-separated
-        /// (e.g. `opencode,claude`, `omp`, or `all`). Skips the interactive
+        /// (e.g. `opencode,claude`, `omp`, `maki`, or `all`). Skips the interactive
         /// prompt. Only takes effect on fresh config creation (or with
         /// `--force`), same as the prompt it replaces.
         #[arg(long, value_delimiter = ',')]
