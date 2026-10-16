@@ -5521,7 +5521,7 @@ name it.
         4 steps (4 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+  - [x] **COMMIT** — `f7365a573212d436bfae32d857be952aa13eb89f` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `A wait the harness does not time is still
         recorded with a duration` in the body. Record the revision identifier.
         ```
