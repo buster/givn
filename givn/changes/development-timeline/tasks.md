@@ -3499,7 +3499,7 @@ name it.
 
 ## Task 14 — `A question wait is recorded with its duration` (`agent-activity-reporting`, added)
 
-- [ ] **Scenario: `A question wait is recorded with its duration`**
+- [x] **Scenario: `A question wait is recorded with its duration`**
   - Design constraints:
     - Entry shape: `kind: "question"`, `duration_ms` the wait duration (the
       harness's own where it exists, else the reporter's stamps), `label` the
@@ -3619,9 +3619,31 @@ name it.
         4 steps (4 passed)
         EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+  - [x] **COMMIT** — `55f8bb5799fc5814e2a412ece70e172b478d98e5` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `A question wait is recorded with its duration`
         in the body. Record the revision identifier.
+        ```
+        $ GIVN_ATTRIBUTION_ACTIVE=1 … ./target/debug/givn commit -m "feat(agent-activity-reporting): <release note verbatim>\n\nA question wait is recorded with its duration"
+        [15:26:51] committed revision on the Git backend
+
+        $ git show --stat 55f8bb5799fc5814e2a412ece70e172b478d98e5
+        commit 55f8bb5799fc5814e2a412ece70e172b478d98e5
+        Author: buster <me@bstr.eu>
+        Date:   Fri Oct 16 15:26:51 2026 +0200
+
+            feat(agent-activity-reporting): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+            A question wait is recorded with its duration
+
+            Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../agent-activity-reporting.feature               |   2 +-
+         givn/changes/development-timeline/tasks.md         |  98 ++++++++++++++++++++--
+         src/cli/history.rs                                 |  25 +++++-
+         src/history.rs                                     |  12 +++
+         tests/steps/agent_activity_reporting_steps.rs      |  93 ++++++++++++++++++++
+         5 files changed, 221 insertions(+), 9 deletions(-)
+        ```
 
 ## Task 15 — `Reported token usage is recorded with the model that produced it` (`agent-activity-reporting`, added)
 
