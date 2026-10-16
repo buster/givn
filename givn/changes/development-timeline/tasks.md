@@ -9273,9 +9273,32 @@ name it.
         in the accent colour, and the mobile capture shows the same panel as the
         full-width sheet below the timeline.
         ```
-  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+  - [x] **COMMIT** — `88334ae790b3135e3165f1d8c5d26859ee4ef326` — `test(e2e): <release note>` with the scenario
         title `Consumer selects a timeline element and reads its details` in the
         body (including the two evidence PNGs). Record the revision identifier.
+        ```
+        $ ./target/debug/givn commit -m "test(e2e): Givn records the development process of every change and ideation — … opens in a browser.
+
+        Consumer selects a timeline element and reads its details"
+        [18:03:15] committed revision on the Git backend
+
+        $ git show --stat --format='%H' 88334ae7
+        88334ae790b3135e3165f1d8c5d26859ee4ef326
+         assets/timeline/report.html                        | 126 ++++++++++++--
+         .../desktop.png                                    | Bin 0 -> 104180 bytes
+         .../mobile.png                                     | Bin 0 -> 42881 bytes
+         .../development-report.feature                     |   2 +-
+         givn/changes/development-timeline/tasks.md         | 130 ++++++++++++++-
+         tests/common/browser.rs                            |  22 +++
+         tests/steps/development_report_e2e_steps.rs        | 183 +++++++++++++++++++++
+         7 files changed, 445 insertions(+), 18 deletions(-)
+
+        The revision is this scenario's RED+GREEN+REFACTOR as one atomic commit:
+        the `@wip` removal from this scenario alone, the selection and the
+        details panel in the asset, the browser helper's anchored capture, the
+        scenario's four steps, this task file's evidence, and the scenario's one
+        evidence pair. No other scenario's tag, step, or capture is touched.
+        ```
 
 ## Task E8 — `Consumer zooms the timeline to a shorter time range` (`@e2e`, `development-report`)
 
