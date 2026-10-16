@@ -6733,7 +6733,7 @@ name it.
 
 ## Task 31 — `The report needs no network access to render` (`development-report`, added)
 
-- [ ] **Scenario: `The report needs no network access to render`**
+- [x] **Scenario: `The report needs no network access to render`**
   - Design constraints:
     - Self-containment (D4 + the report technology decision): one file with
       inline CSS + vanilla JS + inline SVG, no third-party JavaScript, no CDN,
@@ -6752,27 +6752,146 @@ name it.
       no service to reach, which is the Local Runnability statement).
     - Fixture: change `demo` with a recorded history (seeded builder).
     - RED expected failure: the no-remote-resource Then step is undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report needs no network access to render"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report needs no network access to render"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report needs no network access to render
+           ✔  Given a change "demo" with a recorded history
+           ✔  When the developer generates the development report for "demo"
+           ✘  Then the report references no remote resource
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:48:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+
+        thread 'main' (2610263) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — the no-remote-resource Then step matches
+        no function. (The Given is the shared recorded-history fixture bound by
+        Task 1's file, and the When is the same generation step the earlier
+        report scenarios use, so the run reaches the unbound Then.) The claim
+        itself had no assertion at this revision: nothing read the written
+        document for a resource reference, so nothing kept the report
+        self-contained against a future edit.
         ```
-  - [ ] **GREEN** — render the asset with zero external references. Files:
+  - [x] **GREEN** — render the asset with zero external references. Files:
         `assets/timeline/report.html`, `src/cli/timeline.rs` (escaping and the
         data-slot substitution), `tests/steps/development_report_steps.rs`.
         Compile/write the asset, re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.60s
+        BUILD=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report needs no network access to render"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 4.59s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report needs no network access to render
+           ✔  Given a change "demo" with a recorded history
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report references no remote resource
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        3 steps (3 passed)
+        EXIT=0
+
+        Production files created/modified by this GREEN step:
+        - none — and that is the investigated finding, not an omission. The
+          claim is an *absence* of remote references in the file the renderer
+          writes, and the renderer already writes such a file by construction:
+          there is exactly one asset (`assets/timeline/report.html`, embedded
+          with `include_str!`), every style lives in its one inline `<style>`,
+          the model is the one inline `<script id="report-model">`, the SVG is
+          generated inline by `render_view`/`render_timeline`, and the escaping
+          (`escape`, `json_for_slot`) only ever turns recorded text into
+          document text — it can add no element and no attribute. Neither
+          `assets/timeline/report.html` nor `src/cli/timeline.rs` was therefore
+          modified: the file the command wrote was scanned and carries no
+          resource reference, so nothing needed changing to "render the asset
+          with zero external references".
+        - `tests/steps/development_report_steps.rs` (modified — the
+          `remote_resource_reference` scan and its two marker lists, the
+          discrimination controls, and the Then step: the scan over the written
+          document, the one-document/inline-integrity assertions, and the
+          command's own half of the claim).
+        - the scan's own discrimination is part of the step: five control
+          documents (a `<script src="https://…">`, a protocol-relative
+          `<link href="//…">`, a CSS `@import`, an in-page `fetch(`, an
+          `XMLHttpRequest` construction) are each detected by the same function
+          the clean document is checked with, so a scan that never looks cannot
+          pass. The written report itself is clean: it carries one inline
+          `<style>`, exactly one `<script` element (the inline model), and no
+          loading attribute pointing off-file. The SVG namespace declaration
+          the design constraint names is not present in this document (the
+          renderer's SVG is HTML-inline and needs no namespace); the scan reads
+          only loading attributes and fetch forms, so it would not fail on it
+          either way, and nothing here removes a namespace.
+        - the command's half of the claim is asserted too: the fixture project
+          root holds no server, no port, and no external service (the Local
+          Runnability statement), the generation runs as a subprocess in it, and
+          the path the command *prints* resolves to exactly the file the
+          scenario's When read the report from — so "the command writes and
+          prints the file with no network available" is the scenario's own
+          evidence, not prose.
         ```
-  - [ ] **REFACTOR** — keep every style/script inline in one document, no
+  - [x] **REFACTOR** — keep every style/script inline in one document, no
         separate assets to load; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        Nothing was split out to load: the report stays one document with its
+        one inline `<style>` and its one inline model script, and the asset was
+        not touched (adding a second asset is exactly what this constraint
+        forbids). The step's scan was tightened instead: the two marker lists
+        moved to module scope as `LOADING_ATTRIBUTES` and `REMOTE_FETCH_FORMS`,
+        so the attribute half and the fetch half of the scan are named in one
+        place each and the doc comment states the rule (a `data:` URL, a
+        fragment, and a relative path stay inside the file; a namespace URI is
+        never a request). No behaviour change: same scan, same markers, same
+        verdicts.
+
+        $ cargo fmt --all -- --check
+        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.14s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report needs no network access to render"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 5.21s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report needs no network access to render
+           ✔  Given a change "demo" with a recorded history
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report references no remote resource
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        3 steps (3 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `PENDING` — `feat(development-report): <release note>` with
         the scenario title `The report needs no network access to render` in the
         body. Record the revision identifier.
+        ```
+        <!-- paste the commit output + the revision's file list -->
+        ```
 
 ## Task 32 — `The report shows the empty state for a scope with no recorded activity` (`development-report`, added)
 
