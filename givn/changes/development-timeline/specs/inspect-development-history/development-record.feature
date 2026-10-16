@@ -79,7 +79,7 @@ Feature: Development Record
     When the user runs `givn status --change demo`
     Then the repository reports no pending change for the development record
 
-  @givn.added @wip
+  @givn.added
   Scenario: A Fossil project ignores the record through its own ignore file
     Given a project root with givn/ initialised in a Fossil checkout
     And a change "demo" exists with artifact "proposal.md"

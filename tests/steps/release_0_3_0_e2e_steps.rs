@@ -486,13 +486,15 @@ fn fossil_project_with_version(version: &str) -> crate::common::TestEnv {
         "verify:\n  command: \"./emit-result.sh regular\"\n  e2e_command: \"\"\n",
     );
     // Keep the generated agent files unmanaged so the upgrade's force-add is
-    // observable, then record the rest as the fixture's initial check-in.
+    // observable, and keep the development record out of the repository: the
+    // record path joins the fixture's own ignore content (F3), because
+    // `addremove` would otherwise record the store.
     let ignore = fossil(
         &env,
         &[
             "settings",
             "ignore-glob",
-            ".opencode/*,AGENTS.md,.gitignore",
+            ".opencode/*,AGENTS.md,.gitignore,givn/history/*",
         ],
     );
     assert!(
