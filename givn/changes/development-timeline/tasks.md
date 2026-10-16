@@ -4637,9 +4637,44 @@ name it.
         A reported tool call is recorded for its scope => EXIT=0
         The intake rejects a payload that is not readable JSON => EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+  - [x] **COMMIT** — `579b5971ad4d8ebcc695658964231a6fdb94d78e` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `The intake rejects a payload that is not
         readable JSON` in the body. Record the revision identifier.
+        ```
+        One `givn commit` with the release note as the message subject and the
+        scenario title as the body:
+
+        $ GIVN_ATTRIBUTION_ACTIVE=1 GIVN_ATTRIBUTION_LLM=deepseek/deepseek-flash \
+          GIVN_ATTRIBUTION_REASONING=max GIVN_ATTRIBUTION_HARNESS=omp \
+          ./target/debug/givn commit -m "feat(agent-activity-reporting): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        The intake rejects a payload that is not readable JSON"
+        [15:49:00] committed revision on the Git backend
+
+        $ git show --stat 579b5971ad4d8ebcc695658964231a6fdb94d78e
+        commit 579b5971ad4d8ebcc695658964231a6fdb94d78e
+        Author: buster <me@bstr.eu>
+        Date:   Fri Oct 16 15:49:00 2026 +0200
+
+            feat(agent-activity-reporting): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+            The intake rejects a payload that is not readable JSON
+
+            Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../agent-activity-reporting.feature               |   2 +-
+         givn/changes/development-timeline/tasks.md         | 166 ++++++++++++++++++++-
+         src/cli/history.rs                                 |  51 ++++++-
+         src/main.rs                                        |  11 +-
+         tests/steps/agent_activity_reporting_steps.rs      |  74 +++++++++
+         tests/steps/development_timeline_support.rs        |   8 +
+         6 files changed, 298 insertions(+), 14 deletions(-)
+
+        One atomic revision for the scenario: the delta spec (`@wip` removed from
+        this scenario only), the payload-level exit code and its one enumerated
+        outcome (`IntakeOutcome`), the fixture and assertions, and this file's
+        Task 19 record together.
+        ```
 
 ## Task 20 — `The intake keeps the acceptable events of a payload with a rejected event` (`agent-activity-reporting`, added)
 
