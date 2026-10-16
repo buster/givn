@@ -105,6 +105,7 @@ no second use case includes it.
 | development-record | no signal | `NEW in inspect-development-history` | No existing capability owns recording what Givn does; `inspect-change-state` owns current artifact state, not history, and cannot cover ideation. |
 | agent-activity-reporting | no signal | `NEW in inspect-development-history` | Reporting the agent's work only matters as input to the same history; a separate use case would have no independent actor goal. |
 | development-report | no signal | `NEW in inspect-development-history` | Rendering the history for the developer is the goal of the same use case; the browser view and the CLI generation are two actions under that one goal, not two capabilities. |
+| adr-qualification-gate | no signal | `EXTEND adr-qualification-gate` | Adding ADR-073 raises the register count the permanent scenario pins; this change carries the `@givn.modified` record and patches the permanent scenario. |
 
 ## Out of Scope
 

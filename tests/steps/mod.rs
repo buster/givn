@@ -12,6 +12,7 @@ use crate::common;
 
 pub mod adr_qualification_gate_e2e_steps;
 pub mod adr_qualification_gate_steps;
+pub mod agent_activity_reporting_steps;
 pub mod arc42_review_alignment_steps;
 pub mod archive_proof_e2e_steps;
 pub mod archive_proof_steps;
@@ -23,6 +24,9 @@ pub mod coverage_readme_example_steps;
 pub mod coverage_script_workflow_e2e_steps;
 pub mod coverage_script_workflow_steps;
 pub mod deduplicate_change_dir_detection_steps;
+pub mod development_record_steps;
+pub mod development_report_steps;
+pub mod development_timeline_support;
 pub mod enforce_post_merge_e2e_gate_steps;
 pub mod extract_coverage_gate_steps;
 pub mod fix_domain_modeling_skill_trigger_e2e_steps;
@@ -148,6 +152,20 @@ pub struct GivnWorld {
     pub(crate) scm_fixture: scm_backend_selection_steps::ScmFixture,
     /// State for the release-truth changelog and guard scenarios.
     pub(crate) release: release_steps::ReleaseState,
+    /// State for the `development-record` scenarios (record fixtures read
+    /// through `development_timeline_support`).
+    // Skeleton (tasks.md S3): the slot exists before the capability's first
+    // step reads it; that scenario removes this allowance.
+    #[allow(dead_code)]
+    pub(crate) development_record: Option<development_record_steps::DevelopmentRecordState>,
+    /// State for the `agent-activity-reporting` scenarios (reporter payloads
+    /// handed to the intake).
+    #[allow(dead_code)]
+    pub(crate) agent_activity_reporting:
+        Option<agent_activity_reporting_steps::AgentActivityReportingState>,
+    /// State for the `development-report` scenarios (the generated report).
+    #[allow(dead_code)]
+    pub(crate) development_report: Option<development_report_steps::DevelopmentReportState>,
 }
 
 /// A readiness probe running on a background thread.

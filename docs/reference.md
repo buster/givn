@@ -169,8 +169,8 @@ Project command scripts live at the repo root and are referenced by
 This repository's own verify commands:
 
 ```sh
-./run-tests.sh            # cargo test matrix across feature combinations
-./run-tests.sh --e2e      # @e2e-tagged subsets per feature combination
+./run-tests.sh --non-e2e  # the regular scope (verify.command): every non-@e2e scenario
+./run-tests.sh --e2e      # the e2e scope (verify.e2e_command): the @e2e scenarios, browser included
 ./measure-coverage.sh     # writes non-E2E and E2E Cobertura reports
 ./merge-coverages.sh      # writes merged report used by README badges/blocks
 ```
