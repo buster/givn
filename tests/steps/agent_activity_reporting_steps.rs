@@ -49,6 +49,14 @@ const REPORTED_QUESTION: &str = "Which store should the record use?\nDuckDB, SQL
 const REPORTED_QUESTION_WAIT_MS: u64 = 480_000;
 const REPORTED_QUESTION_AT: &str = "2026-10-16T09:13:45.501Z";
 
+/// The completed turn the fixture's agent reports, with its token usage: the
+/// index, the harness's own duration, the model, and the counts are the values
+/// the record must carry.
+const REPORTED_TURN: u64 = 12;
+const REPORTED_TURN_MS: u64 = 41_230;
+const REPORTED_TURN_AT: &str = "2026-10-16T09:14:46.221Z";
+const REPORTED_MODEL: &str = "deepseek/deepseek-flash";
+
 /// The one completed tool call the fixture seeds as already-reported agent
 /// activity, and (for the tool scenario's own report) the call the assertions
 /// read.
@@ -182,6 +190,31 @@ fn reports_a_subagent_that_started_and_completed(world: &mut GivnWorld) {
                 "status": "completed",
             }),
         ],
+    );
+    report(world, payload);
+}
+
+#[when("the agent reports a completed turn with token usage")]
+fn reports_a_turn_with_token_usage(world: &mut GivnWorld) {
+    let change = reported_change(world);
+    let payload = support::intake_payload(
+        Some(&change),
+        None,
+        vec![json!({
+            "kind": "turn",
+            "at": REPORTED_TURN_AT,
+            "turn": REPORTED_TURN,
+            "duration_ms": REPORTED_TURN_MS,
+            "model": REPORTED_MODEL,
+            "status": "completed",
+            "usage": {
+                "input": 12_043,
+                "output": 812,
+                "cache_read": 9_000,
+                "cache_write": 0,
+                "total_tokens": 21_855,
+            },
+        })],
     );
     report(world, payload);
 }
@@ -351,6 +384,77 @@ fn entry_names_the_subagent_and_spans_its_start_and_end(world: &mut GivnWorld) {
         entry["outcome"],
         json!("ok"),
         "a completed subagent is not recorded as ok: {entry}"
+    );
+}
+
+#[then("the record holds that turn's token usage")]
+fn record_holds_the_turns_token_usage(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let reported = reported_event(world, "turn");
+    let reported_usage = reported["usage"]
+        .as_object()
+        .expect("the fixture reports the turn's usage");
+    let entries = support::record_entries(&env.root());
+    let turns: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| entry["kind"] == json!("turn"))
+        .collect();
+    assert_eq!(
+        turns.len(),
+        1,
+        "expected exactly one recorded turn; the record holds: {entries:#?}"
+    );
+    let usages: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| entry["source"] == json!("agent") && entry["kind"] == json!("usage"))
+        .collect();
+    assert_eq!(
+        usages.len(),
+        1,
+        "expected exactly one usage entry for the reported turn; the record holds: {entries:#?}"
+    );
+    let entry = usages[0].clone();
+    assert_eq!(
+        entry["scope"],
+        json!({"kind": "change", "id": reported_change(world)}),
+        "the reported usage is not recorded for the change the payload named: {entry}"
+    );
+    assert_eq!(
+        entry["parent"], turns[0]["id"],
+        "the usage entry is not parented to the turn that produced it: {entry}"
+    );
+    for (key, count) in reported_usage {
+        assert_eq!(
+            entry["data"][key], *count,
+            "the usage entry does not carry the reported `{key}` count: {entry}"
+        );
+    }
+    world
+        .agent_activity_reporting
+        .get_or_insert_with(AgentActivityReportingState::default)
+        .last_entry = Some(entry);
+}
+
+#[then("the usage names the model that produced it")]
+fn usage_names_the_model_that_produced_it(world: &mut GivnWorld) {
+    let reported = reported_event(world, "turn");
+    let entry = identified_entry(world);
+    let model = entry["data"]["model"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the usage entry names no model: {entry}"));
+    assert_eq!(
+        model,
+        reported["model"]
+            .as_str()
+            .expect("the fixture reports the turn's model"),
+        "the usage does not name the reported model: {entry}"
+    );
+    assert_eq!(
+        model, REPORTED_MODEL,
+        "the model is not kept verbatim, never normalised or truncated: {entry}"
     );
 }
 

@@ -24,7 +24,7 @@ Feature: Agent Activity Reporting
     Then the record holds one entry for the question wait
     And that entry carries the wait duration
 
-  @givn.added @wip
+  @givn.added
   Scenario: Reported token usage is recorded with the model that produced it
     Given a change "demo" with reported agent activity
     When the agent reports a completed turn with token usage
