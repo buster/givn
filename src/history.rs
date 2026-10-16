@@ -16,6 +16,18 @@ use serde::{Deserialize, Serialize};
 /// know.
 pub const SCHEMA: u32 = 1;
 
+/// The record's one vocabulary for a signal it does not have — missing data is
+/// recorded as missing, never as a zero:
+///
+/// - an unmeasured duration is *absent* (no `duration_ms`),
+/// - an outcome the harness did not report is [`OUTCOME_UNKNOWN`],
+/// - a turn whose token usage the harness did not report carries
+///   `data.usage: `[`USAGE_UNAVAILABLE`].
+pub const OUTCOME_UNKNOWN: &str = "unknown";
+
+/// The turn `data.usage` marker for a token usage the harness never reported.
+pub const USAGE_UNAVAILABLE: &str = "unavailable";
+
 /// One record line: `id`, `at`, `scope`, `source`, `kind`, `name`, `label`,
 /// `duration_ms`, `outcome`, `parent`, `data`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -84,7 +96,7 @@ impl HistoryEntry {
             name: name.to_string(),
             label: None,
             duration_ms: None,
-            outcome: "unknown".to_string(),
+            outcome: OUTCOME_UNKNOWN.to_string(),
             parent: None,
             data: None,
         }
@@ -254,7 +266,7 @@ impl HistoryRecorder {
             name: name.to_string(),
             label: label.map(|label| bound_label(&label)),
             duration_ms: None,
-            outcome: "unknown".to_string(),
+            outcome: OUTCOME_UNKNOWN.to_string(),
             parent: None,
             data: None,
         }
@@ -280,7 +292,7 @@ impl HistoryRecorder {
             name: name.to_string(),
             label: None,
             started: Instant::now(),
-            outcome: "unknown".to_string(),
+            outcome: OUTCOME_UNKNOWN.to_string(),
         }
     }
 
