@@ -7426,55 +7426,387 @@ name it.
       Obstacles table rather than weakening the assertion.
     - **`@e2e` tags are immutable**; nothing in this task or the following
       sections may remove one.
-  - [ ] **Sub-task 1 — the local environment and the browser toolchain.**
+  - [x] **Sub-task 1 — the local environment and the browser toolchain.**
         Create `setup-e2e-browser.sh` and `tests/e2e/package.json` (Playwright
         pinned to 1.64.1), run the script, and paste its output plus
         `npx --prefix tests/e2e playwright --version`.
         ```
-        <!-- paste: setup-e2e-browser.sh + playwright --version -->
+        $ cat setup-e2e-browser.sh
+        #!/bin/sh
+        # One-time setup for the @e2e browser tier: install the Playwright pinned in
+        # tests/e2e/package.json and the Chromium that Playwright bundles.
+        #
+        # This is the only step of the change that touches the network, and it runs
+        # once, outside the suite. The tier itself needs no server, no port, no
+        # database, and no external service: the report under test is one
+        # self-contained file and the record is a local file, so the browser loads the
+        # report from a file:// URL inside the temporary project root a scenario
+        # created. Node.js is resolved from PATH (the design does not pin it); the
+        # browser under test is always this Chromium, never a system browser.
+        set -eu
+
+        cd "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+
+        npm ci --prefix tests/e2e
+        npx --prefix tests/e2e playwright install chromium
+
+        $ cat tests/e2e/package.json
+        {
+          "name": "givn-e2e-browser",
+          "version": "0.0.0",
+          "private": true,
+          "description": "The @e2e browser tier's driver dependency: Playwright, pinned exactly as the design names it. `./setup-e2e-browser.sh` installs this package and the Chromium the pinned Playwright bundles; the tier itself runs offline against file:// URLs.",
+          "type": "module",
+          "dependencies": {
+            "playwright": "1.64.1"
+          }
+        }
+
+        $ npm install --package-lock-only --prefix tests/e2e
+        up to date in 1s
+        $ grep -n '"playwright"' tests/e2e/package-lock.json | head -2
+        11:        "playwright": "1.64.1"
+        23:        "playwright": "cli.js"
+
+        First run (the actual download; the script is idempotent, the second run
+        is the cached one below):
+        $ ./setup-e2e-browser.sh
+        ... FFmpeg (playwright ffmpeg v1013) downloaded to /home/buster/.cache/ms-playwright/ffmpeg-1013
+        ... Downloading Chrome Headless Shell 156.0.8078.4 (playwright chromium-headless-shell v1248) from https://cdn.playwright.dev/builds/cft/156.0.8078.4/linux64/chrome-headless-shell-linux64.zip
+        ... Chrome Headless Shell 156.0.8078.4 (playwright chromium-headless-shell v1248) downloaded to /home/buster/.cache/ms-playwright/chromium_headless_shell-1248
+        SETUP_EXIT=0
+
+        Second run, everything already installed:
+        $ ./setup-e2e-browser.sh
+        added 2 packages in 306ms
+        SETUP_EXIT=0
+
+        $ npx --prefix tests/e2e playwright --version
+        Version 1.64.1
+        EXIT=0
+
+        node --version → v22.20.0 (the design's own resolved version; Node is
+        resolved from PATH, never pinned). The script's dependency is the only
+        new runtime dependency of this change, and it is exactly the pinned
+        Playwright: `tests/e2e/package.json` + `package-lock.json` (committed),
+        `tests/e2e/node_modules` (ignored by `tests/e2e/.gitignore` — E1's own
+        directory — and recreated by the script). The browser download lands in
+        `~/.cache/ms-playwright`, outside the repository.
         ```
-  - [ ] **Sub-task 2 — the driver and the Rust browser helper.** Create
+  - [x] **Sub-task 2 — the driver and the Rust browser helper.** Create
         `tests/e2e/browser-driver.mjs` and `tests/common/browser.rs` with the
         contracts above (one context per scenario, `file://` navigation,
         reduced-motion emulation, deterministic capture, failure-never-skip
         error contract).
         ```
-        <!-- paste: the two files' key sections + a smoke run that exits 0 -->
+        `tests/e2e/browser-driver.mjs` (new, 175 lines): `chromium.launch()` +
+        ONE `newContext({ reducedMotion: "reduce", viewport: {width: 1280,
+        height: 900} })` + one page, started lazily on the first command; the
+        commands `goto` (`target.goto(url, {waitUntil: "load"})`),
+        `viewport`, `click`, `press` (focuses the selector first when one is
+        named), `text`, `count`, `attribute`, `evaluate`, `screenshot`
+        (`{ path, animations: "disabled" }`), `quit`; `settled()` awaits
+        `document.fonts.ready` and one `requestIdleCallback` tick before every
+        read/capture; requests are handled strictly one at a time in arrival
+        order (`chain = chain.then(...)`), so the page's state (zoom, open
+        panel) survives across a scenario's steps; replies are
+        `{"id":n,"ok":true,"value":…}` / `{"id":n,"ok":false,"error":…}`;
+        stdin EOF and `quit` both close the browser and exit 0.
+
+        `tests/common/browser.rs` (new, 330 lines): `BrowserDriver::start()`
+        spawns `node tests/e2e/browser-driver.mjs` from the repository root with
+        a reader thread feeding an `mpsc` channel; `command()` matches the
+        reply's `id`, panics on `ok: false` ("the browser driver failed
+        `cmd`: …"), on a 60 s silence ("did not answer within 60s"), and on a
+        driver that exited first — a **failed** step in every case, never a
+        skip; typed helpers (`goto`, `viewport`, `click`, `press`, `text`,
+        `count`, `attribute`, `evaluate`, `screenshot`, `quit`);
+        `capture_evidence`/`capture_state_evidence` write the contract's two
+        viewports through `evidence_file`/`state_evidence_file`, which lay out
+        `givn/changes/development-timeline/evidence/visual/<scenario_slug>/…`
+        with `givn::integrity_hook::scenario_slug` (the gate's own rule, never a
+        second convention); `file_url()` canonicalizes the report into a
+        `file://` URL; `Drop` kills the child, so no browser survives a failure.
+
+        Driver-level smoke (the documented failure contract included):
+        $ printf '%s\n' '{"id":1,"command":"goto","url":"file:///tmp/e2e-smoke/page.html"}' \
+            '{"id":2,"command":"text","selector":"#report-title"}' \
+            '{"id":3,"command":"count","selector":".note"}' \
+            '{"id":4,"command":"count","selector":"svg"}' \
+            '{"id":5,"command":"viewport","width":360,"height":780}' \
+            '{"id":6,"command":"screenshot","path":"/tmp/e2e-smoke/mobile.png"}' \
+            '{"id":7,"command":"viewport","width":1920,"height":1080}' \
+            '{"id":8,"command":"screenshot","path":"/tmp/e2e-smoke/desktop.png"}' \
+            '{"id":9,"command":"quit"}' | node tests/e2e/browser-driver.mjs
+        {"id":1,"ok":true,"value":null}
+        {"id":2,"ok":true,"value":"Smoke page"}
+        {"id":3,"ok":true,"value":1}
+        {"id":4,"ok":true,"value":0}
+        {"id":5,"ok":true,"value":null}
+        {"id":6,"ok":true,"value":null}
+        {"id":7,"ok":true,"value":null}
+        {"id":8,"ok":true,"value":null}
+        {"id":9,"ok":true,"value":null}
+        EXIT=0
+        -rw-r--r-- 13659 /tmp/e2e-smoke/desktop.png   -rw-r--r-- 6997 /tmp/e2e-smoke/mobile.png
+
+        $ printf '%s\n' '{"id":1,"command":"goto",…}' '{"id":2,"command":"text","selector":"#missing"}' '{"id":3,"command":"nope"}' | node tests/e2e/browser-driver.mjs
+        {"id":1,"ok":true,"value":null}
+        {"id":2,"ok":false,"error":"text: page.innerText: Timeout 10000ms exceeded. …waiting for locator('#missing')"}
+        {"id":3,"ok":false,"error":"unknown command: nope"}
+        EOF_EXIT=0        # stdin EOF closes the browser and exits cleanly
+
+        Rust-level smoke (Task E1's temporary probe, removed again in sub-task 4
+        — `GIVN_FEATURES=givn/changes/development-timeline/probe-e2e`, one
+        scenario over a trivial `file://` page in a fixture root, driven through
+        `BrowserDriver`):
+        $ GIVN_FEATURES=givn/changes/development-timeline/probe-e2e cargo test --locked --test features_runner -- --exact "probe.feature::The e2e tier's browser helper drives a real page"
+        Feature: E2E strictness probe
+          Scenario: The e2e tier's browser helper drives a real page
+           ✔  Given the e2e browser smoke page
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        1 step (1 passed)
+        SMOKE_EXIT=0
         ```
-  - [ ] **Sub-task 3 — the e2e step files and the harness drivers.** Create the
+  - [x] **Sub-task 3 — the e2e step files and the harness drivers.** Create the
         three `*_e2e_steps.rs` files, register them, wire the `GivnWorld` slots,
         and extend `tests/steps/development_timeline_support.rs` with the three
         harness drivers.
         ```
-        <!-- paste: the registrations + `cargo build --locked --tests` output -->
+        Created (one file per capability, separate from the unit/integration
+        files — no shared e2e file):
+        - tests/steps/development_record_e2e_steps.rs — module doc +
+          `DevelopmentRecordE2eState { entries: Vec<Value> }` (the parsed
+          machine-readable record Task E3 reads);
+        - tests/steps/agent_activity_reporting_e2e_steps.rs — module doc +
+          `AgentActivityReportingE2eState { reporter_output: Option<Output> }`
+          (Task E4);
+        - tests/steps/development_report_e2e_steps.rs — module doc +
+          `DevelopmentReportE2eState { report_path: Option<PathBuf>, browser:
+          Option<BrowserDriver> }` (Tasks E5–E9; dropping the state closes the
+          browser).
+
+        Registrations (tests/steps/mod.rs):
+          line 15: pub mod agent_activity_reporting_e2e_steps;
+          line 28: pub mod development_record_e2e_steps;
+          line 30: pub mod development_report_e2e_steps;
+          line 13: pub mod browser;                   (tests/common/mod.rs)
+
+        GivnWorld slots (the same `Option<…State>` pattern, one per e2e
+        capability, each with an `#[allow(dead_code)]` naming the task that
+        first reads it — the S3 precedent, because nothing reads a slot before
+        its first scenario does):
+          pub(crate) development_record_e2e: Option<development_record_e2e_steps::DevelopmentRecordE2eState>,
+          pub(crate) agent_activity_reporting_e2e: Option<agent_activity_reporting_e2e_steps::AgentActivityReportingE2eState>,
+          pub(crate) development_report_e2e: Option<development_report_e2e_steps::DevelopmentReportE2eState>,
+
+        Harness drivers (tests/steps/development_timeline_support.rs): one
+        shared vocabulary `HarnessActivity` (`Tool`, `Question`, `Subagent`,
+        `Turn`, `Shutdown`) consumed by both node drivers, and
+        `drive_omp_reporter` / `drive_opencode_reporter`, which write their
+        driver script into the fixture root and run it through `node` with the
+        project root as cwd and `PATH` carrying the `givn` shim
+        (`shim_givn_on_path`, extracted from `report_harness_hook` so the Claude
+        shim and both new drivers share one shim writer). The omp driver calls
+        the generated reporter's factory with a fake `pi` (`on`, `events.on`,
+        `exec` via `spawnSync`, `getThinkingLevel`) and fires
+        tool/question/subagent/turn/shutdown at its own harness events; the
+        opencode driver calls `setup(ctx)` with a fake context capturing
+        `session.hook`/`tool.hook`/`shell.hook`/`permission.hook` plus an
+        `event.subscribe` async iterable the driver feeds the harness's own
+        event shapes into. The third driver is the already-existing Claude
+        invocation (`report_harness_hook`: the generated
+        `.claude/hooks/givn-timeline.sh` with a real payload on stdin,
+        `PATH`-shimmed `givn`, fixture transcript) — reused, never copied.
+        These items carry `#[allow(dead_code)]` naming Task E4, their first
+        caller: their own verification is Task E4's scenario (Task E1 builds
+        and compiles them, per this sub-task's own evidence line), and Task E4
+        removes the allowances.
+
+        $ cargo build --locked --tests
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 11.54s
+        BUILD=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.74s
+        CLIPPY=0
+        $ cargo fmt --all -- --check        FMT=0
         ```
-  - [ ] **Sub-task 4 — the e2e strictness proof.** Temporary
+  - [x] **Sub-task 4 — the e2e strictness proof.** Temporary
         `unimplemented!("TODO: development-timeline")` binding in the e2e tier,
         run scoped, paste the non-zero exit, remove the probe, re-run the delta
         listing to show the e2e unit count is unchanged.
         ```
-        <!-- paste: probe command + output (non-zero), then the removal + count -->
+        Probe directory: `givn/changes/development-timeline/probe-e2e/`
+        (outside `specs/`, so no delta count, lint finding, or permanent-corpus
+        scenario changes).
+
+        Probe A — an undefined step fails the runner:
+        $ GIVN_FEATURES=givn/changes/development-timeline/probe-e2e cargo test --locked --test features_runner -- --exact "probe.feature::An e2e probe step that has no binding fails the runner"
+        Feature: E2E strictness probe
+          Scenario: An e2e probe step that has no binding fails the runner
+           ✘  Given an e2e probe step that has no binding
+              Step failed:
+              Defined: givn/changes/development-timeline/probe-e2e/probe.feature:11:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        error: test failed, to rerun pass `--test features_runner`
+        PROBE_A_EXIT=101
+
+        Probe B — the same step bound in the e2e tier with exactly
+        `unimplemented!("TODO: development-timeline")`
+        (tests/steps/development_report_e2e_steps.rs):
+        $ GIVN_FEATURES=givn/changes/development-timeline/probe-e2e cargo test --locked --test features_runner -- --exact "probe.feature::An e2e probe step that has no binding fails the runner"
+        Feature: E2E strictness probe
+          Scenario: An e2e probe step that has no binding fails the runner
+           ✘  Given an e2e probe step that has no binding
+              Step failed:
+              Defined: givn/changes/development-timeline/probe-e2e/probe.feature:11:5
+              Matched: tests/steps/development_report_e2e_steps.rs:43:1
+              Step panicked. Captured output: not implemented: TODO: development-timeline
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        error: test failed, to rerun pass `--test features_runner`
+        PROBE_B_EXIT=101
+
+        Removal (probe directory and both probe bindings deleted; the step files
+        back to their skeletons) and the unchanged delta listing:
+        $ rm -rf givn/changes/development-timeline/probe-e2e
+        $ ls givn/changes/development-timeline/
+        arc42.md  design-review.md  design.md  proposal.md  specs  tasks.md
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs GIVN_CUCUMBER_TAGS='@e2e' cargo nextest list --locked --test features_runner | grep -c 'givn::features_runner'
+        8
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs GIVN_CUCUMBER_TAGS='not @e2e' cargo nextest list --locked --test features_runner | grep -c 'givn::features_runner'
+        35
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs GIVN_CUCUMBER_TAGS='' cargo nextest list --locked --test features_runner | grep -c 'probe'
+        0
+
+        The e2e tier is strict: an undefined step and an `unimplemented!()` step
+        each fail the run (exit 101), and no probe title survives anywhere. A
+        browser step therefore cannot degrade into a skip — the Rust helper's own
+        error contract (non-zero exit, timeout, `{"ok": false, …}` → failed step)
+        is the other half, proven in sub-task 2 above.
         ```
-  - [ ] **Sub-task 5 — `verify.e2e_command` and the scenario-count proof.**
+  - [x] **Sub-task 5 — `verify.e2e_command` and the scenario-count proof.**
         Confirm `givn/commands.yaml` declares `verify.command:
         ./run-tests.sh --non-e2e` (Task S2) and `verify.e2e_command:
         ./run-tests.sh --e2e`; paste both scope runs' counts.
         ```
-        <!-- paste: both commands' scenario counts (35 vs 8, e2e strictly less) + the two config lines -->
+        $ cat givn/commands.yaml | head -3
+        # Project-owned command scripts. The README documents these same commands.
+        verify:
+          command: "./run-tests.sh --non-e2e"
+          e2e_command: "./run-tests.sh --e2e"
+        (identical strings are never accepted: the two commands differ, and the
+        two tag sets below prove the runtime difference too.)
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e
+             Summary [   3.626s] 35 tests run: 35 passed, 8 skipped
+        NON_E2E_EXIT=0                                    # verify.command → 35 scenarios
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --e2e
+             FAIL [   0.597s] (4/8) givn::features_runner …Consumer opens the generated development report in a browser
+             FAIL [   0.633s] (5/8) givn::features_runner …Consumer generates the development report for a change
+             FAIL [   0.696s] (6/8) givn::features_runner …Consumer reads the development record as machine-readable output
+             FAIL [   0.702s] (7/8) givn::features_runner …Consumer runs a lifecycle step and reads its recorded actions
+             FAIL [   0.711s] (8/8) givn::features_runner …Consumer installs the agent reporter and its reported activity lands in the record
+        error: test run failed
+        E2E_EXIT=100                                      # verify.e2e_command → 8 scenarios
+
+        The e2e scope is **8** scenarios against the regular scope's **35**: the
+        filter is real and the e2e count is strictly less (the 8 `@e2e`
+        scenarios are Tasks E2–E9, whose steps arrive with those tasks; their
+        RED is the undefined-step failure this run already shows). The listing
+        proof agrees: `@e2e` → 8 units, `not @e2e` → 35 units, 43 in total.
         ```
-  - [ ] **Sub-task 6 — the local health check.** Run the driver against a
+  - [x] **Sub-task 6 — the local health check.** Run the driver against a
         trivial `file://` page (or a freshly generated report) inside a temp
         project root and paste the exit-0 smoke result.
         ```
-        <!-- paste: the smoke command + output -->
+        The toolchain reports the pinned version:
+        $ npx --prefix tests/e2e playwright --version
+        Version 1.64.1
+
+        And the driver launches Chromium over a real generated report. The
+        project root `/tmp/e2e-health` is a `givn init` root whose change
+        `demo` ran a lifecycle command, so `givn timeline` wrote a report with
+        a rendered timeline — one file, no server, no port:
+        $ cd /tmp/e2e-health && givn init --agents omp && givn new demo && givn status --change demo && givn timeline --change demo --out report.html
+        report.html
+        $ printf '%s\n' '{"id":1,"command":"goto","url":"file:///tmp/e2e-health/report.html"}' \
+            '{"id":2,"command":"text","selector":"#report-title"}' \
+            '{"id":3,"command":"count","selector":"svg.timeline"}' \
+            '{"id":4,"command":"text","selector":"#report-scope"}' \
+            '{"id":5,"command":"quit"}' | node tests/e2e/browser-driver.mjs
+        {"id":1,"ok":true,"value":null}
+        {"id":2,"ok":true,"value":"Development report"}
+        {"id":3,"ok":true,"value":1}
+        {"id":4,"ok":true,"value":"Change: demo"}
+        {"id":5,"ok":true,"value":null}
+        HEALTH_EXIT=0
+
+        The browser really rendered the report: the page's heading, exactly one
+        timeline `svg`, and the rendered scope line all come from the DOM, with
+        the `file://` URL the browser scenarios will use.
         ```
-  - [ ] **Sub-task 7 — CI/release browser prerequisites.** Add
+  - [x] **Sub-task 7 — CI/release browser prerequisites.** Add
         `./setup-e2e-browser.sh` before the first suite invocation in
         `.github/workflows/ci.yml` and `.github/workflows/release.yml`, and make
         the regular workflow step `./run-tests.sh --non-e2e` before
         `./run-tests.sh --e2e`.
         ```
-        <!-- paste: both diffs -->
+        $ git diff .github/workflows/ci.yml
+        @@ -70,10 +70,14 @@ jobs:
+               - name: Install pinned git-cliff for the changelog scenarios
+                 shell: bash
+                 run: |
+                   set -euo pipefail
+                   if ! git-cliff --version 2>/dev/null | grep -Fq 'git-cliff 2.13.1'; then
+                     cargo install git-cliff --version 2.13.1 --locked
+                   fi
+
+        +      - name: Install the pinned Playwright browser
+        +        run: ./setup-e2e-browser.sh
+        +
+               - name: Run repository acceptance suites
+                 run: |
+                   set -euo pipefail
+        -          ./run-tests.sh
+        +          ./run-tests.sh --non-e2e
+                   ./run-tests.sh --e2e
+
+        $ git diff .github/workflows/release.yml
+        @@ -325,10 +325,14 @@ jobs:
+                   cargo clippy --locked --all-targets -- -D warnings
+                   cargo nextest run --locked --lib --no-tests=warn
+
+        +      - name: Install the pinned Playwright browser
+        +        shell: bash
+        +        run: ./setup-e2e-browser.sh
+        +
+               - name: Run repository acceptance suites
+                 shell: bash
+                 run: |
+                   set -euo pipefail
+        -          ./run-tests.sh
+        +          ./run-tests.sh --non-e2e
+                   ./run-tests.sh --e2e
+
+        Node is already on both runners (the design states it), so the only new
+        prerequisite is the Playwright-bundled Chromium the setup script
+        downloads. The regular step now runs the two declared scopes back to
+        back: the bare `./run-tests.sh` would run the whole suite including
+        `@e2e` and then `./run-tests.sh --e2e` again, running the browser tier
+        twice once the regular scope narrows. Both workflow edits ride in this
+        setup commit, never in a scenario commit.
         ```
   - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the subject
         `E2E setup: browser tier, strictness, tag scopes, evidence` — the e2e

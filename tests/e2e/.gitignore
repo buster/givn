@@ -1,0 +1,4 @@
+# The pinned Playwright install of the @e2e browser tier. `./setup-e2e-browser.sh`
+# recreates it from `package.json` + `package-lock.json`; it is never committed,
+# and neither is anything else npm writes here.
+node_modules/

@@ -264,17 +264,12 @@ pub fn stop_payload(transcript: &Path) -> Value {
     })
 }
 
-/// Run the generated Claude shim with one real hook payload on stdin, through
-/// its real entry point: the shim is executed directly and its `givn` is
-/// `PATH`-shimmed to the compiled binary, so the payload reaches the
-/// binary-side mapper exactly as it would in a live session.
-pub fn report_harness_hook(env: &common::TestEnv, payload: &Value) -> std::process::Output {
-    let shim = env.path(".claude/hooks/givn-timeline.sh");
-    assert!(
-        shim.is_file(),
-        "the generated Claude shim is missing: {}",
-        shim.display()
-    );
+/// The `PATH` entry that makes a generated reporter's `givn` this build: a
+/// one-line script executing the compiled binary, in the fixture's own
+/// `.givn-test-bin` directory. Every harness driver prepends it to `PATH`, so
+/// the reporter's real intake invocation (`givn history ingest`, or the shim's
+/// `givn history harness-hook`) reaches the binary under test.
+pub fn shim_givn_on_path(env: &common::TestEnv) -> PathBuf {
     let bin = env.path(SHIM_BIN_DIR);
     std::fs::create_dir_all(&bin).unwrap_or_else(|error| {
         panic!("create the PATH shim directory {}: {error}", bin.display())
@@ -294,13 +289,33 @@ pub fn report_harness_hook(env: &common::TestEnv, payload: &Value) -> std::proce
         permissions.set_mode(0o755);
         std::fs::set_permissions(&givn, permissions).expect("make the PATH shim executable");
     }
-    let path = match std::env::var_os("PATH") {
+    bin
+}
+
+/// `PATH` with `bin` (a [`shim_givn_on_path`] directory) in front of the
+/// process's own, as every reporter process is started.
+fn path_with(bin: &Path) -> String {
+    match std::env::var_os("PATH") {
         Some(existing) => format!("{}:{}", bin.display(), existing.to_string_lossy()),
         None => bin.display().to_string(),
-    };
+    }
+}
+
+/// Run the generated Claude shim with one real hook payload on stdin, through
+/// its real entry point: the shim is executed directly and its `givn` is
+/// `PATH`-shimmed to the compiled binary, so the payload reaches the
+/// binary-side mapper exactly as it would in a live session.
+pub fn report_harness_hook(env: &common::TestEnv, payload: &Value) -> std::process::Output {
+    let shim = env.path(".claude/hooks/givn-timeline.sh");
+    assert!(
+        shim.is_file(),
+        "the generated Claude shim is missing: {}",
+        shim.display()
+    );
+    let bin = shim_givn_on_path(env);
     let mut child = std::process::Command::new(&shim)
         .current_dir(env.root())
-        .env("PATH", path)
+        .env("PATH", path_with(&bin))
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
@@ -681,3 +696,312 @@ fn seeded_entry(scope: &Scope, kind: &str, name: &str, at: &str) -> HistoryEntry
         data: None,
     }
 }
+
+// ─── The omp and opencode development-reporter drivers ─────────────────────
+
+/// One activity a driver fires at a *generated* reporter through that
+/// harness's own events: the synthetic session the agent-activity-reporting
+/// scenarios report, expressed once so the omp and the opencode driver consume
+/// the same vocabulary instead of two hand-rolled event streams.
+// Task E1 creates the driver vocabulary; Task E4's scenario is the first
+// caller, and that scenario removes this allowance.
+#[allow(dead_code)]
+#[derive(Debug, Clone)]
+pub enum HarnessActivity {
+    /// One completed tool call.
+    Tool {
+        /// The harness's own call id (the key both reporters pair a call by).
+        id: String,
+        /// The tool the harness names.
+        tool: String,
+        /// The call's input, in the harness's own shape.
+        args: Value,
+    },
+    /// One question wait: the question tool's call, from its start to its
+    /// completion.
+    Question {
+        /// The harness's own call id.
+        id: String,
+        /// The question text the wait's label is bounded from.
+        question: String,
+    },
+    /// One subagent, from its start to its completion.
+    Subagent {
+        /// The subagent's own identity.
+        id: String,
+        /// The agent definition that ran it.
+        agent: String,
+    },
+    /// One completed turn, with the harness's own usage where it reports one.
+    Turn {
+        /// The turn's own index.
+        index: u64,
+        /// The model that produced the turn.
+        model: String,
+        /// The usage the harness reports for the turn, in its own shape.
+        usage: Option<Value>,
+    },
+    /// The session's end: the reporter materializes whatever never closed and
+    /// flushes.
+    Shutdown,
+}
+
+#[allow(dead_code)] // Task E4 drives it.
+impl HarnessActivity {
+    /// The activity as the driver scripts consume it.
+    fn as_json(&self) -> Value {
+        match self {
+            HarnessActivity::Tool { id, tool, args } => serde_json::json!({
+                "kind": "tool",
+                "id": id,
+                "tool": tool,
+                "args": args,
+            }),
+            HarnessActivity::Question { id, question } => serde_json::json!({
+                "kind": "question",
+                "id": id,
+                "question": question,
+            }),
+            HarnessActivity::Subagent { id, agent } => serde_json::json!({
+                "kind": "subagent",
+                "id": id,
+                "agent": agent,
+            }),
+            HarnessActivity::Turn {
+                index,
+                model,
+                usage,
+            } => serde_json::json!({
+                "kind": "turn",
+                "index": index,
+                "model": model,
+                "usage": usage,
+            }),
+            HarnessActivity::Shutdown => serde_json::json!({ "kind": "shutdown" }),
+        }
+    }
+}
+
+/// The session id every driver reports under: one session per driver run, so
+/// the record's intake sees one reporter session.
+#[allow(dead_code)] // Task E4's drivers report under it.
+pub const DRIVER_SESSION: &str = "givn-timeline-driver";
+
+/// Drive the project's *generated* omp reporter through its real entry point:
+/// `node` imports the generated `.omp/hooks/pre/givn-timeline.js`, calls its
+/// factory with a fake `pi` extension context (`on`, `events.on`, `exec`,
+/// `getThinkingLevel`), and fires `activities` at the reporter's own harness
+/// events. The reporter's real `givn history ingest` reaches the compiled
+/// binary through the `PATH` shim.
+#[allow(dead_code)] // Task E4 drives it.
+pub fn drive_omp_reporter(
+    env: &common::TestEnv,
+    activities: &[HarnessActivity],
+) -> std::process::Output {
+    let reporter = env.path(".omp/hooks/pre/givn-timeline.js");
+    assert!(
+        reporter.is_file(),
+        "the generated omp reporter is missing: {}",
+        reporter.display()
+    );
+    run_node_driver(
+        env,
+        "invoke-omp-reporter.mjs",
+        OMP_DRIVER,
+        &reporter,
+        activities,
+    )
+}
+
+/// Drive the project's *generated* opencode reporter through its real entry
+/// point: `node` imports the generated `.opencode/plugins/givn-timeline.js`,
+/// calls `setup(ctx)` with a fake `ctx` that captures
+/// `session.hook`/`tool.hook`/`shell.hook` registrations plus an
+/// `event.subscribe` async iterable, and emits the synthetic events the
+/// activities name through that same stream. The reporter's real
+/// `givn history ingest` reaches the compiled binary through the `PATH` shim.
+#[allow(dead_code)] // Task E4 drives it.
+pub fn drive_opencode_reporter(
+    env: &common::TestEnv,
+    activities: &[HarnessActivity],
+) -> std::process::Output {
+    let reporter = env.path(".opencode/plugins/givn-timeline.js");
+    assert!(
+        reporter.is_file(),
+        "the generated opencode reporter is missing: {}",
+        reporter.display()
+    );
+    run_node_driver(
+        env,
+        "invoke-opencode-reporter.mjs",
+        OPENCODE_DRIVER,
+        &reporter,
+        activities,
+    )
+}
+
+/// Write one driver script into the fixture root and run it with `node`: the
+/// driver's working directory is the project root (so a relative intake
+/// invocation and the record both land where the scenario reads them) and its
+/// `PATH` carries the `givn` shim. A driver that cannot run at all fails the
+/// scenario's fixture, never its assertion.
+#[allow(dead_code)] // Reached through the two drivers above.
+fn run_node_driver(
+    env: &common::TestEnv,
+    script_name: &str,
+    script: &str,
+    reporter: &Path,
+    activities: &[HarnessActivity],
+) -> std::process::Output {
+    let root = env.root();
+    let bin = shim_givn_on_path(env);
+    let script_path = root.join(script_name);
+    std::fs::write(&script_path, script)
+        .unwrap_or_else(|error| panic!("write the driver {}: {error}", script_path.display()));
+    let activities: Vec<Value> = activities.iter().map(HarnessActivity::as_json).collect();
+    let output = std::process::Command::new("node")
+        .arg(&script_path)
+        .current_dir(&root)
+        .env("PATH", path_with(&bin))
+        .env("GIVN_DRIVER_REPORTER", reporter)
+        .env("GIVN_DRIVER_SESSION", DRIVER_SESSION)
+        .env(
+            "GIVN_DRIVER_ACTIVITIES",
+            serde_json::Value::Array(activities).to_string(),
+        )
+        .output()
+        .unwrap_or_else(|error| panic!("run the driver {}: {error}", script_path.display()));
+    assert!(
+        output.status.success(),
+        "the driver {} failed (exit {:?}): {}{}",
+        script_path.display(),
+        output.status.code(),
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr),
+    );
+    output
+}
+
+/// The omp driver's script: the fake `pi` extension context the design names,
+/// the reporter's own harness events, and nothing else.
+#[allow(dead_code)] // The omp driver's script, run by `drive_omp_reporter`.
+const OMP_DRIVER: &str = r#"import { spawnSync } from "node:child_process"
+import { pathToFileURL } from "node:url"
+
+const activities = JSON.parse(process.env.GIVN_DRIVER_ACTIVITIES)
+const handlers = new Map()
+const eventHandlers = new Map()
+const pi = {
+  on: (event, handler) => handlers.set(event, handler),
+  events: { on: (event, handler) => eventHandlers.set(event, handler) },
+  getThinkingLevel: () => undefined,
+  exec: async (command, args) => {
+    const result = spawnSync(command, args, { env: process.env, stdio: ["ignore", "inherit", "inherit"] })
+    if (result.status !== 0) throw new Error(`${command} exited ${result.status}`)
+  },
+}
+const module = await import(pathToFileURL(process.env.GIVN_DRIVER_REPORTER).href)
+module.default(pi)
+const fire = async (event, payload, ctx = {}) => {
+  const handler = handlers.get(event)
+  if (!handler) throw new Error(`the reporter registered no ${event} handler`)
+  await handler(payload, ctx)
+}
+await fire("session_start", {}, { sessionManager: { getSessionId: () => process.env.GIVN_DRIVER_SESSION } })
+for (const activity of activities) {
+  if (activity.kind === "tool") {
+    await fire("tool_execution_start", { toolCallId: activity.id, toolName: activity.tool, args: activity.args })
+    await fire("tool_execution_end", { toolCallId: activity.id, toolName: activity.tool, args: activity.args, isError: false })
+  } else if (activity.kind === "question") {
+    const args = { questions: [{ question: activity.question }] }
+    await fire("tool_execution_start", { toolCallId: activity.id, toolName: "ask", args })
+    await fire("tool_execution_end", { toolCallId: activity.id, toolName: "ask", args, isError: false })
+  } else if (activity.kind === "subagent") {
+    const handler = eventHandlers.get("task:subagent:lifecycle")
+    if (!handler) throw new Error("the reporter subscribed to no subagent lifecycle")
+    handler({ id: activity.id, agent: activity.agent, status: "started" })
+    handler({ id: activity.id, agent: activity.agent, status: "completed" })
+  } else if (activity.kind === "turn") {
+    await fire("turn_start", { turnIndex: activity.index })
+    await fire("turn_end", { turnIndex: activity.index, message: { model: activity.model, usage: activity.usage } })
+  } else if (activity.kind === "shutdown") {
+    await fire("session_shutdown", {})
+  }
+}
+"#;
+
+/// The opencode driver's script: the fake plugin context the design names
+/// (`session.hook`/`tool.hook`/`shell.hook` plus the `event.subscribe` async
+/// iterable the driver itself feeds), and the reporter's own event shapes.
+#[allow(dead_code)] // The opencode driver's script, run by `drive_opencode_reporter`.
+const OPENCODE_DRIVER: &str = r#"import { pathToFileURL } from "node:url"
+
+const activities = JSON.parse(process.env.GIVN_DRIVER_ACTIVITIES)
+const session = process.env.GIVN_DRIVER_SESSION
+const hooks = new Map()
+const queued = []
+let wake = null
+let closed = false
+const stream = {
+  async *[Symbol.asyncIterator]() {
+    while (!closed) {
+      if (queued.length > 0) {
+        yield queued.shift()
+        continue
+      }
+      await new Promise((resolve) => { wake = resolve })
+      wake = null
+    }
+  },
+}
+const registration = (domain) => (kind, handler) => hooks.set(`${domain}:${kind}`, handler)
+const ctx = {
+  session: { hook: registration("session") },
+  tool: { hook: registration("tool") },
+  shell: { hook: registration("shell") },
+  permission: { hook: registration("permission") },
+  event: { subscribe: () => stream },
+  signal: undefined,
+}
+const module = await import(pathToFileURL(process.env.GIVN_DRIVER_REPORTER).href)
+await module.default.setup(ctx)
+let clock = Date.now()
+const stamp = () => (clock += 50)
+const emit = async (event) => {
+  queued.push(event)
+  if (wake) {
+    const resolve = wake
+    wake = null
+    resolve()
+  }
+  // The consumer handles one event at a time; give it the turn it needs before
+  // the next event of the same session.
+  await new Promise((resolve) => setTimeout(resolve, 25))
+}
+for (const activity of activities) {
+  if (activity.kind === "tool") {
+    await emit({ type: "session.tool.called", created: stamp(), data: { sessionID: session, id: activity.id, name: activity.tool, input: activity.args } })
+    await emit({ type: "session.tool.success", created: stamp(), data: { sessionID: session, id: activity.id, name: activity.tool } })
+  } else if (activity.kind === "question") {
+    await emit({ type: "permission.asked", created: stamp(), data: { sessionID: session, id: activity.id, tool: activity.question } })
+    await emit({ type: "permission.replied", created: stamp(), data: { sessionID: session, id: activity.id } })
+  } else if (activity.kind === "subagent") {
+    await emit({ type: "session.created", created: stamp(), data: { sessionID: session, id: activity.id, parentID: session, agent: activity.agent } })
+    await emit({ type: "session.execution.succeeded", created: stamp(), data: { sessionID: activity.id } })
+  } else if (activity.kind === "turn") {
+    await emit({ type: "session.step.started", created: stamp(), data: { sessionID: session, assistantMessageID: `step-${activity.index}` } })
+    await emit({ type: "session.step.ended", created: stamp(), data: { sessionID: session, assistantMessageID: `step-${activity.index}`, model: activity.model, tokens: activity.usage } })
+  }
+}
+// One final boundary: the reporter materializes whatever never closed and
+// flushes the last payload.
+await emit({ type: "session.execution.succeeded", created: stamp(), data: { sessionID: session } })
+await new Promise((resolve) => setTimeout(resolve, 200))
+closed = true
+if (wake) {
+  const resolve = wake
+  wake = null
+  resolve()
+}
+await new Promise((resolve) => setTimeout(resolve, 200))
+"#;

@@ -12,6 +12,7 @@ use crate::common;
 
 pub mod adr_qualification_gate_e2e_steps;
 pub mod adr_qualification_gate_steps;
+pub mod agent_activity_reporting_e2e_steps;
 pub mod agent_activity_reporting_steps;
 pub mod arc42_review_alignment_steps;
 pub mod archive_proof_e2e_steps;
@@ -24,7 +25,9 @@ pub mod coverage_readme_example_steps;
 pub mod coverage_script_workflow_e2e_steps;
 pub mod coverage_script_workflow_steps;
 pub mod deduplicate_change_dir_detection_steps;
+pub mod development_record_e2e_steps;
 pub mod development_record_steps;
+pub mod development_report_e2e_steps;
 pub mod development_report_steps;
 pub mod development_timeline_support;
 pub mod enforce_post_merge_e2e_gate_steps;
@@ -169,6 +172,23 @@ pub struct GivnWorld {
     /// State for the `development-report` scenarios (the generated report and
     /// the record its Given seeded).
     pub(crate) development_report: Option<development_report_steps::DevelopmentReportState>,
+    /// State for the `@e2e` `development-record` scenarios: the parsed
+    /// machine-readable record the scenario's own read printed.
+    // Task E1 creates the e2e tier's slots; the capability's first `@e2e`
+    // scenario (Task E2/E3) is the one that reads this one.
+    #[allow(dead_code)]
+    pub(crate) development_record_e2e:
+        Option<development_record_e2e_steps::DevelopmentRecordE2eState>,
+    /// State for the `@e2e` `agent-activity-reporting` scenarios: the output of
+    /// the reporter run the scenario drove through its real entry point.
+    #[allow(dead_code)] // Task E4 reads it.
+    pub(crate) agent_activity_reporting_e2e:
+        Option<agent_activity_reporting_e2e_steps::AgentActivityReportingE2eState>,
+    /// State for the `@e2e` `development-report` scenarios: the generated
+    /// report and the browser the browser scenarios drive.
+    #[allow(dead_code)] // Tasks E5–E9 read it.
+    pub(crate) development_report_e2e:
+        Option<development_report_e2e_steps::DevelopmentReportE2eState>,
 }
 
 /// A readiness probe running on a background thread.

@@ -10,6 +10,7 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 use tempfile::TempDir;
 
+pub mod browser;
 pub mod reference_check;
 
 /// The version-control fixture the project root emulates.
