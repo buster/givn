@@ -5184,7 +5184,7 @@ name it.
 
 ## Task 22 — `The neutral skills target receives no development reporter` (`agent-activity-reporting`, added)
 
-- [ ] **Scenario: `The neutral skills target receives no development reporter`**
+- [x] **Scenario: `The neutral skills target receives no development reporter`**
   - Design constraints:
     - The `agents` target is a skills mirror that no harness executes; it
       receives **no** reporter. Installing one would claim activity that can
@@ -5319,9 +5319,18 @@ name it.
         4 steps (4 passed)
         EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+  - [x] **COMMIT** — `eb2191810eb28efd06adf6a7a789d5ae4a660681` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `The neutral skills target receives no
         development reporter` in the body. Record the revision identifier.
+        ```
+        $ GIVN_ATTRIBUTION_ACTIVE=1 GIVN_ATTRIBUTION_LLM=deepseek/deepseek-flash \
+          GIVN_ATTRIBUTION_REASONING=max GIVN_ATTRIBUTION_HARNESS=omp \
+          ./target/debug/givn commit -m "feat(agent-activity-reporting): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        The neutral skills target receives no development reporter"
+        [16:10:46] committed revision on the Git backend
+        EXIT=0
+        ```
 
 ## Task 23 — `A wait the harness does not time is still recorded with a duration` (`agent-activity-reporting`, added)
 
