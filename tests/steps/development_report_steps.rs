@@ -484,6 +484,20 @@ fn generate_report_for_topic(world: &mut GivnWorld, topic: String) {
     state(world).report_path = Some(report);
 }
 
+#[given(
+    regex = r#"^a change "([^"]+)" whose record holds an entry appended after an entry with a later end time$"#
+)]
+fn change_with_an_entry_appended_after_a_later_end(world: &mut GivnWorld, id: String) {
+    let scope = Scope::Change { id: id.clone() };
+    let seeded = {
+        let env = project_root(world);
+        run_fixture_command(env, &["new", &id]);
+        support::seed_out_of_order_steps(env, &scope)
+    };
+    state(world).seeded = seeded;
+    world.last_change_id = Some(id);
+}
+
 #[when(regex = r#"^the developer generates the development report for "([^"]+)"$"#)]
 fn generate_report_for_change(world: &mut GivnWorld, id: String) {
     let report = {
@@ -975,6 +989,112 @@ fn report_names_no_change_that_does_not_exist_yet(world: &mut GivnWorld) {
             .env
             .as_ref()
             .expect("a project root is required first"),
+    );
+}
+
+/// The spans the written report draws, in document order: each one's entry id
+/// and its recorded end timestamp (as milliseconds), read from the markup the
+/// screen renders.
+fn rendered_spans(document: &str) -> Vec<(u64, i64)> {
+    timeline_region(document)
+        .split("<g class=\"span\"")
+        .skip(1)
+        .map(|span| {
+            let id = span
+                .split("data-entry-id=\"")
+                .nth(1)
+                .and_then(|value| value.split('"').next())
+                .and_then(|value| value.parse().ok())
+                .unwrap_or_else(|| panic!("a drawn span carries no entry id: {span}"));
+            let at = span
+                .split("data-at=\"")
+                .nth(1)
+                .and_then(|value| value.split('"').next())
+                .and_then(givn::history::parse_rfc3339_ms)
+                .unwrap_or_else(|| panic!("a drawn span carries no readable `at`: {span}"));
+            (id, at)
+        })
+        .collect()
+}
+
+/// The axis ticks the written report draws, in document order, as recorded
+/// instants in milliseconds.
+fn rendered_ticks(document: &str) -> Vec<i64> {
+    timeline_region(document)
+        .split("<text class=\"tick\"")
+        .skip(1)
+        .map(|tick| {
+            tick.split("data-at-ms=\"")
+                .nth(1)
+                .and_then(|value| value.split('"').next())
+                .and_then(|value| value.parse().ok())
+                .unwrap_or_else(|| panic!("a drawn tick carries no instant: {tick}"))
+        })
+        .collect()
+}
+
+#[then("the report orders the entries by their recorded end time")]
+fn report_orders_the_entries_by_their_recorded_end_time(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let entries = seeded(world);
+
+    // The fixture's own claim: the store's line order is not the record's time
+    // order, so a report that reused the store's order (or the ids, which are
+    // minted in that order) cannot pass.
+    let file_order: Vec<u64> = entries.iter().map(|entry| entry.id).collect();
+    let mut by_time: Vec<(i64, u64)> = entries
+        .iter()
+        .map(|entry| {
+            let at = givn::history::parse_rfc3339_ms(&entry.at)
+                .unwrap_or_else(|| panic!("the fixture's `at` does not parse: {}", entry.at));
+            (at, entry.id)
+        })
+        .collect();
+    by_time.sort();
+    let time_order: Vec<u64> = by_time.iter().map(|(_, id)| *id).collect();
+    assert_ne!(
+        file_order, time_order,
+        "the fixture's file order must contradict its time order"
+    );
+
+    let ordered: Vec<u64> = model["entries"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the model carries no entries: {model:#?}"))
+        .iter()
+        .map(|entry| {
+            entry["id"]
+                .as_u64()
+                .unwrap_or_else(|| panic!("an entry carries no id: {entry}"))
+        })
+        .collect();
+    assert_eq!(
+        ordered, time_order,
+        "the model's spans are not in recorded-time order: {model:#?}"
+    );
+
+    // The rendered timeline agrees: its spans are drawn in the model's order,
+    // and their recorded times never run backwards.
+    let spans = rendered_spans(&document);
+    let drawn: Vec<u64> = spans.iter().map(|(id, _)| *id).collect();
+    assert_eq!(
+        drawn, time_order,
+        "the drawn spans are not in recorded-time order: {document}"
+    );
+    assert!(
+        spans.windows(2).all(|pair| pair[0].1 <= pair[1].1),
+        "the drawn spans' recorded times are not ascending: {document}"
+    );
+
+    // The rendered axis agrees too: its ticks run forwards in time.
+    let ticks = rendered_ticks(&document);
+    assert!(
+        !ticks.is_empty(),
+        "the report draws no axis ticks: {document}"
+    );
+    assert!(
+        ticks.windows(2).all(|pair| pair[0] < pair[1]),
+        "the drawn axis ticks are not ascending in time: {ticks:?}"
     );
 }
 

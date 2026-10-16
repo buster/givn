@@ -4,6 +4,7 @@
 //! Like `givn history`, this command runs without a recorder: rendering a
 //! report must never extend the record it renders.
 
+use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -138,12 +139,7 @@ impl Summary {
             entries: entries.len(),
             ..Summary::default()
         };
-        let (mut earliest, mut latest) = (None::<i64>, None::<i64>);
         for entry in entries {
-            if let Some(time) = crate::history::parse_rfc3339_ms(&entry.at) {
-                earliest = Some(earliest.map_or(time, |value| value.min(time)));
-                latest = Some(latest.map_or(time, |value| value.max(time)));
-            }
             if records_span(&entry.kind) && entry.duration_ms.is_none() {
                 summary.unmeasured_durations += 1;
             }
@@ -160,15 +156,24 @@ impl Summary {
                 summary.unmeasured_turns += 1;
             }
         }
-        summary.elapsed_ms = earliest
-            .zip(latest)
-            .and_then(|(earliest, latest)| u64::try_from(latest - earliest).ok());
+        summary.elapsed_ms = recorded_span(entries);
         summary.longest_steps = ranked_steps(entries);
         let tokens = TokenRollUp::of(entries);
         summary.tokens_by_model = tokens.model_rows();
         summary.tokens_by_subagent = tokens.subagent_rows();
         summary
     }
+}
+
+/// The window's elapsed time: its last recorded end minus its first. The window
+/// is ordered by `at` before the summary reads it, so its ends are the window's
+/// extremes and the elapsed time is never a second scan of the record; an end
+/// the record cannot read leaves the elapsed time unmeasured rather than
+/// guessed.
+fn recorded_span(entries: &[HistoryEntry]) -> Option<u64> {
+    let first = crate::history::parse_rfc3339_ms(&entries.first()?.at)?;
+    let last = crate::history::parse_rfc3339_ms(&entries.last()?.at)?;
+    u64::try_from(last - first).ok()
 }
 
 /// One token total: the model or subagent it belongs to and the tokens the
@@ -303,6 +308,7 @@ pub struct RankedStep {
 
 /// Record lines → `ReportModel` (bands, ordering, ranking, totals).
 pub fn build_report_model(scope: Option<Scope>, entries: Vec<HistoryEntry>) -> ReportModel {
+    let entries = ordered_by_recorded_time(entries);
     let bands = bands_for(scope.as_ref(), &entries);
     let summary = Summary::of(&entries);
     ReportModel {
@@ -313,11 +319,37 @@ pub fn build_report_model(scope: Option<Scope>, entries: Vec<HistoryEntry>) -> R
     }
 }
 
+/// The window's entries in the record's own order: by `at`, the entry's
+/// recorded end timestamp, and never by the entry's line position in the store.
+/// The store is append-only and concurrent writers make file order and time
+/// order different things, while `at` is the only ordering the record
+/// guarantees. `id` is minted at append time under the append lock and is
+/// therefore file-ordered too, so it is never the sort key — only the tie
+/// breaker for two entries that record the same instant. An entry whose `at`
+/// does not parse sorts after every timestamp the record can read.
+fn ordered_by_recorded_time(mut entries: Vec<HistoryEntry>) -> Vec<HistoryEntry> {
+    entries.sort_by(|a, b| {
+        match (
+            crate::history::parse_rfc3339_ms(&a.at),
+            crate::history::parse_rfc3339_ms(&b.at),
+        ) {
+            (Some(left), Some(right)) => left.cmp(&right).then_with(|| a.id.cmp(&b.id)),
+            (Some(_), None) => Ordering::Less,
+            (None, Some(_)) => Ordering::Greater,
+            (None, None) => a.id.cmp(&b.id),
+        }
+    });
+    entries
+}
+
 /// The report's window: the bands its rows cover. A named scope is one band —
 /// the report of that change, topic, or project. The project report groups the
 /// window's entries by the scope each one belongs to, in the order the window
 /// first names them, so the project's own entries stay in the "outside a
-/// scope" band instead of being folded into a change.
+/// scope" band instead of being folded into a change. Every band takes its
+/// spans in the window's own order, so the one `at` comparator
+/// [`ordered_by_recorded_time`] applies to the window orders every band, the
+/// drawn axis, and the summary alike.
 fn bands_for(scope: Option<&Scope>, entries: &[HistoryEntry]) -> Vec<Band> {
     let mut bands: Vec<Band> = Vec::new();
     if let Some(scope) = scope {
@@ -466,23 +498,63 @@ const MARGIN: f64 = 8.0;
 const BAND_HEIGHT: u64 = 56;
 const MIN_SPAN: f64 = 2.0;
 
+/// The axis strip above the band rows, and the most ticks the initial view
+/// draws, so a report of any length carries a readable axis.
+const AXIS_HEIGHT: u64 = 28;
+const MAX_TICKS: usize = 6;
+
+/// The steps the axis may mark between two ticks: round times, so a tick label
+/// is a time a reader recognises rather than an arbitrary instant.
+const TICK_STEPS_MS: [i64; 12] = [
+    1_000,
+    5_000,
+    15_000,
+    30_000,
+    60_000,
+    300_000,
+    900_000,
+    1_800_000,
+    3_600_000,
+    3 * 3_600_000,
+    6 * 3_600_000,
+    12 * 3_600_000,
+];
+
 /// The timeline section: one row per band, each row naming its scope and
-/// drawing its spans across the window's time range. A window with no bands
-/// draws no timeline at all.
+/// drawing its spans across the window's time range, above an axis strip of
+/// round tick labels. A window with no bands draws no timeline at all.
 fn render_timeline(model: &ReportModel) -> String {
     if model.bands.is_empty() {
         return String::new();
     }
     let scale = TimeScale::of(&model.entries);
-    let height = u64::try_from(model.bands.len()).unwrap_or_default() * BAND_HEIGHT + MARGIN as u64;
+    let height = AXIS_HEIGHT + model.bands.len() as u64 * BAND_HEIGHT + MARGIN as u64;
     let mut svg = format!(
         "<section class=\"timeline-section\" aria-label=\"Development timeline\">\n<svg class=\"timeline\" role=\"img\" aria-labelledby=\"timeline-title\" viewBox=\"0 0 {WIDTH} {height}\">\n<title id=\"timeline-title\">Development timeline</title>\n"
     );
+    svg.push_str(&render_axis(&scale));
     for (index, band) in model.bands.iter().enumerate() {
-        let y = index as u64 * BAND_HEIGHT;
+        let y = AXIS_HEIGHT + index as u64 * BAND_HEIGHT;
         svg.push_str(&render_band(y, band, &model.entries, &scale));
     }
     svg.push_str("</svg>\n</section>");
+    svg
+}
+
+/// The axis strip: the window's range as round tick labels in time order, the
+/// same order the band rows draw their spans in. The axis is derived from the
+/// embedded timestamps alone, never from the wall clock, so the same record
+/// always renders identically.
+fn render_axis(scale: &TimeScale) -> String {
+    let mut svg = String::from("<g class=\"axis\" aria-hidden=\"true\">\n");
+    for tick in scale.ticks() {
+        svg.push_str(&format!(
+            "<text class=\"tick\" data-at-ms=\"{tick}\" x=\"{:.1}\" y=\"16\">{}</text>\n",
+            scale.x(tick),
+            scale.label(tick),
+        ));
+    }
+    svg.push_str("</g>\n");
     svg
 }
 
@@ -587,6 +659,37 @@ impl TimeScale {
         let x = self.x(start);
         let width = (self.x(end) - x).max(MIN_SPAN);
         (x, width)
+    }
+
+    /// The axis's ticks: round instants across the window's range, in time
+    /// order, none of them outside the range. The step is the smallest one that
+    /// keeps the count within [`MAX_TICKS`], so a short window marks seconds and
+    /// a long one marks hours; a window shorter than the smallest step gets no
+    /// tick at all rather than a tick outside it.
+    fn ticks(&self) -> Vec<i64> {
+        let end = self.start_ms + self.span_ms;
+        let Some(step) = TICK_STEPS_MS
+            .iter()
+            .copied()
+            .find(|step| self.span_ms / step <= MAX_TICKS as i64)
+        else {
+            return Vec::new();
+        };
+        let mut ticks = Vec::new();
+        let mut tick = self.start_ms.div_euclid(step) * step;
+        while tick <= end && ticks.len() < MAX_TICKS {
+            if tick >= self.start_ms {
+                ticks.push(tick);
+            }
+            tick += step;
+        }
+        ticks
+    }
+
+    /// A tick's label: the time of day the tick marks.
+    fn label(&self, at_ms: i64) -> String {
+        let minute_of_day = at_ms.div_euclid(60_000).rem_euclid(24 * 60);
+        format!("{:02}:{:02}", minute_of_day / 60, minute_of_day % 60)
     }
 }
 
