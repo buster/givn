@@ -54,7 +54,7 @@ Feature: Development Report
     Then the report shows the empty state for "demo"
     And the report draws no timeline axis for it
 
-  @givn.added @wip
+  @givn.added
   Scenario: A dense record is reported as aggregates instead of raw ticks
     Given a change "demo" whose record holds hundreds of short agent activities
     When the developer generates the development report for "demo"
