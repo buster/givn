@@ -176,6 +176,33 @@ is already required on `PATH` by the existing omp/OpenCode attribution E2E.
 
 ## Record Model And Intake Contract
 
+### When the recorder engages
+
+The recorder engages **only when the project root carries the Givn scaffold
+(`givn/`)**. Before the scaffold exists it writes nothing and creates no
+directory, so a refused command in a bare root — `givn init` with no agent
+target, or a root a backend preflight refuses — leaves that root exactly as it
+was. A successful `givn init` creates the scaffold and then records.
+
+The rule keys on the **scaffold**, never on the VCS markers: once `givn/` exists,
+every command records, including refusals and failures, and a scaffolded project
+without a usable backend still records (its own store write is legitimate — the
+ignore destinations are Task 10/11's business, not the recorder's).
+
+### Test-side exclusion of the store
+
+The store is Givn runtime state, not project content, so the acceptance suite's
+project-state comparison helpers exclude `givn/history/**`:
+`tests/steps/scm_backend_selection_steps.rs::snapshot_tree`/`collect_tree`
+(which already skips `.git`/`.fslckout`/`_FOSSIL_` and drives "no file in the
+project changed") and `tests/steps/serve_extended_rules_steps.rs::project_files`/
+`collect_project_files` (which drives "no project file changed"). Without the
+exclusion, a legitimate command entry makes refusal and guidance scenarios
+report a changed project. The other tree walkers in the suite never reach the
+record directory (their callers root them at `givn/specs` or at feature files),
+so the exclusion is scoped to the record directory and changes no other path's
+behavior.
+
 ### Scope resolution and the report window
 
 `resolve_scope` binds every recorded entry to exactly one scope from the
@@ -374,7 +401,7 @@ Rules the intake enforces, and the reason each exists:
 
 | Point | File | Entries emitted |
 |---|---|---|
-| Command dispatch | `src/main.rs` | one `command` entry per `givn` invocation (name, scope, duration, outcome, exit code) |
+| Command dispatch | `src/main.rs` | one `command` entry per `givn` invocation (name, scope, duration, outcome, exit code) — subject to the engagement rule below: nothing is emitted or created before the project carries the Givn scaffold |
 | Shell execution (the single choke point) | `src/subprocess.rs::sh_streamed` | one `step` entry per shell command with its existing `label` (gate hook, verification scope, coverage pass) and its measured duration |
 | Hook engine | `src/hooks.rs::run_artifact_hooks`, `run_archive_gate_hooks` | one `hook` entry per hook, parented to the command entry |
 | Archive gate phases | `src/cli/archive.rs::run` | one `phase` entry per gate phase (the ten numbered phases), parented to the archive command |
@@ -387,7 +414,10 @@ Rules the intake enforces, and the reason each exists:
 appended an entry about itself would put the newest entry into every report it
 produced and make the record's size depend on how often it was read. Both
 commands therefore run without a recorder; every other command, including the
-intake, records normally.
+intake, records normally — **within the engagement rule of the record model
+section**: this section lists what is recorded once the project carries the
+Givn scaffold, and before that scaffold exists the recorder writes nothing and
+creates no directory.
 
 The recorder is a small `HistoryRecorder` value created once per process
 (`src/history.rs`): it holds the store path and the resolved scope, mints each
@@ -1006,7 +1036,7 @@ flowchart LR
 | `src/cli/check.rs`, `src/cli/commit.rs` | phase and revision entries |
 | `src/skills/targets.rs` | install all three reporter assets for their targets; extend `merge_claude_settings` to merge the per-event Claude registration idempotently per `(event, matcher, command)` and to re-apply a changed matcher; register all three in `managed_generated_paths` |
 | `src/skills/rules.rs` | add the three reporter paths to `ignore_entries` so the `local-only` policy keeps them out of a repository |
-| `tests/` | six new step files, one support file, `tests/common/browser.rs`, `tests/e2e/` (driver + `package.json`), and the **fixture class** whose hand-written ignore content would otherwise commit the store: `tests/steps/run_execution_e2e_steps.rs::git_managed_project`, `tests/steps/release_0_3_0_e2e_steps.rs::git_project_with_version`, and `tests/steps/release_0_3_0_e2e_steps.rs::fossil_project_with_version`. Minimal remedy per fixture: the record path (`givn/history/*`) joins the fixture's hand-written ignore content, or the store is removed before the fixture's commit |
+| `tests/` | six new step files, one support file, `tests/common/browser.rs`, `tests/e2e/` (driver + `package.json`); the **fixture class** whose hand-written ignore content would otherwise commit the store (`tests/steps/run_execution_e2e_steps.rs::git_managed_project`, `tests/steps/release_0_3_0_e2e_steps.rs::git_project_with_version` and `::fossil_project_with_version`; minimal remedy: the record path joins each fixture's hand-written ignore content, or the store is removed before the fixture commit); and the **comparison-helper class** that must exclude the record directory (`tests/steps/scm_backend_selection_steps.rs::snapshot_tree`/`collect_tree` and `tests/steps/serve_extended_rules_steps.rs::project_files`/`collect_project_files`) |
 | `setup-e2e-browser.sh` | **new** — one-time browser installation |
 | `givn/commands.yaml` | `verify.command` narrows to `./run-tests.sh --non-e2e`; `verify.e2e_command` stays `./run-tests.sh --e2e` (the README's command table follows) |
 | `.github/workflows/ci.yml`, `.github/workflows/release.yml` | install Node/Chromium (`./setup-e2e-browser.sh`) before the first suite invocation, and run the regular scope as `./run-tests.sh --non-e2e` before the e2e scope |

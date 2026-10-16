@@ -553,3 +553,176 @@ decision, or scenario changes.
   complete the class evidence.
 
 **DESIGN-REVIEW: PASS**
+
+## Re-review round 2 (2026-10-16, second correction: recorder engagement + test-side store exclusion)
+
+**Why it ran.** With Tasks 10–11 landed, the implementation phase ran the
+permanent non-`@e2e` scope and hit a second failure class, reproduced on
+2026-10-16: **(1) 4 × `the directory "givn" does not exist`** — a refused
+`givn init` in a bare root still wrote the store (`HistoryRecorder::finish`
+ran unconditionally: `ensure_ignored`, then the append whose `create_dir_all`
+created `givn/history/`), so the four refusal scenarios at
+`givn/specs/initialize-project/initialize-a-project.feature:196,206,213,221`
+(assertions at `:204,211,219,226`) failed; and **(2) 10 × project-state
+comparisons** read the store as a project change — `modified:
+givn/history/events.jsonl` — nine through `no file in the project changed`
+(`fragments/detect-the-project-repository.feature:16,23,36,43`,
+`archive-change/archive-proof.feature:202,211,221,230,240`) and one through
+`no project file changed`
+(`obtain-effective-guidance/serve-extended-rules.feature:47`). The design
+authority applied the correction — the engagement rule and the test-side
+exclusion — and a fresh-context grilling pass (high effort) interrogated it;
+the grill returned two blockers and six correctness findings, all answerable
+from the codebase, so no operator question arose. The round-4 fixes applied
+every one of them; this hardening pass verified the applied text against all
+fifteen grill branches and wrote this record (it wrote nothing else).
+
+**The two circle-breaking fixes.**
+
+1. **Recorder engagement (product).** The recorder engages **only when the
+   project root carries the Givn scaffold (`givn/`)**; before the scaffold
+   exists it writes nothing and creates no directory; a successful `givn init`
+   creates the scaffold and then records; once the scaffold exists every
+   command records, including refusals and failures; the rule keys on the
+   scaffold, never on the VCS markers. Rejected alternatives: **narrowing the
+   four permanent assertions** — they pin the init contract's own promise (a
+   refused init leaves no Givn project behind), so the failure was the
+   product's, not the tests'; **keying on the VCS markers or on a usable
+   backend** — a scaffolded project without a usable backend still records
+   (Task 11a's own constraint), and `givn init` runs in a bare directory by
+   design, so repository presence cannot be the trigger; **gating at dispatch**
+   (`records()` before `dispatch` in `src/main.rs`) instead of at write time —
+   the successful `givn init` must record its own command, which only exists
+   once the process has created the scaffold, and that is exactly what the new
+   scenario's second half discriminates (grill A4).
+2. **Path-based helper exclusion (test-side).** The project-state comparison
+   helpers exclude the record directory **by path** —
+   `path == root.join("givn/history")` — scoped to the record directory only.
+   Rejected alternatives: **a bare-name skip** (`Some("history")`; the
+   `collect_tree` skip list matches `entry.file_name()`, so it would also drop
+   any unrelated `history` directory anywhere in a fixture tree, contradicting
+   "no other path's behavior changes" — grill B3); **changing the scenarios,
+   their fixtures, or their assertions** — the helpers' contract is "a command
+   changed nothing", and the store is legitimate runtime state of every
+   scaffolded command, so deleting it in fixtures or tolerating it in the
+   assertions would hide the store instead of classifying it.
+
+**Grill branch outcomes (fresh context, high effort).** All fifteen branches
+walked; the grill's citations were re-verified against the working tree by this
+pass.
+
+| # | Branch | Outcome | Disposition |
+|---|---|---|---|
+| A1 | The four permanent `the directory "givn" does not exist` assertions | FIXED by the engagement rule (pre-rule they fail; under the rule the refused init leaves no scaffold and no store) | rule carried in design.md/TC-34/§8.25/arc42.md; Task 11a implements it |
+| A2 | Other permanent scenarios that run commands without a `givn/` scaffold | INTACT — every scaffold-less refusal asserts exit code + stderr only; successful inits still scaffold and record; nothing depends on the removed bare-root writes | no change needed |
+| A3 | The new delta scenario's executability with existing step vocabulary | FAIL (blocker 1) — the second Given (`a project root without a Git worktree or a Fossil checkout`) bound to the permanent `make_init_root_without_git` fixture, which scaffolds the root, so `the directory "givn" does not exist` could never hold; a second binding for the same phrase would be an AmbiguousMatch | **fix 1**: second Given removed |
+| A4 | The new scenario's discrimination | PARTIAL DEVIATION — the first half discriminates (pre-fix the refusal leaves `givn/`); the second half exists to catch a dispatch-time predicate; Task 11a's stated RED failure named the wrong step | **fix 6**: RED expectation names the `the directory "givn" does not exist` assertion |
+| A5 | Interaction with Task 10/11's ignore mechanism | GAP (blocker 2) — `finish` calls `ensure_ignored` first, and a backendless root's `.gitignore` write (`upsert_block` creates the file) would violate "writes nothing"; only the store path was gated | **fix 2**: predicate pinned at the top of `finish` |
+| A6 | Count updates vs actual file contents | MIXED — five current statements read 34, the header needed the section-count qualification, and "Every `@givn.added` entry carries `@wip`" was false | **fix 3** |
+| A7 | arc42 / TC-34 / §8.25 statements | CONSISTENT — both halves present; no contradictory wording in 05/06/11, ADR-073, proposal, or usecase | re-verified, no change needed |
+| A8 | Superseded wording in design.md's Capture Architecture | ONE SENTENCE LEFT — the capture table row and the two-commands paragraph implied every non-read command writes | **fix 4** |
+| B1 | Do the named helpers cover all 10 comparison failures? | YES, exactly — 9 through `scm_backend_selection_steps.rs::snapshot_tree`/`collect_tree` (`detect-the-project-repository:16,23,36,43`; `archive-proof:202,211,221,230,240`) + 1 through `serve_extended_rules_steps.rs::project_files`/`collect_project_files` (`serve-extended-rules:47`) | helpers named in design.md + Task 11a |
+| B2 | Any other project-root walker that includes the store | NONE FOUND — all tree walks audited with their callers' roots; the out-of-scope ones stay untouched | out-of-scope walkers named in Task 11a |
+| B3 | Exclusion scoping | INTENT YES, IMPLEMENTATION SHAPE RISKY — a name-based skip (`Some("history")`) invites collateral exclusion; the record-exact form is path-based | **fix 5** |
+| B4 | Declared in the design | YES — Architecture Impact `tests/` row + the record-model subsection, echoed in Task 11a and arc42.md | re-verified |
+| C1 | No re-opening: inventory, `@e2e` titles, personas, routing | INTACT — 8 inventory rows = 8 matrix rows = 8 `@e2e` titles; personas unchanged; proposal/usecase untouched | re-verified |
+| C2 | Tasks 1–11 evidence/hashes, Task 11a shape | AS DECLARED — each of Tasks 1–11 is 5/5 checked and all eleven revision identifiers resolve to commits; Task 11a is 5/5 unchecked with placeholder evidence; `@wip` = 31 pending sections; minor: the header's "Every `@givn.added` entry carries `@wip`" wording | **fix 3** ("still-pending entry" wording) |
+| C3 | Other permanent-scope failure class | NONE FOUND beyond the 4 + 10 split (by helper/caller inventory; no suite was re-run) | no change needed |
+
+**Round-4 fixes verified against the working tree.**
+
+| # | Fix | Verified at |
+|---|---|---|
+| 1 | The scenario's second Given removed — the bare root already carries no VCS markers (binding `tests/steps/mod.rs:288` → `tests/common/mod.rs::make_bare_root`, "no `givn/` subtree", no `.git` created) | `development-record.feature:89-99` |
+| 2 | The engagement predicate is pinned **at the top of `HistoryRecorder::finish`, before `ensure_ignored` and before the store path is created or opened** — both the ignore re-assert and the append are gated, including the `.gitignore` fallback a backendless root would otherwise receive | `tasks.md:2849-2856` |
+| 3 | Delta run counts read 35 everywhere a count is stated — `:24`, `:36`, `:224`, `:3972`, `:3976`, `:4062`, `:4477`, and `arc42.md:98-99` ("Delta inventory is now 43 entries (35 non-`@e2e`, 8 `@e2e`)"); the header reads "the 34 non-`@e2e` scenario sections" with the "(the one `@givn.modified` entry is reconciled in S2b, not as a scenario task)" clause (`:3-5`), and the work order reconciles 34 sections / 35 scenarios (`:40-43`); "Every still-pending entry carries `@wip`" replaces the false `@givn.added` wording (`:26`) | as listed |
+| 4 | The Capture Architecture table row and the two-commands paragraph both carry the scaffold qualification/pointer ("subject to the engagement rule …: nothing is emitted or created before the project carries the Givn scaffold"; "within the engagement rule of the record model section") | `design.md:404`, `:412-420` |
+| 5 | The helper exclusion is path-based in the task text — `path == root.join("givn/history")`, explicitly "not by bare entry name", with the `entry.file_name()` collateral called out for `collect_tree` and the existing path form cited for `collect_project_files`; the out-of-scope walkers are named | `tasks.md:2862-2886` |
+| 6 | Task 11a's RED expectation names the `the directory "givn" does not exist` assertion as the failure point and leaves undefined-step reporting to the pasted output ("paste whichever output the run actually produces; the run must exit non-zero either way") | `tasks.md:2887-2893` |
+
+**Round-3 rules verified as written (this pass).**
+
+- **Engagement rule** — design.md §Record Model → *When the recorder engages*
+  (`:179-190`): scaffold-keyed, writes nothing / creates no directory before
+  the scaffold, `givn init` scaffolds then records, scaffolded projects record
+  refusals and failures; TC-34 (`docs/arc42/02-architecture-constraints.md:34`)
+  carries the same rule ("engages only when … writes nothing and creates no
+  directory … the rule keys on the scaffold, not on the VCS markers"); §8.25
+  *Engagement* (`docs/arc42/08-crosscutting-concepts.md:927-934`); the
+  change-level `arc42.md` rows 2 and 8 (`:15`, `:21`) and the pass note
+  (`:87-100`). The `givn init` clause lives in design.md, §8.25, and Task 11a
+  (`:2840-2842`); TC-34 and the arc42 rows carry the engagement and
+  scaffold-not-VCS clauses.
+- **The new scenario** — `development-record.feature:89-99` carries exactly
+  the round-4 text (single Given `a project root without a givn/ directory`;
+  refused `givn init`; `the directory "givn" does not exist`; `holds no
+  development record`; successful `givn init --no-addons --agents opencode`;
+  `the directory "givn" exists`; `holds a development record`), tagged
+  `@givn.added @wip`. No binding hazard: literal step attributes are anchored
+  (`^…$`, `cucumber-codegen-0.23.0/src/attribute.rs:418`), so the bare-root
+  Given cannot collide with the longer Git-repository Given;
+  both When steps match the one generic binding at
+  `tests/steps/init_agent_target_selection_steps.rs:193` (the literal phrase
+  `the consumer runs` plus one backquoted command captured as a whole);
+  the exit steps match `tests/steps/mod.rs:503/:542`; `the directory "givn"
+  does not exist` reuses the existing generic binding (`tests/steps/mod.rs:928`)
+  — a second binding for that phrase would be an AmbiguousMatch — while `the
+  directory "givn" exists` and the two `holds … record` steps have no binding
+  today and are Task 11a's new steps.
+- **Test-side exclusion declared** — design.md → *Test-side exclusion of the
+  store* (`:192-204`) and the Architecture Impact `tests/` row (`:1039`);
+  §8.25 *Runtime state, not project content* (`:935-940`); Task 11a
+  (`:2856-2886`); `arc42.md` note (`:94-98`).
+
+**Nothing else re-opened.** The uncommitted correction spans exactly six files
+(`design.md`, `tasks.md`, `arc42.md`,
+`docs/arc42/02-architecture-constraints.md`,
+`docs/arc42/08-crosscutting-concepts.md`, the delta `development-record.feature`)
+— +182/−23 lines, every hunk in the two corrected rules' text. No tasks.md hunk
+touches Tasks 1–11 (the hunks are the header/inventory/work order, the scope
+line, the Task 11a insertion, E1's count proof, sub-task 5's paste instruction,
+and Done-when). `proposal.md`, `usecase.md`, and the other two delta features
+are byte-identical to the reviewed revision; the interaction inventory, the
+Interaction Coverage Matrix, and the `@e2e` titles still hold the same eight
+rows in the same order; personas and routing are unchanged.
+
+**Checks run by this pass.**
+
+- `givn lint --change development-timeline` → exit 2: 4 files checked, 31
+  findings — the 31 `@wip` scenarios awaiting their tasks (23 non-`@e2e`
+  incl. Task 11a + the 8 `@e2e`) — plus `[SUBST] advisory` permanent-corpus
+  subset matches; no parse error and no error-kind finding.
+- Mechanical recount from the four delta features: 43 entries = 42
+  `@givn.added` + 1 `@givn.modified`, 0 `@givn.removed`; 35 non-`@e2e` + 8
+  `@e2e` (14/12/2, 14/13/1, 14/9/5, 1/1/0); `@wip` = 31 = the 31 pending
+  scenario sections; Tasks 1–11 are 5/5 checked and Task 11a 0/5; every one of
+  the eleven recorded revision identifiers resolves to a commit
+  (`git cat-file -t`).
+- Consistency invariants re-checked: 8 §Interactions rows = 8 matrix rows = 8
+  `@e2e` titles; every current run-count statement reads 35 (S1's and S2b's
+  pasted listings — 41/33/8 and 42/34/8 — are dated evidence from before Task
+  11a's scenario existed, and E1's pending proof will paste 35 vs 8).
+- No suite was run (read-only scope): the 4 + 10 failure accounting is the
+  implementation phase's own observation, and the helper coverage is the
+  grill's caller/root inventory re-checked by this pass.
+
+**Residuals noted by this pass.** None re-opens a question; no mechanism,
+decision, scenario, or count changes.
+
+- `design.md:404` reads "subject to the engagement rule below", while the
+  named subsection (`### When the recorder engages`, `:179-190`) sits above the
+  Capture Architecture section; the row's colon carries the rule content and
+  the paragraph below points correctly at "the engagement rule of the record
+  model section", so nothing depends on the pointer — wording only, for the
+  design authority.
+- Task 11a's RED note names the `the project root holds no development record`
+  / `holds a development record` pair as the undefined phrasing; `the
+  directory "givn" exists` (`development-record.feature:98`) is unbound too and
+  will appear in the same undefined-step report — the instruction's "paste
+  whichever output the run actually produces" already covers it; wording only.
+- S1's and S2b's pasted listings predate Task 11a's scenario, so they read
+  41/33/8 and 42/34/8 against the current 43/35/8 inventory; they are dated
+  evidence and no current statement is stale — a dated one-line note in S1/S2b
+  would remove the reader's double-take, if the design authority wants one.
+
+**DESIGN-REVIEW: PASS**

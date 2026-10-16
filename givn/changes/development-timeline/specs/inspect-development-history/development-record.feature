@@ -86,6 +86,18 @@ Feature: Development Record
     When the user runs `givn status --change demo`
     Then the repository's ignore glob names the development record
 
+  @givn.added @wip
+  Scenario: A refused command outside a Givn project creates no record
+    Given a project root without a givn/ directory
+    When the consumer runs `givn init`
+    Then the command exits non-zero
+    And the directory "givn" does not exist
+    And the project root holds no development record
+    When the consumer runs `givn init --no-addons --agents opencode`
+    Then the command exits 0
+    And the directory "givn" exists
+    And the project root holds a development record
+
   @givn.added @e2e @wip
   Scenario: Consumer runs a lifecycle step and reads its recorded actions
     Given a project root with givn/ initialised

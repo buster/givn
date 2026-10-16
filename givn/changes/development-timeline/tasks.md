@@ -1,8 +1,9 @@
 # Tasks: development-timeline
 
 Scenario-by-scenario RED→GREEN→REFACTOR→COMMIT loop. One section per executable
-scenario: the 33 non-`@e2e` scenarios first, in `.feature` order, then the E2E
-setup task, then the 8 `@e2e` scenarios in the same order.
+scenario: the 34 non-`@e2e` scenario sections first, in `.feature` order (the one
+`@givn.modified` entry is reconciled in S2b, not as a scenario task), then the
+E2E setup task, then the 8 `@e2e` scenarios in the same order.
 
 Legend: an unchecked box means pending; a box is checked only when the pasted
 evidence and the revision identifier are filled in. Check each box immediately
@@ -18,28 +19,29 @@ copied verbatim from `proposal.md` §Release note):**
 > report that opens in a browser.
 
 **Delta inventory (verified mechanically against every delta `.feature` under
-`givn/changes/development-timeline/specs/`):** 42 executable scenario entries in
-4 features = 41 `@givn.added`, 1 `@givn.modified` (the S2b corpus-pin
-reconciliation), 0 `@givn.removed`; 34 non-`@e2e` + 8 `@e2e`. A `Scenario
+`givn/changes/development-timeline/specs/`):** 43 executable scenario entries in
+4 features = 42 `@givn.added`, 1 `@givn.modified` (the S2b corpus-pin
+reconciliation), 0 `@givn.removed`; 35 non-`@e2e` + 8 `@e2e`. A `Scenario
 Outline` counts as one entry (its Examples rows are input variation, not
-additional scenarios). Every `@givn.added` entry carries `@wip` today and stays
+additional scenarios). Every still-pending entry carries `@wip` today and stays
 `@wip` until its own RED step removes the tag from that one scenario; the one
 `@givn.modified` entry carries no `@wip` and is reconciled green in S2b.
 
 | Feature (path relative to `GIVN_FEATURES`) | Entries | Non-`@e2e` | `@e2e` |
 |---|---|---|---|
-| `inspect-development-history/development-record.feature` | 13 | 11 | 2 |
+| `inspect-development-history/development-record.feature` | 14 | 12 | 2 |
 | `inspect-development-history/agent-activity-reporting.feature` | 14 | 13 | 1 |
 | `inspect-development-history/development-report.feature` | 14 | 9 | 5 |
 | `fragments/adr-qualification-gate.feature` (`@givn.modified`) | 1 | 1 | 0 |
-| **Total** | **42** | **34** | **8** |
+| **Total** | **43** | **35** | **8** |
 
 **Work order (recorded choice).** `design.md` names no implementation sequencing
 section, so this file follows `.feature` order — the features in the inventory
-order above, scenarios in their in-file order — in three phases: Tasks 1–33
-(the non-`@e2e` scenarios), Task E1 (E2E setup), Tasks E2–E9 (the `@e2e`
-scenarios, same feature order). The one `@givn.modified` entry is not a scenario
-task: ADR-073 raises the register count that the permanent
+order above, scenarios in their in-file order — in three phases: Tasks 1–34
+(the 35 non-`@e2e` scenarios, numbered Tasks 1–33 plus **Task 11a** inserted
+after Task 11 so the later task numbers stay stable), Task E1 (E2E setup), Tasks
+E2–E9 (the `@e2e` scenarios, same feature order). The one `@givn.modified` entry
+is not a scenario task: ADR-073 raises the register count that the permanent
 `adr-qualification-gate` scenario pins, so setup item **S2b** carries the
 `@givn.modified` record and the permanent patch, before any scenario work.
 
@@ -219,7 +221,8 @@ zoom transition and the panel animation.
   GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/<feature>.feature::<scenario title>"
   ```
   Scope commands: full delta `GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e`
-  (33 scenarios, `verify.command` after Task S2) and
+  (35 scenarios, `verify.command` after Task S2 — the 34 non-`@e2e` scenario
+  sections plus the `@givn.modified` entry) and
   `GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --e2e`
   (8 scenarios, `verify.e2e_command`). Run a `Scenario Outline`'s unit once: it
   executes all Examples rows in one process.
@@ -2828,6 +2831,92 @@ name it.
         recorded its own production path as already present.
         ```
 
+## Task 11a — `A refused command outside a Givn project creates no record` (`development-record`, added)
+
+- [ ] **Scenario: `A refused command outside a Givn project creates no record`**
+  - Design constraints:
+    - Engagement rule (product): the recorder engages **only when the project
+      root carries the Givn scaffold (`givn/`)**; before the scaffold exists it
+      writes nothing and creates no directory, so a refused command in a bare
+      root (for example `givn init` with no agent target, or a root without
+      version control) leaves that root untouched. A successful `givn init`
+      creates the scaffold and then records.
+    - The rule keys on the scaffold, **not** on the VCS markers: once `givn/`
+      exists, every command records — including refusals and failures — and a
+      scaffolded project without a usable backend still records (its store write
+      is legitimate; the upgrade clean-checkout refusal is the backend's own
+      business, and the store is ignored through Task 10/11's destinations).
+    - Exact files: `src/history.rs` — the engagement predicate is checked **at
+      the top of `HistoryRecorder::finish`, before `ensure_ignored` and before
+      the store path is created or opened**, so both the ignore re-assert and the
+      store append are gated (calling `finish` in a root with no scaffold must
+      write nothing and create nothing, including the `.gitignore` fallback a
+      backendless root would otherwise receive) — and the step file
+      `tests/steps/development_record_steps.rs` for the new steps. No new
+      command, flag, or output surface.
+    - Test-side class (Part B — the same task owns these edits): the
+      project-state comparison helpers must exclude the record store
+      (`givn/history/**`), because the store is Givn runtime state, not project
+      content, and a legitimate command entry otherwise reads as "the project
+      changed" in refusal and guidance scenarios:
+      - `tests/steps/scm_backend_selection_steps.rs::snapshot_tree` /
+        `::collect_tree` — exclude the record directory **by path**, i.e.
+        `path == root.join("givn/history")`, and not by bare entry name:
+        `collect_tree`'s skip list matches `entry.file_name()`, so skipping
+        `Some("history")` would also drop any unrelated `history` directory
+        anywhere in the tree. This helper drives `no file in the project
+        changed`, shared by the refusal scenarios of
+        `fragments/detect-the-project-repository.feature` and
+        `archive-change/archive-proof.feature` (and it is also used by
+        `archive_proof_steps.rs` and the `scm_fixture` snapshot Given steps).
+      - `tests/steps/serve_extended_rules_steps.rs::project_files` /
+        `::collect_project_files` — same exclusion, and this helper already
+        compares paths (`path == root.join(EXTENSION_FIXTURE_DIR)` at
+        `serve_extended_rules_steps.rs:481`), so the record directory joins that
+        form; this drives `no project file changed` in
+        `obtain-effective-guidance/serve-extended-rules.feature`.
+      - Checked and out of scope (they never walk the record directory, so they
+        stay untouched): `tests/steps/repository_ownership_fixtures_support.rs::snapshot_tree`
+        and `::collect_files` (their callers root them at `givn/specs`),
+        `tests/steps/spec_discovery_deterministic_steps.rs::collect_tree_text`
+        (rooted at `givn/specs`), and
+        `tests/steps/release_0_3_0_e2e_steps.rs::walk_feature_files` (feature
+        files only).
+      - Scope: the exclusion covers the record directory only; no other path's
+        behavior changes.
+    - RED expected failure: the run fails at **the `the directory "givn" does
+      not exist` assertion** (today the refusal still creates `givn/` through
+      the recorder, so the pre-fix behavior breaks that Then). If the runner
+      reports undefined steps for the new phrasing as well — the
+      `the project root holds no development record` / `holds a development
+      record` pair — paste whichever output the run actually produces; the run
+      must exit non-zero either way.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A refused command outside a Givn project creates no record"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the engagement predicate in `src/history.rs` and
+        the helper exclusions above; add the steps to
+        `tests/steps/development_record_steps.rs`. Compile first, re-run →
+        exit 0. Paste it. Also re-run the affected permanent refusal scenarios
+        (`fragments/detect-the-project-repository.feature` and
+        `archive-change/archive-proof.feature`) and paste their exit-0 result,
+        proving the store no longer reads as a project change.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — keep one engagement predicate and one shared skip list
+        (no per-helper duplication of the record path); re-run → still exit 0.
+        Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+        the scenario title `A refused command outside a Givn project creates no
+        record` in the body. Record the revision identifier.
+
 ## Task 12 — `A reported tool call is recorded for its scope` (`agent-activity-reporting`, added)
 
 - [ ] **Scenario: `A reported tool call is recorded for its scope`**
@@ -3880,11 +3969,11 @@ name it.
       is a hard-stop, fix-before-continuing condition.
     - **Scenario-count proof (the subset must be real).** `verify.command` runs
       the `not @e2e` tag set and `verify.e2e_command` the `@e2e` set; with this
-      change in scope that is 33 vs 8 units, so the e2e count is strictly less
+      change in scope that is 35 vs 8 units, so the e2e count is strictly less
       than the full count. Prove it with the runner's own listing (or the
       summary line of each run) and paste both counts:
       `GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e`
-      → 33 scenarios, `GIVN_FEATURES=givn/changes/development-timeline/specs
+      → 35 scenarios, `GIVN_FEATURES=givn/changes/development-timeline/specs
       ./run-tests.sh --e2e` → 8 scenarios.
     - **Health check before any scenario step.** `npx --prefix tests/e2e
       playwright --version` reports 1.64.1 and the driver can launch Chromium and
@@ -3970,7 +4059,7 @@ name it.
         ./run-tests.sh --non-e2e` (Task S2) and `verify.e2e_command:
         ./run-tests.sh --e2e`; paste both scope runs' counts.
         ```
-        <!-- paste: both commands' scenario counts (33 vs 8, e2e strictly less) + the two config lines -->
+        <!-- paste: both commands' scenario counts (35 vs 8, e2e strictly less) + the two config lines -->
         ```
   - [ ] **Sub-task 6 — the local health check.** Run the driver against a
         trivial `file://` page (or a freshly generated report) inside a temp
@@ -4385,7 +4474,7 @@ name it.
 **Done when:** every box above is checked with its pasted evidence and revision
 identifier, `verify.command` (`./run-tests.sh --non-e2e`) and
 `verify.e2e_command` (`./run-tests.sh --e2e`) both exit 0 on the full suite, the
-e2e setup task's scenario-count proof is pasted (33 regular vs 8 `@e2e`, e2e
+e2e setup task's scenario-count proof is pasted (35 regular vs 8 `@e2e`, e2e
 strictly less), every `@e2e` scenario has committed `mobile.png` + `desktop.png`
 under its slug with the empty-scope scenario's `mobile--empty.png` /
 `desktop--empty.png`, and no `@wip` tag remains on any scenario this change
