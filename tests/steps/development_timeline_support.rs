@@ -61,9 +61,23 @@ pub fn make_record_unwritable(env: &common::TestEnv) {
 /// so a malformed line fails the scenario instead of being skipped, and a
 /// missing store fails it too (the scenario ran a command that records).
 pub fn record_entries(root: &Path) -> Vec<Value> {
+    parse_entries(&store_bytes(root))
+}
+
+/// The store's raw bytes. "Append-only" and "never rewritten" are claims about
+/// these bytes, so the fixture reads the file itself instead of a
+/// re-serialized view of its entries.
+pub fn store_bytes(root: &Path) -> Vec<u8> {
     let path = store_file(root);
-    let text = std::fs::read_to_string(&path)
-        .unwrap_or_else(|error| panic!("read the development record {}: {error}", path.display()));
+    std::fs::read(&path)
+        .unwrap_or_else(|error| panic!("read the development record {}: {error}", path.display()))
+}
+
+/// The entries of a store's bytes: one JSON object per line, every line
+/// required to parse.
+fn parse_entries(bytes: &[u8]) -> Vec<Value> {
+    let text = std::str::from_utf8(bytes)
+        .unwrap_or_else(|error| panic!("the development record is not UTF-8: {error}"));
     text.lines()
         .filter(|line| !line.trim().is_empty())
         .map(|line| {

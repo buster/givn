@@ -1087,7 +1087,7 @@ name it.
 
 ## Task 3 — `A record that cannot be written never fails the command it records` (`development-record`, added)
 
-- [ ] **Scenario: `A record that cannot be written never fails the command it records`**
+- [x] **Scenario: `A record that cannot be written never fails the command it records`**
   - Design constraints:
     - Minimal guarantee of the owning use case: recording never changes the
       outcome of the command it records. Every write is best-effort and
@@ -1246,9 +1246,23 @@ name it.
         imports are one `use` group. Nothing else in the GREEN diff needed cleaning — the
         warning already had exactly one emitter, which is why this step is a proof step here.
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+  - [x] **COMMIT** — `ac094e722262711c23bce7b25606070edfe7d501` — `feat(development-record): <release note>` with
         the scenario title `A record that cannot be written never fails the
         command it records` in the body. Record the revision identifier.
+        ```
+        $ givn commit -m "feat(development-record): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        A record that cannot be written never fails the command it records"
+        [13:25:14] committed revision on the Git backend
+        $ git rev-parse HEAD
+        ac094e722262711c23bce7b25606070edfe7d501
+        ```
+        One atomic revision: RED+GREEN+REFACTOR together — the delta spec (this scenario's
+        `@wip` removed), the real fixture in `tests/steps/development_timeline_support.rs`, the
+        real assertions in `tests/steps/development_record_steps.rs`, and this file's Task 2
+        revision record. No production file: the best-effort write path and its single warning
+        already exist in `src/history.rs`, and the controlled omission in the GREEN block proves
+        the scenario discriminates that arm instead of merely restating it.
 
 ## Task 4 — `The record is append-only across commands` (`development-record`, added)
 
@@ -1268,22 +1282,114 @@ name it.
       bytes); also assert the earlier entry's own field values are unchanged when
       read back.
     - RED expected failure: the unchanged/append assertions are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record is append-only across commands"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record is append-only across commands"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: The record is append-only across commands
+           ✔  Given a project root with givn/ initialised
+           ✘  And the development record holds an entry from an earlier command
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:32:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+
+        thread 'main' (2023540) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT 101
+
+        Category: undefined step — the earlier-command fixture Given and the two append-only Then
+        steps do not exist yet. Every other scenario kept its `@wip` tag.
         ```
-  - [ ] **GREEN** — implement the append path and the byte-prefix assertions;
+  - [x] **GREEN** — implement the append path and the byte-prefix assertions;
         Files: `src/history.rs`, `tests/steps/development_record_steps.rs`.
         Compile first, re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.63s       EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record is append-only across commands"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 5.84s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: The record is append-only across commands
+           ✔  Given a project root with givn/ initialised
+           ✔  And the development record holds an entry from an earlier command
+           ✔  When the user runs `givn status`
+           ✔  Then the earlier entry is still present unchanged
+           ✔  And the new entry is appended after it without rewriting the store
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT 0
+
+        Production files created/modified by this scenario: none — the append path itself is
+        `HistoryStore::append` (src/history.rs: `create_dir_all` of the store's directory, then
+        `OpenOptions::create(true).append(true)` and one `writeln!` per entry), which already
+        opens the store append-only and never rewrites it; this scenario pins that property
+        from the outside. Test/fixture files:
+
+          tests/steps/development_timeline_support.rs  `store_bytes` — the store's raw bytes (the
+                               claim is about bytes, so the fixture reads the file, not a
+                               re-serialized view of its entries) and `parse_entries`, the one JSONL
+                               rule both `record_entries` and the byte path share.
+          tests/steps/development_record_steps.rs      the three steps: the Given runs a real earlier
+                               `givn status` and snapshots the store's bytes plus the earlier entry's
+                               own field values; "still present unchanged" asserts the earlier bytes
+                               are a byte-identical prefix AND that the entry's field values read
+                               back equal; "appended after it without rewriting the store" asserts
+                               the file grew by exactly one appended newline-terminated JSON object
+                               naming this command, with the earlier bytes untouched.
+                               Claim discipline (design-review Q5): the steps claim bytes and field
+                               values only — never time ordering, which concurrent writers make
+                               differ from file order (that is Task 29's rule).
         ```
-  - [ ] **REFACTOR** — make the store the only writer of the file (no second
+  - [x] **REFACTOR** — make the store the only writer of the file (no second
         write path, no read-modify-write); re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        $ cargo fmt --all -- --check                                                  EXIT 0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.69s       EXIT 0
+
+        One writer, verified rather than asserted:
+        $ grep -rn "events.jsonl\|store_path" src/*.rs src/cli/*.rs src/skills/*.rs | grep -v "^src/history.rs"
+        (no output — no other module names, opens or writes the store)
+        $ grep -n "OpenOptions\|fs::write\|File::create" src/history.rs
+        src/history.rs:122:        let mut file = std::fs::OpenOptions::new()
+        → exactly one writer (`HistoryStore::append`, `create(true).append(true)`); there is no
+        `fs::write` and no truncating `File::create` anywhere in the store, so no read-modify-write
+        path exists to remove.
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record is append-only across commands"
+        Feature: Development Record
+          Scenario: The record is append-only across commands
+           ✔  Given a project root with givn/ initialised
+           ✔  And the development record holds an entry from an earlier command
+           ✔  When the user runs `givn status`
+           ✔  Then the earlier entry is still present unchanged
+           ✔  And the new entry is appended after it without rewriting the store
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT 0
+
+        Cleanups, no behaviour change: the byte-prefix assertion both Then steps need is now one
+        named helper (`assert_store_prefix_unchanged`), so "the earlier bytes were rewritten" has
+        one message and one definition instead of two copies; the JSONL parsing rule moved into
+        `parse_entries`, which `record_entries` (parsed view) and the byte snapshot share.
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
         the scenario title `The record is append-only across commands` in the
