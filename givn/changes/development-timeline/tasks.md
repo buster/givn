@@ -9082,10 +9082,43 @@ name it.
         (`min-width: 680px` with `overflow-x: auto` below 720px), so the mobile
         capture shows a readable axis instead of an unreadable squeeze.
         ```
-  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+  - [x] **COMMIT** — `4c8cba403cf9321625ea6002bb583deea18809d5` — `test(e2e): <release note>` with the scenario
         title `Consumer opens the generated development report in a browser` in
         the body (including the two evidence PNGs). Record the revision
         identifier.
+        ```
+        $ ./target/debug/givn commit -m "test(e2e): Givn records the development process of every change and ideation — … opens in a browser.
+
+        Consumer opens the generated development report in a browser"
+        [17:59:35] committed revision on the Git backend
+
+        $ git show --stat --format='%H' 4c8cba40
+        4c8cba403cf9321625ea6002bb583deea18809d5
+         assets/timeline/report.html                        | 458 ++++++++++++++++++++-
+         .../desktop.png                                    | Bin 0 -> 66470 bytes
+         .../mobile.png                                     | Bin 0 -> 44956 bytes
+         .../development-report.feature                     |   2 +-
+         givn/changes/development-timeline/tasks.md         | 171 +++++++-
+         src/cli/timeline.rs                                |   2 +-
+         tests/steps/development_report_e2e_steps.rs        | 361 +++++++++++++-
+         7 files changed, 970 insertions(+), 24 deletions(-)
+
+        The revision is this outline's RED+GREEN+REFACTOR as one atomic commit:
+        the `@wip` removal from the outline alone, the asset's interactive layer
+        with its landmarks and responsive rules, the doubled-note rendering fix,
+        this outline's steps, this task file's evidence (including the Task 31
+        alignment note and its revision line recorded in the separate
+        `fix(development-report)` commit `d0899202`), and the outline's one
+        evidence pair. No other scenario's tag, step, or capture is touched.
+
+        Two out-of-bundle records, stated rather than hidden: (1) the Task 31
+        assertion alignment landed as its own commit before this one
+        (`d08992027b8b4d9dcbbb4f0afcf9e73ef0eb3657`), because design.md requires
+        the inline script that assertion's count forbade; (2) this scenario's
+        RED evidence was pasted into tasks.md before that alignment commit and
+        therefore rides in it — the RED run's output and the GREEN/REFACTOR
+        evidence in this section are the same runs either way.
+        ```
 
 ## Task E7 — `Consumer selects a timeline element and reads its details` (`@e2e`, `development-report`)
 
