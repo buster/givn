@@ -3155,7 +3155,7 @@ name it.
 
 ## Task 12 — `A reported tool call is recorded for its scope` (`agent-activity-reporting`, added)
 
-- [ ] **Scenario: `A reported tool call is recorded for its scope`**
+- [x] **Scenario: `A reported tool call is recorded for its scope`**
   - Design constraints:
     - Intake: `givn history ingest` reads exactly one JSON object from stdin
       (`schema`, `reporter`, `session`, `change`, `topic`, `events`). A present
@@ -3291,9 +3291,42 @@ name it.
         5 steps (5 passed)
         EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
+  - [x] **COMMIT** — `453ce716e2c04eb76f1ca2b713fbd226e1e0543d` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `A reported tool call is recorded for its scope`
         in the body. Record the revision identifier.
+        ```
+        One `givn commit` with the release note as the message subject and the
+        scenario title as the body (`-m` takes the whole message; a second `-m`
+        is refused by the command's single-value argument):
+
+        $ GIVN_ATTRIBUTION_ACTIVE=1 GIVN_ATTRIBUTION_LLM=deepseek/deepseek-flash GIVN_ATTRIBUTION_REASONING=max GIVN_ATTRIBUTION_HARNESS=omp \
+            ./target/debug/givn commit -m "feat(agent-activity-reporting): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        A reported tool call is recorded for its scope"
+        [15:20:00] committed revision on the Git backend
+
+        $ git show --stat 453ce716e2c04eb76f1ca2b713fbd226e1e0543d
+        commit 453ce716e2c04eb76f1ca2b713fbd226e1e0543d
+        Author: buster <me@bstr.eu>
+        Date:   Fri Oct 16 15:20:00 2026 +0200
+
+            feat(agent-activity-reporting): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+            A reported tool call is recorded for its scope
+
+            Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../agent-activity-reporting.feature               |   2 +-
+         givn/changes/development-timeline/tasks.md         | 105 +++++++++-
+         src/cli/history.rs                                 | 222 ++++++++++++++++++++-
+         src/history.rs                                     | 102 ++++++++++
+         src/main.rs                                        |  45 +++--
+         tests/steps/agent_activity_reporting_steps.rs      | 144 ++++++++++++-
+         tests/steps/development_timeline_support.rs        |  22 ++
+         7 files changed, 609 insertions(+), 33 deletions(-)
+        ```
+        (The revision carries production code, the steps, and the spec's `@wip`
+        removal — not a spec-only revision.)
 
 ## Task 13 — `A subagent's activity is attributed to that subagent` (`agent-activity-reporting`, added)
 
