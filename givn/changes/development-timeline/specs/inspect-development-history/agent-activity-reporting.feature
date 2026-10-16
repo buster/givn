@@ -80,7 +80,7 @@ Feature: Agent Activity Reporting
       | opencode |
       | claude   |
 
-  @givn.added @wip
+  @givn.added
   Scenario: The neutral skills target receives no development reporter
     Given a project root without a givn/ directory
     When the consumer runs `givn init --agents agents`

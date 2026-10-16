@@ -5199,24 +5199,125 @@ name it.
       fixture; `givn init` creates it) and the explicit
       `--agents agents` selection (never the interactive prompt).
     - RED expected failure: the no-reporter Then step is undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::The neutral skills target receives no development reporter"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::The neutral skills target receives no development reporter"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: The neutral skills target receives no development reporter
+           ✔  Given a project root without a givn/ directory
+           ✔  When the consumer runs `givn init --agents agents`
+           ✔  Then the command exits 0
+           ✘  And no development reporter is installed for that project
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:88:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        4 steps (3 passed, 1 failed)
+
+        thread 'main' (2521059) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — the no-reporter Then step matches no
+        function; the scenario itself is the mirror of Task 21's install set, so
+        its RED is the missing assertion, not a missing production path.
         ```
-  - [ ] **GREEN** — keep the reporter set keyed to the executing targets.
+  - [x] **GREEN** — keep the reporter set keyed to the executing targets.
         Files: `src/skills/targets.rs`,
         `tests/steps/agent_activity_reporting_steps.rs`. Compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.15s
+        BUILD=0
+
+        $ cargo test --locked --lib skills::targets
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 4.68s
+             Running unittests src/lib.rs (target/debug/deps/givn-7704d9c228643a4b)
+
+        running 4 tests
+        test skills::targets::tests::validate_frontmatter_requires_description ... ok
+        test skills::targets::tests::validate_frontmatter_requires_name_match ... ok
+        test skills::targets::tests::all_command_templates_are_embedded ... ok
+        test skills::targets::tests::only_executing_targets_receive_a_development_reporter ... ok
+
+        test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 268 filtered out; finished in 0.00s
+        UNITTESTS=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::The neutral skills target receives no development reporter"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 5.51s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: The neutral skills target receives no development reporter
+           ✔  Given a project root without a givn/ directory
+           ✔  When the consumer runs `givn init --agents agents`
+           ✔  Then the command exits 0
+           ✔  And no development reporter is installed for that project
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
+
+        Production files for this GREEN step: `src/skills/targets.rs`
+        (modified — the `only_executing_targets_receive_a_development_reporter`
+        unit test pins the install set to the three executing targets, asserts
+        the `agents` mirror receives no integration row, and asserts every
+        reporter row's asset is really embedded) and
+        `tests/steps/agent_activity_reporting_steps.rs` (modified — the
+        no-reporter Then step reads the project tree, not just the four
+        design-named paths, and checks the Claude settings file when one
+        exists). No further production path was needed: the Task 21 REFACTOR's
+        target-keyed table already answers `Agents => &[]`, and `givn init
+        --agents agents` therefore writes no reporter — investigated and
+        asserted rather than assumed.
         ```
-  - [ ] **REFACTOR** — let the target list (not a hard-coded check) decide which
+  - [x] **REFACTOR** — let the target list (not a hard-coded check) decide which
         targets receive a reporter, so a future target cannot silently inherit
         one; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        `managed_generated_paths` no longer enumerates target paths with three
+        `if targets.contains(…)` blocks: it walks the selected targets and pushes
+        each target's own `integrations_of(target)` rows plus its
+        `registration_of(target)` file. The install list, the allowlist, and the
+        writer now all read the target-keyed table, so a result for the neutral
+        `agents` target is the empty row set — a future target extends the table
+        instead of inheriting a reporter, and the allowlist cannot drift from
+        what `sync` writes. No behaviour change: the same files are installed
+        and listed.
+
+        $ cargo fmt --all -- --check
+        FMT OK
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.79s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::The neutral skills target receives no development reporter"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 4.23s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: The neutral skills target receives no development reporter
+           ✔  Given a project root without a givn/ directory
+           ✔  When the consumer runs `givn init --agents agents`
+           ✔  Then the command exits 0
+           ✔  And no development reporter is installed for that project
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `The neutral skills target receives no
