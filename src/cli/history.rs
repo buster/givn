@@ -68,6 +68,72 @@ pub struct IngestedEvent {
     /// (`kind: "subagent"`, e.g. `Architect.Scout`).
     #[serde(default)]
     pub subagent: Option<String>,
+    /// The harness's own turn index (`kind: "turn"`).
+    #[serde(default)]
+    pub turn: Option<u64>,
+    /// The model that produced the turn (`kind: "turn"`).
+    #[serde(default)]
+    pub model: Option<String>,
+    /// The token usage the harness reported for the turn, inline
+    /// (`kind: "turn"`): its absence is a signal the record keeps as absent.
+    #[serde(default)]
+    pub usage: Option<Usage>,
+}
+
+/// The token usage one harness report carries: the counts, the model that
+/// produced them (`message.model` on a turn), and the subagent session they
+/// belong to where the harness reports one.
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct Usage {
+    /// Prompt tokens the model processed.
+    #[serde(default)]
+    pub input: Option<u64>,
+    /// Tokens the model produced.
+    #[serde(default)]
+    pub output: Option<u64>,
+    /// Prompt tokens served from the prompt cache.
+    #[serde(default)]
+    pub cache_read: Option<u64>,
+    /// Prompt tokens written into the prompt cache.
+    #[serde(default)]
+    pub cache_write: Option<u64>,
+    /// The harness's own total, where it reports one.
+    #[serde(default)]
+    pub total_tokens: Option<u64>,
+    /// The model that produced the counts, where the harness reports it here.
+    #[serde(default)]
+    pub model: Option<String>,
+    /// The subagent session the counts belong to, where the harness reports one.
+    #[serde(default)]
+    pub subagent: Option<String>,
+}
+
+impl Usage {
+    /// The `data` a usage entry carries, wherever the usage came from: every
+    /// count the harness reported, the model that produced it, and the subagent
+    /// session it belongs to where the harness reports one. A count the harness
+    /// did not report is absent, never zero.
+    fn data(&self, model: Option<&str>, subagent: Option<&str>) -> Value {
+        let mut data = serde_json::Map::new();
+        for (key, count) in [
+            ("input", self.input),
+            ("output", self.output),
+            ("cache_read", self.cache_read),
+            ("cache_write", self.cache_write),
+            ("total_tokens", self.total_tokens),
+        ] {
+            if let Some(count) = count {
+                data.insert(key.to_string(), Value::from(count));
+            }
+        }
+        if let Some(model) = model {
+            data.insert("model".to_string(), Value::String(model.to_string()));
+        }
+        if let Some(subagent) = subagent {
+            data.insert("subagent".to_string(), Value::String(subagent.to_string()));
+        }
+        Value::Object(data)
+    }
 }
 
 impl IngestedEvent {
@@ -89,6 +155,9 @@ impl IngestedEvent {
             "subagent" => Err("missing required field `subagent`".to_string()),
             "question" if self.label.is_some() => Ok(()),
             "question" => Err("missing required field `label`".to_string()),
+            // A turn's usage is optional: a turn the harness did not measure is
+            // still a turn (its usage is recorded as unavailable, never zero).
+            "turn" => Ok(()),
             kind => Err(format!("unknown kind `{kind}`")),
         }
     }
@@ -118,8 +187,41 @@ impl IngestedEvent {
                     batch.push(self.question_entry(scope, question), batch.turn);
                 }
             }
+            "turn" => self.map_turn(scope, batch),
             _ => {}
         }
+    }
+
+    /// The turn one reporter flush is built around: the turn entry, and the
+    /// usage entry the harness reported inline, parented to it. The turn is the
+    /// reporter's flush boundary, so every later span of the same payload nests
+    /// in it.
+    fn map_turn(&self, scope: &Scope, batch: &mut IntakeBatch) {
+        let name = match self.turn {
+            Some(index) => format!("turn {index}"),
+            None => "turn".to_string(),
+        };
+        let mut entry = HistoryEntry::reported(scope.clone(), "turn", &name, &self.at);
+        entry.duration_ms = self.duration_ms;
+        entry.outcome = self.outcome_word();
+        let turn = batch.push(entry, batch.turn);
+        batch.turn = Some(turn);
+        if let Some(usage) = &self.usage {
+            batch.push(self.usage_entry(scope, usage), Some(turn));
+        }
+    }
+
+    /// The one `usage` entry a reported usage produces: every count the harness
+    /// reported, the model that produced them (never normalised or truncated),
+    /// and the subagent session they belong to where the harness reports one.
+    fn usage_entry(&self, scope: &Scope, usage: &Usage) -> HistoryEntry {
+        let model = usage.model.as_deref().or(self.model.as_deref());
+        let subagent = self.subagent.as_deref().or(usage.subagent.as_deref());
+        let mut entry =
+            HistoryEntry::reported(scope.clone(), "usage", model.unwrap_or("usage"), &self.at);
+        entry.data = Some(usage.data(model, subagent));
+        entry.outcome = self.outcome_word();
+        entry
     }
 
     /// The one `question` entry a reported wait produces: the wait is its own
@@ -404,10 +506,12 @@ struct IntakeBatch {
 
 impl IntakeBatch {
     /// Plan one entry, nested in the batch entry at `parent` when the payload
-    /// reported an enclosing entry.
-    fn push(&mut self, entry: HistoryEntry, parent: Option<usize>) {
+    /// reported an enclosing entry. Returns the entry's index in the plan, so a
+    /// span reported after it can nest in it.
+    fn push(&mut self, entry: HistoryEntry, parent: Option<usize>) -> usize {
         self.parents.push(parent);
         self.entries.push(entry);
+        self.entries.len() - 1
     }
 
     /// Close the batch: a start the payload never closed still becomes one

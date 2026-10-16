@@ -3662,23 +3662,118 @@ name it.
     - Assertion shape: the turn's usage is present with the reported counts and
       the model that produced it.
     - RED expected failure: both Then steps are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Reported token usage is recorded with the model that produced it"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Reported token usage is recorded with the model that produced it"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 5.22s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: Reported token usage is recorded with the model that produced it
+           ✔  Given a change "demo" with reported agent activity
+           ✔  When the agent reports a completed turn with token usage
+           ✘  Then the record holds that turn's token usage
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:31:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+
+        thread 'main' (2368915) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — both Then steps are unbound (the first
+        Then matches no function; the scenario stops there, so `the usage names
+        the model that produced it` never runs). The `Given` and the `When` drive
+        the real fixture (a change with one reported tool call, then the reported
+        completed turn with its inline usage handed to `givn history ingest`);
+        the intake still rejects `turn` as an unknown kind at this point, which
+        the `When` records without asserting — the RED signal is the undefined
+        Then.
         ```
-  - [ ] **GREEN** — implement the usage event kind and the turn linkage. Files:
+  - [x] **GREEN** — implement the usage event kind and the turn linkage. Files:
         `src/cli/history.rs`, `src/history.rs`,
         `tests/steps/agent_activity_reporting_steps.rs`. Compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.54s
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Reported token usage is recorded with the model that produced it"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 10.74s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: Reported token usage is recorded with the model that produced it
+           ✔  Given a change "demo" with reported agent activity
+           ✔  When the agent reports a completed turn with token usage
+           ✔  Then the record holds that turn's token usage
+           ✔  And the usage names the model that produced it
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
+
+        Regression check — the three earlier scenarios still pass:
+        $ for s in "A reported tool call is recorded for its scope" "A subagent's activity is attributed to that subagent" "A question wait is recorded with its duration"; do … done
+        A reported tool call is recorded for its scope => EXIT=0
+        A subagent's activity is attributed to that subagent => EXIT=0
+        A question wait is recorded with its duration => EXIT=0
+
+        Production files:
+        - `src/cli/history.rs` — the `turn` validation row (usage is optional on
+          a turn) and its mapper: the turn entry (name `turn <index>` when the
+          harness reports one, the measured duration, the mapped outcome), the
+          batch's enclosing turn set to it, and — when the harness reported
+          usage inline — one `usage` entry parented to the turn's id, its `data`
+          carrying every reported count, the model verbatim, and the subagent
+          session where reported. `Usage` is the reported-usage struct, and
+          `IntakeBatch::push` now returns the plan index so a span nests in the
+          entry just planned.
+        - `tests/steps/agent_activity_reporting_steps.rs` — the two `Then` steps
+          (the usage entry's counts and its parent link to the turn; the model
+          kept verbatim).
+        Note: `src/history.rs` is unchanged by this scenario — the parent link is
+        `append_linked` from Task 13.
         ```
-  - [ ] **REFACTOR** — one usage struct used by every harness path; re-run →
+  - [x] **REFACTOR** — one usage struct used by every harness path; re-run →
         still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The usage struct now owns the record rendering of its own counts:
+        `Usage::data(model, subagent)` builds the usage entry's `data` set, and
+        the free `usage_data` function is gone — any harness path that produces
+        a `Usage` renders it the same way.
+
+        $ cargo fmt --all -- --check
+        FMT_CLEAN
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.37s
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Reported token usage is recorded with the model that produced it"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 6.59s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: Reported token usage is recorded with the model that produced it
+           ✔  Given a change "demo" with reported agent activity
+           ✔  When the agent reports a completed turn with token usage
+           ✔  Then the record holds that turn's token usage
+           ✔  And the usage names the model that produced it
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `Reported token usage is recorded with the model
