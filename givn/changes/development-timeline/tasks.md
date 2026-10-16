@@ -2807,9 +2807,26 @@ name it.
         hold — a corpus-fixture change outside this task, so it is reported
         rather than patched.
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+  - [x] **COMMIT** — `e531f80fd0d875d0f09106055b31b6b80996c22b` — `feat(development-record): <release note>` with
         the scenario title `A Fossil project ignores the record through its own
         ignore file` in the body. Record the revision identifier.
+        ```
+        $ givn commit -m "feat(development-record): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        A Fossil project ignores the record through its own ignore file"
+        [14:32:55] committed revision on the Git backend
+        $ git rev-parse HEAD
+        e531f80fd0d875d0f09106055b31b6b80996c22b
+
+        One atomic revision: RED+GREEN+REFACTOR together — the delta spec (this
+        scenario's `@wip` removed), the Fossil checkout fixture and its
+        assertions, the adapted `fossil_project_with_version` fixture, and this
+        file's Task 11 record. It carries no `src/` change because the Fossil arm
+        landed with Task 10's single shared destination table (see GREEN): the
+        production work of this scenario is verified here and was written there,
+        exactly as the retired `ac094e72` precedent (Task 3's reuse scenario)
+        recorded its own production path as already present.
+        ```
 
 ## Task 12 — `A reported tool call is recorded for its scope` (`agent-activity-reporting`, added)
 
