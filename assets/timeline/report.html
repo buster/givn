@@ -5,14 +5,92 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Development report</title>
 <style>
-  /* The report asset is self-contained: inline CSS/JS/SVG, no CDN, no
-     third-party JavaScript, no build step. The generator substitutes the
-     single data slot below with the JSON model. */
-  :root { color-scheme: light dark; }
-  body { margin: 0; font-family: system-ui, sans-serif; }
-  main { padding: 1rem; }
-  .timeline { width: 100%; height: 40vh; }
-  .details { border-top: 1px solid currentColor; }
+  /* One self-contained file: inline CSS, inline script, inline SVG, and the
+     tokens of docs/design/design-system.md carried inline. No CDN, no
+     third-party JavaScript, no build step, and no network access of any kind.
+     The generator fills two markers below, each once, and nothing else:
+     the view marker in the body — the model rendered as the page's own text,
+     so the written file is readable without script — and the single JSON data
+     slot inside the report-model element. */
+  :root {
+    --color-surface: #ffffff;
+    --color-surface-raised: #f5f6f8;
+    --color-border: #d5d9e0;
+    --color-text: #14171c;
+    --color-text-muted: #5a6270;
+    --color-accent: #2f6fd0;
+    --color-ok: #1f7a4d;
+    --color-warn: #9a6100;
+    --color-error: #b3261e;
+    --color-band-command: #6b7bd6;
+    --color-band-step: #2f9e8f;
+    --color-band-agent: #b06ad0;
+    --color-band-wait: #d08a2f;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --font-12: 12px;
+    --font-14: 14px;
+    --font-16: 16px;
+    --font-20: 20px;
+    --font-28: 28px;
+    --radius-span: 4px;
+    --radius-panel: 8px;
+    --elevation-panel: 0 1px 2px rgba(20, 23, 28, .08), 0 8px 24px rgba(20, 23, 28, .12);
+    --motion: 120ms ease-out;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: var(--font-16);
+    line-height: 1.45;
+  }
+  main { padding: var(--space-4); }
+  h1 { font-size: var(--font-28); margin: 0 0 var(--space-2); }
+  h2 { font-size: var(--font-20); margin: var(--space-5) 0 var(--space-2); }
+  .report-scope { color: var(--color-text-muted); margin: 0 0 var(--space-4); }
+  .summary { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: flex-start; }
+  .summary > h2, .summary > ol, .summary > p { flex-basis: 100%; margin: 0; }
+  .summary > * + * { margin-top: 0; }
+  .tile {
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-panel);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    min-width: 8rem;
+  }
+  .tile-label { color: var(--color-text-muted); font-size: var(--font-12); }
+  .tile-value { font-size: var(--font-20); font-variant-numeric: tabular-nums; }
+  .tile-note, .summary-note { color: var(--color-warn); font-size: var(--font-12); }
+  .summary-note { flex-basis: 100%; }
+  .longest-steps { list-style: none; padding: 0; }
+  .longest-steps li {
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    gap: var(--space-3);
+    justify-content: space-between;
+    padding: var(--space-2) 0;
+  }
+  .step-label { color: var(--color-text); }
+  .step-duration { color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+  .details {
+    border-top: 1px solid var(--color-border);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--elevation-panel);
+    margin-top: var(--space-5);
+    padding: var(--space-3);
+  }
+  .details[hidden] { display: none; }
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; animation: none !important; }
   }
@@ -20,16 +98,12 @@
 </head>
 <body>
 <main>
-  <h1>Development report</h1>
-  <svg class="timeline" role="img" aria-labelledby="timeline-title">
-    <title id="timeline-title">Development timeline</title>
-  </svg>
+  <h1 id="report-title">Development report</h1>
+<!--__GIVN_REPORT_VIEW__-->
   <section class="details" role="region" aria-label="Details" hidden>
     <button type="button" class="details-close">Close</button>
   </section>
 </main>
-<script>
-  /*__GIVN_REPORT_DATA__*/
-</script>
+<script id="report-model" type="application/json">/*__GIVN_REPORT_DATA__*/</script>
 </body>
 </html>

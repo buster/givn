@@ -5741,24 +5741,131 @@ name it.
       `docs/design/design-system.md` carried inline, the dense-timeline direction
       (D6).
     - RED expected failure: the ranking Then step is undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report ranks the longest single step first"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report ranks the longest single step first"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+        warning: methods `data`, `outcome`, and `nested_in` are never used
+           --> tests/steps/development_timeline_support.rs:521:12
+        … (the seeded-history builder landed whole; Tasks 26 and 27 use those
+        setters, so this warning disappears with the next scenario's fixture)
+        warning: `givn` (test "features_runner") generated 1 warning
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 7.94s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report ranks the longest single step first
+           ✔  Given a change "demo" whose record holds steps of different durations
+           ✔  When the developer generates the development report for "demo"
+           ✘  Then the report ranks the longest step first
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:9:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+
+        thread 'main' (2550632) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — exactly the failure this section
+        predicts. The scenario's ranking Then step matches no function, and the
+        run stops there: the fixture Given (a change whose seeded record holds
+        steps of different durations, seeded through the store's own append
+        path) and the report-generating When are in place, so the RED is the
+        missing ranking assertion rather than a broken fixture. The report the
+        When writes exists but ranks nothing — `build_report_model` carried only
+        the scope and the record lines — so no honest assertion could pass at
+        this revision.
         ```
-  - [ ] **GREEN** — implement the model's ranking and the renderer's summary.
+  - [x] **GREEN** — implement the model's ranking and the renderer's summary.
         Files: `src/cli/timeline.rs`, `assets/timeline/report.html`,
         `src/main.rs` (dispatch), `tests/steps/development_report_steps.rs`,
         `tests/steps/development_timeline_support.rs`. Compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.33s
+        BUILD=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report ranks the longest single step first"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 4.28s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report ranks the longest single step first
+           ✔  Given a change "demo" whose record holds steps of different durations
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report ranks the longest step first
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        3 steps (3 passed)
+        EXIT=0
+
+        Production files created/modified by this GREEN step:
+        - `src/cli/timeline.rs` (modified — `ReportModel` gains `bands` and
+          `summary`; `build_report_model` assembles the scope's band and the
+          window's summary; `Summary` carries the entry count, the elapsed time,
+          the unmeasured-duration count, and `longest_steps`; `ranked_steps` is
+          the ranking (recorded `duration_ms`, longest first, file order never
+          consulted); `format_duration` is the report's one duration renderer;
+          `render_report` fills the asset's view marker and its single data slot;
+          `escape` owns the document's text path);
+        - `assets/timeline/report.html` (modified — the design system's tokens
+          carried inline, the shell with the labelled `h1` and the details
+          region, the view marker, and the model's data slot as a
+          `report-model` JSON element);
+        - `tests/steps/development_report_steps.rs` (modified — the fixture
+          Given, the report-generating When, the ranking Then, and the
+          model/list readers the assertions use);
+        - `tests/steps/development_timeline_support.rs` (modified — the
+          seeded-history builder: `SeededHistory` writes a fixture record
+          through the store's own append path, so every id is minted and every
+          parent link resolved exactly as production mints them);
+        - `src/main.rs` (unchanged — the `timeline` dispatch landed with the
+          Task S3 skeleton and already calls `cli::timeline::run`, so this
+          scenario adds no dispatch change).
         ```
-  - [ ] **REFACTOR** — one ranking implementation reused by the summary and the
+  - [x] **REFACTOR** — one ranking implementation reused by the summary and the
         axis; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        One aggregation pass feeds every summary number: `Summary::of` walks the
+        window's entries once — the entry count, the earliest and latest recorded
+        end for the elapsed time, and the spans whose duration the record does
+        not carry — and the superseded per-number scans (`elapsed_ms`, the
+        `unmeasured_durations` filter) are gone. The ranking lives in the single
+        `ranked_steps` function the model's summary carries, so the summary list,
+        the axis (Task 29) and the details view all read the record's one
+        ranking instead of sorting again. No behaviour change: same ranking,
+        same totals, same rendered text.
+
+        $ cargo fmt --all -- --check
+        FMT OK
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.99s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report ranks the longest single step first"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 12.13s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report ranks the longest single step first
+           ✔  Given a change "demo" whose record holds steps of different durations
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report ranks the longest step first
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        3 steps (3 passed)
+        EXIT=0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
         the scenario title `The report ranks the longest single step first` in

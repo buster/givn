@@ -16,6 +16,7 @@
 
 use std::path::{Path, PathBuf};
 
+use givn::history::{HistoryEntry, HistoryStore, Scope};
 use serde_json::Value;
 
 use crate::common;
@@ -459,4 +460,135 @@ pub fn entries_of(bytes: &[u8]) -> Vec<Value> {
                 .unwrap_or_else(|error| panic!("store line is not a JSON object: {error}\n{line}"))
         })
         .collect()
+}
+
+// ─── The seeded-history builder ────────────────────────────────────────────
+
+/// The seeded-history builder: one fixture record, entry by entry. A scenario
+/// that reports a record it built itself seeds it here, so the report's
+/// assertions derive from the fixture the scenario's Given claims rather than
+/// from constants.
+///
+/// The entries go into the store through the store's own append path
+/// ([`HistoryStore::append_linked`]), so every `id` is minted and every parent
+/// link resolved exactly as production mints them — a seeded record is shaped
+/// like a recorded one, never hand-written JSON. The builder clears whatever
+/// the fixture's own setup commands left behind: the record a seeded scenario
+/// reads is the fixture's own known record.
+#[derive(Debug, Default)]
+pub struct SeededHistory {
+    entries: Vec<HistoryEntry>,
+    parents: Vec<Option<usize>>,
+}
+
+impl SeededHistory {
+    /// A builder for a record with no entries yet.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// One measured span: the entry kind, its name, its recorded end
+    /// timestamp, and the duration a fixture measured. Returns the entry's
+    /// index in the seeded batch, which the setters and [`Self::nested_in`]
+    /// address.
+    pub fn span(
+        &mut self,
+        scope: &Scope,
+        kind: &str,
+        name: &str,
+        at: &str,
+        duration_ms: u64,
+    ) -> usize {
+        let mut entry = seeded_entry(scope, kind, name, at);
+        entry.duration_ms = Some(duration_ms);
+        self.push(entry)
+    }
+
+    /// One point entry: the kind records an instant (a reported usage, a
+    /// minted revision, an activity the record does not time), so it carries
+    /// no duration.
+    pub fn point(&mut self, scope: &Scope, kind: &str, name: &str, at: &str) -> usize {
+        self.push(seeded_entry(scope, kind, name, at))
+    }
+
+    /// The bounded subject label of the entry at `index`.
+    pub fn label(&mut self, index: usize, label: &str) -> usize {
+        self.entry(index).label = Some(label.to_string());
+        index
+    }
+
+    /// The entry's `data`, where the record carries a non-generic value.
+    pub fn data(&mut self, index: usize, data: Value) -> usize {
+        self.entry(index).data = Some(data);
+        index
+    }
+
+    /// The entry's outcome (`ok`, `failed`, `skipped`, or `unknown`).
+    pub fn outcome(&mut self, index: usize, outcome: &str) -> usize {
+        self.entry(index).outcome = outcome.to_string();
+        index
+    }
+
+    /// Nest the entry at `index` inside the entry at `parent` (an earlier
+    /// index of this same batch), the link the report nests spans by.
+    pub fn nested_in(&mut self, index: usize, parent: usize) -> usize {
+        assert!(
+            parent < index,
+            "a parent is only ever an entry an earlier append minted: {parent} >= {index}"
+        );
+        self.parents[index] = Some(parent);
+        index
+    }
+
+    /// Write the record: clear the fixture's store and append these entries
+    /// through the store's own append path. Returns the written entries — ids
+    /// minted, parent links resolved — so the scenario asserts on the record it
+    /// seeded.
+    pub fn seed(mut self, env: &common::TestEnv) -> Vec<HistoryEntry> {
+        let path = store_file(&env.root());
+        match std::fs::remove_file(&path) {
+            Ok(()) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => panic!("clear the record {}: {error}", path.display()),
+        }
+        let store = HistoryStore::at(path);
+        store
+            .append_linked(&mut self.entries, &self.parents)
+            .unwrap_or_else(|error| panic!("seed the development record: {error}"));
+        self.entries
+    }
+
+    /// The entry at `index`, for the setters.
+    fn entry(&mut self, index: usize) -> &mut HistoryEntry {
+        self.entries
+            .get_mut(index)
+            .unwrap_or_else(|| panic!("the seeded record has no entry {index}"))
+    }
+
+    /// Append one entry with no parent link yet.
+    fn push(&mut self, entry: HistoryEntry) -> usize {
+        self.entries.push(entry);
+        self.parents.push(None);
+        self.entries.len() - 1
+    }
+}
+
+/// One fixture entry as the record's own shape: a recorded (`givn`) entry with
+/// the fixture's timestamp, its kind and name, `ok` until a setter says
+/// otherwise, and no id — the store mints it at append time.
+fn seeded_entry(scope: &Scope, kind: &str, name: &str, at: &str) -> HistoryEntry {
+    HistoryEntry {
+        schema: givn::history::SCHEMA,
+        id: 0,
+        at: at.to_string(),
+        scope: scope.clone(),
+        source: "givn".to_string(),
+        kind: kind.to_string(),
+        name: name.to_string(),
+        label: None,
+        duration_ms: None,
+        outcome: "ok".to_string(),
+        parent: None,
+        data: None,
+    }
 }
