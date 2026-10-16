@@ -489,6 +489,90 @@ fn repository_reports_no_pending_change_for_the_record(world: &mut GivnWorld) {
     );
 }
 
+#[given("a project root with givn/ initialised in a Fossil checkout")]
+fn project_root_initialised_in_a_fossil_checkout(world: &mut GivnWorld) {
+    // A real Fossil checkout first and `givn init` INSIDE it: the managed
+    // ignore file then carries the record path before the fixture's first
+    // commit, so its `addremove` cannot record the store (F3).
+    let env = common::make_fossil_root_bare();
+    let out = common::run_givn(&env, &["init", "--agents", "opencode"]);
+    assert!(
+        out.status.success(),
+        "givn init in the Fossil checkout failed: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+    common::fossil_commit_all(&env, "fixture: initial state");
+    world.env = Some(env);
+}
+
+/// The glob entries of a Fossil ignore file: its non-comment lines. The fence
+/// markers are not globs.
+fn fossil_glob_entries(path: &std::path::Path) -> Vec<String> {
+    std::fs::read_to_string(path)
+        .unwrap_or_else(|error| panic!("read {}: {error}", path.display()))
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty() && !line.starts_with('#'))
+        .map(str::to_string)
+        .collect()
+}
+
+#[then("the repository's ignore glob names the development record")]
+fn repository_ignore_glob_names_the_development_record(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let store = support::store_file(&env.root());
+    assert!(
+        store.is_file(),
+        "the scenario's own command wrote no record at {}: the assertion below would be vacuous",
+        store.display()
+    );
+    // A committed managed file overrides the repository-level setting, so both
+    // sources are read: the step never asserts on the file it happened to
+    // write.
+    let managed = env.path(".fossil-settings/ignore-glob");
+    assert!(
+        managed.is_file(),
+        "the managed checkout must carry {}: the effective ignore source would otherwise be the setting",
+        managed.display()
+    );
+    let entries = fossil_glob_entries(&managed);
+    assert!(
+        entries.iter().any(|entry| entry == "givn/history/*"),
+        "the managed ignore file does not name the development record:\n{entries:#?}"
+    );
+    let setting = common::fossil(env, &["settings", "--value", "ignore-glob"]);
+    assert!(
+        setting.status.success(),
+        "read the repository ignore-glob setting: {}",
+        String::from_utf8_lossy(&setting.stderr)
+    );
+    let setting = String::from_utf8_lossy(&setting.stdout);
+    assert!(
+        setting
+            .split([',', '\n'])
+            .any(|entry| entry.trim() == "givn/history/*"),
+        "the effective ignore-glob setting does not name the development record: {setting:?}"
+    );
+    // The record is neither a pending nor an extra change: the committed file
+    // keeps it out of the checkout without the working tree becoming dirty.
+    for command in ["changes", "extras"] {
+        let out = common::fossil(env, &[command]);
+        assert!(
+            out.status.success(),
+            "fossil {command} failed: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        let listing = String::from_utf8_lossy(&out.stdout);
+        assert!(
+            !listing.contains("givn/history/events.jsonl"),
+            "the repository reports the development record as a {command} entry:\n{listing}"
+        );
+    }
+}
+
 #[given("a project root with givn/ initialised under Git")]
 fn project_root_initialised_under_git(world: &mut GivnWorld) {
     let env = common::make_init_root();

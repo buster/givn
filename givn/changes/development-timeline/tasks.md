@@ -2541,13 +2541,27 @@ name it.
         65 steps (65 passed)
         EXIT 0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+  - [x] **COMMIT** — `12d835a96c084de03b5b99fe63f59e7746184dd8` — `feat(development-record): <release note>` with
         the scenario title `The record stays out of the repository's own history`
         in the body. Record the revision identifier.
+        ```
+        $ givn commit -m "feat(development-record): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        The record stays out of the repository's own history"
+        [14:28:21] committed revision on the Git backend
+        $ git rev-parse HEAD
+        12d835a96c084de03b5b99fe63f59e7746184dd8
+
+        One atomic revision: RED+GREEN+REFACTOR together — the delta spec (this
+        scenario's `@wip` removed), the record's ignore entry and its per-write
+        re-assertion, the shared destination table with the owning commands'
+        Fossil entry, the two adapted fixtures, the steps, and this file's
+        Task 10 record.
+        ```
 
 ## Task 11 — `A Fossil project ignores the record through its own ignore file` (`development-record`, added)
 
-- [ ] **Scenario: `A Fossil project ignores the record through its own ignore file`**
+- [x] **Scenario: `A Fossil project ignores the record through its own ignore file`**
   - Design constraints:
     - Same D1 rule, Fossil arm: the record path reaches the versioned
       destination only through the owning commands. When
@@ -2585,22 +2599,213 @@ name it.
       if the seam cannot express it, that is the design-review escalation in
       *Global constraints*, not a silent skip.
     - RED expected failure: the ignore-glob Then step is undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A Fossil project ignores the record through its own ignore file"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A Fossil project ignores the record through its own ignore file"
+        Feature: Development Record
+          Scenario: A Fossil project ignores the record through its own ignore file
+           ✘  Given a project root with givn/ initialised in a Fossil checkout
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:84:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+
+        thread 'main' (2127344) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT 101
+
+        RED category: undefined step — both the Fossil fixture's Given and the
+        ignore-glob Then step are new for this scenario (the checkout fixture did
+        not exist at all); the run fails at the first of them.
+
+        The Then step's discrimination was then proved by a controlled omission,
+        restored immediately: with the record entry removed from the Fossil
+        managed entry list (the pre-correction behaviour, `&& false` in the
+        entry-list build, never a production switch), the same scenario failed —
+        the RED states the fixture-level omission, not a production toggle:
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A Fossil project ignores the record through its own ignore file"
+        Feature: Development Record
+          Scenario: A Fossil project ignores the record through its own ignore file
+           ✔  Given a project root with givn/ initialised in a Fossil checkout
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  When the user runs `givn status --change demo`
+           ✘  Then the repository's ignore glob names the development record
+              Step panicked. Captured output: the managed ignore file does not name the development record:
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        4 steps (3 passed, 1 failed)
+        EXIT 101
         ```
-  - [ ] **GREEN** — extend `ensure_ignored` with the Fossil destinations. Files:
+  - [x] **GREEN** — extend `ensure_ignored` with the Fossil destinations. Files:
         `src/history.rs`, `src/skills/rules.rs`, `tests/steps/development_record_steps.rs`.
         Compile first, re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.90s
+        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A Fossil project ignores the record through its own ignore file"
+        Feature: Development Record
+          Scenario: A Fossil project ignores the record through its own ignore file
+           ✔  Given a project root with givn/ initialised in a Fossil checkout
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  When the user runs `givn status --change demo`
+           ✔  Then the repository's ignore glob names the development record
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT 0
+
+        Production files created/modified: none — and that is the investigated
+        outcome, not an omission. The two Fossil rows belong to the one table
+        Task 10 built to satisfy this task pair's shared REFACTOR requirement
+        ("one destination table shared with the rules writer, no duplicated
+        Git/Fossil branches"), and every line of them landed in Task 10's
+        revision `12d835a9`: `rules_writes`'s Fossil arm adds
+        `givn/history/*` to the managed entry list inside
+        `.fossil-settings/ignore-glob` (the committed file overrides the
+        repository setting), and `record_writes` writes the repository-level
+        `ignore-glob` setting only while no managed file overrides it, entering
+        nothing versioned at plain-command time. This scenario is the acceptance
+        for that arm; the probe below shows the behaviour it observes:
+
+        $ (fixture walk, probe): a bare root → `fossil init`/`open` → `givn init --agents opencode`
+        $ cat .fossil-settings/ignore-glob
+        # givn:begin:rules
+        .opencode/skills/givn-*
+        …
+        .githooks/commit-msg
+        givn/history/*
+        # givn:end:rules
+        $ fossil settings --value ignore-glob          # effective source
+        … ,givn/history/*, …                            (the file's list)
+        $ fossil addremove && fossil commit --allow-empty -m fixture
+        $ fossil ls | grep history                     → (no output: the store is NOT tracked)
+        $ givn status --change demo
+        $ fossil extras; fossil changes                → neither names givn/history/events.jsonl
+
+        Test files created/modified:
+        - `tests/steps/development_record_steps.rs` — the `a project root with
+          givn/ initialised in a Fossil checkout` fixture: a real Fossil checkout
+          first, `givn init` INSIDE it (so the managed entry list is committed
+          before the fixture commit), then the fixture commit (F3; `addremove`
+          would otherwise record the store), plus the `the repository's ignore
+          glob names the development record` step: the managed file's entry list
+          is read (the effective source in a managed checkout) and the
+          repository-level `ignore-glob` setting is read, so the step never
+          asserts on the file it happened to write; the record is then asserted
+          absent from both `fossil changes` and `fossil extras`.
+        - `tests/steps/release_0_3_0_e2e_steps.rs::fossil_project_with_version`
+          (the declared F3 fixture remedy): its hand-written ignore content is
+          now `.opencode/*,AGENTS.md,.gitignore,givn/history/*`, so its
+          `addremove` + commit cannot record the store.
         ```
-  - [ ] **REFACTOR** — keep the destination choice in one backend-keyed place;
+  - [x] **REFACTOR** — keep the destination choice in one backend-keyed place;
         re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The destination choice already lives in one backend-keyed place — the
+        `root_backend` decision plus the two tables that read it (`rules_writes`,
+        `record_writes`) — and this scenario's own file list carries a step-level
+        helper (`fossil_glob_entries`) so the entry list is parsed in one place.
+        Nothing else needed changing; no production file is modified by this task
+        (see GREEN). The restored state is byte-identical to the committed
+        program:
+
+        $ git status --porcelain
+         M givn/changes/development-timeline/specs/inspect-development-history/development-record.feature
+         M givn/changes/development-timeline/tasks.md
+         M tests/steps/development_record_steps.rs
+         M tests/steps/release_0_3_0_e2e_steps.rs
+        → no `src/` file is pending: the controlled-omission probe above was
+          reverted before this run (the restored run is the GREEN one).
+
+        $ cargo fmt --all -- --check                                    EXIT 0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.85s
+        EXIT 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A Fossil project ignores the record through its own ignore file"
+        Feature: Development Record
+          Scenario: A Fossil project ignores the record through its own ignore file
+           ✔  Given a project root with givn/ initialised in a Fossil checkout
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  When the user runs `givn status --change demo`
+           ✔  Then the repository's ignore glob names the development record
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT 0
+
+        The whole greened delta in one process:
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --tags "not @e2e and not @wip"
+        [Summary]
+        2 features
+        12 scenarios (12 passed)
+        62 steps (62 passed)
+        EXIT 0
+
+        The fixtures this task adapted are consumed by a whole feature (its
+        Git and Fossil outline rows included):
+        $ GIVN_FEATURES=givn/specs/upgrade-a-project cargo test --locked --test features_runner -- --tags "not @e2e"
+        [Summary]
+        1 feature
+        12 scenarios (12 passed)
+        65 steps (65 passed)
+        EXIT 0
+
+        Both permanent clean-checkout scenarios the fixture class feeds still
+        exit 0:
+        $ cargo test --locked --test features_runner -- --exact "operate-product/declare-the-product-start.feature::The upgrade commit includes the backfilled run declaration"
+        6 steps (6 passed)                                              EXIT 0
+        $ cargo test --locked --test features_runner -- --exact "operate-product/declare-the-product-start.feature::A repeated upgrade creates no additional commit"
+        6 steps (6 passed)                                              EXIT 0
+
+        CHANGE-WIDE PERMANENT-CORPUS OBSERVATION (reported, not patched — the
+        scenario boxes above are unaffected by it). The whole permanent corpus
+        was run after this task:
+
+        $ GIVN_FEATURES=givn/specs cargo test --locked --test features_runner -- --tags "not @e2e"
+        [Summary]
+        49 features
+        544 scenarios (530 passed, 14 failed)
+        3158 steps (3144 passed, 14 failed)
+        EXIT 1
+
+        All 14 failures are one class: a permanent scenario compares raw project
+        files (or an exact directory list) with the record inside the compared
+        set, and the recording itself changes the record — not the ignore
+        mechanism, and not the working-tree-tracking class this task pair fixed.
+        The failure details name the record every time:
+
+        - 9 × `And no file in the project changed` →
+          `changed: ["modified: givn/history/events.jsonl"]`
+          (the refusal scenarios of `fragments/detect-the-project-repository.feature`
+          and `archive-change/archive-proof.feature`);
+        - 1 × `Then no project file changed` →
+          `["givn/history/events.jsonl"]`
+          (`obtain-effective-guidance/serve-extended-rules.feature::A guidance request changes nothing in the project`);
+        - 4 × `And the directory "givn" does not exist` after a refused
+          `givn init` in a bare root
+          (`initialize-project/initialize-a-project.feature`) — the bare-root
+          recording creates `givn/history/` before `init` can refuse.
+
+        The design's declared fixture class (F6: `git_managed_project`,
+        `git_project_with_version`, `fossil_project_with_version`) covers the
+        tracking mechanism, which this task pair fixed; it names none of these
+        fixtures, and `snapshot_tree`'s own rationale ("Backend bookkeeping is
+        not a project file") would have to extend to the record path for them to
+        hold — a corpus-fixture change outside this task, so it is reported
+        rather than patched.
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
         the scenario title `A Fossil project ignores the record through its own
