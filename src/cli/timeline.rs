@@ -63,6 +63,11 @@ pub struct ReportModel {
     pub bands: Vec<Band>,
     /// The record lines the report renders, in file order.
     pub entries: Vec<HistoryEntry>,
+    /// Whether the requested scope holds no recorded activity at all. The
+    /// report root renders its explicit empty state then — a heading, one
+    /// sentence naming the state, and a way back to the report root — instead
+    /// of a blank page, an error, or an axis drawn over nothing.
+    pub empty: bool,
     /// The summary: the numbers the report states about the whole window.
     pub summary: Summary,
 }
@@ -328,10 +333,12 @@ pub fn build_report_model(scope: Option<Scope>, entries: Vec<HistoryEntry>) -> R
     let entries = ordered_by_recorded_time(entries);
     let bands = bands_for(scope.as_ref(), &entries);
     let summary = Summary::of(&entries);
+    let empty = entries.is_empty();
     ReportModel {
         scope,
         bands,
         entries,
+        empty,
         summary,
     }
 }
@@ -369,6 +376,11 @@ fn ordered_by_recorded_time(mut entries: Vec<HistoryEntry>) -> Vec<HistoryEntry>
 /// drawn axis, and the summary alike.
 fn bands_for(scope: Option<&Scope>, entries: &[HistoryEntry]) -> Vec<Band> {
     let mut bands: Vec<Band> = Vec::new();
+    // A window with no entries has no rows: the report root renders its empty
+    // state then, and an empty band row could only draw an axis over nothing.
+    if entries.is_empty() {
+        return bands;
+    }
     if let Some(scope) = scope {
         bands.push(Band::of(
             scope,
@@ -489,19 +501,37 @@ pub fn render_report(model: &ReportModel) -> String {
         .replacen(DATA_SLOT, &json_for_slot(&data), 1)
 }
 
-/// The model as the page's own text: the scope line, the summary, and the
-/// timeline's initial view — the bands, one visible row per scope the window
+/// The model as the page's own text: the scope line, and then either the
+/// report's empty state — the scope holds no recorded activity — or the summary
+/// and the timeline's initial view, one visible row per scope the window
 /// covers, with the band's spans drawn on the report's time axis.
 fn render_view(model: &ReportModel) -> String {
-    let mut view = String::new();
-    view.push_str(&format!(
+    let scope = scope_line(model.scope.as_ref());
+    let mut view = format!(
         "<p class=\"report-scope\" id=\"report-scope\">{}</p>\n",
-        escape(&scope_line(model.scope.as_ref()))
-    ));
+        escape(&scope)
+    );
+    if model.empty {
+        view.push_str(&render_empty_state(&scope));
+        return view;
+    }
     view.push_str(&render_summary(&model.summary));
     view.push('\n');
     view.push_str(&render_timeline(model));
     view
+}
+
+/// The empty state: a scope with no recorded activity has no timeline to draw,
+/// so the report root renders this instead of a blank page, an error, or an
+/// axis over nothing. It is one branch of the report root — the same markup for
+/// every scope that records nothing — and it carries the three things the
+/// design system's empty state requires: a heading, one sentence explaining the
+/// state, and a way back to the report root. No chart axis is drawn here.
+fn render_empty_state(scope: &str) -> String {
+    format!(
+        "<section class=\"empty-state\" data-state=\"empty\" id=\"report-empty-state\" aria-labelledby=\"report-empty-title\">\n<h2 id=\"report-empty-title\">No recorded activity</h2>\n<p class=\"empty-state-detail\">No activity is recorded for {} yet, so there is no timeline to draw.</p>\n<p class=\"empty-state-back\"><a href=\"#report-title\">Back to the report root</a></p>\n</section>",
+        escape(scope)
+    )
 }
 
 /// The timeline's drawing width and the left gutter the band rows' labels

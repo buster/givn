@@ -47,7 +47,7 @@ Feature: Development Report
     When the developer generates the development report for "demo"
     Then the report references no remote resource
 
-  @givn.added @wip
+  @givn.added
   Scenario: The report shows the empty state for a scope with no recorded activity
     Given a change "demo" with no recorded activity
     When the developer generates the development report for "demo"
