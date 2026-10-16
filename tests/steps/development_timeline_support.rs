@@ -209,6 +209,28 @@ pub fn make_record_unwritable(env: &common::TestEnv) {
         .unwrap_or_else(|error| panic!("create the unwritable store {}: {error}", path.display()));
 }
 
+/// One intake payload as a reporter flushes it: the schema version, the
+/// reporter's own name, its session id, the optional scope overrides, and the
+/// events the reporter buffered for this flush.
+pub fn intake_payload(change: Option<&str>, topic: Option<&str>, events: Vec<Value>) -> Value {
+    serde_json::json!({
+        "schema": 1,
+        "reporter": "fixture",
+        "session": "fixture-session",
+        "change": change,
+        "topic": topic,
+        "events": events,
+    })
+}
+
+/// Hand one payload to the real intake through its machine contract: the
+/// compiled binary's `history ingest` reading the payload from stdin. The
+/// output is returned, never asserted here — the scenario's own Then steps
+/// read the record the intake wrote.
+pub fn report_intake(env: &common::TestEnv, payload: &Value) -> std::process::Output {
+    common::run_givn_with_stdin_and_envs(env, &["history", "ingest"], &payload.to_string(), &[])
+}
+
 /// The development record of the project rooted at `root`, read the way a
 /// consumer reads it: `givn/history/events.jsonl`, one JSON object per line.
 /// Every line must parse as a JSON object — that is the store's own contract,

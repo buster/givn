@@ -124,11 +124,16 @@ enum Commands {
         #[arg(long)]
         json: bool,
     },
-    /// Read the development record (ADR-073): one scope's recorded entries.
+    /// Read the development record (ADR-073): one scope's recorded entries —
+    /// or, with the `ingest` subcommand, the agent intake that appends one
+    /// reported payload's events.
     ///
-    /// Reading never records: this command runs without a recorder, so the
-    /// store keeps exactly the lines it had.
+    /// Reading never records: the read view runs without a recorder, so the
+    /// store keeps exactly the lines it had. The intake records normally.
     History {
+        /// The intake subcommand; without it the command is the read view.
+        #[command(subcommand)]
+        command: Option<HistoryCommands>,
         /// Change identifier — limit the read to that change.
         #[arg(long)]
         change: Option<String>,
@@ -241,6 +246,14 @@ enum AttributionCommands {
     },
     /// Convert a Claude Code Bash hook payload into an optional command update.
     ClaudePreToolUse,
+}
+
+/// The `history` command's subcommands: the read view is the command itself.
+#[derive(Subcommand)]
+enum HistoryCommands {
+    /// Read one reported payload from stdin (the agent intake) and append the
+    /// events it accepts.
+    Ingest,
 }
 
 #[derive(Subcommand)]
@@ -366,16 +379,18 @@ fn main() {
     }
 }
 
-/// Whether this invocation records. `givn history` and `givn timeline` are
-/// deliberately not recorded — reading the record never mutates it — so the
-/// recording wrapper is not entered for them at all: an inspection that
-/// appended an entry about itself would put the newest entry into every report
-/// it produced (design-review Q8).
+/// Whether this invocation records. The record's two read views — `givn
+/// history` without its intake subcommand, and `givn timeline` — are
+/// deliberately not recorded: an inspection that appended an entry about itself
+/// would put the newest entry into every report it produced (design-review Q8).
+/// Every other command records normally, the agent intake included — a
+/// reported payload is activity Givn recorded on the agent's behalf.
 fn records(command: &Commands) -> bool {
-    !matches!(
-        command,
-        Commands::History { .. } | Commands::Timeline { .. }
-    )
+    match command {
+        Commands::Timeline { .. } => false,
+        Commands::History { command, .. } => command.is_some(),
+        _ => true,
+    }
 }
 
 /// The invocation's own text (arguments after the program name), the command
@@ -414,10 +429,14 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         }
         Commands::Status { change, json } => cli::status::run(change.as_deref(), json),
         Commands::History {
+            command,
             change,
             topic,
             json,
-        } => cli::history::run(change.as_deref(), topic.as_deref(), json),
+        } => match command {
+            Some(HistoryCommands::Ingest) => cli::history::ingest(),
+            None => cli::history::run(change.as_deref(), topic.as_deref(), json),
+        },
         Commands::Timeline { change, topic, out } => {
             cli::timeline::run(change.as_deref(), topic.as_deref(), out.as_deref()).map(|_| ())
         }
