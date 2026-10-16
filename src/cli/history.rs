@@ -321,7 +321,13 @@ impl IngestedEvent {
         // The span is nested in the turn that reported it, when the payload
         // reported one, else in the turn its start was reported inside.
         let parent = start.and_then(|start| start.parent).or(batch.turn);
-        batch.push(entry, parent);
+        let subagent = batch.push(entry, parent);
+        // A subagent whose own transcript reported tokens contributes one
+        // usage entry beside its span, parented to it: the report's per
+        // subagent totals read this parent link, never a session-wide guess.
+        if let Some(usage) = &self.usage {
+            batch.push(self.usage_entry(scope, usage), Some(subagent));
+        }
     }
 
     /// The record outcome this event reports, or `None` when it reports only a
@@ -382,6 +388,18 @@ pub struct HarnessPayload {
     /// The notification type, on `Notification`.
     #[serde(default)]
     pub notification_type: Option<String>,
+    /// The session record the harness writes asynchronously, on `Stop`.
+    #[serde(default)]
+    pub transcript_path: Option<PathBuf>,
+    /// The subagent's own run id, on subagent events.
+    #[serde(default)]
+    pub agent_id: Option<String>,
+    /// The agent definition that ran the subagent.
+    #[serde(default)]
+    pub agent_type: Option<String>,
+    /// The subagent's own session record, on `SubagentStop`.
+    #[serde(default)]
+    pub agent_transcript_path: Option<PathBuf>,
 }
 
 impl HarnessPayload {
@@ -407,6 +425,11 @@ const PENDING_KIND_TOOL: &str = "tool";
 
 /// The pending-state kind a wait start produces.
 const PENDING_KIND_QUESTION: &str = "question";
+
+/// The pending key a subagent start opens.
+fn subagent_key(identity: &str) -> String {
+    format!("subagent:{identity}")
+}
 
 /// The pending key a permission request opens: the harness names the tool, not
 /// the call, so the tool name is the harness's own identity for that wait.
@@ -490,6 +513,12 @@ pub fn map_harness_event(
             map_notification(payload, pending);
             Vec::new()
         }
+        "SubagentStart" => {
+            map_subagent_start(payload, pending);
+            Vec::new()
+        }
+        "SubagentStop" => map_subagent_stop(payload, pending),
+        "Stop" => map_turn_end(payload),
         "SessionEnd" => {
             // Session end prunes the whole session's pending state: a start
             // whose end never arrived costs a duration, never an entry.
@@ -633,6 +662,156 @@ fn map_notification(payload: &HarnessPayload, pending: &mut PendingState) {
             label: Some(label.to_string()),
         },
     );
+}
+
+/// A subagent's start: the harness's own run id opens the span, and the
+/// agent definition that ran it is kept for the completion.
+fn map_subagent_start(payload: &HarnessPayload, pending: &mut PendingState) {
+    let Some(identity) = payload.agent_id.as_deref() else {
+        return;
+    };
+    pending.open(
+        &subagent_key(identity),
+        PendingStart {
+            started_at: crate::history::now_rfc3339(),
+            kind: "subagent".to_string(),
+            label: payload.agent_type.clone(),
+        },
+    );
+}
+
+/// A subagent's completion: one span entry, measured from the reporter's own
+/// start stamp, with the subagent's tokens read from its own session record.
+fn map_subagent_stop(payload: &HarnessPayload, pending: &mut PendingState) -> Vec<IngestedEvent> {
+    let identity = match payload.agent_id.clone() {
+        Some(identity) => identity,
+        None => match payload.agent_type.clone() {
+            Some(agent) => agent,
+            None => return Vec::new(),
+        },
+    };
+    let start = pending.take(&subagent_key(&identity));
+    let usage = session_record_usage(payload.agent_transcript_path.as_deref());
+    let mut event = reported_event("subagent", &crate::history::now_rfc3339());
+    event.subagent = Some(identity);
+    event.agent = payload.agent_type.clone();
+    event.status = Some("completed".to_string());
+    event.duration_ms = measured_from(start.as_ref(), crate::history::now_ms());
+    event.usage = usage;
+    vec![event]
+}
+
+/// The turn boundary: the harness's session record is written asynchronously
+/// and may lag the live turn, so its usage is read here, at the turn's end —
+/// and a turn whose usage the record does not report is still recorded, with
+/// its usage marked unavailable.
+fn map_turn_end(payload: &HarnessPayload) -> Vec<IngestedEvent> {
+    let usage = session_record_usage(payload.transcript_path.as_deref());
+    let mut event = reported_event("turn", &crate::history::now_rfc3339());
+    event.status = Some("completed".to_string());
+    event.model = usage.as_ref().and_then(|usage| usage.model.clone());
+    event.usage = usage;
+    vec![event]
+}
+
+/// The token usage one harness session record reports for its current turn:
+/// the record's one reader, shared by the turn path (`transcript_path`) and the
+/// subagent path (`agent_transcript_path`). `None` — never a zero — when the
+/// path is absent, the record is missing or unreadable, or it reports no usage
+/// at all.
+fn session_record_usage(path: Option<&Path>) -> Option<Usage> {
+    let text = std::fs::read_to_string(path?).ok()?;
+    let mut usage = SessionUsage::default();
+    for line in text.lines().filter(|line| !line.trim().is_empty()) {
+        // Defensive parsing: one malformed line never costs the record the rest
+        // of the transcript.
+        let Ok(record) = serde_json::from_str::<Value>(line) else {
+            continue;
+        };
+        match record.get("type").and_then(Value::as_str) {
+            Some("user") if is_prompt(&record) => usage = SessionUsage::default(),
+            Some("assistant") => usage.add(&record),
+            _ => {}
+        }
+    }
+    usage.into_usage()
+}
+
+/// Whether a transcript `user` entry is the prompt that opens a turn. A tool
+/// result is a `user` entry too, and never opens one.
+fn is_prompt(record: &Value) -> bool {
+    record
+        .get("message")
+        .and_then(|message| message.get("content"))
+        .and_then(Value::as_array)
+        .is_some_and(|content| {
+            content.iter().any(|part| {
+                part.get("type").and_then(Value::as_str) == Some("text")
+                    && part.get("text").and_then(Value::as_str).is_some()
+            })
+        })
+}
+
+/// The usage one session record's assistant entries report, summed while the
+/// record is read.
+#[derive(Debug, Default)]
+struct SessionUsage {
+    input: u64,
+    output: u64,
+    cache_read: u64,
+    cache_write: u64,
+    model: Option<String>,
+    counted: bool,
+}
+
+impl SessionUsage {
+    /// Add one assistant entry's usage: every count the entry reports, and the
+    /// model that produced it — kept verbatim, never normalised.
+    fn add(&mut self, record: &Value) {
+        let Some(message) = record.get("message") else {
+            return;
+        };
+        if let Some(model) = message.get("model").and_then(Value::as_str) {
+            self.model = Some(model.to_string());
+        }
+        let Some(usage) = message.get("usage") else {
+            return;
+        };
+        let count = |key: &str| usage.get(key).and_then(Value::as_u64).unwrap_or_default();
+        let input = count("input_tokens");
+        let output = count("output_tokens");
+        let cache_read = count("cache_read_input_tokens");
+        let cache_write = count("cache_creation_input_tokens");
+        if input + output + cache_read + cache_write == 0 {
+            return;
+        }
+        self.input += input;
+        self.output += output;
+        self.cache_read += cache_read;
+        self.cache_write += cache_write;
+        self.counted = true;
+    }
+
+    /// The intake's usage object, or `None` when no entry reported a count.
+    fn into_usage(self) -> Option<Usage> {
+        if !self.counted {
+            return None;
+        }
+        Some(Usage {
+            input: Some(self.input),
+            output: Some(self.output),
+            cache_read: Some(self.cache_read),
+            cache_write: Some(self.cache_write),
+            total_tokens: Some(
+                self.input
+                    .saturating_add(self.output)
+                    .saturating_add(self.cache_read)
+                    .saturating_add(self.cache_write),
+            ),
+            model: self.model,
+            subagent: None,
+        })
+    }
 }
 
 /// One process-per-hook session's pending state: the file the harness's own

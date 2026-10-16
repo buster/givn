@@ -94,7 +94,7 @@ Feature: Agent Activity Reporting
     Then the record holds one wait entry for the permission request
     And that entry carries a duration measured by the reporter itself
 
-  @givn.added @wip
+  @givn.added
   Scenario: Token usage read from the harness's own session record is recorded with its model
     Given a project with the generated Claude Code development reporter
     And the harness's session record holds assistant token usage for "claude-sonnet-5"

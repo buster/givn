@@ -5542,7 +5542,7 @@ name it.
 
 ## Task 24 — `Token usage read from the harness's own session record is recorded with its model` (`agent-activity-reporting`, added)
 
-- [ ] **Scenario: `Token usage read from the harness's own session record is recorded with its model`**
+- [x] **Scenario: `Token usage read from the harness's own session record is recorded with its model`**
   - Design constraints:
     - Claude Code carries no token usage or cost in hook payloads, so usage is
       read from the harness's own session record at `transcript_path`: assistant
@@ -5564,24 +5564,132 @@ name it.
       and the model name; the shim is invoked with a `Stop` payload naming that
       `transcript_path`.
     - RED expected failure: both Then steps are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Token usage read from the harness's own session record is recorded with its model"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Token usage read from the harness's own session record is recorded with its model"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: Token usage read from the harness's own session record is recorded with its model
+           ✔  Given a project with the generated Claude Code development reporter
+           ✘  And the harness's session record holds assistant token usage for "claude-sonnet-5"
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/agent-activity-reporting.feature:100:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+
+        thread 'main' (2536819) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — the scenario's session-record Given (and
+        both Then steps) match no function, and the mapper has no `Stop` arm at
+        all: Task 23's commit carries exactly the wait mapping, so the
+        transcript reader, the turn's usage mapping, and the subagent usage
+        hand-off are still missing.
         ```
-  - [ ] **GREEN** — implement the transcript reader and the usage mapping.
+  - [x] **GREEN** — implement the transcript reader and the usage mapping.
         Files: `src/cli/history.rs`, `assets/agent-integrations/claude/givn-timeline.sh`
         (no logic beyond the pipe), `tests/steps/agent_activity_reporting_steps.rs`
         plus the fixture transcript in the support file. Compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.89s
+        BUILD=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Token usage read from the harness's own session record is recorded with its model"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 14.36s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: Token usage read from the harness's own session record is recorded with its model
+           ✔  Given a project with the generated Claude Code development reporter
+           ✔  And the harness's session record holds assistant token usage for "claude-sonnet-5"
+           ✔  When the harness reports the end of a turn with that session record's path
+           ✔  Then the record holds that turn's token usage
+           ✔  And the usage names "claude-sonnet-5"
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
+
+        Production files created/modified by this GREEN step:
+        - `src/cli/history.rs` (modified — `HarnessPayload` gains the session
+          record's path and the subagent's own run id/definition/record path;
+          `map_harness_event` gains the `Stop` arm (`map_turn_end`) and the
+          `SubagentStart`/`SubagentStop` arms (a pending start stamp per run id,
+          one completion entry measured from it); `transcript_usage` is the
+          binary-side reader of the harness's own session record (a real user
+          prompt opens a turn, assistant entries sum `input_tokens`,
+          `output_tokens`, `cache_read_input_tokens`,
+          `cache_creation_input_tokens` and carry `message.model` verbatim,
+          with one malformed line never costing the rest of the transcript),
+          and `IngestedEvent::map_subagent` hands a completion's usage to one
+          usage entry parented to the subagent span);
+        - `assets/agent-integrations/claude/givn-timeline.sh` (unchanged — the
+          three-line shim, no logic beyond the pipe);
+        - `tests/steps/development_timeline_support.rs` (modified — the
+          `Stop` payload the shim is driven with, the fixture transcript builder
+          in the harness's own shape, and the counts/model the assertions read);
+        - `tests/steps/agent_activity_reporting_steps.rs` (modified — the
+          session-record Given, the turn-end When, the two Then steps, and the
+          shared `the record holds that turn's token usage` step text now
+          dispatching on the scenario's own fixture: the reported-payload turn
+          keeps Task 15's assertions (change scope, payload counts), the
+          transcript turn asserts the harness record's counts and the turn link).
         ```
-  - [ ] **REFACTOR** — one transcript reader shared by the turn and subagent
+  - [x] **REFACTOR** — one transcript reader shared by the turn and subagent
         paths, defensive parsing kept; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        The reader is now the session record's one reader for both paths:
+        `session_record_usage(path: Option<&Path>) -> Option<Usage>` owns the
+        optional path, the defensive line-by-line parse, the turn boundary, and
+        the accumulator (`SessionUsage`, renamed from the turn-only name), and
+        both `map_turn_end` (`transcript_path`) and `map_subagent_stop`
+        (`agent_transcript_path`) read through it with one call each. No
+        behaviour change: same parsing rules, same sums, same `None` for an
+        absent/unreadable/unmeasured record.
+
+        $ cargo fmt --all -- --check
+        FMT OK
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.48s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/agent-activity-reporting.feature::Token usage read from the harness's own session record is recorded with its model"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 6.46s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Agent Activity Reporting
+          Scenario: Token usage read from the harness's own session record is recorded with its model
+           ✔  Given a project with the generated Claude Code development reporter
+           ✔  And the harness's session record holds assistant token usage for "claude-sonnet-5"
+           ✔  When the harness reports the end of a turn with that session record's path
+           ✔  Then the record holds that turn's token usage
+           ✔  And the usage names "claude-sonnet-5"
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
+
+        Regression run of the two committed scenarios this step's shared code
+        touches (`map_subagent`'s usage hand-off, the shared record-usage step):
+
+        $ ... --exact "...::A subagent's activity is attributed to that subagent"
+        1 scenario (1 passed), 4 steps (4 passed)        EXIT=0
+        $ ... --exact "...::Reported token usage is recorded with the model that produced it"
+        1 scenario (1 passed), 4 steps (4 passed)        EXIT=0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(agent-activity-reporting): <release note>`
         with the scenario title `Token usage read from the harness's own session
