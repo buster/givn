@@ -98,7 +98,7 @@ Feature: Development Record
     And the directory "givn" exists
     And the project root holds a development record
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer runs a lifecycle step and reads its recorded actions
     Given a project root with givn/ initialised
     And a change "demo" exists with artifact "proposal.md"

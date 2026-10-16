@@ -7869,25 +7869,161 @@ name it.
       `givn/changes/development-timeline/evidence/visual/consumer-runs-a-lifecycle-step-and-reads-its-recorded-actions/`
       — `mobile.png` (360x780) and `desktop.png` (1920x1080) — captured with
       animations disabled via `tests/e2e/browser-driver.mjs`.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Consumer runs a lifecycle step and reads its recorded actions"`
         → must exit non-zero (the e2e steps are undefined). Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Consumer runs a lifecycle step and reads its recorded actions"
+        Feature: Development Record
+          Scenario: Consumer runs a lifecycle step and reads its recorded actions
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  When the user runs `givn status --change demo`
+           ✔  And the user runs `givn history --change demo --json`
+           ✔  Then the command exits 0
+           ✘  And the machine-readable record names the status command for "demo"
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:108:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        6 steps (5 passed, 1 failed)
+        error: test failed, to rerun pass `--test features_runner`
+        RED_EXIT=101
+
+        RED category: genuinely new behaviour — the scenario's two Then steps
+        are undefined (the E2E tier is strict, proven in Task S1/E1 sub-task 4),
+        so the run exits 101 and the scenario cannot pass silently. The five
+        reused steps (root, change fixture, both `givn` invocations, exit code)
+        already bind; only this scenario's own assertions are missing.
         ```
-  - [ ] **GREEN** — implement the e2e steps on the real CLI. Files:
+  - [x] **GREEN** — implement the e2e steps on the real CLI. Files:
         `tests/steps/development_record_e2e_steps.rs`,
         `src/cli/history.rs` (any read-path gap), plus the two evidence
         screenshots above. Compile first, re-run → exit 0; then run
         `./run-tests.sh --e2e` at least once for this scenario's scope health.
         Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) + the two screenshot paths -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.38s
+        BUILD=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Consumer runs a lifecycle step and reads its recorded actions"
+        Feature: Development Record
+          Scenario: Consumer runs a lifecycle step and reads its recorded actions
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  When the user runs `givn status --change demo`
+           ✔  And the user runs `givn history --change demo --json`
+           ✔  Then the command exits 0
+           ✔  And the machine-readable record names the status command for "demo"
+           ✔  And the machine-readable record carries a duration for that command
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
+        EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --e2e
+             PASS [   1.309s] (8/8) givn::features_runner inspect-development-history/development-record.feature::Consumer runs a lifecycle step and reads its recorded actions
+        ────────────
+             Summary [   1.309s] 8 tests run: 1 passed, 7 failed, 35 skipped
+        E2E_EXIT=100
+
+        Scope health at this scenario's commit point: this scenario is the one
+        e2e scenario that passes; the other seven are Tasks E3–E9, whose steps
+        are their own RED (undefined step), and this task's commit does not
+        claim them.
+
+        The two evidence screenshots (the change-wide visual gate):
+        $ ls -l givn/changes/development-timeline/evidence/visual/consumer-runs-a-lifecycle-step-and-reads-its-recorded-actions/
+        total 80
+        -rw-r--r-- 1 buster buster 46816 Oct 16 17:22 desktop.png
+        -rw-r--r-- 1 buster buster 32172 Oct 16 17:22 mobile.png
+        $ file givn/changes/development-timeline/evidence/visual/consumer-runs-a-lifecycle-step-and-reads-its-recorded-actions/*.png
+        …/desktop.png: PNG image data, 1920 x 1080, 8-bit/color RGB, non-interlaced
+        …/mobile.png:  PNG image data, 360 x 780, 8-bit/color RGB, non-interlaced
+
+        Production files: **none for this scenario** — investigated, not
+        assumed. The read view the scenario asserts on already exists and is
+        the whole of the interface it drives: `givn history --change <id>
+        --json` prints `serde_json::to_string(&entries)` of
+        `src/cli/history.rs::run` (the `entries_in_scope` read path, filtered to
+        one `Scope::Change`), and the recorder writes the `command` entry the
+        assertion finds through `HistoryRecorder::finish`
+        (`src/history.rs`), carrying the resolved scope, the bounded invocation
+        label, the measured `duration_ms`, the outcome, and
+        `data.exit_code`. The step does not need a read-path gap filled, so no
+        production line was added.
+
+        Step files (`tests/steps/development_record_e2e_steps.rs`, in this
+        scenario's commit):
+        - `Then the machine-readable record names the status command for "…"` —
+          parses the read view's own stdout (the `When`'s `givn history
+          --change demo --json`) into the capability's
+          `DevelopmentRecordE2eState.entries` *once*, then requires a
+          `command`/`status` entry whose `scope` is exactly
+          `{"kind":"change","id":"demo"}` and whose bounded label names the
+          invocation (`status --change demo`).
+        - `Then the machine-readable record carries a duration for that command`
+          — the same parse (never a second invocation, never a private store
+          read) must carry `duration_ms` for that entry, within the command's
+          own wall time.
+        - `commit_evidence` — the change-wide visual gate: renders the report the
+          scenario's own record produced (`givn timeline --change demo --out
+          report.html`; the read view records nothing, so the record is
+          untouched), opens that one `file://` document in the real browser
+          (`tests/e2e/browser-driver.mjs` through `BrowserDriver`), and captures
+          `mobile.png`/`desktop.png` at 360x780 and 1920x1080 with animations
+          disabled — after the scenario's final assertion.
         ```
-  - [ ] **REFACTOR** — reuse the shared run-helper instead of a second
+  - [x] **REFACTOR** — reuse the shared run-helper instead of a second
         invocation helper; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        Cleanup, no behaviour change:
+        - the report/evidence helper now takes the scenario's project root
+          (`&common::TestEnv`) instead of a whole `&GivnWorld`, so it depends on
+          exactly what it uses;
+        - every subprocess in the file goes through the shared run-helper
+          `common::run_givn` (the CLI's one test entry point) and every capture
+          through `common::browser::BrowserDriver`/`capture_evidence` — no second
+          invocation helper and no second capture path exists;
+        - the browser tier is the scenario's only browser use, and the scenario
+          itself stays CLI-only (the matrix's driving mechanism);
+        - the E3 scenario's own step (`the output names every recorded entry …`)
+          is held back to Task E3: this scenario's commit is atomic for this
+          scenario, and that step is Task E3's RED→GREEN work.
+
+        $ cargo fmt --all -- --check        FMT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.17s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Consumer runs a lifecycle step and reads its recorded actions"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 4.53s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: Consumer runs a lifecycle step and reads its recorded actions
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  When the user runs `givn status --change demo`
+           ✔  And the user runs `givn history --change demo --json`
+           ✔  Then the command exits 0
+           ✔  And the machine-readable record names the status command for "demo"
+           ✔  And the machine-readable record carries a duration for that command
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
+        REFACTOR_EXIT=0
+
+        The REFACTOR re-run refreshed both captures (17:22, same 32172/46816
+        bytes at 360x780/1920x1080): the evidence is the final code's own
+        output, not the GREEN iteration's leftover.
         ```
   - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
         title `Consumer runs a lifecycle step and reads its recorded actions` in

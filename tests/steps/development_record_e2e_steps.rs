@@ -7,8 +7,24 @@
 //! back. The capability's unit/integration steps live in
 //! [`crate::steps::development_record_steps`]; this file holds only the steps
 //! that need the real consumer interface.
+//!
+//! Both scenarios are CLI interfaces, so the browser is used for one thing
+//! only: the change-wide visual gate's evidence — the report the scenario's own
+//! record produced, rendered in the real browser at both contract viewports,
+//! captured after the final assertion.
 
-use serde_json::Value;
+use serde_json::{Value, json};
+
+use cucumber::then;
+
+use super::GivnWorld;
+use crate::common;
+use crate::common::TestEnv;
+use crate::common::browser::{self, BrowserDriver};
+
+/// The `@e2e` scenario whose record names the lifecycle command; spelled as the
+/// delta feature spells it, because the visual gate slugifies exactly this text.
+const LIFECYCLE_SCENARIO: &str = "Consumer runs a lifecycle step and reads its recorded actions";
 
 /// State for the `@e2e` development-record scenarios: the machine-readable
 /// record the scenario's own read printed
@@ -17,6 +33,101 @@ use serde_json::Value;
 #[derive(Debug, Default)]
 pub(crate) struct DevelopmentRecordE2eState {
     /// The entries the last machine-readable read printed.
-    #[allow(dead_code)] // Task E3 reads it.
     pub(crate) entries: Vec<Value>,
+}
+
+/// The entries the scenario's own machine-readable read printed, parsed once:
+/// the first Then step parses the read view's own stdout into the scenario's
+/// state and every later Then step asserts against that same parse, never
+/// against a second invocation or a private store read.
+fn printed_entries(world: &mut GivnWorld) -> Vec<Value> {
+    if let Some(state) = world.development_record_e2e.as_ref() {
+        return state.entries.clone();
+    }
+    let printed = super::stdout(world);
+    let entries: Vec<Value> = serde_json::from_str(printed.trim()).unwrap_or_else(|error| {
+        panic!("the machine-readable read printed no JSON entries ({error}): {printed:?}")
+    });
+    world
+        .development_record_e2e
+        .get_or_insert_with(DevelopmentRecordE2eState::default)
+        .entries = entries.clone();
+    entries
+}
+
+/// The one printed `command` entry for `name`, or a failure naming what the
+/// read actually printed.
+fn command_entry<'a>(entries: &'a [Value], name: &str) -> &'a Value {
+    entries
+        .iter()
+        .find(|entry| entry["kind"] == json!("command") && entry["name"] == json!(name))
+        .unwrap_or_else(|| {
+            panic!("the machine-readable record names no `{name}` command entry: {entries:#?}")
+        })
+}
+
+#[then(regex = r#"^the machine-readable record names the status command for "([^"]+)"$"#)]
+fn record_names_the_status_command(world: &mut GivnWorld, change: String) {
+    let entries = printed_entries(world);
+    let command = command_entry(&entries, "status");
+    assert_eq!(
+        command["scope"],
+        json!({ "kind": "change", "id": change }),
+        "the recorded status command does not belong to the change {change}: {command:#}"
+    );
+    let label = command["label"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the recorded status command carries no label: {command:#}"));
+    assert!(
+        label.contains("status") && label.contains(&change),
+        "the recorded status command's label does not name the invocation: {label:?}"
+    );
+}
+
+#[then("the machine-readable record carries a duration for that command")]
+fn record_carries_a_duration_for_that_command(world: &mut GivnWorld) {
+    let entries = printed_entries(world);
+    let command = command_entry(&entries, "status");
+    let duration = command["duration_ms"]
+        .as_u64()
+        .unwrap_or_else(|| panic!("the recorded status command carries no duration: {command:#}"));
+    // A measured span, not a placeholder: the entry's own wall time, in
+    // milliseconds, is the only thing the field can hold.
+    assert!(
+        duration < 60_000,
+        "the recorded status command's duration is not a measured span: {duration} ms"
+    );
+    commit_evidence(
+        world
+            .env
+            .as_ref()
+            .expect("a project root is required first"),
+        LIFECYCLE_SCENARIO,
+    );
+}
+
+/// The change-wide visual gate's evidence for one `@e2e` CLI scenario: render
+/// the report the scenario's own record produced with the real `givn timeline`,
+/// then open that one file in the real browser and capture the contract's pair
+/// (`mobile.png` 360x780, `desktop.png` 1920x1080) under
+/// `evidence/visual/<scenario-slug>/`. Captured after the scenario's final
+/// assertion, with animations disabled by the driver; the report is rendered
+/// from the record's embedded timestamps, so the capture never depends on
+/// timing.
+fn commit_evidence(root: &TestEnv, scenario: &str) {
+    let out = common::run_givn(
+        root,
+        &["timeline", "--change", "demo", "--out", "report.html"],
+    );
+    assert!(
+        out.status.success(),
+        "givn timeline failed: {}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr),
+    );
+    let report = root.path("report.html");
+    let mut browser = BrowserDriver::start();
+    browser.goto(&browser::file_url(&report));
+    browser.capture_evidence(scenario);
+    browser.quit();
 }
