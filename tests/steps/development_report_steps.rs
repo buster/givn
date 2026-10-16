@@ -75,6 +75,26 @@ const RANKING_FIXTURE: [FixtureEntry; 4] = [
 /// belongs to: the coverage step, whose span the call falls inside.
 const COVERAGE_STEP_INDEX: usize = 2;
 
+/// The waits the question fixture's record holds: the question the report must
+/// total, its recorded end, and its measured duration.
+const WAIT_FIXTURE: [(&str, &str, u64); 2] = [
+    (
+        "Which report layout should the timeline use?",
+        "2026-10-16T09:05:00.000Z",
+        300_000,
+    ),
+    (
+        "Should the axis label every day boundary?",
+        "2026-10-16T09:15:00.000Z",
+        180_000,
+    ),
+];
+
+/// The turn the fixture's waits belong to. Its own recorded duration is the
+/// scenario's control: a wait is its own span, so the wait total must be the
+/// waits' durations and never the enclosing turn's.
+const WAIT_TURN: (&str, u64) = ("2026-10-16T09:20:00.000Z", 1_200_000);
+
 /// State for the development-report scenarios: the report the last generation
 /// step wrote, so a following step reads the file the command produced rather
 /// than the store, and the record the scenario's Given seeded, so the
@@ -178,6 +198,18 @@ fn list_entry_ids(document: &str, list_id: &str) -> Vec<u64> {
         .collect()
 }
 
+/// The summary tile named `name` as the report renders it: its whole markup, so
+/// an assertion reads the value the screen shows rather than a re-derivation.
+fn tile(document: &str, name: &str) -> String {
+    let marker = format!("data-tile=\"{name}\"");
+    let start = document
+        .find(&marker)
+        .unwrap_or_else(|| panic!("the report holds no `{name}` tile"));
+    let region = &document[start..];
+    let end = region.find("</div>").expect("the tile is never closed");
+    region[..end].to_string()
+}
+
 #[given(regex = r#"^a change "([^"]+)" whose record holds steps of different durations$"#)]
 fn change_with_steps_of_different_durations(world: &mut GivnWorld, id: String) {
     let scope = Scope::Change { id: id.clone() };
@@ -206,6 +238,30 @@ fn change_with_steps_of_different_durations(world: &mut GivnWorld, id: String) {
             if fixture.kind == "tool" {
                 history.nested_in(entry, COVERAGE_STEP_INDEX);
             }
+        }
+        history.seed(env)
+    };
+    state(world).seeded = seeded;
+    world.last_change_id = Some(id);
+}
+
+#[given(regex = r#"^a change "([^"]+)" whose record holds two question waits$"#)]
+fn change_with_two_question_waits(world: &mut GivnWorld, id: String) {
+    let scope = Scope::Change { id: id.clone() };
+    let seeded = {
+        let env = project_root(world);
+        run_fixture_command(env, &["new", &id]);
+        let mut history = support::SeededHistory::new();
+        let turn = history.span(&scope, "turn", "turn", WAIT_TURN.0, WAIT_TURN.1);
+        for (index, (question, at, duration_ms)) in WAIT_FIXTURE.into_iter().enumerate() {
+            let wait = history.span(&scope, "question", "question", at, duration_ms);
+            history.label(wait, question);
+            history.nested_in(wait, turn);
+            assert_eq!(
+                wait,
+                turn + 1 + index,
+                "the fixture nests every wait in its turn"
+            );
         }
         history.seed(env)
     };
@@ -314,5 +370,72 @@ fn report_ranks_the_longest_step_first(world: &mut GivnWorld) {
     assert!(
         document.contains("not measured"),
         "the report does not state a missing duration as not measured: {document}"
+    );
+}
+
+#[then("the report names the total wait duration and the number of waits")]
+fn report_names_the_total_wait_duration_and_the_number_of_waits(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let waits: Vec<&HistoryEntry> = seeded(world)
+        .iter()
+        .filter(|entry| entry.kind == "question")
+        .collect();
+    assert_eq!(
+        waits.len(),
+        2,
+        "the fixture must hold two question waits: {waits:#?}"
+    );
+    let total: u64 = waits.iter().filter_map(|entry| entry.duration_ms).sum();
+    assert_eq!(
+        waits
+            .iter()
+            .filter(|entry| entry.duration_ms.is_none())
+            .count(),
+        0,
+        "the fixture's waits carry known durations"
+    );
+
+    // The wait total is the waits' own recorded span — never the duration of the
+    // turn the waits sit inside, which is the requester's "waiting is
+    // indistinguishable from working" problem.
+    let turn = seeded(world)
+        .iter()
+        .find(|entry| entry.kind == "turn")
+        .expect("the fixture nests its waits in a turn");
+    let turn_duration = turn.duration_ms.expect("the fixture's turn is measured");
+    assert_ne!(
+        total, turn_duration,
+        "the fixture must make the wait total and the turn's duration distinguishable"
+    );
+    assert_eq!(
+        model["summary"]["wait_ms"],
+        json!(total),
+        "the model's wait total is not the waits' own recorded durations: {model:#?}"
+    );
+    assert_eq!(
+        model["summary"]["waits"],
+        json!(waits.len()),
+        "the model does not count the recorded waits: {model:#?}"
+    );
+    assert_eq!(
+        model["summary"]["unmeasured_waits"],
+        json!(0),
+        "the fixture's waits are all measured: {model:#?}"
+    );
+
+    // The rendered text and the embedded model agree.
+    let rendered = tile(&document, "waits");
+    assert!(
+        rendered.contains(&format_duration(total)),
+        "the waiting tile does not name the total wait duration: {rendered}"
+    );
+    assert!(
+        rendered.contains(&format!("{} waits", waits.len())),
+        "the waiting tile does not name the number of waits: {rendered}"
+    );
+    assert!(
+        !rendered.contains(&format_duration(turn_duration)),
+        "the waiting tile shows the enclosing turn's duration instead of the waits': {rendered}"
     );
 }

@@ -28,6 +28,9 @@ const REPORT_ASSET: &str = include_str!("../../assets/timeline/report.html");
 /// summary's longest-step ranking is about.
 const STEP: &str = "step";
 
+/// The recorded `question` kind: a wait for an answer, its own recorded span.
+const QUESTION: &str = "question";
+
 /// Whether a kind records a *measured span*, so an absent duration is a
 /// duration the record does not have — never a point entry, which records an
 /// instant (a minted revision, a reported usage, a session) and never had a
@@ -95,6 +98,15 @@ pub struct Summary {
     pub unmeasured_durations: usize,
     /// The recorded steps, longest first.
     pub longest_steps: Vec<RankedStep>,
+    /// The recorded question waits the window holds. A wait the record does not
+    /// time is still a wait.
+    pub waits: usize,
+    /// The waits the record does not time; the total never adds them as zero.
+    pub unmeasured_waits: usize,
+    /// The total of the waits the record measured, or `None` when it measured
+    /// none of them.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wait_ms: Option<u64>,
 }
 
 impl Summary {
@@ -114,6 +126,12 @@ impl Summary {
             }
             if records_span(&entry.kind) && entry.duration_ms.is_none() {
                 summary.unmeasured_durations += 1;
+            }
+            if entry.kind == QUESTION {
+                summary.waits += 1;
+                if !add_measured(&mut summary.wait_ms, entry.duration_ms) {
+                    summary.unmeasured_waits += 1;
+                }
             }
         }
         summary.elapsed_ms = earliest
@@ -193,6 +211,21 @@ fn scope_label(scope: &Scope) -> String {
         Scope::Change { id } => format!("Change: {id}"),
         Scope::Ideation { id } => format!("Ideation topic: {id}"),
         Scope::Project { id } => format!("Outside a scope: {id}"),
+    }
+}
+
+/// Add one recorded duration to a running total. A duration the record does not
+/// carry is never added as zero: the total stays `None` while nothing was
+/// measured, so every total this summary states (waits now, subagent spans and
+/// token usage next) renders "not measured" instead of a false zero. Returns
+/// whether the duration was measured.
+fn add_measured(total: &mut Option<u64>, duration: Option<u64>) -> bool {
+    match duration {
+        Some(duration) => {
+            *total = Some(total.unwrap_or_default() + duration);
+            true
+        }
+        None => false,
     }
 }
 
@@ -289,6 +322,15 @@ fn render_summary(summary: &Summary) -> String {
         None,
     ));
     html.push('\n');
+    html.push_str(&tile(
+        "waits",
+        "Waiting",
+        &summary
+            .wait_ms
+            .map_or_else(|| "not measured".to_string(), format_duration),
+        Some(&wait_note(summary)),
+    ));
+    html.push('\n');
     if summary.unmeasured_durations > 0 {
         html.push_str(&format!(
             "<p class=\"summary-note\" data-unmeasured-durations=\"{}\">{} not measured</p>\n",
@@ -309,6 +351,26 @@ fn render_summary(summary: &Summary) -> String {
     }
     html.push_str("</ol>\n</section>");
     html
+}
+
+/// The waiting tile's note: how many waits the record holds, and — where the
+/// record does not time some of them — that they are not measured, so a missing
+/// duration is never read as a zero wait.
+fn wait_note(summary: &Summary) -> String {
+    let mut note = wait_count(summary.waits);
+    if summary.unmeasured_waits > 0 {
+        note.push_str(&format!(" · {} not measured", summary.unmeasured_waits));
+    }
+    note
+}
+
+/// `n waits`, in the singular for one.
+fn wait_count(waits: usize) -> String {
+    if waits == 1 {
+        "1 wait".to_string()
+    } else {
+        format!("{waits} waits")
+    }
 }
 
 /// The note a duration the record does not carry renders as: missing data is
