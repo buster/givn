@@ -323,6 +323,41 @@ fn run_fixture_command(env: &common::TestEnv, args: &[&str]) {
     );
 }
 
+/// The attributes a document loads another resource through.
+const LOADING_ATTRIBUTES: [&str; 6] = ["src", "href", "srcset", "poster", "action", "formaction"];
+
+/// The inline forms that fetch: a document carrying any of these reaches
+/// outside its own file even without a loading attribute.
+const REMOTE_FETCH_FORMS: [&str; 5] = ["@import", "fetch(", "XMLHttpRequest", "url(http", "url(//"];
+
+/// The remote-resource reference a report must never carry, named as the
+/// document spells it. The scan reads the written file for the two ways a
+/// document reaches outside itself: a loading attribute
+/// ([`LOADING_ATTRIBUTES`]) whose value is an absolute or protocol-relative
+/// URL, and an inline form that fetches ([`REMOTE_FETCH_FORMS`]). Nothing else
+/// is a reference: a `data:` URL, a fragment (`href="#…"`), and a relative path
+/// stay inside the file, and the SVG namespace declaration
+/// (`xmlns="http://www.w3.org/2000/svg"`) is a namespace URI the browser never
+/// resolves to a request.
+fn remote_resource_reference(document: &str) -> Option<String> {
+    for attribute in LOADING_ATTRIBUTES {
+        let marker = format!("{attribute}=\"");
+        let mut rest = document;
+        while let Some(at) = rest.find(&marker) {
+            rest = &rest[at + marker.len()..];
+            let value = rest.split('"').next().unwrap_or_default();
+            if value.starts_with("//") || value.starts_with("http:") || value.starts_with("https:")
+            {
+                return Some(format!("{attribute}=\"{value}\""));
+            }
+        }
+    }
+    REMOTE_FETCH_FORMS
+        .into_iter()
+        .find(|marker| document.contains(marker))
+        .map(str::to_string)
+}
+
 /// The report the last generation step wrote, read as the written file — the
 /// command's own output, never the store it was built from.
 fn report_text(world: &GivnWorld) -> String {
@@ -1240,6 +1275,92 @@ fn report_names_the_number_of_subagents_and_their_combined_duration(world: &mut 
     assert!(
         rendered.contains("not measured"),
         "the untimed subagent is not stated as not measured: {rendered}"
+    );
+}
+
+#[then("the report references no remote resource")]
+fn report_references_no_remote_resource(world: &mut GivnWorld) {
+    let document = report_text(world);
+
+    // The scan discriminates: a document that reaches outside its own file is
+    // detected by the same function the assertion below runs, so a clean report
+    // is never confused with a scan that does not look.
+    for reference in [
+        r#"<script src="https://cdn.example.com/report.js"></script>"#,
+        r#"<link href="//cdn.example.com/report.css" rel="stylesheet">"#,
+        r#"<style>@import url("https://cdn.example.com/report.css");</style>"#,
+        r#"<script>fetch("https://example.test/report.json")</script>"#,
+        r#"<script>new XMLHttpRequest()</script>"#,
+    ] {
+        assert!(
+            remote_resource_reference(reference).is_some(),
+            "the scan does not detect a remote reference: {reference}"
+        );
+    }
+    assert_eq!(
+        remote_resource_reference(&document),
+        None,
+        "the report references a resource outside its own file: {document}"
+    );
+
+    // One self-contained file: the styles and the model are inline, and the
+    // only script element is that inline model — nothing for the browser to
+    // fetch beyond the document itself.
+    assert!(
+        document.starts_with("<!doctype html>") && document.trim_end().ends_with("</html>"),
+        "the report is not one complete document: {document}"
+    );
+    assert!(
+        document.contains("<style>"),
+        "the report's styles are not inline: {document}"
+    );
+    assert_eq!(
+        document.matches("<script").count(),
+        1,
+        "the report carries more than its inline model script: {document}"
+    );
+
+    // The command's half of the claim: it wrote the file and printed its path,
+    // with no service to reach — the fixture project root holds no server, no
+    // port, and no external service, and the generation runs as a subprocess in
+    // it (the Local Runnability statement).
+    let id = world
+        .last_change_id
+        .clone()
+        .expect("the scenario names a change");
+    let (printed, root) = {
+        let env = project_root(world);
+        let out = common::run_givn(env, &["timeline", "--change", &id, "--out", "report.html"]);
+        (out, env.root().to_path_buf())
+    };
+    assert!(
+        printed.status.success(),
+        "the report generation failed: {}",
+        String::from_utf8_lossy(&printed.stderr)
+    );
+    let path = world
+        .development_report
+        .as_ref()
+        .and_then(|state| state.report_path.clone())
+        .expect("the development report has not been generated yet");
+    let printed_path = String::from_utf8_lossy(&printed.stdout).trim().to_string();
+    assert!(
+        !printed_path.is_empty(),
+        "the command printed no path for the report it wrote"
+    );
+    assert_eq!(
+        root.join(&printed_path)
+            .canonicalize()
+            .unwrap_or_else(|error| panic!("resolve the printed path {printed_path}: {error}")),
+        path.canonicalize()
+            .unwrap_or_else(|error| panic!("resolve the report {}: {error}", path.display())),
+        "the command does not print the path of the report it wrote"
+    );
+    assert_eq!(
+        std::fs::read_to_string(&path)
+            .unwrap_or_else(|error| panic!("read the report {}: {error}", path.display())),
+        document,
+        "the file the command wrote is not the report the browser loads"
     );
 }
 

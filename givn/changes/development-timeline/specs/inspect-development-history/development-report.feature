@@ -41,7 +41,7 @@ Feature: Development Report
     When the developer generates the development report for "demo"
     Then the report names the number of subagents and their combined duration
 
-  @givn.added @wip
+  @givn.added
   Scenario: The report needs no network access to render
     Given a change "demo" with a recorded history
     When the developer generates the development report for "demo"
