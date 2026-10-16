@@ -6853,6 +6853,19 @@ name it.
   - [x] **REFACTOR** — keep every style/script inline in one document, no
         separate assets to load; re-run → still exit 0. Paste it.
         ```
+        Assertion adjusted 2026-10-16 (E-tier), recorded here without rewriting
+        the pasted evidence above: the "exactly one `<script` element (the
+        inline model)" count this block named was over-strict. `design.md`
+        §Report Generation requires the asset's *inline script* to build the
+        interactive axis from the model, so a design-conformant report
+        necessarily carries the model payload element **plus** that inline
+        interaction script. The Then step in
+        `tests/steps/development_report_steps.rs` now asserts exactly one
+        `<script id="report-model">` and that no `<script src` / `src="http"`
+        appears anywhere — the same "nothing for the browser to fetch beyond the
+        document itself" claim, aligned with the reviewed design. Revision of
+        that step-file edit: see the alignment commit recorded below.
+
         Nothing was split out to load: the report stays one document with its
         one inline `<style>` and its one inline model script, and the asset was
         not touched (adding a second asset is exactly what this constraint
@@ -8861,11 +8874,37 @@ name it.
     - **Evidence:** `givn/changes/development-timeline/evidence/visual/consumer-opens-the-generated-development-report-in-a-browser/`
       — `mobile.png` and `desktop.png` (the populated report at both contract
       viewports), animations disabled.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer opens the generated development report in a browser"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer opens the generated development report in a browser"
+        Feature: Development Report
+          Scenario Outline: Consumer opens the generated development report in a browser
+           ✔  Given a change "demo" with a recorded history
+           ✘  And the development report for "demo" has been generated
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:78:5
+              Step doesn't match any function
+          Scenario Outline: Consumer opens the generated development report in a browser
+           ✘  Given a topic "demo" with a recorded history
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:77:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        2 scenarios (2 failed)
+        3 steps (1 passed, 2 failed)
+        error: test failed, to rerun pass `--test features_runner`
+        RED_EXIT=101
+
+        RED category: undefined steps. Both rows fail inside the one process this
+        outline unit runs — the change row on the unbound report-generation
+        Given (its own `<scope>` Given is the shared, real `givn new demo` +
+        `givn status --change demo` fixture, which really ran and really
+        recorded), the topic row on the topic Given that does not exist yet.
+        The RED is therefore the missing fixture, generation, browser-open and
+        rendered-surface assertion path, never a vacuous setup.
         ```
   - [ ] **GREEN** — implement the browser-open steps and the report's heading,
         timeline SVG, and accessible names. Files:

@@ -1341,8 +1341,10 @@ fn report_references_no_remote_resource(world: &mut GivnWorld) {
     );
 
     // One self-contained file: the styles and the model are inline, and the
-    // only script element is that inline model — nothing for the browser to
-    // fetch beyond the document itself.
+    // only scripts are the model payload element plus the asset's own inline
+    // interaction layer — `design.md` §Report Generation has the inline script
+    // build the axis from that model, so the document carries both and neither
+    // loads anything.
     assert!(
         document.starts_with("<!doctype html>") && document.trim_end().ends_with("</html>"),
         "the report is not one complete document: {document}"
@@ -1352,9 +1354,13 @@ fn report_references_no_remote_resource(world: &mut GivnWorld) {
         "the report's styles are not inline: {document}"
     );
     assert_eq!(
-        document.matches("<script").count(),
+        document.matches("<script id=\"report-model\"").count(),
         1,
-        "the report carries more than its inline model script: {document}"
+        "the report does not carry exactly one inline model payload element: {document}"
+    );
+    assert!(
+        !document.contains("<script src") && !document.contains("src=\"http"),
+        "the report loads a script from outside its own file: {document}"
     );
 
     // The command's half of the claim: it wrote the file and printed its path,
