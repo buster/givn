@@ -6208,7 +6208,7 @@ name it.
 
 ## Task 28 — `The report of an ideation topic names the work done before the change exists` (`development-report`, added)
 
-- [ ] **Scenario: `The report of an ideation topic names the work done before the change exists`**
+- [x] **Scenario: `The report of an ideation topic names the work done before the change exists`**
   - Design constraints:
     - Topic window: `givn timeline --topic timeline-ideas` renders the topic's
       own entries — the part of an ideation that exists before any change
@@ -6359,9 +6359,27 @@ name it.
         $ ... --exact "...::The report totals token usage per turn and per subagent"
         1 feature, 1 scenario (1 passed), 5 steps (5 passed)        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `2f6f77cb2f04d11765ecfbb72bdcc7c656746429` — `feat(development-report): <release note>` with
         the scenario title `The report of an ideation topic names the work done
         before the change exists` in the body. Record the revision identifier.
+        ```
+        $ GIVN_ATTRIBUTION_ACTIVE=1 GIVN_ATTRIBUTION_LLM=deepseek/deepseek-flash \
+          GIVN_ATTRIBUTION_REASONING=max GIVN_ATTRIBUTION_HARNESS=omp \
+          ./target/debug/givn commit -m "feat(development-report): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        The report of an ideation topic names the work done before the change exists"
+        [16:43:03] committed revision on the Git backend
+        EXIT=0
+
+        Revision 2f6f77cb2f04d11765ecfbb72bdcc7c656746429 touches exactly this
+        scenario's files: `src/cli/timeline.rs` (the timeline bands, the
+        `TimeScale`, and the one `scope_row` derivation),
+        `assets/timeline/report.html` (the band/span styles),
+        `tests/steps/development_report_steps.rs` (the topic Given/When and both
+        Then steps), `tests/steps/development_timeline_support.rs` (the reusable
+        topic fixture), the delta `.feature`'s `@wip` removal, and this task
+        file's evidence.
+        ```
 
 ## Task 29 — `The report orders the timeline by recorded time, not by store position` (`development-report`, added)
 
