@@ -220,9 +220,14 @@
   const SVG = "http://www.w3.org/2000/svg";
   const modelElement = document.getElementById("report-model");
   const timeline = document.querySelector("svg.timeline");
-  if (!modelElement || !timeline) return;
-  const model = JSON.parse(modelElement.textContent);
-  if (!model || model.empty) return;
+  const model = modelElement ? JSON.parse(modelElement.textContent) : null;
+  /* One condition for "this report draws a timeline": the generator renders the
+     timeline section only for a record with activity, and the empty state — the
+     same branch Task 32's scenario asserts at the report level — therefore
+     carries no axis, no controls, and no range label. The browser layer is inert
+     there instead of drawing over nothing. */
+  const drawsTimeline = Boolean(timeline && model && !model.empty);
+  if (!drawsTimeline) return;
 
   /* The axis geometry, in the SVG's own units — the same contract the
      generator's text view draws with. */
