@@ -19,7 +19,7 @@ in a per-question block below it.
 | Q3 | Tech choices | How does the binary resolve a recording scope without a reporter-supplied marker? | closed — exactly-one-scope rule over existing project state |
 | Q4 | Scope | Does the proposal's per-ideation promise have executable coverage? | closed — topic-scope scenario plus a topic Example in the open-report outline |
 | Q5 | Risk | What holds when two processes append to the record at once? | closed — append-time ids under the store lock, parents per process, report ordered by `at` |
-| Q6 | Tech choices | Which ignore destinations must the record's fenced block reach? | closed — both backends' destinations through the existing switch |
+| Q6 | Tech choices | Which ignore destinations must the record's fenced block reach? | closed — both backends' destinations through the existing switch<br>**Superseded 2026-10-16 (re-pass): the Fossil arm was replaced — see *Re-review (2026-10-16)* below; the historical text is retained.** |
 | Q7 | Missing scenarios | Is the operator-approved privacy bound observable? | closed — bounded-label scenario with the absence assertion |
 | Q8 | Scope | Are the history-reading commands themselves recorded? | closed — `givn history` and `givn timeline` are excluded |
 | Q9 | Interaction coverage | Is pan a separate interaction? | closed — implementation detail of the zoomable axis |
@@ -180,6 +180,9 @@ in a per-question block below it.
   for Fossil. Named in `design.md` (D1) and TC-34, and covered by two scenarios
   ("The record stays out of the repository's own history" for Git, "A Fossil
   project ignores the record through its own ignore file" for Fossil).
+- Superseded 2026-10-16 (design re-pass): the Fossil arm of this resolution was
+  replaced — see *Re-review (2026-10-16, after the implementation-phase design
+  correction)* below. The historical text above is retained as written.
 
 ### Q7 — Making the privacy bound observable (merged Q7)
 
@@ -403,5 +406,150 @@ the Node/Chromium install steps in `.github/workflows/ci.yml` and
       screen table, and the integrity hook's state-evidence expectation agree;
       `givn status --change development-timeline --json` reports stage
       `arc42-docs-done` with `design-review` as the next required artifact.
+
+**DESIGN-REVIEW: PASS**
+
+## Re-review (2026-10-16, after the implementation-phase design correction)
+
+**Why it ran.** Implementation of Tasks 10–11 (the record store's ignore
+mechanism) STOPPED under the never-deviate rule with the failure mode
+reproduced on 2026-10-16: the managed `# givn:begin:history` block written into
+`.gitignore` dirtied the working tree before the command acted, so
+`givn upgrade`'s clean-checkout precondition refused
+(`src/cli/migration.rs:356-357` — "automatic managed upgrade requires a clean
+checkout; no files were changed", exit 1); and the permanent e2e fixture
+`tests/steps/run_execution_e2e_steps.rs::git_managed_project` committed the
+store, so every later append showed ` M givn/history/events.jsonl` and
+`operate-product/declare-the-product-start.feature::The upgrade commit includes
+the backfilled run declaration` failed at "the working tree is clean". A first
+correction (Git arm → `.git/info/exclude`; Fossil arm → the repository setting;
+`.gitignore` only while no repository exists; permanent-fixture adaptation) was
+applied, then interrogated by one fresh-context grilling pass. The grill
+returned one operator-level question (Q-A) and findings F1–F11, all inside the
+same mechanism; the operator settled Q-A; the design authority applied the
+second correction round; this hardening pass verified the applied text against
+every finding and wrote this record.
+
+**Q-A — the Fossil arm: decided 2026-10-16, option 2.** The rule is the
+ownership split: the recorder never writes a versioned file, and the record path
+reaches the versioned destinations only through the commands that own them
+(`givn init`, `givn skills sync`, `givn upgrade` — the existing
+`write_ignores` path). Four cases: a Git worktree re-asserts the
+`.git/info/exclude` block on every write; no repository yet writes the
+`.gitignore` scaffold fallback; a Fossil checkout without
+`.fossil-settings/ignore-glob` gets the repository-level `ignore-glob` setting;
+a Fossil checkout with that file gets the record path (`givn/history/*`) in the
+file's managed entry list through the owning commands. Rejected: **option 1,
+setting-only** — Fossil's `ignore-glob` is a *versionable* setting, so a
+committed `.fossil-settings/ignore-glob` overrides it, and Givn's own rules
+writer already writes that file in every managed Fossil checkout; setting-only
+would therefore leave the store an `EXTRA` in exactly the projects Givn
+manages, and `givn upgrade` / `givn archive` would refuse a project that did
+nothing wrong — the failure the never-dirty rule exists to eliminate. Recorded
+in `design.md` D1 (`:119-158`) and the record model's *Ignoring the store
+without dirtying the worktree* (`:286-314`), in TC-34
+(`docs/arc42/02-architecture-constraints.md:34`), §6.18
+(`docs/arc42/06-runtime-view.md:521-528`), §7.4
+(`docs/arc42/07-deployment-view.md:62-68`), §8.25
+(`docs/arc42/08-crosscutting-concepts.md:932-954`), and the change-level
+`arc42.md` note (*Ignore-mechanism correction*).
+
+**F1–F11 outcomes** — each verified against the current artifact text of the
+working tree; locations are cited per item.
+
+| # | Outcome | Artifact location |
+|---|---|---|
+| F1 | Verified — the Fossil setting-override residual is named: "a committed file overrides the repository setting, so writing the setting alone would leave the store an `EXTRA`". | `design.md:135`, `tasks.md:163`, TC-34 (`docs/arc42/02-architecture-constraints.md:34`), §8.25 (`docs/arc42/08-crosscutting-concepts.md:936-941`) |
+| F2 | Verified — the entry form is **`givn/history/*`**, "not `givn/history`", with the whole-path glob reason. | `design.md:137-139` and `:299-301`, `tasks.md:165-168` and `:2384-2386`, glossary (`docs/arc42/12-glossary.md:55`) |
+| F3 | Verified — Task 11 requires `givn init` inside the open Fossil checkout so the managed entry list lands **before** the fixture commit, names `make_fossil_root`'s `addremove`, and extends the same adaptation to `fossil_project_with_version`. | `tasks.md:2392-2398` |
+| F4 | Verified — `ensure_ignored` runs on **every** record write, "not only when the store is created, so a store that predates the repository still becomes ignored". | `design.md:288-289` and `:294`, `tasks.md:160` and `:2308-2310`, §8.25 (`:933-936`) |
+| F5 | Verified — repository existence is "decided by the backend markers at the project root … **never** by `scm::select` succeeding", with the nested-root / both-markers / missing-executable reason. | `design.md:139-144` and `:306-308`, `tasks.md:169-171` and `:2314-2317`, TC-34 |
+| F6 | Verified — the fixture class is declared in full — `git_managed_project`, `git_project_with_version`, `fossil_project_with_version` — with the minimal remedy per fixture (the record path joins the fixture's hand-written ignore content, or the store is removed before the fixture's commit). | `design.md:1009`, `tasks.md:2326-2335` and `:2397-2398` |
+| F7 | Verified — `Ignore block` covers both forms: the fenced `# givn:begin:rules` region inside the tracked ignore file, and the record's block in a backend-local, never-tracked destination or as the Fossil managed entry. | `docs/arc42/12-glossary.md:55` |
+| F8 | Applied by this record — Q6 is marked superseded in the index row and in its own block, both dated and pointing here; the historical text is retained. | `design-review.md` (Q6 index row and Q6 block) |
+| F9 | Verified — R-89 records the reproduction by this change's own implementation on 2026-10-16 (Tasks 10–11 stopped on exactly this), the Fossil residual, and the guards as a fixture class. | `docs/arc42/11-risks-and-technical-debt.md:75` |
+| F10 | Verified — Task 11's title stays and matches the mechanism: the fixture runs `givn init` inside the open checkout, so the record path lives in the project's own `.fossil-settings/ignore-glob` managed entry list, and the setting remains the fallback for a checkout without the file. | `specs/inspect-development-history/development-record.feature:82-87`, `tasks.md:2368` |
+| F11 | Verified — only the two Git destinations are fenced `# givn:begin:history` blocks; the Fossil destinations are a "deduplicated entry list without fence markers". | `design.md:301-304`, `tasks.md:167-168` and `:2386-2387`, §8.25 (`:947-950`) |
+
+**Branch coverage (the grilling pass), all seven branches.**
+
+- **Sufficiency** (Task 10's Then, Task 11's Then, the permanent clean-checkout
+  scenario, D1's privacy intent) — sufficient under the corrected mechanism:
+  `.git/info/exclude` lives inside the git dir, so `git status --porcelain`
+  emits no line for the store, and the permanent scenario's clean-tree
+  assertion holds once the fixture's ignore content carries the record path;
+  the Fossil Then holds in a checkout whose managed entry list carries
+  `givn/history/*` (now the declared fixture requirement); `git add -A` skips
+  ignored paths, so no faithful project's store can enter repository history.
+- **Never-dirty residuals** — no repo-present path in the corrected write can
+  dirty a tracked file; the grill's four residuals (a store that is already
+  tracked; a `scm::select`-keyed fallback; a first-write-only call site; the
+  Fossil versionable-setting override) became the F1/F4/F5 corrections, and the
+  tracked-store boundary stays named in D1 and R-89.
+- **Fixture adaptation** — sufficient and faithful for `git_managed_project`;
+  the grill then found the same shape in `git_project_with_version` and its
+  Fossil twin, and the F6 correction brings all three into the declared class.
+- **Consistency sweep** — the corrected rule is applied consistently across
+  `design.md`, `tasks.md`, TC-34, §6.18, §7.4, §8.25, R-89 (with the R-87
+  retirement note), the chapter-11 README index, and the change-level
+  `arc42.md`; the grill's remaining stale wording (the glossary entry, the Q6
+  supersession, the loose "both real destinations are managed blocks" phrasing)
+  became F7, F8, and F11.
+- **Scenario title wording** — Task 11's title resolves under option 2: the
+  project's own managed ignore file stays in charge, so no rename and no
+  five-place rename sweep were needed.
+- **Risk/arc42** — R-89 needed the reproduction fact, the Fossil residual, and
+  class-phrased guards (F9); chapter 12 needed the glossary widening (F7);
+  chapter 10 needed nothing.
+- **No re-opening** — the corrections touch only ignore-destination text; the
+  interaction inventory, all `@e2e` titles, personas, routing, the D2–D6
+  decisions, and Tasks 1–9's evidence stay as approved, and both corrected
+  scenarios remain `@wip` with placeholder evidence.
+
+**Nothing else re-opened.** The uncommitted correction is exactly ten files —
+`design.md`, `tasks.md`, `arc42.md`, and the `docs/arc42/` chapters 02, 06, 07,
+08, 11, 12 plus the chapter README — and every diff hunk sits in
+ignore-destination text (the D1 ledger and record-model subsection, two
+Architecture Impact rows, the tasks' copied contract paragraph and the Task
+10/11 constraint blocks, and the corresponding chapter paragraphs).
+`specs/**` including `usecase.md`, `proposal.md`, and the rest of the plan are
+byte-identical to the approved revision; no Task 1–9 line appears in the diff;
+both corrected scenarios are still `@wip` (`development-record.feature:75`,
+`:82`) and Tasks 10–11 are still unchecked with only their evidence
+placeholders.
+
+**Checks run by this pass.**
+
+- `givn lint --change development-timeline` → exit 2: 4 files checked, 32
+  findings — the 32 `@wip` scenarios awaiting their tasks (including both
+  corrected ones) — plus `[SUBST] advisory` permanent-corpus subset matches; no
+  parse error and no error-kind finding.
+- Consistency invariants re-checked: the use-case `§Interactions` inventory, the
+  design's Interaction Coverage Matrix, and the `@e2e` titles still hold the
+  same eight rows in the same order; the change's specs offer eight `@e2e`
+  scenarios.
+
+**Residuals noted by this pass.** None re-opens a question; no mechanism,
+decision, or scenario changes.
+
+- R-89 says "the refusal names the offending path". That holds for the archive
+  refusal (`src/cli/archive.rs:423-440` — "archive blocked: the project has
+  uncommitted work: <paths>") but not for the upgrade guard, whose message
+  (`src/cli/migration.rs:357`) names no path. Reported for the design
+  authority; wording only.
+- The Fossil residual R-89 names is the deleted-managed-file case. The variant
+  the grill recorded as option 2's residual — a managed
+  `.fossil-settings/ignore-glob` that predates the record path, where a plain
+  command therefore writes nothing and the store stays an `EXTRA` until an
+  owning command (`givn skills sync` / `givn init`) runs — is not named; it is
+  repairable, and no scenario depends on it.
+- Task 10's pasted acceptance evidence names the two
+  `declare-the-product-start` clean-checkout scenarios, both on
+  `git_managed_project`; the F6-identified consumer of
+  `git_project_with_version`
+  (`upgrade-a-project/apply-a-managed-upgrade.feature::Repeating the upgrade
+  does not duplicate the migration`) is not among the pasted commands. The
+  fixture adaptation that fixes it is declared; a third pasted run would
+  complete the class evidence.
 
 **DESIGN-REVIEW: PASS**

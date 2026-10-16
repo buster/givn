@@ -518,9 +518,14 @@ sequenceDiagram
 
 Every write is best-effort: a store that cannot be written produces one warning
 and the command keeps its own exit code. The store is opened append-only and is
-never rewritten; the fenced `# givn:begin:history` block in the active backend's
-ignore file keeps it out of repository history independently of the `rules`
-policy.
+never rewritten; the development record's ignore entry keeps it out of
+repository history independently of the `rules` policy and never writes a
+versioned file — the recorder re-asserts `.git/info/exclude` on every write in a
+Git worktree, writes Fossil's repository-level `ignore-glob` setting only while
+no managed file overrides it, and uses `.gitignore` only before a repository
+exists; inside a Fossil checkout that already has `.fossil-settings/ignore-glob`,
+the entry `givn/history/*` belongs to that file's managed list, written by
+`givn init`, `givn skills sync`, and `givn upgrade`.
 
 `givn history ingest` is the one intake for reported agent activity: a harness
 reporter buffers its events and hands them over as one JSON payload. Each event

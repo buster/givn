@@ -58,9 +58,14 @@ The development record adds one project-local directory, `givn/history/`: the
 append-only `events.jsonl` record, the generated reports under
 `givn/history/reports/`, and the small pending-state files under
 `givn/history/pending/` that a process-per-hook harness needs for its start
-timestamps. Givn keeps all of it out of repository history with its own fenced
-ignore block in the active backend's ignore file, independent of the `rules`
-policy, because the record is development data rather than generated rules.
+timestamps. Givn keeps all of it out of repository history independently of the
+`rules` policy, because the record is development data rather than generated
+rules, and the recorder never writes a versioned file: it re-asserts the record
+block in `.git/info/exclude` for a Git worktree, writes Fossil's repository-level
+`ignore-glob` setting only while no managed file overrides it, and uses
+`.gitignore` only before a repository exists. A Fossil checkout that already has
+`.fossil-settings/ignore-glob` receives the entry `givn/history/*` in that file's
+managed entry list through `givn init`, `givn skills sync`, and `givn upgrade`.
 
 When `omp` is a selected target, initialization and synchronization also install
 `.omp/hooks/pre/givn-timeline.js` next to the attribution hook. The other two

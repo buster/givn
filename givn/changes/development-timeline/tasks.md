@@ -148,13 +148,29 @@ be written warns and still exits `0`.
 runs, consumed by the matching end event, pruned by age (older than 24 h) and at
 session end, no payload content. Losing it costs a duration, never an entry.
 
-**Ignore block (D1):** Givn itself writes a managed `# givn:begin:history` block
-(independent of the `rules` policy) through the backend switch
-`src/skills/rules.rs::write_ignores` already uses — Git: `.gitignore` plus the
-worktree-local exclude file resolved with `git rev-parse --git-path
-info/exclude`; Fossil: `.fossil-settings/ignore-glob` plus the repository-local
-`ignore-glob` setting. Realized in `src/history.rs::store_path` and
-`src/history.rs::ensure_ignored`.
+**Ignore block (D1, corrected):** keeping the store out of repository history is
+split by who owns the destination. **The recorder never writes a versioned
+file**; the record path reaches the versioned destinations only through the
+commands that own them (`givn init`, `givn skills sync`, `givn upgrade` — the
+existing `write_ignores` path), while the recorder asserts the never-dirty
+destinations on every write.
+
+| State of the project | Destination | Writer |
+|---|---|---|
+| Git worktree | the `# givn:begin:history` block in `.git/info/exclude` (resolved with `git rev-parse --git-path info/exclude`, the existing `upsert_local_exclude`), **re-asserted idempotently on every record write** | the recorder |
+| No repository yet (`givn init` in a bare directory) | the `# givn:begin:history` block in `.gitignore` (scaffold-time safety net; nothing is tracked) | the recorder at its first write |
+| Fossil checkout, `.fossil-settings/ignore-glob` absent | the repository-level `ignore-glob` setting (`fossil settings --value ignore-glob` … `fossil settings ignore-glob <value>`, the existing `upsert_fossil_local_ignore`), never-tracked and effective while no file overrides it | the recorder |
+| Fossil checkout, `.fossil-settings/ignore-glob` present | `givn/history/*` in that file's **managed entry list** — a committed file overrides the repository setting, so writing the setting alone would leave the store an `EXTRA` | `givn init` / `givn skills sync` / `givn upgrade` through `write_ignores` |
+
+The Fossil entry form is **`givn/history/*`**, not `givn/history` (a Fossil glob
+must match the whole path and `*` crosses `/`, so a bare directory path matches
+nothing). The Fossil destinations are a deduplicated entry list without fence
+markers; only the Git destinations are fenced `# givn:begin:history` blocks.
+Repository existence is decided by the backend markers at the project root, the
+same markers `scm::select` reads — never by `scm::select` succeeding, because
+select also bails for a nested root, both markers, or a missing executable, and
+a select-keyed branch would write a versioned file while a worktree exists.
+Realized in `src/history.rs::store_path` and `src/history.rs::ensure_ignored`.
 
 **Report (`givn timeline`):** `givn timeline [--change <id>|--topic <id>] [--out
 <path>]`. With `--out` omitted the report goes to the default path
@@ -2280,21 +2296,50 @@ name it.
 
 - [ ] **Scenario: `The record stays out of the repository's own history`**
   - Design constraints:
-    - D1: one local project store, kept out of repository history by a managed
-      `# givn:begin:history` ignore block written by Givn itself (independent of
-      the `rules` policy — the record is data, not generated rules), realized in
-      `src/history.rs::store_path` and `src/history.rs::ensure_ignored`.
-    - Git destinations, through the switch `src/skills/rules.rs::write_ignores`
-      already uses: `.gitignore` **plus** the worktree-local exclude file
-      resolved with `git rev-parse --git-path info/exclude`.
-    - The block is managed: re-running must not duplicate it, and user content
-      outside the block stays untouched.
+    - D1 (corrected rule): the **recorder never writes a versioned file**; the
+      record path reaches versioned destinations only through the commands that
+      own them (`givn init`, `givn skills sync`, `givn upgrade` —
+      `write_ignores`), while the recorder asserts the never-dirty destination
+      on **every** write. Realized in `src/history.rs::store_path` and
+      `src/history.rs::ensure_ignored`.
+    - Git destination: the `# givn:begin:history` block in
+      **`.git/info/exclude` only**, resolved with
+      `git rev-parse --git-path info/exclude` and written through the existing
+      `upsert_local_exclude`. Re-assert it idempotently on every record write,
+      not only when the store is created (a store that predates the repository
+      must still become ignored). Never write `.gitignore` while a repository
+      exists: the recorder runs at command start, so a versioned write would
+      dirty the worktree and `givn upgrade`'s clean-checkout precondition
+      (`src/cli/migration.rs`, "automatic managed upgrade requires a clean
+      checkout") would refuse. `.gitignore` is written only when no repository
+      exists yet — and repository existence is decided by the backend markers
+      at the project root, **never** by `scm::select` succeeding (select also
+      bails for a nested root, both markers, or a missing executable).
+    - The Git block is a fenced managed block: re-running must not duplicate it,
+      and user content outside the block stays untouched.
     - Fixture: the Git backend fixture (`BackendKind::Git` in
       `tests/common/mod.rs`) with a real `git` worktree.
     - Assertion shape: after `givn status --change demo`, the repository reports
       no pending change for the development record (`git status --porcelain`
       output contains no `givn/history/events.jsonl` entry, untracked or
       modified), for a project where the record was written by the same command.
+    - Fixture class to adapt (F6 — the failure was a class, not one instance):
+      `tests/steps/run_execution_e2e_steps.rs::git_managed_project`,
+      `tests/steps/release_0_3_0_e2e_steps.rs::git_project_with_version`. Both
+      overwrite the ignore file and then commit everything, which tracks the
+      store and makes later appends show as modifications, tripping the
+      clean-checkout guard in the permanent upgrade scenarios. Minimal remedy
+      per fixture: the record path (`givn/history/*` for the Fossil fixture
+      below, `givn/history/` for the Git `.gitignore` content here) joins the
+      fixture's hand-written ignore content, or the store is removed before the
+      fixture's commit.
+    - Permanent-scenario acceptance evidence (extra, must be pasted below): after
+      GREEN, the clean-checkout scenarios that consume those fixtures must exit
+      0 —
+      `cargo test --locked --test features_runner -- --exact "operate-product/declare-the-product-start.feature::The upgrade commit includes the backfilled run declaration"`
+      and
+      `cargo test --locked --test features_runner -- --exact "operate-product/declare-the-product-start.feature::A repeated upgrade creates no additional commit"`.
+      Paste both commands and their output.
     - No push, no commit: the scenario only proves the file is ignored.
     - RED expected failure: the no-pending-change Then step is undefined.
   - [ ] **RED** — remove `@wip` from this scenario only, then run:
@@ -2324,17 +2369,38 @@ name it.
 
 - [ ] **Scenario: `A Fossil project ignores the record through its own ignore file`**
   - Design constraints:
-    - Same D1 rule, Fossil arm: the managed `# givn:begin:history` block reaches
-      `.fossil-settings/ignore-glob` plus the repository-local `ignore-glob`
-      setting, so a Fossil project is covered through the same seam instead of a
-      Git-only file.
+    - Same D1 rule, Fossil arm: the record path reaches the versioned
+      destination only through the owning commands. When
+      `.fossil-settings/ignore-glob` is **absent**, the recorder writes the
+      repository-level `ignore-glob` setting (`fossil settings --value
+      ignore-glob` … `fossil settings ignore-glob <value>`, the existing
+      `upsert_fossil_local_ignore`). When that file **is present** it overrides
+      the setting, so the record path must be part of that file's **managed
+      entry list**, written by `givn init` / `givn skills sync` / `givn upgrade`
+      through `write_ignores`; the recorder writes nothing versioned at
+      plain-command time. Writing only the setting in a managed checkout would
+      leave the store an `EXTRA` and `givn upgrade`/`givn archive` would refuse
+      a project that did nothing wrong.
+    - Entry form: **`givn/history/*`**, never `givn/history` — a Fossil glob
+      must match the whole path and `*` crosses `/`, so a bare directory path
+      matches nothing. The Fossil destinations are a deduplicated entry list
+      without fence markers (only the Git destinations are fenced
+      `# givn:begin:history` blocks).
     - Fixture: the `BackendKind::Fossil` fixture — a real `fossil` repository kept
       outside the checkout (so it is never an `EXTRA` entry), created by
       `tests/common/mod.rs`'s existing helper.
-    - Assertion shape: after `givn status --change demo`, the repository's ignore
-      glob names the development record (read the effective `ignore-glob`
-      setting, not the file we happened to write) and the record path is not
-      reported as a pending/extra change.
+    - Fixture requirement (F3): keep the managed file effective and the store
+      untracked — run `givn init` inside the open Fossil checkout so the managed
+      entry list lands in `.fossil-settings/ignore-glob` **before** the fixture
+      commit, because `make_fossil_root`'s `addremove` would otherwise track the
+      store. The same adaptation applies to
+      `tests/steps/release_0_3_0_e2e_steps.rs::fossil_project_with_version`,
+      which today sets only the repository setting and then commits.
+    - Assertion shape: after `givn status --change demo`, the effective ignore
+      source names the development record — read the effective `ignore-glob`
+      setting **and** the managed file's entry list, never only the file the
+      step happened to write, and assert the record path is not reported as a
+      pending or extra change.
     - The Fossil path must not be implemented as a Git-only branch plus a stub:
       if the seam cannot express it, that is the design-review escalation in
       *Global constraints*, not a silent skip.

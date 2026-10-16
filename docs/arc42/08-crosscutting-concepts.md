@@ -929,14 +929,29 @@ characters. Complete tool inputs, complete command lines, and complete question
 text are never stored. The bound lives in one function (`bound_label`), so the
 privacy rule has one enforcement site rather than one per capture point.
 
-**Ignore block.** Givn writes and maintains a fenced `# givn:begin:history`
-block through the same backend switch the rules writer uses: in a Git worktree
-in `.gitignore` plus the worktree-local exclude file (`git rev-parse --git-path
-info/exclude`), in a Fossil checkout in `.fossil-settings/ignore-glob` plus the
-repository-local `ignore-glob` setting. It applies under both rules policies,
-because the record is development data rather than a generated rule; this is a
-separate block from the `# givn:begin:rules` block so neither policy can
-silently drop the other's entries.
+**Ignore entry.** Keeping the store out of repository history splits by who owns
+the destination, and the recorder never writes a versioned file: with a Git
+worktree it re-asserts the `# givn:begin:history` block in `.git/info/exclude`
+on every write (not only when the store is created, so a store that predates the
+repository still becomes ignored); with a Fossil checkout whose
+`.fossil-settings/ignore-glob` is absent it writes the repository-level
+`ignore-glob` setting, which is never tracked and effective while no file
+overrides it; with a Fossil checkout that already has that file it writes
+nothing, because the file overrides the setting and the entry `givn/history/*`
+belongs to that file's managed entry list, written by `givn init`,
+`givn skills sync`, and `givn upgrade`; and it uses `.gitignore` only when no
+repository exists yet. Repository existence comes from the backend markers at
+the project root, never from backend selection succeeding (selection also fails
+for a nested root, both markers, or a missing executable). It applies under both
+rules policies, because the record is development data rather than a generated
+rule, and the Git destinations are their own fenced block rather than the
+`# givn:begin:rules` block. The never-dirty rule is the point: the recorder runs
+at command start, so a versioned write would dirty the working tree before the
+command did anything and `givn upgrade`'s clean-checkout precondition would
+refuse a project that did nothing wrong — and no ignore destination can suppress
+a tracked file's modification anyway. The Fossil entry is `givn/history/*`, not
+`givn/history`, because a Fossil glob must match the whole path and `*` crosses
+`/`.
 
 **Report packaging.** `givn timeline` writes one self-contained HTML file from
 the embedded report asset: the CSS, JavaScript, and SVG are inline, the record
