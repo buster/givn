@@ -94,10 +94,19 @@ fn assert_entries_complete(entries: &[Value]) -> Value {
             entry["scope"]["kind"].is_string() && entry["scope"]["id"].is_string(),
             "the printed {kind} entry names no scope: {entry:#}"
         );
-        assert!(
-            entry["duration_ms"].is_u64(),
-            "the printed {kind} entry names no duration: {entry:#}"
-        );
+        match kind {
+            // A point event — an artifact transition or a recorded revision —
+            // names its instant and no measured span: the record never invents
+            // a duration for it.
+            "phase" | "revision" => assert!(
+                entry.get("duration_ms").is_none_or(Value::is_null),
+                "the printed {kind} entry invents a measured duration: {entry:#}"
+            ),
+            _ => assert!(
+                entry["duration_ms"].is_u64(),
+                "the printed {kind} entry names no duration: {entry:#}"
+            ),
+        }
     }
     let scope = entries[0]["scope"].clone();
     assert!(

@@ -452,9 +452,18 @@ fn every_parent_link_names_an_entry_in_the_record(world: &mut GivnWorld) {
         dangling.is_empty(),
         "these entries name a parent that is not in the record: {dangling:#?}"
     );
-    // Not a vacuous claim: every racing run's children carry the link.
+    // Not a vacuous claim: every racing run's children carry the link. The
+    // entries the fixture appended before the race — including the `new demo`
+    // command's own artifact transition — are not racing runs and are counted
+    // separately by their own scenario.
+    let before = world
+        .development_record
+        .as_ref()
+        .and_then(|state| state.entries_before)
+        .expect("the two-writer fixture ran first");
     let linked = entries
         .iter()
+        .skip(before)
         .filter(|entry| entry.get("parent").is_some())
         .count();
     assert_eq!(
