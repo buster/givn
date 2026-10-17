@@ -99,9 +99,7 @@ the time went — and `givn history --change <id> --json` prints the record
 itself. The record lives under `givn/history/` as local runtime state and stays
 out of repository history.
 
-<p align="center">
-  <a href="docs/development-report.md"><img src="docs/development-report-mobile.png" width="340" alt="Development report of an example change: current state, KPI tiles, and the top-to-bottom workflow phase stack; the guide covers settings and analytics."></a>
-</p>
+[![Development report of an example change: current state, KPI tiles, and the top-to-bottom workflow phase stack.](docs/development-report-mobile.png)](docs/development-report.md)
 
 `givn init` asks which agent targets receive the generated skills and commands;
 the list opens with `.opencode` marked and re-asks until at least one target is
