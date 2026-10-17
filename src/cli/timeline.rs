@@ -91,6 +91,19 @@ pub struct ReportModel {
     /// browser tier's phase placement assertion. A scope whose record carries
     /// no artifact transition has no name here — never an invented phase name.
     pub stages: Vec<StageAssignment>,
+    /// The workflow stack: the change workflow's nine phases in order, each
+    /// carrying its status and its recorded facts, for the change or ideation
+    /// scope the report was asked for. Empty for the project report, which
+    /// keeps its band rows.
+    pub workflow: Vec<WorkflowPhase>,
+    /// The change state embedded at generation, where the change has one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub current_state: Option<CurrentState>,
+    /// The "no recorded stage transition" group: the same phase scaffold for
+    /// the work the record assigns to no stage, absent when every entry has a
+    /// stage.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unstaged: Option<WorkflowPhase>,
     /// The summary: the numbers the report states about the whole window.
     pub summary: Summary,
     /// The documented total content budget, in bytes.
@@ -206,6 +219,18 @@ pub struct Summary {
     pub tokens_by_subagent: Vec<TokenTotal>,
     /// The turns whose token usage the harness never reported.
     pub unmeasured_turns: usize,
+    /// Elapsed time minus waiting time when both are measured; `None` ("not
+    /// measured") otherwise. The record's own two measured ends, never an
+    /// invented active reading.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub active_ms: Option<u64>,
+    /// The number of recorded `tool` entries — the agent's tool calls.
+    pub tool_calls: usize,
+    /// The sum of every recorded real cost (`data.cost.total` for the cost
+    /// object, `data.cost` for a number), or `None` ("unavailable") when the
+    /// record carries none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cost_total: Option<f64>,
 }
 
 impl Summary {
@@ -220,6 +245,12 @@ impl Summary {
         for entry in entries {
             if records_span(&entry.kind) && entry.duration_ms.is_none() {
                 summary.unmeasured_durations += 1;
+            }
+            if entry.kind == "tool" {
+                summary.tool_calls += 1;
+            }
+            if let Some(cost) = recorded_cost(entry) {
+                *summary.cost_total.get_or_insert(0.0) += cost;
             }
             if entry.kind == QUESTION {
                 summary.waits += 1;
@@ -241,6 +272,10 @@ impl Summary {
             }
         }
         summary.elapsed_ms = recorded_span(entries);
+        summary.active_ms = summary
+            .elapsed_ms
+            .zip(summary.wait_ms)
+            .map(|(elapsed, waiting)| elapsed.saturating_sub(waiting));
         summary.longest_steps = ranked_steps(entries);
         let tokens = TokenRollUp::of(entries);
         summary.tokens_by_model = tokens.model_rows();
@@ -379,6 +414,17 @@ fn usage_unavailable(entry: &HistoryEntry) -> bool {
             == Some(crate::history::USAGE_UNAVAILABLE)
 }
 
+/// The real cost one entry records: `data.cost.total` when the fact is the cost
+/// object, `data.cost` when it is a number, and `None` for an entry the record
+/// carries no cost for — never a zero.
+fn recorded_cost(entry: &HistoryEntry) -> Option<f64> {
+    match entry.data.as_ref()?.get("cost")? {
+        serde_json::Value::Number(number) => number.as_f64(),
+        serde_json::Value::Object(object) => object.get("total")?.as_f64(),
+        _ => None,
+    }
+}
+
 /// One ranked entry: the recorded entry, the kind that recorded it, and the
 /// duration it was measured with. Every entry carrying a measured `duration_ms`
 /// is ranked, whichever layer recorded it — a Givn command, a gate phase, a
@@ -397,6 +443,536 @@ pub struct RankedStep {
     pub label: String,
     /// The measured duration the ranking orders by.
     pub duration_ms: u64,
+}
+
+/// One workflow phase of the report's stack, or the "no recorded stage
+/// transition" group: the phase's recorded facts, read from the entries the one
+/// derivation places in it. The scaffold holds ids, names, and totals only —
+/// the entries themselves appear once in [`ReportModel::entries`].
+#[derive(Debug, Default, Serialize)]
+pub struct WorkflowPhase {
+    /// The workflow stage's name; absent for the "no recorded stage transition"
+    /// group.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stage: Option<String>,
+    /// `done`, `active`, `queued`, or `skipped`; absent where no live state
+    /// derives one. The group carries no status.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    /// The phase's first recorded instant, milliseconds since the Unix epoch.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub first_ms: Option<i64>,
+    /// The phase's last recorded instant.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_ms: Option<i64>,
+    /// Wall time: the first to the last recorded entry assigned to the phase; a
+    /// phase with no recorded entries records zero.
+    pub wall_ms: Option<u64>,
+    /// Wall time minus the question waits inside the phase, when both are
+    /// measured.
+    pub active_ms: Option<u64>,
+    /// The question waits inside the phase; zero when the phase holds no wait,
+    /// absent when it holds only waits the record does not time.
+    pub waiting_ms: Option<u64>,
+    /// The recorded `tool` entries in the phase.
+    pub tools: usize,
+    /// The recorded `subagent` spans in the phase.
+    pub subagents: usize,
+    /// One lane per distinct recorded session.
+    pub lanes: Vec<Lane>,
+    /// The phase's repeated-step groups.
+    pub repeated: Vec<RepeatedGroup>,
+    /// The phase's Fit-zoom aggregate buckets.
+    pub aggregates: Vec<PhaseAggregate>,
+}
+
+/// One lane of a phase: a distinct recorded session and the entries it holds.
+#[derive(Debug, Default, Serialize)]
+pub struct Lane {
+    /// The recorded session id; absent for the unattributed lane.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub session: Option<String>,
+    /// The lane's visible name.
+    pub name: String,
+    /// The lane's member entry ids, in the model's own order.
+    pub entries: Vec<u64>,
+    /// The lane's first recorded instant.
+    pub first_ms: Option<i64>,
+    /// The lane's last recorded instant.
+    pub last_ms: Option<i64>,
+    /// The lane's measured duration: its last instant minus its first.
+    pub duration_ms: Option<u64>,
+}
+
+/// One repeated-step group: entries of one kind and one normalized label,
+/// grouped when the group holds at least five entries.
+#[derive(Debug, Default, Serialize)]
+pub struct RepeatedGroup {
+    /// The recorded kind the group's members share.
+    pub kind: String,
+    /// The normalized label (trimmed, whitespace collapsed).
+    pub label: String,
+    /// How many entries the group holds.
+    pub count: usize,
+    /// The members' combined measured duration; `None` when none was measured.
+    pub duration_ms: Option<u64>,
+    /// The member entry ids.
+    pub entries: Vec<u64>,
+}
+
+/// One Fit-zoom aggregate of a phase: the phase's entries too short to draw
+/// individually, bucketed by recorded time.
+#[derive(Debug, Default, Serialize)]
+pub struct PhaseAggregate {
+    /// The bucket's first instant (inclusive), milliseconds since the epoch.
+    pub bucket_start_ms: i64,
+    /// The bucket's end (exclusive).
+    pub bucket_end_ms: i64,
+    /// The entries the bucket stands for.
+    pub entries: Vec<u64>,
+    /// How many entries the bucket holds.
+    pub count: usize,
+    /// The covered entries' combined measured duration.
+    pub duration_ms: Option<u64>,
+}
+
+/// The change state embedded in the report at generation: the stage label, the
+/// current workflow phase, the next required artifact, and the task progress
+/// the change state exposes. Absent for a topic, the project report, and an
+/// archived change.
+#[derive(Debug, Default, Serialize)]
+pub struct CurrentState {
+    /// The change state's own stage label.
+    pub stage_label: String,
+    /// The workflow phase the state maps to; absent when the state's next
+    /// required artifact is outside the mapping table.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub phase: Option<String>,
+    /// The next required artifact's id.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next_artifact: Option<String>,
+    /// The task counts, where the change state has them.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tasks: Option<TasksProgress>,
+}
+
+/// The task counts one change state exposes.
+#[derive(Debug, Default, Serialize)]
+pub struct TasksProgress {
+    /// The tasks.md checkbox total.
+    pub total: usize,
+    /// The checked boxes.
+    pub done: usize,
+}
+
+/// The report's workflow scaffold: the nine phases, the current state, and the
+/// no-stage group.
+#[derive(Debug, Default)]
+struct PhaseScaffold {
+    workflow: Vec<WorkflowPhase>,
+    current_state: Option<CurrentState>,
+    unstaged: Option<WorkflowPhase>,
+}
+
+/// The change's state as the report can resolve it.
+enum ChangeResolution {
+    /// A live change directory: its derived state.
+    Live(Box<crate::state::ChangeState>),
+    /// The change's directory is under `givn/archive/<id>`.
+    Archived,
+    /// Neither directory exists: the record names a change the project does not
+    /// hold.
+    Absent,
+}
+
+/// Resolve one change scope against the project root: `givn/changes/<id>`
+/// existing is the live state, else `givn/archive/<id>` existing is an archived
+/// change, else neither — never assume an archive for a missing directory.
+fn change_resolution(scope: &Scope) -> ChangeResolution {
+    let Scope::Change { id } = scope else {
+        return ChangeResolution::Absent;
+    };
+    let Ok(root) = std::env::current_dir() else {
+        return ChangeResolution::Absent;
+    };
+    let change_dir = root.join("givn").join("changes").join(id);
+    if change_dir.is_dir() {
+        let Ok(manifest) = crate::config::overlay::load_effective() else {
+            return ChangeResolution::Absent;
+        };
+        return ChangeResolution::Live(Box::new(crate::state::ChangeState::from_manifest(
+            &change_dir,
+            &manifest,
+        )));
+    }
+    if root.join("givn").join("archive").join(id).is_dir() {
+        return ChangeResolution::Archived;
+    }
+    ChangeResolution::Absent
+}
+
+/// The workflow phase one change state is in: the state's `next_required()`
+/// artifact mapped through the artifact-id table, `implement` while the tasks
+/// artifact is `partial` (the stage `tasks.md`'s appearance opens), and
+/// `archive` with every required artifact done. An artifact outside the table
+/// leaves the phase underived instead of guessing one.
+fn current_phase_index(state: &crate::state::ChangeState) -> Option<usize> {
+    if state.all_required_done() {
+        return WORKFLOW_STAGES.iter().position(|stage| *stage == "archive");
+    }
+    let next = state.next_required()?;
+    if next.id == "tasks" && next.status == crate::state::ArtifactStatus::Partial {
+        return WORKFLOW_STAGES
+            .iter()
+            .position(|stage| *stage == "implement");
+    }
+    let stage = ARTIFACT_STAGES.iter().find(|(id, _)| *id == next.id)?.1;
+    WORKFLOW_STAGES.iter().position(|known| *known == stage)
+}
+
+/// The state artifact id that maps onto one workflow phase.
+fn state_artifact_of(stage: &str) -> Option<&'static str> {
+    ARTIFACT_STAGES
+        .iter()
+        .find(|(_, phase)| *phase == stage)
+        .map(|(id, _)| *id)
+}
+
+/// One status per workflow phase, in [`WORKFLOW_STAGES`] order. Phases before
+/// the current phase are `done`, the current phase is `active`, phases after it
+/// are `queued`; a phase whose mapped artifact is skipped is `skipped` (which
+/// wins over the positional statuses); an archived change renders every phase
+/// `done`; a change the project does not hold derives no status and marks no
+/// phase done.
+fn phase_statuses(resolution: &ChangeResolution) -> Vec<Option<&'static str>> {
+    match resolution {
+        ChangeResolution::Live(state) => {
+            let change_dir = std::env::current_dir()
+                .unwrap_or_default()
+                .join("givn")
+                .join("changes")
+                .join(&state.id);
+            let current = current_phase_index(state);
+            WORKFLOW_STAGES
+                .iter()
+                .enumerate()
+                .map(|(index, stage)| {
+                    if state_artifact_of(stage)
+                        .is_some_and(|artifact| crate::state::is_skipped(artifact, &change_dir))
+                    {
+                        return Some("skipped");
+                    }
+                    match current {
+                        Some(current) if index < current => Some("done"),
+                        Some(current) if index == current => Some("active"),
+                        Some(_) => Some("queued"),
+                        None => None,
+                    }
+                })
+                .collect()
+        }
+        ChangeResolution::Archived => vec![Some("done"); WORKFLOW_STAGES.len()],
+        ChangeResolution::Absent => vec![None; WORKFLOW_STAGES.len()],
+    }
+}
+
+/// A topic's statuses: the last stage its record names is the current phase and
+/// every earlier stage is done; a record that names none marks no phase
+/// current.
+fn topic_statuses(stages: &[StageAssignment]) -> Vec<Option<&'static str>> {
+    let current = WORKFLOW_STAGES
+        .iter()
+        .enumerate()
+        .rev()
+        .find(|(_, stage)| {
+            stages
+                .iter()
+                .any(|assignment| assignment.stage.as_deref() == Some(**stage))
+        })
+        .map(|(index, _)| index);
+    let Some(current) = current else {
+        return vec![None; WORKFLOW_STAGES.len()];
+    };
+    (0..WORKFLOW_STAGES.len())
+        .map(|index| {
+            Some(if index < current {
+                "done"
+            } else if index == current {
+                "active"
+            } else {
+                "queued"
+            })
+        })
+        .collect()
+}
+
+/// The current state the report embeds for a live change: exactly what the
+/// change state exposes — stage label, mapped phase, next required artifact,
+/// and task counts — and nothing it does not.
+fn current_state_of(state: &crate::state::ChangeState) -> CurrentState {
+    CurrentState {
+        stage_label: state.stage_label(),
+        phase: current_phase_index(state).map(|index| WORKFLOW_STAGES[index].to_string()),
+        next_artifact: state.next_required().map(|artifact| artifact.id.clone()),
+        tasks: state
+            .artifacts
+            .iter()
+            .find(|artifact| artifact.id == "tasks")
+            .and_then(|artifact| artifact.tasks_progress.clone())
+            .map(|progress| TasksProgress {
+                total: progress.total,
+                done: progress.done,
+            }),
+    }
+}
+
+/// The entries the one derivation assigns to one stage (`None` for the no-stage
+/// group), in the model's own order.
+fn phase_members<'a>(
+    stage: Option<&str>,
+    stages: &[StageAssignment],
+    entries: &'a [HistoryEntry],
+) -> Vec<&'a HistoryEntry> {
+    stages
+        .iter()
+        .filter(|assignment| assignment.stage.as_deref() == stage)
+        .filter_map(|assignment| entries.iter().find(|entry| entry.id == assignment.entry))
+        .collect()
+}
+
+/// One phase's scaffold from the entries the derivation places in it: the
+/// first/last instants, wall/active/waiting time, tool and subagent counts, its
+/// lanes, its repeated groups, and its Fit-zoom aggregates. Nothing is inferred:
+/// a duration the record does not carry stays unmeasured, and a phase with no
+/// recorded entries records zero minutes.
+fn build_phase(
+    stage: Option<&str>,
+    status: Option<&str>,
+    members: &[&HistoryEntry],
+    scale: &TimeScale,
+) -> WorkflowPhase {
+    let mut first_ms: Option<i64> = None;
+    let mut last_ms: Option<i64> = None;
+    let mut waiting_ms: Option<u64> = None;
+    let mut waits = 0usize;
+    let mut tools = 0usize;
+    let mut subagents = 0usize;
+    for entry in members {
+        if let Some(at) = crate::history::parse_rfc3339_ms(&entry.at) {
+            first_ms = Some(first_ms.map_or(at, |first| first.min(at)));
+            last_ms = Some(last_ms.map_or(at, |last| last.max(at)));
+        }
+        match entry.kind.as_str() {
+            "tool" => tools += 1,
+            SUBAGENT => subagents += 1,
+            QUESTION => {
+                waits += 1;
+                add_measured(&mut waiting_ms, entry.duration_ms);
+            }
+            _ => {}
+        }
+    }
+    let wall_ms = match (members.is_empty(), first_ms.zip(last_ms)) {
+        (true, _) => Some(0),
+        (false, Some((first, last))) => u64::try_from((last - first).max(0)).ok(),
+        (false, None) => None,
+    };
+    let waiting_ms = if waits == 0 { Some(0) } else { waiting_ms };
+    let active_ms = wall_ms
+        .zip(waiting_ms)
+        .map(|(wall, waiting)| wall.saturating_sub(waiting));
+    WorkflowPhase {
+        stage: stage.map(str::to_string),
+        status: status.map(str::to_string),
+        first_ms,
+        last_ms,
+        wall_ms,
+        active_ms,
+        waiting_ms,
+        tools,
+        subagents,
+        lanes: lanes_of(members),
+        repeated: repeated_groups(members),
+        aggregates: phase_aggregates(members, scale),
+    }
+}
+
+/// The phase's lanes: one per distinct recorded session, named by the recorded
+/// `session` entry's title when one exists, else by the session's short id;
+/// entries the record names no session for go to the unattributed lane.
+fn lanes_of(members: &[&HistoryEntry]) -> Vec<Lane> {
+    let mut lanes: Vec<Lane> = Vec::new();
+    for entry in members {
+        let index = match lanes.iter().position(|lane| lane.session == entry.session) {
+            Some(index) => index,
+            None => {
+                let name = lane_name(entry.session.as_deref(), members);
+                lanes.push(Lane {
+                    session: entry.session.clone(),
+                    name,
+                    ..Lane::default()
+                });
+                lanes.len() - 1
+            }
+        };
+        let lane = &mut lanes[index];
+        lane.entries.push(entry.id);
+        if let Some(at) = crate::history::parse_rfc3339_ms(&entry.at) {
+            lane.first_ms = Some(lane.first_ms.map_or(at, |first| first.min(at)));
+            lane.last_ms = Some(lane.last_ms.map_or(at, |last| last.max(at)));
+        }
+    }
+    for lane in &mut lanes {
+        lane.duration_ms = lane
+            .first_ms
+            .zip(lane.last_ms)
+            .and_then(|(first, last)| u64::try_from((last - first).max(0)).ok());
+    }
+    lanes
+}
+
+/// The visible name of one lane: the recorded `session` entry's title when the
+/// phase holds one for the session id, else the session's short id (the first
+/// eight characters, the whole id when shorter), and `unattributed` for the
+/// entries the record names no session for.
+fn lane_name(session: Option<&str>, members: &[&HistoryEntry]) -> String {
+    let Some(session) = session else {
+        return "unattributed".to_string();
+    };
+    let title = members
+        .iter()
+        .filter(|entry| entry.kind == "session")
+        .filter(|entry| entry.session.as_deref() == Some(session))
+        .find_map(|entry| {
+            entry
+                .data
+                .as_ref()?
+                .get("title")?
+                .as_str()
+                .map(str::to_string)
+        });
+    title.unwrap_or_else(|| session.chars().take(8).collect())
+}
+
+/// The normalized label a repeated-step group groups by: the entry's bounded
+/// label (or its name), trimmed with its whitespace collapsed.
+fn normalized_label(entry: &HistoryEntry) -> String {
+    entry
+        .label
+        .as_deref()
+        .unwrap_or(&entry.name)
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// The phase's repeated-step groups: entries of the same kind and the same
+/// normalized label, grouped when the group holds at least five entries.
+fn repeated_groups(members: &[&HistoryEntry]) -> Vec<RepeatedGroup> {
+    let mut groups: BTreeMap<(String, String), Vec<&HistoryEntry>> = BTreeMap::new();
+    for entry in members {
+        groups
+            .entry((entry.kind.clone(), normalized_label(entry)))
+            .or_default()
+            .push(entry);
+    }
+    groups
+        .into_iter()
+        .filter(|(_, group)| group.len() >= 5)
+        .map(|((kind, label), group)| {
+            let mut duration_ms = None;
+            for entry in &group {
+                add_measured(&mut duration_ms, entry.duration_ms);
+            }
+            RepeatedGroup {
+                kind,
+                label,
+                count: group.len(),
+                duration_ms,
+                entries: group.iter().map(|entry| entry.id).collect(),
+            }
+        })
+        .collect()
+}
+
+/// The phase's Fit-zoom aggregates: its entries too short to draw one shape per
+/// entry at the initial zoom, bucketed by recorded time with the report's one
+/// bucketing rule.
+fn phase_aggregates(members: &[&HistoryEntry], scale: &TimeScale) -> Vec<PhaseAggregate> {
+    let time_per_pixel = scale.time_per_pixel();
+    let bucket_ms = (time_per_pixel as f64 * AGGREGATE_BUCKET_PX).ceil() as i64;
+    let mut aggregates: Vec<PhaseAggregate> = Vec::new();
+    for entry in members {
+        let Some(at) = crate::history::parse_rfc3339_ms(&entry.at) else {
+            continue;
+        };
+        if !collapses(entry, time_per_pixel) {
+            continue;
+        }
+        let bucket_start_ms =
+            scale.start_ms + (at - scale.start_ms).div_euclid(bucket_ms) * bucket_ms;
+        match aggregates
+            .iter_mut()
+            .find(|marker| marker.bucket_start_ms == bucket_start_ms)
+        {
+            Some(marker) => {
+                marker.entries.push(entry.id);
+                marker.count += 1;
+                add_measured(&mut marker.duration_ms, entry.duration_ms);
+            }
+            None => aggregates.push(PhaseAggregate {
+                bucket_start_ms,
+                bucket_end_ms: bucket_start_ms + bucket_ms,
+                entries: vec![entry.id],
+                count: 1,
+                duration_ms: entry.duration_ms,
+            }),
+        }
+    }
+    aggregates
+}
+
+/// The workflow scaffold of the scope the report was asked for: the nine
+/// phases, the live current state, and the no-stage group. The project report
+/// keeps its band rows and gets no stack.
+fn phase_scaffold(
+    scope: Option<&Scope>,
+    stages: &[StageAssignment],
+    entries: &[HistoryEntry],
+    scale: &TimeScale,
+) -> PhaseScaffold {
+    let Some(scope) = scope else {
+        return PhaseScaffold::default();
+    };
+    let (statuses, current_state) = match scope {
+        Scope::Change { .. } => {
+            let resolution = change_resolution(scope);
+            let statuses = phase_statuses(&resolution);
+            let current_state = match &resolution {
+                ChangeResolution::Live(state) => Some(current_state_of(state)),
+                ChangeResolution::Archived | ChangeResolution::Absent => None,
+            };
+            (statuses, current_state)
+        }
+        Scope::Ideation { .. } => (topic_statuses(stages), None),
+        Scope::Project { .. } => (vec![None; WORKFLOW_STAGES.len()], None),
+    };
+    let workflow = WORKFLOW_STAGES
+        .iter()
+        .enumerate()
+        .map(|(index, stage)| {
+            let members = phase_members(Some(stage), stages, entries);
+            build_phase(Some(stage), statuses[index], &members, scale)
+        })
+        .collect();
+    let unstaged_members = phase_members(None, stages, entries);
+    let unstaged =
+        (!unstaged_members.is_empty()).then(|| build_phase(None, None, &unstaged_members, scale));
+    PhaseScaffold {
+        workflow,
+        current_state,
+        unstaged,
+    }
 }
 
 /// Record lines → `ReportModel` (bands, ordering, ranking, totals, and the
@@ -424,11 +1000,17 @@ pub fn build_report_model(scope: Option<Scope>, mut entries: Vec<HistoryEntry>) 
     }
     let summary = Summary::of(&entries);
     let empty = entries.is_empty();
+    let scale = TimeScale::of(&entries);
+    // The workflow scaffold: the nine phases, the live current state, and the
+    // no-stage group, from the same one derivation the model's `stages`
+    // carries. The scaffold holds ids and totals only; the entries stay in
+    // `entries`, embedded once.
+    let scaffold = phase_scaffold(scope.as_ref(), &stages, &entries, &scale);
     // The one bucketing: the markers the initial view draws are computed here,
     // from the window the bands were built from, and carried in the model — so
     // the zoom path reads the aggregate that already stands for an entry
     // instead of bucketing a second time.
-    let aggregates = aggregates_for(&bands, &entries, &TimeScale::of(&entries));
+    let aggregates = aggregates_for(&bands, &entries, &scale);
     ReportModel {
         scope,
         bands,
@@ -436,6 +1018,9 @@ pub fn build_report_model(scope: Option<Scope>, mut entries: Vec<HistoryEntry>) 
         empty,
         aggregates,
         stages,
+        workflow: scaffold.workflow,
+        current_state: scaffold.current_state,
+        unstaged: scaffold.unstaged,
         summary,
         content_budget_bytes: CONTENT_BUDGET_BYTES,
         content_bytes,
@@ -909,12 +1494,132 @@ fn render_view(model: &ReportModel) -> String {
         view.push_str(&render_empty_state(&scope));
         return view;
     }
+    view.push_str(&render_current_state(model.current_state.as_ref()));
     view.push_str(&render_summary(&model.summary));
     view.push('\n');
+    view.push_str(&render_workflow(model));
     view.push_str(&render_timeline(model));
     view.push('\n');
     view.push_str(&render_content_omissions(&model.omitted_content));
     view
+}
+
+/// The header's current-state line: exactly what the change state exposes —
+/// stage label, current phase, next required artifact, and task counts — or
+/// the report's own words when no live state exists. A change the project does
+/// not hold and an archived change both have no live state.
+fn render_current_state(state: Option<&CurrentState>) -> String {
+    let Some(state) = state else {
+        return "<p class=\"report-current-state\" id=\"report-current-state\">no live change state</p>\n"
+            .to_string();
+    };
+    let phase = state.phase.as_deref().unwrap_or("underived");
+    let next = state.next_artifact.as_deref().unwrap_or("none");
+    let tasks = state.tasks.as_ref().map_or_else(
+        || "no task progress".to_string(),
+        |tasks| format!("{} of {} tasks done", tasks.done, tasks.total),
+    );
+    format!(
+        "<p class=\"report-current-state\" id=\"report-current-state\">Current state: stage <span class=\"state-stage\" data-stage-label=\"{}\">{}</span>, phase <span class=\"state-phase\">{}</span>, next artifact <span class=\"state-next\">{}</span>, {}</p>\n",
+        escape(&state.stage_label),
+        escape(&state.stage_label),
+        escape(phase),
+        escape(next),
+        escape(&tasks),
+    )
+}
+
+/// The workflow stack: one line per workflow phase, and the "no recorded stage
+/// transition" group beneath it when the record assigns work to no stage. The
+/// project report carries no stack — its model builds none — so it keeps its
+/// band rows.
+fn render_workflow(model: &ReportModel) -> String {
+    if model.workflow.is_empty() && model.unstaged.is_none() {
+        return String::new();
+    }
+    let mut html = String::from(
+        "<section class=\"workflow-stack\" id=\"workflow-stack\" aria-label=\"Workflow phases\">\n",
+    );
+    for phase in &model.workflow {
+        html.push_str(&render_workflow_phase(phase));
+    }
+    if let Some(unstaged) = &model.unstaged {
+        html.push_str(&render_unstaged_group(unstaged));
+    }
+    html.push_str("</section>\n");
+    html
+}
+
+/// One workflow phase line: the phase's status, its wall/active/waiting time,
+/// its tool and subagent counts, the names of its lanes, and its repeated-group
+/// and Fit-aggregate counts. A phase with no recorded entries states zero
+/// recorded minutes, never an invented duration.
+fn render_workflow_phase(phase: &WorkflowPhase) -> String {
+    let stage = phase
+        .stage
+        .as_deref()
+        .unwrap_or("no recorded stage transition");
+    let status = phase.status.as_deref().unwrap_or("underived");
+    let wall = duration_or_not_measured(phase.wall_ms);
+    let active = duration_or_not_measured(phase.active_ms);
+    let waiting = duration_or_not_measured(phase.waiting_ms);
+    let lanes = if phase.lanes.is_empty() {
+        "no lanes".to_string()
+    } else {
+        phase
+            .lanes
+            .iter()
+            .map(|lane| lane.name.clone())
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    format!(
+        "<p class=\"workflow-phase\" data-phase=\"{}\" data-status=\"{}\">phase {}: {}, wall {}, active {}, waiting {}, {} tools, {} subagents, lanes: {}, {} repeated groups, {} fit aggregates</p>\n",
+        escape(stage),
+        escape(status),
+        escape(stage),
+        escape(status),
+        escape(&wall),
+        escape(&active),
+        escape(&waiting),
+        phase.tools,
+        phase.subagents,
+        escape(&lanes),
+        phase.repeated.len(),
+        phase.aggregates.len(),
+    )
+}
+
+/// The "no recorded stage transition" group: the work the record assigns to no
+/// workflow phase, stated as the gap it is — never placed under a guessed
+/// phase.
+fn render_unstaged_group(phase: &WorkflowPhase) -> String {
+    let count = phase
+        .lanes
+        .iter()
+        .map(|lane| lane.entries.len())
+        .sum::<usize>();
+    let lanes = if phase.lanes.is_empty() {
+        "no lanes".to_string()
+    } else {
+        phase
+            .lanes
+            .iter()
+            .map(|lane| lane.name.clone())
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    format!(
+        "<section class=\"unstaged-group\" id=\"unstaged-group\" data-entries=\"{count}\">\n<h2>No recorded stage transition</h2>\n<p class=\"unstaged-line\">{} entries carry no recorded stage transition; the record assigns them to no workflow phase.</p>\n<p class=\"unstaged-lanes\">lanes: {}</p>\n</section>\n",
+        count,
+        escape(&lanes),
+    )
+}
+
+/// A duration as the text view states it, or the record's own words for a
+/// duration it does not have.
+fn duration_or_not_measured(duration: Option<u64>) -> String {
+    duration.map_or_else(|| "not measured".to_string(), format_duration)
 }
 
 /// The text view's omission notes: one line per entry whose content the
@@ -1299,6 +2004,31 @@ fn render_summary(summary: &Summary) -> String {
     ));
     html.push('\n');
     html.push_str(&tile(
+        "active",
+        "Active",
+        &summary
+            .active_ms
+            .map_or_else(|| "not measured".to_string(), format_duration),
+        None,
+    ));
+    html.push('\n');
+    html.push_str(&tile(
+        "tool-calls",
+        "Tool calls",
+        &summary.tool_calls.to_string(),
+        None,
+    ));
+    html.push('\n');
+    html.push_str(&tile(
+        "cost",
+        "Cost",
+        &summary
+            .cost_total
+            .map_or_else(|| "unavailable".to_string(), |cost| format!("{cost:.2}")),
+        None,
+    ));
+    html.push('\n');
+    html.push_str(&tile(
         "subagents",
         "Subagents",
         &summary
@@ -1526,4 +2256,241 @@ fn default_report_path(root: &Path, scope: Option<&Scope>) -> PathBuf {
         .join("history")
         .join("reports")
         .join(format!("{id}.html"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// One record line of the unit fixture, scoped to the `demo` change.
+    #[derive(Default)]
+    struct FixtureEntry<'a> {
+        id: u64,
+        at: &'a str,
+        kind: &'a str,
+        name: &'a str,
+        label: Option<&'a str>,
+        duration_ms: Option<u64>,
+        session: Option<&'a str>,
+        data: Option<serde_json::Value>,
+    }
+
+    impl FixtureEntry<'_> {
+        fn record(self) -> HistoryEntry {
+            HistoryEntry {
+                schema: crate::history::SCHEMA,
+                id: self.id,
+                at: self.at.to_string(),
+                scope: Scope::Change {
+                    id: "demo".to_string(),
+                },
+                source: "givn".to_string(),
+                kind: self.kind.to_string(),
+                name: self.name.to_string(),
+                label: self.label.map(str::to_string),
+                duration_ms: self.duration_ms,
+                outcome: "ok".to_string(),
+                parent: None,
+                session: self.session.map(str::to_string),
+                data: self.data,
+            }
+        }
+    }
+
+    /// The shared scaffold's proof: the model carries the nine-phase workflow
+    /// stack, its lanes, repeated groups, and Fit aggregates as ids and totals
+    /// only — the record stays embedded once — and the three KPI totals the KPI
+    /// strip states (active time, tool calls, cost) are the record's own.
+    #[test]
+    fn hybrid_model_carries_the_phase_scaffold_and_kpi_totals() {
+        let entries = vec![
+            FixtureEntry {
+                id: 1,
+                at: "2026-10-17T10:00:00.000Z",
+                kind: "question",
+                name: "question",
+                label: Some("Which scope?"),
+                duration_ms: Some(30_000),
+                ..FixtureEntry::default()
+            }
+            .record(),
+            FixtureEntry {
+                id: 2,
+                at: "2026-10-17T10:00:30.000Z",
+                kind: "phase",
+                name: "proposal.md",
+                label: Some("proposal.md"),
+                ..FixtureEntry::default()
+            }
+            .record(),
+            FixtureEntry {
+                id: 3,
+                at: "2026-10-17T10:00:32.000Z",
+                kind: "tool",
+                name: "task",
+                label: Some("task"),
+                duration_ms: Some(500),
+                session: Some("s1"),
+                ..FixtureEntry::default()
+            }
+            .record(),
+            FixtureEntry {
+                id: 4,
+                at: "2026-10-17T10:00:40.000Z",
+                kind: "turn",
+                name: "turn",
+                label: Some("turn"),
+                duration_ms: Some(1_000),
+                session: Some("s1"),
+                data: Some(serde_json::json!({ "cost": 0.25 })),
+            }
+            .record(),
+            FixtureEntry {
+                id: 5,
+                at: "2026-10-17T10:00:41.000Z",
+                kind: "turn",
+                name: "turn",
+                label: Some("turn"),
+                duration_ms: Some(500),
+                session: Some("s1"),
+                data: Some(serde_json::json!({ "cost": { "total": 0.5, "list": 0.75 } })),
+            }
+            .record(),
+        ];
+        let model = build_report_model(
+            Some(Scope::Change {
+                id: "demo".to_string(),
+            }),
+            entries.clone(),
+        );
+
+        assert_eq!(
+            model.entries.len(),
+            entries.len(),
+            "the scaffold re-embedded the record: it must hold ids and totals only"
+        );
+        assert!(
+            model.current_state.is_none(),
+            "a change the project does not hold has no live state: {:?}",
+            model.current_state
+        );
+
+        let stages: Vec<&str> = model
+            .workflow
+            .iter()
+            .map(|phase| phase.stage.as_deref().unwrap_or_default())
+            .collect();
+        assert_eq!(
+            stages,
+            WORKFLOW_STAGES.to_vec(),
+            "the stack is not the nine workflow phases in workflow order"
+        );
+
+        let ids: Vec<u64> = model.entries.iter().map(|entry| entry.id).collect();
+        for phase in &model.workflow {
+            for lane in &phase.lanes {
+                assert!(
+                    !lane.entries.is_empty(),
+                    "the `{:?}` phase carries an empty lane",
+                    phase.stage
+                );
+                for id in &lane.entries {
+                    assert!(
+                        ids.contains(id),
+                        "lane member {id} is not in the model's entries"
+                    );
+                }
+            }
+            for group in &phase.repeated {
+                for id in &group.entries {
+                    assert!(
+                        ids.contains(id),
+                        "group member {id} is not in the model's entries"
+                    );
+                }
+            }
+            for aggregate in &phase.aggregates {
+                assert_eq!(
+                    aggregate.count,
+                    aggregate.entries.len(),
+                    "an aggregate's count disagrees with its member ids"
+                );
+                for id in &aggregate.entries {
+                    assert!(
+                        ids.contains(id),
+                        "aggregate member {id} is not in the model's entries"
+                    );
+                }
+            }
+        }
+
+        let specs = model
+            .workflow
+            .iter()
+            .find(|phase| phase.stage.as_deref() == Some("specs"))
+            .expect("the proposal.md transition opens the specs phase");
+        assert_eq!(specs.tools, 1, "the phase's tool count");
+        assert_eq!(specs.subagents, 0, "the phase's subagent count");
+        assert_eq!(specs.wall_ms, Some(11_000), "the phase's wall time");
+        assert_eq!(specs.waiting_ms, Some(0), "the phase holds no wait");
+        assert_eq!(specs.active_ms, Some(11_000), "the phase's active time");
+        let session_lane = specs
+            .lanes
+            .iter()
+            .find(|lane| lane.session.as_deref() == Some("s1"))
+            .expect("the tool entry's session has no lane");
+        assert_eq!(session_lane.name, "s1", "the lane's short-id name");
+        assert!(
+            session_lane.entries.contains(&3),
+            "the tool entry is not in its session's lane"
+        );
+        let unattributed = specs
+            .lanes
+            .iter()
+            .find(|lane| lane.session.is_none())
+            .expect("the transition entry has no unattributed lane");
+        assert_eq!(unattributed.name, "unattributed");
+        assert!(
+            unattributed.entries.contains(&2),
+            "the transition entry is not in the unattributed lane"
+        );
+
+        assert_eq!(model.summary.elapsed_ms, Some(41_000));
+        assert_eq!(model.summary.wait_ms, Some(30_000));
+        assert_eq!(
+            model.summary.active_ms,
+            Some(11_000),
+            "active is elapsed minus waiting when both are measured"
+        );
+        assert_eq!(model.summary.tool_calls, 1, "the number of tool entries");
+        assert_eq!(model.summary.subagents, 0);
+        assert_eq!(
+            model.summary.cost_total,
+            Some(0.75),
+            "the numeric cost and the cost object's total are summed"
+        );
+        assert!(
+            model.unstaged.is_none(),
+            "the no-stage group is absent when every entry has a stage"
+        );
+
+        let view = render_view(&model);
+        assert!(
+            view.contains("data-phase=\"specs\""),
+            "the text view prints no specs phase line: {view}"
+        );
+        assert!(
+            view.contains("no live change state"),
+            "the text view does not state the absent live state: {view}"
+        );
+
+        let payload = serde_json::to_value(&model).expect("the model serializes");
+        assert_eq!(
+            payload["workflow"].as_array().map(Vec::len),
+            Some(WORKFLOW_STAGES.len()),
+            "the model payload carries the nine phases"
+        );
+        assert_eq!(payload["summary"]["tool_calls"], serde_json::json!(1));
+        assert_eq!(payload["summary"]["cost_total"], serde_json::json!(0.75));
+    }
 }
