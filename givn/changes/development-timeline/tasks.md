@@ -14738,7 +14738,7 @@ untouched; this part is appended after its completion statement.
 
 ## Task H15 — Link resolution: proposal/seed parsing, normalization, archive fallback, snapshot (shared prerequisite; no new scenario)
 
-- [ ] **Shared prerequisite: `cli::timeline::tests::link_resolution_normalizes_real_proposal_forms`**
+- [x] **Shared prerequisite: `cli::timeline::tests::link_resolution_normalizes_real_proposal_forms`**
   - Design constraints:
     - **Sources.** For a change report, read `givn/changes/<id>/proposal.md`;
       when that directory does not exist, `givn/archive/<id>/proposal.md`.
@@ -14768,28 +14768,61 @@ untouched; this part is appended after its completion statement.
     - Files: `src/cli/timeline.rs` (the resolver and its tests) and
       `src/cli/timeline.rs`'s `run()` call site.
     - RED expected failure: the unit test does not compile (no resolver).
-  - [ ] **RED** — add the unit test and run:
+  - [x] **RED** — add the unit test and run:
         `cargo test --locked --lib cli::timeline::tests::link_resolution_normalizes_real_proposal_forms`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        error[E0425]: cannot find function `resolve_link` in this scope
+        error[E0425]: cannot find function `resolve_link` in this scope
+        error[E0425]: cannot find function `resolve_link` in this scope
+        error: could not compile `givn` (lib test) due to 3 previous errors
+        EXIT=101
         ```
-  - [ ] **GREEN** — implement the resolver and wire `run()`. File:
+  - [x] **GREEN** — implement the resolver and wire `run()`. File:
         `src/cli/timeline.rs`. Re-run the unit test → exit 0. Paste it.
         ```
-        PASTE THE GREEN RUN HERE
+        running 1 test
+        test cli::timeline::tests::link_resolution_normalizes_real_proposal_forms ... ok
+
+        test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 277 filtered out; finished in 0.01s
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — one `normalize_link_value` used by both the topic and
+  - [x] **REFACTOR** — one `normalize_link_value` used by both the topic and
         seed paths; `cargo fmt --all -- --check` and `cargo clippy --locked
         --all-targets -- -D warnings` green; re-run → still exit 0. Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+        cargo test --locked --lib → 278 passed; 0 failed
+
+        running 1 test
+        test cli::timeline::tests::link_resolution_normalizes_real_proposal_forms ... ok
+
+        test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 277 filtered out; finished in 0.01s
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `5110738b` — `feat(development-report): <release note>` with
         the link-resolution scope and the unit test in the body. Record the
         revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit 5110738b
+        feat(development-report): resolve a change's ideation link from its proposal
+
+        The link resolver reads the change's proposal (the live directory, the
+        archive fallback), takes the Ideation topic line first and the Seed path
+        as the fallback, normalizes the value once (whitespace, backticks/quotes,
+        bare id or givn/ideation path with or without a trailing slash, a first
+        token none including none — reason), uses it only when
+        givn/ideation/<id>/ exists, and snapshots the topic's store entries into
+        Option<LinkedIdeation>. run() resolves it once and passes it into
+        build_report_model; a topic or project report parses no link.
+
+        Unit test: cli::timeline::tests::link_resolution_normalizes_real_proposal_forms.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         src/cli/timeline.rs | 196 +++++++++++++++++++++++++++++++++++++++++++++++++++-
+         1 file changed, 195 insertions(+), 1 deletion(-)
         ```
 
 ## Task H16 — `An ideation topic report uses the ideation workflow` (`development-report`, added)
