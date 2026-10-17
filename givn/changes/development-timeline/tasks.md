@@ -15039,7 +15039,7 @@ untouched; this part is appended after its completion statement.
 
 ## Task H18 — `A linked ideation with no recorded activity is stated` (`development-report`, added)
 
-- [ ] **Scenario: `A linked ideation with no recorded activity is stated`** (`@wip` until its RED)
+- [x] **Scenario: `A linked ideation with no recorded activity is stated`** (`@wip` until its RED)
   - Design constraints:
     - **The group header only.** When the linked topic's directory exists but
       its record holds no entries, the group renders its header with
@@ -15058,30 +15058,82 @@ untouched; this part is appended after its completion statement.
       `tests/steps/development_report_steps.rs` (the Givens and two Thens),
       `tests/steps/development_timeline_support.rs` (the empty-topic fixture).
     - RED expected failure: the Givens and two Then phrases are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::A linked ideation with no recorded activity is stated"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Report
+          Scenario: A linked ideation with no recorded activity is stated
+           ✔  Given a change "demo" whose proposal links the ideation topic "ideas"
+           ✘  And the topic has no recorded activity
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:176:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+        EXIT=101
         ```
-  - [ ] **GREEN** — implement the no-activity group state. Files:
+  - [x] **GREEN** — implement the no-activity group state. Files:
         `src/cli/timeline.rs`, `tests/steps/development_report_steps.rs`,
         `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
         it.
         ```
-        PASTE THE GREEN RUN HERE
+        Feature: Development Report
+          Scenario: A linked ideation with no recorded activity is stated
+           ✔  Given a change "demo" whose proposal links the ideation topic "ideas"
+           ✔  And the topic has no recorded activity
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report names the linked topic "ideas" and that no activity is recorded
+           ✔  And the report invents no ideation phase duration
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — one `has_activity` branch drives both the text view and
+  - [x] **REFACTOR** — one `has_activity` branch drives both the text view and
         the group scaffold; `cargo fmt --all -- --check` and `cargo clippy
         --locked --all-targets -- -D warnings` green; re-run → still exit 0.
         Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        The scaffold computes activity once from the topic entries and emits the
+        phases only when it holds activity; render_ideation_group branches on
+        that one group.activity value, never on a second empty-check. No code
+        change was needed beyond the fixture.
+
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+        (the scenario re-run)
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `eadd066c` — `feat(development-report): <release note>` with
         the scenario title in the body. Record the revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit eadd066c
+        feat(development-report): a linked ideation with no recorded activity is stated
+
+        Scenario: A linked ideation with no recorded activity is stated
+
+        The fixtures give the change a proposal link and a topic directory whose
+        record holds no entry at all: only the change's own record is seeded. The
+        two Thens read the written report: the linked group names its topic and
+        states no recorded activity (pre-dates the record) with no phases,
+        entries, duration, tools, subagents, or waits, while the change's own
+        workflow and totals still render (empty stays false). The group's one
+        activity value from the scaffold drives both the text view and the model.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../development-report.feature                     |   2 +-
+         tests/steps/development_report_steps.rs            | 143 ++++++++++++++++++++-
+         tests/steps/development_timeline_support.rs        |   9 ++
+         3 files changed, 152 insertions(+), 2 deletions(-)
         ```
 
 ## Task H19 — `A change whose proposal names no ideation topic shows no linked group` (`development-report`, added)
