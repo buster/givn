@@ -13211,7 +13211,7 @@ Repository checks are secondary only.
 
 ## Task H12 — `The report omits the recorder's own command entries` (`development-report`, added; the recorder-omission follow-up)
 
-- [ ] **Scenario: `The report omits the recorder's own command entries`** (`@wip` until its RED)
+- [x] **Scenario: `The report omits the recorder's own command entries`** (`@wip` until its RED)
   - Design constraints:
     - **The rule** (`design.md`, *Hybrid workflow report* → **Recorder
       self-recording**). The recorder's own command entries are recorded — the
@@ -13285,36 +13285,115 @@ Repository checks are secondary only.
       review gate re-runs both scopes.
     - RED expected failure: the Given and all six Then phrases are undefined,
       and the model still carries every recorder row.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report omits the recorder's own command entries"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Report
+          Scenario: The report omits the recorder's own command entries
+           ✘  Given a change "demo" whose record holds one tool call, one other command, and the recorder's own command entries, flagged and unflagged
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:147:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        EXIT=101
         ```
-  - [ ] **GREEN** — add the first-step filter and its predicate, the fixture,
+  - [x] **GREEN** — add the first-step filter and its predicate, the fixture,
         the six Thens, and the unit assertion. Files: `src/cli/timeline.rs`,
         `tests/steps/development_report_steps.rs`,
         `tests/steps/development_timeline_support.rs`. Re-run this scenario and
         the unit test → both exit 0. Paste both.
         ```
-        PASTE THE GREEN RUN (SCENARIO) HERE
+        Feature: Development Report
+          Scenario: The report omits the recorder's own command entries
+           ✔  Given a change "demo" whose record holds one tool call, one other command, and the recorder's own command entries, flagged and unflagged
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report names the tool call and counts it
+           ✔  And the report names the other command
+           ✔  And the report names no recorder command entry
+           ✔  And the report's entry total excludes the recorder command entries
+           ✔  And the record still holds the recorder command entries
+           ✔  And `givn history` still lists the recorder command entries
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        EXIT=0
         ```
         ```
-        PASTE THE GREEN RUN (UNIT TEST) HERE
+        running 1 test
+        test cli::timeline::tests::report_model_omits_only_the_recorder_command_entries ... ok
+
+        test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 275 filtered out; finished in 0.01s
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — one `is_recorder_command` predicate and one filter step
+  - [x] **REFACTOR** — one `is_recorder_command` predicate and one filter step
         at the top of `build_report_model`, read by nothing else; `cargo fmt
         --all -- --check` and `cargo clippy --locked --all-targets --
         -D warnings` green; re-run the scenario and the unit test → still exit
         0. Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+
+        running 1 test
+        test cli::timeline::tests::report_model_omits_only_the_recorder_command_entries ... ok
+
+        test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 275 filtered out; finished in 0.01s
+        UNIT EXIT=0
+
+        Feature: Development Report
+          Scenario: The report omits the recorder's own command entries
+           ✔  Given a change "demo" whose record holds one tool call, one other command, and the recorder's own command entries, flagged and unflagged
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report names the tool call and counts it
+           ✔  And the report names the other command
+           ✔  And the report names no recorder command entry
+           ✔  And the report's entry total excludes the recorder command entries
+           ✔  And the record still holds the recorder command entries
+           ✔  And `givn history` still lists the recorder command entries
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        SCENARIO EXIT=0
+
+        GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e
+        Summary [5.049s] 55 tests run: 55 passed, 9 skipped — exit 0
+
+        GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --e2e
+        Summary [7.547s] 9 tests run: 9 passed, 55 skipped — exit 0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `cff0e844949cda7b49a81383c700102a9a9c6816` — `feat(development-report): <release note>` with
         the scenario title in the body and the named unit assertion. Record the
         revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit cff0e844
+        feat(development-report): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        The report omits the recorder's own command entries
+
+        build_report_model drops the recorder's own invocations as its first step, before
+        the content budget and every derivation: exactly a command named history whose
+        bounded label is history ingest or begins with history ingest or history
+        harness-hook followed by a word boundary, so history ingest-extra, a bare history,
+        history settings, and a tool or commit quoting the phrase survive. The store and
+        the read view still hold and print every recorder row.
+
+        The named unit assertion report_model_omits_only_the_recorder_command_entries pins
+        the predicate boundary and the omission from entries, summary.entries, the
+        ranking, and omitted_content.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../development-report.feature                     |   2 +-
+         src/cli/timeline.rs                                | 268 +++++++++++++++++
+         tests/steps/development_report_steps.rs            | 322 +++++++++++++++++++++
+         tests/steps/development_timeline_support.rs        |  89 ++++++
+         4 files changed, 680 insertions(+), 1 deletion(-)
         ```
 
 ## Task HE1 — `Consumer generates the development report for a change` (`@e2e`, `development-report`)
