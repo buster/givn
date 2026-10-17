@@ -13094,7 +13094,7 @@ Repository checks are secondary only.
 
 ## Task HE2 — `Consumer opens the generated development report in a browser` (`@e2e`, `development-report`, Scenario Outline, `change` and `topic` rows) — the asset rewrite
 
-- [ ] **Scenario: `Consumer opens the generated development report in a browser`** (`@wip` until its RED)
+- [x] **Scenario: `Consumer opens the generated development report in a browser`** (`@wip` until its RED)
   - Design constraints:
     - Matrix row 5: real interface **Web UI**; Playwright opens
       `file://<root>/report.html` and reads the **rendered** heading, the
@@ -13144,13 +13144,30 @@ Repository checks are secondary only.
     - RED expected failure: `the report heading and the current workflow state`,
       `the workflow phases top to bottom`, and the mobile-layout assertion are
       undefined; the current asset draws the superseded dense timeline.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer opens the generated development report in a browser"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Report
+          Scenario Outline: Consumer opens the generated development report in a browser
+           ✔  Given a change "demo" with a recorded history
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✘  Then the browser shows the report heading and the current workflow state
+              Step doesn't match any function
+          Scenario Outline: Consumer opens the generated development report in a browser
+           ✔  Given a topic "demo" with a recorded history
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✘  Then the browser shows the report heading and the current workflow state
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        2 scenarios (2 failed)
+        8 steps (6 passed, 2 failed)
+        EXIT=101
         ```
-  - [ ] **GREEN** — rewrite the asset to the hybrid workflow view and implement
+  - [x] **GREEN** — rewrite the asset to the hybrid workflow view and implement
         the three Then steps (heading + current state, top-to-bottom phases,
         mobile one-column with no page-level horizontal scrolling). Files:
         `assets/timeline/report.html`, `src/cli/timeline.rs` (only if the
@@ -13160,20 +13177,79 @@ Repository checks are secondary only.
         `node --check` on the extracted inline layer, compile, re-run → exit 0.
         Paste it.
         ```
-        PASTE THE GREEN RUN HERE
+        Feature: Development Report
+          Scenario Outline: Consumer opens the generated development report in a browser
+           ✔  Given a change "demo" with a recorded history
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✔  Then the browser shows the report heading and the current workflow state
+           ✔  And the browser shows the workflow phases top to bottom
+           ✔  And the browser shows the longest recorded step with its duration
+           ✔  And the browser lays the page out in one column without page-level horizontal scrolling at the mobile viewport
+          Scenario Outline: Consumer opens the generated development report in a browser
+           ✔  Given a topic "demo" with a recorded history
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✔  Then the browser shows the report heading and the current workflow state
+           ✔  And the browser shows the workflow phases top to bottom
+           ✔  And the browser shows the longest recorded step with its duration
+           ✔  And the browser lays the page out in one column without page-level horizontal scrolling at the mobile viewport
+        [Summary]
+        1 feature
+        2 scenarios (2 passed)
+        14 steps (14 passed)
+        EXIT=0
+
+        consumer-opens-the-generated-development-report-in-a-browser/desktop.png 113107 bytes
+        consumer-opens-the-generated-development-report-in-a-browser/mobile.png   55909 bytes
         ```
-  - [ ] **REFACTOR** — one phase-card renderer, one KPI tile renderer, one
+  - [x] **REFACTOR** — one phase-card renderer, one KPI tile renderer, one
         `prefers-reduced-motion` block; `cargo fmt --all -- --check`,
         `cargo clippy --locked --all-targets -- -D warnings`, and `node --check`
         green; re-run → still exit 0. Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+        node --check /tmp/report-inline.js → exit 0
+
+        Feature: Development Report
+          Scenario Outline: Consumer opens the generated development report in a browser
+           ✔  Given a topic "demo" with a recorded history
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✔  Then the browser shows the report heading and the current workflow state
+           ✔  And the browser shows the workflow phases top to bottom
+           ✔  And the browser shows the longest recorded step with its duration
+           ✔  And the browser lays the page out in one column without page-level horizontal scrolling at the mobile viewport
+        [Summary]
+        1 feature
+        2 scenarios (2 passed)
+        14 steps (14 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+  - [x] **COMMIT** — `c776da2c` — `test(e2e): <release note>` with the scenario
         title in the body (including the refreshed evidence pair). Record the
         revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit c776da2c
+        test(e2e): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        Consumer opens the generated development report in a browser
+
+        The report asset is the hybrid workflow view: the current-state header, the
+        six-fact KPI strip, the nine workflow phase cards top to bottom with statuses,
+        stats, and sparklines, the longest recorded step in the statistics, and the
+        one-column mobile layout without page-level horizontal scrolling. The evidence
+        pair is refreshed in place.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         assets/timeline/report.html                        | 1794 ++++++++++++---------
+         .../consumer-opens-the-generated-development-report-in-a-browser/desktop.png | Bin 73818 -> 113107 bytes
+         .../consumer-opens-the-generated-development-report-in-a-browser/mobile.png  | Bin 46204 -> 55909 bytes
+         .../development-report.feature                      |   2 +-
+         tests/steps/development_report_e2e_steps.rs         |  442 +++---
+         5 files changed, 1214 insertions(+), 1024 deletions(-)
         ```
 
 ## Task HE3 — `Consumer expands a workflow phase and sees its lanes` (`@e2e`, `development-report`)
