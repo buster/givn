@@ -6255,7 +6255,7 @@ name it.
 
 ## Task 25a — `Measured agent activity is ranked alongside Givn's own steps` (`development-report`, added)
 
-- [ ] **Scenario: `Measured agent activity is ranked alongside Givn's own steps`**
+- [x] **Scenario: `Measured agent activity is ranked alongside Givn's own steps`**
   - Design constraints:
     - Ranking rule (design §Report Generation): the ranking covers **every
       recorded entry with a measured `duration_ms`** — `command`, `phase`,
@@ -6483,9 +6483,33 @@ name it.
              Summary [   7.110s] 8 tests run: 8 passed, 39 skipped
         EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `e4b798824f5bea96f73177b77f021a5e795ef273` — `feat(development-report): <release note>` with
         the scenario title `Measured agent activity is ranked alongside Givn's own
         steps` in the body. Record the revision identifier.
+        ```
+        $ GIVN_ATTRIBUTION_ACTIVE=1 GIVN_ATTRIBUTION_LLM=deepseek/deepseek-flash \
+          GIVN_ATTRIBUTION_REASONING=max GIVN_ATTRIBUTION_HARNESS=omp \
+          ./target/debug/givn commit -m "feat(development-report): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        Measured agent activity is ranked alongside Givn's own steps"
+        [03:32:22] committed revision on the Git backend
+        EXIT=0
+
+        Revision e4b798824f5bea96f73177b77f021a5e795ef273 touches exactly this
+        scenario's files: `src/cli/timeline.rs` (the widened `ranked_steps`, the
+        `RankedStep.kind`, the one `ranked_row` renderer, and the doc comments
+        and unused constant it retires), `assets/timeline/report.html` (only the
+        kind element's style rule), `tests/steps/development_report_steps.rs`
+        (the widened fixture, the rendered-row readers, and both Then steps),
+        the delta `.feature`'s `@wip` removal, this task file's evidence, and the
+        14 refreshed `evidence/visual/**` pairs this step's widened summary rows
+        changed.
+        ```
+        The refreshed pairs are one commit with the scenario, exactly as Task 24a
+        refreshed the same evidence in its own commit: no committed pair may stay
+        stale by content into the archive finalization. The refresh ran twice —
+        once in GREEN, once after REFACTOR — and the second run wrote the same 14
+        files, so the committed pairs are the post-refactor rendering.
 
 ## Task 26 — `The report totals the time spent waiting for questions` (`development-report`, added)
 
