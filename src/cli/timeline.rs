@@ -54,6 +54,13 @@ fn records_span(kind: &str) -> bool {
     )
 }
 
+/// The documented total budget for full content embedded in one report
+/// document, in bytes: the report embeds every entry's `data.content` in record
+/// order until this cap, and the remaining content is not embedded (the store
+/// keeps every byte). Applied in record order, so the same record always
+/// produces the same report.
+pub const CONTENT_BUDGET_BYTES: usize = 8 * 1024 * 1024;
+
 /// Everything the report screen renders: scope, bands, entries, summary.
 #[derive(Debug, Default, Serialize)]
 pub struct ReportModel {
@@ -81,6 +88,14 @@ pub struct ReportModel {
     pub stages: Vec<StageAssignment>,
     /// The summary: the numbers the report states about the whole window.
     pub summary: Summary,
+    /// The documented total content budget, in bytes.
+    pub content_budget_bytes: usize,
+    /// The content bytes the document embeds.
+    pub content_bytes: usize,
+    /// The ids whose full content was left out of the document because the
+    /// budget was exhausted; the panel states the omission instead of rendering
+    /// a partial bundle. The store keeps every byte.
+    pub omitted_content: Vec<u64>,
 }
 
 /// One aggregate marker: the entries of one band and one time bucket that the
@@ -379,7 +394,13 @@ pub struct RankedStep {
 
 /// Record lines → `ReportModel` (bands, ordering, ranking, totals, and the
 /// initial zoom's aggregates).
-pub fn build_report_model(scope: Option<Scope>, entries: Vec<HistoryEntry>) -> ReportModel {
+pub fn build_report_model(scope: Option<Scope>, mut entries: Vec<HistoryEntry>) -> ReportModel {
+    // The content budget is applied in record order — the store's own line
+    // order, before the report's time ordering — so a record over the budget
+    // always produces the same document. An entry whose bundle would cross the
+    // cap is not embedded; the panel states the omission and the store keeps
+    // every byte.
+    let (content_bytes, omitted_content) = apply_content_budget(&mut entries);
     let entries = ordered_by_recorded_time(entries);
     let mut bands = bands_for(scope.as_ref(), &entries);
     // The one phase derivation: every band's entries are placed in the stage
@@ -409,7 +430,61 @@ pub fn build_report_model(scope: Option<Scope>, entries: Vec<HistoryEntry>) -> R
         aggregates,
         stages,
         summary,
+        content_budget_bytes: CONTENT_BUDGET_BYTES,
+        content_bytes,
+        omitted_content,
     }
+}
+
+/// The content bytes one report document embeds and the ids whose content was
+/// left out: every entry's `data.content` in record order until
+/// [`CONTENT_BUDGET_BYTES`], then omission. An entry that crosses the cap has
+/// its content removed from the model (so the document never carries it) and is
+/// listed by id.
+fn apply_content_budget(entries: &mut [HistoryEntry]) -> (usize, Vec<u64>) {
+    let mut used = 0usize;
+    let mut omitted: Vec<u64> = Vec::new();
+    for entry in entries {
+        let Some(content) = entry
+            .data
+            .as_ref()
+            .and_then(|data| data.get("content"))
+            .cloned()
+        else {
+            continue;
+        };
+        let size = content_bytes(&content);
+        if used.saturating_add(size) > CONTENT_BUDGET_BYTES {
+            if let Some(data) = entry
+                .data
+                .as_mut()
+                .and_then(serde_json::Value::as_object_mut)
+            {
+                data.remove("content");
+            }
+            omitted.push(entry.id);
+            continue;
+        }
+        used = used.saturating_add(size);
+    }
+    (used, omitted)
+}
+
+/// The embedded byte size of one `data.content` object: the UTF-8 bytes of
+/// every named field's kept text. The object's own `truncated` marker and each
+/// field's original `bytes` are accounting, not embedded text.
+fn content_bytes(content: &serde_json::Value) -> usize {
+    content
+        .as_object()
+        .map(|object| {
+            object
+                .iter()
+                .filter(|(name, _)| name.as_str() != "truncated")
+                .filter_map(|(_, field)| field.get("text").and_then(serde_json::Value::as_str))
+                .map(str::len)
+                .sum()
+        })
+        .unwrap_or_default()
 }
 
 /// The window's aggregates: the report's one bucketing, used by the initial
