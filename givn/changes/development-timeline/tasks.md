@@ -14621,7 +14621,7 @@ untouched; this part is appended after its completion statement.
 
 ## Task H14 — Ideation model: stage list, marker derivation, per-band order, linked group, scope-separated totals (shared prerequisite; no new scenario)
 
-- [ ] **Shared prerequisite: `cli::timeline::tests::ideation_model_maps_markers_to_phases_and_keeps_scope_totals`**
+- [x] **Shared prerequisite: `cli::timeline::tests::ideation_model_maps_markers_to_phases_and_keeps_scope_totals`**
   - Design constraints:
     - **`IDEATION_STAGES`** (`src/cli/timeline.rs`): the six names in order.
       The model's `workflow` for a topic report lists these six; a change
@@ -14668,30 +14668,72 @@ untouched; this part is appended after its completion statement.
     - Files: `src/cli/timeline.rs` only.
     - RED expected failure: the unit test does not compile (no ideation stages,
       no `ideation` field, no link input).
-  - [ ] **RED** — add the unit test under `#[cfg(test)] mod tests` and run:
+  - [x] **RED** — add the unit test under `#[cfg(test)] mod tests` and run:
         `cargo test --locked --lib cli::timeline::tests::ideation_model_maps_markers_to_phases_and_keeps_scope_totals`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        error[E0425]: cannot find value `IDEATION_STAGES` in this scope
+        error[E0422]: cannot find struct, variant or union type `LinkedIdeation` in this scope
+        error[E0425]: cannot find value `IDEATION_STAGES` in this scope
+        error[E0425]: cannot find value `IDEATION_STAGES` in this scope
+        error[E0422]: cannot find struct, variant or union type `LinkedIdeation` in this scope
+        error[E0061]: this function takes 2 arguments but 3 arguments were supplied
+        error[E0061]: this function takes 2 arguments but 3 arguments were supplied
+        error[E0609]: no field `ideation` on type `ReportModel`
+        error[E0061]: this function takes 2 arguments but 3 arguments were supplied
+        error[E0609]: no field `ideation` on type `ReportModel`
+        EXIT=101
         ```
-  - [ ] **GREEN** — add the stages, the derivation, the per-band order, the
+  - [x] **GREEN** — add the stages, the derivation, the per-band order, the
         `IdeationGroup`, the scoped totals, and the link input. File:
         `src/cli/timeline.rs`. Re-run the unit test → exit 0. Paste it.
         ```
-        PASTE THE GREEN RUN HERE
+        running 1 test
+        test cli::timeline::tests::ideation_model_maps_markers_to_phases_and_keeps_scope_totals ... ok
+
+        test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 276 filtered out; finished in 0.00s
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — one derivation and one scoped-summary selection shared
+  - [x] **REFACTOR** — one derivation and one scoped-summary selection shared
         by the topic workflow and the group; `cargo fmt --all -- --check` and
         `cargo clippy --locked --all-targets -- -D warnings` green; re-run →
         still exit 0. Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+        cargo test --locked --lib → 277 passed; 0 failed
+
+        running 1 test
+        test cli::timeline::tests::ideation_model_maps_markers_to_phases_and_keeps_scope_totals ... ok
+
+        test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 276 filtered out; finished in 0.00s
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `6e9bfb5e` — `feat(development-report): <release note>` with
         the shared model scope in the body and the unit test. Record the
         revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit 6e9bfb5e
+        feat(development-report): the report model carries the ideation workflow and a linked ideation group
+
+        The model gains the six IDEATION_STAGES, a direct marker-to-phase derivation
+        (a marker starts its phase; pre-marker entries are frame; never
+        STAGE_ARTIFACTS, never a no-stage group), per-band workflow order, and
+        ReportModel.ideation carrying the linked topic's six phases, its entry ids, its
+        own totals, and whether the record has activity. The linked topic's entries
+        join entries once and form their own ideation band; the report scope's summary,
+        ranking, KPI facts, and empty flag are computed from its own entries, so a
+        change with an active linked topic is never empty and its totals never include
+        the topic's. build_report_model gains the resolved Option<LinkedIdeation>
+        snapshot input; the text view prints the group above the change stack and the
+        no-activity statement instead of invented phases.
+
+        Unit test: cli::timeline::tests::ideation_model_maps_markers_to_phases_and_keeps_scope_totals.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         src/cli/timeline.rs | 765 ++++++++++++++++++++++++++++++++++++++++++++++------
+         1 file changed, 679 insertions(+), 86 deletions(-)
         ```
 
 ## Task H15 — Link resolution: proposal/seed parsing, normalization, archive fallback, snapshot (shared prerequisite; no new scenario)
