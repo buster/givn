@@ -1329,6 +1329,13 @@ end
 /// reaches the compiled binary through the `PATH` shim. Called once per
 /// scenario action, so each action's events really cross the harness dispatch.
 pub fn run_maki_driver(env: &common::TestEnv, events: &[MakiEvent]) -> std::process::Output {
+    assert_maki_reporter(env);
+    run_maki_init(env, &maki_driver_script(events))
+}
+
+/// The generated Maki reporter and fence must exist before any driver runs: a
+/// driver against a hand-written file would not be the generated reporter.
+fn assert_maki_reporter(env: &common::TestEnv) {
     let reporter = env.path(".maki/lua/givn-timeline.lua");
     assert!(
         reporter.is_file(),
@@ -1341,16 +1348,21 @@ pub fn run_maki_driver(env: &common::TestEnv, events: &[MakiEvent]) -> std::proc
         "the generated Maki fence is missing: {}",
         fence.display()
     );
+}
+
+/// Run the project's generated `.maki/init.lua` with `driver` appended: the
+/// real `maki` binary (`--trust prompt`, no model call, no network), the
+/// project root as cwd, and the `givn` shim on PATH. The driver's load marker
+/// proves the real harness loaded the project plugin.
+fn run_maki_init(env: &common::TestEnv, driver: &str) -> std::process::Output {
     // The driver file starts with the shipped fence verbatim, so the fence text
     // itself is what loads the reporter in the real harness; the generated file
     // is restored by the next `givn init`/`givn skills sync`.
+    let fence = env.path(".maki/init.lua");
     let generated = std::fs::read_to_string(&fence)
         .unwrap_or_else(|error| panic!("read the generated Maki fence: {error}"));
-    std::fs::write(
-        &fence,
-        format!("{generated}\n{}", maki_driver_script(events)),
-    )
-    .expect("write the Maki driver init.lua");
+    std::fs::write(&fence, format!("{generated}\n{driver}"))
+        .expect("write the Maki driver init.lua");
     let marker = env.path(".maki-driver-loaded");
     let _ = std::fs::remove_file(&marker);
     let maki = maki_binary();
@@ -1391,6 +1403,88 @@ pub fn run_maki_driver(env: &common::TestEnv, events: &[MakiEvent]) -> std::proc
         String::from_utf8_lossy(&output.stderr),
     );
     output
+}
+
+/// The session id the Maki question scenarios report under.
+pub const MAKI_QUESTION_SESSION: &str = "maki-question-fixture";
+
+/// The live-transcript messages one Maki question wait reads at its close: one
+/// assistant message carrying the blocking `question` tool_use, with the
+/// scenario's question and option labels. `None` builds a transcript with no
+/// matching question, the residual a non-question wait leaves.
+pub fn maki_question_transcript(question: Option<&str>, options: &[&str]) -> Value {
+    match question {
+        Some(question) => serde_json::json!([{
+            "role": "assistant",
+            "content": [{
+                "type": "tool_use",
+                "name": "question",
+                "input": {
+                    "questions": [{
+                        "question": question,
+                        "options": options
+                            .iter()
+                            .map(|label| serde_json::json!({ "label": label }))
+                            .collect::<Vec<_>>(),
+                    }],
+                },
+            }],
+        }]),
+        None => serde_json::json!([
+            {
+                "role": "assistant",
+                "content": [{ "type": "text", "text": "Working on the change." }],
+            },
+        ]),
+    }
+}
+
+/// Drive the generated Maki reporter through one question wait: the harness's
+/// own `needs_input` -> `working` status pair, with `maki.session.messages`
+/// overridden to the fixture transcript the reporter reads at the wait's
+/// close. The reporter's real `givn history ingest` reaches the compiled
+/// binary through the PATH shim.
+pub fn drive_maki_question_wait(
+    env: &common::TestEnv,
+    title: &str,
+    transcript: &Value,
+) -> std::process::Output {
+    assert_maki_reporter(env);
+    let title = lua_literal(&Value::String(title.to_string()));
+    let transcript = lua_literal(transcript);
+    let driver = format!(
+        r#"-- Givn question-wait driver: the shipped fence above ran verbatim; the
+-- live transcript is the fixture, and the harness's own status pair opens and
+-- closes the wait.
+local marker = maki.fs.write(".maki-driver-loaded", "loaded\n")
+if not marker then
+  error("the driver's load marker could not be written")
+end
+maki.session.messages = function()
+  return {transcript}
+end
+local status = function(value)
+  maki.api.exec_autocmds("SessionStatusChanged", {{
+    data = {{
+      session_id = {MAKI_QUESTION_SESSION:?},
+      status = value,
+      title = {title},
+      focused = true,
+    }},
+  }})
+  local until_t = os.clock() + 0.02
+  while os.clock() < until_t do end
+end
+status("needs_input")
+status("working")
+local reporter = require("givn-timeline")
+local flushed, flush_err = pcall(reporter.run)
+if not flushed then
+  maki.log.error("givn-timeline driver: the flush failed: " .. tostring(flush_err))
+end
+"#
+    );
+    run_maki_init(env, &driver)
 }
 
 /// The Maki events one driver activity reaches the generated reporter through:

@@ -35,6 +35,13 @@ pub(crate) struct DevelopmentRecordState {
     /// The ids the record already held when the off-mode fixture started: the
     /// earlier entries the developer can still read after the mode is lowered.
     pub(crate) earlier_ids: Vec<u64>,
+    /// The question text the Maki transcript fixture carries, joined the way
+    /// the reporter joins it.
+    pub(crate) question_text: Option<String>,
+    /// The wait title (the label's bounded source) the Maki fixture carries.
+    pub(crate) question_title: Option<String>,
+    /// The title of the residual wait whose transcript holds no question.
+    pub(crate) residual_title: Option<String>,
 }
 
 /// The verification command the bounded-label fixture declares: it really runs
@@ -1850,5 +1857,244 @@ fn failed_tool_entry_keeps_bounded_metadata(world: &mut GivnWorld) {
     assert!(
         !error.contains("second line"),
         "the intake kept a later error line: {tool}"
+    );
+}
+
+/// The question the Maki transcript fixture carries: longer than both the entry
+/// label bound and the 4 000-character question cap.
+fn maki_question() -> String {
+    format!(
+        "{} — choose the next step",
+        "Q".repeat(givn::history::QUESTION_TEXT_LIMIT + 500)
+    )
+}
+
+/// The option labels the fixture's question carries.
+const MAKI_OPTIONS: [&str; 2] = ["Continue with the change", "Stop here"];
+
+/// The text the reporter joins and the intake stores: every question and option
+/// label, one per line, in the reporter's order.
+fn maki_joined_question() -> String {
+    std::iter::once(maki_question())
+        .chain(MAKI_OPTIONS.iter().map(|option| option.to_string()))
+        .collect::<Vec<String>>()
+        .join("\n")
+}
+
+/// The last question entry the Maki reporter recorded for the scenario's
+/// change: the wait's own entry, never a fixture-written line.
+fn last_answered_question(world: &GivnWorld) -> Value {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let change = world
+        .last_change_id
+        .clone()
+        .expect("the question fixture ran first");
+    let entries = support::record_entries(&env.root());
+    let questions: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| {
+            entry["kind"] == json!("question")
+                && entry["source"] == json!("agent")
+                && entry["scope"] == json!({ "kind": "change", "id": change })
+        })
+        .collect();
+    questions
+        .last()
+        .map(|entry| (*entry).clone())
+        .unwrap_or_else(|| panic!("the Maki reporter recorded no question entry: {entries:#?}"))
+}
+
+#[given(
+    regex = r#"^a change "([^"]+)" whose Maki reporter reads a question from its session transcript$"#
+)]
+fn change_with_maki_question_transcript(world: &mut GivnWorld, id: String) {
+    // The reporter is installed by the real `givn init --agents maki` in a
+    // fresh root, never a hand-written file, and driven through the real
+    // `maki` binary.
+    let env = common::make_bare_root();
+    support::initialize_with_maki_reporter(&env);
+    let out = common::run_givn(&env, &["new", &id]);
+    assert!(
+        out.status.success(),
+        "givn new {id} failed: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+    let state = world
+        .development_record
+        .get_or_insert_with(DevelopmentRecordState::default);
+    state.question_text = Some(maki_joined_question());
+    state.question_title = Some(maki_question());
+    world.last_change_id = Some(id);
+    world.env = Some(env);
+}
+
+#[when("the reported question is longer than the entry label bound")]
+fn reported_question_longer_than_the_label_bound(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let question = maki_question();
+    let transcript = support::maki_question_transcript(Some(&question), &MAKI_OPTIONS);
+    let out = support::drive_maki_question_wait(env, &question, &transcript);
+    world.last_output = Some(out);
+}
+
+#[then("the record holds the complete question text up to the 4 000-character cap")]
+fn record_holds_the_question_text_capped(world: &mut GivnWorld) {
+    let state = world
+        .development_record
+        .as_ref()
+        .expect("the question fixture ran first");
+    let expected = state
+        .question_text
+        .clone()
+        .expect("the question fixture carries no text");
+    assert!(
+        expected.chars().count() > givn::history::QUESTION_TEXT_LIMIT,
+        "the fixture's question must exceed the cap: {} chars",
+        expected.chars().count()
+    );
+    let entry = last_answered_question(world);
+    let question = entry
+        .pointer("/data/question")
+        .unwrap_or_else(|| panic!("the question entry carries no full text: {entry}"));
+    let text = question["text"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the question text is not a string: {entry}"));
+    assert!(
+        text.chars().count() <= givn::history::QUESTION_TEXT_LIMIT,
+        "the stored question text exceeds the cap ({} chars): {entry}",
+        text.chars().count()
+    );
+    let capped: String = expected
+        .chars()
+        .take(givn::history::QUESTION_TEXT_LIMIT)
+        .collect();
+    assert_eq!(
+        text, capped,
+        "the stored question text is not the reported text up to the cap: {entry}"
+    );
+    world
+        .development_record
+        .get_or_insert_with(DevelopmentRecordState::default)
+        .last_entry = Some(entry);
+}
+
+#[then("the entry marks the text truncated with its original size")]
+fn entry_marks_the_question_truncated(world: &mut GivnWorld) {
+    let state = world
+        .development_record
+        .as_ref()
+        .expect("the question fixture ran first");
+    let expected = state
+        .question_text
+        .clone()
+        .expect("the question fixture carries no text");
+    let entry = state
+        .last_entry
+        .clone()
+        .expect("no question entry was identified by the previous step");
+    let question = &entry["data"]["question"];
+    assert_eq!(
+        question["truncated"],
+        json!(true),
+        "the entry does not mark the text truncated: {entry}"
+    );
+    assert_eq!(
+        question["bytes"],
+        json!(expected.len()),
+        "the entry does not keep the original byte size: {entry}"
+    );
+}
+
+#[then("the entry's label stays within the label bound")]
+fn entry_label_stays_within_the_label_bound(world: &mut GivnWorld) {
+    let state = world
+        .development_record
+        .as_ref()
+        .expect("the question fixture ran first");
+    let title = state
+        .question_title
+        .clone()
+        .expect("the question fixture carries no title");
+    let entry = state
+        .last_entry
+        .clone()
+        .expect("no question entry was identified by the previous step");
+    let label = entry["label"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the question entry carries no label: {entry}"));
+    assert!(
+        label.chars().count() <= givn::history::LABEL_LIMIT,
+        "the label is not bounded to {} characters ({}): {entry}",
+        givn::history::LABEL_LIMIT,
+        label.chars().count()
+    );
+    assert!(
+        label.ends_with('…'),
+        "the label does not mark its truncation: {entry}"
+    );
+    let kept = label.trim_end_matches('…');
+    assert!(
+        title.starts_with(kept),
+        "the label is not the wait title's bounded first line: {entry}"
+    );
+    let metadata = entry["data"]["title"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the question entry carries no bounded title: {entry}"));
+    assert!(
+        metadata.chars().count() <= givn::history::TEXT_METADATA_LIMIT,
+        "the title metadata exceeds its documented bound: {entry}"
+    );
+}
+
+#[when("the Maki session transcript holds no matching question")]
+fn maki_transcript_holds_no_matching_question(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let title = "Waiting for the operator";
+    let transcript = support::maki_question_transcript(None, &[]);
+    let out = support::drive_maki_question_wait(env, title, &transcript);
+    world.last_output = Some(out);
+    world
+        .development_record
+        .get_or_insert_with(DevelopmentRecordState::default)
+        .residual_title = Some(title.to_string());
+}
+
+#[then("the record keeps the bounded title label and no full question text")]
+fn record_keeps_the_title_label_without_question_text(world: &mut GivnWorld) {
+    let state = world
+        .development_record
+        .as_ref()
+        .expect("the residual fixture ran first");
+    let title = state
+        .residual_title
+        .clone()
+        .expect("the residual fixture carries no title");
+    let entry = last_answered_question(world);
+    assert_eq!(
+        entry["label"],
+        json!(title),
+        "the residual wait does not keep its bounded title label: {entry}"
+    );
+    assert!(
+        entry["data"].get("question").is_none(),
+        "the residual wait invented a full question text: {entry}"
+    );
+    assert_eq!(
+        entry["data"]["title"],
+        json!(title),
+        "the residual wait does not keep its bounded title metadata: {entry}"
+    );
+    assert!(
+        entry["duration_ms"].as_u64().is_some(),
+        "the residual wait lost its measured duration: {entry}"
     );
 }

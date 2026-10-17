@@ -119,7 +119,7 @@ Feature: Development Record
     Then the turn entry names its model, its cost, its context size, and its stop reason
     And the failed tool entry keeps its error text within the documented bound, its tool call id, and its output size
 
-  @givn.added @wip
+  @givn.added
   Scenario: Question text is captured in full
     Given a change "demo" whose Maki reporter reads a question from its session transcript
     When the reported question is longer than the entry label bound
