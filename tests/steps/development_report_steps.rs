@@ -1795,7 +1795,9 @@ fn report_shows_the_empty_state_for(world: &mut GivnWorld, id: String) {
 fn report_draws_no_workflow_phase_for_it(world: &mut GivnWorld) {
     let document = report_text(world);
     // The empty state is the whole report root: no phase card, no axis, no
-    // lane, and no KPI strip is drawn for a scope that recorded nothing.
+    // lane, and no KPI strip is drawn for a scope that recorded nothing. The
+    // rendered view is read, never the asset's own inline CSS and script.
+    let view = view_region(&document);
     for marker in [
         "<svg",
         "class=\"timeline-section\"",
@@ -1810,8 +1812,8 @@ fn report_draws_no_workflow_phase_for_it(world: &mut GivnWorld) {
         "data-tile=",
     ] {
         assert!(
-            !document.contains(marker),
-            "the empty report draws {marker}: {document}"
+            !view.contains(marker),
+            "the empty report draws {marker}: {view}"
         );
     }
     // The empty state names no workflow phase: no phase line and no phase name
@@ -1901,6 +1903,23 @@ fn change_artifacts_make_its_derived_state(world: &mut GivnWorld, stage: String,
         json!(next),
         "the fixture's artifacts do not derive the claimed next artifact: {status:#?}"
     );
+}
+
+/// The report's text-view region: the main landmark the generator fills with
+/// the model rendered as the file's own text. The asset's inline CSS and script
+/// legitimately mention the same marker names they read, so an absence
+/// assertion reads this region rather than the whole self-contained file.
+fn view_region(document: &str) -> String {
+    let marker = "<main id=\"report-main\">";
+    let start = document
+        .find(marker)
+        .unwrap_or_else(|| panic!("the report has no main landmark: {document}"))
+        + marker.len();
+    let region = &document[start..];
+    let end = region
+        .find("</main>")
+        .expect("the report's main landmark is never closed");
+    region[..end].to_string()
 }
 
 /// The written report's scope line: the element the text view prints its scope
@@ -2104,7 +2123,8 @@ fn report_names_no_phase_the_workflow_does_not_have(world: &mut GivnWorld) {
         stages, WORKFLOW_PHASES,
         "the report's workflow is not the nine phases in workflow order: {model:#?}"
     );
-    let printed: Vec<&str> = document
+    let view = view_region(&document);
+    let printed: Vec<&str> = view
         .split("data-phase=\"")
         .skip(1)
         .filter_map(|rest| rest.split('"').next())
@@ -2642,10 +2662,11 @@ fn report_names_no_live_change_state(world: &mut GivnWorld) {
         document.contains("no live change state"),
         "the header does not state the absent live state: {document}"
     );
+    let state = current_state_line(&document);
     for marker in ["data-stage-label=", "state-phase", "state-next="] {
         assert!(
-            !document.contains(marker),
-            "the archived header names the live state's {marker}: {document}"
+            !state.contains(marker),
+            "the archived header names the live state's {marker}: {state}"
         );
     }
 }
@@ -2691,9 +2712,10 @@ fn report_names_no_next_required_artifact(world: &mut GivnWorld) {
         model["current_state"].is_null(),
         "the archived report carries a next required artifact: {model:#?}"
     );
+    let state = current_state_line(&document);
     assert!(
-        !document.contains("state-next=") && !document.contains("next artifact"),
-        "the archived header names a next required artifact: {document}"
+        !state.contains("state-next=") && !state.contains("next artifact"),
+        "the archived header names a next required artifact: {state}"
     );
 }
 

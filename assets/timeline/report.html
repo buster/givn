@@ -849,14 +849,26 @@
     fact("Kind", entry.kind);
     fact("Outcome", entry.outcome);
     if (entry.session) fact("Session", entry.session);
+    if (data.title !== undefined) fact("Session title", data.title);
     if (data.tool_call_id !== undefined) fact("Tool call id", data.tool_call_id);
     if (data.status !== undefined) fact("Status", data.status);
     if (data.stop_reason !== undefined) fact("Stop reason", data.stop_reason);
     if (data.model !== undefined) fact("Model", data.model);
     if (data.cost !== undefined) fact("Cost", typeof data.cost === "object" ? JSON.stringify(data.cost) : data.cost);
+    if (data.list_cost !== undefined) fact("List cost", data.list_cost);
+    if (data.context_size !== undefined) fact("Context size", data.context_size);
+    if (data.context_window !== undefined) fact("Context window", data.context_window);
+    if (data.output_bytes !== undefined) fact("Output bytes", data.output_bytes);
+    if (data.error !== undefined) fact("Error", data.error);
     if (data.parent !== undefined) fact("Parent", data.parent);
     if (data.agent !== undefined) fact("Agent", data.agent);
     if (data.subagent !== undefined) fact("Subagent", data.subagent);
+    if (data.attempt !== undefined) {
+      fact(
+        "Retry",
+        data.max_attempts === undefined ? String(data.attempt) : data.attempt + " of " + data.max_attempts,
+      );
+    }
     if (data.permission_mode !== undefined) fact("Permission mode", data.permission_mode);
     row.appendChild(facts);
 
