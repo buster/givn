@@ -170,7 +170,7 @@ Feature: Development Report
     And the group names the ideation phases and the group's own duration
     And the change workflow still names its own phases
 
-  @givn.added @wip
+  @givn.added
   Scenario: A linked ideation with no recorded activity is stated
     Given a change "demo" whose proposal links the ideation topic "ideas"
     And the topic has no recorded activity
