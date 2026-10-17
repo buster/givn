@@ -225,6 +225,6 @@ addons:
   grill_me: true
   grill_with_docs: true
 skills:
-  targets: [opencode, agents, claude, omp]
+  targets: [opencode, agents, claude, omp, maki]
 rules: versioned
 # ---
