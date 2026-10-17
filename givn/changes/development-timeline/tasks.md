@@ -14110,11 +14110,57 @@ Repository checks are secondary only.
 
         git grep -n "@wip" -- givn/changes/development-timeline/specs → no output
         ```
-  - [ ] **COMMIT** — `<hash>` — `docs(development-timeline): hybrid workflow
+  - [x] **COMMIT** — `1aa0d6df` — `docs(development-timeline): hybrid workflow
         report evidence and scope runs` with the scenario titles and the counts
         in the body. Record the revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit 1aa0d6df
+        docs(development-timeline): hybrid workflow report evidence and scope runs
+
+        The delta's full scope runs are green: verify.command (54 non-e2e passed, 9
+        skipped) and verify.e2e_command (9 e2e passed, 54 skipped) on the 63-entry
+        inventory, so the e2e count is strictly less than the full count. All sixteen
+        scenarios this part schedules pass in their own tier:
+
+        - An artifact appearance is recorded as one phase transition
+        - The report shows the empty state for a scope with no recorded activity
+        - The report derives the current workflow state
+        - The report lays parallel sessions side by side
+        - The report marks a skipped workflow phase
+        - The report of an archived change marks every phase done
+        - The report states a record with no stage transition
+        - The report groups repeated steps
+        - A dense record is reported as aggregates instead of raw ticks
+        - The written report's text view presents the workflow
+        - Consumer generates the development report for a change
+        - Consumer opens the generated development report in a browser
+        - Consumer expands a workflow phase and sees its lanes
+        - Consumer selects a timeline element and reads its details
+        - Consumer zooms the timeline to a shorter time range
+        - Consumer opens the report of a scope with no recorded activity
+
+        The nine change-level @e2e scenarios each carry a non-empty pair at the
+        contract viewports; the empty scope additionally carries its declared-state
+        pair. The five existing report slugs are unchanged and
+        consumer-expands-a-workflow-phase-and-sees-its-lanes is the only new directory.
+        givn lint --change development-timeline exits 0 with no [WIP] finding. The run
+        refreshes each scenario's own evidence pair in place, so the committed pairs
+        are the final hybrid view.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../consumer-generates-the-development-report-for-a-change/desktop.png        | Bin 187683 -> 117612 bytes
+         .../consumer-generates-the-development-report-for-a-change/mobile.png         | Bin 54146 -> 58269 bytes
+         .../consumer-installs-the-agent-reporter-and-its-reported-activity-lands-in-the-record/desktop.png | Bin 74690 -> 112883 bytes
+         .../consumer-installs-the-agent-reporter-and-its-reported-activity-lands-in-the-record/mobile.png  | Bin 47553 -> 53160 bytes
+         .../consumer-reads-the-development-record-as-machine-readable-output/desktop.png | Bin 55995 -> 115704 bytes
+         .../consumer-reads-the-development-record-as-machine-readable-output/mobile.png  | Bin 41266 -> 58075 bytes
+         .../consumer-runs-a-lifecycle-step-and-reads-its-recorded-actions/desktop.png    | Bin 55995 -> 115590 bytes
+         .../consumer-runs-a-lifecycle-step-and-reads-its-recorded-actions/mobile.png     | Bin 41266 -> 57944 bytes
+         .../consumer-selects-a-timeline-element-and-reads-its-details/desktop.png        | Bin 95895 -> 96291 bytes
+         .../consumer-selects-a-timeline-element-and-reads-its-details/mobile.png         | Bin 49534 -> 50080 bytes
+         givn/changes/development-timeline/tasks.md                                      |  95 +++++++++++++++++++--
+         11 files changed, 88 insertions(+), 7 deletions(-)
         ```
 
 **Part-2 done when:** all 16 pending scenarios have completed RED/GREEN/REFACTOR
