@@ -5,17 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Development report</title>
 <style>
-  /* One self-contained file: inline CSS, inline script, inline SVG, and the
-     tokens of docs/design/design-system.md carried inline. No CDN, no
-     third-party JavaScript, no build step, and no network access of any kind.
-     The generator fills two markers below, each once, and nothing else:
-     the view marker in the body — the model rendered as the page's own text,
-     so the written file is readable without script — and the single JSON data
-     slot inside the report-model element. The inline script then builds the
-     interactive axis on top of that text view, from the same model. */
+  /* One self-contained file: inline CSS, inline script, and the tokens of
+     docs/design/design-system.md carried inline. No CDN, no third-party
+     JavaScript, no build step, and no network access of any kind. The generator
+     fills two markers below, each once, and nothing else: the view marker in
+     the body — the model rendered as the page's own text, so the written file
+     is readable without script — and the single JSON data slot inside the
+     report-model element. The inline script builds the hybrid workflow view on
+     top of that text view, from the same model, and never reads the wall
+     clock. */
   :root {
     --color-surface: #ffffff;
     --color-surface-raised: #f5f6f8;
+    --color-surface-warm: #faf8f4;
     --color-border: #d5d9e0;
     --color-text: #14171c;
     --color-text-muted: #5a6270;
@@ -23,10 +25,14 @@
     --color-ok: #1f7a4d;
     --color-warn: #9a6100;
     --color-error: #b3261e;
-    --color-band-command: #6b7bd6;
-    --color-band-step: #2f9e8f;
-    --color-band-agent: #b06ad0;
-    --color-band-wait: #d08a2f;
+    --color-done: #1f7a4d;
+    --color-active: #9a6100;
+    --color-queued: #8b93a1;
+    --color-skipped: #5a6270;
+    --color-lane-1: #2f6fd0;
+    --color-lane-2: #b06ad0;
+    --color-lane-3: #2f9e8f;
+    --color-lane-4: #d08a2f;
     --space-1: 4px;
     --space-2: 8px;
     --space-3: 12px;
@@ -40,11 +46,13 @@
     --font-28: 28px;
     --radius-span: 4px;
     --radius-panel: 8px;
+    --radius-card: 12px;
     --elevation-panel: 0 1px 2px rgba(20, 23, 28, .08), 0 8px 24px rgba(20, 23, 28, .12);
     --motion: 120ms ease-out;
     color-scheme: light;
   }
   * { box-sizing: border-box; }
+  html, body { max-width: 100%; }
   body {
     margin: 0;
     background: var(--color-surface);
@@ -52,15 +60,20 @@
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     font-size: var(--font-16);
     line-height: 1.45;
+    overflow-x: clip;
   }
+  [hidden] { display: none !important; }
   header { padding: var(--space-4) var(--space-4) 0; }
-  main { padding: var(--space-3) var(--space-4) var(--space-4); }
+  main { padding: var(--space-3) var(--space-4) var(--space-6); min-width: 0; }
   h1 { font-size: var(--font-28); margin: 0 0 var(--space-2); }
   h2 { font-size: var(--font-20); margin: var(--space-5) 0 var(--space-2); }
+  h3 { font-size: var(--font-16); margin: 0 0 var(--space-2); }
+  h4 { font-size: var(--font-14); margin: 0 0 var(--space-1); }
+  h5 { color: var(--color-text-muted); font-size: var(--font-12); margin: 0 0 var(--space-1); }
   .report-scope { color: var(--color-text-muted); margin: 0 0 var(--space-4); }
+  .report-current-state { margin: 0 0 var(--space-4); }
   .summary { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: flex-start; }
   .summary > h2, .summary > ol, .summary > p { flex-basis: 100%; margin: 0; }
-  .summary > * + * { margin-top: 0; }
   .tile {
     background: var(--color-surface-raised);
     border: 1px solid var(--color-border);
@@ -89,7 +102,7 @@
   .empty-state > h2 { margin: 0; }
   .empty-state > p { color: var(--color-text-muted); margin: 0; }
   .empty-state-back > a { color: var(--color-accent); }
-  .longest-steps { list-style: none; padding: 0; }
+  .longest-steps { list-style: none; padding: 0; margin: 0; }
   .longest-steps li {
     border-bottom: 1px solid var(--color-border);
     display: flex;
@@ -97,7 +110,7 @@
     justify-content: space-between;
     padding: var(--space-2) 0;
   }
-  .step-label { color: var(--color-text); }
+  .step-label { color: var(--color-text); overflow-wrap: anywhere; }
   .step-kind {
     background: var(--color-surface-raised);
     border: 1px solid var(--color-border);
@@ -106,118 +119,295 @@
     font-size: var(--font-12);
     padding: 0 var(--space-1);
   }
-  .step-duration { color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
-  .details {
+  .step-duration { color: var(--color-text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  /* ── The hybrid view ─────────────────────────────────────────────────── */
+  .hybrid-header {
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-3);
+  }
+  .hybrid-scope { color: var(--color-text-muted); font-size: var(--font-14); margin: 0 0 var(--space-1); }
+  .hybrid-current {
+    background: #eef4fd;
+    border: 1px solid #c9dcf7;
+    border-radius: var(--radius-panel);
+    color: #163a6b;
+    margin: 0 0 var(--space-2);
+    padding: var(--space-2) var(--space-3);
+  }
+  .hybrid-current.is-live { background: #fff8e8; border-color: #f0d9a6; color: #6b4a06; }
+  .hybrid-progress { color: var(--color-text-muted); font-size: var(--font-14); margin: 0; }
+  .hybrid-progress strong { color: var(--color-text); }
+  .kpi-strip {
+    display: grid;
+    gap: var(--space-2);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    margin-bottom: var(--space-5);
+  }
+  .kpi {
     background: var(--color-surface-raised);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-panel);
-    box-shadow: var(--elevation-panel);
-    margin: var(--space-4) var(--space-4) var(--space-5);
-    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding: var(--space-2) var(--space-3);
   }
-  .details[hidden] { display: none; }
-  .details-close {
+  .kpi-label { color: var(--color-text-muted); font-size: var(--font-12); }
+  .kpi-value { font-size: var(--font-20); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .kpi-note { color: var(--color-text-muted); font-size: var(--font-12); }
+  .section-heading { color: var(--color-text-muted); font-size: var(--font-12); letter-spacing: .1em; margin: var(--space-5) 0 var(--space-2); text-transform: uppercase; }
+  .phase-stack { display: flex; flex-direction: column; gap: var(--space-2); position: relative; }
+  .phase-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    box-shadow: 0 1px 2px rgba(20, 23, 28, .04);
+    min-width: 0;
+    overflow: hidden;
+  }
+  .phase-card[data-status="active"] { border-color: #e8c777; box-shadow: 0 0 0 2px #fdf1d3, 0 1px 2px rgba(20,23,28,.04); }
+  .phase-expander {
+    align-items: center;
+    background: none;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    display: grid;
+    font: inherit;
+    gap: var(--space-2) var(--space-3);
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: var(--space-3);
+    text-align: left;
+    width: 100%;
+  }
+  .phase-expander:hover { background: var(--color-surface-warm); }
+  .phase-expander:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -2px; }
+  .phase-knob {
+    align-items: center;
+    border: 2px solid var(--color-queued);
+    border-radius: 50%;
+    display: inline-flex;
+    font-size: var(--font-12);
+    height: 22px;
+    justify-content: center;
+    width: 22px;
+  }
+  .phase-card[data-status="done"] .phase-knob { background: var(--color-done); border-color: var(--color-done); color: #fff; }
+  .phase-card[data-status="active"] .phase-knob { background: var(--color-active); border-color: var(--color-active); color: #fff; }
+  .phase-card[data-status="skipped"] .phase-knob { border-style: dashed; color: var(--color-skipped); }
+  .phase-main { min-width: 0; }
+  .phase-title { align-items: baseline; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .phase-name { font-size: var(--font-16); font-weight: 650; }
+  .phase-duration { color: var(--color-text-muted); font-size: var(--font-12); font-variant-numeric: tabular-nums; }
+  .phase-status {
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    color: var(--color-text-muted);
+    font-size: var(--font-12);
+    margin-left: auto;
+    padding: 0 var(--space-2);
+    white-space: nowrap;
+  }
+  .phase-card[data-status="done"] .phase-status { background: #ecf8f1; border-color: #b9e2cb; color: var(--color-done); }
+  .phase-card[data-status="active"] .phase-status { background: #fff4d9; border-color: #ecd28e; color: #7a4e00; }
+  .phase-card[data-status="skipped"] .phase-status { border-style: dashed; }
+  .phase-stats { color: var(--color-text-muted); display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); font-size: var(--font-12); margin-top: 2px; }
+  .phase-stats b { color: var(--color-text); font-weight: 600; }
+  .phase-lane-names { color: var(--color-text-muted); font-size: var(--font-12); margin-top: 2px; overflow-wrap: anywhere; }
+  .phase-chevron { color: var(--color-text-muted); transition: transform var(--motion); }
+  .phase-card.is-open .phase-chevron { transform: rotate(90deg); }
+  .sparkline { align-items: flex-end; display: flex; gap: 1px; height: 22px; width: 132px; }
+  .spark-bar { background: #d6dae1; border-radius: 1px; flex: 1 1 0; min-height: 2px; }
+  .spark-bar.is-hot { background: #8b93a1; }
+  .phase-region { border-top: 1px solid var(--color-border); padding: var(--space-3); }
+  .phase-toolbar {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+  }
+  .range-label { color: var(--color-text-muted); font-size: var(--font-12); font-variant-numeric: tabular-nums; margin: 0; }
+  .zoom-group { display: flex; gap: var(--space-1); }
+  .zoom-control {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-span);
     color: var(--color-text);
+    cursor: pointer;
     font: inherit;
-    font-size: var(--font-14);
-    padding: var(--space-1) var(--space-3);
+    font-size: var(--font-12);
+    padding: 2px var(--space-2);
   }
-  .details-facts { display: grid; grid-template-columns: minmax(6rem, auto) 1fr; gap: var(--space-1) var(--space-3); margin: var(--space-3) 0 0; }
-  .details-facts dt { color: var(--color-text-muted); font-size: var(--font-12); }
-  .details-facts dd { margin: 0; font-variant-numeric: tabular-nums; }
-  .details-content { border-top: 1px solid var(--color-border); margin-top: var(--space-3); padding-top: var(--space-3); }
-  .details-content[hidden] { display: none; }
-  .details-content > h3 { font-size: var(--font-16); margin: 0 0 var(--space-2); }
-  .content-field { margin: 0 0 var(--space-3); }
-  .content-field > h4 { color: var(--color-text-muted); font-size: var(--font-12); margin: 0 0 var(--space-1); }
-  .content-text {
+  .zoom-control[aria-pressed="true"] { background: var(--color-text); border-color: var(--color-text); color: #fff; }
+  .zoom-control:focus-visible, .lane-header:focus-visible, .tick:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+  .lane-scroll {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-panel);
+    max-height: 440px;
+    max-width: 100%;
+    overflow: auto;
+    position: relative;
+  }
+  .timeline-grid { display: flex; min-width: 100%; }
+  .phase-axis {
+    background: var(--color-surface-warm);
+    border-right: 1px solid var(--color-border);
+    flex: 0 0 58px;
+    position: relative;
+  }
+  .axis-tick {
+    border-top: 1px solid #ece7dc;
+    color: var(--color-text-muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10px;
+    left: 0;
+    padding: 1px 3px;
+    position: absolute;
+    right: 0;
+  }
+  .lanes { display: flex; min-width: 0; }
+  .lane { border-right: 1px solid var(--color-border); flex: 1 1 0; min-width: 150px; }
+  .lane:last-child { border-right: 0; }
+  .lane.is-selected { background: #f1f8f4; }
+  .lane-header {
     background: var(--color-surface);
+    border: 0;
+    border-bottom: 1px solid var(--color-border);
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    font: inherit;
+    gap: 1px;
+    min-height: 46px;
+    padding: var(--space-1) var(--space-2);
+    text-align: left;
+    width: 100%;
+  }
+  .lane-header:hover { background: var(--color-surface-warm); }
+  .lane.is-selected .lane-header { box-shadow: inset 0 -2px 0 var(--color-ok); }
+  .lane-name { align-items: center; display: flex; font-size: var(--font-12); font-weight: 620; gap: var(--space-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lane-swatch { border-radius: 50%; flex: 0 0 7px; height: 7px; width: 7px; }
+  .lane-meta { color: var(--color-text-muted); font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lane-track { position: relative; }
+  .tick {
+    border: 0;
+    border-radius: 3px;
+    cursor: pointer;
+    font: inherit;
+    left: 50%;
+    min-width: 10px;
+    padding: 0;
+    position: absolute;
+    transform: translateX(-50%);
+  }
+  .tick[data-kind="tool"] { background: #63707f; }
+  .tick[data-kind="turn"] { background: var(--color-lane-1); }
+  .tick[data-kind="revision"] { background: var(--color-lane-2); }
+  .tick[data-kind="question"] { background: var(--color-lane-4); }
+  .tick[data-kind="subagent"] { background: var(--color-lane-3); }
+  .tick[data-outcome="failed"] { background: var(--color-error); }
+  .tick.is-repeated { outline: 2px solid #c58a12; }
+  .tick.aggregate { background: #a7aeb9; border-radius: 4px; }
+  .tick.is-focused { box-shadow: 0 0 0 2px var(--color-accent); }
+  .lane-log {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-panel);
+    margin-top: var(--space-3);
+    min-width: 0;
+    padding: var(--space-3);
+  }
+  .lane-log-title { margin: 0 0 var(--space-1); }
+  .lane-facts {
+    display: grid;
+    gap: var(--space-1) var(--space-3);
+    grid-template-columns: auto minmax(0, 1fr);
+    margin: 0 0 var(--space-3);
+  }
+  .lane-facts dt { color: var(--color-text-muted); font-size: var(--font-12); }
+  .lane-facts dd { font-variant-numeric: tabular-nums; margin: 0; overflow-wrap: anywhere; }
+  .log-list { list-style: none; margin: 0; max-height: 320px; overflow: auto; padding: 0; }
+  .log-entry {
+    border-top: 1px solid var(--color-border);
+    display: grid;
+    gap: var(--space-1) var(--space-2);
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    padding: var(--space-2) 0;
+  }
+  .log-entry.is-focused { background: #eef4fd; }
+  .log-time { color: var(--color-text-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+  .entry-mark { border-radius: 3px; font-size: 10px; padding: 0 var(--space-1); text-transform: uppercase; }
+  .entry-mark.failed { background: #fde8e6; color: var(--color-error); }
+  .entry-mark.repeated { background: #fdf1d3; color: #7a4e00; }
+  .log-label { overflow-wrap: anywhere; }
+  .log-duration { color: var(--color-text-muted); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .log-facts { display: grid; gap: 0 var(--space-2); grid-column: 3 / -1; grid-template-columns: auto minmax(0, 1fr); margin: var(--space-1) 0 0; }
+  .log-facts dt { color: var(--color-text-muted); font-size: 11px; }
+  .log-facts dd { font-size: 12px; margin: 0; overflow-wrap: anywhere; }
+  .attribution-limit { color: var(--color-warn); font-size: var(--font-12); grid-column: 3 / -1; margin: var(--space-1) 0 0; }
+  .content-region { border-top: 1px dashed var(--color-border); grid-column: 3 / -1; margin-top: var(--space-1); padding-top: var(--space-1); }
+  .content-field { margin: 0 0 var(--space-2); }
+  .content-text {
+    background: var(--color-surface-warm);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-span);
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: var(--font-12);
+    font-size: 11px;
     margin: 0;
-    max-height: 14rem;
+    max-height: 12rem;
     overflow: auto;
     overflow-wrap: anywhere;
     padding: var(--space-2);
     white-space: pre-wrap;
   }
-  .content-meta, .content-omitted { color: var(--color-text-muted); font-size: var(--font-12); margin: var(--space-1) 0 0; }
-  .timeline-section { margin-top: var(--space-5); }
-  .controls { align-items: center; display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-2) 0 var(--space-3); }
-  .control {
-    background: var(--color-surface-raised);
+  .content-meta, .content-omitted { color: var(--color-text-muted); font-size: 11px; margin: var(--space-1) 0 0; }
+  .statistics { margin-top: var(--space-5); min-width: 0; }
+  .stat-grid { display: grid; gap: var(--space-3); grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .stat-card {
+    background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-span);
-    color: var(--color-text);
-    font: inherit;
-    font-size: var(--font-14);
-    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-panel);
+    min-width: 0;
+    padding: var(--space-3);
   }
-  .control:disabled { color: var(--color-text-muted); }
-  .control:focus-visible, .details-close:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
-  .range { color: var(--color-text-muted); font-size: var(--font-12); font-variant-numeric: tabular-nums; margin: 0; }
-  .timeline { display: block; width: 100%; height: auto; transform-origin: left center; }
-  /* The report's zoom transition: the token's duration, applied to the axis
-     whenever the visible range changes. The reduce block below removes it
-     entirely, which is what makes a zoom apply instantly. */
-  .timeline.zooming { animation: report-zoom var(--motion); }
-  @keyframes report-zoom {
-    from { transform: scaleX(.985); }
-    to { transform: scaleX(1); }
-  }
-  .band-row { fill: var(--color-surface-raised); stroke: var(--color-border); }
-  .tick { fill: var(--color-text-muted); font-size: var(--font-12); font-variant-numeric: tabular-nums; }
-  .band-label { fill: var(--color-text-muted); font-size: var(--font-12); }
-  .band-phases { fill: var(--color-text-muted); font-size: var(--font-12); }
-  .band[data-band-kind="change"] .span-bar { fill: var(--color-band-command); }
-  .band[data-band-kind="ideation"] .span-bar { fill: var(--color-band-agent); }
-  .band[data-band-kind="project"] .span-bar { fill: var(--color-band-step); }
-  .span { cursor: pointer; }
-  .span-bar { fill: var(--color-band-step); rx: var(--radius-span); stroke: transparent; stroke-width: 0; transition: stroke var(--motion); }
-  .span:focus-visible .span-bar, .span.selected .span-bar { stroke: var(--color-accent); stroke-width: 2; }
-  .span-label { fill: var(--color-text); font-size: var(--font-12); pointer-events: none; }
-  .aggregate-bar { fill: var(--color-band-step); opacity: .8; rx: var(--radius-span); }
-  .band[data-band-kind="change"] .aggregate-bar { fill: var(--color-band-command); }
-  .band[data-band-kind="ideation"] .aggregate-bar { fill: var(--color-band-agent); }
-  .band[data-band-kind="project"] .aggregate-bar { fill: var(--color-band-step); }
-  .aggregate-label { fill: var(--color-text-muted); font-size: var(--font-12); }
-  /* Two columns from 720px: the summary beside the timeline. The desktop
-     viewport (1200px and above) puts the open details panel on the right. */
+  .stat-card.wide { grid-column: 1 / -1; }
+  .stat-line { border-bottom: 1px dashed var(--color-border); display: grid; gap: var(--space-2); grid-template-columns: minmax(0, 1fr) auto; font-size: var(--font-12); padding: var(--space-1) 0; }
+  .stat-line:last-child { border-bottom: 0; }
+  .stat-line .value { color: var(--color-text-muted); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  .stat-empty { color: var(--color-text-muted); font-size: var(--font-12); margin: 0; }
+  .table-scroll { max-width: 100%; overflow-x: auto; }
+  table { border-collapse: collapse; font-size: var(--font-12); width: 100%; }
+  th, td { border-bottom: 1px solid var(--color-border); padding: var(--space-1) var(--space-2); text-align: left; white-space: nowrap; }
+  th { color: var(--color-text-muted); font-size: 10.5px; text-transform: uppercase; }
+  td.number { font-variant-numeric: tabular-nums; text-align: right; }
+  tr.is-active td { background: #fff8e8; }
+  .token-total { font-size: var(--font-20); font-variant-numeric: tabular-nums; margin-bottom: var(--space-2); }
+  /* One column below 720 px: the KPI strip is two columns, the phase cards are
+     full width, the expanded phase's lanes scroll horizontally inside the card,
+     and the lane log sits below the axis. */
   @media (max-width: 719px) {
-    /* Mobile (the 360x780 contract viewport): one column, with the band rows on
-       a horizontally scrollable time axis instead of a squeezed one. */
-    .timeline-section { overflow-x: auto; }
-    .timeline { min-width: 680px; }
-  }
-  @media (min-width: 720px) {
-    main {
-      column-gap: var(--space-5);
-      display: grid;
-      grid-template-columns: minmax(14rem, 20rem) minmax(0, 1fr);
-      align-items: start;
-    }
-    main > .report-scope, main > .empty-state { grid-column: 1 / -1; }
-    main > .summary { grid-column: 1; }
-    main > .timeline-section { grid-column: 2; margin-top: 0; }
-  }
-  @media (min-width: 1200px) {
-    body:has(#details-panel:not([hidden])) {
-      column-gap: var(--space-5);
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 22rem;
-      grid-template-areas: "header header" "main aside";
-    }
-    body:has(#details-panel:not([hidden])) > header { grid-area: header; }
-    body:has(#details-panel:not([hidden])) > main { grid-area: main; }
-    body:has(#details-panel:not([hidden])) > aside { grid-area: aside; margin-left: 0; }
+    header { padding: var(--space-3) var(--space-3) 0; }
+    main { padding: var(--space-2) var(--space-3) var(--space-5); }
+    h1 { font-size: var(--font-20); }
+    .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stat-grid { grid-template-columns: minmax(0, 1fr); }
+    .stat-card.wide { grid-column: auto; }
+    .phase-expander { padding: var(--space-2); }
+    .sparkline { width: 100%; }
+    .phase-title { gap: var(--space-1); }
+    .phase-status { margin-left: 0; }
+    .lane-scroll { overflow-x: auto; }
+    .lane { flex: 0 0 180px; }
+    .log-entry { grid-template-columns: auto auto minmax(0, 1fr); }
+    .log-duration { grid-column: 3; }
+    .log-facts, .content-region, .attribution-limit { grid-column: 1 / -1; }
   }
   @media (prefers-reduced-motion: reduce) {
-    * { transition: none !important; animation: none !important; }
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
   }
 </style>
 </head>
@@ -225,785 +415,779 @@
 <header>
   <h1 id="report-title">Development report</h1>
 </header>
-<main>
+<main id="report-main">
 <!--__GIVN_REPORT_VIEW__-->
 </main>
-<aside class="details" id="details-panel" role="region" aria-label="Details" hidden>
-  <h2 class="details-title" id="details-title">Step details</h2>
-  <button type="button" class="details-close" id="details-close">Close</button>
-  <dl class="details-facts" id="details-facts"></dl>
-  <section class="details-content" id="details-content" aria-label="Captured content" hidden></section>
-</aside>
 <script id="report-model" type="application/json">/*__GIVN_REPORT_DATA__*/</script>
 <script>
-/* The report's interactive layer: the timeline axis the browser really drives,
-   built from the model the generator embedded above. The axis is derived from
-   the record's own timestamps and never from the wall clock, so the same record
-   always renders identically; nothing here fetches, loads a remote resource, or
-   writes to the record. The empty state carries no timeline at all, so this
-   layer does nothing there: no axis, no controls. */
+/* The report's interactive layer: the hybrid workflow view the browser really
+   drives, built from the model the generator embedded above. Everything is
+   derived from the record's own timestamps and the change state embedded at
+   generation — never from the wall clock, never from the network — so the same
+   record always renders identically. The empty state carries no workflow at
+   all, so this layer does nothing there. */
 (() => {
   "use strict";
 
-  const SVG = "http://www.w3.org/2000/svg";
+  const main = document.getElementById("report-main");
   const modelElement = document.getElementById("report-model");
-  const timeline = document.querySelector("svg.timeline");
-  const model = modelElement ? JSON.parse(modelElement.textContent) : null;
-  /* One condition for "this report draws a timeline": the generator renders the
-     timeline section only for a record with activity, and the empty state — the
-     same branch Task 32's scenario asserts at the report level — therefore
-     carries no axis, no controls, and no range label. The browser layer is inert
-     there instead of drawing over nothing. */
-  const drawsTimeline = Boolean(timeline && model && !model.empty);
-  if (!drawsTimeline) return;
-
-  /* The axis geometry, in the SVG's own units — the same contract the
-     generator's text view draws with. */
-  const GEOMETRY = {
-    width: 1000,
-    gutter: 12,
-    labelWidth: 168,
-    margin: 8,
-    drawingWidth: 1000 - 168 - 8,
-    axisHeight: 28,
-    bandHeight: 68,
-    phaseBaseline: 13,
-    minSpan: 2,
-    bucketPx: 16,
-    maxTicks: 6,
-    /* The width one 12-unit character of a span label occupies: the estimate
-       that decides whether a label is placeable beside its own bar. */
-    charWidth: 6.2,
-  };
-  /* The round times the axis may mark between two ticks, smallest first. */
-  const TICK_STEPS_MS = [
-    1_000, 5_000, 15_000, 30_000, 60_000, 300_000, 900_000, 1_800_000,
-    3_600_000, 10_800_000, 21_600_000, 43_200_000,
-  ];
-  /* The zoom's own limits: never narrower than a second, never wider than the
-     record's whole range. */
-  const MIN_RANGE_MS = 1_000;
-  const ZOOM_IN_FACTOR = 0.5;
-  const ZOOM_OUT_FACTOR = 2;
+  if (!main || !modelElement) return;
+  const model = JSON.parse(modelElement.textContent);
+  /* One condition for "this report draws the hybrid workflow view": a scope
+     with recorded activity and a workflow scaffold. The empty report and the
+     project report keep the text view's own markup. */
+  if (!model || model.empty) return;
+  if (!Array.isArray(model.workflow) || model.workflow.length === 0) return;
 
   const entries = new Map(model.entries.map((entry) => [entry.id, entry]));
-  const stages = new Map(model.stages.map((assignment) => [assignment.entry, assignment.stage]));
-  const recorded = model.entries
-    .map((entry) => Date.parse(entry.at))
-    .filter((value) => Number.isFinite(value));
-  /* The record's own range: the bounds every zoom is clamped to, never the wall
-     clock. */
-  const bounds = { start: Math.min(...recorded), end: Math.max(...recorded) };
-  /* The visible window: the record's whole range until a zoom, a pan, or a fit
-     moves it through `applyRange`. */
-  let range = { start: bounds.start, end: bounds.end };
+  const entryList = model.entries;
+  const stages = model.workflow.map((phase) => phase.stage).filter(Boolean);
+  const summary = model.summary || {};
+  const omitted = new Set(model.omitted_content || []);
+  const phaseState = new Map();
+  const LANE_COLORS = ["--color-lane-1", "--color-lane-2", "--color-lane-3", "--color-lane-4"];
+  const MAX_LONGEST = 10;
+  const MAX_TICKS = 140;
+  const TRACK_HEIGHT = 380;
+  const AXIS_TICKS = 6;
 
-  /** One SVG element with its attributes — never markup text, so a recorded
-      label can never become a node. */
-  function element(name, attributes) {
-    const node = document.createElementNS(SVG, name);
-    for (const key of Object.keys(attributes || {})) {
-      const value = attributes[key];
-      if (value !== undefined && value !== null) node.setAttribute(key, String(value));
-    }
+  /* The text view is the file's own readable fallback; once the interactive
+     view is built, the fallback sections step aside so the page reads as one
+     hybrid report. They stay in the document (and in the written file). */
+  for (const node of main.querySelectorAll(
+    ".report-scope, .report-current-state, .summary, .workflow-stack, .timeline-section",
+  )) {
+    node.hidden = true;
+  }
+
+  /** One element with its class and text. */
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined && text !== null) node.textContent = String(text);
     return node;
   }
 
-  /** One SVG text element carrying its content. */
-  function text(content, attributes) {
-    const node = element("text", attributes);
-    node.textContent = content;
-    return node;
+  /** One recorded duration, rendered the same way the text view renders it. */
+  function durationText(ms) {
+    if (ms === undefined || ms === null) return "not measured";
+    if (ms < 1000) return ms + " ms";
+    if (ms < 60000) return Math.floor(ms / 1000) + " s";
+    if (ms < 3600000) return Math.floor(ms / 60000) + " m";
+    const minutes = Math.floor((ms % 3600000) / 60000);
+    return Math.floor(ms / 3600000) + " h " + String(minutes).padStart(2, "0") + " m";
   }
 
-  /** One entry's rendered end, in milliseconds, or null where the record's own
-      timestamp does not parse. */
+  /** A token count, thousands separated. */
+  function countText(count) {
+    return String(count).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
+  /** A recorded instant as the report's clock reads it. */
+  function clock(ms, seconds) {
+    if (ms === undefined || ms === null) return "not recorded";
+    const day = Math.floor(ms / 1000) % 86400;
+    const hh = String(Math.floor(day / 3600)).padStart(2, "0");
+    const mm = String(Math.floor((day % 3600) / 60)).padStart(2, "0");
+    if (!seconds) return hh + ":" + mm;
+    return hh + ":" + mm + ":" + String(day % 60).padStart(2, "0");
+  }
+
+  /** One entry's rendered end, in milliseconds, or null. */
   function endOf(entry) {
     const value = Date.parse(entry.at);
     return Number.isFinite(value) ? value : null;
   }
 
-  /** The visible window's scale: the range the reader sees mapped onto the
-      drawing width. */
-  function scale() {
-    return { start: range.start, span: Math.max(1, range.end - range.start) };
-  }
-
-  /** One recorded instant's x coordinate inside the visible range. */
-  function position(ms) {
-    const { start, span } = scale();
-    const fraction = (ms - start) / span;
-    const left = GEOMETRY.labelWidth;
-    const right = GEOMETRY.labelWidth + GEOMETRY.drawingWidth;
-    return Math.min(Math.max(left + fraction * GEOMETRY.drawingWidth, left), right);
-  }
-
-  /** The time one pixel of the drawing width spends on: the threshold below
-      which two entries cannot be told apart. */
-  function timePerPixel() {
-    return Math.max(1, Math.ceil(scale().span / GEOMETRY.drawingWidth));
-  }
-
-  /** One entry's drawn bar: a measured span starts at its recorded end minus its
-      duration, an entry the record does not time draws as the narrowest mark. */
-  function barOf(entry) {
-    const end = endOf(entry);
-    if (end === null) return { x: GEOMETRY.labelWidth, width: GEOMETRY.minSpan };
-    const start = entry.duration_ms === undefined || entry.duration_ms === null
-      ? end
-      : end - entry.duration_ms;
-    const x = position(start);
-    return { x, width: Math.max(position(end) - x, GEOMETRY.minSpan) };
-  }
-
-  /** The visible label of one entry: its bounded subject label, or its name. */
+  /** One entry's visible label. */
   function visibleName(entry) {
     return entry.label === undefined || entry.label === null ? entry.name : entry.label;
   }
 
-  /** One recorded duration as the report renders it — a duration the record
-      does not carry is stated, never rendered as a zero. */
-  function durationText(entry) {
-    const ms = entry.duration_ms;
-    if (ms === undefined || ms === null) return "not measured";
-    if (ms < 1_000) return ms + " ms";
-    if (ms < 60_000) return Math.floor(ms / 1_000) + " s";
-    if (ms < 3_600_000) return Math.floor(ms / 60_000) + " m";
-    const minutes = Math.floor((ms % 3_600_000) / 60_000);
-    return Math.floor(ms / 3_600_000) + " h " + String(minutes).padStart(2, "0") + " m";
+  /** One scope, as the header names it. */
+  function scopeLabel(scope) {
+    if (!scope) return "project report";
+    return scope.kind + " " + scope.id;
   }
 
-  /** One token count as the report renders it, thousands separated. */
-  function countText(tokens) {
-    return String(tokens).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  /** One phase's recorded bounds; a phase with no recorded entries still
+      carries an empty window instead of a guessed duration. */
+  function boundsOf(phase) {
+    const first = phase.first_ms === undefined || phase.first_ms === null ? null : phase.first_ms;
+    const last = phase.last_ms === undefined || phase.last_ms === null ? null : phase.last_ms;
+    if (first === null && last === null) return { start: 0, end: 60000 };
+    const start = first === null ? last : first;
+    const end = last === null ? start : last;
+    return { start, end: end > start ? end : start + 1000 };
   }
 
-  /** A recorded instant as the axis reads it: the time of day, from the
-      embedded timestamp alone. */
-  function clock(ms, seconds) {
-    const day = Math.floor(ms / 1_000) % 86_400;
-    const hh = String(Math.floor(day / 3_600)).padStart(2, "0");
-    const mm = String(Math.floor((day % 3_600) / 60)).padStart(2, "0");
-    if (!seconds) return hh + ":" + mm;
-    return hh + ":" + mm + ":" + String(day % 60).padStart(2, "0");
+  /** The visible range for one zoom level: Fit is the phase's whole recorded
+      window; 1 h and 15 m narrow it toward the phase's last instant. */
+  function rangeFor(phase, level) {
+    const bounds = boundsOf(phase);
+    if (level === "fit") return bounds;
+    const windowMs = level === "60" ? 3600000 : 900000;
+    const end = bounds.end;
+    const start = Math.max(bounds.start, end - windowMs);
+    return { start: start < end ? start : bounds.start, end: end };
   }
 
-  /** The axis's ticks: round instants across the visible range, in time order,
-      none of them outside it. */
-  function ticks() {
-    const { start, span } = scale();
-    const end = start + span;
-    const step = TICK_STEPS_MS.find((candidate) => span / candidate <= GEOMETRY.maxTicks);
-    if (step === undefined) return [];
-    const found = [];
-    let tick = Math.floor(start / step) * step;
-    while (tick <= end && found.length < GEOMETRY.maxTicks) {
-      if (tick >= start) found.push(tick);
-      tick += step;
+  /** One phase's own state: whether it is open, which lane is selected, the zoom
+      level, and whether its body has been rendered. */
+  function stateOf(phase) {
+    const key = phase.stage === undefined || phase.stage === null ? "unstaged" : phase.stage;
+    let state = phaseState.get(key);
+    if (!state) {
+      state = { open: false, lane: 0, zoom: "fit", focused: null };
+      phaseState.set(key, state);
     }
-    return found;
+    return state;
   }
 
-  /** One row's drawn marks, in the model's own order: a span for every entry
-      this window can tell apart, and one aggregate marker per band and time
-      bucket for the entries it cannot. */
-  function rowMarks(band, perPixel) {
-    const drawn = [];
+  /** The hybrid header: scope, current state, and the done phases of nine. */
+  function buildHeader() {
+    const header = el("section", "hybrid-header");
+    header.appendChild(el("p", "hybrid-scope", scopeLabel(model.scope)));
+    const current = el("p", "hybrid-current");
+    current.id = "hybrid-current-state";
+    const state = model.current_state;
+    if (state) {
+      current.classList.add("is-live");
+      current.appendChild(document.createTextNode("Current state: stage "));
+      const stage = el("span", "state-stage", state.stage_label);
+      stage.setAttribute("data-stage-label", state.stage_label);
+      current.appendChild(stage);
+      current.appendChild(document.createTextNode(", phase "));
+      current.appendChild(el("span", "state-phase", state.phase === undefined ? "underived" : state.phase));
+      current.appendChild(document.createTextNode(", next artifact "));
+      current.appendChild(el("span", "state-next", state.next_artifact === undefined ? "none" : state.next_artifact));
+      if (state.tasks) {
+        current.appendChild(document.createTextNode(", " + state.tasks.done + " of " + state.tasks.total + " tasks done"));
+      }
+    } else {
+      current.textContent = "no live change state";
+    }
+    header.appendChild(current);
+    const done = model.workflow.filter((phase) => phase.status === "done").length;
+    const progress = el("p", "hybrid-progress");
+    progress.id = "hybrid-phases-done";
+    progress.appendChild(el("strong", null, done + " of " + stages.length));
+    progress.appendChild(document.createTextNode(" phases done"));
+    header.appendChild(progress);
+    return header;
+  }
+
+  /** One KPI tile with its written label, value, and optional note. */
+  function kpi(name, label, value, note) {
+    const tile = el("div", "kpi");
+    tile.setAttribute("data-kpi", name);
+    tile.appendChild(el("span", "kpi-label", label));
+    tile.appendChild(el("span", "kpi-value", value));
+    if (note) tile.appendChild(el("span", "kpi-note", note));
+    return tile;
+  }
+
+  /** The six KPI facts: elapsed, active, waiting, tool calls, subagent spans,
+      and cost. A fact the record does not carry is stated, never zeroed. */
+  function buildKpis() {
+    const strip = el("section", "kpi-strip");
+    strip.setAttribute("aria-label", "Key figures");
+    strip.appendChild(kpi("elapsed", "Elapsed", durationText(summary.elapsed_ms)));
+    strip.appendChild(kpi("active", "Active", durationText(summary.active_ms)));
+    strip.appendChild(
+      kpi(
+        "waiting",
+        "Waiting",
+        durationText(summary.wait_ms),
+        (summary.waits || 0) + (summary.waits === 1 ? " wait" : " waits"),
+      ),
+    );
+    strip.appendChild(kpi("tool-calls", "Tool calls", String(summary.tool_calls || 0)));
+    strip.appendChild(
+      kpi(
+        "subagents",
+        "Subagent spans",
+        String(summary.subagents || 0),
+        summary.subagent_ms === undefined || summary.subagent_ms === null
+          ? "not measured"
+          : durationText(summary.subagent_ms),
+      ),
+    );
+    strip.appendChild(
+      kpi(
+        "cost",
+        "Cost",
+        summary.cost_total === undefined || summary.cost_total === null
+          ? "unavailable"
+          : "$" + summary.cost_total.toFixed(2),
+        summary.tokens_total === undefined || summary.tokens_total === null
+          ? undefined
+          : countText(summary.tokens_total) + " tokens",
+      ),
+    );
+    return strip;
+  }
+
+  /** One phase's activity sparkline: its recorded entries bucketed across its
+      own recorded window, a fixed number of bars. */
+  function sparkline(phase) {
+    const bars = el("span", "sparkline");
+    bars.setAttribute("aria-hidden", "true");
+    const bounds = boundsOf(phase);
+    const span = Math.max(1, bounds.end - bounds.start);
+    const counts = new Array(22).fill(0);
+    for (const lane of phase.lanes || []) {
+      for (const id of lane.entries) {
+        const entry = entries.get(id);
+        const at = entry ? endOf(entry) : null;
+        if (at === null) continue;
+        const bucket = Math.min(21, Math.max(0, Math.floor(((at - bounds.start) / span) * 22)));
+        counts[bucket] += 1;
+      }
+    }
+    const max = Math.max(1, ...counts);
+    counts.forEach((count) => {
+      const bar = el("span", count / max > 0.55 ? "spark-bar is-hot" : "spark-bar");
+      bar.style.height = Math.max(2, Math.round((22 * count) / max)) + "px";
+      bars.appendChild(bar);
+    });
+    return bars;
+  }
+
+  /** One phase card's collapsed header facts. */
+  function phaseHeading(phase) {
+    const stats = el("span", "phase-stats");
+    for (const [label, value] of [
+      ["wall", durationText(phase.wall_ms)],
+      ["active", durationText(phase.active_ms)],
+      ["waiting", durationText(phase.waiting_ms)],
+      ["tools", String(phase.tools || 0)],
+      ["subagents", String(phase.subagents || 0)],
+    ]) {
+      const bit = el("span");
+      bit.appendChild(el("b", null, value));
+      bit.appendChild(document.createTextNode(" " + label));
+      stats.appendChild(bit);
+    }
+    const names = (phase.lanes || []).map((lane) => lane.name).join(", ");
+    return { stats, lanes: names === "" ? "no recorded lanes" : "lanes: " + names };
+  }
+
+  /** One lane's marks across the visible range: individual ticks where the
+      density permits, aggregate ticks where entries are too short to tell
+      apart — the same threshold at every zoom. */
+  function laneMarks(phase, lane, range) {
+    const span = Math.max(1, range.end - range.start);
+    const perPixel = span / TRACK_HEIGHT;
+    const bucketMs = Math.max(1000, perPixel * 12);
+    const marks = [];
     const buckets = new Map();
-    const bucketMs = Math.ceil(perPixel * GEOMETRY.bucketPx);
-    for (const id of band.entries) {
+    for (const id of lane.entries) {
       const entry = entries.get(id);
       if (!entry) continue;
-      const end = endOf(entry);
-      const extent = entry.duration_ms === undefined || entry.duration_ms === null
-        ? 0
-        : entry.duration_ms;
-      if (end === null || extent >= perPixel) {
-        drawn.push({ kind: "span", entry, bar: barOf(entry) });
+      const at = endOf(entry);
+      if (at === null) continue;
+      const duration = entry.duration_ms === undefined || entry.duration_ms === null ? 0 : entry.duration_ms;
+      if (duration >= perPixel * 4) {
+        marks.push({ kind: "entry", entry, at, duration });
         continue;
       }
-      const bucketStart = range.start + Math.floor((end - range.start) / bucketMs) * bucketMs;
-      const key = band.scope.kind + ":" + band.scope.id + ":" + bucketStart;
-      let marker = buckets.get(key);
-      if (marker === undefined) {
-        marker = { count: 0, duration: null, bucketStart, bucketEnd: bucketStart + bucketMs, drawn: false };
-        buckets.set(key, marker);
+      const bucket = Math.floor((at - range.start) / bucketMs);
+      let marker = buckets.get(bucket);
+      if (!marker) {
+        marker = { kind: "aggregate", count: 0, duration: 0, at: range.start + bucket * bucketMs };
+        buckets.set(bucket, marker);
       }
       marker.count += 1;
-      if (entry.duration_ms !== undefined && entry.duration_ms !== null) {
-        marker.duration = (marker.duration || 0) + entry.duration_ms;
+      marker.duration += duration;
+    }
+    let combined = marks.concat([...buckets.values()]);
+    if (combined.length > MAX_TICKS) {
+      const fallback = new Map();
+      for (const mark of combined) {
+        const bucket = Math.floor((mark.at - range.start) / Math.max(bucketMs, span / MAX_TICKS));
+        let marker = fallback.get(bucket);
+        if (!marker) {
+          marker = { kind: "aggregate", count: 0, duration: 0, at: range.start + bucket * Math.max(bucketMs, span / MAX_TICKS) };
+          fallback.set(bucket, marker);
+        }
+        marker.count += mark.kind === "entry" ? 1 : mark.count;
+        marker.duration += mark.kind === "entry" ? mark.duration : mark.duration;
       }
-      if (marker.drawn) continue;
-      marker.drawn = true;
-      const x = position(marker.bucketStart);
-      drawn.push({
-        kind: "aggregate",
-        marker,
-        bar: { x, width: Math.max(position(marker.bucketEnd) - x, GEOMETRY.minSpan) },
-      });
+      combined = [...fallback.values()];
     }
-    return drawn;
+    combined.sort((left, right) => left.at - right.at);
+    return combined;
   }
 
-  /** The inline text one mark carries, and whether it sits beside the bar
-      instead of inside it: a span narrower than its label omits the inline
-      label — the duration stays where it fits, and the accessible name always
-      keeps name and duration. */
-  function inlineText(mark, room, name, duration) {
-    const full = name + " · " + duration;
-    if (mark.bar.width >= full.length * GEOMETRY.charWidth) return { text: full, outside: false };
-    if (room >= full.length * GEOMETRY.charWidth) return { text: full, outside: true };
-    if (mark.bar.width >= duration.length * GEOMETRY.charWidth) return { text: duration, outside: false };
-    return { text: "", outside: false };
+  /** The axis labels for the visible range: round instants across the window. */
+  function axisTicks(range) {
+    const span = Math.max(1, range.end - range.start);
+    const ticks = [];
+    for (let index = 0; index <= AXIS_TICKS; index += 1) {
+      ticks.push({ ms: range.start + (span * index) / AXIS_TICKS, top: (index / AXIS_TICKS) * TRACK_HEIGHT });
+    }
+    return ticks;
   }
 
-  /** One span: the entry drawn on its row's axis, focusable, with its
-      accessible name always its name and its duration. */
-  function spanNode(mark, room, y) {
-    const entry = mark.entry;
-    const name = visibleName(entry);
-    const duration = durationText(entry);
-    const node = element("g", {
-      class: "span",
-      "data-entry-id": entry.id,
-      "data-kind": entry.kind,
-      "data-at": entry.at,
-      tabindex: 0,
-      "aria-label": name + ", " + duration,
-    });
-    if (entry.duration_ms !== undefined && entry.duration_ms !== null) {
-      node.setAttribute("data-duration-ms", entry.duration_ms);
-    }
-    const stage = stages.get(entry.id);
-    if (stage !== undefined && stage !== null) node.setAttribute("data-stage", stage);
-    const barY = y + GEOMETRY.bandHeight / 3;
-    const inline = inlineText(mark, room, name, duration);
-    if (inline.text !== name + " · " + duration) {
-      /* Whatever the bar had room to draw, the element's own text still carries
-         the step's name and its duration: the SVG title holds both where
-         nothing is drawn inline, and the name where only the duration fits. */
-      const title = element("title");
-      title.textContent = inline.text === "" ? name + " · " + duration : name;
-      node.appendChild(title);
-    }
-    node.appendChild(element("rect", {
-      class: "span-bar",
-      x: mark.bar.x.toFixed(1),
-      y: barY.toFixed(1),
-      width: mark.bar.width.toFixed(1),
-      height: 16,
-    }));
-    if (inline.text !== "") {
-      const x = inline.outside ? mark.bar.x + mark.bar.width + 4 : mark.bar.x + 4;
-      node.appendChild(text(inline.text, {
-        class: "span-label",
-        x: x.toFixed(1),
-        y: (barY + 12).toFixed(1),
-      }));
-    }
-    return node;
-  }
-
-  /** One aggregate marker: its bucket's own width, naming how many entries it
-      covers and their combined duration, in the same machine-readable
-      attributes the text view carries. */
-  function aggregateNode(mark, y) {
-    const marker = mark.marker;
-    const duration = marker.duration === null ? "not measured" : durationText({ duration_ms: marker.duration });
-    const covered = marker.count === 1 ? "1 entry" : marker.count + " entries";
-    const node = element("g", {
-      class: "aggregate",
-      "data-count": marker.count,
-      "data-bucket-start-ms": marker.bucketStart,
-      "data-bucket-end-ms": marker.bucketEnd,
-      "aria-label": covered + ", " + duration,
-    });
-    if (marker.duration !== null) node.setAttribute("data-duration-ms", marker.duration);
-    const barY = y + GEOMETRY.bandHeight / 3;
-    node.appendChild(element("rect", {
-      class: "aggregate-bar",
-      x: mark.bar.x.toFixed(1),
-      y: barY.toFixed(1),
-      width: mark.bar.width.toFixed(1),
-      height: 16,
-    }));
-    /* The marker's inline text follows the same density rule as a span's: the
-       count and the combined duration where the bucket has room for them, the
-       count alone where it has only that much, nothing where it has neither.
-       The accessible name always carries both. */
-    const full = marker.count + " · " + duration;
-    const count = String(marker.count);
-    const inline = mark.bar.width >= full.length * GEOMETRY.charWidth
-      ? full
-      : mark.bar.width >= count.length * GEOMETRY.charWidth ? count : "";
-    if (inline !== "") {
-      node.appendChild(text(inline, {
-        class: "aggregate-label",
-        x: (mark.bar.x + 4).toFixed(1),
-        y: (barY + 12).toFixed(1),
-      }));
-    }
-    return node;
-  }
-
-  /** One band row: its visible label, its phase names, and its marks. */
-  function bandRow(band, y, perPixel) {
-    const row = element("g", {
-      class: "band",
-      "data-band-kind": band.kind,
-      "data-band": band.scope.id,
-      "aria-label": band.label,
-    });
-    row.appendChild(element("rect", {
-      class: "band-row",
-      x: 0,
-      y,
-      width: GEOMETRY.width,
-      height: GEOMETRY.bandHeight,
-    }));
-    row.appendChild(text(band.label, {
-      class: "band-label",
-      x: GEOMETRY.gutter,
-      y: y + GEOMETRY.bandHeight / 4,
-    }));
-    if (band.stages && band.stages.length) {
-      row.appendChild(text(band.stages.join(" · "), {
-        class: "band-phases",
-        x: GEOMETRY.labelWidth.toFixed(1),
-        y: y + GEOMETRY.phaseBaseline,
-      }));
-    }
-    const marks = rowMarks(band, perPixel);
-    const rowEnd = GEOMETRY.labelWidth + GEOMETRY.drawingWidth;
-    marks.forEach((mark, index) => {
-      const next = marks[index + 1];
-      const limit = next === undefined ? rowEnd : next.bar.x;
-      const room = limit - (mark.bar.x + mark.bar.width);
-      row.appendChild(mark.kind === "span" ? spanNode(mark, room, y) : aggregateNode(mark, y));
-    });
-    return row;
-  }
-
-  /** The whole timeline, for the visible range. */
-  function render() {
-    while (timeline.firstChild) timeline.removeChild(timeline.firstChild);
-    const title = element("title", { id: "timeline-title" });
-    title.textContent = "Development timeline";
-    timeline.appendChild(title);
-    const height = GEOMETRY.axisHeight + model.bands.length * GEOMETRY.bandHeight + GEOMETRY.margin;
-    timeline.setAttribute("viewBox", "0 0 " + GEOMETRY.width + " " + height);
-    const perPixel = timePerPixel();
-    const axis = element("g", { class: "axis", "aria-hidden": "true" });
-    for (const tick of ticks()) {
-      const label = clock(tick);
-      /* A tick's label never runs outside the viewBox: the last tick is
-         anchored back so its own text still fits inside the axis. */
-      const right = GEOMETRY.width - GEOMETRY.margin - label.length * GEOMETRY.charWidth;
-      const x = Math.min(position(tick), right);
-      axis.appendChild(text(label, { class: "tick", "data-at-ms": tick, x: x.toFixed(1), y: 16 }));
-    }
-    timeline.appendChild(axis);
-    model.bands.forEach((band, index) => {
-      const row = bandRow(band, GEOMETRY.axisHeight + index * GEOMETRY.bandHeight, perPixel);
-      if (selected !== null) {
-        const span = [...row.querySelectorAll(".span")].find(
-          (node) => Number(node.dataset.entryId) === selected,
-        );
-        if (span) span.classList.add("selected");
-      }
-      timeline.appendChild(row);
-    });
-  }
-
-  /* ── The zoom ───────────────────────────────────────────────────────────
-     One range-state derivation (`applyRange`) that every path — the buttons,
-     the wheel, the drag, and a click on an aggregate marker — goes through, so
-     the visible range and its label can never disagree with the drawing. */
-
-  const section = timeline.closest(".timeline-section");
-  let controls = null;
-  let rangeLabel = null;
-
-  /** The visible range as the zoom control renders it: the times of day the
-      window covers, from the embedded timestamps alone. */
-  function rangeText() {
-    return "Visible range " + clock(range.start, true) + " → " + clock(range.end, true);
-  }
-
-  /** One labelled control button. */
-  function controlButton(id, label) {
-    const button = document.createElement("button");
+  /** One lane's tick button. A tick is a separate focusable control; the lane
+      header is its own button, so no control nests another. */
+  function tickNode(phase, lane, mark, range, index) {
+    const span = Math.max(1, range.end - range.start);
+    const top = Math.min(TRACK_HEIGHT - 2, Math.max(0, ((mark.at - range.start) / span) * TRACK_HEIGHT));
+    const button = el("button", "tick");
     button.type = "button";
-    button.className = "control";
-    button.id = id;
-    button.textContent = label;
+    button.style.top = top.toFixed(1) + "px";
+    let height = 8;
+    let label;
+    if (mark.kind === "aggregate") {
+      button.classList.add("aggregate");
+      button.dataset.count = String(mark.count);
+      button.dataset.durationMs = String(mark.duration);
+      height = Math.max(8, Math.min(TRACK_HEIGHT / 3, (mark.duration / span) * TRACK_HEIGHT));
+      label = mark.count + (mark.count === 1 ? " entry" : " entries") + ", " + durationText(mark.duration);
+    } else {
+      const entry = mark.entry;
+      height = Math.max(6, Math.min(TRACK_HEIGHT / 2, (mark.duration / span) * TRACK_HEIGHT));
+      button.dataset.entryId = String(entry.id);
+      button.dataset.kind = entry.kind;
+      button.dataset.outcome = entry.outcome;
+      if (phase.repeated && phase.repeated.some((group) => group.entries.includes(entry.id))) {
+        button.classList.add("is-repeated");
+      }
+      button.dataset.durationMs = String(mark.duration);
+      label = entry.kind + " " + visibleName(entry) + ", " + durationText(entry.duration_ms);
+    }
+    button.style.height = height.toFixed(1) + "px";
+    button.dataset.index = String(index);
+    button.setAttribute("aria-label", label);
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const state = stateOf(phase);
+      state.lane = phase.lanes.indexOf(lane);
+      state.focused = mark.kind === "entry" ? mark.entry.id : null;
+      renderPhase(phase);
+    });
     return button;
   }
 
-  /** The zoom controls and the rendered range label: created only where there is
-      a timeline to zoom, so the empty state carries none of them. */
-  function buildControls() {
-    if (!section) return;
-    const group = document.createElement("div");
-    group.className = "controls";
-    group.setAttribute("role", "group");
-    group.setAttribute("aria-label", "Timeline zoom");
-    const zoomIn = controlButton("zoom-in", "Zoom in");
-    const zoomOut = controlButton("zoom-out", "Zoom out");
-    const fit = controlButton("zoom-fit", "Fit");
-    zoomIn.addEventListener("click", () => zoom(ZOOM_IN_FACTOR));
-    zoomOut.addEventListener("click", () => zoom(ZOOM_OUT_FACTOR));
-    fit.addEventListener("click", () => applyRange(bounds));
-    group.appendChild(zoomIn);
-    group.appendChild(zoomOut);
-    group.appendChild(fit);
-    rangeLabel = document.createElement("p");
-    rangeLabel.className = "range";
-    rangeLabel.id = "timeline-range";
-    group.appendChild(rangeLabel);
-    section.insertBefore(group, timeline);
-    controls = { zoomIn, zoomOut, fit };
-  }
-
-  /** The label's own state: the rendered range and the controls' limits. A
-      control at its limit is disabled, never silently inert. */
-  function updateControls() {
-    if (rangeLabel) {
-      rangeLabel.textContent = rangeText();
-      rangeLabel.setAttribute("data-range-start-ms", range.start);
-      rangeLabel.setAttribute("data-range-end-ms", range.end);
+  /** The phase's vertical axis and its session lanes, side by side. */
+  function renderAxis(phase) {
+    const state = stateOf(phase);
+    const range = rangeFor(phase, state.zoom);
+    const scroll = el("div", "lane-scroll");
+    const grid = el("div", "timeline-grid");
+    const axis = el("div", "phase-axis");
+    axis.style.height = (TRACK_HEIGHT + 46) + "px";
+    for (const tick of axisTicks(range)) {
+      const label = el("div", "axis-tick", clock(tick.ms));
+      label.style.top = tick.top.toFixed(1) + "px";
+      axis.appendChild(label);
     }
-    if (!controls) return;
-    const span = range.end - range.start;
-    const whole = bounds.end - bounds.start;
-    controls.zoomIn.disabled = span <= MIN_RANGE_MS;
-    controls.zoomOut.disabled = span >= whole;
-    controls.fit.disabled = span >= whole;
+    grid.appendChild(axis);
+    const lanes = el("div", "lanes");
+    phase.lanes.forEach((lane, laneIndex) => {
+      const column = el("div", state.lane === laneIndex ? "lane is-selected" : "lane");
+      column.dataset.lane = lane.name;
+      const header = el("button", "lane-header");
+      header.type = "button";
+      header.dataset.lane = lane.name;
+      header.setAttribute("aria-pressed", state.lane === laneIndex ? "true" : "false");
+      header.setAttribute(
+        "aria-label",
+        lane.name + ", " + durationText(lane.duration_ms),
+      );
+      const name = el("span", "lane-name");
+      const swatch = el("span", "lane-swatch");
+      swatch.style.background = "var(" + LANE_COLORS[laneIndex % LANE_COLORS.length] + ")";
+      name.appendChild(swatch);
+      name.appendChild(document.createTextNode(lane.name));
+      header.appendChild(name);
+      header.appendChild(
+        el("span", "lane-meta", durationText(lane.duration_ms) + " · " + lane.entries.length + " entries"),
+      );
+      header.addEventListener("click", () => {
+        state.lane = laneIndex;
+        state.focused = null;
+        renderPhase(phase);
+      });
+      const track = el("div", "lane-track");
+      track.style.height = TRACK_HEIGHT + "px";
+      const marks = laneMarks(phase, lane, range);
+      marks.forEach((mark, index) => track.appendChild(tickNode(phase, lane, mark, range, index)));
+      column.appendChild(header);
+      column.appendChild(track);
+      lanes.appendChild(column);
+    });
+    grid.appendChild(lanes);
+    scroll.appendChild(grid);
+    return scroll;
   }
 
-  /** The zoom's own motion: the token's transition applied to the axis, restarted
-      on every range change. Under `prefers-reduced-motion: reduce` the style
-      sheet removes it entirely, which is what makes the change instant. */
-  function pulseZoom() {
-    timeline.classList.remove("zooming");
-    void timeline.getBoundingClientRect().width;
-    timeline.classList.add("zooming");
-    window.setTimeout(() => timeline.classList.remove("zooming"), 240);
-  }
-
-  /** Set the visible range: the one place a zoom, a pan, or a fit moves the
-      axis. The span stays inside the record's own range and above the smallest
-      readable window, the window stays inside the record's bounds, and every
-      observer of the range (the drawing, the label, the controls) is updated
-      here and nowhere else. */
-  function applyRange(next) {
-    const boundsSpan = Math.max(bounds.end - bounds.start, MIN_RANGE_MS);
-    const span = Math.min(Math.max(next.end - next.start, MIN_RANGE_MS), boundsSpan);
-    let start = Math.min(Math.max(next.start, bounds.start), bounds.end - span);
-    if (start < bounds.start) start = bounds.start;
-    range = { start, end: start + span };
-    render();
-    updateControls();
-    pulseZoom();
-  }
-
-  /** Zoom the visible range by `factor` (below one zooms in) around `anchor`
-      (the range's centre by default), so the anchor's own instant stays where
-      the reader put it. */
-  function zoom(factor, anchor) {
-    const span = range.end - range.start;
-    const nextSpan = Math.min(Math.max(span * factor, MIN_RANGE_MS), bounds.end - bounds.start || MIN_RANGE_MS);
-    const centre = anchor === undefined ? range.start + span / 2 : anchor;
-    const start = centre - (centre - range.start) * (nextSpan / span);
-    applyRange({ start, end: start + nextSpan });
-  }
-
-  /** The instant one client x coordinate points at, for the wheel and the drag. */
-  function instantAt(x) {
-    const box = timeline.getBoundingClientRect();
-    if (box.width === 0) return range.start;
-    const unit = (x - box.left) / box.width * GEOMETRY.width;
-    const fraction = (unit - GEOMETRY.labelWidth) / GEOMETRY.drawingWidth;
-    return range.start + Math.min(Math.max(fraction, 0), 1) * (range.end - range.start);
-  }
-
-  let dragging = null;
-
-  timeline.addEventListener(
-    "wheel",
-    (event) => {
-      event.preventDefault();
-      zoom(event.deltaY < 0 ? ZOOM_IN_FACTOR : ZOOM_OUT_FACTOR, instantAt(event.clientX));
-    },
-    { passive: false },
-  );
-
-  timeline.addEventListener("pointerdown", (event) => {
-    dragging = { x: event.clientX, range };
-  });
-
-  timeline.addEventListener("pointermove", (event) => {
-    if (!dragging) return;
-    const box = timeline.getBoundingClientRect();
-    if (box.width === 0) return;
-    const span = dragging.range.end - dragging.range.start;
-    const shift = (dragging.x - event.clientX) / box.width * GEOMETRY.width / GEOMETRY.drawingWidth * span;
-    applyRange({ start: dragging.range.start + shift, end: dragging.range.end + shift });
-  });
-
-  timeline.addEventListener("pointerup", () => {
-    dragging = null;
-  });
-  timeline.addEventListener("pointerleave", () => {
-    dragging = null;
-  });
-
-  if (section) section.addEventListener("dblclick", () => applyRange(bounds));
-
-  /* ── The details panel ──────────────────────────────────────────────────
-     One labelled region, opened by the one selection path the pointer and the
-     keyboard both reach, so an opened panel is the same panel however it was
-     opened. */
-
-  const panel = document.getElementById("details-panel");
-  const facts = document.getElementById("details-facts");
-  const closeControl = document.getElementById("details-close");
-  let selected = null;
-
-  /** One row of the panel: the fact's written label and its rendered value. */
-  function fact(label, value) {
-    const term = document.createElement("dt");
-    term.textContent = label;
-    const definition = document.createElement("dd");
-    definition.textContent = value;
-    return [term, definition];
-  }
-
-  /** The facts the panel shows for one entry: the exact fact list the report
-      contract names — session, status, stop reason, model, cost, context, tool
-      call id, output bytes, bounded error, parent/agent attribution, retry,
-      and permission mode — plus the entry's own timing. A value the record
-      does not carry is stated as "not reported", never rendered as a zero. */
-  function panelFacts(entry) {
-    const end = endOf(entry);
-    const duration = entry.duration_ms === undefined || entry.duration_ms === null
-      ? null
-      : entry.duration_ms;
-    const start = end === null ? null : end - (duration || 0);
-    const data = entry.data === undefined || entry.data === null ? {} : entry.data;
-    const usage = data.usage && typeof data.usage === "object" ? data.usage : {};
-    const value = (candidate) => candidate === undefined || candidate === null
-      ? "not reported"
-      : typeof candidate === "string"
-        ? candidate
-        : JSON.stringify(candidate);
-    const number = (candidate) => typeof candidate === "number"
-      ? countText(candidate)
-      : "not reported";
-    const scope = entry.scope && typeof entry.scope === "object"
-      ? `${entry.scope.kind} ${entry.scope.id}`
-      : "not reported";
-    return [
-      ["Label", visibleName(entry)],
-      ["Scope", scope],
-      ["Session", value(entry.session)],
-      ["Session title", value(data.title)],
-      ["Start", start === null ? "not recorded" : clock(start, true)],
-      ["End", end === null ? "not recorded" : clock(end, true)],
-      ["Duration", durationText(entry)],
-      ["Outcome", typeof entry.outcome === "string" ? entry.outcome : "unknown"],
-      ["Status", value(data.status)],
-      ["Stop reason", value(data.stop_reason)],
-      ["Model", typeof data.model === "string" ? data.model : value(usage.model)],
-      ["Cost", value(data.cost)],
-      ["List cost", value(data.list_cost)],
-      ["Context size", number(data.context_size)],
-      ["Context window", number(data.context_window)],
-      ["Tool call id", value(data.tool_call_id)],
-      ["Output bytes", number(data.output_bytes)],
-      ["Error", value(data.error)],
-      ["Parent", entry.parent === undefined || entry.parent === null ? "not reported" : `#${entry.parent}`],
-      ["Agent", value(data.agent)],
-      ["Subagent", value(data.subagent)],
-      ["Retry", retryText(data)],
-      ["Permission mode", value(data.permission_mode)],
-      [
-        "Tokens",
-        typeof data.total_tokens === "number" ? countText(data.total_tokens) : "unavailable",
-      ],
-    ];
-  }
-
-  /** The retry/fallback signals the record carries, in one written line. */
-  function retryText(data) {
-    const parts = [];
-    if (typeof data.attempt === "number") {
-      const max = typeof data.max_attempts === "number" ? ` of ${data.max_attempts}` : "";
-      parts.push(`attempt ${data.attempt}${max}`);
+  /** One entry's lane-log row: its time, marks, label, duration, facts, and —
+      where captured — its bounded content region. */
+  function logEntryNode(phase, entry) {
+    const row = el("li", "log-entry");
+    row.dataset.entryId = String(entry.id);
+    row.dataset.kind = entry.kind;
+    row.appendChild(el("span", "log-time", clock(endOf(entry), true)));
+    const marks = el("span");
+    if (entry.outcome === "failed") marks.appendChild(el("span", "entry-mark failed", "failed"));
+    if (phase.repeated && phase.repeated.some((group) => group.entries.includes(entry.id))) {
+      marks.appendChild(el("span", "entry-mark repeated", "repeated"));
     }
-    if (typeof data.delay_ms === "number") parts.push(`delay ${countText(data.delay_ms)} ms`);
-    if (data.fallback_from !== undefined || data.fallback_to !== undefined) {
-      parts.push(`fallback ${data.fallback_from ?? "?"} → ${data.fallback_to ?? "?"}`);
-    }
-    return parts.length > 0 ? parts.join(", ") : "not reported";
-  }
+    row.appendChild(marks);
+    row.appendChild(el("span", "log-label", visibleName(entry)));
+    row.appendChild(el("span", "log-duration", durationText(entry.duration_ms)));
 
-  /* The content region: every named `data.content` field in its own labelled
-     block, escaped, capped and scrollable. It is never part of the accessible
-     summary line, and an entry whose bundle the document budget left out states
-     the omission instead of a partial value. */
-  const contentRegion = document.getElementById("details-content");
-  const CONTENT_FIELD_NAMES = [
-    ["tool_input", "Tool input"],
-    ["tool_output", "Tool output"],
-    ["assistant_text", "Assistant text"],
-    ["thinking_text", "Thinking text"],
-    ["user_prompt", "User prompt"],
-    ["compaction_summary", "Compaction summary"],
-    ["plan_content", "Plan content"],
-    ["draft_text", "Draft text"],
-    ["subagent_transcript", "Subagent transcript"],
-  ];
-  const CONTENT_FIELD_CAP = "64 KiB per field";
+    const facts = el("dl", "log-facts");
+    const data = entry.data && typeof entry.data === "object" ? entry.data : {};
+    const fact = (label, value) => {
+      facts.appendChild(el("dt", null, label));
+      facts.appendChild(el("dd", null, value === undefined || value === null ? "not reported" : String(value)));
+    };
+    fact("Kind", entry.kind);
+    fact("Outcome", entry.outcome);
+    if (entry.session) fact("Session", entry.session);
+    if (data.tool_call_id !== undefined) fact("Tool call id", data.tool_call_id);
+    if (data.status !== undefined) fact("Status", data.status);
+    if (data.stop_reason !== undefined) fact("Stop reason", data.stop_reason);
+    if (data.model !== undefined) fact("Model", data.model);
+    if (data.cost !== undefined) fact("Cost", typeof data.cost === "object" ? JSON.stringify(data.cost) : data.cost);
+    if (data.parent !== undefined) fact("Parent", data.parent);
+    if (data.agent !== undefined) fact("Agent", data.agent);
+    if (data.subagent !== undefined) fact("Subagent", data.subagent);
+    if (data.permission_mode !== undefined) fact("Permission mode", data.permission_mode);
+    row.appendChild(facts);
 
-  /** Empty the content region and hide it. */
-  function clearContent() {
-    if (!contentRegion) return;
-    while (contentRegion.firstChild) contentRegion.removeChild(contentRegion.firstChild);
-    contentRegion.hidden = true;
-  }
-
-  /** Fill the content region for one entry — the one place it is written. */
-  function fillContent(entry) {
-    if (!contentRegion) return;
-    clearContent();
-    const data = entry.data === undefined || entry.data === null ? {} : entry.data;
-    const content = data.content;
-    if (!content || typeof content !== "object") {
-      const omitted = data.content_omitted === true
-        || (model && Array.isArray(model.omitted_content) && model.omitted_content.includes(entry.id));
-      if (omitted) {
-        const note = document.createElement("p");
-        note.className = "content-omitted";
-        note.textContent = model && typeof model.content_omitted_note === "string"
-          ? model.content_omitted_note
-          : "content omitted; see the record";
-        contentRegion.appendChild(note);
-        contentRegion.hidden = false;
+    if (entry.kind === "subagent") {
+      const attributable = entryList.some((candidate) => candidate.parent === entry.id && candidate.kind === "tool");
+      if (!attributable) {
+        row.appendChild(
+          el(
+            "p",
+            "attribution-limit",
+            "no tool call was attributable to this subagent span; the record names no per-subagent tool identity for it.",
+          ),
+        );
       }
+    }
+
+    const content = data.content && typeof data.content === "object" ? data.content : null;
+    const budgetLeftOut = omitted.has(entry.id);
+    if (content) {
+      const region = el("section", "content-region");
+      region.setAttribute("aria-label", "Captured content");
+      region.appendChild(el("h4", null, "Captured content"));
+      for (const [name, label] of [
+        ["tool_input", "Tool input"],
+        ["tool_output", "Tool output"],
+        ["assistant_text", "Assistant text"],
+        ["thinking_text", "Thinking text"],
+        ["user_prompt", "User prompt"],
+        ["compaction_summary", "Compaction summary"],
+        ["plan_content", "Plan content"],
+        ["draft_text", "Draft text"],
+        ["subagent_transcript", "Subagent transcript"],
+      ]) {
+        const field = content[name];
+        if (!field || typeof field !== "object" || typeof field.text !== "string") continue;
+        const block = el("section", "content-field");
+        block.dataset.field = name;
+        block.appendChild(el("h5", null, label));
+        block.appendChild(el("pre", "content-text", field.text));
+        const original = typeof field.bytes === "number" ? field.bytes : null;
+        block.appendChild(
+          el(
+            "p",
+            "content-meta",
+            "64 KiB per field · " + (field.truncated === true ? "truncated" : "complete")
+              + (original === null ? "" : " · original " + original + " bytes"),
+          ),
+        );
+        region.appendChild(block);
+      }
+      row.appendChild(region);
+    } else if (budgetLeftOut) {
+      row.appendChild(
+        el(
+          "p",
+          "content-omitted",
+          typeof model.content_omitted_note === "string" ? model.content_omitted_note : "content omitted; see the record",
+        ),
+      );
+    }
+    return row;
+  }
+
+  /** The selected lane's log: the lane's own facts and entries, sorted by the
+      recorded instant. */
+  function renderLog(phase) {
+    const state = stateOf(phase);
+    const lane = phase.lanes[state.lane];
+    const log = el("section", "lane-log");
+    log.id = "lane-log-" + (phase.stage === undefined ? "unstaged" : phase.stage);
+    log.setAttribute("aria-label", "Lane log");
+    const title = el("h3", "lane-log-title", lane.name + " — log");
+    log.appendChild(title);
+    const facts = el("dl", "lane-facts");
+    const start = lane.first_ms === undefined ? null : lane.first_ms;
+    const fact = (label, value) => {
+      facts.appendChild(el("dt", null, label));
+      facts.appendChild(el("dd", null, value));
+    };
+    fact("Start", clock(start, true));
+    fact("Duration", durationText(lane.duration_ms));
+    const selected = lane.entries.map((id) => entries.get(id)).filter(Boolean);
+    const failed = selected.some((entry) => entry.outcome === "failed");
+    fact("Outcome", failed ? "failed" : (selected[0] && selected[0].outcome) || "unknown");
+    log.appendChild(facts);
+    const list = el("ol", "log-list");
+    const ordered = selected.slice().sort((left, right) => {
+      const leftAt = endOf(left);
+      const rightAt = endOf(right);
+      return (leftAt === null ? 0 : leftAt) - (rightAt === null ? 0 : rightAt);
+    });
+    for (const entry of ordered) {
+      const row = logEntryNode(phase, entry);
+      if (state.focused === entry.id) row.classList.add("is-focused");
+      list.appendChild(row);
+    }
+    if (ordered.length === 0) list.appendChild(el("li", "stat-empty", "no recorded entries in this lane"));
+    log.appendChild(list);
+    return log;
+  }
+
+  /** Build (or rebuild) one phase's expanded body: the toolbar with the
+      per-phase zoom controls, the vertical axis with its lanes, and the log. */
+  function renderPhase(phase) {
+    const key = phase.stage === undefined ? "unstaged" : phase.stage;
+    const card = document.querySelector('.phase-card[data-phase="' + key + '"]');
+    if (!card) return;
+    const state = stateOf(phase);
+    const region = card.querySelector(".phase-region");
+    if (!region) return;
+    while (region.firstChild) region.removeChild(region.firstChild);
+    const toolbar = el("div", "phase-toolbar");
+    const range = rangeFor(phase, state.zoom);
+    const label = el("p", "range-label");
+    label.id = "phase-range-" + key;
+    label.dataset.rangeStartMs = String(range.start);
+    label.dataset.rangeEndMs = String(range.end);
+    label.textContent = "Visible range " + clock(range.start, true) + " → " + clock(range.end, true);
+    toolbar.appendChild(label);
+    const zoom = el("div", "zoom-group");
+    zoom.setAttribute("role", "group");
+    zoom.setAttribute("aria-label", "Timeline zoom");
+    for (const [level, text] of [["fit", "Fit"], ["60", "1 h"], ["15", "15 m"]]) {
+      const button = el("button", "zoom-control", text);
+      button.type = "button";
+      button.dataset.zoom = level;
+      button.setAttribute("aria-pressed", state.zoom === level ? "true" : "false");
+      button.addEventListener("click", () => {
+        state.zoom = level;
+        renderPhase(phase);
+      });
+      zoom.appendChild(button);
+    }
+    toolbar.appendChild(zoom);
+    region.appendChild(toolbar);
+    if (phase.lanes.length === 0) {
+      region.appendChild(el("p", "stat-empty", "No recorded lanes in this phase."));
       return;
     }
-    const heading = document.createElement("h3");
-    heading.textContent = "Captured content";
-    contentRegion.appendChild(heading);
-    for (const [name, label] of CONTENT_FIELD_NAMES) {
-      const field = content[name];
-      if (!field || typeof field !== "object" || typeof field.text !== "string") continue;
-      const block = document.createElement("section");
-      block.className = "content-field";
-      block.dataset.field = name;
-      const title = document.createElement("h4");
-      title.textContent = label;
-      block.appendChild(title);
-      const pre = document.createElement("pre");
-      pre.className = "content-text";
-      pre.textContent = field.text;
-      block.appendChild(pre);
-      const meta = document.createElement("p");
-      meta.className = "content-meta";
-      const original = typeof field.bytes === "number" ? field.bytes : null;
-      meta.textContent = `${CONTENT_FIELD_CAP} · ${field.truncated === true ? "truncated" : "complete"}`
-        + (original === null ? "" : ` · original ${original} bytes`);
-      block.appendChild(meta);
-      contentRegion.appendChild(block);
-    }
-    if (content.truncated === true) {
-      const note = document.createElement("p");
-      note.className = "content-meta";
-      note.textContent = "one or more content fields were cut by the content caps";
-      contentRegion.appendChild(note);
-    }
-    contentRegion.hidden = false;
+    region.appendChild(renderAxis(phase));
+    region.appendChild(renderLog(phase));
   }
 
-  /** Bring the panel up to date for one entry — the one place the region's
-      content is written. */
-  function fillPanel(entry) {
-    if (!facts) return;
-    while (facts.firstChild) facts.removeChild(facts.firstChild);
-    for (const [label, value] of panelFacts(entry)) {
-      for (const node of fact(label, value)) facts.appendChild(node);
-    }
-    fillContent(entry);
+  /** One phase card: the expander button, the labelled region, and the header
+      facts. The body is built lazily on first expansion, so the DOM stays
+      bounded at every zoom. */
+  function phaseCard(phase) {
+    const key = phase.stage === undefined || phase.stage === null ? "unstaged" : phase.stage;
+    const state = stateOf(phase);
+    const card = el("section", "phase-card");
+    card.dataset.phase = key;
+    card.dataset.status = phase.status === undefined || phase.status === null ? "underived" : phase.status;
+    const expander = el("button", "phase-expander");
+    expander.type = "button";
+    expander.id = "phase-toggle-" + key;
+    expander.setAttribute("aria-expanded", "false");
+    expander.setAttribute("aria-controls", "phase-region-" + key);
+    const knob = el("span", "phase-knob");
+    knob.setAttribute("aria-hidden", "true");
+    if (phase.status === "done") knob.textContent = "✓";
+    if (phase.status === "active") knob.textContent = "●";
+    expander.appendChild(knob);
+    const main = el("span", "phase-main");
+    const title = el("span", "phase-title");
+    title.appendChild(el("span", "phase-name", phase.stage === undefined ? "no recorded stage transition" : phase.stage));
+    title.appendChild(el("span", "phase-duration", durationText(phase.wall_ms)));
+    title.appendChild(el("span", "phase-status", phase.status === undefined ? "underived" : phase.status));
+    main.appendChild(title);
+    const heading = phaseHeading(phase);
+    main.appendChild(heading.stats);
+    main.appendChild(el("span", "phase-lane-names", heading.lanes));
+    expander.appendChild(main);
+    const right = el("span");
+    right.appendChild(sparkline(phase));
+    right.appendChild(el("span", "phase-chevron", "▸"));
+    expander.appendChild(right);
+    expander.addEventListener("click", () => {
+      state.open = !state.open;
+      expander.setAttribute("aria-expanded", state.open ? "true" : "false");
+      card.classList.toggle("is-open", state.open);
+      region.hidden = !state.open;
+      if (state.open) renderPhase(phase);
+    });
+    card.appendChild(expander);
+    const region = el("div", "phase-region");
+    region.id = "phase-region-" + key;
+    region.setAttribute("role", "region");
+    region.setAttribute("aria-labelledby", expander.id);
+    region.hidden = true;
+    card.appendChild(region);
+    return card;
   }
 
-  /** Select one entry: the report's one selection path. The pointer's click and
-      the keyboard's `Enter`/`Space` both reach it, and it is the only place the
-      panel opens and a span is marked selected. */
-  function select(entryId) {
-    const entry = entries.get(Number(entryId));
-    if (!entry || !panel) return;
-    selected = Number(entryId);
-    fillPanel(entry);
-    panel.hidden = false;
-    for (const span of timeline.querySelectorAll(".span")) {
-      span.classList.toggle("selected", Number(span.dataset.entryId) === selected);
+  /** The workflow stack: the nine phases top to bottom. */
+  function buildWorkflow() {
+    const section = el("section", "hybrid-workflow");
+    section.id = "hybrid-workflow";
+    const heading = el("h2", "section-heading", "Workflow · top to bottom");
+    heading.id = "hybrid-workflow-heading";
+    section.setAttribute("aria-labelledby", heading.id);
+    section.appendChild(heading);
+    const stack = el("div", "phase-stack");
+    for (const phase of model.workflow) stack.appendChild(phaseCard(phase));
+    section.appendChild(stack);
+    if (model.unstaged) {
+      const unstaged = el("section", "hybrid-unstaged");
+      unstaged.id = "hybrid-unstaged";
+      const subheading = el("h3", "section-heading", "No recorded stage transition");
+      unstaged.appendChild(subheading);
+      unstaged.appendChild(phaseCard(model.unstaged));
+      section.appendChild(unstaged);
     }
+    return section;
   }
 
-  /** Close the panel: the close control and `Escape` both reach it. */
-  function clearSelection() {
-    selected = null;
-    if (panel) panel.hidden = true;
-    if (facts) {
-      while (facts.firstChild) facts.removeChild(facts.firstChild);
-    }
-    clearContent();
-    for (const span of timeline.querySelectorAll(".span")) span.classList.remove("selected");
+  /** One plain statistics line. */
+  function statLine(label, value) {
+    const line = el("div", "stat-line");
+    line.appendChild(el("span", null, label));
+    line.appendChild(el("span", "value", value));
+    return line;
   }
 
-  /** The span one event happened on, wherever inside the span it landed. */
-  function spanOf(event) {
-    const target = event.target;
-    return target && target.closest ? target.closest(".span") : null;
+  /** The statistics: longest steps, question waits, loops and retries, the
+      phase table, and tokens. */
+  function buildStatistics() {
+    const section = el("section", "statistics");
+    section.id = "hybrid-statistics";
+    const heading = el("h2", "section-heading", "Statistics");
+    heading.id = "hybrid-statistics-heading";
+    section.setAttribute("aria-labelledby", heading.id);
+    section.appendChild(heading);
+    const grid = el("div", "stat-grid");
+
+    const longest = el("section", "stat-card");
+    longest.id = "hybrid-longest";
+    longest.appendChild(el("h3", null, "Longest steps"));
+    const list = el("ol", "longest-steps");
+    const ranked = (summary.longest_steps || []).slice(0, MAX_LONGEST);
+    for (const step of ranked) {
+      const row = el("li");
+      row.dataset.entryId = String(step.id);
+      row.dataset.kind = step.kind;
+      row.dataset.durationMs = String(step.duration_ms);
+      row.appendChild(el("span", "step-label", step.label));
+      row.appendChild(el("span", "step-kind", step.kind));
+      row.appendChild(el("span", "step-duration", durationText(step.duration_ms)));
+      list.appendChild(row);
+    }
+    if (ranked.length === 0) list.appendChild(el("li", "stat-empty", "no measured step"));
+    longest.appendChild(list);
+    grid.appendChild(longest);
+
+    const waits = el("section", "stat-card");
+    waits.id = "hybrid-waits";
+    waits.appendChild(el("h3", null, "Question waits"));
+    const questions = entryList.filter((entry) => entry.kind === "question").slice(0, MAX_LONGEST);
+    if (questions.length === 0) waits.appendChild(el("p", "stat-empty", "no recorded waits"));
+    for (const question of questions) {
+      waits.appendChild(statLine(visibleName(question), durationText(question.duration_ms)));
+    }
+    grid.appendChild(waits);
+
+    const loops = el("section", "stat-card");
+    loops.id = "hybrid-repeats";
+    loops.appendChild(el("h3", null, "Loops & retries"));
+    const repeated = model.workflow.flatMap((phase) => phase.repeated || []);
+    if (repeated.length === 0) loops.appendChild(el("p", "stat-empty", "no repeated groups"));
+    for (const group of repeated.slice(0, MAX_LONGEST)) {
+      loops.appendChild(statLine(group.label, "× " + group.count + " · " + durationText(group.duration_ms)));
+    }
+    grid.appendChild(loops);
+
+    const tableCard = el("section", "stat-card wide");
+    tableCard.appendChild(el("h3", null, "Phase statistics"));
+    const scroll = el("div", "table-scroll");
+    const table = el("table");
+    const head = el("thead");
+    const headRow = el("tr");
+    for (const label of ["Phase", "Status", "Wall", "Active", "Waiting", "Tools", "Subagents"]) {
+      headRow.appendChild(el("th", null, label));
+    }
+    head.appendChild(headRow);
+    table.appendChild(head);
+    const body = el("tbody");
+    for (const phase of model.workflow) {
+      const row = el("tr");
+      if (phase.status === "active") row.className = "is-active";
+      row.appendChild(el("td", null, phase.stage === undefined ? "no recorded stage transition" : phase.stage));
+      row.appendChild(el("td", null, phase.status === undefined ? "underived" : phase.status));
+      for (const value of [
+        durationText(phase.wall_ms),
+        durationText(phase.active_ms),
+        durationText(phase.waiting_ms),
+        String(phase.tools || 0),
+        String(phase.subagents || 0),
+      ]) {
+        row.appendChild(el("td", "number", value));
+      }
+      body.appendChild(row);
+    }
+    table.appendChild(body);
+    scroll.appendChild(table);
+    tableCard.appendChild(scroll);
+    grid.appendChild(tableCard);
+
+    const tokens = el("section", "stat-card");
+    tokens.id = "hybrid-tokens";
+    tokens.appendChild(el("h3", null, "Tokens"));
+    tokens.appendChild(
+      el(
+        "p",
+        "token-total",
+        summary.tokens_total === undefined || summary.tokens_total === null
+          ? "unavailable"
+          : countText(summary.tokens_total),
+      ),
+    );
+    for (const row of summary.tokens_by_model || []) {
+      tokens.appendChild(statLine(row.name, row.tokens === null || row.tokens === undefined ? "unavailable" : countText(row.tokens)));
+    }
+    grid.appendChild(tokens);
+
+    section.appendChild(grid);
+    return section;
   }
 
-  /** The one activation both the pointer and the keyboard reach: a click and an
-      `Enter`/`Space` on a span open the same panel through the same function,
-      and a click on an aggregate marker zooms to the bucket it stands for
-      instead of pretending to be one entry. */
-  function activate(event) {
-    const span = spanOf(event);
-    if (span) {
-      select(span.dataset.entryId);
-      return;
-    }
-    const target = event.target;
-    const marker = target && target.closest ? target.closest(".aggregate") : null;
-    if (marker) {
-      const start = Number(marker.dataset.bucketStartMs);
-      const end = Number(marker.dataset.bucketEndMs);
-      if (Number.isFinite(start) && Number.isFinite(end)) applyRange({ start, end });
-    }
-  }
-
-  timeline.addEventListener("click", activate);
-
-  timeline.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
-      event.preventDefault();
-      activate(event);
-    }
-  });
-
-  if (closeControl) closeControl.addEventListener("click", clearSelection);
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") clearSelection();
-  });
-
-  buildControls();
-  updateControls();
-  render();
+  main.appendChild(buildHeader());
+  main.appendChild(buildKpis());
+  main.appendChild(buildWorkflow());
+  main.appendChild(buildStatistics());
 })();
 </script>
 </body>

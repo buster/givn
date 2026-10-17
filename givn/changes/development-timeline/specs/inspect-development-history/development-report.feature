@@ -144,7 +144,7 @@ Feature: Development Report
     And the report file exists and names the workflow phases
     And the report file places the step recorded after that transition in the "implement" phase
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario Outline: Consumer opens the generated development report in a browser
     Given a <scope> "demo" with a recorded history
     And the development report for "demo" has been generated
