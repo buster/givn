@@ -3593,7 +3593,7 @@ name it.
 
 ## Task 11d — `Question text is captured in full` (`development-record`, added)
 
-- [ ] **Scenario: `Question text is captured in full`**
+- [x] **Scenario: `Question text is captured in full`**
   - Design constraints:
     - Question text is the one content value captured **always**, never behind
       the switch and never reduced to the label: every question and its option
@@ -3621,23 +3621,96 @@ name it.
       transcript fixture).
     - RED expected failure: the new Given/When/Then phrases (including the
       no-match residual) are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Question text is captured in full"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Question text is captured in full"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: Question text is captured in full
+           ✘  Given a change "demo" whose Maki reporter reads a question from its session transcript
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:124:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+
+        thread 'main' (3839711) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
         ```
-  - [ ] **GREEN** — capture and cap the text; compile first, re-run → exit 0.
+  - [x] **GREEN** — capture and cap the text; compile first, re-run → exit 0.
         Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.09s
+        BUILD_EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Question text is captured in full"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: Question text is captured in full
+           ✔  Given a change "demo" whose Maki reporter reads a question from its session transcript
+           ✔  When the reported question is longer than the entry label bound
+           ✔  Then the record holds the complete question text up to the 4 000-character cap
+           ✔  And the entry marks the text truncated with its original size
+           ✔  And the entry's label stays within the label bound
+           ✔  When the Maki session transcript holds no matching question
+           ✔  Then the record keeps the bounded title label and no full question text
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — reuse the bounded-text helper; re-run → still exit 0.
+        Production sites (the question value is part of the same intake contract
+        landed with the bundle's 11b/11c revisions): `src/history.rs`
+        (`bound_question`, the 4 000-character cap), `src/cli/history.rs`
+        (`data.question` on every question event, the `title` metadata bound),
+        and the four reporter assets — omp's `ask` questions/options,
+        opencode's form fields and question tool, Claude's
+        `AskUserQuestion.tool_input`, and Maki's `maki.session.messages` read at
+        the wait's close landed with 11c's `50926387`. This revision adds the
+        real Maki transcript driver fixture and the scenario's assertions.
+  - [x] **REFACTOR** — reuse the bounded-text helper; re-run → still exit 0.
         Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        $ cargo fmt --all -- --check
+        FMT_EXIT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.50s
+        CLIPPY_EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Question text is captured in full"
+             Finished `test` profile [unoptimized + debuginfo] target(s) in 4.31s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: Question text is captured in full
+           ✔  Given a change "demo" whose Maki reporter reads a question from its session transcript
+           ✔  When the reported question is longer than the entry label bound
+           ✔  Then the record holds the complete question text up to the 4 000-character cap
+           ✔  And the entry marks the text truncated with its original size
+           ✔  And the entry's label stays within the label bound
+           ✔  When the Maki session transcript holds no matching question
+           ✔  Then the record keeps the bounded title label and no full question text
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
+        EXIT=0
+
+        The reporter-side join reuses the one value shape (`{text, truncated,
+        bytes}`) and the intake's `bound_question` is the only cap; the Maki
+        transcript reader returns `nil` for a wait with no matching call, so the
+        residual keeps the bounded title and the intake stores no
+        `data.question`.
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+  - [x] **COMMIT** — `f54633310bba10abae995e9dc68267cfaebe0c8c` — `feat(development-record): <release note>` with
         the scenario title in the body. Record the revision identifier.
 
 ## Task 11e — `The record can be turned off for a project` (`development-record`, added)
