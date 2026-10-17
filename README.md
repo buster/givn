@@ -100,7 +100,7 @@ itself. The record lives under `givn/history/` as local runtime state and stays
 out of repository history.
 
 <p align="center">
-  <img src="docs/development-report.png" width="340" alt="Development report of an archived change: the scope, KPI tiles, and the top-to-bottom workflow phase stack; opening a phase shows its session lanes and lane log.">
+  <a href="docs/development-report.md"><img src="docs/development-report-mobile.png" width="340" alt="Development report of an example change: current state, KPI tiles, and the top-to-bottom workflow phase stack; the guide covers settings and analytics."></a>
 </p>
 
 `givn init` asks which agent targets receive the generated skills and commands;
@@ -140,6 +140,9 @@ Missing context never blocks a human commit.
   quality.
 - [`docs/reference.md`](docs/reference.md) — full CLI reference, agent skills,
   addons, configuration keys, project layout, dev scripts.
+- [`docs/development-report.md`](docs/development-report.md) — the record
+  settings (mode, default, privacy), the report screens, and analytics over the
+  JSONL store with jq, SQLite, and DuckDB.
 - [`docs/arc42/README.md`](docs/arc42/README.md) — architecture documentation,
   one file per chapter.
 - [`CHANGELOG.md`](CHANGELOG.md) · [`docs/migrations/README.md`](docs/migrations/README.md) —
