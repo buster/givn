@@ -12730,7 +12730,7 @@ Repository checks are secondary only.
 
 ## Task H9 — `The report groups repeated steps` (`development-report`, added)
 
-- [ ] **Scenario: `The report groups repeated steps`** (`@wip` until its RED)
+- [x] **Scenario: `The report groups repeated steps`** (`@wip` until its RED)
   - Design constraints:
     - **Grouping rule.** Within a phase, entries with the **same kind and the
       same normalized label** (trimmed, whitespace collapsed) are grouped when
@@ -12757,30 +12757,83 @@ Repository checks are secondary only.
       `tests/steps/development_timeline_support.rs` (the six-command fixture).
     - RED expected failure: the Given and the two Then phrases are undefined;
       no group scaffold exists.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report groups repeated steps"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Report
+          Scenario: The report groups repeated steps
+           ✘  Given a change "demo" whose record holds the same command six times in one phase
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:108:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+
+        thread 'main' (4029934) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
         ```
-  - [ ] **GREEN** — implement the normalized-label grouping and the text-view
+  - [x] **GREEN** — implement the normalized-label grouping and the text-view
         count. Files: `src/cli/timeline.rs`,
         `tests/steps/development_report_steps.rs`,
         `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
         it.
         ```
-        PASTE THE GREEN RUN HERE
+        Feature: Development Report
+          Scenario: The report groups repeated steps
+           ✔  Given a change "demo" whose record holds the same command six times in one phase
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report names one repeated-step group with its count and combined duration
+           ✔  And the report still ranks every measured entry
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — one `normalized_label` used by the grouping and the
+  - [x] **REFACTOR** — one `normalized_label` used by the grouping and the
         ranking rows; `cargo fmt --all -- --check` and `cargo clippy --locked
         --all-targets -- -D warnings` green; re-run → still exit 0. Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+
+        Feature: Development Report
+          Scenario: The report groups repeated steps
+           ✔  Given a change "demo" whose record holds the same command six times in one phase
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report names one repeated-step group with its count and combined duration
+           ✔  And the report still ranks every measured entry
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `bef49d86` — `feat(development-report): group repeated steps within a phase` with
         the scenario title in the body. Record the revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit bef49d8662b3189b232a3e7507d6b2937450625e
+        feat(development-report): group repeated steps within a phase
+
+        The report groups repeated steps
+
+        Entries of the same kind and the same normalized label are grouped when the
+        group holds at least five entries; the phase carries the group's count, its
+        combined measured duration, and its member ids, and the text view names them.
+        Different kinds never merge, the group never hides an entry from the ranking,
+        and the one normalized label now feeds both the grouping and the ranking rows.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../development-report.feature                     |   2 +-
+         src/cli/timeline.rs                                |  24 +++-
+         tests/steps/development_report_steps.rs            | 150 +++++++++++++++++++++
+         3 files changed, 168 insertions(+), 8 deletions(-)
         ```
 
 ## Task H10 — `A dense record is reported as aggregates instead of raw ticks` (`development-report`, added)
