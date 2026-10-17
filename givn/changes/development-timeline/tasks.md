@@ -12368,7 +12368,7 @@ Repository checks are secondary only.
 
 ## Task H6 — `The report marks a skipped workflow phase` (`development-report`, added)
 
-- [ ] **Scenario: `The report marks a skipped workflow phase`** (`@wip` until its RED)
+- [x] **Scenario: `The report marks a skipped workflow phase`** (`@wip` until its RED)
   - Design constraints:
     - **Skip source.** The state's `.givn-skip` list (`src/state.rs`:
       `is_skipped`, `ArtifactStatus::Skipped`) makes the mapped phase
@@ -12391,30 +12391,88 @@ Repository checks are secondary only.
       fixture).
     - RED expected failure: the skip Given and the two Then phrases are
       undefined; the current model has no `skipped` status.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report marks a skipped workflow phase"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Report
+          Scenario: The report marks a skipped workflow phase
+           ✔  Given a change "demo" whose record holds the workflow phases up to "tasks"
+           ✔  And the change's artifacts make its derived state "tasks-done" with the next required artifact "review"
+           ✘  And the change skips the "arc42-docs" artifact
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:85:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+
+        thread 'main' (4024418) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
         ```
-  - [ ] **GREEN** — implement skip precedence and the steps. Files:
+  - [x] **GREEN** — implement skip precedence and the steps. Files:
         `src/cli/timeline.rs`, `tests/steps/development_report_steps.rs`,
         `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
         it.
         ```
-        PASTE THE GREEN RUN HERE
+        Feature: Development Report
+          Scenario: The report marks a skipped workflow phase
+           ✔  Given a change "demo" whose record holds the workflow phases up to "tasks"
+           ✔  And the change's artifacts make its derived state "tasks-done" with the next required artifact "review"
+           ✔  And the change skips the "arc42-docs" artifact
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report marks "arc42" skipped
+           ✔  And the report does not mark "arc42" done
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — the status pass stays one function (skipped → done →
+  - [x] **REFACTOR** — the status pass stays one function (skipped → done →
         active → queued precedence in one place); `cargo fmt --all --
         --check` and `cargo clippy --locked --all-targets -- -D warnings`
         green; re-run → still exit 0. Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+
+        Feature: Development Report
+          Scenario: The report marks a skipped workflow phase
+           ✔  Given a change "demo" whose record holds the workflow phases up to "tasks"
+           ✔  And the change's artifacts make its derived state "tasks-done" with the next required artifact "review"
+           ✔  And the change skips the "arc42-docs" artifact
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report marks "arc42" skipped
+           ✔  And the report does not mark "arc42" done
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `d4dadf61` — `feat(development-report): mark a skipped workflow phase` with
         the scenario title in the body. Record the revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit d4dadf61d11aff64b7483a85cac1ce221899f483
+        feat(development-report): mark a skipped workflow phase
+
+        The report marks a skipped workflow phase
+
+        A change that records an artifact in .givn-skip derives that artifact skipped
+        through the real state, and the report marks the mapped phase skipped instead
+        of done or queued: one status per phase, the skipped artifact never current
+        because next_required ignores it, and the state stays tasks-done with review
+        next.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../development-report.feature                     |  2 +-
+         tests/steps/development_report_steps.rs            | 86 ++++++++++++++++++++++
+         2 files changed, 87 insertions(+), 1 deletion(-)
         ```
 
 ## Task H7 — `The report of an archived change marks every phase done` (`development-report`, added)
