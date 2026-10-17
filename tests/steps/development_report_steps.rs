@@ -1793,9 +1793,11 @@ fn report_shows_the_empty_state_for(world: &mut GivnWorld, id: String) {
     );
 }
 
-#[then("the report draws no timeline axis for it")]
-fn report_draws_no_timeline_axis_for_it(world: &mut GivnWorld) {
+#[then("the report draws no workflow phase for it")]
+fn report_draws_no_workflow_phase_for_it(world: &mut GivnWorld) {
     let document = report_text(world);
+    // The empty state is the whole report root: no phase card, no axis, no
+    // lane, and no KPI strip is drawn for a scope that recorded nothing.
     for marker in [
         "<svg",
         "class=\"timeline-section\"",
@@ -1803,24 +1805,40 @@ fn report_draws_no_timeline_axis_for_it(world: &mut GivnWorld) {
         "class=\"tick\"",
         "class=\"band\"",
         "class=\"span\"",
+        "class=\"workflow-stack\"",
+        "data-phase=",
+        "data-status=",
+        "data-lane=",
+        "data-tile=",
     ] {
         assert!(
             !document.contains(marker),
             "the empty report draws {marker}: {document}"
         );
     }
-    // No axis, and no other blank chart furniture either: the document is still
-    // one complete report, its root heading intact.
+    // The empty state names no workflow phase: no phase line and no phase name
+    // reaches the rendered state, and the state itself is the whole root.
+    let empty = empty_state_region(&document);
+    assert!(
+        !empty.contains("workflow-phase") && !empty.contains("phase "),
+        "the empty state names a workflow phase: {empty}"
+    );
+    // The document is still one complete report, its root heading intact.
     assert!(
         document.starts_with("<!doctype html>") && document.trim_end().ends_with("</html>"),
         "the report is not one complete document: {document}"
     );
-    // The model agrees: the empty report carries no rows to draw.
+    // The model agrees: the empty report carries no rows to draw and its
+    // workflow scaffold draws no phase.
     let model = report_model(&document);
     assert_eq!(
         model["bands"].as_array().map(Vec::len),
         Some(0),
         "the empty report still carries bands: {model:#?}"
+    );
+    assert!(
+        !document.contains(&format!("phase {}", "propose")),
+        "the empty report prints a phase line: {document}"
     );
 }
 
