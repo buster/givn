@@ -16,7 +16,7 @@
 | 3 | 03 context-and-scope | Yes | A new external entity (each supported harness's reporter), seven new interfaces (`givn history ingest`, `givn history`, `givn timeline`, plus the reporter boundary for opencode, Claude Code, omp, and Maki), and the record file join the context; the scope gains the record and the report. | External entity, interface rows (the four harness boundaries, Maki's including the folder-trust gate), and in-scope bullets added; `.agents` recorded as a skills mirror with no runtime; the new use case `inspect-development-history` is named. |
 | 4 | 04 solution-strategy | Yes | The strategy table gains the development record and report concern, because it spans capture, storage, intake, and rendering. | "Development record" row added to 4.1. |
 | 5 | 05 building-block-view | Yes | New building blocks: `history` (record model and store), `cli::history` (read, the one intake, and the process-per-hook harness mapper), `cli::timeline` (report model and rendering), the embedded timeline asset, and four embedded harness reporter integrations (five assets: omp, opencode, Claude Code, and Maki's module plus its grants file), with Maki additionally a full guidance target. | Diagram node plus five responsibility rows added. |
-| 6 | 06 runtime-view | Yes | Two new flows: best-effort capture while other commands run, and the intake/report flow, including the per-harness capture order for the four reporters. | New section 6.18 with a mermaid capture sequence and a per-harness capture table. |
+| 6 | 06 runtime-view | Yes | Two new flows: best-effort capture while other commands run, and the intake/report flow, including the per-harness capture order for the four reporters and the report's widened ranking of measured entries of any kind. | New section 6.18 with a mermaid capture sequence, a per-harness capture table, and the report paragraph. |
 | 7 | 07 deployment-view | Yes | The project footprint gains `givn/history/` (record, reports, pending state), one generated reporter per executing agent target (`.omp/hooks/pre/`, `.opencode/plugins/`, `.claude/hooks/`), Maki's guidance and reporter (`.maki/skills/`, `.maki/commands/`, `.maki/lua/givn-timeline.lua`, grants merged into `.maki/plugin.toml`, and a managed fence in `.maki/init.lua`), and the repository-only `tests/e2e/` Node project; the acceptance suite gains Node/Chromium and a pinned `maki` v0.6.3 binary, provisioned outside the suite. | 7.3 target environments and 7.4 project footprint updated. |
 | 8 | 08 crosscutting-concepts | Yes | The record's ownership, the engagement rule, the runtime-state status of the store, the four harness reporters and their documented asymmetries (including Maki's folder-trust gate and main-session-only turns), best-effort discipline, scope rule, privacy bound, ignore entry, scale rule, report packaging, and browser tier are cross-cutting concepts every capture point and future reporter must respect. | New section 8.25 added, including the engagement, runtime-state, reporters, scale, and missing-data paragraphs. |
 | 9 | 09 architecture-decisions | Yes | One new qualified decision (ADR-073): record ownership and the single intake interface — now carrying four harness reporters — plus an ADR-013 amendment for the `maki` target (full guidance target plus the reporter, with two merged user-owned files). Two further candidates were evaluated and routed to canonical artifacts instead of ADRs. | ADR-073 created and extended, ADR-013 amended (register row, ADR body, chapter-09 paragraph), chapter-09 paragraph added. |
@@ -132,6 +132,31 @@ reporter's three are added, never removed or flipped), and a **merged** fail-sof
 `pcall(require, "givn-timeline").setup()` exits 1 and was rejected. The new risk
 is R-90, and the driver needs the pinned `maki` v0.6.3 binary provisioned by the
 setup-script family.
+
+**Ranking widening and Maki headless gaps (2026-10-17, operator finding).** Two
+things were recorded after the implementation landed. (1) The report's ranking
+filtered `kind == "step"`, so this repository's own report showed an empty
+"Longest steps" list while the record held 75 measured entries (a 3.6 s
+`skills sync`, a 799 ms `task` tool call). The rule is now explicit in
+`design.md` §Report Generation and in chapters 06/08/10: the ranking covers
+**every entry with a measured `duration_ms`** of any kind, longest first with the
+existing tie-breaking (earlier `at`, then lower `id`), over the whole record;
+each row carries label, **kind**, and duration (`RankedStep` gains the kind); the
+heading stays "Longest steps" and an unmeasured entry is absent rather than zero.
+It arrives as the delta scenario `Measured agent activity is ranked alongside
+Givn's own steps` (Task 25a). (2) Maki's headless gaps were reproduced and
+recorded: `TurnStart` is TUI-only (so a headless turn has usage but no duration),
+and in the reproduced headless run the record carried the `task` tool entry
+(799 ms) with **no subagent span**, although Maki's log shows the subagent
+session opening and closing (`duration_ms 795`, `input_tokens 8512`) and
+`maki.task.list()` answers `no interactive UI attached`, so a plugin cannot
+enumerate subagents there. Whether `TaskStatusChanged` reaches a `task`-tool
+subagent outside the TUI is **not established** (the 0.6.3 binary's bundled
+reference names only `TurnStart` and `PlanReady` as `maki-ui`-only), so the
+recorded fact is the run's observation — measured tool calls and turn usage, no
+turn durations, and no subagent span in that run; subagent spans come from omp,
+opencode, and Claude Code (R-90). Inventory
+is now 47 entries (39 non-`@e2e`, 8 `@e2e`).
 
 The ADR candidates were evaluated in order and only the first qualified:
 

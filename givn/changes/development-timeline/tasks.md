@@ -1,7 +1,7 @@
 # Tasks: development-timeline
 
 Scenario-by-scenario RED→GREEN→REFACTOR→COMMIT loop. One section per executable
-scenario: the 35 non-`@e2e` scenario sections first, in `.feature` order (the
+scenario: the 36 non-`@e2e` scenario sections first, in `.feature` order (the
 three `@givn.modified` entries are reconciled in S2b and Task 24a, not as
 scenario tasks), then the
 E2E setup task, then the 8 `@e2e` scenarios in the same order.
@@ -20,10 +20,10 @@ copied verbatim from `proposal.md` §Release note):**
 > report that opens in a browser.
 
 **Delta inventory (verified mechanically against every delta `.feature` under
-`givn/changes/development-timeline/specs/`):** 46 executable scenario entries in
-5 features = 43 `@givn.added`, 3 `@givn.modified` (the S2b corpus-pin
+`givn/changes/development-timeline/specs/`):** 47 executable scenario entries in
+5 features = 44 `@givn.added`, 3 `@givn.modified` (the S2b corpus-pin
 reconciliation plus the two target-list reconciliations in Task 24a),
-0 `@givn.removed`; 38 non-`@e2e` + 8 `@e2e`. A `Scenario
+0 `@givn.removed`; 39 non-`@e2e` + 8 `@e2e`. A `Scenario
 Outline` counts as one entry (its Examples rows are input variation, not
 additional scenarios). Every still-pending entry carries `@wip` today and stays
 `@wip` until its own RED step removes the tag from that one scenario; the three
@@ -34,16 +34,17 @@ Task 24a.
 |---|---|---|---|
 | `inspect-development-history/development-record.feature` | 14 | 12 | 2 |
 | `inspect-development-history/agent-activity-reporting.feature` | 15 | 14 | 1 |
-| `inspect-development-history/development-report.feature` | 14 | 9 | 5 |
+| `inspect-development-history/development-report.feature` | 15 | 10 | 5 |
 | `fragments/adr-qualification-gate.feature` (`@givn.modified`) | 1 | 1 | 0 |
 | `initialize-project/initialize-a-project.feature` (`@givn.modified`, two scenarios) | 2 | 2 | 0 |
-| **Total** | **46** | **38** | **8** |
+| **Total** | **47** | **39** | **8** |
 
 **Work order (recorded choice).** `design.md` names no implementation sequencing
 section, so this file follows `.feature` order — the features in the inventory
-order above, scenarios in their in-file order — in three phases: Tasks 1–35
-(the 38 non-`@e2e` scenarios, numbered Tasks 1–33 plus **Task 11a** and **Task
-24a**, both inserted with an `a` suffix so the later task numbers stay stable),
+order above, scenarios in their in-file order — in three phases: Tasks 1–36
+(the 39 non-`@e2e` scenarios, numbered Tasks 1–33 plus **Task 11a**, **Task 24a**
+and **Task 25a**, each inserted with an `a` suffix so the later task numbers stay
+stable),
 Task E1 (E2E setup), Tasks E2–E9 (the `@e2e` scenarios, same feature order). The
 three `@givn.modified` entries are not scenario tasks: ADR-073 raises the register
 count the permanent `adr-qualification-gate` scenario pins, and the new `maki`
@@ -203,7 +204,7 @@ fills the asset's single data slot (`/*__GIVN_REPORT_DATA__*/`) with the JSON
 model; the inline script builds an SVG time axis, nests spans by `parent`, and
 wires zoom (wheel, buttons), pan (drag), selection (click/`Enter`) and the
 details panel — it never calls `fetch`, never loads a remote resource, and never
-uses `Date.now()`. Summary: total elapsed, ranked longest steps, entry count,
+uses `Date.now()`. Summary: total elapsed, the ranked longest entries, entry count,
 question-wait total and count, subagent count and combined duration, token
 totals overall / per model / per subagent. Accessibility: a labelled `svg`
 inside `main`, every span focusable with an accessible name, the details panel a
@@ -228,7 +229,7 @@ zoom transition and the panel animation.
   GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/<feature>.feature::<scenario title>"
   ```
   Scope commands: full delta `GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e`
-  (38 scenarios, `verify.command` after Task S2 — the 35 non-`@e2e` scenario
+  (39 scenarios, `verify.command` after Task S2 — the 36 non-`@e2e` scenario
   sections plus the three `@givn.modified` entries) and
   `GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --e2e`
   (8 scenarios, `verify.e2e_command`). Run a `Scenario Outline`'s unit once: it
@@ -6252,6 +6253,86 @@ name it.
         the delta `.feature`'s `@wip` removal, and this task file's evidence.
         ```
 
+## Task 25a — `Measured agent activity is ranked alongside Givn's own steps` (`development-report`, added)
+
+- [ ] **Scenario: `Measured agent activity is ranked alongside Givn's own steps`**
+  - Design constraints:
+    - Ranking rule (design §Report Generation): the ranking covers **every
+      recorded entry with a measured `duration_ms`** — `command`, `phase`,
+      `hook`, `step`, `revision`, `session`, `turn`, `tool`, `subagent`,
+      `question` — longest first, with the existing tie-breaking (equal durations
+      break on the earlier `at`, then the lower `id`), over the whole record and
+      never the zoomed window. Today `src/cli/timeline.rs::ranked_steps` filters
+      `entry.kind == STEP`, which is why this repository's own report shows an
+      empty ranking while its record holds measured commands (a 3.6 s
+      `skills sync`) and tool calls (a 799 ms `task`).
+    - Fixture shape (the new Given): the seeded record holds a measured agent
+      **tool** call longer than the longest measured `step`, so the ranking's
+      first row is a non-step entry and the old `kind == "step"` filter cannot
+      pass. The agent tool call is an ordinary `tool` entry built with the
+      shared seeded-history builder
+      (`tests/steps/development_timeline_support.rs`) — no new fixture
+      machinery.
+    - Each rendered row carries the entry's visible label, **its kind**, and its
+      duration, so a gate step, a command, a tool call, a turn, and a subagent
+      span are distinguishable. That means `RankedStep` gains a `kind` field and
+      the row markup gains the kind element beside `step-label` and the
+      duration; the list heading stays **"Longest steps"**,
+      because these are the longest measured steps of the development whatever
+      layer recorded them, so no design-system wording changes.
+    - Assertions: the first Then reads the model's `summary.longest_steps` and
+      finds the agent tool call first — the JSON field name stays
+      `longest_steps`, because the existing Then and the `@e2e` model readers use
+      it; the second Then reads the **rendered** ranking through the existing
+      `list_entry_ids(&document, "longest-steps")` parser
+      (`tests/steps/development_report_steps.rs:428`) and asserts the visible
+      kind element names the kind of every entry the list holds, so the rendered
+      markup is exercised, not only the model.
+    - An entry the harness could not measure is absent from the ranking, never
+      rendered as zero — the same missing-signal rule the rest of the report
+      follows.
+    - The written list is uncapped by design: it is bounded only by the record's
+      own measured entries, because the design bounds the **drawn shapes** (the
+      zoom aggregation rule), never the summary rows — so no cap, truncation, or
+      "top N" is added here.
+    - Files: `src/cli/timeline.rs` — the widened filter, the `kind` field, the
+      row markup in `render_summary` (`~:1178-1186`), and the doc comments that
+      still describe a steps-only ranking (`RankedStep`, `~:362-364`;
+      `ranked_steps`, `~:711-715`; `Summary.longest_steps`, `~:158-159`) — and
+      `assets/timeline/report.html`, which gains only the kind element's **style
+      rule** (the asset carries the CSS; the element itself is rendered by
+      `render_summary`, never by the asset). The steps go in
+      `tests/steps/development_report_steps.rs`.
+    - RED expected failure: the three new step phrases (one Given, two
+      Then/And) are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Measured agent activity is ranked alongside Givn's own steps"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — widen the ranking, add the kind to the model and the row,
+        and implement the steps; then re-run the whole existing ranking scenario
+        (`The report ranks the longest single step first`) as well, so the wider
+        rule is proven not to break the narrower claim. Re-run the `@e2e` scope
+        (`GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh
+        --e2e`) and commit the refreshed `evidence/visual/**` pairs it writes:
+        the widened summary rows change the rendered report, so no committed
+        pair may stay stale by content into the archive finalization (Task 24a
+        refreshed the same evidence in its own commit). Compile first, re-run →
+        exit 0. Paste them.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — keep one ranking function and one row renderer (no
+        second list for agent activity); re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title `Measured agent activity is ranked alongside Givn's own
+        steps` in the body. Record the revision identifier.
+
 ## Task 26 — `The report totals the time spent waiting for questions` (`development-report`, added)
 
 - [x] **Scenario: `The report totals the time spent waiting for questions`**
@@ -7755,11 +7836,11 @@ name it.
       is a hard-stop, fix-before-continuing condition.
     - **Scenario-count proof (the subset must be real).** `verify.command` runs
       the `not @e2e` tag set and `verify.e2e_command` the `@e2e` set; with this
-      change in scope that is 38 vs 8 units, so the e2e count is strictly less
+      change in scope that is 39 vs 8 units, so the e2e count is strictly less
       than the full count. Prove it with the runner's own listing (or the
       summary line of each run) and paste both counts:
       `GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e`
-      → 38 scenarios, `GIVN_FEATURES=givn/changes/development-timeline/specs
+      → 39 scenarios, `GIVN_FEATURES=givn/changes/development-timeline/specs
       ./run-tests.sh --e2e` → 8 scenarios.
     - **Health check before any scenario step.** `npx --prefix tests/e2e
       playwright --version` reports 1.64.1 and the driver can launch Chromium and
@@ -10103,7 +10184,7 @@ asset's extracted inline layer were green at every commit of the tier.
 **Done when:** every box above is checked with its pasted evidence and revision
 identifier, `verify.command` (`./run-tests.sh --non-e2e`) and
 `verify.e2e_command` (`./run-tests.sh --e2e`) both exit 0 on the full suite, the
-e2e setup task's scenario-count proof is pasted (38 regular vs 8 `@e2e`, e2e
+e2e setup task's scenario-count proof is pasted (39 regular vs 8 `@e2e`, e2e
 strictly less), every `@e2e` scenario has committed `mobile.png` + `desktop.png`
 under its slug with the empty-scope scenario's `mobile--empty.png` /
 `desktop--empty.png`, and no `@wip` tag remains on any scenario this change

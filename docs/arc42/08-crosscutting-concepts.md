@@ -905,7 +905,14 @@ in-process and stamp their own timestamps where their events carry none, Claude
 Code runs one process per hook so its mapping, pending start timestamps, and
 session-record token read live in the binary while its generated asset stays a
 thin shim, and Maki runs the reporter as a Lua plugin whose autocmds fire
-without any timestamp and whose `TurnEnd` covers only the main session. Maki
+without any timestamp, whose `TurnEnd` covers only the main session, and whose
+`TurnStart` is `maki-ui`-only — a reproduced headless run therefore reported
+measured tool calls and turn usage, no turn durations, and no subagent span (the
+record carried only the `task` tool entry while Maki's own log shows the
+subagent session opening and closing, and `maki.task.list()` cannot enumerate
+subagents without an interactive UI; whether the harness's subagent event fires
+outside the TUI is not established), while subagent spans come from omp,
+opencode, and Claude Code. Maki
 additionally gates `.maki/` configuration on folder trust, so its reporter is
 active only in a project the developer has trusted for Maki. A signal a harness
 cannot deliver — token usage on a background subagent launch, a duration broken
@@ -997,8 +1004,9 @@ plain file is the interface external tools read directly. To stay readable at
 that size, the timeline never draws one shape per entry: at low zoom, dense
 short activities collapse into per-bucket aggregate markers naming their count
 and combined duration, individual spans appear as the zoom narrows, and the
-summary and ranking always cover the full record (D-23 tracks pruning and
-retention).
+summary and ranking always cover the full record — the ranking over every entry
+kind that carries a measured duration, never only subprocess steps (D-23 tracks
+pruning and retention).
 
 **Browser tier.** The report is a Web UI, so its acceptance is browser-driven:
 the repository's e2e tier installs Node.js (current LTS) and Playwright's

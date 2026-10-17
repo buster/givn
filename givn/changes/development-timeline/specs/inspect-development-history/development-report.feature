@@ -62,6 +62,13 @@ Feature: Development Report
     And each aggregate marker names how many entries it covers and their total duration
     And the report summary still counts every recorded entry
 
+  @givn.added @wip
+  Scenario: Measured agent activity is ranked alongside Givn's own steps
+    Given a change "demo" whose record holds an agent tool call longer than any step
+    When the developer generates the development report for "demo"
+    Then the report ranks the agent tool call first
+    And the ranking names the kind of every entry it lists
+
   @givn.added @e2e
   Scenario: Consumer generates the development report for a change
     Given a project root with givn/ initialised

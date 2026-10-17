@@ -560,7 +560,7 @@ as missing rather than as zero.
 `givn timeline [--change <id>|--topic <id>] [--out <path>]` reads the record for
 one scope — or, with no scope flag, renders the project report, whose "outside a
 scope" band carries the project's own entries — builds the report model (bands,
-phases, ranked longest steps, question wait totals, subagent fan-out, token
+phases, the ranked longest measured entries of any kind, question wait totals, subagent fan-out, token
 totals overall, per model, and per subagent), substitutes that model into the
 embedded report document twice — as the machine-readable model payload element
 the document's inline script parses, and as the text-only initial view the
