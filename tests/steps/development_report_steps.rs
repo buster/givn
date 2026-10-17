@@ -2737,6 +2737,156 @@ fn report_names_no_phase_for_that_recorded_work(world: &mut GivnWorld) {
     );
 }
 
+/// The durations the repeated-step fixture records for its six identical
+/// commands, each distinct so the group's combined duration is a real sum.
+const REPEATED_DURATIONS: [u64; 6] = [10_000, 20_000, 30_000, 40_000, 50_000, 60_000];
+
+#[given(
+    regex = r#"^a change "([^"]+)" whose record holds the same command six times in one phase$"#
+)]
+fn change_whose_record_holds_the_same_command_six_times(world: &mut GivnWorld, id: String) {
+    let scope = Scope::Change { id: id.clone() };
+    let seeded = {
+        let env = project_root(world);
+        let mut history = support::SeededHistory::new();
+        let transition = history.point(&scope, "phase", "tasks.md", "2026-10-16T13:00:00.000Z");
+        history.label(transition, "tasks.md");
+        for (index, duration) in REPEATED_DURATIONS.iter().enumerate() {
+            let at = format!("2026-10-16T13:{:02}:00.000Z", 10 + index);
+            let entry = history.span(&scope, "command", "test", &at, *duration);
+            // The labels differ only in whitespace: the group's normalized
+            // label is what makes them one group.
+            let label = if index % 2 == 0 {
+                "cargo  test --locked "
+            } else {
+                "cargo test --locked"
+            };
+            history.label(entry, label);
+        }
+        // A different kind with the same label never joins the group, and the
+        // ranking's other measured entries stay outside it.
+        let step = history.span(
+            &scope,
+            "step",
+            "verify",
+            "2026-10-16T13:20:00.000Z",
+            120_000,
+        );
+        history.label(step, "cargo test --locked");
+        let tool = history.span(&scope, "tool", "Bash", "2026-10-16T13:21:00.000Z", 5_000);
+        history.label(tool, "git status");
+        history.seed(env)
+    };
+    state(world).seeded = seeded;
+    world.last_change_id = Some(id);
+}
+
+#[then("the report names one repeated-step group with its count and combined duration")]
+fn report_names_one_repeated_step_group(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let phase = report_phase(&model, "implement");
+    let groups = phase["repeated"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the phase carries no repeated groups: {model:#?}"));
+    assert_eq!(
+        groups.len(),
+        1,
+        "the report names {} repeated groups instead of one: {model:#?}",
+        groups.len()
+    );
+    let group = &groups[0];
+    assert_eq!(group["kind"], json!("command"));
+    assert_eq!(
+        group["label"],
+        json!("cargo test --locked"),
+        "the group does not carry the normalized label: {group:#?}"
+    );
+    let entries = seeded(world);
+    let mut expected: Vec<u64> = Vec::new();
+    let mut combined = 0u64;
+    for entry in entries.iter().filter(|entry| entry.kind == "command") {
+        expected.push(entry.id);
+        combined += entry
+            .duration_ms
+            .expect("the fixture measures every command");
+    }
+    expected.sort_unstable();
+    assert_eq!(expected.len(), 6, "the fixture records six commands");
+    assert_eq!(
+        group["count"].as_u64(),
+        Some(expected.len() as u64),
+        "the group does not name its count: {group:#?}"
+    );
+    assert_eq!(
+        group["duration_ms"].as_u64(),
+        Some(combined),
+        "the group does not name the members' combined duration: {group:#?}"
+    );
+    let mut members: Vec<u64> = group["entries"]
+        .as_array()
+        .expect("the group's member ids")
+        .iter()
+        .map(|id| id.as_u64().expect("a group member id"))
+        .collect();
+    members.sort_unstable();
+    assert_eq!(
+        members, expected,
+        "the group does not hold exactly the six commands: {group:#?}"
+    );
+    // A different kind with the same label stays out of the group.
+    let step = entries
+        .iter()
+        .find(|entry| entry.kind == "step")
+        .expect("the fixture records a step with the same label");
+    assert!(
+        !members.contains(&step.id),
+        "the group merged a different kind: {group:#?}"
+    );
+    // The text view names the count and the combined duration.
+    assert!(
+        document.contains(&format!(
+            "data-kind=\"command\" data-count=\"6\" data-duration-ms=\"{combined}\""
+        )),
+        "the text view does not name the group's count and duration: {document}"
+    );
+    assert!(
+        document.contains(&format!(
+            "6 entries, combined {}",
+            format_duration(combined)
+        )),
+        "the text view does not print the group's count and combined duration: {document}"
+    );
+}
+
+#[then("the report still ranks every measured entry")]
+fn report_still_ranks_every_measured_entry(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let mut expected: Vec<u64> = seeded(world)
+        .iter()
+        .filter(|entry| entry.duration_ms.is_some())
+        .map(|entry| entry.id)
+        .collect();
+    expected.sort_unstable();
+    let mut ranked: Vec<u64> = model["summary"]["longest_steps"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the report ranks no steps: {model:#?}"))
+        .iter()
+        .map(|step| step["id"].as_u64().expect("a ranked step id"))
+        .collect();
+    ranked.sort_unstable();
+    assert_eq!(
+        ranked, expected,
+        "the group hid an entry from the ranking: {model:#?}"
+    );
+    // One row each: no measured entry is duplicated or omitted by the group.
+    let rows = model["summary"]["longest_steps"]
+        .as_array()
+        .expect("the ranking");
+    assert_eq!(rows.len(), expected.len(), "the ranking rows: {model:#?}");
+}
+
 #[given(regex = r#"^a change "([^"]+)" whose record holds hundreds of short agent activities$"#)]
 fn change_with_hundreds_of_short_agent_activities(world: &mut GivnWorld, id: String) {
     let scope = Scope::Change { id: id.clone() };
