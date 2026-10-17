@@ -13254,7 +13254,7 @@ Repository checks are secondary only.
 
 ## Task HE3 — `Consumer expands a workflow phase and sees its lanes` (`@e2e`, `development-report`)
 
-- [ ] **Scenario: `Consumer expands a workflow phase and sees its lanes`** (`@wip` until its RED)
+- [x] **Scenario: `Consumer expands a workflow phase and sees its lanes`** (`@wip` until its RED)
   - Design constraints:
     - Matrix row 6: real interface **Web UI**; Playwright clicks the
       **`implement`** phase expander and reads from the DOM: the phase's
@@ -13289,32 +13289,89 @@ Repository checks are secondary only.
       `tests/steps/development_timeline_support.rs`, the two new PNGs.
     - RED expected failure: the Given, When, and three Then phrases are all
       undefined (the scenario is new).
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer expands a workflow phase and sees its lanes"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Report
+          Scenario: Consumer expands a workflow phase and sees its lanes
+           ✘  Given an open development report with a recorded history holding parallel sessions
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:164:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        EXIT=101
         ```
-  - [ ] **GREEN** — implement expansion, the vertical axis, the lanes, and the
+  - [x] **GREEN** — implement expansion, the vertical axis, the lanes, and the
         three controls. Files: `assets/timeline/report.html`,
         `tests/steps/development_report_e2e_steps.rs`,
         `tests/steps/development_timeline_support.rs`, plus the new pair.
         `node --check`, compile, re-run → exit 0. Paste it.
         ```
-        PASTE THE GREEN RUN HERE
+        Feature: Development Report
+          Scenario: Consumer expands a workflow phase and sees its lanes
+           ✔  Given an open development report with a recorded history holding parallel sessions
+           ✔  When the consumer expands the "implement" phase
+           ✔  Then the browser shows that phase's vertical timeline with time flowing down
+           ✔  And the browser shows one lane per session beside each other
+           ✔  And the browser shows the Fit, 1 h, and 15 m zoom controls
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
+
+        consumer-expands-a-workflow-phase-and-sees-its-lanes/desktop.png 65829 bytes
+        consumer-expands-a-workflow-phase-and-sees-its-lanes/mobile.png   27404 bytes
         ```
-  - [ ] **REFACTOR** — one `expandPhase`/`renderAxis`/`renderLanes` path shared
+  - [x] **REFACTOR** — one `expandPhase`/`renderAxis`/`renderLanes` path shared
         with select and zoom; `cargo fmt --all -- --check`, `cargo clippy
         --locked --all-targets -- -D warnings`, and `node --check` green;
         re-run → still exit 0. Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+        node --check /tmp/report-inline.js → exit 0
+
+        Feature: Development Report
+          Scenario: Consumer expands a workflow phase and sees its lanes
+           ✔  Given an open development report with a recorded history holding parallel sessions
+           ✔  When the consumer expands the "implement" phase
+           ✔  Then the browser shows that phase's vertical timeline with time flowing down
+           ✔  And the browser shows one lane per session beside each other
+           ✔  And the browser shows the Fit, 1 h, and 15 m zoom controls
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+  - [x] **COMMIT** — `0e6306aa` — `test(e2e): <release note>` with the scenario
         title in the body (including the new evidence pair). Record the
         revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit 0e6306aa
+        test(e2e): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        Consumer expands a workflow phase and sees its lanes
+
+        The hybrid report's implement phase expands into a vertical time axis with one
+        lane per recorded session side by side, the subagent's own Architect.Scout lane
+        and the unattributed lane included, and the per-phase Fit / 1 h / 15 m controls.
+        The expanded phase and its lane scroll survive the mobile layout. The new
+        evidence directory is committed.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../development-report.feature                       |   2 +-
+         .../development_report_e2e_steps.rs                  | 244 ++++++++++++++++++
+         .../development_timeline_support.rs                  |  69 +++++
+         .../consumer-expands-a-workflow-phase-and-sees-its-lanes/desktop.png | Bin 0 -> 65829 bytes
+         .../consumer-expands-a-workflow-phase-and-sees-its-lanes/mobile.png  | Bin 0 -> 27404 bytes
+         5 files changed, 315 insertions(+), 1 deletion(-)
         ```
 
 ## Task HE4 — `Consumer selects a timeline element and reads its details` (`@e2e`, `development-report`)
