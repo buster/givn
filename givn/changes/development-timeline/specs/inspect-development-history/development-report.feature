@@ -159,7 +159,7 @@ Feature: Development Report
       | change |
       | topic  |
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer expands a workflow phase and sees its lanes
     Given an open development report with a recorded history holding parallel sessions
     When the consumer expands the "implement" phase

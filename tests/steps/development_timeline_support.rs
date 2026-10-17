@@ -576,6 +576,103 @@ pub fn seed_report_detail_tool(env: &common::TestEnv, change: &str) -> HistoryEn
     entry
 }
 
+/// The spawning session's visible lane name in the parallel-session fixture.
+pub const PARALLEL_SPAWN_LANE: &str = "Opencode main";
+/// The subagent's own session lane name in the parallel-session fixture.
+pub const PARALLEL_SCOUT_LANE: &str = "Architect.Scout";
+/// The unattributed lane's visible name in the parallel-session fixture.
+pub const PARALLEL_UNATTRIBUTED_LANE: &str = "unattributed";
+/// The tool call id the subagent lane's tool entry carries.
+pub const PARALLEL_TOOL_CALL_ID: &str = "call-hybrid-scout";
+/// The captured content the subagent lane's tool entry carries.
+pub const PARALLEL_CONTENT_TEXT: &str = "<b>cargo test --locked</b>";
+
+/// The `@e2e` fixture the expand, select, and zoom scenarios drive: the same
+/// two-session `implement` phase Task H5 proves at the model boundary — the
+/// subagent's own session named `Architect.Scout`, the spawning session's lane
+/// that keeps its own name and carries a subagent span, and an entry the
+/// record names no session for. The subagent lane's tool entry carries the tool
+/// call id and the bounded content field the lane-log assertion reads.
+pub fn seed_parallel_sessions(env: &common::TestEnv, change: &str) -> Vec<HistoryEntry> {
+    let out = common::run_givn(env, &["new", change]);
+    assert!(
+        out.status.success(),
+        "givn new {change} failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let scope = Scope::Change {
+        id: change.to_string(),
+    };
+    let mut history = SeededHistory::new();
+    let transition = history.point(&scope, "phase", "tasks.md", "2026-10-16T13:00:00.000Z");
+    history.label(transition, "tasks.md");
+    let spawn_session = history.point(
+        &scope,
+        "session",
+        "opencode-session",
+        "2026-10-16T13:05:00.000Z",
+    );
+    history.session(spawn_session, SPAWN_SESSION_ID);
+    history.data(
+        spawn_session,
+        serde_json::json!({ "title": PARALLEL_SPAWN_LANE }),
+    );
+    let child_session = history.point(
+        &scope,
+        "session",
+        "subagent-session",
+        "2026-10-16T13:06:00.000Z",
+    );
+    history.session(child_session, CHILD_SESSION_ID);
+    history.data(
+        child_session,
+        serde_json::json!({ "title": "Subagent transcript" }),
+    );
+    let child_turn = history.span(&scope, "turn", "turn", "2026-10-16T13:07:00.000Z", 30_000);
+    history.session(child_turn, CHILD_SESSION_ID);
+    let child_span = history.point(
+        &scope,
+        "subagent",
+        "Architect.Scout",
+        "2026-10-16T13:08:00.000Z",
+    );
+    history.session(child_span, CHILD_SESSION_ID);
+    history.data(
+        child_span,
+        serde_json::json!({ "subagent": CHILD_SESSION_ID, "agent": PARALLEL_SCOUT_LANE }),
+    );
+    let tool = history.span(&scope, "tool", "Bash", "2026-10-16T13:09:00.000Z", 12_000);
+    history.label(tool, "cargo test --locked");
+    history.session(tool, CHILD_SESSION_ID);
+    history.data(
+        tool,
+        serde_json::json!({
+            "tool_call_id": PARALLEL_TOOL_CALL_ID,
+            "content": {
+                "tool_input": {
+                    "text": PARALLEL_CONTENT_TEXT,
+                    "truncated": false,
+                    "bytes": PARALLEL_CONTENT_TEXT.len()
+                }
+            }
+        }),
+    );
+    history.nested_in(tool, child_span);
+    let spawn_turn = history.span(&scope, "turn", "turn", "2026-10-16T13:10:00.000Z", 45_000);
+    history.session(spawn_turn, SPAWN_SESSION_ID);
+    let spawn_span = history.point(&scope, "subagent", "Reviewer", "2026-10-16T13:11:00.000Z");
+    history.session(spawn_span, SPAWN_SESSION_ID);
+    history.data(
+        spawn_span,
+        serde_json::json!({ "subagent": "ghost-111213141516", "agent": "Reviewer" }),
+    );
+    history.span(&scope, "step", "verify", "2026-10-16T13:12:00.000Z", 20_000);
+    history.seed(env)
+}
+
+const SPAWN_SESSION_ID: &str = "spawn-0a1b2c3d4e5f";
+const CHILD_SESSION_ID: &str = "child-9f8e7d6c5b4a";
+
 /// The names of a directory's entries, empty when the directory does not
 /// exist.
 fn read_dir_names(dir: &Path) -> Vec<String> {
