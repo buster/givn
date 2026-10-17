@@ -99,6 +99,10 @@ the time went — and `givn history --change <id> --json` prints the record
 itself. The record lives under `givn/history/` as local runtime state and stays
 out of repository history.
 
+<p align="center">
+  <img src="docs/development-report.png" width="340" alt="Development report of an archived change: the scope, KPI tiles, and the top-to-bottom workflow phase stack; opening a phase shows its session lanes and lane log.">
+</p>
+
 `givn init` asks which agent targets receive the generated skills and commands;
 the list opens with `.opencode` marked and re-asks until at least one target is
 marked. Scripted runs state the selection explicitly:
