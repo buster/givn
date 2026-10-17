@@ -3516,7 +3516,7 @@ name it.
 
 ## Task 11e — `The record can be turned off for a project` (`development-record`, added)
 
-- [ ] **Scenario: `The record can be turned off for a project`**
+- [x] **Scenario: `The record can be turned off for a project`**
   - Design constraints:
     - The control is the three-state project key `record.mode: on | off | full`
       in `givn/config.yaml` (design §Capture completeness). The parse site is
@@ -3547,24 +3547,112 @@ name it.
       `tests/steps/development_record_steps.rs`.
     - RED expected failure: the new Then phrases (no pending state, no
       record-side ignore write, the intake warning) are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record can be turned off for a project"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record can be turned off for a project"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: The record can be turned off for a project
+           ✘  Given a change "demo" whose record already holds entries
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:134:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+
+        thread 'main' (3812785) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
         ```
-  - [ ] **GREEN** — implement the lenient key, the resolver, the intake and
+  - [x] **GREEN** — implement the lenient key, the resolver, the intake and
         harness_hook enforcement, and the reporters' early return; compile
         first, re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.81s
+        EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record can be turned off for a project"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: The record can be turned off for a project
+           ✔  Given a change "demo" whose record already holds entries
+           ✔  When the project sets the record mode to "off"
+           ✔  And a lifecycle command runs for "demo"
+           ✔  Then the record gains no new entry
+           ✔  And the record directory gains no pending state
+           ✔  And no record-side ignore entry is written
+           ✔  And the developer still reads the earlier entries for "demo"
+           ✔  When the agent reports a tool call with its complete input through the intake
+           ✔  Then the intake exits 0 and warns once that the record is off
+           ✔  And the record gains no new entry
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        10 steps (10 passed)
+        EXIT=0
+
+        Settings and off-enforcement smoke (real binary, throwaway roots):
+        $ givn history settings --json          # no record key
+        {"mode":"on","source":"default"}                     exit 0
+        $ givn history settings                   # no record key
+        record mode: on (source: default)                    exit 0
+        $ givn history settings --json          # record.mode: off
+        {"mode":"off","source":"config"}                     exit 0
+        $ givn history settings --json          # record.mode: full
+        {"mode":"full","source":"config"}                    exit 0
+        $ givn history settings --json          # outside givn/ (no scaffold)
+        error: not a Givn project (givn/ not found)          exit 1
+        $ givn history ingest --with-full-content   # off, payload carrying content
+        warning: the development record is off for this project; nothing was recorded
+                                                             exit 0
+        store byte-identical: yes; givn/history/pending: absent
+        $ givn history harness-hook --harness claude   # off, PreToolUse payload
+        warning: the development record is off for this project; nothing was recorded
+                                                             exit 0
+        store byte-identical: yes; givn/history/pending: absent
+
+        Reporter smoke (real harness binary, generated reporter; record.mode on
+        then off): on recorded the tool entry and stored no data.content; off
+        left the store byte-identical and created no pending directory.
         ```
-  - [ ] **REFACTOR** — one mode resolver shared by capture points and the
+  - [x] **REFACTOR** — one mode resolver shared by capture points and the
         settings query; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        $ cargo fmt --all -- --check
+        EXIT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 9.18s
+        CLIPPY_EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record can be turned off for a project"
+             Finished `test` profile [unoptimized + debuginfo] target(s) in 4.27s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: The record can be turned off for a project
+           ✔  Given a change "demo" whose record already holds entries
+           ✔  When the project sets the record mode to "off"
+           ✔  And a lifecycle command runs for "demo"
+           ✔  Then the record gains no new entry
+           ✔  And the record directory gains no pending state
+           ✔  And no record-side ignore entry is written
+           ✔  And the developer still reads the earlier entries for "demo"
+           ✔  When the agent reports a tool call with its complete input through the intake
+           ✔  Then the intake exits 0 and warns once that the record is off
+           ✔  And the record gains no new entry
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        10 steps (10 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+  - [x] **COMMIT** — `fb54192bd357c55f859d22d73625165211ab28ba` — `feat(development-record): <release note>` with
         the scenario title in the body. Record the revision identifier.
 
 ## Task 11f — `The default mode records metadata without content` (`development-record`, added)
