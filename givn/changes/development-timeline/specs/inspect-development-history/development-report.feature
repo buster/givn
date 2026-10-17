@@ -167,7 +167,7 @@ Feature: Development Report
     And the browser shows one lane per session beside each other
     And the browser shows the Fit, 1 h, and 15 m zoom controls
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer selects a timeline element and reads its details
     Given an open development report with a recorded history holding parallel sessions
     When the consumer selects the "Architect.Scout" lane
