@@ -16,6 +16,8 @@ repository's development scripts.
 | `givn readme check` | Report open README placeholders, scaffold remnants, and managed-block damage; exit 1 while findings remain. |
 | `givn spec <coverage\|duplicates\|tree\|find\|route>` | Deterministic spec-corpus queries: coverage inventory (with `--baseline` comparison), duplicate report, structural tree, lexical scenario search, and advisory capability routing. |
 | `givn status [--change <id>] [--json]` | Lifecycle state: artifact checklist, current stage, task progress with pending task descriptions, next required/optional steps; the text view opens with `SCM: git`, `SCM: fossil`, or `SCM: none (archive and managed upgrade are unavailable)`. Filesystem-derived, no separate state file. |
+| `givn history [--change <id> \| --topic <id>] [--json]` | Read one scope's development record as text or the machine-readable JSON view; with no scope flag, the project. Reading never appends an entry. Subcommands: `ingest` (the one intake: one reported payload on stdin, per-event validation, exit `0` when read and `2` when stdin is not readable JSON, `--with-full-content` raises this payload's mode unless `off`), `harness-hook --harness claude` (the process-per-hook mapping entry point the generated Claude shim pipes into), and `settings [--json]` (the resolved `record.mode` and its `config`/`default` source). |
+| `givn timeline [--change <id> \| --topic <id>] [--out <path>]` | Render the development report of one change, one ideation topic, or the project into one self-contained HTML file and print its path (default `givn/history/reports/<scope>.html`). Opens nothing and records nothing. |
 | `givn graph [--change <id>] [--json]` | Show the artifact workflow graph: nodes, `requires` edges, optional/gates-archive flags, post hooks; overlays live status with `--change`. |
 | `givn archive --change <id>` | Archive a completed change, forward-only and SCM-backed (Git or Fossil). Requires a clean committed checkout; publishes the merged candidate revision, runs the regular and E2E verification scopes once with fail-closed runner results, runs the optional coverage gate, and publishes the verification receipt (`givn/archive/<id>/verification.json`). A failed candidate remains unproven and resumable; an already proven archive is refused. |
 | `givn run [--port <n>] [--print]` | Start the product declared in the `run:` block of `givn/commands.yaml`. Hands the port to the product through `port_env` (ephemeral port when the caller passes none), prints `givn run: ready at <url>` once readiness is observed, forwards SIGINT/SIGTERM (exit 130/143), and forwards the product's exit code. `--print` emits one sh-eval-able start line without starting. |
@@ -129,6 +131,11 @@ Key sections of `givn/config.yaml`:
   ```
 - `addons:` — see the addons table above.
 - `skills:` — the persisted agent targets `givn skills sync` installs to.
+- `record.mode` — the development record's capture control: `on` (default:
+  bounded metadata and full question text), `off` (nothing is appended, no
+  pending state, no record-side ignore write), or `full` (adds complete
+  LLM-facing content under the 64 KiB/256 KiB caps). An absent or invalid value
+  falls back to `on` with one warning; `givn upgrade` preserves the key.
 - `rules:` — the generated-rules policy: `local-only` (the default when
   absent) or `versioned`.
 
@@ -138,6 +145,7 @@ Key sections of `givn/config.yaml`:
 givn/
 ├── config.yaml                       # documented + versioned: overlay, addons, rules, extensions
 ├── commands.yaml                     # project-owned verify, coverage, and run values
+├── history/                          # local runtime state, never committed: events.jsonl and reports/
 ├── specs/<group>/<cap>.feature       # permanent merged spec (source of truth)
 ├── changes/<id>/                     # active change (state = which files exist)
 │   ├── proposal.md
