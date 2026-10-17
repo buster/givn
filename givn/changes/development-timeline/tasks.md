@@ -14827,7 +14827,7 @@ untouched; this part is appended after its completion statement.
 
 ## Task H16 — `An ideation topic report uses the ideation workflow` (`development-report`, added)
 
-- [ ] **Scenario: `An ideation topic report uses the ideation workflow`** (`@wip` until its RED)
+- [x] **Scenario: `An ideation topic report uses the ideation workflow`** (`@wip` until its RED)
   - Design constraints:
     - **Header and stack.** A topic report renders the **six** `IDEATION_STAGES`
       in place of the change workflow, with the header's done count over six
