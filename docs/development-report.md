@@ -92,93 +92,102 @@ The record contains, per line: `schema`, `id`, `at` (UTC), `scope`
 ## Analytics on the JSONL store
 
 The store is one JSON object per line at `givn/history/events.jsonl`. It is
-append-only and grows as commands run; treat every output below as a snapshot.
-**Never commit the store.**
+local and ignored; **never commit it**. Each line carries `id`, `at` (UTC),
+`scope` (`change|ideation|project` + id), `source`, `kind`, `name`, `label`,
+`duration_ms` (may be absent), `outcome`, `session`, `parent`, and `data`
+(kind-specific: `usage`, `cost`, `context_size`, `tool_call_id`, `error`,
+`agent/subagent`, `question`, and `content` only in `full` mode).
 
-Before summing, note four traps:
+Four traps before summing:
 
 - `duration_ms` is measured; absent is not zero.
-- Durations overlap: a turn overlaps its tool calls and subagent spans. Sum one
-  kind, or use a phase's wall time — never all kinds together.
-- The recorder records its own intake invocations (`history ingest`,
-  `history harness-hook`). Exclude them for development analytics; the report
-  does.
-- Token fields are per turn. `usage.input`/`output` are per-turn counts while
-  `usage.total_tokens`/`context_size` repeat the prompt context each turn; the
-  report's token tile is a cumulative total across turns, so it is not the same
-  as unique tokens. Pick the field that answers the question.
+- Durations overlap: a turn overlaps its tools and subagent spans. Sum one kind,
+  or use a phase's wall time — never all kinds together.
+- The recorder records its own intake commands (`history ingest`,
+  `history harness-hook`). Exclude them for work analytics.
+- Token fields are per turn; `usage.total_tokens`/`context_size` repeat context
+  each turn, so cumulative sums are not unique tokens.
 
-### jq
+The outputs below come from a frozen snapshot of **8,981 entries**; the live
+file grows as work continues.
+
+### jq — no setup, whole-file JSON
+
+jq's strength is the zero-setup ad-hoc question: read the file, reshape the
+heterogeneous JSON, print. No database, no schema, and the output pipes into
+anything.
+
+**Where did the measured time go, by kind?**
+Group every entry by kind and sum its measured durations; the fastest first
+look.
 
 ```sh
-# entries and measured seconds per kind
 jq -s 'group_by(.kind)
   | map({kind:.[0].kind, n:length, s:((map(.duration_ms // 0)|add)/1000|floor)})
   | sort_by(-.n)' givn/history/events.jsonl
-
-# longest measured steps, recorder excluded
-jq -s 'map(select(.duration_ms != null
-    and ((.kind=="command" and ((.label//"")|test("^history (ingest|harness-hook)\\b"))) | not)))
-  | sort_by(-.duration_ms) | .[:8]
-  | .[] | [(.duration_ms/1000), .kind, (.name//""), ((.label//"")[0:55]), .scope.id]
-  | @tsv' -r givn/history/events.jsonl
-
-# where command time goes
-jq -s 'map(select(.kind=="command"
-    and ((.label//"")|test("^history (ingest|harness-hook)\\b")|not)))
-  | group_by(.name)
-  | map({name:.[0].name, n:length, s:((map(.duration_ms//0)|add)/1000|floor)})
-  | sort_by(-.n) | .[:6]' givn/history/events.jsonl
-
-# per-turn token work and cost (usage can be the string "unavailable")
-jq -s 'map(select(.kind=="turn")) | {
-  turns: length,
-  input:  [.[]|(.data.usage|if type=="object" then (.input // 0) else 0 end)]|add,
-  output: [.[]|(.data.usage|if type=="object" then (.output // 0) else 0 end)]|add,
-  reasoning: [.[]|(.data.usage|if type=="object" then (.reasoning // 0) else 0 end)]|add,
-  cost: [.[]|(.data.cost|if type=="object" then (.total // 0) else (. // 0) end)]|add
-}' givn/history/events.jsonl
 ```
-
-Example snapshot (8,917 entries at the time of writing; the store grows as commands run):
 
 ```text
 kind       n     s
-command    2421  512
-tool       2296  8855
-turn       2074  17454
-usage      2074  0
+command    2445  512
+tool       2308  8857
+turn       2088  17584
+usage      2088  0
 subagent   25    8358
 phase      16    11
 step       10    409
 question   1     137
+```
 
+**Which single steps took longest, ignoring the recorder's own commands?**
+Filter for measured entries, drop the intake rows, sort descending, and emit
+TSV ready for `cut`, `column`, or a spreadsheet.
+
+```sh
+jq -s 'map(select(.duration_ms != null
+    and ((.kind=="command" and ((.label//"")|test("^history (ingest|harness-hook)\\b"))) | not)))
+  | sort_by(-.duration_ms) | .[:5]
+  | .[] | [((.duration_ms/1000*10|round)/10), .kind, (.name//"")]
+  | @tsv' -r givn/history/events.jsonl
+```
+
+```text
 963.4  turn      turn 11
 963.2  subagent  HybridBundleO
 961.0  tool      wait
 812.1  subagent  HybridDesignReview
 737.3  turn      turn 21
-737.3  subagent  HybridBundleQ
-
-commit        164  15.9 s
-attribution    97   1.1 s
-status         31   0.9 s
-
-turns 2075 · input 5,013,065 · output 1,440,883 · reasoning 684,872 · cost $2.56
 ```
 
-### SQLite
+**How much token work and cost do the turns carry?**
+Select turns whose `usage` is an object (the harness may report
+`"unavailable"`), then sum the recorded counts and cost.
 
-Import once. The `\x01` separator cannot occur in JSON, so labels containing
-`|` survive the one-column import:
+```sh
+jq -s 'map(select(.kind=="turn" and (.data.usage|type)=="object")) as $t
+  | {turns:($t|length),
+     input:([$t[]|(.data.usage.input//0)]|add),
+     output:([$t[]|(.data.usage.output//0)]|add),
+     reasoning:([$t[]|(.data.usage.reasoning//0)]|add),
+     cost:([$t[]|(.data.cost|if type=="object" then (.total//0) else (.//0) end)]|add)}'
+  givn/history/events.jsonl
+```
+
+```text
+turns 2086 · input 5,019,281 · output 1,461,596 · reasoning 697,945 · cost $2.60
+```
+
+### SQLite — a persistent local table and SQL
+
+SQLite's strength is a stable local database: import once, query repeatedly,
+keep views, and use SQL aggregation and window functions. Import the JSONL with
+a separator that cannot occur in JSON, then expose a typed view:
 
 ```sh
 rm -f /tmp/givn.db
 sqlite3 /tmp/givn.db 'CREATE TABLE raw(line TEXT);'
 printf '.separator \001\n.import givn/history/events.jsonl raw\n' | sqlite3 /tmp/givn.db
-```
 
-```sh
 sqlite3 /tmp/givn.db <<'SQL'
 CREATE VIEW ev AS
 SELECT json_extract(line,'$.id')          AS id,
@@ -196,109 +205,149 @@ FROM raw WHERE json_valid(line);
 SQL
 ```
 
-```sql
-SELECT kind, count(*) n, round(sum(coalesce(duration_ms,0))/1000.0,1) s
-FROM ev GROUP BY kind ORDER BY n DESC;
+**Which Givn commands dominate command time, excluding the recorder?**
+Group command names and sum their measured durations — the query the SQL view
+makes repeatable.
 
-SELECT round(duration_ms/1000.0,1) s, kind, name, substr(label,1,55) label
-FROM ev
-WHERE duration_ms IS NOT NULL
-  AND NOT (kind='command'
-           AND (label LIKE 'history ingest%' OR label LIKE 'history harness-hook%'))
-ORDER BY duration_ms DESC LIMIT 8;
-
+```sh
+sqlite3 -header -column /tmp/givn.db <<'SQL'
 SELECT name, count(*) n, round(sum(coalesce(duration_ms,0))/1000.0,1) s
 FROM ev
 WHERE kind='command'
   AND NOT (label LIKE 'history ingest%' OR label LIKE 'history harness-hook%')
-GROUP BY name ORDER BY n DESC LIMIT 6;
-
-SELECT count(*) waits, round(sum(coalesce(duration_ms,0))/1000.0,1) s
-FROM ev WHERE kind='question';
-
-SELECT count(*) turns,
-       sum(CAST(json_extract(data,'$.usage.input')     AS INTEGER)) input,
-       sum(CAST(json_extract(data,'$.usage.output')    AS INTEGER)) output,
-       sum(CAST(json_extract(data,'$.usage.reasoning') AS INTEGER)) reasoning
-FROM ev WHERE kind='turn' AND json_type(data,'$.usage')='object';
+GROUP BY name ORDER BY n DESC LIMIT 5;
+SQL
 ```
-
-The view yields the same snapshot as the jq block; for the same data it prints
-`command 2421/512`, `tool 2296/8855`, `turn 2074/17454`, one wait of `137.6 s`,
-and `2075` turns with `5,013,065` input and `1,440,883` output tokens. Re-import into a fresh database, or `DELETE FROM raw;` and import
-again, to refresh a snapshot.
-
-### DuckDB
-
-DuckDB reads the JSONL directly; the 2.0 alpha exposes `read_json_auto` with
-`format='newline_delimited'` and infers `scope` as a struct and `usage` as JSON.
-`at` is a reserved word in DuckDB 2.0, so quote it as `"at"`. Add `-no-agent`
-in scripts to suppress the alpha's agent-mode banner.
-
-```sh
-# install (2.0 alpha)
-curl https://install.duckdb.org | DUCKDB_VERSION=alpha bash
-
-# direct query, no import
-duckdb -c "SELECT count(*) FROM read_json_auto('givn/history/events.jsonl', format='newline_delimited');"
-
-# or persist for repeated analysis
-duckdb /tmp/givn-history.duckdb -c "
-  CREATE OR REPLACE TABLE ev AS
-  SELECT * FROM read_json_auto('givn/history/events.jsonl', format='newline_delimited');"
-```
-
-```sql
-SELECT kind, count(*) n, round(sum(coalesce(duration_ms,0))/1000.0,1) s
-FROM ev GROUP BY kind ORDER BY n DESC;
-
-SELECT "at", round(duration_ms/1000.0,1) s, kind, name, left(label,55) label
-FROM ev
-WHERE duration_ms IS NOT NULL
-  AND NOT (kind='command'
-           AND (label LIKE 'history ingest%' OR label LIKE 'history harness-hook%'))
-ORDER BY duration_ms DESC LIMIT 8;
-
-SELECT sum(TRY_CAST(data.usage->>'input'     AS BIGINT)) input,
-       sum(TRY_CAST(data.usage->>'output'    AS BIGINT)) output,
-       sum(TRY_CAST(data.usage->>'reasoning' AS BIGINT)) reasoning
-FROM ev WHERE kind='turn' AND json_type(data.usage)='OBJECT';
-
-SELECT scope.id, label, "at",
-       date_diff('second', lag("at") OVER (PARTITION BY scope.id ORDER BY "at"), "at") AS s_since_prev
-FROM ev WHERE kind='phase' ORDER BY scope.id, "at";
-
-SELECT kind, left(label,42) label, count(*) n
-FROM ev
-WHERE kind IN ('tool','command') AND label IS NOT NULL
-  AND NOT (kind='command' AND (label LIKE 'history ingest%' OR label LIKE 'history harness-hook%'))
-GROUP BY kind,label HAVING n >= 5 ORDER BY n DESC LIMIT 6;
-```
-
-The same snapshot returns the same kind table and token totals; the phase query
-shows the transition instants and the gap to the previous transition:
 
 ```text
-development-timeline  proposal.md      2026-10-17 11:59:46.56+02  NULL
-development-timeline  design-review.md 2026-10-17 11:59:46.56+02  0
-development-timeline  specs            2026-10-17 11:59:46.56+02  0
-development-timeline  tasks.md         2026-10-17 12:42:33.994+02  2567
-development-timeline  review           2026-10-17 14:12:49.985+02  5416
-
-command  attribution stamp --message-file .git/COMMIT_…  97
-tool     givn/changes/development-timeline/tasks.md      90
-tool     src/cli/timeline.rs                             72
-tool     export GIVN_ATTRIBUTION_ACTIVE='1' …            63
-tool     givn/changes/development-timeline/design.md     60
-tool     cd /home/buster/projects/givn && GIVN_FEATURES…  55
+name          n    s
+commit        167  16.1
+attribution    99   1.1
+status         31   0.9
+instructions   22   0.5
+lint           12   1.6
 ```
 
-Choose by task: `jq` for ad-hoc questions over the whole file; SQLite for a
-persistent local database and joins; DuckDB for direct JSONL analytics, larger
-records, window functions, and Parquet export (`COPY ev TO 'ev.parquet'`).
-While a change is in flight its record is inside the same file; filter on
-`scope.kind`/`scope.id`, and exclude the recorder's own commands for work
-analytics.
+**Which agent tool calls repeat enough to look like a loop?**
+Group tool labels and keep groups of five or more; this is the loop/fan-out
+signal at the tool level.
+
+```sh
+sqlite3 -header -column /tmp/givn.db <<'SQL'
+SELECT kind, substr(label,1,38) label, count(*) n
+FROM ev
+WHERE kind='tool' AND label IS NOT NULL
+GROUP BY kind,label HAVING n >= 5 ORDER BY n DESC LIMIT 5;
+SQL
+```
+
+```text
+kind  label                                   n
+tool  givn/changes/development-timeline/task  90
+tool  src/cli/timeline.rs                     72
+tool  export GIVN_ATTRIBUTION_ACTIVE='1' GIV  63
+tool  givn/changes/development-timeline/desi  60
+tool  cd /home/buster/projects/givn && GIVN_  55
+```
+
+**How long did each phase run before the next recorded transition?**
+Use `lag` over the phase entries per scope; the window function is the reason
+to keep a SQL database around.
+
+```sh
+sqlite3 -header -column /tmp/givn.db <<'SQL'
+SELECT scope_id, label, at,
+       unixepoch(at) - unixepoch(lag(at) OVER (PARTITION BY scope_id ORDER BY at)) AS s_since_prev
+FROM ev WHERE kind='phase' ORDER BY scope_id, at LIMIT 6;
+SQL
+```
+
+```text
+scope_id              label             at                        s_since_prev
+development-timeline  proposal.md       2026-10-17T09:59:46.560Z
+development-timeline  specs             2026-10-17T09:59:46.560Z  0
+development-timeline  design.md         2026-10-17T09:59:46.560Z  0
+development-timeline  arc42.md          2026-10-17T09:59:46.560Z  0
+development-timeline  design-review.md  2026-10-17T09:59:46.560Z  0
+development-timeline  tasks.md          2026-10-17T10:42:33.994Z  2567
+```
+
+### DuckDB — direct JSONL, nested JSON, window analytics
+
+DuckDB's strength is reading the file itself: `read_json_auto` infers the
+schema, structs and nested JSON stay queryable, and window/`QUALIFY` analytics
+run without an import step. In the 2.0 alpha, quote `"at"` (reserved) and add
+`-no-agent` in scripts.
+
+**Can I answer from the file without importing it?**
+Read the JSONL directly and group by kind.
+
+```sh
+duckdb -no-agent -c "SELECT kind, count(*) n,
+  round(sum(coalesce(duration_ms,0))/1000.0,1) s
+FROM read_json_auto('givn/history/events.jsonl', format='newline_delimited')
+GROUP BY kind ORDER BY n DESC;"
+```
+
+```text
+command  2445   512.7
+tool     2308  8857.8
+turn     2088 17584.8
+usage    2088     0.0
+subagent   25  8358.2
+phase      16    11.9
+step       10   409.0
+question    1   137.6
+```
+
+**How much token work is inside the nested `usage` JSON?**
+Access the JSON field with `->>`, keep rows whose `usage` is an object, and sum.
+
+```sh
+duckdb -no-agent -c "SELECT count(*) turns,
+  sum(TRY_CAST(data.usage->>'input'  AS BIGINT)) input,
+  sum(TRY_CAST(data.usage->>'output' AS BIGINT)) output,
+  sum(TRY_CAST(data.usage->>'reasoning' AS BIGINT)) reasoning
+FROM read_json_auto('givn/history/events.jsonl', format='newline_delimited')
+WHERE kind='turn' AND json_type(data.usage)='OBJECT';"
+```
+
+```text
+turns 2086 · input 5,019,281 · output 1,461,596 · reasoning 697,945
+```
+
+**What was the longest activity in each session?**
+`QUALIFY` keeps one row per session without a subquery — the DuckDB way to rank
+inside partitions.
+
+```sh
+duckdb -no-agent -c "SELECT left(session::VARCHAR,12) session, kind, name,
+  round(duration_ms/1000.0,1) s
+FROM read_json_auto('givn/history/events.jsonl', format='newline_delimited')
+WHERE session IS NOT NULL AND duration_ms IS NOT NULL
+  AND NOT (kind='command' AND (label LIKE 'history ingest%' OR label LIKE 'history harness-hook%'))
+QUALIFY row_number() OVER (PARTITION BY session ORDER BY duration_ms DESC) = 1
+ORDER BY s DESC LIMIT 5;"
+```
+
+```text
+session       kind      name                           s
+01a148a7-1dd  turn      turn 11                      963.4
+01a149c5-c4b  subagent  ChangeReview.VisionDeveloper  319.7
+01a1495d-46d  turn      turn 80                       48.8
+01a14982-796  turn      turn 76                       46.2
+01a149b3-af5  turn      turn 115                      44.1
+```
+
+### Choose by task
+
+- **jq** for ad-hoc questions on the whole file with no setup; its output pipes.
+- **SQLite** for a persistent local database, views, joins, and portable SQL.
+- **DuckDB** for direct JSONL analytics without import, nested JSON, window
+  functions, and Parquet export (`COPY ev TO 'ev.parquet'`).
+
+Filter by `scope.kind`/`scope.id` for a change or topic, and exclude the
+recorder's own commands for work analytics.
 
 ## See also
 
