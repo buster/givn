@@ -2696,6 +2696,96 @@ fn escape(text: &str) -> String {
     escaped
 }
 
+/// The link snapshot a change report carries, resolved once from the change's
+/// proposal: the topic the proposal names, when that topic's directory exists.
+/// `None` means no link — a `none` line, no line, an absent topic directory, or
+/// no readable proposal. No other file, project entry, time proximity, or
+/// mutable topic state is consulted.
+fn resolve_link(root: &Path, change: &str) -> Option<LinkedIdeation> {
+    let text = std::fs::read_to_string(proposal_path(root, change)?).ok()?;
+    let topic = link_value_from_proposal(&text)?;
+    if !root.join("givn").join("ideation").join(&topic).is_dir() {
+        return None;
+    }
+    let entries = crate::history::HistoryStore::at(crate::history::store_path(root))
+        .read()
+        .ok()?
+        .into_iter()
+        .filter(|entry| entry.scope == Scope::Ideation { id: topic.clone() })
+        .collect();
+    Some(LinkedIdeation { topic, entries })
+}
+
+/// The proposal a change report reads its link from: the live change's
+/// `proposal.md`, or — when the live change directory does not exist — the
+/// archived change's. A live directory always wins, even when the archive
+/// holds a second copy.
+fn proposal_path(root: &Path, change: &str) -> Option<PathBuf> {
+    let live = root.join("givn").join("changes").join(change);
+    if live.is_dir() {
+        return Some(live.join("proposal.md"));
+    }
+    let archived = root
+        .join("givn")
+        .join("archive")
+        .join(change)
+        .join("proposal.md");
+    archived.is_file().then_some(archived)
+}
+
+/// The topic a proposal's own lines name: `Ideation topic:` first, `Seed path:`
+/// only when the topic line is absent. A present topic line decides even when it
+/// says `none`, so a stale seed never overrides an explicit no-link.
+fn link_value_from_proposal(text: &str) -> Option<String> {
+    match proposal_field(text, "Ideation topic:") {
+        Some(value) => normalize_link_value(&value),
+        None => proposal_field(text, "Seed path:").and_then(|value| normalize_link_value(&value)),
+    }
+}
+
+/// One proposal field's value: the line whose trimmed text (minus a list
+/// marker) starts with `field`. The first such line wins.
+fn proposal_field(text: &str, field: &str) -> Option<String> {
+    text.lines().find_map(|line| {
+        let line = line.trim();
+        let line = line
+            .strip_prefix("- ")
+            .or_else(|| line.strip_prefix("* "))
+            .or_else(|| line.strip_prefix("+ "))
+            .unwrap_or(line);
+        line.strip_prefix(field)
+            .map(|value| value.trim().to_string())
+    })
+}
+
+/// One proposal link value, normalized before any existence check: surrounding
+/// whitespace and backticks/quotes are stripped; a value whose first token is
+/// `none` (including `none — <reason>`) means no link; a bare `<id>` or a
+/// `givn/ideation/<id>` path (with or without a trailing slash) names the topic.
+/// A seed path names the topic by its `givn/ideation/<topic>/` segment, so the
+/// seed's own filename is never validated (both `<uc-id>` and `<change-id>` seed
+/// names occur).
+fn normalize_link_value(value: &str) -> Option<String> {
+    let value = value
+        .trim()
+        .trim_matches(|character| matches!(character, '`' | '"' | '\''))
+        .trim();
+    if value.is_empty() {
+        return None;
+    }
+    if value.split_whitespace().next() == Some("none") {
+        return None;
+    }
+    let segments: Vec<&str> = value
+        .split('/')
+        .filter(|segment| !segment.is_empty())
+        .collect();
+    if segments.len() >= 3 && segments[0] == "givn" && segments[1] == "ideation" {
+        return Some(segments[2].to_string());
+    }
+    segments.last().map(|segment| (*segment).to_string())
+}
+
 /// `givn timeline` — write the report for one scope and print its path. With
 /// `--out` omitted the report goes to the project's own default path
 /// `givn/history/reports/<scope>.html`.
@@ -2703,7 +2793,14 @@ pub fn run(change: Option<&str>, topic: Option<&str>, out: Option<&Path>) -> Res
     let root = std::env::current_dir().context("resolve the project root")?;
     let scope = crate::cli::history::scope_for(&root, change, topic);
     let entries = crate::cli::history::entries_in_scope(&root, scope.as_ref())?;
-    let model = build_report_model(scope.clone(), entries, None);
+    // The link is resolved once, from the change's proposal, and embedded in
+    // the model: the written document is deterministic over the record, the
+    // change state, and that snapshot. A topic or project report parses none.
+    let link = match &scope {
+        Some(Scope::Change { id }) => resolve_link(&root, id),
+        _ => None,
+    };
+    let model = build_report_model(scope.clone(), entries, link);
     let path = match out {
         Some(path) => path.to_path_buf(),
         None => default_report_path(&root, scope.as_ref()),
@@ -3660,6 +3757,103 @@ mod tests {
         assert!(
             bare.empty,
             "a report with no entries anywhere did not render the empty state"
+        );
+    }
+
+    /// The link resolver's proof over the real proposal forms: the primary
+    /// topic line, the seed fallback, normalization (whitespace, backticks, a
+    /// bare id, a topic path with or without a trailing slash), `none`
+    /// including `none — <reason>`, the topic directory's existence, the
+    /// archive proposal, and the live proposal winning over the archive.
+    #[test]
+    fn link_resolution_normalizes_real_proposal_forms() {
+        let fixture = tempfile::TempDir::new().expect("create the fixture root");
+        let root = fixture.path();
+        for topic in ["multi-scm-support", "foo"] {
+            std::fs::create_dir_all(root.join("givn/ideation").join(topic))
+                .expect("create the topic directory");
+        }
+        std::fs::create_dir_all(root.join("givn/changes")).expect("create the change directory");
+        std::fs::create_dir_all(root.join("givn/archive")).expect("create the archive directory");
+
+        // One topic's recorded work: the link snapshot carries it.
+        let mut stored = vec![HistoryEntry::reported(
+            Scope::Ideation {
+                id: "foo".to_string(),
+            },
+            "step",
+            "ideation",
+            "2026-10-16T08:00:00.000Z",
+        )];
+        crate::history::HistoryStore::at(crate::history::store_path(root))
+            .append(&mut stored)
+            .expect("seed the record");
+
+        let write_proposal = |path: &str, body: &str| {
+            let path = root.join(path);
+            std::fs::create_dir_all(path.parent().expect("the proposal has a directory"))
+                .expect("create the change directory");
+            std::fs::write(path, body).expect("write the proposal");
+        };
+
+        for (proposal, expected) in [
+            (
+                "- Ideation topic: `multi-scm-support`\n- Seed path: none\n",
+                Some("multi-scm-support"),
+            ),
+            ("- Ideation topic: givn/ideation/foo\n", Some("foo")),
+            ("- Ideation topic: givn/ideation/foo/\n", Some("foo")),
+            ("- Ideation topic: none\n", None),
+            (
+                "- Ideation topic: none — the change originates from a rules refinement\n",
+                None,
+            ),
+            ("- Ideation topic: \n- Seed path: none\n", None),
+            ("- Ideation topic: givn/ideation/missing/\n", None),
+            (
+                "- Ideation topic: none\n- Seed path: givn/ideation/foo/changes/<uc-id>.md\n",
+                None,
+            ),
+            (
+                "- Seed path: givn/ideation/foo/changes/<uc-id>.md\n",
+                Some("foo"),
+            ),
+            ("- Seed path: none\n", None),
+        ] {
+            write_proposal("givn/changes/demo/proposal.md", proposal);
+            let link = resolve_link(root, "demo");
+            assert_eq!(
+                link.as_ref().map(|link| link.topic.as_str()),
+                expected,
+                "the proposal form did not normalize as expected: {proposal:?}"
+            );
+            if expected == Some("foo") {
+                assert_eq!(
+                    link.as_ref().map(|link| link.entries.len()),
+                    Some(1),
+                    "the link snapshot does not carry the topic's record: {proposal:?}"
+                );
+            }
+        }
+
+        // The archive proposal is read when the live directory does not exist.
+        write_proposal("givn/archive/old/proposal.md", "- Ideation topic: foo\n");
+        assert_eq!(
+            resolve_link(root, "old").map(|link| link.topic),
+            Some("foo".to_string()),
+            "the archive proposal did not resolve its link"
+        );
+
+        // The live proposal wins when both directories exist.
+        write_proposal("givn/changes/both/proposal.md", "- Ideation topic: foo\n");
+        write_proposal(
+            "givn/archive/both/proposal.md",
+            "- Ideation topic: multi-scm-support\n",
+        );
+        assert_eq!(
+            resolve_link(root, "both").map(|link| link.topic),
+            Some("foo".to_string()),
+            "the archive proposal won over the live one"
         );
     }
 }
