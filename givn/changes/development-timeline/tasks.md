@@ -13979,7 +13979,7 @@ Repository checks are secondary only.
 
 ## Task HE7 — Evidence refresh, slug preservation, and both declared scope runs (no new scenario)
 
-- [ ] **Shared verification task: nine `@e2e` evidence sets and the two scope runs**
+- [x] **Shared verification task: nine `@e2e` evidence sets and the two scope runs**
   - Design constraints:
     - **Slug preservation (review F10).** The delta keeps the existing titles,
       so these slugs are unchanged and their directories are refreshed in
@@ -14013,21 +14013,102 @@ Repository checks are secondary only.
       re-runs the scopes rather than re-capturing.
     - Files: none in production; this task records evidence, the two scope
       summaries, and the evidence listing.
-  - [ ] **VERIFY** — run the two scopes and paste both summaries with the
+    - **Implementation note (2026-10-17):** the first full scope run surfaced
+      reading drift the HE2 asset rewrite left behind, fixed in `d85ca253`
+      under unchanged titles and step phrases: the empty report, the
+      no-unknown-phase check, and the archived no-live-state/no-next-artifact
+      checks now read the rendered view or the current-state line instead of
+      the whole self-contained file (whose inline script and CSS legitimately
+      name the same markers); the lane log renders the full captured fact list
+      again; and the two-writer fixture counts only the racing runs' child
+      links, because `givn new` now records its own `proposal.md` transition.
+      The e2e run refreshes each scenario's own pair in place, so the pairs
+      below are the final hybrid view; the five report slugs are unchanged and
+      the expand scenario remains the only directory HE1–HE6 added.
+  - [x] **VERIFY** — run the two scopes and paste both summaries with the
         per-scenario PASS lines for the 16 new scenarios.
         ```
-        PASTE BOTH SCOPE RUNS HERE
+        GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e
+            Summary [   4.973s] 54 tests run: 54 passed, 9 skipped          EXIT=0
+
+          PASS (H1)  inspect-development-history/development-record.feature::An artifact appearance is recorded as one phase transition
+          PASS (H3)  inspect-development-history/development-report.feature::The report shows the empty state for a scope with no recorded activity
+          PASS (H4)  inspect-development-history/development-report.feature::The report derives the current workflow state
+          PASS (H5)  inspect-development-history/development-report.feature::The report lays parallel sessions side by side
+          PASS (H6)  inspect-development-history/development-report.feature::The report marks a skipped workflow phase
+          PASS (H7)  inspect-development-history/development-report.feature::The report of an archived change marks every phase done
+          PASS (H8)  inspect-development-history/development-report.feature::The report states a record with no stage transition
+          PASS (H9)  inspect-development-history/development-report.feature::The report groups repeated steps
+          PASS (H10) inspect-development-history/development-report.feature::A dense record is reported as aggregates instead of raw ticks
+          PASS (H11) inspect-development-history/development-report.feature::The written report's text view presents the workflow
+
+        GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --e2e
+            Summary [   6.973s] 9 tests run: 9 passed, 54 skipped           EXIT=0
+
+          PASS (HE1) inspect-development-history/development-report.feature::Consumer generates the development report for a change
+          PASS (HE2) inspect-development-history/development-report.feature::Consumer opens the generated development report in a browser
+          PASS (HE3) inspect-development-history/development-report.feature::Consumer expands a workflow phase and sees its lanes
+          PASS (HE4) inspect-development-history/development-report.feature::Consumer selects a timeline element and reads its details
+          PASS (HE5) inspect-development-history/development-report.feature::Consumer zooms the timeline to a shorter time range
+          PASS (HE6) inspect-development-history/development-report.feature::Consumer opens the report of a scope with no recorded activity
+          PASS       inspect-development-history/development-record.feature::Consumer runs a lifecycle step and reads its recorded actions
+          PASS       inspect-development-history/development-record.feature::Consumer reads the development record as machine-readable output
+          PASS       inspect-development-history/agent-activity-reporting.feature::Consumer installs the agent reporter and its reported activity lands in the record
+
+        Side by side: non-e2e 54 passed (9 skipped) + e2e 9 passed (54 skipped)
+        = the 63-entry inventory, 54 non-e2e / 9 e2e. The e2e count (9) is
+        strictly less than the full count (63), so Task E1's proof still holds.
         ```
-  - [ ] **EVIDENCE** — list the nine directories and their files with sizes and
+  - [x] **EVIDENCE** — list the nine directories and their files with sizes and
         `file` dimensions; confirm the only new directory is the expand
         scenario's and all files are non-empty.
         ```
-        PASTE THE EVIDENCE LISTING HERE
+        consumer-expands-a-workflow-phase-and-sees-its-lanes/            (the only new directory)
+          desktop.png                     65829 bytes  1920 x 1080
+          mobile.png                      27404 bytes   360 x  780
+        consumer-generates-the-development-report-for-a-change/
+          desktop.png                    117612 bytes  1920 x 1080
+          mobile.png                      58269 bytes   360 x  780
+        consumer-installs-the-agent-reporter-and-its-reported-activity-lands-in-the-record/
+          desktop.png                    112883 bytes  1920 x 1080
+          mobile.png                      53160 bytes   360 x  780
+        consumer-opens-the-generated-development-report-in-a-browser/
+          desktop.png                    113107 bytes  1920 x 1080
+          mobile.png                      55909 bytes   360 x  780
+        consumer-opens-the-report-of-a-scope-with-no-recorded-activity/
+          desktop--empty.png              29448 bytes  1920 x 1080
+          desktop.png                     29448 bytes  1920 x 1080
+          mobile--empty.png               21675 bytes   360 x  780
+          mobile.png                      21674 bytes   360 x  780
+        consumer-reads-the-development-record-as-machine-readable-output/
+          desktop.png                    115704 bytes  1920 x 1080
+          mobile.png                      58075 bytes   360 x  780
+        consumer-runs-a-lifecycle-step-and-reads-its-recorded-actions/
+          desktop.png                    115590 bytes  1920 x 1080
+          mobile.png                      57944 bytes   360 x  780
+        consumer-selects-a-timeline-element-and-reads-its-details/
+          desktop.png                     96291 bytes  1920 x 1080
+          mobile.png                      50080 bytes   360 x  780
+        consumer-zooms-the-timeline-to-a-shorter-time-range/
+          desktop.png                     65394 bytes  1920 x 1080
+          mobile.png                      28737 bytes   360 x  780
+
+        9 directories / 20 PNGs; every file non-empty and at the contract
+        viewport; no intermediate capture lives under the change directory. The
+        five report slugs are unchanged; `consumer-expands-a-workflow-phase-and-sees-its-lanes`
+        is the only new directory.
         ```
-  - [ ] **LINT** — `givn lint --change development-timeline` → exit 0, no
+  - [x] **LINT** — `givn lint --change development-timeline` → exit 0, no
         `[WIP]` finding.
         ```
-        PASTE THE LINT RUN HERE
+        givn lint --change development-timeline
+        [SUBST] advisory  …/visual-review-gate.feature & …/development-record.feature  subset: …
+        [SUBST] advisory  …/visual-review-gate.feature & …/development-record.feature  subset: …
+        (the pre-existing [SUBST] advisory lines only; no [WIP] finding)
+        givn lint: 5 file(s) checked — clean
+        EXIT=0
+
+        git grep -n "@wip" -- givn/changes/development-timeline/specs → no output
         ```
   - [ ] **COMMIT** — `<hash>` — `docs(development-timeline): hybrid workflow
         report evidence and scope runs` with the scenario titles and the counts
