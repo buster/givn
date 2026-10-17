@@ -4454,3 +4454,76 @@ fn report_names_the_change_workflow_phases(world: &mut GivnWorld) {
         "the change stack does not name its own phases: {stack}"
     );
 }
+
+#[given(
+    regex = r#"^an archived change "([^"]+)" whose archived proposal links the ideation topic "([^"]+)"$"#
+)]
+fn archived_change_whose_proposal_links_the_topic(
+    world: &mut GivnWorld,
+    change: String,
+    topic: String,
+) {
+    {
+        let env = project_root(world);
+        support::create_archived_linked_ideation_change(env, &change, &topic);
+        assert!(
+            !env.path(&format!("givn/changes/{change}")).exists(),
+            "the fixture's archived change also exists as a live change"
+        );
+    }
+    let state = state(world);
+    state.linked_topic = Some(topic);
+    world.last_change_id = Some(change);
+}
+
+#[when(
+    regex = r#"^the developer generates the development report for the archived change "([^"]+)"$"#
+)]
+fn generate_report_for_archived_change(world: &mut GivnWorld, id: String) {
+    let report = {
+        let env = project_root(world);
+        run_fixture_command(env, &["timeline", "--change", &id, "--out", "report.html"]);
+        env.path("report.html")
+    };
+    assert!(
+        report.is_file(),
+        "the command wrote no report at {}",
+        report.display()
+    );
+    state(world).report_path = Some(report);
+}
+
+#[then("the change workflow marks every change phase done")]
+fn change_workflow_marks_every_change_phase_done(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let workflow = model["workflow"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the report carries no workflow: {model:#?}"));
+    assert_eq!(
+        workflow.len(),
+        WORKFLOW_PHASES.len(),
+        "the archived change does not render its nine phases: {model:#?}"
+    );
+    for phase in workflow {
+        assert_eq!(
+            phase["status"],
+            json!("done"),
+            "an archived change phase is not done: {phase}"
+        );
+    }
+    // The archived change has no live state and names no next artifact.
+    assert!(
+        model.get("current_state").is_none(),
+        "the archived change carries a live state: {model:#?}"
+    );
+    let state = current_state_line(&document);
+    assert!(
+        state.contains("no live change state"),
+        "the archived report claims a live state: {state}"
+    );
+    assert!(
+        !state.contains("next artifact"),
+        "the archived report names a next required artifact: {state}"
+    );
+}
