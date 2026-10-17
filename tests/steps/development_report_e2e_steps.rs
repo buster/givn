@@ -1251,14 +1251,15 @@ fn rendered_empty_state(driver: &mut BrowserDriver) -> Value {
     scope: document.getElementById("report-scope")
       ? document.getElementById("report-scope").textContent.trim()
       : null,
-    axis: {
-      svg: document.querySelectorAll("svg").length,
-      timelines: document.querySelectorAll("svg.timeline").length,
-      bands: document.querySelectorAll(".band").length,
-      spans: document.querySelectorAll(".span").length,
+    workflow: {
+      sections: document.querySelectorAll("#hybrid-workflow, #hybrid-unstaged").length,
+      cards: document.querySelectorAll(".phase-card").length,
+      phases: document.querySelectorAll("[data-phase]").length,
+      stack: document.querySelectorAll(".phase-stack").length,
+      axes: document.querySelectorAll(".phase-axis").length,
+      lanes: document.querySelectorAll(".lane").length,
       ticks: document.querySelectorAll(".tick").length,
-      aggregates: document.querySelectorAll(".aggregate").length,
-      controls: document.querySelectorAll(".controls button").length,
+      controls: document.querySelectorAll(".zoom-control").length,
     },
   };
 })()"##,
@@ -1300,26 +1301,30 @@ fn browser_shows_the_empty_state(world: &mut GivnWorld, id: String) {
     );
 }
 
-#[then("the browser draws no timeline axis for it")]
-fn browser_draws_no_timeline_axis(world: &mut GivnWorld) {
+#[then("the browser draws no workflow phase for it")]
+fn browser_draws_no_workflow_phase(world: &mut GivnWorld) {
     let rendered = rendered_empty_state(browser(world));
     for marker in [
-        "svg",
-        "timelines",
-        "bands",
-        "spans",
-        "ticks",
-        "aggregates",
-        "controls",
+        "sections", "cards", "phases", "stack", "axes", "lanes", "ticks", "controls",
     ] {
         assert_eq!(
-            rendered["axis"][marker],
+            rendered["workflow"][marker],
             json!(0),
             "the empty report draws {marker}: {rendered:#}"
         );
     }
-    // The declared state's captures, beside the final-state pair the visual gate
-    // reads for every @e2e scenario.
+    // The model may carry the scaffold, but the browser draws none of it: no
+    // phase card, no phase name, and no axis reaches the page.
+    let model = browser(world).evaluate(
+        r##"(() => JSON.parse(document.getElementById("report-model").textContent).empty)()"##,
+    );
+    assert_eq!(
+        model,
+        json!(true),
+        "the empty report's model does not declare the empty state"
+    );
+    // The declared state's captures, beside the final-state pair the visual
+    // gate reads for every @e2e scenario.
     let driver = browser(world);
     driver.capture_evidence(EMPTY_SCENARIO);
     driver.capture_state_evidence(EMPTY_SCENARIO, "empty");
