@@ -17,17 +17,13 @@ the selected lane's log. Every phase has a Fit / 1 h / 15 m zoom. The linked
 ideation group, when the change's proposal or seed names an existing topic,
 sits above the change workflow with its own ideation phases and totals.
 
-<p align="center">
-  <img src="development-report-desktop.png" width="900" alt="Desktop development report: current state, KPI tiles, and the nine workflow phases with their durations, lanes, and statistics.">
-</p>
+![Desktop development report: current state, KPI tiles, and the nine workflow phases with their durations, lanes, and statistics.](development-report-desktop.png)
 
-<p align="center"><em>Desktop: current state, KPI tiles, the workflow stack, and each phase's lanes.</em></p>
+*Desktop: current state, KPI tiles, the workflow stack, and each phase's lanes.*
 
-<p align="center">
-  <img src="development-report-mobile.png" width="340" alt="Mobile development report: current state, two-column KPI tiles, and the workflow phase stack.">
-</p>
+![Mobile development report: current state, two-column KPI tiles, and the workflow phase stack.](development-report-mobile.png)
 
-<p align="center"><em>Mobile: one column, two-column KPIs, full-width phase cards, and lanes scrolling horizontally inside a card.</em></p>
+*Mobile: one column, two-column KPIs, full-width phase cards, and lanes scrolling horizontally inside a card.*
 
 The screenshots use a demonstration change with seeded record data; the layout
 and interactions are the product's own.
