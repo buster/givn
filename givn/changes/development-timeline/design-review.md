@@ -931,3 +931,120 @@ diagram node, recorded for the design authority's sweep.
   re-fetched, and no Maki command was re-executed.
 
 **DESIGN-REVIEW: PASS**
+
+## Re-review round 4 (2026-10-17, ranking widening + Maki headless gaps)
+
+**Why it ran.** The operator extended the change after the implementation
+landed: the report's ranking must cover **every measured entry of any kind**
+(the operator asked to see "single calls to subagents, what took the time" after
+this repository's own report rendered an empty "Longest steps" list while its
+model held seventy-five measured entries), and the Maki reporter's headless gaps
+must be recorded at the strength of the evidence. The design authority updated
+the planning layer in place — `design.md`, `arc42.md`, `tasks.md`, the delta
+feature `development-report.feature`, and `docs/arc42/06`, `08`, `10`, `11` —
+including the new delta scenario `Measured agent activity is ranked
+alongside Givn's own steps` (Task 25a). A fresh-context grill (high effort,
+read-only; no suite run) interrogated the extension across the seven branches
+below and returned **no blocker and no operator question** plus seven
+non-blocking findings (F1–F7). This hardening pass applied every finding to the
+working tree and wrote this record; it re-probed nothing — the reproduced facts
+below are the grill's own evidence, re-read read-only against the live log, the
+store, and the report.
+
+**The grill's branch outcomes.**
+
+| Branch | Outcome |
+|---|---|
+| 1a Widened rule as recorded | SOUND — the rule states every measured entry of any kind, longest first, with the existing tie-break (earlier `at`, then lower `id`), over the whole record, kind per row, unmeasured absent rather than zero, heading kept; it matches the code's tie-break and the preserved aggregation rule (`design.md:898-914`, `:1005-1006`, `:1319-1320`). |
+| 1b Model/asset change named concretely | YES, with F4 — the `kind` field and the row element are named in the design and in Task 25a, but the task located the row markup in the asset; `render_summary` emits it and the asset holds only the CSS. |
+| 1c Motivation verified against the live artifacts | VERIFIED — the report written 2026-10-17 03:02 has `summary.longest_steps` = 0 rows while its model window holds 75 measured entries (id 70 `command` `skills sync` 3604 ms, id 76 tool `task` 799 ms); no value is invented. |
+| 2a Bindable with the existing vocabulary | YES — the new Given is built with the shared seeded-history builder, the When already exists, and only the two Thens are new step phrases. |
+| 2b The new scenario discriminates | YES — with today's `kind == "step"` filter a `tool` entry can never rank and neither the model nor the row markup carries a kind, so both Thens fail with no production change; Task 25a's undefined-step prediction was right in kind but undercounted the phrases (F3). |
+| 2c The pre-existing ranking scenario under the widening | NO BLOCKER — its fixture holds only steps (3 measured plus 1 untimed tool), so the widened ranking equals the Then's expected ids and the "not measured" text stays true. |
+| 3a Other consumers of the ranking's membership | NO ISSUE — only `render_summary` reads `summary.longest_steps`; no test asserts a ranking count or absence beyond the two ranking scenarios, the `@e2e` longest-measured reader is duration-based, and the permanent corpus has zero references. |
+| 3b Asset/JS dependency | NO ISSUE — the asset's scripts never read the ranking (only its CSS is ranking-related), so the model change alters no script behaviour. |
+| 3c Evidence rules vs. the changed asset | NO CONTENT DEPENDENCY, with F7(b) — the visual gate checks presence, not content, and the archive gate re-captures and finalizes evidence-only dirt; but every committed `@e2e` capture that renders the report changes visibly, and Task 25a's `--exact` runs would not refresh them. |
+| 4 Counts and per-feature rows | MATCH — the 47-entry inventory (44 `@givn.added` + 3 `@givn.modified`; 39 non-`@e2e` + 8 `@e2e`; per feature 14/15/15/1/2) reconciles with the header, the table, the work order, the scope line, E1's proof instruction, and the Done-when. |
+| 4b E1's historical evidence and prior counts | UNTOUCHED — E1's pasted "43 in total" proof and Task 24a's dated tally remain exactly as committed; they are dated evidence. |
+| 4c Delta shape/lint | OK — lint exits 2 with exactly the one pending `@wip` (Task 25a's scenario) and the pre-existing `[SUBST] advisory` permanent-corpus subset matches. |
+| 5a Maki's reproduced values | EXACT, NO INVENTION — the harness's own log and the live record carry the values below, and `nil, "no interactive UI attached"` is the documented `maki.task.*` return without a UI. |
+| 5b `TurnStart`/`TurnEnd` headless facts | BACKED — the bundled 0.6.3 reference states both clauses, and the record's turn entries carry no duration while their usage entries exist. |
+| 5c The "no `TaskStatusChanged` outside the TUI" claim | TENSION → F1 — the effect is reproduced, but the causal/TUI-only wording is stronger than the evidence and contradicts the harness's own reference ("Everything else fires under `maki -p` and sdk mode as well"). |
+| 5d Reproduction date | WRONG BY ONE DAY → F2 — the evidence is 2026-10-17, not 2026-10-16. |
+| 6a Chapters 06/08/10 wording matches the rule | YES — the durable docs carry the widened rule; no stale steps-only wording survives there. |
+| 6b Heading stays / design system unchanged | ACCURATE — the design system has no contract line for the ranking list, and the visible heading stays "Longest steps". |
+| 6c Stale-wording greps | CLEAN — `kind == "step"` survives only in the rejection statements, the code and tests to be widened, and Task 25a. |
+| 7 Nothing reviewed is re-opened | CONFIRMED — the extension diff touches only the change artifacts and the four chapters; no code, test, asset, or config edit; every revision identifier, checkbox, and pasted evidence of Tasks 1–24a, 11a and E1–E9 is intact. |
+
+**The reproduced facts this round turned on (read-only re-read).**
+
+- **The empty ranking, on this repository's own data.** `ranked_steps` filtered
+  `entry.kind == STEP`, so
+  `givn/history/reports/development-timeline.html` (written 2026-10-17 03:02)
+  carried `summary.longest_steps` = 0 rows while its model window held **75
+  measured entries**, including record id 70 `command` `skills sync` 3604 ms and
+  id 76 tool `task` 799 ms; the window holds no `subagent` entry.
+- **Maki's headless subagent run (2026-10-17T01:01Z).** `maki.log`
+  `01:01:40.533Z` `subagent session opened` `name "State the number 42"`, and
+  `01:01:41.328Z` `subagent session closed` `duration_ms 795`,
+  `input_tokens 8512`; the live record's ids 73–79 (2026-10-17T01:01Z) carry the
+  `task` tool entry (id 76, `duration_ms 799`) and **no subagent span**;
+  `maki.task.list()` outside the TUI answers `nil, "no interactive UI
+  attached"`.
+- **The harness's own driver statement** (the pinned 0.6.3 binary's bundled
+  reference): "`TurnStart` and `PlanReady` come from maki-ui only. … Everything
+  else fires under `maki -p` and sdk mode as well." and "`TurnEnd` fires once
+  per turn and only for the main session." — so a TUI-only rule for
+  `TaskStatusChanged` cannot be stated, and the turn-with-usage/no-duration
+  observation is the reference's own consequence.
+
+**Findings F1–F7 and their applied resolutions.**
+
+| # | Finding | Applied resolution |
+|---|---|---|
+| F1 (medium) | The `TaskStatusChanged` wording overclaimed an event as TUI-only / absent headlessly in four places, against the harness's own reference. | All occurrences now state only the reproduced fact — in the headless run the record carried the `task` tool entry (799 ms) and no subagent span, although Maki's own log shows the subagent session opening and closing (`duration_ms 795`, `input_tokens 8512`), and `maki.task.list()` returns `nil, "no interactive UI attached"` — and say the event's coverage outside the TUI is **not established**, naming the reference's actual clause. The mapping row's label became **Headless coverage not established**; the gap bullet became "Headless Maki's subagent span is not reproduced, and the event's coverage outside the TUI is not established"; the parity sentence now says the *reproduced headless run* contributed measured tool calls and turn usage only; and the `TurnEnd` bullet's clause reads "the subagent span, when the harness reports it, is still recorded". Applied at `design.md:716` and `:732-750`, `arc42.md:147-158`, `docs/arc42/08:907-915`, and R-90 (`docs/arc42/11:76`). |
+| F2 (low) | The reproduction was dated 2026-10-16 where the evidence is 2026-10-17. | Re-dated to 2026-10-17 at `design.md:733`, `arc42.md:136`, and R-90. The other 2026-10-16 dates (version verifications, earlier probe projects) are correct and untouched. |
+| F3 (low) | Task 25a's RED prediction said "the two new Then steps are undefined". | Now "the three new step phrases (one Given, two Then/And) are undefined" (`tasks.md:6306-6307`). |
+| F4 (low) | Task 25a located the ranking row in the asset, and its touch list omitted the stale doc comments. | The Files bullet now reads: `src/cli/timeline.rs` — the widened filter, the `kind` field, the row markup in `render_summary` (`~:1178-1186`), and the doc comments that still describe a steps-only ranking (`RankedStep` `~:362-364`, `ranked_steps` `~:711-715`, `Summary.longest_steps` `~:158-159`) — and `assets/timeline/report.html`, which gains only the kind element's **style rule** (the asset carries the CSS; the element is rendered by `render_summary`). The JSON field name stays `longest_steps`, stated in the Assertions bullet (`tasks.md:6298-6304`, `:6283-6289`). |
+| F5 (low) | Task 25a stated no fixture shape, and its second Then could have stopped at the model. | The constraints now state the fixture shape (a measured agent **tool** call longer than the longest measured `step`, built with the shared seeded-history builder) and require the second Then to read the **rendered** ranking through the existing `list_entry_ids(&document, "longest-steps")` parser, so the visible kind element is exercised (`tasks.md:6269-6275`, `:6283-6289`). |
+| F6 (low) | The copied contract in `tasks.md` still said "ranked longest steps". | Now "the ranked longest entries", matching `design.md:895`; the visible heading keeps "Longest steps" (`tasks.md:207`). |
+| F7 (awareness) | (a) The ranking is unbounded by construction and no assertion covers or caps it; (b) Task 25a would leave the committed `@e2e` captures stale by content. | (a) One sentence added to Task 25a's constraints: the written list is uncapped **by design** — bounded only by the record's own measured entries, because the design bounds the drawn shapes, never the summary rows (`tasks.md:6294-6297`). (b) Task 25a's GREEN step now also re-runs the `@e2e` scope and commits the refreshed `evidence/visual/**` pairs, with Task 24a's precedent named, so no committed pair stays stale by content into the archive finalization (`tasks.md:6314-6323`). |
+
+**One same-class correction beyond the seven findings.** The Turn-events bullet's
+ACP clause also claimed more than its source: it read "a headless or ACP session
+delivers `TurnEnd` without `TurnStart`", while the same reference paragraph F1
+cites says `maki-acp` "runs the agent on its own loop and does not call the
+dispatcher yet, so plugins loaded under ACP receive no turn events". The bullet
+now reads "`maki-acp` runs the agent on its own loop and does not call the
+dispatcher yet (so plugins loaded under ACP receive no turn events at all),
+while a headless session delivers `TurnEnd` without `TurnStart`"
+(`design.md:751-759`). Nothing else in the extension was re-worded beyond
+F1–F7.
+
+**Checks run by this pass.**
+
+- `givn lint --change development-timeline` → exit 2: 5 files checked, **1
+  finding** — the pending Task 25a scenario's `@wip` (the state the header
+  predicts) — plus the pre-existing `[SUBST] advisory` permanent-corpus subset
+  matches; no parse error and no error-kind finding.
+- Diff scope: the extension plus this record is nine files — `design.md`,
+  `tasks.md`, `arc42.md`, the delta feature, `docs/arc42/06`, `08`, `10`, `11`,
+  and `design-review.md` — with no code, test, asset, config, or
+  `evidence/visual/` edit; the five delta features' tags, the use case's eight
+  §Interactions rows, the design's eight matrix rows, and the eight `@e2e`
+  titles are unchanged; Tasks 1–24a, 11a and E1–E9 keep every checkbox, pasted
+  evidence, and revision identifier, and the three prior records in this file
+  are untouched.
+- No suite was run (read-only scope): the reproduced values above were re-read
+  from `maki.log`, the live store, and the written report; no Maki command was
+  re-executed.
+
+**Residuals noted by this pass.** One, and it is dated evidence rather than a
+question; it changes no mechanism, decision, scenario, count, or gate.
+
+- Task 24a's COMMIT note reads "12 screenshot pairs" where its own commit
+  refreshed twelve `evidence/visual/**` files (six desktop/mobile pairs). No
+  current statement depends on the count, and Task 25a's amended GREEN text
+  states the evidence set without restating a number.
+
+**DESIGN-REVIEW: PASS**

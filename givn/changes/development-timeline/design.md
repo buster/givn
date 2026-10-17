@@ -708,12 +708,12 @@ the installed 0.6.3 binary):
 |---|---|
 | `ToolStart` (`data.tool_id`, `data.tool`) | tool start; **no host event carries a timestamp**, so the reporter stamps its own start in its in-memory pending state, keyed by `tool_id` |
 | `ToolDone` (`data.tool_id`, `data.tool`, `data.is_error`, `data.bytes`; `data.duration_ms` and `data.input` only for a call that actually ran) | tool end. **Cancelled-call rule:** a call that never ran is detected by the absence of *both* `data.duration_ms` and `data.input` (the API reference marks both present only for a call that ran), and it is recorded **without** a duration — never as zero; a measured call that lacks a host duration still gets the reporter's own stamp. **Label rule:** the entry is labelled with the bounded subject of `data.input` — the first of its `command`, `file_path`, `path`, `pattern`, or `query` — and with the tool name when the call never ran or carries no usable subject; the subject is cut to its first line and to the record's 120-character bound (the privacy bound), so the full input is never stored |
-| `TurnStart` (`data.text`) | turn start, stamped by the reporter; `data.text` is never stored (it is prompt content) |
-| `TurnEnd` (`data.reason`, `data.usage` — four token fields, cache included —, `data.cost`, `data.list_cost`, `data.context_size`, `data.context_window`, `data.num_turns`) | turn entry with usage and outcome; the flush boundary |
+| `TurnStart` (`data.text`) | turn start, stamped by the reporter; `data.text` is never stored (it is prompt content). **TUI-only**: a headless (`-p`) or ACP session never fires it, so a headless turn's start is unknown and the turn entry carries no duration — never a zero |
+| `TurnEnd` (`data.reason`, `data.usage` — four token fields, cache included —, `data.cost`, `data.list_cost`, `data.context_size`, `data.context_window`, `data.num_turns`) | turn entry with usage and outcome; the flush boundary. It still fires headlessly, so turn usage is recorded, while the turn's duration is available only when `TurnStart` was seen |
 | `TurnError` | turn entry with `outcome: failed` |
 | `AutoCompacting` / `CompactionDone` (`context_size`, `context_size_before`/`_after`, `data.summary`) | `phase` entries labelled `compacting` and `compacted` (the second with `outcome: ok`), so a compaction shows up as the long step it is; `data.summary` is never stored (content) |
 | `SessionStatusChanged` (`data.status` = `working`/`needs_input`/`idle`) | the question-wait derivation: `needs_input` opens a wait and the next `working` closes it, with the reporter's own measurement. The wait's label is the harness's own bounded `data.title`, falling back to `needs input` when it is absent — Maki exposes no question text, so the record never invents one |
-| `TaskStatusChanged` (`data.id`, `data.name`, `data.status` = `working`/`done`/`error`) | subagent spans: `working` opens one, `done`/`error` closes it, and the entry carries `data.usage = "unavailable"` because Maki never reports a subagent's tokens (the intake's usage marker) |
+| `TaskStatusChanged` (`data.id`, `data.name`, `data.status` = `working`/`done`/`error`) | subagent spans: `working` opens one, `done`/`error` closes it, and the entry carries `data.usage = "unavailable"` because Maki never reports a subagent's tokens (the intake's usage marker). **Headless coverage not established**: in the headless run reproduced on 2026-10-17 the record carried the `task` tool entry (799 ms) and **no subagent span**, although Maki's own log shows the subagent session opening and closing (`duration_ms 795`, `input_tokens 8512`); `maki.task.list()` returned `nil, "no interactive UI attached"`, so a plugin could not enumerate subagents there either. Whether this event reaches a `task`-tool subagent outside the TUI is **not** established — the 0.6.3 binary's bundled reference names only `TurnStart` and `PlanReady` as `maki-ui`-only |
 | `ModelChanged` (`data.model`, `data.previous_spec`) | the model attributed to subsequent usage entries, because no usage payload names a model |
 | `SessionEnd` (`data.reason`, `data.deadline_ms`) | session end, then the final flush. `deadline_ms` is the shared teardown grace period, and a job started inside a callback dies with the dispatch unless it is awaited, so the flush awaits its `givn history ingest` job with `maki.fn.jobwait` inside the callback |
 | `SessionReset` (TUI `/new`; same path as `SessionEnd` with `reason = "reset"`) | flush, then clear that session's buffer |
@@ -725,15 +725,38 @@ the installed 0.6.3 binary):
   `ToolDone` can supply a host-measured duration.
 - **`TurnEnd` fires once per turn and only for the main session.** A subagent
   turn therefore never yields a usage entry: per-subagent token usage is
-  unavailable through Maki, the subagent span is still recorded and carries
-  `data.usage = "unavailable"`, and the report's subagent token column reads
-  "unavailable" (R-90, and the report's missing-signal rule).
+  unavailable through Maki, the subagent span, when the harness reports it, is
+  still recorded and carries `data.usage = "unavailable"`, and the report's
+  subagent token column reads "unavailable" (R-90, and the report's
+  missing-signal rule).
+- **Headless Maki's subagent span is not reproduced, and the event's coverage
+  outside the TUI is not established.** Reproduced on 2026-10-17 with the
+  committed reporter: Maki's own log shows the subagent session opening and
+  closing (`name "State the number 42"`, `duration_ms 795`, `input_tokens 8512`)
+  while the record carries only the `task` tool entry (`duration_ms 799`) and no
+  subagent span, and `maki.task.list()` answers `nil, "no interactive UI
+  attached"` outside the TUI, so a plugin cannot enumerate subagents there.
+  Whether `TaskStatusChanged` reaches a `task`-tool subagent outside the TUI is
+  **not** established: the 0.6.3 binary's bundled reference names only
+  `TurnStart` and `PlanReady` as `maki-ui`-only ("Everything else fires under
+  `maki -p` and sdk mode as well"), so the design records the run's observation
+  rather than a TUI-only rule. The parity claim therefore stays per-harness and
+  honest: **omp, opencode, and Claude Code
+  produce subagent spans** (omp from the `task:subagent:lifecycle` frames and its
+  rebound subagent handlers; opencode from child sessions with `parentID`;
+  Claude Code from `SubagentStart`/`SubagentStop` with `agent_transcript_path`),
+  while **the reproduced headless Maki run contributed measured tool calls and
+  turn usage only** — no subagent span, no subagent tokens, and (below) no turn
+  durations.
 - **Turn events are driver-dependent.** `TurnStart` and `PlanReady` come from
-  the TUI only and `maki-acp` runs its own loop, so a headless or ACP session can
-  deliver `TurnEnd` without `TurnStart`. The reporter never depends on
-  `TurnStart` for a turn's start: a turn is closed by `TurnEnd`/`TurnError`, and
-  its start falls back to the last observed activity, recorded as unmeasured
-  rather than invented.
+  the TUI only, and `maki-acp` runs the agent on its own loop and does not call
+  the dispatcher yet (so plugins loaded under ACP receive no turn events at
+  all), while a headless session delivers `TurnEnd` without `TurnStart`. The
+  reporter never depends on `TurnStart` for a turn's start: a turn is closed by
+  `TurnEnd`/`TurnError`, and its start falls back to the last observed activity,
+  recorded as unmeasured rather than invented. Consequence reproduced
+  headlessly: the turn entry is present **without** a `duration_ms`, so the
+  widened ranking simply omits it while the turn's usage is still recorded.
 - **`FileIndexReady` carries no `session_id`** (it is about a directory) and is
   not recorded; every other event carries `data.session_id`, which is what keeps
   two concurrent sessions apart in the buffer.
@@ -869,9 +892,26 @@ Missing data is rendered as missing, never as zero:
   recorded end timestamp), never by the entry's line position in the store. The
   store is append-only and concurrent writers make file order and time order
   different things, while `at` is the only ordering the record guarantees.
-- **Summary**: total elapsed, the ranked longest steps, the number of entries,
+- **Summary**: total elapsed, the ranked longest entries, the number of entries,
   the question-wait total and count, the subagent count and combined duration,
   token totals overall, per model, and per subagent.
+- **Ranking rule**: the ranking covers **every recorded entry that carries a
+  measured `duration_ms`** — `command`, `phase`, `hook`, `step`, `revision`,
+  `session`, `turn`, `tool`, `subagent`, `question` — longest first, with the
+  existing tie-breaking (equal durations break on the earlier `at`, then the
+  lower `id`), over the whole record and never the zoomed window. Restricting it
+  to subprocess steps (`kind == "step"`) is what left this repository's own
+  report with an empty ranking while its record held seventy-five measured
+  entries, including a 3.6 s `skills sync` and a 799 ms `task` tool call — the
+  operator asked to see "single calls to subagents, what took the time". Each
+  rendered row carries the entry's visible label, **its kind**, and its
+  duration, so a gate step, a command, a tool call, a turn, and a subagent span
+  are distinguishable at a glance (`RankedStep` gains a `kind` field and the
+  row markup gains the kind element). An entry the harness could not measure is
+  simply absent from the ranking, never rendered as zero. The list heading stays
+  **"Longest steps"**: these are the longest measured steps of the development,
+  whatever layer recorded them, and the new kind element carries the
+  distinction, so no design-system wording changes.
 - **Aggregation at low zoom**: the timeline never draws one shape per entry
   when that would be unreadable. At the initial zoom, entries shorter than the
   time-per-pixel of the visible range — dense agent ticks and short steps in
@@ -962,6 +1002,8 @@ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test
 | `map_harness_event` | `fn` | Raw harness payload → record events plus pending-state updates; the Claude mapper's only entry point, also usable by a future shell-based harness |
 | `PendingState` | `struct` | Start timestamps for process-per-hook harnesses, keyed by the harness's own call id; written atomically, pruned by age and at session end |
 | `ReportModel` | `struct` | Everything the report screen renders: scope, bands, entries, summary |
+| `RankedStep` | `struct` | One ranked entry: id, visible label, **kind**, and the measured duration the ranking orders by |
+| `ranked_steps` | `fn` | Every entry with a measured `duration_ms`, of any kind, longest first with the existing tie-breaking — never only `step` entries |
 | `build_report_model` | `fn` | Record lines → `ReportModel` (phase derivation, ranking, totals) |
 | `render_report` | `fn` | `ReportModel` → the HTML document: the model payload element (JSON, `<` escaped) and the text-only initial view substituted once each, with every recorded string escaped |
 | `run_givn` (test) | `fn` | Existing harness: runs the compiled binary in a temp project root |
@@ -1274,8 +1316,8 @@ flowchart LR
 |---|---|
 | `src/history.rs` | **new** — entry schema, store, scope resolution, bounded labels, pending state, and `ensure_ignored` with its ownership split (the recorder re-asserts `.git/info/exclude` on every write, writes Fossil's repository `ignore-glob` setting only while no managed file overrides it, and uses `.gitignore` only before a repository exists; the Fossil entry `givn/history/*` joins the managed list through `write_ignores`) |
 | `src/cli/history.rs` | **new** — `givn history` (read), `givn history ingest` (the one intake), and `givn history harness-hook --harness claude` (the raw-payload mapper and transcript reader for process-per-hook harnesses) |
-| `src/cli/timeline.rs` | **new** — report model and HTML rendering |
-| `assets/timeline/report.html` | **new** — the self-contained report asset (inline CSS/JS/SVG) with two substituted markers: the model payload element the script parses and the text-only initial view the file carries |
+| `src/cli/timeline.rs` | **new** — report model and HTML rendering; `ranked_steps` covers every entry kind with a measured duration (not only `step`), and `RankedStep` carries the entry's kind |
+| `assets/timeline/report.html` | **new** — the self-contained report asset (inline CSS/JS/SVG) with two substituted markers: the model payload element the script parses and the text-only initial view the file carries; the ranking rows carry label, kind, and duration |
 | `assets/agent-integrations/omp/givn-timeline.js` | **new** — the omp reporter (`pi.on` handlers plus one event-bus subscription) |
 | `assets/agent-integrations/opencode/givn-timeline.js` | **new** — the opencode reporter (`setup(ctx)`: domain hooks plus one `ctx.event.subscribe` iterable) |
 | `assets/agent-integrations/claude/givn-timeline.sh` | **new** — the Claude Code shim that pipes its payload to the binary-side mapper |
