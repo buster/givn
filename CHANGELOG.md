@@ -6,6 +6,29 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.9.1] - 2026-10-15
+
+### Bug Fixes
+
+- **e2e-gate:** Attribute verify.e2e_command to givn/commands.yaml in error strings
+
+- **spec:** Describe the spec subcommands instead of the removed retrieval index
+
+- **instructions:** Point the duplicate rule at the overlap review
+
+- **migration:** Cover source patch releases in the migration route
+
+
+### Features
+
+- **enforce-post-merge-e2e-gate:** Givn drops its stale residue — the retired history rewrite, the vestigial `extras` flag, the legacy coverage commands, and the pre-0.8 migration bundles and guides — so every documented claim and migration route matches what the tool actually does.
+
+- **config:** Remove the dead extras manifest flag
+
+- **coverage:** Remove the legacy two-command coverage schema and in-tool merge
+
+- **attribution:** Stamp only the managed co-author line
+
 ## [0.9.0] - 2026-10-14
 
 ### Bug Fixes
@@ -353,3 +376,5 @@ for the complete 0.2.0 feature set.
 [0.8.5]: https://github.com/buster/givn/compare/v0.8.4...v0.8.5
 
 [0.9.0]: https://github.com/buster/givn/compare/v0.8.5...v0.9.0
+
+[0.9.1]: https://github.com/buster/givn/compare/v0.9.0...v0.9.1
