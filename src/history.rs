@@ -60,6 +60,9 @@ pub struct HistoryEntry {
     /// The `id` of the enclosing entry, when the same process minted it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parent: Option<u64>,
+    /// The harness session the entry belongs to, when the reporter named one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub session: Option<String>,
     /// Only where the report needs a non-generic value.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<serde_json::Value>,
@@ -98,6 +101,7 @@ impl HistoryEntry {
             duration_ms: None,
             outcome: OUTCOME_UNKNOWN.to_string(),
             parent: None,
+            session: None,
             data: None,
         }
     }
@@ -280,6 +284,7 @@ impl HistoryRecorder {
             duration_ms: None,
             outcome: OUTCOME_UNKNOWN.to_string(),
             parent: None,
+            session: None,
             data: None,
         }
     }
@@ -472,18 +477,69 @@ fn project_name(root: &Path) -> String {
 /// The longest label the record keeps, in characters (never bytes).
 pub const LABEL_LIMIT: usize = 120;
 
-/// The bounded subject label (≤ 120 characters, truncation marked with `…`) —
-/// the only place raw subjects are touched. A subject at or under the limit is
-/// kept verbatim; a longer one keeps the first `LABEL_LIMIT - 1` characters and
-/// marks the truncation, so the marked label is itself within the limit.
-pub fn bound_label(subject: &str) -> String {
+/// The longest short descriptive text the record keeps, in characters: a
+/// session title, a subagent name/description, notification text, and other
+/// short metadata (design §Capture completeness bounds table).
+pub const TEXT_METADATA_LIMIT: usize = 240;
+
+/// The longest error text the record keeps, in characters: a failed tool or
+/// turn error string, first line only.
+pub const ERROR_TEXT_LIMIT: usize = 1_000;
+
+/// Cut `subject` to at most `limit` characters, marking the cut with `…` so the
+/// marked value is itself within the limit.
+fn bound_chars(subject: &str, limit: usize) -> String {
     let mut chars = subject.chars();
-    let mut bounded: String = chars.by_ref().take(LABEL_LIMIT).collect();
+    let mut bounded: String = chars.by_ref().take(limit).collect();
     if chars.next().is_some() {
         bounded.pop();
         bounded.push('…');
     }
     bounded
+}
+
+/// The bounded subject label (≤ 120 characters, truncation marked with `…`) —
+/// the only place raw subjects are touched. A subject at or under the limit is
+/// kept verbatim; a longer one keeps the first `LABEL_LIMIT - 1` characters and
+/// marks the truncation, so the marked label is itself within the limit.
+pub fn bound_label(subject: &str) -> String {
+    bound_chars(subject, LABEL_LIMIT)
+}
+
+/// The bounded short descriptive text: the first three lines, then at most
+/// [`TEXT_METADATA_LIMIT`] characters with the truncation marked.
+pub fn bound_text_metadata(subject: &str) -> String {
+    let lines: Vec<&str> = subject.lines().take(3).collect();
+    bound_chars(&lines.join("\n"), TEXT_METADATA_LIMIT)
+}
+
+/// The bounded error text: the first line only, then at most
+/// [`ERROR_TEXT_LIMIT`] characters with the truncation marked.
+pub fn bound_error(subject: &str) -> String {
+    bound_chars(subject.lines().next().unwrap_or_default(), ERROR_TEXT_LIMIT)
+}
+
+/// The bounded `result_meta`: an object whose string values are cut to the
+/// text-metadata bound and whose scalars are kept; any other value is cut as a
+/// text value, so a stale reporter cannot dump a payload into the record here.
+pub fn bound_result_meta(value: &serde_json::Value) -> serde_json::Value {
+    match value {
+        serde_json::Value::Object(map) => serde_json::Value::Object(
+            map.iter()
+                .map(|(key, value)| {
+                    let key = bound_text_metadata(key);
+                    let value = match value {
+                        serde_json::Value::String(text) => {
+                            serde_json::Value::String(bound_text_metadata(text))
+                        }
+                        other => other.clone(),
+                    };
+                    (key, value)
+                })
+                .collect(),
+        ),
+        other => serde_json::Value::String(bound_text_metadata(&other.to_string())),
+    }
 }
 
 /// The bounded subject label of a reported event: the record's one label path,

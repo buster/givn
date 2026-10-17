@@ -1616,3 +1616,239 @@ fn settings_reports_mode_and_source(world: &mut GivnWorld, mode: String, source:
         "the settings query changed the record"
     );
 }
+
+/// The turn metadata the default-capture fixture reports: the model, the
+/// harness's stop reason, its cost, and its context reading.
+const CAPTURE_TURN_INDEX: u64 = 12;
+const CAPTURE_TURN_MODEL: &str = "deepseek/deepseek-flash";
+const CAPTURE_STOP_REASON: &str = "end_turn";
+const CAPTURE_COST: f64 = 0.0123;
+const CAPTURE_CONTEXT_SIZE: u64 = 48_000;
+const CAPTURE_CONTEXT_WINDOW: u64 = 128_000;
+const CAPTURE_REASONING: u64 = 64;
+const CAPTURE_TOOL_CALL: &str = "call-1";
+const CAPTURE_OUTPUT_BYTES: u64 = 4_096;
+
+/// The failed tool's error text: its first line is longer than the record's
+/// error bound, so the intake must keep only the bounded first line.
+fn overlong_tool_error() -> String {
+    format!(
+        "{}\nthis second line must never reach the record",
+        "E".repeat(givn::history::ERROR_TEXT_LIMIT + 500)
+    )
+}
+
+#[given("the project records in the default mode")]
+fn project_records_in_the_default_mode(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let config =
+        std::fs::read_to_string(env.path("givn/config.yaml")).expect("read givn/config.yaml");
+    assert!(
+        !config.lines().any(|line| {
+            !line.starts_with([' ', '\t', '#']) && line.trim_start().starts_with("record:")
+        }),
+        "the fixture must start without an active record.mode key: {config}"
+    );
+    let out = common::run_givn(env, &["history", "settings", "--json"]);
+    assert!(
+        out.status.success(),
+        "the settings query failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let payload: Value = serde_json::from_slice(&out.stdout)
+        .unwrap_or_else(|error| panic!("the settings query did not print JSON: {error}"));
+    assert_eq!(
+        payload["mode"],
+        json!("on"),
+        "the fixture is not on: {payload}"
+    );
+    assert_eq!(
+        payload["source"],
+        json!("default"),
+        "the fixture's mode does not come from the default: {payload}"
+    );
+    // The scenario drives the generated omp reporter, so the fixture targets
+    // omp: its reporter asset is installed by the real `givn init`.
+    support::initialize_with_omp_reporter(env);
+}
+
+#[when(
+    regex = r#"^the omp reporter reports a completed turn and a failed tool call for "([^"]+)"$"#
+)]
+fn omp_reporter_reports_turn_and_failed_tool(world: &mut GivnWorld, id: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let out = support::drive_omp_reporter(
+        env,
+        &[
+            support::HarnessActivity::TurnMetadata {
+                index: CAPTURE_TURN_INDEX,
+                model: CAPTURE_TURN_MODEL.to_string(),
+                stop_reason: CAPTURE_STOP_REASON.to_string(),
+                cost: json!(CAPTURE_COST),
+                context_size: CAPTURE_CONTEXT_SIZE,
+                context_window: CAPTURE_CONTEXT_WINDOW,
+                usage: Some(json!({
+                    "input": 12_043,
+                    "output": 812,
+                    "reasoning": CAPTURE_REASONING,
+                    "cache_read": 9_000,
+                    "cache_write": 0,
+                    "total_tokens": 21_855,
+                })),
+            },
+            support::HarnessActivity::FailedTool {
+                id: CAPTURE_TOOL_CALL.to_string(),
+                tool: "Bash".to_string(),
+                args: json!({ "command": "cargo test --locked" }),
+                error: overlong_tool_error(),
+                output_bytes: CAPTURE_OUTPUT_BYTES,
+            },
+            support::HarnessActivity::Shutdown,
+        ],
+    );
+    assert!(
+        out.status.success(),
+        "the omp reporter driver failed: {}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    world.last_change_id = Some(id);
+    world.last_output = Some(out);
+}
+
+#[then("the turn entry names its model, its cost, its context size, and its stop reason")]
+fn turn_entry_names_its_metadata(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let change = world
+        .last_change_id
+        .clone()
+        .expect("the metadata fixture ran first");
+    let entries = support::record_entries(&env.root());
+    let turns: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| {
+            entry["kind"] == json!("turn")
+                && entry["source"] == json!("agent")
+                && entry["scope"] == json!({ "kind": "change", "id": change })
+        })
+        .collect();
+    let turn = turns
+        .last()
+        .unwrap_or_else(|| panic!("the reporter recorded no turn entry: {entries:#?}"));
+    let data = &turn["data"];
+    assert_eq!(
+        data["model"],
+        json!(CAPTURE_TURN_MODEL),
+        "the turn does not name its model: {turn}"
+    );
+    assert_eq!(
+        data["cost"],
+        json!(CAPTURE_COST),
+        "the turn does not name its cost: {turn}"
+    );
+    assert_eq!(
+        data["context_size"],
+        json!(CAPTURE_CONTEXT_SIZE),
+        "the turn does not name its context size: {turn}"
+    );
+    assert_eq!(
+        data["context_window"],
+        json!(CAPTURE_CONTEXT_WINDOW),
+        "the turn does not name its context window: {turn}"
+    );
+    assert_eq!(
+        data["stop_reason"],
+        json!(CAPTURE_STOP_REASON),
+        "the turn does not name its stop reason: {turn}"
+    );
+    assert_eq!(
+        data["index"],
+        json!(CAPTURE_TURN_INDEX),
+        "the turn does not name its index: {turn}"
+    );
+    assert_eq!(
+        data["usage"]["reasoning"],
+        json!(CAPTURE_REASONING),
+        "the turn's usage does not carry its reasoning count: {turn}"
+    );
+    assert_eq!(
+        turn["session"],
+        json!(support::DRIVER_SESSION),
+        "the entry envelope does not carry the harness session: {turn}"
+    );
+}
+
+#[then(
+    "the failed tool entry keeps its error text within the documented bound, its tool call id, and its output size"
+)]
+fn failed_tool_entry_keeps_bounded_metadata(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let change = world
+        .last_change_id
+        .clone()
+        .expect("the metadata fixture ran first");
+    let entries = support::record_entries(&env.root());
+    let tools: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| {
+            entry["kind"] == json!("tool")
+                && entry["source"] == json!("agent")
+                && entry["scope"] == json!({ "kind": "change", "id": change })
+        })
+        .collect();
+    let tool = tools
+        .last()
+        .unwrap_or_else(|| panic!("the reporter recorded no tool entry: {entries:#?}"));
+    assert_eq!(
+        tool["outcome"],
+        json!("failed"),
+        "the failed tool call is not recorded as failed: {tool}"
+    );
+    assert_eq!(
+        tool["data"]["tool_call_id"],
+        json!(CAPTURE_TOOL_CALL),
+        "the tool entry does not carry its harness call id: {tool}"
+    );
+    assert_eq!(
+        tool["data"]["output_bytes"],
+        json!(CAPTURE_OUTPUT_BYTES),
+        "the tool entry does not carry its output size: {tool}"
+    );
+    assert_eq!(
+        tool["data"]["duration_source"],
+        json!("reporter"),
+        "the tool entry does not name where its duration came from: {tool}"
+    );
+    let error = tool["data"]["error"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the failed tool entry carries no error text: {tool}"));
+    assert!(
+        error.chars().count() <= givn::history::ERROR_TEXT_LIMIT,
+        "the error text exceeds the documented bound: {tool}"
+    );
+    assert!(
+        error.ends_with('…'),
+        "the bounded error text does not mark its truncation: {tool}"
+    );
+    let kept = error.trim_end_matches('…');
+    assert!(
+        overlong_tool_error().starts_with(kept),
+        "the bounded error text is not the first line of the reported error: {tool}"
+    );
+    assert!(
+        !error.contains("second line"),
+        "the intake kept a later error line: {tool}"
+    );
+}

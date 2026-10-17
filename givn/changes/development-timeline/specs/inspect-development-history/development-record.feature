@@ -110,7 +110,7 @@ Feature: Development Record
     And the directory "givn" exists
     And the project root holds a development record
 
-  @givn.added @wip
+  @givn.added
   Scenario: Default capture keeps the metadata a review needs
     Given a project root with givn/ initialised
     And a change "demo" exists with artifact "proposal.md"
