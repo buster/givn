@@ -121,6 +121,17 @@ const WORKFLOW_PHASES: [&str; 9] = [
     "archive",
 ];
 
+/// The ideation workflow's six phases, in the order a topic report's stack and
+/// the linked ideation group name them.
+const IDEATION_PHASES: [&str; 6] = [
+    "frame",
+    "personas",
+    "event-storming",
+    "use-case-definition",
+    "use-case-elaboration",
+    "handoff",
+];
+
 /// The phase names one written report draws, in document order: the visible
 /// text of every workflow phase line in the text view's stack.
 fn rendered_phases(document: &str) -> Vec<String> {
@@ -380,6 +391,8 @@ fn browser_shows_the_heading_and_the_current_workflow_state(world: &mut GivnWorl
     currentVisible: visible(current),
     current: current ? current.textContent.trim() : null,
     currentState: model.current_state,
+    scopeKind: model.scope ? model.scope.kind : null,
+    workflow: model.workflow.map((phase) => ({ stage: phase.stage, status: phase.status })),
     done: document.getElementById("hybrid-phases-done")
       ? document.getElementById("hybrid-phases-done").textContent.trim()
       : null,
@@ -434,10 +447,35 @@ fn browser_shows_the_heading_and_the_current_workflow_state(world: &mut GivnWorl
             "the topic report does not say it has no live change state: {current:?}"
         );
     }
+    // The header counts the scope's own workflow: the change report's nine
+    // change phases, the topic report's six ideation phases. Both the count and
+    // the total come from the model the page rendered, so the row's claim is
+    // read from the report's own workflow rather than a second constant.
+    let scope_kind = rendered["scopeKind"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the model names no report scope: {rendered:#}"));
+    let phases = rendered["workflow"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the model carries no workflow: {rendered:#}"));
+    let total = match scope_kind {
+        "ideation" => IDEATION_PHASES.len(),
+        "change" => WORKFLOW_PHASES.len(),
+        other => panic!("the report scope {other} has no workflow header: {rendered:#}"),
+    };
+    assert_eq!(
+        phases.len(),
+        total,
+        "the {scope_kind} report's workflow is not its {total} phases: {rendered:#}"
+    );
+    let done_count = phases
+        .iter()
+        .filter(|phase| phase["status"] == json!("done"))
+        .count();
     let done = rendered["done"].as_str().unwrap_or_default();
-    assert!(
-        done.contains("of 9 phases done"),
-        "the header does not count the done phases of nine: {done:?}"
+    assert_eq!(
+        done,
+        format!("{done_count} of {total} phases done"),
+        "the header does not count the {scope_kind} report's done phases of {total}: {done:?}"
     );
 }
 
@@ -448,12 +486,24 @@ fn browser_shows_the_workflow_phases_top_to_bottom(world: &mut GivnWorld) {
   const model = JSON.parse(document.getElementById("report-model").textContent);
   const cards = [...document.querySelectorAll("#hybrid-workflow .phase-stack > .phase-card")];
   return {
+    scopeKind: model.scope ? model.scope.kind : null,
     expected: model.workflow.map((phase) => phase.stage),
     drawn: cards.map((card) => card.dataset.phase),
     tops: cards.map((card) => card.getBoundingClientRect().top),
   };
 })()"##,
     );
+    // The stack names the scope's own workflow: the change's nine phases for a
+    // change report, the six ideation phases for a topic report — in the
+    // workflow's own order, and only those.
+    let scope_kind = rendered["scopeKind"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the model names no report scope: {rendered:#}"));
+    let workflow: &[&str] = match scope_kind {
+        "ideation" => &IDEATION_PHASES,
+        "change" => &WORKFLOW_PHASES,
+        other => panic!("the report scope {other} draws no workflow stack: {rendered:#}"),
+    };
     let expected: Vec<String> = rendered["expected"]
         .as_array()
         .unwrap_or_else(|| panic!("the model carries no workflow: {rendered:#}"))
@@ -465,6 +515,14 @@ fn browser_shows_the_workflow_phases_top_to_bottom(world: &mut GivnWorld) {
                 .to_string()
         })
         .collect();
+    assert_eq!(
+        expected,
+        workflow
+            .iter()
+            .map(|stage| (*stage).to_string())
+            .collect::<Vec<_>>(),
+        "the {scope_kind} report's workflow is not its own phases: {rendered:#}"
+    );
     let drawn: Vec<String> = rendered["drawn"]
         .as_array()
         .unwrap_or_else(|| panic!("the browser draws no phase card: {rendered:#}"))
@@ -603,6 +661,408 @@ fn browser_lays_the_page_out_in_one_column_at_the_mobile_viewport(world: &mut Gi
         "the phase cards are not in one column at the mobile viewport: {lefts:?}"
     );
     commit_evidence(world, OPEN_SCENARIO);
+}
+
+/// The `@e2e` browser scenario that reads a change's linked ideation group.
+const LINKED_GROUP_SCENARIO: &str = "Consumer reads a change's linked ideation group";
+
+/// The ideation phases the linked-group scenario's record holds markers for.
+const LINKED_GROUP_MARKERS: [&str; 2] = ["personas", "event-storming"];
+
+/// The group's phase card: the group's own card, never the change stack's.
+fn group_phase_card(phase: &str) -> String {
+    format!("#hybrid-ideation .phase-card[data-phase=\"{phase}\"]")
+}
+
+/// The group's phase expander.
+fn group_phase_expander(phase: &str) -> String {
+    format!("{} .phase-expander", group_phase_card(phase))
+}
+
+/// The group's phase body.
+fn group_phase_region(phase: &str) -> String {
+    format!("{} .phase-region", group_phase_card(phase))
+}
+
+/// The topic a linked change's proposal names, as the proposal-link Given (the
+/// capability's own step) recorded it: the second Given seeds this topic's
+/// record, and the browser steps read the rendered group against it.
+fn linked_topic(world: &GivnWorld) -> String {
+    world
+        .development_report
+        .as_ref()
+        .and_then(|state| state.linked_topic.clone())
+        .expect("the proposal-link Given ran first")
+}
+
+#[given(regex = r#"^the topic's record holds the markers for personas and event storming$"#)]
+fn topic_record_holds_persona_and_event_storming_markers(world: &mut GivnWorld) {
+    let change = world
+        .last_change_id
+        .clone()
+        .expect("the linked change Given ran first");
+    let topic = linked_topic(world);
+    let seeded = {
+        let env = project_root(world);
+        support::seed_linked_ideation_sessions(env, &change, &topic, &LINKED_GROUP_MARKERS)
+    };
+    // The fixture's own claim, read through the topic-scoped marker helper: the
+    // record carries exactly one start marker per marker the scenario names,
+    // scoped to the topic rather than to the change.
+    let entries = support::record_entries(&project_root(world).root());
+    for marker in LINKED_GROUP_MARKERS {
+        assert_eq!(
+            support::markers_for(&entries, &topic, marker).len(),
+            1,
+            "the fixture seeded no single `{marker}` marker for the topic `{topic}`: {entries:#?}"
+        );
+    }
+    // Two parallel sessions' work sits inside the `personas` phase, so its
+    // expanded card draws real lanes.
+    let mut sessions: Vec<&str> = seeded
+        .iter()
+        .filter(|entry| entry.scope == Scope::Ideation { id: topic.clone() })
+        .filter_map(|entry| entry.session.as_deref())
+        .collect();
+    sessions.sort_unstable();
+    sessions.dedup();
+    assert_eq!(
+        sessions.len(),
+        2,
+        "the fixture's topic record does not hold two parallel sessions: {seeded:#?}"
+    );
+}
+
+#[then("the browser shows the linked ideation group before the change workflow")]
+fn browser_shows_the_linked_ideation_group_before_the_workflow(world: &mut GivnWorld) {
+    let rendered = browser(world).evaluate(
+        r##"(() => {
+  const model = JSON.parse(document.getElementById("report-model").textContent);
+  const group = document.getElementById("hybrid-ideation");
+  const workflow = document.getElementById("hybrid-workflow");
+  const heading = document.getElementById("hybrid-ideation-heading");
+  const totals = document.getElementById("hybrid-group-totals");
+  const linked = model.ideation || {};
+  return {
+    modelTopic: linked.topic === undefined ? null : linked.topic,
+    modelActivity: linked.activity === undefined ? null : linked.activity,
+    modelDuration: linked.duration_ms === undefined ? null : linked.duration_ms,
+    modelTools: linked.tools === undefined ? null : linked.tools,
+    modelSubagents: linked.subagents === undefined ? null : linked.subagents,
+    modelWaits: linked.waits === undefined ? null : linked.waits,
+    modelEntries: Array.isArray(linked.entries) ? linked.entries.length : null,
+    topic: group ? group.dataset.topic : null,
+    heading: heading ? heading.textContent.trim() : null,
+    groupTop: group ? group.getBoundingClientRect().top : null,
+    workflowTop: workflow ? workflow.getBoundingClientRect().top : null,
+    nested: group && workflow ? workflow.contains(group) : null,
+    wrapsWorkflow: group && workflow ? group.contains(workflow) : null,
+    totals: totals ? totals.textContent.trim() : null,
+    totalsEntries: totals ? Number(totals.dataset.entries) : null,
+    groupCards: group ? group.querySelectorAll(".phase-card").length : 0,
+    workflowCards: workflow ? workflow.querySelectorAll(".phase-card").length : 0,
+  };
+})()"##,
+    );
+    let topic = linked_topic(world);
+    assert_eq!(
+        rendered["modelTopic"],
+        json!(topic),
+        "the model carries no linked group for the topic the proposal names: {rendered:#}"
+    );
+    assert_eq!(
+        rendered["modelActivity"],
+        json!(true),
+        "the linked group's record claims no activity: {rendered:#}"
+    );
+    assert_eq!(
+        rendered["topic"],
+        json!(topic),
+        "the browser draws no linked ideation group for {topic}: {rendered:#}"
+    );
+    let heading = rendered["heading"].as_str().unwrap_or_default();
+    assert!(
+        heading.to_lowercase().contains("ideation") && heading.contains(&topic),
+        "the group's heading names no ideation group for {topic}: {heading:?}"
+    );
+    // The group is its own labelled section above the change workflow, never a
+    // child of the change stack: the change stack's selectors stay unambiguous.
+    assert_eq!(
+        rendered["nested"],
+        json!(false),
+        "the group is nested inside the change workflow: {rendered:#}"
+    );
+    assert_eq!(
+        rendered["wrapsWorkflow"],
+        json!(false),
+        "the group wraps the change workflow: {rendered:#}"
+    );
+    let group_top = rendered["groupTop"]
+        .as_f64()
+        .unwrap_or_else(|| panic!("the group has no rendered position: {rendered:#}"));
+    let workflow_top = rendered["workflowTop"]
+        .as_f64()
+        .unwrap_or_else(|| panic!("the change workflow has no rendered position: {rendered:#}"));
+    assert!(
+        group_top < workflow_top,
+        "the group is not drawn before the change workflow: {rendered:#}"
+    );
+    // The group states its own totals — the topic's duration, tools,
+    // subagents, and waits — never the change's.
+    let duration = match rendered["modelDuration"].as_u64() {
+        Some(ms) => givn::cli::timeline::format_duration(ms),
+        None => "not measured".to_string(),
+    };
+    let expected_totals = format!(
+        "ideation recorded {duration}, {} tools, {} subagents, {} waits",
+        rendered["modelTools"].as_u64().unwrap_or_default(),
+        rendered["modelSubagents"].as_u64().unwrap_or_default(),
+        rendered["modelWaits"].as_u64().unwrap_or_default(),
+    );
+    assert_eq!(
+        rendered["totals"],
+        json!(expected_totals),
+        "the group does not state the topic's own totals: {rendered:#}"
+    );
+    assert_eq!(
+        rendered["totalsEntries"],
+        json!(rendered["modelEntries"].as_u64().unwrap_or_default()),
+        "the group's totals do not carry the topic's own entry count: {rendered:#}"
+    );
+    assert_eq!(
+        rendered["workflowCards"],
+        json!(WORKFLOW_PHASES.len()),
+        "the change stack beside the group is not the change's nine phases: {rendered:#}"
+    );
+}
+
+#[then("the group names the ideation phases")]
+fn group_names_the_ideation_phases(world: &mut GivnWorld) {
+    let rendered = browser(world).evaluate(
+        r##"(() => {
+  const model = JSON.parse(document.getElementById("report-model").textContent);
+  const group = document.getElementById("hybrid-ideation");
+  const cards = [...group.querySelectorAll(":scope > .phase-stack > .phase-card")];
+  const done = group.querySelector("#hybrid-ideation-done");
+  return {
+    expected: model.ideation.phases.map((phase) => phase.stage),
+    statuses: model.ideation.phases.map((phase) => phase.status),
+    drawn: cards.map((card) => card.dataset.phase),
+    drawnStatuses: cards.map((card) => card.dataset.status),
+    names: cards.map((card) => card.querySelector(".phase-name").textContent.trim()),
+    workflow: model.workflow.map((phase) => phase.stage),
+    done: done ? done.textContent.trim() : null,
+  };
+})()"##,
+    );
+    let expected: Vec<String> = rendered["expected"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the model carries no linked group: {rendered:#}"))
+        .iter()
+        .map(|stage| stage.as_str().unwrap_or_default().to_string())
+        .collect();
+    assert_eq!(
+        expected,
+        IDEATION_PHASES
+            .iter()
+            .map(|stage| (*stage).to_string())
+            .collect::<Vec<_>>(),
+        "the group's phases are not the six ideation phases in order: {rendered:#}"
+    );
+    let drawn: Vec<String> = rendered["drawn"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the group draws no phase card: {rendered:#}"))
+        .iter()
+        .map(|stage| stage.as_str().unwrap_or_default().to_string())
+        .collect();
+    assert_eq!(
+        drawn, expected,
+        "the group does not name the ideation phases top to bottom: {rendered:#}"
+    );
+    let names: Vec<String> = rendered["names"]
+        .as_array()
+        .unwrap_or_else(|| panic!("a group card carries no visible name: {rendered:#}"))
+        .iter()
+        .map(|name| name.as_str().unwrap_or_default().to_string())
+        .collect();
+    assert_eq!(
+        names, expected,
+        "the group's cards do not show their ideation phase names: {rendered:#}"
+    );
+    // The statuses are the topic report's marker statuses, and no change phase
+    // reaches the group.
+    let statuses: Vec<String> = rendered["statuses"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the group's phases carry no status: {rendered:#}"))
+        .iter()
+        .map(|status| status.as_str().unwrap_or_default().to_string())
+        .collect();
+    let drawn_statuses: Vec<String> = rendered["drawnStatuses"]
+        .as_array()
+        .unwrap_or_else(|| panic!("a group card carries no status: {rendered:#}"))
+        .iter()
+        .map(|status| status.as_str().unwrap_or_default().to_string())
+        .collect();
+    assert_eq!(
+        drawn_statuses, statuses,
+        "the group does not show the topic's marker statuses: {rendered:#}"
+    );
+    let workflow: Vec<String> = rendered["workflow"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the model carries no change workflow: {rendered:#}"))
+        .iter()
+        .map(|stage| stage.as_str().unwrap_or_default().to_string())
+        .collect();
+    assert!(
+        drawn.iter().all(|stage| !workflow.contains(stage)),
+        "the group draws a change phase instead of an ideation phase: {rendered:#}"
+    );
+    let done_count = statuses.iter().filter(|status| *status == "done").count();
+    assert_eq!(
+        rendered["done"],
+        json!(format!(
+            "{done_count} of {} ideation phases done",
+            IDEATION_PHASES.len()
+        )),
+        "the group does not state its own ideation phase total: {rendered:#}"
+    );
+}
+
+#[then(regex = r#"^the consumer expands the group's ([\w-]+) phase$"#)]
+fn consumer_expands_the_group_phase(world: &mut GivnWorld, phase: String) {
+    let expander = group_phase_expander(&phase);
+    assert_eq!(
+        browser(world)
+            .attribute(&expander, "aria-expanded")
+            .as_deref(),
+        Some("false"),
+        "the group's {phase} expander does not start collapsed"
+    );
+    browser(world).click(&expander);
+    assert_eq!(
+        browser(world)
+            .attribute(&expander, "aria-expanded")
+            .as_deref(),
+        Some("true"),
+        "the group's {phase} expander did not report its expanded state"
+    );
+    let rendered = browser(world).evaluate(&format!(
+        r##"(() => {{
+  const region = document.querySelector({region});
+  return {{ hidden: region ? region.hidden : null, role: region ? region.getAttribute("role") : null }};
+}})()"##,
+        region = json!(group_phase_region(&phase))
+    ));
+    assert_eq!(
+        rendered["hidden"],
+        json!(false),
+        "the group's expanded {phase} phase is not visible: {rendered:#}"
+    );
+    assert_eq!(
+        rendered["role"],
+        json!("region"),
+        "the group's expanded {phase} phase is not a labelled region: {rendered:#}"
+    );
+}
+
+#[then("the browser shows that phase's vertical lanes")]
+fn browser_shows_the_group_phase_vertical_lanes(world: &mut GivnWorld) {
+    let rendered = browser(world).evaluate(&format!(
+        r##"(() => {{
+  const model = JSON.parse(document.getElementById("report-model").textContent);
+  const phase = model.ideation
+    ? model.ideation.phases.find((candidate) => candidate.stage === "personas")
+    : null;
+  const card = document.querySelector({card});
+  const region = card ? card.querySelector(".phase-region") : null;
+  const lanes = card ? [...card.querySelectorAll(".lane")] : [];
+  return {{
+    expected: phase ? phase.lanes.map((lane) => lane.name) : null,
+    drawn: lanes.map((lane) => lane.dataset.lane),
+    lefts: lanes.map((lane) => lane.getBoundingClientRect().left),
+    heights: card
+      ? [...card.querySelectorAll(".lane-track")].map((track) => track.getBoundingClientRect().height)
+      : [],
+    axis: card ? card.querySelectorAll(".phase-axis").length : 0,
+    ticks: card
+      ? [...card.querySelectorAll(".axis-tick")].map((tick) => tick.getBoundingClientRect().top)
+      : [],
+    visible: region ? !region.hidden : false,
+    log: card ? card.querySelectorAll(".lane-log").length : 0,
+  }};
+}})()"##,
+        card = json!(group_phase_card("personas"))
+    ));
+    assert_eq!(
+        rendered["visible"],
+        json!(true),
+        "the group's expanded personas phase is not visible: {rendered:#}"
+    );
+    let expected: Vec<String> = rendered["expected"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the model carries no personas lanes: {rendered:#}"))
+        .iter()
+        .map(|name| name.as_str().unwrap_or_default().to_string())
+        .collect();
+    let drawn: Vec<String> = rendered["drawn"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the group draws no lane: {rendered:#}"))
+        .iter()
+        .map(|name| name.as_str().unwrap_or_default().to_string())
+        .collect();
+    assert_eq!(
+        drawn, expected,
+        "the group does not draw one lane per recorded session: {rendered:#}"
+    );
+    assert!(
+        drawn.len() >= 2
+            && drawn.contains(&support::IDEATION_SCOUT_LANE.to_string())
+            && drawn.contains(&support::IDEATION_WRITER_LANE.to_string()),
+        "the group's personas phase does not name its parallel sessions' lanes: {drawn:?}"
+    );
+    let lefts: Vec<f64> = rendered["lefts"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the lanes carry no positions: {rendered:#}"))
+        .iter()
+        .map(|left| left.as_f64().unwrap_or_default())
+        .collect();
+    assert!(
+        lefts.windows(2).all(|pair| pair[0] < pair[1]),
+        "the group's session lanes are not beside each other: {lefts:?}"
+    );
+    assert_eq!(
+        rendered["axis"],
+        json!(1),
+        "the group's expanded phase draws no vertical axis: {rendered:#}"
+    );
+    let heights: Vec<f64> = rendered["heights"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the phase draws no lane track: {rendered:#}"))
+        .iter()
+        .map(|height| height.as_f64().unwrap_or_default())
+        .collect();
+    assert!(
+        !heights.is_empty() && heights.iter().all(|height| *height > 0.0),
+        "the group's lane tracks have no vertical extent: {heights:?}"
+    );
+    let ticks: Vec<f64> = rendered["ticks"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the group's axis draws no tick: {rendered:#}"))
+        .iter()
+        .map(|top| top.as_f64().unwrap_or_default())
+        .collect();
+    assert!(
+        ticks.len() >= 2 && ticks.windows(2).all(|pair| pair[0] < pair[1]),
+        "the group's axis ticks do not flow downwards in time: {ticks:?}"
+    );
+    assert_eq!(
+        rendered["log"],
+        json!(1),
+        "the group's expanded phase draws no lane log: {rendered:#}"
+    );
+    // The scenario's pair: the linked group and its expanded `personas` phase,
+    // at both contract viewports, animations disabled by the driver.
+    browser(world).capture_evidence_from(LINKED_GROUP_SCENARIO, "#hybrid-ideation");
 }
 
 /// The `@e2e` browser scenario that expands a workflow phase.

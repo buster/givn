@@ -158,6 +158,20 @@
   .kpi-value { font-size: var(--font-20); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
   .kpi-note { color: var(--color-text-muted); font-size: var(--font-12); }
   .section-heading { color: var(--color-text-muted); font-size: var(--font-12); letter-spacing: .1em; margin: var(--space-5) 0 var(--space-2); text-transform: uppercase; }
+  /* The linked ideation group: its own labelled section above the change
+     workflow, never inside it. Its heading, totals, and progress line state
+     the topic's record, not the change's. */
+  .group-totals, .group-progress { color: var(--color-text-muted); font-size: var(--font-14); margin: 0 0 var(--space-2); }
+  .group-progress strong { color: var(--color-text); }
+  .group-empty {
+    background: var(--color-surface-raised);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-panel);
+    color: var(--color-text-muted);
+    font-size: var(--font-14);
+    margin: 0 0 var(--space-2);
+    padding: var(--space-3);
+  }
   .phase-stack { display: flex; flex-direction: column; gap: var(--space-2); position: relative; }
   .phase-card {
     background: var(--color-surface);
@@ -455,7 +469,7 @@
      view is built, the fallback sections step aside so the page reads as one
      hybrid report. They stay in the document (and in the written file). */
   for (const node of main.querySelectorAll(
-    ".report-scope, .report-current-state, .summary, .workflow-stack, .timeline-section",
+    ".report-scope, .report-current-state, .summary, .workflow-stack, .timeline-section, section[data-topic]",
   )) {
     node.hidden = true;
   }
@@ -533,13 +547,16 @@
   }
 
   /** One phase's own state: whether it is open, which lane is selected, the zoom
-      level, and whether its body has been rendered. */
-  function stateOf(phase) {
+      level, and whether its body has been rendered. The key carries the stack
+      the card belongs to, so the change workflow's cards and the linked
+      ideation group's cards never share state. */
+  function stateOf(stack, phase) {
     const key = phase.stage === undefined || phase.stage === null ? "unstaged" : phase.stage;
-    let state = phaseState.get(key);
+    const stateKey = stack.id + ":" + key;
+    let state = phaseState.get(stateKey);
     if (!state) {
       state = { open: false, lane: 0, zoom: "fit", focused: null };
-      phaseState.set(key, state);
+      phaseState.set(stateKey, state);
     }
     return state;
   }
@@ -732,7 +749,7 @@
 
   /** One lane's tick button. A tick is a separate focusable control; the lane
       header is its own button, so no control nests another. */
-  function tickNode(phase, lane, mark, range, index) {
+  function tickNode(stack, phase, lane, mark, range, index) {
     const span = Math.max(1, range.end - range.start);
     const top = Math.min(TRACK_HEIGHT - 2, Math.max(0, ((mark.at - range.start) / span) * TRACK_HEIGHT));
     const button = el("button", "tick");
@@ -763,17 +780,17 @@
     button.setAttribute("aria-label", label);
     button.addEventListener("click", (event) => {
       event.stopPropagation();
-      const state = stateOf(phase);
+      const state = stateOf(stack, phase);
       state.lane = phase.lanes.indexOf(lane);
       state.focused = mark.kind === "entry" ? mark.entry.id : null;
-      renderPhase(phase);
+      renderPhase(stack, phase);
     });
     return button;
   }
 
   /** The phase's vertical axis and its session lanes, side by side. */
-  function renderAxis(phase) {
-    const state = stateOf(phase);
+  function renderAxis(stack, phase) {
+    const state = stateOf(stack, phase);
     const range = rangeFor(phase, state.zoom);
     const scroll = el("div", "lane-scroll");
     const grid = el("div", "timeline-grid");
@@ -809,12 +826,14 @@
       header.addEventListener("click", () => {
         state.lane = laneIndex;
         state.focused = null;
-        renderPhase(phase);
+        renderPhase(stack, phase);
       });
       const track = el("div", "lane-track");
       track.style.height = TRACK_HEIGHT + "px";
       const marks = laneMarks(phase, lane, range);
-      marks.forEach((mark, index) => track.appendChild(tickNode(phase, lane, mark, range, index)));
+      marks.forEach((mark, index) =>
+        track.appendChild(tickNode(stack, phase, lane, mark, range, index)),
+      );
       column.appendChild(header);
       column.appendChild(track);
       lanes.appendChild(column);
@@ -934,8 +953,8 @@
 
   /** The selected lane's log: the lane's own facts and entries, sorted by the
       recorded instant. */
-  function renderLog(phase) {
-    const state = stateOf(phase);
+  function renderLog(stack, phase) {
+    const state = stateOf(stack, phase);
     const lane = phase.lanes[state.lane];
     const log = el("section", "lane-log");
     log.id = "lane-log-" + (phase.stage === undefined ? "unstaged" : phase.stage);
@@ -972,11 +991,13 @@
 
   /** Build (or rebuild) one phase's expanded body: the toolbar with the
       per-phase zoom controls, the vertical axis with its lanes, and the log. */
-  function renderPhase(phase) {
+  function renderPhase(stack, phase) {
     const key = phase.stage === undefined ? "unstaged" : phase.stage;
-    const card = document.querySelector('.phase-card[data-phase="' + key + '"]');
+    const section = document.getElementById(stack.id);
+    if (!section) return;
+    const card = section.querySelector('.phase-card[data-phase="' + key + '"]');
     if (!card) return;
-    const state = stateOf(phase);
+    const state = stateOf(stack, phase);
     const region = card.querySelector(".phase-region");
     if (!region) return;
     while (region.firstChild) region.removeChild(region.firstChild);
@@ -998,7 +1019,7 @@
       button.setAttribute("aria-pressed", state.zoom === level ? "true" : "false");
       button.addEventListener("click", () => {
         state.zoom = level;
-        renderPhase(phase);
+        renderPhase(stack, phase);
       });
       zoom.appendChild(button);
     }
@@ -1008,16 +1029,16 @@
       region.appendChild(el("p", "stat-empty", "No recorded lanes in this phase."));
       return;
     }
-    region.appendChild(renderAxis(phase));
-    region.appendChild(renderLog(phase));
+    region.appendChild(renderAxis(stack, phase));
+    region.appendChild(renderLog(stack, phase));
   }
 
   /** One phase card: the expander button, the labelled region, and the header
       facts. The body is built lazily on first expansion, so the DOM stays
       bounded at every zoom. */
-  function phaseCard(phase) {
+  function phaseCard(stack, phase) {
     const key = phase.stage === undefined || phase.stage === null ? "unstaged" : phase.stage;
-    const state = stateOf(phase);
+    const state = stateOf(stack, phase);
     const card = el("section", "phase-card");
     card.dataset.phase = key;
     card.dataset.status = phase.status === undefined || phase.status === null ? "underived" : phase.status;
@@ -1050,7 +1071,7 @@
       expander.setAttribute("aria-expanded", state.open ? "true" : "false");
       card.classList.toggle("is-open", state.open);
       region.hidden = !state.open;
-      if (state.open) renderPhase(phase);
+      if (state.open) renderPhase(stack, phase);
     });
     card.appendChild(expander);
     const region = el("div", "phase-region");
@@ -1062,25 +1083,77 @@
     return card;
   }
 
-  /** The workflow stack: the nine phases top to bottom. */
-  function buildWorkflow() {
-    const section = el("section", "hybrid-workflow");
-    section.id = "hybrid-workflow";
-    const heading = el("h2", "section-heading", "Workflow · top to bottom");
-    heading.id = "hybrid-workflow-heading";
+  /** One stack's labelled section: its own heading and the id every scoped
+      query inside the stack reads. The change workflow and the linked ideation
+      group share it; the container id a stack names is the only difference. */
+  function stackSection(stack, className, headingText) {
+    const section = el("section", className);
+    section.id = stack.id;
+    const heading = el("h2", "section-heading", headingText);
+    heading.id = stack.id + "-heading";
     section.setAttribute("aria-labelledby", heading.id);
     section.appendChild(heading);
-    const stack = el("div", "phase-stack");
-    for (const phase of model.workflow) stack.appendChild(phaseCard(phase));
-    section.appendChild(stack);
+    return section;
+  }
+
+  /** One stack's phase cards, top to bottom. */
+  function phaseStack(stack, phases) {
+    const node = el("div", "phase-stack");
+    for (const phase of phases) node.appendChild(phaseCard(stack, phase));
+    return node;
+  }
+
+  /** The workflow stack: the scope's own workflow phases, top to bottom — the
+      change's nine for a change report, the six ideation phases for a topic
+      report — plus the group of work the record assigns to no stage. */
+  function buildWorkflow() {
+    const stack = { id: "hybrid-workflow" };
+    const section = stackSection(stack, "hybrid-workflow", "Workflow · top to bottom");
+    section.appendChild(phaseStack(stack, model.workflow));
     if (model.unstaged) {
       const unstaged = el("section", "hybrid-unstaged");
       unstaged.id = "hybrid-unstaged";
       const subheading = el("h3", "section-heading", "No recorded stage transition");
       unstaged.appendChild(subheading);
-      unstaged.appendChild(phaseCard(model.unstaged));
+      unstaged.appendChild(phaseCard(stack, model.unstaged));
       section.appendChild(unstaged);
     }
+    return section;
+  }
+
+  /** The linked ideation group: the topic's six ideation phases with the topic
+      report's marker statuses, its own cards, lanes, log, zoom, and totals,
+      rendered as its own labelled section above the change workflow — never
+      inside it, and never as the change's current phase. A topic whose record
+      holds no entry states that instead of inventing phases or durations. */
+  function buildIdeationGroup() {
+    const group = model.ideation;
+    if (!group) return null;
+    const stack = { id: "hybrid-ideation" };
+    const section = stackSection(stack, "hybrid-ideation", "Linked ideation · " + group.topic);
+    section.dataset.topic = group.topic;
+    if (!group.activity) {
+      section.appendChild(
+        el("p", "group-empty", "no recorded activity (pre-dates the record)"),
+      );
+      return section;
+    }
+    const totals = el("p", "group-totals");
+    totals.id = "hybrid-group-totals";
+    totals.dataset.entries = String(group.entries.length);
+    totals.textContent =
+      "ideation recorded " + durationText(group.duration_ms)
+      + ", " + (group.tools || 0) + " tools"
+      + ", " + (group.subagents || 0) + " subagents"
+      + ", " + (group.waits || 0) + " waits";
+    section.appendChild(totals);
+    const done = group.phases.filter((phase) => phase.status === "done").length;
+    const progress = el("p", "group-progress");
+    progress.id = "hybrid-ideation-done";
+    progress.appendChild(el("strong", null, done + " of " + group.phases.length));
+    progress.appendChild(document.createTextNode(" ideation phases done"));
+    section.appendChild(progress);
+    section.appendChild(phaseStack(stack, group.phases));
     return section;
   }
 
@@ -1198,6 +1271,8 @@
 
   main.appendChild(buildHeader());
   main.appendChild(buildKpis());
+  const ideationGroup = buildIdeationGroup();
+  if (ideationGroup) main.appendChild(ideationGroup);
   main.appendChild(buildWorkflow());
   main.appendChild(buildStatistics());
 })();
