@@ -176,7 +176,7 @@ Feature: Development Report
     And the log names the entry's tool call id
     And the log renders the entry's content in its bounded content region
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer zooms the timeline to a shorter time range
     Given an open development report with a recorded history
     When the consumer zooms the expanded phase's timeline in
