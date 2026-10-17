@@ -14487,7 +14487,7 @@ untouched; this part is appended after its completion statement.
 
 ## Task H13 — `An ideation artifact appearance is recorded as one phase start` (`development-record`, added)
 
-- [ ] **Scenario: `An ideation artifact appearance is recorded as one phase start`** (`@wip` until its RED)
+- [x] **Scenario: `An ideation artifact appearance is recorded as one phase start`** (`@wip` until its RED)
   - Design constraints:
     - **Marker table** (the design's *Start markers*): the first
       `personas/*.md` → label `personas`; `eventstorming.md` → `event-storming`;
@@ -14534,31 +14534,89 @@ untouched; this part is appended after its completion statement.
       `tests/steps/development_timeline_support.rs`.
     - RED expected failure: the Given and four Then phrases are undefined, and
       no marker is ever emitted.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::An ideation artifact appearance is recorded as one phase start"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Record
+          Scenario: An ideation artifact appearance is recorded as one phase start
+           ✘  Given an ideation topic "ideas" whose personas file appears while a recorded command runs
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:179:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        EXIT=101
         ```
-  - [ ] **GREEN** — implement the ideation half, the override carrier, the
+  - [x] **GREEN** — implement the ideation half, the override carrier, the
         fixture, and the steps. Files: `src/history.rs`,
         `src/cli/history.rs`, `tests/steps/development_record_steps.rs`,
         `tests/steps/development_timeline_support.rs`. Compile, re-run → exit
         0. Paste it.
         ```
-        PASTE THE GREEN RUN HERE
+        Feature: Development Record
+          Scenario: An ideation artifact appearance is recorded as one phase start
+           ✔  Given an ideation topic "ideas" whose personas file appears while a recorded command runs
+           ✔  When the command finishes
+           ✔  Then the record holds one phase entry labelled "personas" for the topic "ideas"
+           ✔  And a later recorded command that sees the same personas file records no second phase entry
+           ✔  And a later observed marker records its own phase entry
+           ✔  And a change artifact appearance records no ideation phase entry
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — one marker table and one dedupe path, separate from the
+  - [x] **REFACTOR** — one marker table and one dedupe path, separate from the
         change-transition path; `cargo fmt --all -- --check` and `cargo clippy
         --locked --all-targets -- -D warnings` green; re-run → still exit 0.
         Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+
+        Feature: Development Record
+          Scenario: An ideation artifact appearance is recorded as one phase start
+           ✔  Given an ideation topic "ideas" whose personas file appears while a recorded command runs
+           ✔  When the command finishes
+           ✔  Then the record holds one phase entry labelled "personas" for the topic "ideas"
+           ✔  And a later recorded command that sees the same personas file records no second phase entry
+           ✔  And a later observed marker records its own phase entry
+           ✔  And a change artifact appearance records no ideation phase entry
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+  - [x] **COMMIT** — `1bb356c6` — `feat(development-record): <release note>` with
         the scenario title in the body. Record the revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit 1bb356c6
+        feat(development-record): An ideation artifact appearance is recorded as one phase start
+
+        The recorder's artifact observation gains its ideation half: one `phase`
+        entry per start marker the observed topic first shows (personas,
+        eventstorming.md, use-case-definitions.md, the first use-case, the first
+        seed or the published topic document), labelled with the phase it starts.
+        The observation topic is the command's start-resolved scope or the intake's
+        topic override, never a post-command re-resolution or a directory sweep, so
+        a change- or project-scoped command records no marker and a finished topic
+        is never backfilled. Entries are deduplicated by label in the topic's scope
+        and parented to the observing command exactly as a change transition is;
+        the change half keeps its post-command resolution.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../development-record.feature                     |   2 +-
+         src/cli/history.rs                                 |   9 +
+         src/history.rs                                     | 126 +++++++++++
+         tests/steps/development_record_steps.rs            | 231 ++++++++++++++++++++-
+         tests/steps/development_timeline_support.rs        |  14 ++
+         5 files changed, 373 insertions(+), 9 deletions(-)
         ```
 
 ## Task H14 — Ideation model: stage list, marker derivation, per-band order, linked group, scope-separated totals (shared prerequisite; no new scenario)
