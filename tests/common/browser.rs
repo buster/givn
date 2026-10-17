@@ -226,6 +226,14 @@ impl BrowserDriver {
         );
     }
 
+    /// Whether evidence capture is enabled. The release workflow sets
+    /// `GIVN_EVIDENCE_CAPTURE=0` while it verifies a release: captures carry
+    /// measured durations and would otherwise dirty the tested tree with
+    /// changes the release commit must not carry.
+    fn capture_enabled() -> bool {
+        std::env::var("GIVN_EVIDENCE_CAPTURE").ok().as_deref() != Some("0")
+    }
+
     /// Capture one scenario's evidence pair at both contract viewports, under
     /// `evidence/visual/<scenario-slug>/` — the layout the change's visual gate
     /// reads.
@@ -238,6 +246,9 @@ impl BrowserDriver {
     /// scenario asserted, even where it sits below the fold at the mobile
     /// viewport.
     pub fn capture_evidence_from(&mut self, scenario: &str, anchor: &str) {
+        if !Self::capture_enabled() {
+            return;
+        }
         for (viewport, width, height) in VIEWPORTS {
             self.viewport(width, height);
             self.scroll_into_view(anchor);
@@ -248,6 +259,9 @@ impl BrowserDriver {
     /// Capture the declared state's pair (`<viewport>--<state>.png`) beside the
     /// final-state pair, from the same open report.
     pub fn capture_state_evidence(&mut self, scenario: &str, state: &str) {
+        if !Self::capture_enabled() {
+            return;
+        }
         for (viewport, width, height) in VIEWPORTS {
             self.viewport(width, height);
             self.screenshot(&state_evidence_file(scenario, viewport, state));

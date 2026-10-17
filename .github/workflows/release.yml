@@ -335,6 +335,8 @@ jobs:
 
       - name: Run repository acceptance suites
         shell: bash
+        env:
+          GIVN_EVIDENCE_CAPTURE: "0"
         run: |
           set -euo pipefail
           ./run-tests.sh --non-e2e
