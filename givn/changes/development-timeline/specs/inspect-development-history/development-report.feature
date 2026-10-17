@@ -47,17 +47,17 @@ Feature: Development Report
     When the developer generates the development report for "demo"
     Then the report references no remote resource
 
-  @givn.added
+  @givn.added @wip
   Scenario: The report shows the empty state for a scope with no recorded activity
     Given a change "demo" with no recorded activity
     When the developer generates the development report for "demo"
     Then the report shows the empty state for "demo"
     And the report draws no workflow phase for it
 
-  @givn.added
+  @givn.added @wip
   Scenario: The report derives the current workflow state
     Given a change "demo" whose record holds the workflow phases up to "tasks"
-    And the change's current state names "tasks-done" and the next required artifact "review"
+    And the change's artifacts make its derived state "tasks-done" with the next required artifact "review"
     When the developer generates the development report for "demo"
     Then the report names the current stage "tasks-done"
     And the report marks the phases before "review" done
@@ -65,24 +65,52 @@ Feature: Development Report
     And the report marks "archive" queued
     And the report names no phase the workflow does not have
 
-  @givn.added
+  @givn.added @wip
   Scenario: The report lays parallel sessions side by side
     Given a change "demo" whose record holds one phase with two sessions
-    And one session holds a subagent span named "Architect.Scout"
+    And one session is a subagent's own recorded session named "Architect.Scout"
+    And one session holds a subagent span the record places in the spawning session
     When the developer generates the development report for "demo"
     Then the report draws one lane per session beside each other in that phase
-    And the lane named "Architect.Scout" carries that subagent span
+    And the lane named "Architect.Scout" carries that subagent's own entries
+    And the spawning session's lane keeps its own name and carries the subagent span
     And an entry whose session the record does not name stays in the unattributed lane
     And the report never assigns an entry to a subagent the record does not name
+    And the report states when no tool call was attributable to a subagent span
 
-  @givn.added
+  @givn.added @wip
+  Scenario: The report marks a skipped workflow phase
+    Given a change "demo" whose record holds the workflow phases up to "tasks"
+    And the change's artifacts make its derived state "tasks-done" with the next required artifact "review"
+    And the change skips the "arc42-docs" artifact
+    When the developer generates the development report for "demo"
+    Then the report marks "arc42" skipped
+    And the report does not mark "arc42" done
+
+  @givn.added @wip
+  Scenario: The report of an archived change marks every phase done
+    Given an archived change "demo" whose record holds the workflow phases up to "review"
+    When the developer generates the development report for "demo"
+    Then the report names no live change state
+    And the report marks every workflow phase done
+    And the report names no next required artifact
+
+  @givn.added @wip
+  Scenario: The report states a record with no stage transition
+    Given a change "demo" whose record holds no artifact transition
+    When the developer generates the development report for "demo"
+    Then the report groups the recorded work under no workflow phase
+    And the report states that the record carries no stage transition
+    And the report names no phase for that recorded work
+
+  @givn.added @wip
   Scenario: The report groups repeated steps
     Given a change "demo" whose record holds the same command six times in one phase
     When the developer generates the development report for "demo"
     Then the report names one repeated-step group with its count and combined duration
     And the report still ranks every measured entry
 
-  @givn.added
+  @givn.added @wip
   Scenario: A dense record is reported as aggregates instead of raw ticks
     Given a change "demo" whose record holds hundreds of short agent activities
     When the developer generates the development report for "demo"
@@ -106,7 +134,7 @@ Feature: Development Report
     And the report notes "content omitted; see the record" beyond the budget
     And the development record still holds every content byte
 
-  @givn.added @e2e
+  @givn.added @e2e @wip
   Scenario: Consumer generates the development report for a change
     Given a project root with givn/ initialised
     And a change "demo" with a recorded history whose last recorded artifact transition is "tasks.md"
@@ -116,7 +144,7 @@ Feature: Development Report
     And the report file exists and names the workflow phases
     And the report file places the step recorded after that transition in the "implement" phase
 
-  @givn.added @e2e
+  @givn.added @e2e @wip
   Scenario Outline: Consumer opens the generated development report in a browser
     Given a <scope> "demo" with a recorded history
     And the development report for "demo" has been generated
@@ -124,30 +152,37 @@ Feature: Development Report
     Then the browser shows the report heading and the current workflow state
     And the browser shows the workflow phases top to bottom
     And the browser shows the longest recorded step with its duration
+    And the browser lays the page out in one column without page-level horizontal scrolling at the mobile viewport
 
     Examples:
       | scope  |
       | change |
       | topic  |
 
-  @givn.added @e2e
-  Scenario: Consumer expands a workflow phase and reads a subagent's log
+  @givn.added @e2e @wip
+  Scenario: Consumer expands a workflow phase and sees its lanes
     Given an open development report with a recorded history holding parallel sessions
-    When the consumer expands the "implement" phase and selects the "Architect.Scout" lane
+    When the consumer expands the "implement" phase
     Then the browser shows that phase's vertical timeline with time flowing down
-    And the browser shows the session lanes beside each other
-    And the browser shows that lane's log
+    And the browser shows one lane per session beside each other
+    And the browser shows the Fit, 1 h, and 15 m zoom controls
+
+  @givn.added @e2e @wip
+  Scenario: Consumer selects a timeline element and reads its details
+    Given an open development report with a recorded history holding parallel sessions
+    When the consumer selects the "Architect.Scout" lane
+    Then the browser shows that lane's log
     And the log names the lane's start, its duration, and its outcome
     And the log names the entry's tool call id
     And the log renders the entry's content in its bounded content region
 
-  @givn.added @e2e
-  Scenario: Consumer zooms a phase's timeline to a shorter time range
+  @givn.added @e2e @wip
+  Scenario: Consumer zooms the timeline to a shorter time range
     Given an open development report with a recorded history
     When the consumer zooms the expanded phase's timeline in
     Then the browser shows a narrower time range than before
 
-  @givn.added @e2e
+  @givn.added @e2e @wip
   Scenario: Consumer opens the report of a scope with no recorded activity
     Given a change "demo" with no recorded activity
     And the development report for "demo" has been generated

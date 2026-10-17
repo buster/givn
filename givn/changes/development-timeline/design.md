@@ -692,13 +692,13 @@ Rules the intake enforces, and the reason each exists:
 
 | Point | File | Entries emitted |
 |---|---|---|
-| Command dispatch | `src/main.rs` | one `command` entry per `givn` invocation (name, scope, duration, outcome, exit code) — subject to the engagement rule below: nothing is emitted or created before the project carries the Givn scaffold |
+| Command dispatch | `src/main.rs` | one `command` entry per `givn` invocation (name, scope, duration, outcome, exit code); one `phase` entry labelled with the artifact's `STAGE_ARTIFACTS` filename when the post-command change state first marks an artifact `Done` (the report's artifact-appearance transition) — subject to the engagement rule below: nothing is emitted or created before the project carries the Givn scaffold |
 | Shell execution (the single choke point) | `src/subprocess.rs::sh_streamed` | one `step` entry per shell command with its existing `label` (gate hook, verification scope, coverage pass) and its measured duration |
 | Hook engine | `src/hooks.rs::run_artifact_hooks`, `run_archive_gate_hooks` | one `hook` entry per hook, parented to the command entry |
 | Archive gate phases | `src/cli/archive.rs::run` | one `phase` entry per gate phase (the ten numbered phases), parented to the archive command |
 | Verification scopes | `src/cli/archive.rs::run_scope` | the scope `duration_ms` that already exists is recorded as the step's duration |
 | Commit | `src/cli/commit.rs::commit` | one `revision` entry per created revision (backend, revision id) |
-| Check | `src/cli/check.rs::run` | the mandatory-check boundary as `phase` entries |
+| Check | `src/cli/check.rs::run` | the mandatory-check boundary as `phase` entries labelled with the artifact id; a gate phase is never an artifact-appearance transition |
 
 **Three read views are deliberately not recorded: `givn history`,
 `givn history settings`, and `givn timeline`.** Reading the record never mutates
@@ -1171,30 +1171,41 @@ Missing data is rendered as missing, never as zero:
 `givn timeline` builds a `ReportModel` from the record and writes one HTML file:
 
 - **Workflow view**: a change or ideation report reads top to bottom. The
-  header states the scope and the derived current state; the KPI strip states
-  elapsed, active, waiting, tool calls, subagent spans, and cost; the workflow
+  header states the scope, the derived current state, and how many of the nine
+  phases are done; the KPI strip states elapsed, active, waiting, tool calls,
+  subagent spans, and cost, each read from the model's summary; the workflow
   stack lists the change workflow's phases (`propose`, `specs`, `design`,
   `arc42`, `design-review`, `tasks`, `implement`, `review`, `archive`) in order,
-  each with its status, wall/active/waiting time, tool and subagent counts, and
-  an activity sparkline. Expanding a phase draws its vertical time axis (time
-  flows down) with one lane per recorded session beside each other, the selected
-  lane's log below the axis, and per-phase zoom Fit / 1 h / 15 m. Statistics
-  follow: longest steps, question waits, repeated-step groups, the phase table,
-  and token totals. The project report keeps the existing band rows — one row
-  per scope — and this workflow view applies to the change or ideation scope the
-  report was asked for.
+  each with its status, wall/active/waiting time, tool and subagent counts, the
+  names of its lanes, and an activity sparkline. Expanding a phase draws its
+  vertical time axis (time flows down) with one lane per recorded session beside
+  each other, the selected lane's log below the axis, and per-phase zoom
+  Fit / 1 h / 15 m. Recorded work the record places in no workflow stage renders
+  as one "no recorded stage transition" group beneath the stack, with the same
+  lane timeline, and the report states that gap. Statistics follow: longest
+  steps, question waits, repeated-step groups, the phase table, and token
+  totals. The project report keeps the existing band rows — one row per scope —
+  and this workflow view applies to the change or ideation scope the report was
+  asked for.
 - **Phase derivation rule**: Givn records one `phase` entry when an artifact
-  file of the change appears, and an entry belongs to the stage of the latest
-  such transition at or before its own `at`; entries recorded before the band's
-  first transition stay in the band's opening stage, and a scope with no
-  transitions gets one unnamed stage instead of an invented phase name. The CLI
+  file of the change appears — the command dispatcher emits it, labelled with
+  the artifact's `STAGE_ARTIFACTS` filename, at the end of the first recorded
+  command that observes the artifact `Done` — and an entry belongs to the stage
+  of the latest such transition at or before its own `at`. The gate entry
+  `givn check --artifact <id>` keeps the artifact id label and is never a
+  transition: a check runs while a stage is active, not when its artifact
+  appears. Entries recorded before the band's first transition stay in the
+  opening stage only when that first transition is `proposal.md` (the record
+  starts where the workflow starts); when the first transition is later, those
+  entries belong to the "no recorded stage transition" group, and a scope with
+  no transitions gets that one group instead of an invented phase name. The CLI
   `@e2e` scenario asserts one concrete stage name against a seeded record whose
   last transition is `tasks.md`.
 - **Ordering**: within every band the spans are ordered by `at` (the entry's
   recorded end timestamp), never by the entry's line position in the store. The
   store is append-only and concurrent writers make file order and time order
   different things, while `at` is the only ordering the record guarantees.
-- **Summary**: total elapsed, the ranked longest entries, the number of entries,
+- **Summary**: total elapsed, active, waiting, tool calls, subagent spans, and cost (the six KPI facts in *Hybrid workflow report*), the ranked longest entries, the number of entries,
   the question-wait total and count, the subagent count and combined duration,
   token totals overall, per model, and per subagent.
 - **Ranking rule**: the ranking covers **every recorded entry that carries a
@@ -1215,16 +1226,21 @@ Missing data is rendered as missing, never as zero:
   whatever layer recorded them, and the new kind element carries the
   distinction, so no design-system wording changes.
 - **Aggregation at low zoom**: within an expanded phase, a lane never draws one
-  shape per entry when that would be unreadable. At the fit zoom, entries
-  shorter than the lane's time-per-pixel — dense agent ticks and short steps in
-  particular — collapse into one aggregate tick per time bucket; the tick names
-  how many entries it covers and their combined measured duration, and clicking
-  it zooms the phase to that bucket instead of opening a log entry that stands
-  for many. A record of tens of thousands of entries therefore renders at a
-  bounded number of shapes and stays readable. Individual ticks replace their
-  aggregate as the phase's zoom narrows (1 h, 15 m), and the summary and the
-  longest-step ranking always cover the full record, never only the visible
-  window. This is proven by the regular scenario "A dense record is reported as
+  shape per entry when that would be unreadable. The threshold is the lane's
+  time-per-pixel **at the current zoom**, applied at every level and not only at
+  Fit: entries shorter than that threshold — dense agent ticks and short steps
+  in particular — collapse into one aggregate tick per time bucket; the tick
+  names how many entries it covers and their combined measured duration, and
+  clicking it zooms the phase to that bucket instead of opening a log entry that
+  stands for many. A record of tens of thousands of entries therefore renders at
+  a bounded number of shapes at Fit, 1 h, and 15 m; the timeline's scroll height
+  is capped and the lane scrolls, so 15 m never forces one tick per sub-second
+  entry. Individual ticks replace their aggregate as the phase's zoom narrows
+  and the threshold permits, and the summary and the longest-step ranking always
+  cover the full record, never only the visible window. The model carries each
+  phase's Fit-zoom aggregate buckets, so the regular scenario reads them from
+  the written file; the asset re-applies the same criterion for the narrower
+  zooms. This is proven by the regular scenario "A dense record is reported as
   aggregates instead of raw ticks", which is a rendering rule rather than a
   second interaction, so it adds no `@e2e` scenario and no inventory row.
 - **Details facts and content budget**: the report model carries every entry's
@@ -1249,10 +1265,14 @@ Missing data is rendered as missing, never as zero:
   read. (2) The **text-view marker** `<!--__GIVN_REPORT_VIEW__-->` receives the
   same model rendered as the file's own visible text — the scope line, the
   current-state line, one line per workflow phase (status, wall/active/waiting,
-  tools, subagents), the summary, and the empty state — so the written file
-  reads without script and the non-browser scenarios assert its content
-  directly. On top of that text view the inline script builds the interactive
-  workflow stack: it renders the phase cards from the model's `workflow`,
+  tools, subagents, its lane names, its repeated-group count, and its Fit
+  aggregate count), the "no recorded stage transition" line when the record
+  assigns entries to no stage, the summary (including the six KPI facts), and
+  the empty state — so the written file reads without script and the
+  non-browser scenarios assert its content directly. For the project report the
+  same text view lists the band rows instead of the phase stack, because the
+  project report keeps the band model. On top of that text view the inline script builds the interactive
+  workflow stack (or the band rows for the project report): it renders the phase cards from the model's `workflow`,
   expands a phase into a vertical axis whose lanes are the phase's distinct
   sessions, wires phase expansion, lane selection, tick focus, and the
   per-phase zoom (Fit / 1 h / 15 m), and renders the selected lane's log,
@@ -1265,9 +1285,10 @@ Missing data is rendered as missing, never as zero:
   names no other path, which is the chapter 07 footprint.
 - **Accessibility**: the workflow stack is a sequence of labelled expander
   buttons with `aria-expanded` inside `main`; each expanded phase is a labelled
-  region with a vertical axis; each lane is a focusable button whose accessible
-  name carries the lane name and its duration; the lane log is a labelled
-  region; the per-phase zoom controls are buttons with a visible focus ring;
+  region with a vertical axis; each lane's header is a focusable button whose
+  accessible name carries the lane name and its duration, and its ticks are
+  separate focusable elements (never nested controls); the lane log is a
+  labelled region; the per-phase zoom controls are buttons with a visible focus ring;
   the page has a real `title`, one `h1`, and `header`/`main` landmarks;
   `prefers-reduced-motion` disables the phase-expansion and zoom transitions.
 
@@ -1276,41 +1297,93 @@ Missing data is rendered as missing, never as zero:
 The hybrid is the report screen for the change or ideation scope the report was
 asked for; the project report keeps its band rows. Its rules:
 
-- **Current state.** For a change scope, `givn timeline` reads the change's
-  derived state (`src/state.rs`: `stage_label()`, `next_required()`, task
-  progress) and the record's phase transitions, then reports the change's stage
-  label, the next required artifact, and the task counts. The current workflow
-  phase is the stage that owns the next required artifact
-  (`STAGE_ARTIFACTS`' own index), or `archive` when every required artifact is
-  done; the header prints both words, so "tasks-done, next review" and the
-  active `review` phase are not conflated. For an ideation topic or an archived
-  change no live state exists: the current phase is the last recorded stage,
-  every earlier phase is `done`, and no "next required" is invented. The model
-  carries the result as `current_state: Option<CurrentState>`; the text view
-  prints it.
+- **Current state.** For a change scope whose directory exists at
+  `givn/changes/<id>`, `givn timeline` reads the change's derived state
+  (`src/state.rs`: `stage_label()`, `next_required()`, task progress, and the
+  `.givn-skip` list) and reports the stage label, the next required artifact,
+  and the task counts. The state's artifact ids map onto the workflow through
+  one table, never by list position:
+
+  | State artifact id | Workflow phase |
+  |---|---|
+  | `proposal` | `propose` |
+  | `specs` | `specs` |
+  | `design` | `design` |
+  | `arc42-docs` | `arc42` |
+  | `design-review` | `design-review` |
+  | `tasks` | `tasks`, or `implement` while its status is `partial` |
+  | `review` | `review` |
+
+  The current phase is that mapping of `next_required()`; a `partial` `tasks`
+  artifact means the change is implementing, so the current phase is
+  `implement` (the stage `tasks.md`'s appearance opens). With every required
+  artifact done the current phase is `archive`. A `next_required()` artifact
+  outside the table leaves the current phase underived: the header still prints
+  the stage label and the artifact, and no phase is marked active instead of
+  guessing one. The header prints the stage label and the phase as separate
+  words, so "tasks-done, next review" and the active `review` phase are not
+  conflated. It states only what the change state exposes (stage, next artifact,
+  task progress, and the count of done phases of nine); it does not count review
+  findings or claim a running time, which the state does not expose. A change
+  id whose `givn/changes/<id>` directory does not exist is resolved against
+  `givn/archive/<id>`: when the archive directory exists the change is archived
+  (every phase `done`, no current state); when neither directory exists the
+  report says "recorded only, no live change state" and marks no phase `done`,
+  never assuming an archive. A topic or the project report likewise has no live
+  state: `current_state` is `None` and the header says "no live change state".
+  For a topic the current phase is
+  the last stage its record names and every earlier stage is `done`, expressed
+  as the workflow statuses; when the record names none, no phase is current and
+  the header says so. The model carries the change result as
+  `current_state: Option<CurrentState>`; the text view prints it. The scenario
+  that proves this drives a real change directory whose artifacts produce the
+  state, never a step that supplies the label.
 - **Phase statuses.** The workflow order is `WORKFLOW_STAGES` (nine phases, in
   the change workflow's order). Phases before the current phase are `done`, the
-  current phase is `active`, phases after it are `queued`; a phase the change
-  state marks skipped is `skipped`. A phase with no recorded entries renders its
-  status and zero recorded minutes, never an invented duration. Archived
-  changes render every phase `done`.
+  current phase is `active`, phases after it are `queued`. A phase whose mapped
+  state artifact is `skipped` is `skipped`, which wins over `done` and `queued`;
+  a skipped artifact is never the current phase, because `next_required()`
+  ignores it. A phase with no recorded entries renders its status and zero
+  recorded minutes, never an invented duration. Archived changes render every
+  phase `done` and carry no `current_state`.
+- **Recorded stage coverage.** An entry's stage is the phase derivation's
+  result. Entries the record assigns to no stage — a scope with no transition,
+  or entries before a first transition that is not `proposal.md` — belong to one
+  "no recorded stage transition" group rendered below the phase stack, with the
+  same lane timeline, and the report states the gap. They are never placed under
+  a phase the record does not support and never under a guessed opening phase.
+  A state-done phase with no recorded entries shows its status and zero recorded
+  minutes.
 - **Phase facts.** Wall time is the first to the last recorded entry assigned to
   the phase (the existing phase derivation); active time is wall time minus the
   question waits inside the phase; tools, subagents, and waits are counted from
-  the entries; none is inferred. The activity sparkline buckets the phase's
-  entries by recorded time.
+  the entries; none is inferred, and a phase with one entry has zero wall time.
+  The activity sparkline buckets the phase's entries by recorded time. The
+  report-level KPI facts are: elapsed, the summary's elapsed; waiting, the
+  summary's wait total; active, elapsed minus waiting when both are measured and
+  otherwise "not measured"; tool calls, the number of `tool` entries; subagent
+  spans, the summary's subagent count; cost, the sum of every recorded real cost
+  (`data.cost.total` when the fact is the cost object, `data.cost` when it is a
+  number) or "unavailable" when none is recorded. All six are model fields and
+  the text view prints them.
 - **Lanes.** Within a phase, one lane per distinct recorded `session`; entries
   whose `session` the record does not name go to the unattributed lane. A lane
-  that holds a `subagent` entry is named by that entry's `data.subagent` (with
-  its agent definition); otherwise the lane is named by the session's short id.
-  **Tool calls are never assigned to a subagent the record does not name**: the
-  record carries no per-subagent identity on tool entries today, so a subagent
-  lane without its own recorded session shows its span and usage, and its log
-  states that no tool calls were attributable (R-93). Where a reporter delivers
-  a subagent's entries under that subagent's session (Claude's subagent
-  transcripts, opencode's session ids), the lane log holds them and the
-  per-subagent log goal is met; where it does not, the report says so instead of
-  inventing parentage.
+  is named by a recorded subagent span only when the span's `data.subagent`
+  equals the lane's session id (opencode's child-session flush); it then carries
+  that span's `data.agent` definition as well. Otherwise the lane is named by
+  the recorded `session` entry's title when one exists, else by the session's
+  short id. **A lane that merely contains a subagent span keeps its own name**:
+  the span is drawn inside that lane and never renames it, and no "subagent
+  lane" is created for a span the record places in the spawning session.
+  **Tool calls are never assigned to a subagent the record does not name**:
+  omp and Maki report one session, so their subagent spans sit in the agent's
+  lane, and selecting such a span shows its span and usage and states that no
+  tool calls were attributable (R-93). Claude's subagent transcript is read for
+  usage, not for tool entries, and opencode's flush carries one session id for
+  its whole batch, so a flush that mixed sessions attributes its entries to the
+  flush's session id. The report states each limit instead of inventing
+  per-entry parentage. Lanes beyond the four defined hues cycle those hues; the
+  lane name, never the hue, carries identity.
 - **Lane log.** The selected lane's entries sorted by `at`: tool calls, turns,
   revisions, questions, and the subagent span itself, each with its recorded
   fact list, outcome, duration, and content when captured; failed and repeated
@@ -1320,25 +1393,41 @@ asked for; the project report keeps its band rows. Its rules:
   same normalized label (trimmed, whitespace collapsed) are grouped when the
   group holds at least five entries; the report names the count and the combined
   measured duration. Different kinds never merge, and a group never hides an
-  entry from the ranking. This answers the "loops around a task / too many small
-  tasks" question at the phase level.
+  entry from the ranking. The model carries the groups so the text view and the
+  regular scenario state them, and the asset marks their members. This answers
+  the "loops around a task / too many small tasks" question at the phase level.
 - **Model delta.** `ReportModel` gains `workflow: Vec<WorkflowPhase>` and
   `current_state: Option<CurrentState>` (serialized only inside the report; no
   store change). `WorkflowPhase` carries the stage, status, first/last recorded
-  instants, wall/active/waiting ms, tool count, and subagent count;
+  instants, wall/active/waiting ms, tool count, subagent count, its
+  `lanes: Vec<Lane>` (session key, visible name, entry ids, first/last, measured
+  duration), its `repeated: Vec<RepeatedGroup>` (kind, normalized label, count,
+  combined measured duration, entry ids), and its `aggregates: Vec<PhaseAggregate>`
+  (Fit-zoom bucket bounds, entry ids, count, combined measured duration).
+  `Lane`, `RepeatedGroup`, and `PhaseAggregate` carry ids, names, and totals
+  only; the entries themselves appear once in `entries`, so the model grows by
+  the phase/lane/group scaffold and never by a second copy of the record.
   `CurrentState` carries the change stage label, the current workflow phase, the
   next required artifact, and task progress where the change state has them.
-  Lanes, logs, and repeated-step groups are derived in the asset from `entries`
-  plus `stages` — never a second copy of the raw entries — so the embedded model
-  grows only by the phase scaffold.
+  `ReportModel` also gains `unstaged: Option<WorkflowPhase>` — the same
+  scaffold with `stage: None` and no status for entries the record assigns to no
+  stage, absent when every entry has a stage. `Summary` gains
+  `active_ms: Option<u64>`, `tool_calls: usize`, and
+  `cost_total: Option<f64>` beside its existing totals. The asset renders ticks
+  and the selected lane's log from `entries` plus the scaffold; the text view
+  prints the phase lines, lane names, group counts, current state, and summary,
+  so the regular scenarios assert the written file without a browser.
 - **Mobile.** Below 720 px the report is one column: the KPI strip becomes two
   columns, the phase cards are full width with their stats wrapping, the
   expanded phase's lanes scroll horizontally inside the card, the lane log sits
   below the axis, and the phase table scrolls inside its card. The expanded
   phase, the selected lane, and the zoom state survive the layout change.
-- **Evidence.** The three browser scenarios (open, expand a phase and read a
-  lane log, zoom a phase's timeline) capture the hybrid at desktop 1920x1080 and
-  mobile 360x780, refreshing the existing evidence paths.
+- **Evidence.** The four browser scenarios (open, expand a phase, select a
+  timeline element, zoom the timeline) capture the hybrid at desktop 1920x1080
+  and mobile 360x780. The open, select, zoom, generate, and empty scenarios keep
+  their existing titles and therefore their existing evidence directories, which
+  this delta refreshes in place; the new expand scenario commits its own pair
+  under its own slug.
 
 ## Step Definitions
 
@@ -1390,11 +1479,14 @@ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test
 | `HarnessPayload` | `struct` | One raw hook payload from a process-per-hook harness, with the fields the mapper reads |
 | `map_harness_event` | `fn` | Raw harness payload → record events plus pending-state updates; the Claude mapper's only entry point, also usable by a future shell-based harness |
 | `PendingState` | `struct` | Start timestamps for process-per-hook harnesses, keyed by the harness's own call id; written atomically, pruned by age and at session end |
-| `ReportModel` | `struct` | Everything the report screen renders: scope, bands, entries, summary, and the 8 MiB `content_budget_bytes`/`content_bytes` accounting |
+| `ReportModel` | `struct` | Everything the report screen renders: scope, bands, entries, stages, summary (with the six KPI totals), the `workflow` phases with their lane/repeated-group/Fit-aggregate scaffold, the `unstaged` group, `current_state`, and the 8 MiB `content_budget_bytes`/`content_bytes` accounting |
+| `WorkflowPhase` | `struct` | One workflow phase or the "no recorded stage transition" group: stage, status, first/last, wall/active/waiting ms, tool/subagent counts, lanes, repeated groups, Fit aggregates |
+| `Lane` | `struct` | One recorded session's lane inside a phase: session key, visible name, entry ids, first/last, measured duration |
+| `CurrentState` | `struct` | The change state embedded at generation: stage label, current phase, next required artifact, task progress |
 | `RankedStep` | `struct` | One ranked entry: id, visible label, **kind**, and the measured duration the ranking orders by |
 | `ranked_steps` | `fn` | Every entry with a measured `duration_ms`, of any kind, longest first with the existing tie-breaking — never only `step` entries |
-| `build_report_model` | `fn` | Record lines → `ReportModel` (phase derivation, ranking, totals, content budget/omission accounting) |
-| `render_report` | `fn` | `ReportModel` → the HTML document: the model payload element (JSON, `<` escaped) and the text-only initial view substituted once each, with every recorded string escaped, content fields embedded in record order up to the 8 MiB budget, and the remaining content marked `content omitted; see the record` |
+| `build_report_model` | `fn` | Record lines → `ReportModel` (phase derivation and the no-stage group, the state-derived workflow statuses and `current_state`, lane/repeated-group/Fit-aggregate scaffolds, ranking, KPI totals, content budget/omission accounting) |
+| `render_report` | `fn` | `ReportModel` → the HTML document: the model payload element (JSON, `<` escaped) and the text-only initial view (scope, current state, one line per phase and the no-stage group, summary, empty state) substituted once each, with every recorded string escaped, content fields embedded in record order up to the 8 MiB budget, and the remaining content marked `content omitted; see the record` |
 | `run_givn` (test) | `fn` | Existing harness: runs the compiled binary in a temp project root |
 
 ## Strict Mode (mandatory)
@@ -1463,7 +1555,7 @@ Stated explicitly rather than left blank, per the instruction.
 | Browser state must persist across the steps of one scenario (page, zoom level, open panel) | `tests/e2e/browser-driver.mjs` starts **one** browser and **one** context per scenario and accepts commands as JSON lines on stdin; the Rust step helper owns the process for the scenario's lifetime. No step opens a second context |
 | `file://` and module loading | the report is one file with inline script and no imports, so no module resolution, no CORS, and no `fetch` is involved; the driver navigates with `page.goto("file://…")` |
 | Non-deterministic screenshots (animation, fonts, optional waits) | `prefers-reduced-motion: reduce` is emulated for the context, the driver awaits `document.fonts.ready` and a `requestIdleCallback` tick before capture, and the report animates nothing when reduced motion is set |
-| The report's clock | the report renders from embedded timestamps only (no `Date.now()`), so two runs of the same record produce the same pixels |
+| The report's clock | the report renders from embedded timestamps and its embedded change-state snapshot only (no `Date.now()`), so the same record and the same change state produce the same pixels; a later change-state edit requires a re-render and is not read at open time (R-96) |
 | A stray browser surviving a failure | the driver exits on stdin EOF and on a `quit` command; the Rust helper kills the child on drop, and the scenario's `TempDir` removal is what deletes the report |
 
 ## E2E Smoke Test Infrastructure
@@ -1542,9 +1634,10 @@ Every row is one normalized inventory entry from
 | development-record: read the development record | Consumer reads the development record as machine-readable output | CLI | `common::run_givn`: `givn history --change demo --json` against a seeded record; the assertion parses the printed entries |
 | agent-activity-reporting: report agent activity | Consumer installs the agent reporter and its reported activity lands in the record | CLI (harness integration) | one `@e2e` Scenario Outline with one Examples row per harness (omp, opencode, Claude Code, Maki): install the project (`givn init --agents <target>`), then drive that harness's generated reporter through its real entry point — `node` with a fake `pi` for omp, `node` with a fake plugin context for opencode, the generated Claude shim with a real hook payload on stdin (mapper in the binary), and for Maki the real binary loading the plugin (`maki --trust prompt`) plus a test-only Lua driver firing synthetic autocmds — emitting a tool call, a subagent start/stop, and a question wait; every reporter calls the real `givn history ingest`, and `givn history --change demo --json` is asserted |
 | development-report: generate the development report for a change | Consumer generates the development report for a change | CLI | `common::run_givn`: `givn timeline --change demo --out report.html`; the assertion reads the written file |
-| development-report: open the report in a browser | Consumer opens the generated development report in a browser | Web UI | Playwright: one `@e2e` Scenario Outline with a change row and a topic row — one normalized action with input variants, so it adds no second inventory row — `page.goto("file://<root>/report.html")`, then read the rendered heading, the current-state line, the workflow phase list, and the longest step's duration from the DOM |
-| development-report: select a timeline element | Consumer expands a workflow phase and reads a subagent's log | Web UI | Playwright: click the `implement` phase expander, then a session lane; read the phase's vertical axis (time flowing down), the lane's log, its span facts, the tool call id, and the bounded content region from the DOM |
-| development-report: zoom the timeline | Consumer zooms a phase's timeline to a shorter time range | Web UI | Playwright: expand the phase, click the zoom-in control, then read the rendered range label before and after and assert it narrowed |
+| development-report: open the report in a browser | Consumer opens the generated development report in a browser | Web UI | Playwright: one `@e2e` Scenario Outline with a change row and a topic row — one normalized action with input variants, so it adds no second inventory row — `page.goto("file://<root>/report.html")`, then read the rendered heading, the current-state line, the workflow phase list, and the longest step's duration from the DOM; set the mobile viewport and assert the one-column layout and no page-level horizontal overflow |
+| development-report: expand a workflow phase | Consumer expands a workflow phase and sees its lanes | Web UI | Playwright: `page.goto("file://<root>/report.html")`, click the `implement` phase expander; read the phase's vertical axis (time flowing down), one lane per session beside each other, the lane names, and the Fit / 1 h / 15 m controls from the DOM |
+| development-report: select a timeline element | Consumer selects a timeline element and reads its details | Web UI | Playwright: expand the phase, then click the `Architect.Scout` lane (or focus it and press Enter); read the lane log's span facts (start, duration, outcome), the entry's tool call id, and the bounded content region from the DOM |
+| development-report: zoom the timeline | Consumer zooms the timeline to a shorter time range | Web UI | Playwright: expand the phase, click the `15 m` control (the next narrower level), then read the rendered range label before and after and assert it narrowed |
 | development-report: open the report of a scope with no recorded activity | Consumer opens the report of a scope with no recorded activity | Web UI | Playwright: generate the report for a scope with no recorded activity, `page.goto("file://<root>/report.html")`, then read the rendered empty-state heading and the absence of any axis from the DOM |
 
 **Primary-assertion rule:** every browser scenario asserts on what the browser
@@ -1558,8 +1651,8 @@ it reads a value the page's own script produced (the visible time range) and
 asserts it changed between two observations. The empty-scope scenario is the
 evidence for the contract's declared `empty` state: it is the `@e2e` traversal
 of that state and it commits `<viewport>--empty.png` at both viewports. The
-matrix has eight rows, one for each inventory entry in
-`specs/inspect-development-history/usecase.md` §Interactions, and the eight
+matrix has nine rows, one for each inventory entry in
+`specs/inspect-development-history/usecase.md` §Interactions, and the nine
 `@e2e` titles are exactly the titles in this table.
 
 ## Visual Design Contract
@@ -1581,9 +1674,11 @@ the change-specific rules.
 
 - Color roles: `surface`, `surface-raised`, `border`, `text`, `text-muted`,
   `accent` (the current-state banner and focus ring), `ok`, `warn`, `error`,
-  one phase-status color pair (done, active, queued, skipped), plus one hue per
-  lane (the main agent and each recorded session) and one per tick class
-  (command, gate/step, agent, wait) that stays distinguishable in greyscale.
+  the phase-status colors (done, active, queued, skipped), plus one hue per
+  lane (the main agent and each recorded session; more lanes than defined hues
+  cycle them) and one per tick class (command, gate/step, agent, wait) that
+  stays distinguishable in greyscale; the lane name, never the hue, carries
+  identity.
 - Spacing scale: 4/8/12/16/24/32 px. Typography scale: 12/14/16/20/28 px, one
   family (system UI stack), tabular numerals for every duration.
 - Radii: 4 px for ticks, 8 px for the lane log and panels, 12 px for phase
@@ -1601,16 +1696,23 @@ plus its duration; a tick's is its kind plus its label plus its duration.
 **Breakpoints:** one column below 720 px (mobile: the phase cards are full
 width, the expanded phase's lanes scroll horizontally inside the card, the lane
 log sits below the axis, the KPI strip is two columns, the summary and tables
-stack); two columns from 720 px. Both mandatory viewports are covered by the e2e
-tier.
+stack). From 720 to 1199 px the report stays one column with a two-column
+statistics grid, full-width phase cards, and the lane log below the axis; from
+1200 px it stays one column with a three-column statistics grid and a wider lane
+gutter. The phase cards are never a second column. Both mandatory viewports are
+covered by the e2e tier, whose open scenario asserts the one-column mobile
+layout and the absence of page-level horizontal overflow at 360x780 (the
+expanded phase's lanes may still scroll inside their card).
 
 **Accessibility:** body text meets 4.5:1 contrast against its surface and
 non-text UI meets 3:1; every control is reachable by Tab with a visible focus
-ring; the phase expanders carry `aria-expanded`; each expanded phase is a
-labelled region; the page has a real `title`, one `h1`, and
+ring; the phase expander is a button carrying `aria-expanded`, the lane header
+(not the lane column that contains the ticks) is a button, and ticks are
+separate focusable elements so no button nests another control; each expanded
+phase is a labelled region; the page has a real `title`, one `h1`, and
 `header`/`main` landmarks. Verification is part of the e2e assertions (labels,
-heading, focus order, landmark presence) and the `prefers-reduced-motion`
-assertion.
+heading, focus order, landmark presence, the mobile layout assertion) and the
+`prefers-reduced-motion` assertion.
 
 **Screens covered:** the development report screen for a change or ideation
 (declared state: empty; a populated report is the implicit final state); no
@@ -1716,14 +1818,14 @@ flowchart LR
 | `src/history.rs` | **new** — entry schema (including `session`), store, scope resolution, bounded labels, pending state, the three-mode resolver, the question/content bounds, and `ensure_ignored` with its ownership split (the recorder re-asserts `.git/info/exclude` on every write, writes Fossil's repository `ignore-glob` setting only while no managed file overrides it, and uses `.gitignore` only before a repository exists; the Fossil entry `givn/history/*` joins the managed list through `write_ignores`) |
 | `src/config/overlay.rs` | the project-config parse path (`OverlayDoc`) gains a lenient raw `record` value so `record.mode` is read by the resolver; an invalid value is a one-warning fallback to `on`, never a config-parse failure, and `givn upgrade` preserves the uncommented key |
 | `src/cli/history.rs` | **new** — `givn history` (read), `givn history settings [--json]` (the non-recorded mode query), `givn history ingest` (the one intake and the single enforcement site for every bound, plus mode enforcement for payloads), and `givn history harness-hook --harness claude` (the raw-payload mapper, in-process mode resolution, the second `off` site, and transcript reader for process-per-hook harnesses) |
-| `src/cli/timeline.rs` | **new** — report model and HTML rendering; `ranked_steps` covers every entry kind with a measured duration (not only `step`), `RankedStep` carries the entry's kind, and the model carries the panel facts plus the 8 MiB content budget and omission markers |
+| `src/cli/timeline.rs` | **new** — report model and HTML rendering; `ranked_steps` covers every entry kind with a measured duration (not only `step`), `RankedStep` carries the entry's kind, and the model carries the workflow/current-state scaffold, the lane/repeated-group/Fit-aggregate scaffolds, the lane-log facts, the six KPI totals, and the 8 MiB content budget and omission markers |
 | `assets/timeline/report.html` | **new** — the self-contained report asset (inline CSS/JS/SVG) with two substituted markers: the model payload element the script parses and the text-only initial view the file carries; the workflow stack, the expanded phase's vertical lane timeline and lane log render the captured facts and the bounded content region, the ranking rows carry label, kind, and duration, and content beyond the report budget reads `content omitted; see the record` |
 | `assets/agent-integrations/omp/givn-timeline.js` | **new** — the omp reporter (`pi.on` handlers plus one event-bus subscription) |
 | `assets/agent-integrations/opencode/givn-timeline.js` | **new** — the opencode reporter (`setup(ctx)`: domain hooks plus one `ctx.event.subscribe` iterable) |
 | `assets/agent-integrations/claude/givn-timeline.sh` | **new** — the Claude Code shim that pipes its payload to the binary-side mapper |
 | `assets/agent-integrations/maki/givn-timeline.lua` + `assets/agent-integrations/maki/plugin.toml` | **new** — the Maki reporter module (its `setup()` registers the autocmds and exports its callbacks for the test driver) and the permission grants it needs (`fs_read`, `fs_write`, `run`) |
 | `docs/design/design-system.md` | **new** — the durable design system and the reference views |
-| `src/main.rs` | two new commands (`history`, `timeline`) plus the `history settings` subcommand and its read-view exemption, and the recording wrapper around dispatch (`records()` excludes `history`, `history settings`, and `timeline`) |
+| `src/main.rs` | two new commands (`history`, `timeline`) plus the `history settings` subcommand and its read-view exemption, the recording wrapper around dispatch (`records()` excludes `history`, `history settings`, and `timeline`), and the post-command artifact-transition emission that records each artifact's appearance once |
 | `src/subprocess.rs` | emit a `step` entry (label, duration, outcome) at the shell choke point |
 | `src/hooks.rs` | emit a `hook` entry per hook |
 | `src/cli/archive.rs` | emit `phase` entries at the existing gate boundaries; record the existing scope duration |
@@ -1746,10 +1848,12 @@ change. The change adds one new on-disk format (the record, described in
 **Record Model And Intake Contract**) with the additive `session` envelope
 field and the `data.question`/`data.content` members, and one new in-memory
 model (`ReportModel`) that is serialized only inside the generated HTML and
-carries the 8 MiB content budget; the hybrid report adds only the in-memory
-`workflow` phase scaffold and `current_state` to that model (no store change).
-`src/state.rs` keeps its derived-state
-contract and gains no file.
+carries the 8 MiB content budget; the hybrid report adds the in-memory
+`workflow` phase/lane/repeated-group/aggregate scaffold, `current_state`, and the
+three summary KPI totals to that model (no store change). The record gains no
+new field: the artifact-appearance transition is a `phase` entry with an
+existing label form, emitted by the command dispatcher. `src/state.rs` keeps its
+derived-state contract and gains no file.
 
 ## Open Technical Questions
 

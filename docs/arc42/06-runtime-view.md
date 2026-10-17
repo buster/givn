@@ -583,7 +583,7 @@ query is treated as `on`, warns once, and never blocks the harness.
 `givn timeline [--change <id>|--topic <id>] [--out <path>]` reads the record for
 one scope — or, with no scope flag, renders the project report, whose "outside a
 scope" band carries the project's own entries — builds the report model (the workflow phase scaffold with the current state,
-phase aggregates, lane groups, the ranked longest measured entries of any kind, question wait totals,
+phase aggregates, lane groups, the no-stage group, the ranked longest measured entries of any kind, question wait totals,
 repeated-step groups, subagent fan-out, token totals overall, per model, and per subagent), substitutes that model into the
 embedded report document twice — as the machine-readable model payload element
 the document's inline script parses, and as the text-only initial view the
@@ -592,7 +592,8 @@ default `givn/history/reports/<scope>.html`), and prints its path. The command
 opens nothing itself and publishes no JSON model: the machine-readable view of
 the record is `givn history --json`. The document contains its own CSS,
 JavaScript, and SVG: it loads nothing, and it renders from the embedded
-timestamps alone, so the same record always produces the same pixels. The
+timestamps and its embedded change-state snapshot alone, so the same record and
+the same change state always produce the same pixels (R-96). The
 lane log carries the captured metadata facts and one bounded content region;
 the report embeds full content only up to the **8 MiB total budget** and marks
 the rest `content omitted; see the record`, while the store keeps every byte.
