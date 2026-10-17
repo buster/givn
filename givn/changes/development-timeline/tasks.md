@@ -3203,7 +3203,7 @@ name it.
 
 ## Task 11b — `The record and its content stay ignored in both backends` (extended evidence; no new scenario)
 
-- [ ] **Scenario extension: `The record stays out of the repository's own history`
+- [x] **Scenario extension: `The record stays out of the repository's own history`
       and `A Fossil project ignores the record through its own ignore file`**
   - Design constraints:
     - The two record-hygiene scenarios were extended in place (no new entry, so
@@ -3231,12 +3231,48 @@ name it.
     - RED expected failure: the new phrases are undefined — the full-content
       fixture step, the bare-root `.gitignore` assertion, the pending-state
       absence assertion, and the Fossil extra-file assertions.
-  - [ ] **RED** — run both scenarios before any step implementation; the new
+  - [x] **RED** — run both scenarios before any step implementation; the new
         phrases are undefined, so the runner exits non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record stays out of the repository's own history"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: The record stays out of the repository's own history
+           ✘  Given a project root with givn/ initialised without a repository
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:77:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+
+        thread 'main' (3804497) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A Fossil project ignores the record through its own ignore file"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: A Fossil project ignores the record through its own ignore file
+           ✔  Given a project root with givn/ initialised in a Fossil checkout
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✘  When the project records a full-content entry in the full mode
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:92:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+
+        thread 'main' (3804558) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
         ```
-  - [ ] **GREEN (evidence)** — implement the steps, re-run both scenarios and
+  - [x] **GREEN (evidence)** — implement the steps, re-run both scenarios and
         paste the exit-0 output, together with the raw `git status --porcelain`
         after a full-content capture and after `givn timeline`, the
         `.gitignore` fallback assertion, and the effective
@@ -3244,9 +3280,132 @@ name it.
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record stays out of the repository's own history"`
         and the same for the Fossil scenario. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record stays out of the repository's own history"
+             Finished `test` profile [unoptimized + debuginfo] target(s) in 4.09s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: The record stays out of the repository's own history
+           ✔  Given a project root with givn/ initialised without a repository
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  When the project records a full-content entry in the full mode
+           ✔  Then the project's ".gitignore" names the development record
+           ✔  When the project becomes a Git repository
+           ✔  Then the repository reports no pending change for the development record
+           ✔  When the project records a full-content entry in the full mode
+           ✔  Then the repository reports no pending change for the development record
+           ✔  When the user runs `givn timeline --change demo`
+           ✔  Then the repository reports no pending change under the record directory
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        10 steps (10 passed)
+        EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::A Fossil project ignores the record through its own ignore file"
+             Finished `test` profile [unoptimized + debuginfo] target(s) in 4.02s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: A Fossil project ignores the record through its own ignore file
+           ✔  Given a project root with givn/ initialised in a Fossil checkout
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  When the project records a full-content entry in the full mode
+           ✔  Then the repository's ignore glob names the development record
+           ✔  And the Fossil checkout reports no extra file under the record directory
+           ✔  When a lifecycle command runs
+           ✔  Then the repository's ignore glob still names the development record
+           ✔  When the user runs `givn timeline --change demo`
+           ✔  Then the repository's ignore glob covers the generated reports
+           ✔  And the Fossil checkout reports no extra file under the record directory
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        10 steps (10 passed)
+        EXIT=0
+
+        Raw backend evidence (throwaway fixture root, the compiled binary, the
+        scenario's own setup: `givn init --agents opencode`, the record block
+        stripped from `.gitignore` before the write):
+
+        --- .gitignore after the full-content capture ---
+        # givn:begin:history
+        givn/history/
+        # givn:end:history
+
+        --- git status --porcelain -uall after the second full-content capture ---
+        ?? .githooks/commit-msg
+        ?? .gitignore
+        ?? .opencode/commands/givn-archive.md
+        ?? .opencode/commands/givn-characterize.md
+        ?? .opencode/commands/givn-design-review.md
+        ?? .opencode/commands/givn-design.md
+        ?? .opencode/commands/givn-explore.md
+        ?? .opencode/commands/givn-ideation.md
+        ?? .opencode/commands/givn-implement.md
+        ?? .opencode/commands/givn-propose.md
+        ?? .opencode/commands/givn-reverse-engineer.md
+        ?? .opencode/commands/givn-review.md
+        ?? .opencode/commands/givn-spec.md
+        ?? .opencode/commands/givn-steps.md
+        ?? .opencode/commands/givn-tasks.md
+        ?? .opencode/commands/grill-me.md
+        ?? .opencode/commands/grill-with-docs.md
+        ?? .opencode/plugins/givn-attribution.js
+        ?? .opencode/plugins/givn-timeline.js
+        ?? .opencode/skills/givn-archive/SKILL.md
+        ?? .opencode/skills/givn-characterize/SKILL.md
+        ?? .opencode/skills/givn-design-review/SKILL.md
+        ?? .opencode/skills/givn-design/SKILL.md
+        ?? .opencode/skills/givn-dev-principles/SKILL.md
+        ?? .opencode/skills/givn-domain-modeling/SKILL.md
+        ?? .opencode/skills/givn-explore/SKILL.md
+        ?? .opencode/skills/givn-ideation/SKILL.md
+        ?? .opencode/skills/givn-implement/SKILL.md
+        ?? .opencode/skills/givn-propose/SKILL.md
+        ?? .opencode/skills/givn-reverse-engineer/SKILL.md
+        ?? .opencode/skills/givn-review/SKILL.md
+        ?? .opencode/skills/givn-spec/SKILL.md
+        ?? .opencode/skills/givn-steps/SKILL.md
+        ?? .opencode/skills/givn-tasks/SKILL.md
+        ?? AGENTS.md
+        ?? README.md
+        ?? docs/arc42/01-introduction-and-goals.md
+        ?? docs/arc42/02-architecture-constraints.md
+        ?? docs/arc42/03-context-and-scope.md
+        ?? docs/arc42/04-solution-strategy.md
+        ?? docs/arc42/05-building-block-view.md
+        ?? docs/arc42/06-runtime-view.md
+        ?? docs/arc42/07-deployment-view.md
+        ?? docs/arc42/08-crosscutting-concepts.md
+        ?? docs/arc42/09-architecture-decisions.md
+        ?? docs/arc42/10-quality-requirements.md
+        ?? docs/arc42/11-risks-and-technical-debt.md
+        ?? docs/arc42/12-glossary.md
+        ?? docs/arc42/README.md
+        ?? docs/arc42/adr/adr-template.md
+        ?? givn/changes/demo/proposal.md
+        ?? givn/commands.yaml
+        ?? givn/config.yaml
+
+        --- git status --porcelain -uall after givn timeline ---
+        (identical listing: no `givn/history/` line)
+
+        --- git check-ignore -v ---
+        .gitignore:2:givn/history/	givn/history/events.jsonl
+        .gitignore:2:givn/history/	givn/history/reports/demo.html
+
+        --- fossil settings --value ignore-glob (tail) ---
+        .githooks/commit-msg
+        givn/history/*
+
+        --- fossil extras after the full-content capture ---
+        givn/changes/demo/proposal.md
+        (nothing under givn/history/)
+
+        --- fossil extras after givn timeline ---
+        givn/changes/demo/proposal.md
+        (nothing under givn/history/)
         ```
-  - [ ] **COMMIT** — `<hash>` — `test(development-record): <release note>` with
+  - [x] **COMMIT** — `af5ced1f2ffafc4b08b8a476defd405384344104` — `test(development-record): <release note>` with
         a body that names only the extended assertions and points at the Tasks
         10/11 commits; it MUST NOT restate the two scenario titles, so the
         per-scenario gate sees no duplicate scenario commit. Record the revision
