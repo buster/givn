@@ -11706,7 +11706,7 @@ Repository checks are secondary only.
 
 ## Task H1 — `An artifact appearance is recorded as one phase transition` (`development-record`, added)
 
-- [ ] **Scenario: `An artifact appearance is recorded as one phase transition`** (`@wip` until its RED)
+- [x] **Scenario: `An artifact appearance is recorded as one phase transition`** (`@wip` until its RED)
   - Design constraints:
     - **Capture point.** The command dispatcher emits exactly one `phase`
       entry — the report's artifact-appearance transition — labelled with the
@@ -11760,32 +11760,89 @@ Repository checks are secondary only.
       (the fixture).
     - RED expected failure: the three new Then phrases are undefined and no
       production command emits a transition.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::An artifact appearance is recorded as one phase transition"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Record
+          Scenario: An artifact appearance is recorded as one phase transition
+           ✘  Given a change "demo" whose proposal.md appears while a recorded command runs
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:171:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+
+        thread 'main' (4009226) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
         ```
-  - [ ] **GREEN** — implement the emission, the dedupe, and the gate-label
+  - [x] **GREEN** — implement the emission, the dedupe, and the gate-label
         distinction. Files: `src/main.rs`, `src/history.rs`,
         `src/cli/timeline.rs`, `tests/steps/development_record_steps.rs`,
         `tests/steps/development_timeline_support.rs`. Compile first, then
         re-run this scenario → exit 0. Paste it.
         ```
-        PASTE THE GREEN RUN HERE
+        Feature: Development Record
+          Scenario: An artifact appearance is recorded as one phase transition
+           ✔  Given a change "demo" whose proposal.md appears while a recorded command runs
+           ✔  When the command finishes
+           ✔  Then the record holds one phase entry labelled "proposal.md" for "demo"
+           ✔  And a later recorded command that sees the same artifact records no second transition
+           ✔  And a gate check for the same artifact keeps its artifact id label and is not a transition
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — one emission path (post-command state → mapped filename
+  - [x] **REFACTOR** — one emission path (post-command state → mapped filename
         → label-absent check → one entry); `cargo fmt --all -- --check` and
         `cargo clippy --locked --all-targets -- -D warnings` green; re-run
         this scenario → still exit 0. Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+
+        Feature: Development Record
+          Scenario: An artifact appearance is recorded as one phase transition
+           ✔  Given a change "demo" whose proposal.md appears while a recorded command runs
+           ✔  When the command finishes
+           ✔  Then the record holds one phase entry labelled "proposal.md" for "demo"
+           ✔  And a later recorded command that sees the same artifact records no second transition
+           ✔  And a gate check for the same artifact keeps its artifact id label and is not a transition
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+  - [x] **COMMIT** — `6a12865b` — `feat(development-record): <release note>` with
         the scenario title `An artifact appearance is recorded as one phase
         transition` in the body. Record the revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit 6a12865be9f6bc88d9cb87ed996e538b57e85149
+        feat(development-record): record an artifact's appearance as one phase transition
+
+        An artifact appearance is recorded as one phase transition
+
+        The command dispatcher emits one phase entry labelled with the artifact's
+        STAGE_ARTIFACTS filename at the end of the first recorded command that observes
+        the artifact Done, scoped to the post-command change, deduped per label, and
+        never standing in for a gate check's artifact-id phase.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../development-record.feature                     |   2 +-
+         src/cli/timeline.rs                                |  40 +++++-
+         src/history.rs                                     |  61 ++++++++
+         src/main.rs                                        |   1 +
+         tests/steps/development_record_steps.rs            | 158 +++++++++++++++++++++
+         tests/steps/development_timeline_support.rs        |  24 ++++
+         6 files changed, 283 insertions(+), 3 deletions(-)
         ```
 
 ## Task H2 — Shared report-model scaffold and text view (no new scenario; the delta's model prerequisite)
