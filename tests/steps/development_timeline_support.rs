@@ -273,6 +273,30 @@ pub fn create_linked_ideation_change(
     proposal
 }
 
+/// Create the fixture archived change a linked-ideation report reads:
+/// `givn/archive/<change>/proposal.md` names `topic`, `givn/changes/<change>`
+/// does not exist, and the topic's directory exists. The record is seeded
+/// separately.
+pub fn create_archived_linked_ideation_change(
+    env: &common::TestEnv,
+    change: &str,
+    topic: &str,
+) -> std::path::PathBuf {
+    let archived = env.root().join("givn").join("archive").join(change);
+    std::fs::create_dir_all(&archived)
+        .unwrap_or_else(|error| panic!("create the archived change directory: {error}"));
+    let proposal = archived.join("proposal.md");
+    std::fs::write(
+        &proposal,
+        format!("# Proposal: {change}\n\n- Ideation topic: {topic}\n"),
+    )
+    .unwrap_or_else(|error| panic!("write the archived proposal: {error}"));
+    std::fs::write(archived.join("review.md"), "REVIEW: PASS\n")
+        .unwrap_or_else(|error| panic!("write the archived review: {error}"));
+    declare_unfinished_ideation_topic(env, topic);
+    proposal
+}
+
 /// The topic directory a no-link fixture leaves in the project: it exists, but
 /// the change's proposal does not name it, so no group may be inferred from
 /// it, from the project's entries, or from time proximity.

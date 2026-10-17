@@ -185,7 +185,7 @@ Feature: Development Report
     Then the report names no linked ideation group
     And the report names the change workflow phases
 
-  @givn.added @wip
+  @givn.added
   Scenario: An archived change resolves its linked ideation from the archive
     Given an archived change "demo" whose archived proposal links the ideation topic "ideas"
     And the topic's record holds the marker for personas
