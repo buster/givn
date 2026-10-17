@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "development-timeline",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
-  "started_at_unix": 1792239774,
-  "finished_at_unix": null
+  "status": "proven",
+  "candidate_revision": "4b7c00150226787442684c4d5cba358ab49dd4fa",
+  "tested_revision": "4b7c00150226787442684c4d5cba358ab49dd4fa",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 111,
+      "passed": 111,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 35.932639636
+    },
+    "regular": {
+      "status": "passed",
+      "total": 605,
+      "passed": 605,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 73.411839042
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 11045,
+    "line_valid": 14999,
+    "line_percent": 73
+  },
+  "started_at_unix": 1792240083,
+  "finished_at_unix": 1792240274
 }
