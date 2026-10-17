@@ -290,47 +290,6 @@ fn scope_id(scope: &Scope) -> &str {
     }
 }
 
-/// One scope's recorded kind, as the record names it.
-fn scope_kind(scope: &Scope) -> &'static str {
-    match scope {
-        Scope::Change { .. } => "change",
-        Scope::Ideation { .. } => "ideation",
-        Scope::Project { .. } => "project",
-    }
-}
-
-/// One scope's record, read back from the store as the fixture left it: the
-/// ground truth the browser's rendered text is asserted against, for the
-/// scenarios whose record another Given built.
-fn recorded_entries(world: &GivnWorld, scope: &Scope) -> Vec<Value> {
-    support::record_entries(&project_root(world).root())
-        .into_iter()
-        .filter(|entry| entry["scope"]["kind"] == json!(scope_kind(scope)))
-        .filter(|entry| entry["scope"]["id"] == json!(scope_id(scope)))
-        .collect()
-}
-
-/// The scope's longest measured entry: the step the record's own durations rank
-/// first, never a fixture constant.
-fn longest_measured(entries: &[Value]) -> Value {
-    entries
-        .iter()
-        .filter(|entry| entry["duration_ms"].is_u64())
-        .max_by_key(|entry| entry["duration_ms"].as_u64().unwrap_or_default())
-        .unwrap_or_else(|| panic!("the scope's record holds no measured entry: {entries:#?}"))
-        .clone()
-}
-
-/// One recorded entry's visible name: its bounded label, or its name where the
-/// record carries no label — the same derivation the report renders.
-fn visible_name(entry: &Value) -> String {
-    entry["label"]
-        .as_str()
-        .or_else(|| entry["name"].as_str())
-        .unwrap_or_else(|| panic!("the recorded entry names nothing: {entry:#}"))
-        .to_string()
-}
-
 #[given(regex = r#"^a topic "([^"]+)" with a recorded history$"#)]
 fn topic_with_a_recorded_history(world: &mut GivnWorld, topic: String) {
     if world.env.is_none() {
@@ -887,71 +846,6 @@ fn browser_shows_the_per_phase_zoom_controls(world: &mut GivnWorld) {
 /// The `@e2e` browser scenario that selects a timeline element.
 const SELECT_SCENARIO: &str = "Consumer selects a timeline element and reads its details";
 
-/// The span the browser draws for the scope's longest measured entry, with its
-/// own selector — the element both activation paths then drive.
-fn longest_span(world: &mut GivnWorld) -> (Value, String) {
-    let scope = report_scope(world);
-    let entries = recorded_entries(world, &scope);
-    let longest = longest_measured(&entries);
-    let id = longest["id"].as_u64().expect("the longest step has an id");
-    let drawn = browser(world).evaluate(
-        r##"(() => {
-  const spans = [...document.querySelectorAll("svg.timeline .span")];
-  const widths = spans.map((span) => Number(span.dataset.durationMs || -1));
-  const longest = spans[widths.indexOf(Math.max(...widths))];
-  return longest ? { id: longest.dataset.entryId } : null;
-})()"##,
-    );
-    assert!(
-        !drawn.is_null(),
-        "the browser draws no span for the record's longest step {id}"
-    );
-    assert_eq!(
-        drawn["id"],
-        json!(id.to_string()),
-        "the browser's longest drawn span is not the record's longest measured entry: {drawn:#} vs {longest:#}"
-    );
-    (
-        longest,
-        format!("svg.timeline .span[data-entry-id=\"{id}\"]"),
-    )
-}
-
-/// The details panel the browser rendered: whether it is open, the label it
-/// carries, the close control's own visible label, the facts it shows, and the
-/// bounded content region — read from the browser's DOM, never from the report
-/// file.
-fn details_panel(driver: &mut BrowserDriver) -> Value {
-    driver.evaluate(
-        r##"(() => {
-  const panel = document.getElementById("details-panel");
-  const close = document.getElementById("details-close");
-  const content = document.getElementById("details-content");
-  const fields = content
-    ? [...content.querySelectorAll(".content-field")].map((block) => ({
-        field: block.dataset.field,
-        text: block.querySelector(".content-text")?.innerText ?? "",
-        html: block.querySelector(".content-text")?.innerHTML ?? "",
-        meta: block.querySelector(".content-meta")?.innerText ?? "",
-      }))
-    : [];
-  if (!panel) return { open: false, label: null, close: null, text: "", content: { hidden: true, fields: [] } };
-  return {
-    open: !panel.hidden,
-    label: panel.getAttribute("aria-label"),
-    role: panel.getAttribute("role"),
-    close: close ? close.textContent.trim() : null,
-    text: panel.innerText,
-    content: {
-      hidden: content ? content.hidden : true,
-      text: content ? content.innerText : "",
-      fields,
-    },
-  };
-})()"##,
-    )
-}
-
 #[given("an open development report with a recorded history")]
 fn open_report_with_a_recorded_history(world: &mut GivnWorld) {
     if world.env.is_none() {
@@ -977,173 +871,195 @@ fn open_report_with_a_recorded_history(world: &mut GivnWorld) {
     open_report(world);
 }
 
-#[when("the consumer selects the longest recorded step")]
-fn consumer_selects_the_longest_recorded_step(world: &mut GivnWorld) {
-    let (_, selector) = longest_span(world);
-    // The pointer's own path: a real click on the span opens the panel.
+#[when(regex = r#"^the consumer selects the "([^"]+)" lane$"#)]
+fn consumer_selects_the_lane(world: &mut GivnWorld, lane: String) {
+    browser(world).click(&phase_expander("implement"));
+    let selector =
+        format!(".phase-card[data-phase=\"implement\"] .lane-header[data-lane=\"{lane}\"]");
     browser(world).click(&selector);
-    let opened = details_panel(browser(world));
     assert_eq!(
-        opened["open"],
-        json!(true),
-        "a real click on the step's span did not open the details panel: {opened:#}"
+        browser(world)
+            .attribute(&selector, "aria-pressed")
+            .as_deref(),
+        Some("true"),
+        "the selected lane header does not report its selected state"
     );
-    // The keyboard's own path: `Escape` closes the panel, and focusing the span
-    // and pressing `Enter` opens the same panel again.
-    browser(world).press(None, "Escape");
-    let closed = details_panel(browser(world));
-    assert_eq!(
-        closed["open"],
-        json!(false),
-        "Escape did not close the details panel: {closed:#}"
+    let selected = browser(world).evaluate(
+        r##"(() => {
+  const lane = document.querySelector('.phase-card[data-phase="implement"] .lane.is-selected');
+  return { name: lane ? lane.dataset.lane : null };
+})()"##,
     );
-    browser(world).press(Some(&selector), "Enter");
-    let reopened = details_panel(browser(world));
     assert_eq!(
-        reopened["open"],
-        json!(true),
-        "Enter on the focused step's span did not open the details panel: {reopened:#}"
+        selected["name"],
+        json!(lane),
+        "the browser did not select the {lane} lane: {selected:#}"
     );
 }
 
-#[then("the browser shows a details panel for that step")]
-fn browser_shows_a_details_panel(world: &mut GivnWorld) {
-    let (longest, _) = longest_span(world);
-    let panel = details_panel(browser(world));
+/// The selected lane's log, as the browser rendered it.
+fn lane_log_state(driver: &mut BrowserDriver) -> Value {
+    driver.evaluate(
+        r##"(() => {
+  const log = document.getElementById("lane-log-implement");
+  if (!log) return { present: false };
+  return {
+    present: true,
+    visible: log.getClientRects().length > 0,
+    label: log.getAttribute("aria-label"),
+    title: log.querySelector(".lane-log-title") ? log.querySelector(".lane-log-title").textContent.trim() : null,
+    text: log.innerText,
+    facts: log.querySelector(".lane-facts") ? log.querySelector(".lane-facts").innerText : null,
+  };
+})()"##,
+    )
+}
+
+#[then("the browser shows that lane's log")]
+fn browser_shows_the_lane_log(world: &mut GivnWorld) {
+    let log_state = lane_log_state(browser(world));
     assert_eq!(
-        panel["open"],
+        log_state["present"],
         json!(true),
-        "the browser shows no open details panel: {panel:#}"
+        "the browser shows no lane log: {log_state:#}"
     );
     assert_eq!(
-        panel["role"],
-        json!("region"),
-        "the details panel is not the labelled region the design system names: {panel:#}"
+        log_state["visible"],
+        json!(true),
+        "the lane log is not visible: {log_state:#}"
     );
     assert_eq!(
-        panel["label"],
-        json!("Details"),
-        "the details panel carries no accessible label: {panel:#}"
+        log_state["label"],
+        json!("Lane log"),
+        "the lane log is not the labelled region the design system names: {log_state:#}"
     );
-    assert_eq!(
-        panel["close"],
-        json!("Close"),
-        "the details panel's close control carries no visible label: {panel:#}"
-    );
-    let text = panel["text"].as_str().unwrap_or_default();
+    let title = log_state["title"].as_str().unwrap_or_default();
     assert!(
-        text.contains(&visible_name(&longest)),
-        "the details panel is not about the step the consumer selected: {text:?}"
+        title.contains(support::PARALLEL_SCOUT_LANE) && title.contains("log"),
+        "the lane log is not about the selected lane: {title:?}"
     );
 }
 
-#[then("the panel names its start, its duration, and its outcome")]
-fn panel_names_start_duration_and_outcome(world: &mut GivnWorld) {
-    let (longest, _) = longest_span(world);
-    let panel = details_panel(browser(world));
-    let text = panel["text"].as_str().unwrap_or_default();
-    let end = givn::history::parse_rfc3339_ms(longest["at"].as_str().unwrap_or_default())
-        .expect("the selected step records a readable end");
-    let duration = longest["duration_ms"]
+#[then("the log names the lane's start, its duration, and its outcome")]
+fn log_names_the_lane_start_duration_and_outcome(world: &mut GivnWorld) {
+    let rendered = browser(world).evaluate(
+        r##"(() => {
+  const model = JSON.parse(document.getElementById("report-model").textContent);
+  const phase = model.workflow.find((candidate) => candidate.stage === "implement");
+  const lane = phase ? phase.lanes.find((candidate) => candidate.name === "Architect.Scout") : null;
+  const log = document.getElementById("lane-log-implement");
+  if (!lane || !log) return null;
+  const selected = lane.entries.map((id) => model.entries.find((entry) => entry.id === id)).filter(Boolean);
+  const failed = selected.some((entry) => entry.outcome === "failed");
+  return {
+    first: lane.first_ms,
+    duration: lane.duration_ms,
+    outcome: failed ? "failed" : (selected[0] ? selected[0].outcome : "unknown"),
+    facts: log.querySelector(".lane-facts").innerText,
+  };
+})()"##,
+    );
+    assert!(
+        rendered.is_object(),
+        "the browser renders no facts for the selected lane: {rendered:#}"
+    );
+    let facts = rendered["facts"].as_str().unwrap_or_default();
+    let first = rendered["first"]
+        .as_i64()
+        .unwrap_or_else(|| panic!("the selected lane records no start: {rendered:#}"));
+    let duration = rendered["duration"]
         .as_u64()
-        .expect("the selected step was measured");
-    let start_ms = end - i64::try_from(duration).expect("the duration fits in milliseconds");
-    let start = time_of_day(start_ms);
-    assert!(
-        text.contains(&start),
-        "the panel names no start ({start}) for the selected step: {text:?}"
-    );
-    let duration = givn::cli::timeline::format_duration(duration);
-    assert!(
-        text.contains(&duration),
-        "the panel names no duration ({duration}) for the selected step: {text:?}"
-    );
-    let outcome = longest["outcome"]
-        .as_str()
-        .expect("the recorded step carries its outcome");
-    assert!(
-        text.contains(outcome),
-        "the panel names no outcome ({outcome}) for the selected step: {text:?}"
-    );
-    assert!(
-        text.contains("Duration") && text.contains("Start") && text.contains("Outcome"),
-        "the panel's facts carry no written labels: {text:?}"
-    );
-    // The visual gate's evidence for this scenario: the panel open, at both
-    // contract viewports, with the page brought to the panel the assertion above
-    // read (it sits below the fold at the mobile viewport).
-    browser(world).capture_evidence_from(SELECT_SCENARIO, "#details-panel");
+        .unwrap_or_else(|| panic!("the selected lane records no duration: {rendered:#}"));
+    let outcome = rendered["outcome"].as_str().unwrap_or_default();
+    for (label, value) in [
+        ("Start", time_of_day(first)),
+        ("Duration", givn::cli::timeline::format_duration(duration)),
+        ("Outcome", outcome.to_string()),
+    ] {
+        assert!(
+            facts.contains(label) && facts.contains(&value),
+            "the log does not name the lane's {label} ({value}): {facts:?}"
+        );
+    }
 }
 
-#[then("the panel names the entry's tool call id")]
-fn panel_names_the_tool_call_id(world: &mut GivnWorld) {
-    let (longest, _) = longest_span(world);
-    let call = longest["data"]["tool_call_id"].as_str().unwrap_or_else(|| {
-        panic!("the fixture's longest step carries no tool call id: {longest:#}")
-    });
-    let panel = details_panel(browser(world));
-    let text = panel["text"].as_str().unwrap_or_default();
+#[then("the log names the entry's tool call id")]
+fn log_names_the_entry_tool_call_id(world: &mut GivnWorld) {
+    let log_state = lane_log_state(browser(world));
+    let text = log_state["text"].as_str().unwrap_or_default();
     assert!(
         text.contains("Tool call id"),
-        "the panel names no tool call id fact: {text:?}"
+        "the log names no tool call id fact: {text:?}"
     );
     assert!(
-        text.contains(call),
-        "the panel does not name the entry's tool call id ({call}): {text:?}"
+        text.contains(support::PARALLEL_TOOL_CALL_ID),
+        "the log does not name the entry's tool call id ({}): {text:?}",
+        support::PARALLEL_TOOL_CALL_ID
     );
 }
 
-#[then("the panel renders the entry's content in its bounded content region")]
-fn panel_renders_bounded_content(world: &mut GivnWorld) {
-    let (longest, _) = longest_span(world);
-    let field = &longest["data"]["content"]["tool_input"];
-    let expected = field["text"]
-        .as_str()
-        .unwrap_or_else(|| panic!("the fixture's tool entry carries no content text: {longest:#}"));
-    let original = field["bytes"]
-        .as_u64()
-        .unwrap_or_else(|| panic!("the fixture's content field carries no size: {longest:#}"));
-    let panel = details_panel(browser(world));
-    let region = &panel["content"];
-    assert_eq!(
-        region["hidden"],
-        json!(false),
-        "the panel renders no content region for the entry: {panel:#}"
+#[then("the log renders the entry's content in its bounded content region")]
+fn log_renders_the_bounded_content_region(world: &mut GivnWorld) {
+    let rendered = browser(world).evaluate(
+        r##"(() => {
+  const log = document.getElementById("lane-log-implement");
+  const region = log ? log.querySelector(".content-region") : null;
+  const field = region ? region.querySelector('.content-field[data-field="tool_input"]') : null;
+  const text = field ? field.querySelector(".content-text") : null;
+  const style = text ? getComputedStyle(text) : null;
+  return {
+    inLog: region !== null,
+    field: field !== null,
+    text: text ? text.textContent : null,
+    html: text ? text.innerHTML : null,
+    meta: field && field.querySelector(".content-meta") ? field.querySelector(".content-meta").textContent : null,
+    maxHeight: style ? style.maxHeight : null,
+    overflowY: style ? style.overflowY : null,
+  };
+})()"##,
     );
-    let fields = region["fields"]
-        .as_array()
-        .unwrap_or_else(|| panic!("the content region carries no fields: {region:#}"));
-    let rendered = fields
-        .iter()
-        .find(|field| field["field"] == json!("tool_input"))
-        .unwrap_or_else(|| panic!("the content region does not render the tool input: {region:#}"));
+    assert_eq!(
+        rendered["inLog"],
+        json!(true),
+        "the log renders no content region: {rendered:#}"
+    );
+    assert_eq!(
+        rendered["field"],
+        json!(true),
+        "the content region renders no tool-input field: {rendered:#}"
+    );
     assert_eq!(
         rendered["text"],
-        json!(expected),
+        json!(support::PARALLEL_CONTENT_TEXT),
         "the content region does not render the captured text: {rendered:#}"
+    );
+    let html = rendered["html"].as_str().unwrap_or_default();
+    assert!(
+        html.contains("&lt;b&gt;") && !html.contains("<b>"),
+        "the content region rendered the captured markup as HTML: {html}"
     );
     let meta = rendered["meta"].as_str().unwrap_or_default();
     assert!(
-        meta.contains("64 KiB per field"),
-        "the content region names no cap: {meta:?}"
+        meta.contains("64 KiB per field")
+            && meta.contains(&format!(
+                "original {} bytes",
+                support::PARALLEL_CONTENT_TEXT.len()
+            ))
+            && meta.contains("complete"),
+        "the content region does not name its cap, original size, and truncation state: {meta:?}"
     );
-    assert!(
-        meta.contains(&format!("original {original} bytes")),
-        "the content region does not name the original size: {meta:?}"
+    assert_ne!(
+        rendered["maxHeight"],
+        json!("none"),
+        "the content region is not bounded: {rendered:#}"
     );
-    assert!(
-        meta.contains("complete"),
-        "the content region does not state the field's truncation state: {meta:?}"
+    assert_eq!(
+        rendered["overflowY"],
+        json!("auto"),
+        "the content region does not scroll inside its bound: {rendered:#}"
     );
-    // Escaped: the captured text carries markup, and the region renders it as
-    // text, never as an element.
-    let html = rendered["html"].as_str().unwrap_or_default();
-    assert!(
-        !html.contains("<b>") && html.contains("&lt;b&gt;"),
-        "the content region rendered the captured markup as HTML: {html}"
-    );
+    browser(world).capture_evidence_from(SELECT_SCENARIO, "#lane-log-implement");
 }
-
 /// One recorded instant as the report's own clock reads it: the time of day of
 /// the embedded UTC timestamp, seconds included.
 fn time_of_day(at_ms: i64) -> String {
