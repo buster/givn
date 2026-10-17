@@ -1007,7 +1007,7 @@ name it.
         became `enumerate()` (clippy's `explicit_counter_loop` flagged the counter form, which is why
         clippy is pasted here — it was red for that one lint and is green now).
         ```
-  - [x] **COMMIT** — `83fcaf172a55f6dc8b81183d7225b8917d9e8d80` — `feat(development-record): <release note>` (the
+  - [x] COMMIT: 83fcaf172a55f6dc8b81183d7225b8917d9e8d80 -- — `feat(development-record): <release note>` (the
         release note verbatim as the subject; body carries the scenario title
         `A recorded step keeps a measured duration and its outcome`). Record the
         revision identifier here, and check this box only when the evidence
@@ -1152,7 +1152,7 @@ name it.
         the choke point keeps its single guard site and its callers stay branch-free; the new test
         code was formatted (`cargo fmt --all -- --check` was red before this step).
         ```
-  - [x] **COMMIT** — `c3aa8dc5a547e28d35c40a53a1d5c94ca2209f11` — `feat(development-record): <release note>` with
+  - [x] COMMIT: c3aa8dc5a547e28d35c40a53a1d5c94ca2209f11 -- — `feat(development-record): <release note>` with
         the scenario title `A verification run is recorded as its own step` in
         the body. Record the revision identifier.
         ```
@@ -1331,7 +1331,7 @@ name it.
         imports are one `use` group. Nothing else in the GREEN diff needed cleaning — the
         warning already had exactly one emitter, which is why this step is a proof step here.
         ```
-  - [x] **COMMIT** — `ac094e722262711c23bce7b25606070edfe7d501` — `feat(development-record): <release note>` with
+  - [x] COMMIT: ac094e722262711c23bce7b25606070edfe7d501 -- — `feat(development-record): <release note>` with
         the scenario title `A record that cannot be written never fails the
         command it records` in the body. Record the revision identifier.
         ```
@@ -1476,7 +1476,7 @@ name it.
         one message and one definition instead of two copies; the JSONL parsing rule moved into
         `parse_entries`, which `record_entries` (parsed view) and the byte snapshot share.
         ```
-  - [x] **COMMIT** — `49debc5da829d8618270fffc1a8fbef96256f088` — `feat(development-record): <release note>` with
+  - [x] COMMIT: 49debc5da829d8618270fffc1a8fbef96256f088 -- — `feat(development-record): <release note>` with
         the scenario title `The record is append-only across commands` in the
         body. Record the revision identifier.
         ```
@@ -1635,7 +1635,7 @@ name it.
         mixed the active-change question with the exactly-one rule, and is gone), so the
         "is a change active?" logic exists once.
         ```
-  - [x] **COMMIT** — `80ca8a7b4b7e1b2856d4e7f5702d10471295a912` — `feat(development-record): <release note>` with
+  - [x] COMMIT: 80ca8a7b4b7e1b2856d4e7f5702d10471295a912 -- — `feat(development-record): <release note>` with
         the scenario title `Activity outside a change belongs to the project
         scope` in the body. Record the revision identifier.
         ```
@@ -1836,7 +1836,7 @@ name it.
         behind the lock's back), so the lock covers exactly one read-and-append scope; the test
         code was formatted. One id-minting site and one lock scope, verified by the greps above.
         ```
-  - [x] **COMMIT** — `e7c44231cc1816a0ad17637da2bc89529691a60d` — `feat(development-record): <release note>` with
+  - [x] COMMIT: e7c44231cc1816a0ad17637da2bc89529691a60d -- — `feat(development-record): <release note>` with
         the scenario title `Two writers never mint the same entry id` in the
         body. Record the revision identifier.
         ```
@@ -2007,7 +2007,7 @@ name it.
         setup commands can never be mistaken for it. The scope steps also read only the scope out of
         that entry, which is what their titles claim.
         ```
-  - [x] **COMMIT** — `56b05a26dd90ec1d17a6cb544df833dc8d9a5be6` — `feat(development-record): <release note>` with
+  - [x] COMMIT: 56b05a26dd90ec1d17a6cb544df833dc8d9a5be6 -- — `feat(development-record): <release note>` with
         the scenario title `Activity during an ideation belongs to its topic
         scope` in the body. Record the revision identifier.
         ```
@@ -2162,7 +2162,7 @@ name it.
         5 steps (5 passed)
         EXIT 0
         ```
-  - [x] **COMMIT** — `0c8cd7707a81993fb551fe21261014fc02dba60a` — `feat(development-record): <release note>` with
+  - [x] COMMIT: 0c8cd7707a81993fb551fe21261014fc02dba60a -- — `feat(development-record): <release note>` with
         the scenario title `A recorded label is bounded to 120 characters` in
         the body. Record the revision identifier.
         ```
@@ -2342,7 +2342,7 @@ name it.
         54 steps (54 passed)
         EXIT 0
         ```
-  - [x] **COMMIT** — `d41ab44644e3c547207b1f2da057d448d18b1855` — `feat(development-record): <release note>` with
+  - [x] COMMIT: d41ab44644e3c547207b1f2da057d448d18b1855 -- — `feat(development-record): <release note>` with
         the scenario title `Reading the development record does not extend it` in
         the body. Record the revision identifier.
         ```
@@ -2607,7 +2607,7 @@ name it.
         65 steps (65 passed)
         EXIT 0
         ```
-  - [x] **COMMIT** — `12d835a96c084de03b5b99fe63f59e7746184dd8` — `feat(development-record): <release note>` with
+  - [x] COMMIT: 12d835a96c084de03b5b99fe63f59e7746184dd8 -- — `feat(development-record): <release note>` with
         the scenario title `The record stays out of the repository's own history`
         in the body. Record the revision identifier.
         ```
@@ -2873,7 +2873,7 @@ name it.
         hold — a corpus-fixture change outside this task, so it is reported
         rather than patched.
         ```
-  - [x] **COMMIT** — `e531f80fd0d875d0f09106055b31b6b80996c22b` — `feat(development-record): <release note>` with
+  - [x] COMMIT: e531f80fd0d875d0f09106055b31b6b80996c22b -- — `feat(development-record): <release note>` with
         the scenario title `A Fossil project ignores the record through its own
         ignore file` in the body. Record the revision identifier.
         ```
@@ -3168,7 +3168,7 @@ name it.
         `@wip`, and strict mode fails an undefined step by design. The
         implemented-scope run above is this task's green evidence.
         ```
-  - [x] **COMMIT** — `cdd18bd900b76a0aa8730c9b7cef37f11a0c84b6` — `feat(development-record): <release note>` with
+  - [x] COMMIT: cdd18bd900b76a0aa8730c9b7cef37f11a0c84b6 -- — `feat(development-record): <release note>` with
         the scenario title `A refused command outside a Givn project creates no
         record` in the body. Record the revision identifier.
         ```
@@ -3472,7 +3472,7 @@ name it.
         givn/changes/demo/proposal.md
         (nothing under givn/history/)
         ```
-  - [x] **COMMIT** — `af5ced1f2ffafc4b08b8a476defd405384344104` — `test(development-record): <release note>` with
+  - [x] COMMIT: af5ced1f2ffafc4b08b8a476defd405384344104 -- — `test(development-record): <release note>` with
         a body that names only the extended assertions and points at the Tasks
         10/11 commits; it MUST NOT restate the two scenario titles, so the
         per-scenario gate sees no duplicate scenario commit. Record the revision
@@ -3603,7 +3603,7 @@ name it.
         `reportedQuestion` in omp and opencode, `usage_of`/`transcript_question`
         in Maki, `session_record_usage`/`reported_question` in the Claude mapper).
         ```
-  - [x] **COMMIT** — `509263872c637196d31e35753257809917acb64b` — `feat(development-record): <release note>` with
+  - [x] COMMIT: 509263872c637196d31e35753257809917acb64b -- — `feat(development-record): <release note>` with
         the scenario title in the body. Record the revision identifier.
 
 ## Task 11d — `Question text is captured in full` (`development-record`, added)
@@ -3725,7 +3725,7 @@ name it.
         residual keeps the bounded title and the intake stores no
         `data.question`.
         ```
-  - [x] **COMMIT** — `f54633310bba10abae995e9dc68267cfaebe0c8c` — `feat(development-record): <release note>` with
+  - [x] COMMIT: f54633310bba10abae995e9dc68267cfaebe0c8c -- — `feat(development-record): <release note>` with
         the scenario title in the body. Record the revision identifier.
 
 ## Task 11e — `The record can be turned off for a project` (`development-record`, added)
@@ -3866,7 +3866,7 @@ name it.
         10 steps (10 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `fb54192bd357c55f859d22d73625165211ab28ba` — `feat(development-record): <release note>` with
+  - [x] COMMIT: fb54192bd357c55f859d22d73625165211ab28ba -- — `feat(development-record): <release note>` with
         the scenario title in the body. Record the revision identifier.
 
 ## Task 11f — `The default mode records metadata without content` (`development-record`, added)
@@ -3982,7 +3982,7 @@ name it.
         `givn history settings --json` result and uses it both for the `off`
         skip and the `full` content gate.
         ```
-  - [x] **COMMIT** — `9210247f05fa29b5960937e6686e784f77c04e68` — `feat(development-record): <release note>` with
+  - [x] COMMIT: 9210247f05fa29b5960937e6686e784f77c04e68 -- — `feat(development-record): <release note>` with
         the scenario title in the body. Record the revision identifier.
 
 ## Task 11g — `The full mode records complete content` (`development-record`, added)
@@ -4115,7 +4115,7 @@ name it.
         `fillContent`), shared by every kind and every report; the budget was
         re-verified on the 8.65 MiB fixture (8 MiB embedded, one omission).
         ```
-  - [x] **COMMIT** — `dff0a8c9238c4405229881b53d82bb3d9dd36110` — `feat(development-record): <release note>` with
+  - [x] COMMIT: dff0a8c9238c4405229881b53d82bb3d9dd36110 -- — `feat(development-record): <release note>` with
         the scenario title in the body. Record the revision identifier.
 
 ## Task 11h — `An invalid record mode falls back to the default` (`development-record`, added)
@@ -4219,7 +4219,7 @@ name it.
         5 steps (5 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `b06e17716a70572b4016775018fbbb06b56da271` — `feat(development-record): <release note>` with
+  - [x] COMMIT: b06e17716a70572b4016775018fbbb06b56da271 -- — `feat(development-record): <release note>` with
         the scenario title in the body. Record the revision identifier.
 
 ## Task 12 — `A reported tool call is recorded for its scope` (`agent-activity-reporting`, added)
@@ -4360,7 +4360,7 @@ name it.
         5 steps (5 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `453ce716e2c04eb76f1ca2b713fbd226e1e0543d` — `feat(agent-activity-reporting): <release note>`
+  - [x] COMMIT: 453ce716e2c04eb76f1ca2b713fbd226e1e0543d -- — `feat(agent-activity-reporting): <release note>`
         with the scenario title `A reported tool call is recorded for its scope`
         in the body. Record the revision identifier.
         ```
@@ -4540,7 +4540,7 @@ name it.
         4 steps (4 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `1574c66aa30c758f02fbd816f853966526aa4238` — `feat(agent-activity-reporting): <release note>`
+  - [x] COMMIT: 1574c66aa30c758f02fbd816f853966526aa4238 -- — `feat(agent-activity-reporting): <release note>`
         with the scenario title `A subagent's activity is attributed to that
         subagent` in the body. Record the revision identifier.
         ```
@@ -4689,7 +4689,7 @@ name it.
         4 steps (4 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `55f8bb5799fc5814e2a412ece70e172b478d98e5` — `feat(agent-activity-reporting): <release note>`
+  - [x] COMMIT: 55f8bb5799fc5814e2a412ece70e172b478d98e5 -- — `feat(agent-activity-reporting): <release note>`
         with the scenario title `A question wait is recorded with its duration`
         in the body. Record the revision identifier.
         ```
@@ -4845,7 +4845,7 @@ name it.
         4 steps (4 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `22219c9d617dd3a823da7ce096eca53401ea5647` — `feat(agent-activity-reporting): <release note>`
+  - [x] COMMIT: 22219c9d617dd3a823da7ce096eca53401ea5647 -- — `feat(agent-activity-reporting): <release note>`
         with the scenario title `Reported token usage is recorded with the model
         that produced it` in the body. Record the revision identifier.
         ```
@@ -5000,7 +5000,7 @@ name it.
         Reported token usage is recorded with the model that produced it => EXIT=0
         Absent token usage is recorded as unavailable => EXIT=0
         ```
-  - [x] **COMMIT** — `82a4ed81882248d06ce2658eb7faed02819a7601` — `feat(agent-activity-reporting): <release note>`
+  - [x] COMMIT: 82a4ed81882248d06ce2658eb7faed02819a7601 -- — `feat(agent-activity-reporting): <release note>`
         with the scenario title `Absent token usage is recorded as unavailable`
         in the body. Record the revision identifier.
         ```
@@ -5237,7 +5237,7 @@ name it.
         4 steps (4 passed)
         EXIT 0
         ```
-  - [x] **COMMIT** — `049e5664fa18768140ad5fdbd3552ff5ef9a2902` — `feat(agent-activity-reporting): <release note>`
+  - [x] COMMIT: 049e5664fa18768140ad5fdbd3552ff5ef9a2902 -- — `feat(agent-activity-reporting): <release note>`
         with the scenario title `A reported event that does not match the intake
         contract is rejected without corrupting the record` in the body. Record
         the revision identifier.
@@ -5485,7 +5485,7 @@ name it.
         A reported event that does not match the intake contract is rejected without corrupting the record => EXIT=0
         A rejected report never fails the agent action it reports => EXIT=0
         ```
-  - [x] **COMMIT** — `fad0df07dd13d4502b6dbedce882862578855177` — `feat(agent-activity-reporting): <release note>`
+  - [x] COMMIT: fad0df07dd13d4502b6dbedce882862578855177 -- — `feat(agent-activity-reporting): <release note>`
         with the scenario title `A rejected report never fails the agent action
         it reports` in the body. Record the revision identifier.
         ```
@@ -5707,7 +5707,7 @@ name it.
         A reported tool call is recorded for its scope => EXIT=0
         The intake rejects a payload that is not readable JSON => EXIT=0
         ```
-  - [x] **COMMIT** — `579b5971ad4d8ebcc695658964231a6fdb94d78e` — `feat(agent-activity-reporting): <release note>`
+  - [x] COMMIT: 579b5971ad4d8ebcc695658964231a6fdb94d78e -- — `feat(agent-activity-reporting): <release note>`
         with the scenario title `The intake rejects a payload that is not
         readable JSON` in the body. Record the revision identifier.
         ```
@@ -5970,7 +5970,7 @@ name it.
         109 steps (109 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `82579d36cf4c5893dc9d1ce4d1f23f23b750de70` — `feat(agent-activity-reporting): <release note>`
+  - [x] COMMIT: 82579d36cf4c5893dc9d1ce4d1f23f23b750de70 -- — `feat(agent-activity-reporting): <release note>`
         with the scenario title `The intake keeps the acceptable events of a
         payload with a rejected event` in the body. Record the revision
         identifier.
@@ -6234,7 +6234,7 @@ name it.
         12 steps (12 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `ff3480e38b07189ca68f43a0402c28b5212ee395` — `feat(agent-activity-reporting): <release note>`
+  - [x] COMMIT: ff3480e38b07189ca68f43a0402c28b5212ee395 -- — `feat(agent-activity-reporting): <release note>`
         with the scenario title `Every supported harness receives a development
         reporter` in the body. Record the revision identifier.
         ```
@@ -6389,7 +6389,7 @@ name it.
         4 steps (4 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `eb2191810eb28efd06adf6a7a789d5ae4a660681` — `feat(agent-activity-reporting): <release note>`
+  - [x] COMMIT: eb2191810eb28efd06adf6a7a789d5ae4a660681 -- — `feat(agent-activity-reporting): <release note>`
         with the scenario title `The neutral skills target receives no
         development reporter` in the body. Record the revision identifier.
         ```
@@ -6591,7 +6591,7 @@ name it.
         4 steps (4 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `f7365a573212d436bfae32d857be952aa13eb89f` — `feat(agent-activity-reporting): <release note>`
+  - [x] COMMIT: f7365a573212d436bfae32d857be952aa13eb89f -- — `feat(agent-activity-reporting): <release note>`
         with the scenario title `A wait the harness does not time is still
         recorded with a duration` in the body. Record the revision identifier.
         ```
@@ -6761,7 +6761,7 @@ name it.
         $ ... --exact "...::Reported token usage is recorded with the model that produced it"
         1 scenario (1 passed), 4 steps (4 passed)        EXIT=0
         ```
-  - [x] **COMMIT** — `506dfe273d2fe8b84efaaa2718f85d71c5feb6cf` — `feat(agent-activity-reporting): <release note>`
+  - [x] COMMIT: 506dfe273d2fe8b84efaaa2718f85d71c5feb6cf -- — `feat(agent-activity-reporting): <release note>`
         with the scenario title `Token usage read from the harness's own session
         record is recorded with its model` in the body. Record the revision
         identifier.
@@ -7094,7 +7094,7 @@ name it.
         8 steps (8 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `d098946c1e4a1fbc1c30dceac386a748f5aaeea3` — `feat(agent-activity-reporting): <release note>`
+  - [x] COMMIT: d098946c1e4a1fbc1c30dceac386a748f5aaeea3 -- — `feat(agent-activity-reporting): <release note>`
         with the scenario title `Maki's reporter keeps the harness's own tool
         duration and marks what its harness omits` in the body. Record the
         revision identifier.
@@ -7297,7 +7297,7 @@ name it.
         3 steps (3 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `12d2f04d162f7388238d2f4a0653cfa3facc5870` — `feat(development-report): <release note>` with
+  - [x] COMMIT: 12d2f04d162f7388238d2f4a0653cfa3facc5870 -- — `feat(development-report): <release note>` with
         the scenario title `The report ranks the longest single step first` in
         the body. Record the revision identifier.
         ```
@@ -7548,7 +7548,7 @@ name it.
              Summary [   7.110s] 8 tests run: 8 passed, 39 skipped
         EXIT=0
         ```
-  - [x] **COMMIT** — `e4b798824f5bea96f73177b77f021a5e795ef273` — `feat(development-report): <release note>` with
+  - [x] COMMIT: e4b798824f5bea96f73177b77f021a5e795ef273 -- — `feat(development-report): <release note>` with
         the scenario title `Measured agent activity is ranked alongside Givn's own
         steps` in the body. Record the revision identifier.
         ```
@@ -7715,7 +7715,7 @@ name it.
         the budget by one `apply_content_budget` pass whose omission marker and
         note are read by the text view, the model payload, and the panel alike.
         ```
-  - [x] **COMMIT** — `415fdea0c44d3c80d932aa6d843d65d4a83d8c16` — `feat(development-report): <release note>` with
+  - [x] COMMIT: 415fdea0c44d3c80d932aa6d843d65d4a83d8c16 -- — `feat(development-report): <release note>` with
         this scenario's title in the body and a line noting the E7 assertion
         extension (same scenario/action; no new `@e2e`). Record the revision
         identifier.
@@ -7855,7 +7855,7 @@ name it.
            ✔  Then the report ranks the longest step first
         1 feature, 1 scenario (1 passed), 3 steps (3 passed)        EXIT=0
         ```
-  - [x] **COMMIT** — `8dbdb6abff389ee7dce1bcac3d997ada5a730ea6` — `feat(development-report): <release note>` with
+  - [x] COMMIT: 8dbdb6abff389ee7dce1bcac3d997ada5a730ea6 -- — `feat(development-report): <release note>` with
         the scenario title `The report totals the time spent waiting for
         questions` in the body. Record the revision identifier.
         ```
@@ -8017,7 +8017,7 @@ name it.
         $ ... --exact "...::The report totals the time spent waiting for questions"
         1 feature, 1 scenario (1 passed), 3 steps (3 passed)        EXIT=0
         ```
-  - [x] **COMMIT** — `94b20d539a16879af55bcb58b657b71a6718e94e` — `feat(development-report): <release note>` with
+  - [x] COMMIT: 94b20d539a16879af55bcb58b657b71a6718e94e -- — `feat(development-report): <release note>` with
         the scenario title `The report totals token usage per turn and per
         subagent` in the body. Record the revision identifier.
         ```
@@ -8191,7 +8191,7 @@ name it.
         $ ... --exact "...::The report totals token usage per turn and per subagent"
         1 feature, 1 scenario (1 passed), 5 steps (5 passed)        EXIT=0
         ```
-  - [x] **COMMIT** — `2f6f77cb2f04d11765ecfbb72bdcc7c656746429` — `feat(development-report): <release note>` with
+  - [x] COMMIT: 2f6f77cb2f04d11765ecfbb72bdcc7c656746429 -- — `feat(development-report): <release note>` with
         the scenario title `The report of an ideation topic names the work done
         before the change exists` in the body. Record the revision identifier.
         ```
@@ -8360,7 +8360,7 @@ name it.
         $ ... --exact "...::The report of an ideation topic names the work done before the change exists"
         1 feature, 1 scenario (1 passed), 4 steps (4 passed)        EXIT=0
         ```
-  - [x] **COMMIT** — `429fd12a47ff35040b80c1d71f844adc49cd604c` — `feat(development-report): <release note>` with
+  - [x] COMMIT: 429fd12a47ff35040b80c1d71f844adc49cd604c -- — `feat(development-report): <release note>` with
         the scenario title `The report orders the timeline by recorded time, not
         by store position` in the body. Record the revision identifier.
         ```
@@ -8525,7 +8525,7 @@ name it.
         $ ... --exact "...::The report totals the time spent waiting for questions"
         1 feature, 1 scenario (1 passed), 3 steps (3 passed)        EXIT=0
         ```
-  - [x] **COMMIT** — `51d0165d195d37820f467a9c2fe3e1a830d259c2` — `feat(development-report): <release note>` with
+  - [x] COMMIT: 51d0165d195d37820f467a9c2fe3e1a830d259c2 -- — `feat(development-report): <release note>` with
         the scenario title `The report names the agent's fan-out into small
         subagents` in the body. Record the revision identifier.
         ```
@@ -8739,7 +8739,7 @@ name it.
         3 steps (3 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `50468ec60d74aea2be403969487d907254675fc0` — `feat(development-report): <release note>` with
+  - [x] COMMIT: 50468ec60d74aea2be403969487d907254675fc0 -- — `feat(development-report): <release note>` with
         the scenario title `The report needs no network access to render` in the
         body. Record the revision identifier.
         ```
@@ -8915,7 +8915,7 @@ name it.
         $ ... --exact "...::The report names the agent's fan-out into small subagents"     → 1 passed, 3 steps  EXIT=0
         $ ... --exact "...::The report needs no network access to render"                  → 1 passed, 3 steps  EXIT=0
         ```
-  - [x] **COMMIT** — `77f7f73bc00516dd0f08dd8a1a1132ef68ad84e4` — `feat(development-report): <release note>` with
+  - [x] COMMIT: 77f7f73bc00516dd0f08dd8a1a1132ef68ad84e4 -- — `feat(development-report): <release note>` with
         the scenario title `The report shows the empty state for a scope with no
         recorded activity` in the body. Record the revision identifier.
         ```
@@ -9116,7 +9116,7 @@ name it.
         $ ... --exact "...::The report needs no network access to render"                  → 1 passed, 3 steps  EXIT=0
         $ ... --exact "...::The report shows the empty state for a scope with no recorded activity" → 1 passed, 4 steps  EXIT=0
         ```
-  - [x] **COMMIT** — `24f5525166c1a5c976acb6af726f2f56d1ebee49` — `feat(development-report): <release note>` with
+  - [x] COMMIT: 24f5525166c1a5c976acb6af726f2f56d1ebee49 -- — `feat(development-report): <release note>` with
         the scenario title `A dense record is reported as aggregates instead of
         raw ticks` in the body. Record the revision identifier.
         ```
@@ -9670,7 +9670,7 @@ name it.
         twice once the regular scope narrows. Both workflow edits ride in this
         setup commit, never in a scenario commit.
         ```
-  - [x] **COMMIT** — `1f03e66ed7db83f8082a0427e2b147129bf61e77` — `test(e2e): <release note>` with the subject
+  - [x] COMMIT: 1f03e66ed7db83f8082a0427e2b147129bf61e77 -- — `test(e2e): <release note>` with the subject
         `E2E setup: browser tier, strictness, tag scopes, evidence` — the e2e
         setup lands as its own commit (never folded into a scenario), before the
         first `@e2e` scenario's RED. Record the revision identifier.
@@ -9887,7 +9887,7 @@ name it.
         bytes at 360x780/1920x1080): the evidence is the final code's own
         output, not the GREEN iteration's leftover.
         ```
-  - [x] **COMMIT** — `398b343e33eb04e559a209bdb6c43c6e20496435` — `test(e2e): <release note>` with the scenario
+  - [x] COMMIT: 398b343e33eb04e559a209bdb6c43c6e20496435 -- — `test(e2e): <release note>` with the scenario
         title `Consumer runs a lifecycle step and reads its recorded actions` in
         the body (including the two evidence PNGs). Record the revision
         identifier.
@@ -10138,7 +10138,7 @@ name it.
         1920x1080 and 360x780), so the committed pair is this scenario's own
         output, not the earlier iteration's.
         ```
-  - [x] **COMMIT** — `64a5dca3bebcfb9920181edcdb09304e2e87b29a` — `test(e2e): <release note>` with the scenario
+  - [x] COMMIT: 64a5dca3bebcfb9920181edcdb09304e2e87b29a -- — `test(e2e): <release note>` with the scenario
         title `Consumer reads the development record as machine-readable output`
         in the body (including the two evidence PNGs). Record the revision
         identifier.
@@ -10444,7 +10444,7 @@ name it.
         refreshed the evidence pair from the final code (39786/75066 bytes,
         360x780 and 1920x1080).
         ```
-  - [x] **COMMIT** — `0b33499477da79845601aed8cc55e042d2f5f4b8` — `test(e2e): <release note>` with the scenario
+  - [x] COMMIT: 0b33499477da79845601aed8cc55e042d2f5f4b8 -- — `test(e2e): <release note>` with the scenario
         title `Consumer installs the agent reporter and its reported activity
         lands in the record` in the body (including the two evidence PNGs).
         Record the revision identifier.
@@ -10667,7 +10667,7 @@ name it.
         design-review · tasks · implement` and, beneath it, the record's steps —
         the post-transition step's own span drawn under `implement`.
         ```
-  - [x] **COMMIT** — `ec81a9c34c9fc5aa084dcbf61de8e00c803dcfe6` — `test(e2e): <release note>` with the scenario
+  - [x] COMMIT: ec81a9c34c9fc5aa084dcbf61de8e00c803dcfe6 -- — `test(e2e): <release note>` with the scenario
         title `Consumer generates the development report for a change` in the
         body (including the two evidence PNGs). Record the revision identifier.
         ```
@@ -10915,7 +10915,7 @@ name it.
         (`min-width: 680px` with `overflow-x: auto` below 720px), so the mobile
         capture shows a readable axis instead of an unreadable squeeze.
         ```
-  - [x] **COMMIT** — `4c8cba403cf9321625ea6002bb583deea18809d5` — `test(e2e): <release note>` with the scenario
+  - [x] COMMIT: 4c8cba403cf9321625ea6002bb583deea18809d5 -- — `test(e2e): <release note>` with the scenario
         title `Consumer opens the generated development report in a browser` in
         the body (including the two evidence PNGs). Record the revision
         identifier.
@@ -11106,7 +11106,7 @@ name it.
         in the accent colour, and the mobile capture shows the same panel as the
         full-width sheet below the timeline.
         ```
-  - [x] **COMMIT** — `88334ae790b3135e3165f1d8c5d26859ee4ef326` — `test(e2e): <release note>` with the scenario
+  - [x] COMMIT: 88334ae790b3135e3165f1d8c5d26859ee4ef326 -- — `test(e2e): <release note>` with the scenario
         title `Consumer selects a timeline element and reads its details` in the
         body (including the two evidence PNGs). Record the revision identifier.
         ```
@@ -11303,7 +11303,7 @@ name it.
         scenarios / 10 steps, exit 0) — with its own committed evidence pair left
         untouched, restored to its revision's captures after the re-run.
         ```
-  - [x] **COMMIT** — `35b80e06845efd9237ddff6015771de5af514c77` — `test(e2e): <release note>` with the scenario
+  - [x] COMMIT: 35b80e06845efd9237ddff6015771de5af514c77 -- — `test(e2e): <release note>` with the scenario
         title `Consumer zooms the timeline to a shorter time range` in the body
         (including the two evidence PNGs). Record the revision identifier.
         ```
@@ -11486,7 +11486,7 @@ name it.
         5 steps (5 passed)
         REFACTOR_EXIT=0
         ```
-  - [x] **COMMIT** — `11647c8be76c5f0030a3f74774ba089e3d53d162` — `test(e2e): <release note>` with the scenario
+  - [x] COMMIT: 11647c8be76c5f0030a3f74774ba089e3d53d162 -- — `test(e2e): <release note>` with the scenario
         title `Consumer opens the report of a scope with no recorded activity` in
         the body (including the four evidence PNGs). Record the revision
         identifier.
@@ -11829,7 +11829,7 @@ Repository checks are secondary only.
         5 steps (5 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `6a12865b` — `feat(development-record): <release note>` with
+  - [x] COMMIT: 6a12865b -- — `feat(development-record): <release note>` with
         the scenario title `An artifact appearance is recorded as one phase
         transition` in the body. Record the revision identifier.
         ```
@@ -11950,7 +11950,7 @@ Repository checks are secondary only.
         test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 272 filtered out; finished in 0.00s
         EXIT=0
         ```
-  - [x] **COMMIT** — `0d363970` — `feat(development-report): <release note>` with
+  - [x] COMMIT: 0d363970 -- — `feat(development-report): <release note>` with
         the body naming the shared scaffold (model fields, the three KPI totals,
         the text-view lines) and the unit test; no scenario changes. Record the
         revision identifier.
@@ -12058,7 +12058,7 @@ Repository checks are secondary only.
         4 steps (4 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `8b652924` — `feat(development-report): show the empty state and draw no workflow phase` with
+  - [x] COMMIT: 8b652924 -- — `feat(development-report): show the empty state and draw no workflow phase` with
         the scenario title in the body. Record the revision identifier.
         ```
         commit 8b652924d7051b6ddd8cc6986cb106c33f52798b
@@ -12213,7 +12213,7 @@ Repository checks are secondary only.
         8 steps (8 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `130d2066` — `feat(development-report): derive the current workflow state from a live change` with
+  - [x] COMMIT: 130d2066 -- — `feat(development-report): derive the current workflow state from a live change` with
         the scenario title in the body. Record the revision identifier.
         ```
         commit 130d20661dbf65e9eaf0c9590ede8a91a89163c1
@@ -12353,7 +12353,7 @@ Repository checks are secondary only.
         10 steps (10 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `85564850` — `feat(development-report): lay parallel sessions side by side` with
+  - [x] COMMIT: 85564850 -- — `feat(development-report): lay parallel sessions side by side` with
         the scenario title in the body. Record the revision identifier.
         ```
         commit 855648507971171d7c5b60c04e0f2b5e63f73201
@@ -12463,7 +12463,7 @@ Repository checks are secondary only.
         6 steps (6 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `d4dadf61` — `feat(development-report): mark a skipped workflow phase` with
+  - [x] COMMIT: d4dadf61 -- — `feat(development-report): mark a skipped workflow phase` with
         the scenario title in the body. Record the revision identifier.
         ```
         commit d4dadf61d11aff64b7483a85cac1ce221899f483
@@ -12574,7 +12574,7 @@ Repository checks are secondary only.
         5 steps (5 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `4b6c497b` — `feat(development-report): mark every phase done for an archived change` with
+  - [x] COMMIT: 4b6c497b -- — `feat(development-report): mark every phase done for an archived change` with
         the scenario title in the body. Record the revision identifier.
         ```
         commit 4b6c497bba1f71a264bd2667a10708445b7124fa
@@ -12714,7 +12714,7 @@ Repository checks are secondary only.
         test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 272 filtered out; finished in 0.00s
         EXIT=0
         ```
-  - [x] **COMMIT** — `1839d419` — `feat(development-report): state a record with no stage transition` with
+  - [x] COMMIT: 1839d419 -- — `feat(development-report): state a record with no stage transition` with
         the scenario title in the body. Record the revision identifier.
         ```
         commit 1839d419b8b024fe905d4f7eb089f1f4550d6dd6
@@ -12823,7 +12823,7 @@ Repository checks are secondary only.
         4 steps (4 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `bef49d86` — `feat(development-report): group repeated steps within a phase` with
+  - [x] COMMIT: bef49d86 -- — `feat(development-report): group repeated steps within a phase` with
         the scenario title in the body. Record the revision identifier.
         ```
         commit bef49d8662b3189b232a3e7507d6b2937450625e
@@ -12947,7 +12947,7 @@ Repository checks are secondary only.
         5 steps (5 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `55078235` — `feat(development-report): collapse dense entries into phase aggregate ticks` with
+  - [x] COMMIT: 55078235 -- — `feat(development-report): collapse dense entries into phase aggregate ticks` with
         the scenario title in the body. Record the revision identifier.
         ```
         commit 55078235b16ec123b66831517611e38369ae3ee5
@@ -13180,7 +13180,7 @@ Repository checks are secondary only.
         5 steps (5 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `a3042187` — `feat(development-report): present the workflow in the written report's text view` with
+  - [x] COMMIT: a3042187 -- — `feat(development-report): present the workflow in the written report's text view` with
         the scenario title and the three rewritten readings in the body. Record
         the revision identifier.
         ```
@@ -13368,7 +13368,7 @@ Repository checks are secondary only.
         GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --e2e
         Summary [7.547s] 9 tests run: 9 passed, 55 skipped — exit 0
         ```
-  - [x] **COMMIT** — `cff0e844949cda7b49a81383c700102a9a9c6816` — `feat(development-report): <release note>` with
+  - [x] COMMIT: cff0e844949cda7b49a81383c700102a9a9c6816 -- — `feat(development-report): <release note>` with
         the scenario title in the body and the named unit assertion. Record the
         revision identifier.
         ```
@@ -13504,7 +13504,7 @@ Repository checks are secondary only.
         7 steps (7 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `70a0750e` — `test(e2e): <release note>` with the scenario
+  - [x] COMMIT: 70a0750e -- — `test(e2e): <release note>` with the scenario
         title in the body (including the refreshed evidence pair). Record the
         revision identifier.
         ```
@@ -13663,7 +13663,7 @@ Repository checks are secondary only.
         14 steps (14 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `c776da2c` — `test(e2e): <release note>` with the scenario
+  - [x] COMMIT: c776da2c -- — `test(e2e): <release note>` with the scenario
         title in the body (including the refreshed evidence pair). Record the
         revision identifier.
         ```
@@ -13785,7 +13785,7 @@ Repository checks are secondary only.
         5 steps (5 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `0e6306aa` — `test(e2e): <release note>` with the scenario
+  - [x] COMMIT: 0e6306aa -- — `test(e2e): <release note>` with the scenario
         title in the body (including the new evidence pair). Record the
         revision identifier.
         ```
@@ -13911,7 +13911,7 @@ Repository checks are secondary only.
         6 steps (6 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `2771b25e` — `test(e2e): <release note>` with the scenario
+  - [x] COMMIT: 2771b25e -- — `test(e2e): <release note>` with the scenario
         title in the body (including the refreshed evidence pair). Record the
         revision identifier.
         ```
@@ -14027,7 +14027,7 @@ Repository checks are secondary only.
         3 steps (3 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `dbcb3a7c` — `test(e2e): <release note>` with the scenario
+  - [x] COMMIT: dbcb3a7c -- — `test(e2e): <release note>` with the scenario
         title in the body (including the refreshed evidence pair). Record the
         revision identifier.
         ```
@@ -14143,7 +14143,7 @@ Repository checks are secondary only.
         5 steps (5 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `89637f3a` — `test(e2e): <release note>` with the scenario
+  - [x] COMMIT: 89637f3a -- — `test(e2e): <release note>` with the scenario
         title in the body (including the four refreshed captures). Record the
         revision identifier.
         ```
@@ -14301,7 +14301,7 @@ Repository checks are secondary only.
 
         git grep -n "@wip" -- givn/changes/development-timeline/specs → no output
         ```
-  - [x] **COMMIT** — `1aa0d6df` — `docs(development-timeline): hybrid workflow
+  - [x] COMMIT: 1aa0d6df -- — `docs(development-timeline): hybrid workflow
         report evidence and scope runs` with the scenario titles and the counts
         in the body. Record the revision identifier.
         ```
@@ -14592,7 +14592,7 @@ untouched; this part is appended after its completion statement.
         6 steps (6 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `1bb356c6` — `feat(development-record): <release note>` with
+  - [x] COMMIT: 1bb356c6 -- — `feat(development-record): <release note>` with
         the scenario title in the body. Record the revision identifier.
         ```
         commit 1bb356c6
@@ -14709,7 +14709,7 @@ untouched; this part is appended after its completion statement.
         test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 276 filtered out; finished in 0.00s
         EXIT=0
         ```
-  - [x] **COMMIT** — `6e9bfb5e` — `feat(development-report): <release note>` with
+  - [x] COMMIT: 6e9bfb5e -- — `feat(development-report): <release note>` with
         the shared model scope in the body and the unit test. Record the
         revision identifier.
         ```
@@ -14801,7 +14801,7 @@ untouched; this part is appended after its completion statement.
         test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 277 filtered out; finished in 0.01s
         EXIT=0
         ```
-  - [x] **COMMIT** — `5110738b` — `feat(development-report): <release note>` with
+  - [x] COMMIT: 5110738b -- — `feat(development-report): <release note>` with
         the link-resolution scope and the unit test in the body. Record the
         revision identifier.
         ```
@@ -14903,7 +14903,7 @@ untouched; this part is appended after its completion statement.
         5 steps (5 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `31af52cb` — `feat(development-report): <release note>` with
+  - [x] COMMIT: 31af52cb -- — `feat(development-report): <release note>` with
         the scenario title in the body. Record the revision identifier.
         ```
         commit 31af52cb
@@ -15012,7 +15012,7 @@ untouched; this part is appended after its completion statement.
         6 steps (6 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `3c6a485f` — `feat(development-report): <release note>` with
+  - [x] COMMIT: 3c6a485f -- — `feat(development-report): <release note>` with
         the scenario title in the body. Record the revision identifier.
         ```
         commit 3c6a485f
@@ -15112,7 +15112,7 @@ untouched; this part is appended after its completion statement.
         5 steps (5 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `eadd066c` — `feat(development-report): <release note>` with
+  - [x] COMMIT: eadd066c -- — `feat(development-report): <release note>` with
         the scenario title in the body. Record the revision identifier.
         ```
         commit eadd066c
@@ -15208,7 +15208,7 @@ untouched; this part is appended after its completion statement.
         4 steps (4 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `8ea0bda3` — `feat(development-report): <release note>` with
+  - [x] COMMIT: 8ea0bda3 -- — `feat(development-report): <release note>` with
         the scenario title in the body. Record the revision identifier.
         ```
         commit 8ea0bda3
@@ -15311,7 +15311,7 @@ untouched; this part is appended after its completion statement.
         5 steps (5 passed)
         EXIT=0
         ```
-  - [x] **COMMIT** — `349f7096` — `feat(development-report): <release note>` with
+  - [x] COMMIT: 349f7096 -- — `feat(development-report): <release note>` with
         the scenario title in the body. Record the revision identifier.
         ```
         commit 349f7096
@@ -15513,7 +15513,7 @@ untouched; this part is appended after its completion statement.
         14 steps (14 passed)
         EXIT:0
         ```
-  - [x] **COMMIT** — `25d2b20b` — `test(e2e): <release note>` with the
+  - [x] COMMIT: 25d2b20b -- — `test(e2e): <release note>` with the
         scenario title in the body, a line noting the open-outline topic-row
         assertion (`of 6`) and its refreshed pair, and the new evidence pair.
         Recorded:

@@ -35,6 +35,13 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   the permanent specs and the tags are stripped. Optionally preceded by
   `/givn-ideation` — a domain-driven event storming flow that turns a vague
   idea into change-ready use cases.
+- **A development record and report.** Givn records the steps it runs and the
+  activity each supported coding-agent harness reports — tool calls, subagent
+  spans, question waits, and token usage — in one local, append-only record
+  kept out of repository history. `givn history` reads it (text or `--json`),
+  and `givn timeline` renders one change or ideation topic as a self-contained
+  interactive report: the workflow top to bottom, each phase's vertical
+  session lanes and lane log, the longest steps, and where the time went.
 - **Scenario-by-scenario TDD with proof.** Each scenario runs RED (targeted,
   genuinely failing) → GREEN (minimum code) → REFACTOR → one atomic commit.
   The runner's strict mode is proven up front so an empty step definition can
@@ -84,6 +91,13 @@ givn init                             # scaffold givn/ + generate skills + AGENT
 Before the first archive, set `verify.command` in `givn/commands.yaml` to a
 Gherkin runner that executes the `.feature` files; the shipped sentinel fails
 on purpose until you do.
+
+Watch the work as it happens, or afterwards: `givn timeline --change <id>` (or
+`--topic <id>`) writes one self-contained HTML report of the development
+record — the workflow top to bottom, each phase's lanes and lane log, and where
+the time went — and `givn history --change <id> --json` prints the record
+itself. The record lives under `givn/history/` as local runtime state and stays
+out of repository history.
 
 `givn init` asks which agent targets receive the generated skills and commands;
 the list opens with `.opencode` marked and re-asks until at least one target is

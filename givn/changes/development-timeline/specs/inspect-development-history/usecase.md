@@ -36,34 +36,22 @@ The developer asks for the development history of a change or an ideation.
 
 ## Extensions
 
-- 2: no activity is recorded for the requested scope → the report renders an
-  explicit empty state; protects the success guarantee.
-- 1: a reported agent event does not match the intake contract → the event is
-  rejected with a warning and the record is not corrupted; protects the minimal
-  guarantee.
-- 1: the record cannot be written → the work being recorded continues and
-  reports its own outcome; protects the minimal guarantee.
+- 2: no activity is recorded for the requested scope → the report renders an explicit empty state; protects the success guarantee.
+- 1: a reported agent event does not match the intake contract → the event is rejected with a warning and the record is not corrupted; protects the minimal guarantee.
+- 1: the record cannot be written → the work being recorded continues and reports its own outcome; protects the minimal guarantee.
 
 ## Rules
 
-- Recording never changes the outcome of the command or the agent action it
-  records.
-- Every supported harness reports its own activity through the same intake, and
-  a signal a harness cannot deliver is recorded as missing rather than as zero.
+- Recording never changes the outcome of the command or the agent action it records.
+- Every supported harness reports its own activity through the same intake, and a signal a harness cannot deliver is recorded as missing rather than as zero.
 - The record is append-only: a recorded entry is never rewritten.
-- Every recorded entry belongs to exactly one scope: a change, an ideation
-  topic, or the project.
+- Every recorded entry belongs to exactly one scope: a change, an ideation topic, or the project.
 - A recorded duration is measured, never inferred from two entries that disagree.
-- Recording is the observation substrate of this use case rather than a goal of
-  its own: entries exist so this use case can read them back, and recording
-  never changes the work it observes — no gate, no proof, no exit code, no
-  artifact lifecycle. A behaviour that mutates what it observes while claiming
-  this use case's goal is out of scope here.
+- Recording is the observation substrate of this use case rather than a goal of its own: entries exist so this use case can read them back, and recording never changes the work it observes — no gate, no proof, no exit code, no artifact lifecycle. A behaviour that mutates what it observes while claiming this use case's goal is out of scope here.
 
 ## Examples
 
-- The developer reads the report of an archived change and sees the archive
-  verification scope as the longest single step.
+- The developer reads the report of an archived change and sees the archive verification scope as the longest single step.
 - A record written before a restart is still in the report afterwards.
 
 ## Minimal guarantee

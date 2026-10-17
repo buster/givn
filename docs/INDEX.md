@@ -26,6 +26,7 @@ Status values:
 - [Workflow Swimlane (HTML)](workflow.html) - `current`; self-contained HTML swimlane view with one lane per artifact, creating actions, checking processes, and chokepoint summary. No JavaScript, no external assets, dark-mode aware.
 - [Reference](reference.md) - `current`; CLI command table, agent skills, addons, configuration keys, generated project layout, repository development scripts.
 - [Use-Case Model](use-case-model.md) - `current`; the canonical use-case definition, scoping rules, authoring requirements, and review rejection criteria.
+- [Design System](design/design-system.md) - `current`; the development report's design system: tokens, component primitives and their states, breakpoints, accessibility rules, and the rendered reference views.
 
 ## Project Planning
 
