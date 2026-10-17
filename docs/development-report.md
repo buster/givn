@@ -96,30 +96,37 @@ Givn's reporter records today: `✓` available/recorded, `◐` partial, `—`
 absent/not recorded. Sources: the four harness inventories and the current
 generated reporters.
 
-| Field | omp 18.6.1 | Claude Code 2.1.266 | opencode 2.0.26 | Maki 0.6.3 |
+| Field | omp 18.11.3 | Claude Code 2.1.266 | opencode 2.0.26 | Maki 0.6.3 |
 |---|---|---|---|---|
-| Turn index / count | ✓✓ | —— | —— | ◐✓ (`num_turns` round-trips) |
-| Stop reason | ✓✓ | —— | ✓✓ | ✓✓ |
+| Turn index / count | ✓✓ | ◐— (`num_turns`/`prompt_id`; no hook index) | ◐— (derived from message seq) | —— (`num_turns` counts model round-trips, not turns) |
+| Stop reason | ✓✓ | ✓— (assistant transcript/headless, not recorded) | ✓✓ | ✓✓ |
 | Model | ✓✓ | ✓✓ (transcript) | ✓✓ | ◐◐ (TUI-only; headless may omit) |
-| Cost | ✓✓ | ✓✓ (transcript) | ✓✓ | ✓✓ |
-| Context size / window | ✓✓ | ◐— (partial surface, not parsed) | —— | ✓✓ |
+| Cost | ✓✓ | ◐✓ (transcript cost-state) | ✓✓ | ✓✓ |
+| Context size / window | ✓✓ | ◐— (statusline/transcript, not parsed) | ◐— (window only; used context derived) | ✓✓ |
 | Session title | ✓— (session API only, not recorded) | ✓— (`SessionStart` title not parsed) | ✓✓ | ◐— (wait label only) |
-| Transcript path | ✓— (session manager, not recorded) | ✓— (used for usage/cost, not recorded) | —— | —— |
+| Transcript path | ✓— (session manager, not recorded) | ✓— (used for usage/cost, not recorded) | ◐— (export only) | —— |
 
 The table is the durable copy of the archived design's per-harness
 availability matrix, with the second symbol taken from the implemented
-reporters. Known capture gaps are visible in that second symbol: omp and Claude
-do not record the session title or transcript path their surfaces expose;
-Claude's partial context signal is not parsed; Maki's session title exists only
-as a wait label, and its headless turns may omit the model.
+reporters. Re-verified with fresh harness probes on 2026-10-17 (omp 18.11.3,
+Claude Code 2.1.266, opencode 2.0.26, Maki 0.6.3): Claude exposes its stop
+reason in the assistant transcript and headless result (not in a hook, and not
+recorded by Givn), and its cost is a transcript rollup; opencode derives its
+turn index and used context and exposes a transcript only through an export;
+Maki's `num_turns` counts model round-trips, not turns. Known capture gaps are
+visible in that second symbol: omp and Claude do not record the session title or
+transcript path their surfaces expose; Claude's partial context signal is not
+parsed; Maki's session title exists only as a wait label, and its headless turns
+may omit the model.
 
 For report data, **omp is the richest choice**: every turn-level field the
 report renders (index, stop reason, model, cost, context size/window) is present,
 plus tool call ids, subagent lifecycle, retries, and permission waits. Claude
 Code is strongest for subagent, permission, wait, and content detail but lacks a
-turn index and stop reason and does not record the title/context; opencode is a
-solid middle ground with stop reason, model, cost, and title but no turn count
-or context; Maki supplies stop reason, cost, context, and round-trips, with the
+turn index, and its stop reason and cost are transcript/result reads it does
+not record, as are title and context; opencode is a solid middle ground with
+stop reason, model, cost, and title, though its turn index and used context are
+derived; Maki supplies stop reason, cost, context, and round-trips, with the
 headless gaps and the missing `task`-tool subagent span (`R-90`). Question text
 is always captured by all four; per-subagent tool attribution remains
 session-based (`R-93`).
