@@ -2098,3 +2098,162 @@ fn record_keeps_the_title_label_without_question_text(world: &mut GivnWorld) {
         "the residual wait lost its measured duration: {entry}"
     );
 }
+
+/// The complete content the default-mode fixture reports: the markers must not
+/// survive into the store, while the tool call's metadata must.
+const DEFAULT_CONTENT_INPUT: &str = "cargo test --locked --test features_runner";
+const DEFAULT_CONTENT_OUTPUT: &str = "test result: ok. 272 passed; 0 failed";
+const DEFAULT_TOOL_MS: u64 = 1_240;
+
+#[given(regex = r#"^a change "([^"]+)" whose project has no record mode configured$"#)]
+fn change_without_record_mode(world: &mut GivnWorld, id: String) {
+    let env = common::make_init_root();
+    let out = common::run_givn(&env, &["new", &id]);
+    assert!(
+        out.status.success(),
+        "givn new {id} failed: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+    let config =
+        std::fs::read_to_string(env.path("givn/config.yaml")).expect("read givn/config.yaml");
+    assert!(
+        !config.lines().any(|line| {
+            !line.starts_with([' ', '\t', '#']) && line.trim_start().starts_with("record:")
+        }),
+        "the fixture must set no record mode: {config}"
+    );
+    world.last_change_id = Some(id);
+    world.env = Some(env);
+}
+
+#[when("the agent reports a tool call with its complete input and output")]
+fn agent_reports_a_tool_call_with_complete_content(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let change = world
+        .last_change_id
+        .clone()
+        .expect("the default-mode fixture ran first");
+    let payload = support::intake_payload(
+        Some(&change),
+        None,
+        vec![json!({
+            "kind": "tool",
+            "at": "2026-10-17T10:00:00.000Z",
+            "tool": "Bash",
+            "label": "cargo test --locked",
+            "duration_ms": DEFAULT_TOOL_MS,
+            "outcome": "ok",
+            "tool_call_id": "default-content-call",
+            "content": {
+                "tool_input": {
+                    "text": DEFAULT_CONTENT_INPUT,
+                    "truncated": false,
+                    "bytes": DEFAULT_CONTENT_INPUT.len()
+                },
+                "tool_output": {
+                    "text": DEFAULT_CONTENT_OUTPUT,
+                    "truncated": false,
+                    "bytes": DEFAULT_CONTENT_OUTPUT.len()
+                }
+            }
+        })],
+    );
+    let out = support::report_intake(env, &payload);
+    assert!(
+        out.status.success(),
+        "the intake failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    world.last_output = Some(out);
+}
+
+#[then("the record drops the complete content")]
+fn record_drops_the_complete_content(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let bytes = support::store_bytes(&env.root());
+    let store = String::from_utf8_lossy(&bytes);
+    for marker in [DEFAULT_CONTENT_INPUT, DEFAULT_CONTENT_OUTPUT] {
+        assert!(
+            !store.contains(marker),
+            "the store carries the complete content: {store}"
+        );
+    }
+    // Not vacuous: the tool call itself was recorded.
+    let entries = support::record_entries(&env.root());
+    assert!(
+        entries
+            .iter()
+            .any(|entry| entry["kind"] == json!("tool") && entry["name"] == json!("Bash")),
+        "the default-mode intake dropped the event instead of its content: {entries:#?}"
+    );
+}
+
+#[then("no entry carries a data.content object")]
+fn no_entry_carries_a_content_object(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let entries = support::record_entries(&env.root());
+    let carrying: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| entry["data"].get("content").is_some())
+        .collect();
+    assert!(
+        carrying.is_empty(),
+        "the default mode stored a content object: {carrying:#?}"
+    );
+}
+
+#[then("the record keeps the tool call's metadata")]
+fn record_keeps_the_tool_calls_metadata(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let change = world
+        .last_change_id
+        .clone()
+        .expect("the default-mode fixture ran first");
+    let entries = support::record_entries(&env.root());
+    let tool = entries
+        .iter()
+        .find(|entry| {
+            entry["kind"] == json!("tool")
+                && entry["source"] == json!("agent")
+                && entry["scope"] == json!({ "kind": "change", "id": change })
+        })
+        .unwrap_or_else(|| panic!("the intake recorded no tool entry: {entries:#?}"));
+    assert_eq!(tool["name"], json!("Bash"), "the tool name is gone: {tool}");
+    assert_eq!(
+        tool["label"],
+        json!("cargo test --locked"),
+        "the bounded label is gone: {tool}"
+    );
+    assert_eq!(
+        tool["duration_ms"],
+        json!(DEFAULT_TOOL_MS),
+        "the measured duration is gone: {tool}"
+    );
+    assert_eq!(
+        tool["outcome"],
+        json!("ok"),
+        "the reported outcome is gone: {tool}"
+    );
+    assert_eq!(
+        tool["session"],
+        json!("fixture-session"),
+        "the payload's session envelope is gone: {tool}"
+    );
+    assert_eq!(
+        tool["data"]["tool_call_id"],
+        json!("default-content-call"),
+        "the tool call id is gone: {tool}"
+    );
+}
