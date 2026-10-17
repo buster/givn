@@ -128,8 +128,9 @@ enum Commands {
     /// or, with the `ingest` subcommand, the agent intake that appends one
     /// reported payload's events.
     ///
-    /// Reading never records: the read view runs without a recorder, so the
-    /// store keeps exactly the lines it had. The intake records normally.
+    /// Reading never records: the read view and the `settings` mode query run
+    /// without a recorder, so the store keeps exactly the lines it had. The
+    /// intake records normally.
     History {
         /// The intake subcommand; without it the command is the read view.
         #[command(subcommand)]
@@ -274,6 +275,17 @@ enum HistoryCommands {
         #[arg(long)]
         harness: String,
     },
+    /// Report the project's resolved record mode and where it came from.
+    ///
+    /// Human output is `record mode: <mode> (source: <config|default>)`;
+    /// `--json` prints `{"mode": …, "source": …}`. A read view: the query
+    /// appends no `command` entry, so a reporter's mode discovery never
+    /// changes the record.
+    Settings {
+        /// Emit the machine-readable payload.
+        #[arg(long)]
+        json: bool,
+    },
 }
 
 #[derive(Subcommand)]
@@ -399,16 +411,19 @@ fn main() {
     }
 }
 
-/// Whether this invocation records. The record's two read views — `givn
-/// history` without its intake subcommand, and `givn timeline` — are
-/// deliberately not recorded: an inspection that appended an entry about itself
-/// would put the newest entry into every report it produced (design-review Q8).
-/// Every other command records normally, the agent intake included — a
-/// reported payload is activity Givn recorded on the agent's behalf.
+/// Whether this invocation records. The record's read views — `givn history`
+/// without its intake subcommand, `givn history settings` (a reporter's cheap
+/// mode query), and `givn timeline` — are deliberately not recorded: an
+/// inspection that appended an entry about itself would put the newest entry
+/// into every report it produced (design-review Q8). Every other command
+/// records normally, the agent intake included — a reported payload is
+/// activity Givn recorded on the agent's behalf.
 fn records(command: &Commands) -> bool {
     match command {
         Commands::Timeline { .. } => false,
-        Commands::History { command, .. } => command.is_some(),
+        Commands::History { command, .. } => {
+            !matches!(command, None | Some(HistoryCommands::Settings { .. }))
+        }
         _ => true,
     }
 }
@@ -465,6 +480,7 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
                 Ok(())
             }
             Some(HistoryCommands::HarnessHook { harness }) => cli::history::harness_hook(&harness),
+            Some(HistoryCommands::Settings { json }) => cli::history::settings(json),
             None => cli::history::run(change.as_deref(), topic.as_deref(), json),
         },
         Commands::Timeline { change, topic, out } => {

@@ -72,7 +72,39 @@ const questionOf = (args) => {
   return bounded(typeof text === "string" ? text : QUESTION_TOOL)
 }
 
+/**
+ * The project's capture mode: one `givn history settings --json` subprocess
+ * query at session start, cached for the session. A failed or malformed query
+ * degrades to `on` — metadata only — and never blocks the harness's own work.
+ */
+const queryMode = (pi) => {
+  try {
+    return Promise.resolve(pi.exec("givn", ["history", "settings", "--json"])).then(
+      (output) => {
+        const text = typeof output === "string" ? output : output?.stdout
+        try {
+          const parsed = JSON.parse(String(text ?? ""))
+          return ["off", "on", "full"].includes(parsed.mode) ? parsed.mode : "on"
+        } catch {
+          return "on"
+        }
+      },
+      () => "on",
+    )
+  } catch {
+    return Promise.resolve("on")
+  }
+}
+
 export default function givnTimeline(pi) {
+  // The mode is resolved once per session. Under `off` the reporter skips its
+  // work entirely: no buffered event is ever flushed, and the intake refuses a
+  // stale payload too.
+  const mode = queryMode(pi)
+  let off = false
+  mode.then((resolved) => {
+    off = resolved === "off"
+  })
   // The session's open spans, keyed by the harness's own call id. omp emits no
   // durations, so each start carries the reporter's own stamp.
   const tools = new Map()
@@ -85,6 +117,7 @@ export default function givnTimeline(pi) {
   let warned = false
 
   const push = (event) => {
+    if (off) return
     if (buffer.length >= MAX_BUFFER) {
       dropped += 1
       if (!warned) {
@@ -101,6 +134,10 @@ export default function givnTimeline(pi) {
 
   /** Start one flush of the buffered events: one payload per boundary. */
   const flush = async () => {
+    if ((await mode) === "off") {
+      buffer = []
+      return
+    }
     if (buffer.length === 0) return
     const events = buffer
     buffer = []

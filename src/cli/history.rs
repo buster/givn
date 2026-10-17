@@ -948,6 +948,14 @@ pub fn harness_hook(harness: &str) -> Result<()> {
             return Ok(());
         }
     };
+    // The mode is resolved in-process, before any pending state is read or
+    // written: under `off` the hook exits `0` with one warning and never
+    // creates or extends a pending file, and never appends a store line.
+    let setting = crate::history::record_setting(&root);
+    if setting.mode == RecordMode::Off {
+        crate::history::warn_record_off();
+        return Ok(());
+    }
     let mut session = payload
         .session_id
         .as_deref()
@@ -973,7 +981,7 @@ pub fn harness_hook(harness: &str) -> Result<()> {
     let scope = crate::history::resolve_scope(&root);
     let mut batch = IntakeBatch::default();
     for event in events {
-        event.map(&scope, &mut batch, RecordMode::On);
+        event.map(&scope, &mut batch, setting.mode);
     }
     batch.finish(&scope);
     crate::history::ensure_ignored(&root);
@@ -1037,6 +1045,38 @@ pub fn run(change: Option<&str>, topic: Option<&str>, json: bool) -> Result<()> 
     Ok(())
 }
 
+/// `givn history settings [--json]` — report the project's resolved record mode
+/// and where it came from. A non-recorded read view (the recorder is not
+/// installed for it), so a reporter's mode query never appends a `command`
+/// entry.
+///
+/// Human output is `record mode: <mode> (source: <config|default>)`; `--json`
+/// prints `{"mode": …, "source": …}`. Both exit `0`. Outside a Givn project the
+/// command fails with `not a Givn project (givn/ not found)`.
+pub fn settings(json: bool) -> Result<()> {
+    let root = std::env::current_dir().context("resolve the project root")?;
+    if !root.join("givn").is_dir() {
+        anyhow::bail!("not a Givn project (givn/ not found)");
+    }
+    let setting = crate::history::record_setting(&root);
+    if json {
+        println!(
+            "{}",
+            serde_json::json!({
+                "mode": setting.mode.label(),
+                "source": setting.source.label(),
+            })
+        );
+    } else {
+        println!(
+            "record mode: {} (source: {})",
+            setting.mode.label(),
+            setting.source.label()
+        );
+    }
+    Ok(())
+}
+
 /// `givn history ingest` — read one JSON payload from stdin and store the
 /// events it accepts.
 ///
@@ -1058,12 +1098,22 @@ pub fn ingest(with_full_content: bool) -> Result<IntakeOutcome> {
             return Ok(IntakeOutcome::UnreadablePayload);
         }
     };
+    // The project's durable mode is the control; `off` is absolute. The
+    // intake appends nothing, writes no pending state, and touches no
+    // record-side ignore entry — even for a payload carrying content and even
+    // with the one-shot `--with-full-content` override, which is ignored with
+    // this one warning.
+    let setting = crate::history::record_setting(&root);
+    if setting.mode == RecordMode::Off {
+        crate::history::warn_record_off();
+        return Ok(IntakeOutcome::Read);
+    }
     // The per-invocation override (tests and manual capture) raises this one
-    // payload to `full`; the default is the project's resolved mode.
+    // payload to `full`; otherwise the project's resolved mode applies.
     let mode = if with_full_content {
         RecordMode::Full
     } else {
-        RecordMode::On
+        setting.mode
     };
     // The scope every accepted event is recorded under: the payload's named
     // override (a scope this project does not have is a per-event rejection,

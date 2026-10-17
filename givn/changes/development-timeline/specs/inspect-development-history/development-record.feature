@@ -129,7 +129,7 @@ Feature: Development Record
     When the Maki session transcript holds no matching question
     Then the record keeps the bounded title label and no full question text
 
-  @givn.added @wip
+  @givn.added
   Scenario: The record can be turned off for a project
     Given a change "demo" whose record already holds entries
     When the project sets the record mode to "off"
