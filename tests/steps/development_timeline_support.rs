@@ -369,6 +369,67 @@ pub fn seed_linked_ideation_record(
     history.seed(env)
 }
 
+/// The subagent session lane the linked ideation group's `personas` phase
+/// carries: the session whose title names it in the fixture record.
+pub const IDEATION_SCOUT_LANE: &str = "Ideation.Scout";
+/// The spawning session lane the linked ideation group's `personas` phase
+/// carries beside the subagent's own lane.
+pub const IDEATION_WRITER_LANE: &str = "Ideation.Writer";
+
+/// The two recorded session ids the linked group's `personas` phase names.
+const IDEATION_SCOUT_SESSION: &str = "ideation-scout-1a2b3c4d";
+const IDEATION_WRITER_SESSION: &str = "ideation-writer-5e6f7a8b";
+
+/// Seed the record the linked-group browser scenario reads: the topic's
+/// marker-bearing entries (its `personas` and `event-storming` phases carry the
+/// topic report's statuses), two parallel sessions' work inside the `personas`
+/// phase — so the group's expanded `personas` card draws real lanes — and the
+/// change's own entries. Returns the written entries, both scopes included.
+pub fn seed_linked_ideation_sessions(
+    env: &common::TestEnv,
+    change: &str,
+    topic: &str,
+    markers: &[&str],
+) -> Vec<HistoryEntry> {
+    let mut history = SeededHistory::new();
+    push_ideation_topic_entries(&mut history, topic, markers);
+    push_ideation_persona_sessions(&mut history, topic);
+    push_change_entries(&mut history, change);
+    history.seed(env)
+}
+
+/// Two sessions' recorded work inside the `personas` phase: each session's own
+/// `session` entry carries the title its lane is named by, and each session's
+/// work entries keep the session id. Every instant sits between the `personas`
+/// marker and the `event-storming` marker, so the derivation places the work in
+/// `personas` rather than in a later ideation phase.
+fn push_ideation_persona_sessions(history: &mut SeededHistory, topic: &str) {
+    let scope = Scope::Ideation {
+        id: topic.to_string(),
+    };
+    let scout = history.point(
+        &scope,
+        "session",
+        "scout-session",
+        "2026-10-16T08:31:00.000Z",
+    );
+    history.session(scout, IDEATION_SCOUT_SESSION);
+    history.data(scout, serde_json::json!({ "title": IDEATION_SCOUT_LANE }));
+    let scout_turn = history.span(&scope, "turn", "turn", "2026-10-16T08:32:00.000Z", 60_000);
+    history.session(scout_turn, IDEATION_SCOUT_SESSION);
+    let writer = history.point(
+        &scope,
+        "session",
+        "writer-session",
+        "2026-10-16T08:33:00.000Z",
+    );
+    history.session(writer, IDEATION_WRITER_SESSION);
+    history.data(writer, serde_json::json!({ "title": IDEATION_WRITER_LANE }));
+    let writer_tool = history.span(&scope, "tool", "Write", "2026-10-16T08:34:00.000Z", 15_000);
+    history.label(writer_tool, "personas/developer.md");
+    history.session(writer_tool, IDEATION_WRITER_SESSION);
+}
+
 /// Seed a change's own record with no topic entries at all — the linked
 /// topic's directory exists, but its record predates the record. Returns the
 /// written change entries.

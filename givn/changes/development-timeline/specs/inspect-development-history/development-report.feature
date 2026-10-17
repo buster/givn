@@ -226,7 +226,7 @@ Feature: Development Report
     And the browser shows one lane per session beside each other
     And the browser shows the Fit, 1 h, and 15 m zoom controls
 
-  @givn.added @wip @e2e
+  @givn.added @e2e
   Scenario: Consumer reads a change's linked ideation group
     Given a change "demo" whose proposal links the ideation topic "ideas"
     And the topic's record holds the markers for personas and event storming
