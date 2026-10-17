@@ -17,6 +17,8 @@
 import { spawn } from "node:child_process"
 
 const HARNESS = "opencode"
+/** The question tool's harness name: its own call is a wait, not a tool span. */
+const QUESTION_TOOL = "question"
 /** The buffer is bounded so a long session cannot grow without limit. */
 const MAX_BUFFER = 1000
 
@@ -38,6 +40,38 @@ const toolSubject = (name, input) => {
   return bounded(typeof value === "string" && value.length > 0 ? value : name)
 }
 
+/** Every question and option label the harness carries, joined: the always-captured text. */
+const questionsText = (questions) => {
+  if (!Array.isArray(questions)) return undefined
+  const parts = []
+  for (const question of questions) {
+    if (typeof question?.question === "string") parts.push(question.question)
+    const options = Array.isArray(question?.options) ? question.options : []
+    for (const option of options) {
+      const label = typeof option === "string" ? option : option?.label
+      if (typeof label === "string") parts.push(label)
+    }
+  }
+  return parts.length > 0 ? parts.join("\n") : undefined
+}
+
+/** A form's fields as the question text: every field title and description joined. */
+const formText = (form) => {
+  const fields = form && typeof form === "object" && Array.isArray(form.fields) ? form.fields : []
+  const parts = []
+  for (const field of fields) {
+    if (typeof field?.title === "string") parts.push(field.title)
+    if (typeof field?.description === "string") parts.push(field.description)
+  }
+  return parts.length > 0 ? parts.join("\n") : undefined
+}
+
+/** The question text as the intake's wire shape; the intake re-applies the cap. */
+const reportedQuestion = (text) =>
+  typeof text === "string"
+    ? { text, truncated: false, bytes: Buffer.byteLength(text) }
+    : undefined
+
 /** opencode's `Tokens.Info` as the intake's `usage`, counts kept as reported. */
 const usageOf = (tokens) => {
   if (!tokens || typeof tokens !== "object") return undefined
@@ -45,6 +79,7 @@ const usageOf = (tokens) => {
   for (const [key, value] of [
     ["input", tokens.input],
     ["output", tokens.output],
+    ["reasoning", tokens.reasoning ?? tokens.reasoningTokens],
     ["cache_read", tokens.cacheRead ?? tokens.cache_read],
     ["cache_write", tokens.cacheWrite ?? tokens.cache_write],
     ["total_tokens", tokens.total ?? tokens.totalTokens ?? tokens.total_tokens],
@@ -162,7 +197,12 @@ export default {
       }
       tools.clear()
       for (const wait of waits.values()) {
-        push({ kind: "question", at: at(wait.created), label: wait.label })
+        push({
+          kind: "question",
+          at: at(wait.created),
+          label: wait.label,
+          question: wait.question,
+        })
       }
       waits.clear()
     }
@@ -186,31 +226,61 @@ export default {
             at: at(created),
             duration_ms: between(started, created),
             model: typeof data.model === "string" ? data.model : undefined,
+            stop_reason:
+              typeof (data.rawFinish ?? data.finish) === "string"
+                ? (data.rawFinish ?? data.finish)
+                : undefined,
+            cost: data.cost,
             usage: usageOf(data.tokens),
             status: type === "session.step.ended" ? "completed" : "failed",
           })
           break
         }
         case "session.tool.called":
-        case "session.tool.input.started":
+        case "session.tool.input.started": {
+          const name = typeof data.name === "string" ? data.name : data.tool
+          if (name === QUESTION_TOOL) {
+            const text = questionsText(data.input?.questions)
+            waits.set(data.id, {
+              created,
+              label: bounded(text ?? name),
+              question: reportedQuestion(text),
+            })
+            break
+          }
           tools.set(data.id, {
             created,
-            name: typeof data.name === "string" ? data.name : data.tool,
-            label: toolSubject(data.name, data.input),
+            name,
+            label: toolSubject(name, data.input),
           })
           break
+        }
         case "session.tool.success":
         case "session.tool.failed": {
           const start = tools.get(data.id)
           tools.delete(data.id)
           completed.add(data.id)
+          const duration = between(start?.created, created)
           push({
             kind: "tool",
             at: at(created),
             tool: start?.name ?? data.name,
             label: start?.label ?? toolSubject(data.name, data.input),
-            duration_ms: between(start?.created, created),
+            tool_call_id: typeof data.id === "string" ? data.id : undefined,
+            duration_ms: duration,
+            duration_source: duration === undefined ? undefined : "host",
             outcome: type === "session.tool.success" ? "ok" : "failed",
+            error:
+              type === "session.tool.failed" && typeof data.error === "string"
+                ? data.error
+                : undefined,
+            output_bytes:
+              typeof data.bytes === "number"
+                ? data.bytes
+                : typeof data.content === "string"
+                  ? Buffer.byteLength(data.content)
+                  : undefined,
+            result_meta: data.result_meta,
           })
           break
         }
@@ -223,6 +293,7 @@ export default {
               at: at(created),
               agent: typeof data.agent === "string" ? data.agent : undefined,
               subagent: data.id,
+              title: typeof data.title === "string" ? data.title : undefined,
               status: "started",
             })
           }
@@ -242,23 +313,34 @@ export default {
           })
           break
         }
-        case "permission.asked":
-        case "form.created":
+        case "permission.asked": {
           waits.set(data.id, {
             created,
             label: bounded(data.tool ?? data.title ?? type),
           })
           break
+        }
+        case "form.created": {
+          const form = data.form && typeof data.form === "object" ? data.form : {}
+          waits.set(form.id ?? data.id, {
+            created,
+            label: bounded(form.title ?? data.title ?? type),
+            question: reportedQuestion(formText(form)),
+          })
+          break
+        }
         case "permission.replied":
         case "form.replied":
         case "form.cancelled": {
-          const wait = waits.get(data.id)
-          waits.delete(data.id)
+          const key = data.requestID ?? data.form?.id ?? data.formID ?? data.id
+          const wait = waits.get(key)
+          waits.delete(key)
           if (!wait) break
           push({
             kind: "question",
             at: at(created),
             label: wait.label,
+            question: wait.question,
             duration_ms: between(wait.created, created),
             status: "completed",
           })
@@ -298,6 +380,7 @@ export default {
         "execute.before",
         guarded((event) => {
           if (typeof event?.id !== "string") return
+          if (event?.tool === QUESTION_TOOL) return
           if (!tools.has(event.id)) {
             // The hook is the pairing backstop: a call whose input event was
             // missed still gets its start stamped here.
@@ -312,6 +395,7 @@ export default {
         "execute.after",
         guarded((event) => {
           if (typeof event?.id !== "string" || completed.has(event.id)) return
+          if (event?.tool === QUESTION_TOOL) return
           const start = tools.get(event.id)
           tools.delete(event.id)
           push({

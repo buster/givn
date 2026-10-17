@@ -52,6 +52,7 @@ const usageOf = (message) => {
   for (const [key, value] of [
     ["input", usage.input],
     ["output", usage.output],
+    ["reasoning", usage.reasoning ?? usage.reasoningTokens],
     ["cache_read", usage.cacheRead ?? usage.cache_read],
     ["cache_write", usage.cacheWrite ?? usage.cache_write],
     ["total_tokens", usage.totalTokens ?? usage.total_tokens],
@@ -62,6 +63,82 @@ const usageOf = (message) => {
   const model = message.model ?? usage.model
   if (typeof model === "string" && model.length > 0) counts.model = model
   return counts
+}
+
+/** The cost the harness reports for the turn, real and list price where present. */
+const costOf = (message) => {
+  const usage = message && typeof message === "object" ? message.usage : undefined
+  if (!usage || typeof usage !== "object") return undefined
+  return usage.cost
+}
+
+/**
+ * The turn's context reading: the harness's own `getContextUsage()` first,
+ * then the usage counters and the message's context snapshot.
+ */
+const contextOf = (message, ctx) => {
+  const usage = message && typeof message === "object" ? message.usage : undefined
+  const snapshot = message && typeof message === "object" ? message.contextSnapshot : undefined
+  let size = usage?.contextTokens ?? snapshot?.contextTokens ?? snapshot?.tokens
+  let window = usage?.contextWindow ?? snapshot?.contextWindow ?? snapshot?.maxTokens
+  try {
+    const read = ctx?.getContextUsage?.()
+    if (read && typeof read === "object") {
+      size = read.tokens ?? read.contextTokens ?? size
+      window = read.contextWindow ?? read.maxTokens ?? window
+    }
+  } catch {
+    // A context read the harness does not provide is an absent reading.
+  }
+  return {
+    size: typeof size === "number" ? size : undefined,
+    window: typeof window === "number" ? window : undefined,
+  }
+}
+
+/** Every question and option label of an `ask` call, joined: the always-captured text. */
+const questionText = (args) => {
+  const questions = args && typeof args === "object" && Array.isArray(args.questions) ? args.questions : []
+  const parts = []
+  for (const question of questions) {
+    if (typeof question?.question === "string") parts.push(question.question)
+    const options = Array.isArray(question?.options) ? question.options : []
+    for (const option of options) {
+      const label = typeof option === "string" ? option : option?.label
+      if (typeof label === "string") parts.push(label)
+    }
+  }
+  return parts.length > 0 ? parts.join("\n") : undefined
+}
+
+/** The question text as the intake's wire shape; the intake re-applies the cap. */
+const reportedQuestion = (args) => {
+  const text = questionText(args)
+  return typeof text === "string"
+    ? { text, truncated: false, bytes: Buffer.byteLength(text) }
+    : undefined
+}
+
+/** The failed call's error text, from the result the harness reports. */
+const errorOf = (result, event) => {
+  const error = result && typeof result === "object" ? result.error : undefined
+  if (typeof error === "string") return error
+  return typeof event?.error === "string" ? event.error : undefined
+}
+
+/** The host's own result details: exit code, wall time, truncation counts. */
+const resultMetaOf = (result) => {
+  if (!result || typeof result !== "object") return undefined
+  const meta = {}
+  const keys = {
+    exit_code: result.exit_code ?? result.exitCode,
+    wall_time_ms: result.wall_time_ms ?? result.wallTimeMs,
+    truncated: result.truncated,
+  }
+  for (const [key, value] of Object.entries(keys)) {
+    if (value !== undefined) meta[key] = value
+  }
+  return Object.keys(meta).length > 0 ? meta : undefined
 }
 
 /** The first question of an `ask` call, as the bounded label the record keeps. */
@@ -171,7 +248,12 @@ export default function givnTimeline(pi) {
     }
     tools.clear()
     for (const question of questions.values()) {
-      push({ kind: "question", at: at(question.started), label: question.label })
+      push({
+        kind: "question",
+        at: at(question.started),
+        label: question.label,
+        question: question.question,
+      })
     }
     questions.clear()
   }
@@ -188,11 +270,12 @@ export default function givnTimeline(pi) {
     if (typeof event?.turnIndex === "number") turns.set(event.turnIndex, Date.now())
   })
 
-  pi.on("turn_end", async (event) => {
+  pi.on("turn_end", async (event, ctx) => {
     const index = typeof event?.turnIndex === "number" ? event.turnIndex : undefined
     const started = index === undefined ? undefined : turns.get(index)
     if (index !== undefined) turns.delete(index)
     const message = event?.message
+    const context = contextOf(message, ctx)
     push({
       kind: "turn",
       at: at(Date.now()),
@@ -200,6 +283,10 @@ export default function givnTimeline(pi) {
       duration_ms: measured(started),
       status: "completed",
       model: message && typeof message.model === "string" ? message.model : undefined,
+      stop_reason: typeof message?.stopReason === "string" ? message.stopReason : undefined,
+      cost: costOf(message),
+      context_size: context.size,
+      context_window: context.window,
       usage: usageOf(message),
     })
     materialize()
@@ -209,7 +296,11 @@ export default function givnTimeline(pi) {
   pi.on("tool_execution_start", (event) => {
     const started = Date.now()
     if (event?.toolName === QUESTION_TOOL) {
-      questions.set(event.toolCallId, { started, label: questionOf(event.args) })
+      questions.set(event.toolCallId, {
+        started,
+        label: questionOf(event.args),
+        question: reportedQuestion(event.args),
+      })
       return
     }
     tools.set(event.toolCallId, {
@@ -227,6 +318,7 @@ export default function givnTimeline(pi) {
         kind: "question",
         at: at(Date.now()),
         label: question.label,
+        question: question.question,
         duration_ms: measured(question.started),
         status: "completed",
       })
@@ -234,13 +326,22 @@ export default function givnTimeline(pi) {
     }
     const start = tools.get(event?.toolCallId)
     tools.delete(event?.toolCallId)
+    const result = event?.result ?? event?.toolResult
     push({
       kind: "tool",
       at: at(Date.now()),
       tool: start?.tool ?? event?.toolName,
       label: start?.label ?? toolSubject(event?.toolName, event?.args),
+      tool_call_id: typeof event?.toolCallId === "string" ? event.toolCallId : undefined,
       duration_ms: measured(start?.started),
+      duration_source: measured(start?.started) === undefined ? undefined : "reporter",
       outcome: event?.isError ? "failed" : "ok",
+      error: event?.isError ? errorOf(result, event) : undefined,
+      output_bytes:
+        result && typeof result === "object" && typeof result.bytes === "number"
+          ? result.bytes
+          : undefined,
+      result_meta: resultMetaOf(result),
     })
   })
 

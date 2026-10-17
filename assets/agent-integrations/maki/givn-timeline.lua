@@ -299,6 +299,76 @@ local function record_mode()
   return mode
 end
 
+-- The live transcript's last blocking `question` tool call, joined into the
+-- always-captured text. `maki.session.messages` is the live transcript and
+-- needs no permission beyond the reporter's existing grants; a transcript with
+-- no matching call (a permission prompt, plan form, or Lua float also produces
+-- `needs_input`) yields no text, never an invented one.
+local function transcript_question()
+  local ok, messages = pcall(function()
+    return maki.session.messages({ last = 50 })
+  end)
+  if not ok or type(messages) ~= "table" then
+    return nil
+  end
+  local questions = nil
+  for _, message in ipairs(messages) do
+    if type(message) == "table" then
+      local parts = {}
+      local content = message.content
+      if type(content) == "table" then
+        if content.type ~= nil then
+          parts[#parts + 1] = content
+        else
+          for _, part in ipairs(content) do
+            parts[#parts + 1] = part
+          end
+        end
+      end
+      if type(message.tool_calls) == "table" then
+        for _, call in ipairs(message.tool_calls) do
+          parts[#parts + 1] = call
+        end
+      end
+      for _, part in ipairs(parts) do
+        if
+          type(part) == "table"
+          and part.type == "tool_use"
+          and part.name == "question"
+          and type(part.input) == "table"
+          and type(part.input.questions) == "table"
+          and #part.input.questions > 0
+        then
+          questions = part.input.questions
+        end
+      end
+    end
+  end
+  if not questions then
+    return nil
+  end
+  local joined = {}
+  for _, question in ipairs(questions) do
+    if type(question) == "table" then
+      if type(question.question) == "string" then
+        joined[#joined + 1] = question.question
+      end
+      if type(question.options) == "table" then
+        for _, option in ipairs(question.options) do
+          local label = type(option) == "table" and option.label or option
+          if type(label) == "string" then
+            joined[#joined + 1] = label
+          end
+        end
+      end
+    end
+  end
+  if #joined == 0 then
+    return nil
+  end
+  return table.concat(joined, "\n")
+end
+
 -- The callback table, exported so a test driver can drive a handler directly;
 -- the host reaches the same table through `setup()`.
 local handlers = {}
@@ -334,7 +404,10 @@ handlers.ToolDone = function(ev)
   end
   if duration ~= nil then
     event.duration_ms = duration
+    event.duration_source = data.duration_ms ~= nil and "host" or "reporter"
   end
+  event.tool_call_id = data.tool_id
+  event.output_bytes = data.bytes
   push(event)
 end
 
@@ -360,8 +433,13 @@ handlers.TurnEnd = function(ev)
     at = at_now(),
     turn = data.num_turns,
     status = outcome,
+    stop_reason = data.reason,
     model = state.model,
     usage = usage_of(data.usage),
+    cost = data.cost,
+    list_cost = data.list_cost,
+    context_size = data.context_size,
+    context_window = data.context_window,
   }
   -- A turn with no TurnStart (a headless or ACP session) is recorded
   -- unmeasured rather than invented.
@@ -378,6 +456,8 @@ handlers.TurnError = function(ev)
     kind = "turn",
     at = at_now(),
     status = "failed",
+    stop_reason = data.reason,
+    error = data.error,
     model = state.model,
   }
   event.duration_ms = measured(state.turn_started)
@@ -414,18 +494,27 @@ handlers.SessionStatusChanged = function(ev)
       label = "needs input"
     end
     state.wait_label = label:match("^[^\n]*") or "needs input"
+    state.wait_title = label
     return
   end
   if data.status == "working" and state.wait_started then
+    -- At the wait's close the live transcript names the blocking question
+    -- tool call; a transcript without one keeps the bounded title only.
+    local text = transcript_question()
     local event = {
       kind = "question",
       at = at_now(),
       label = state.wait_label or "needs input",
+      title = state.wait_title,
       duration_ms = measured(state.wait_started),
       status = "completed",
     }
+    if text then
+      event.question = { text = text, truncated = false, bytes = #text }
+    end
     state.wait_started = nil
     state.wait_label = nil
+    state.wait_title = nil
     push(event)
   end
 end

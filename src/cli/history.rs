@@ -16,8 +16,8 @@ use serde_json::Value;
 
 use crate::history::{
     BoundedText, HistoryEntry, HistoryStore, OUTCOME_UNKNOWN, PendingStart, PendingState,
-    RecordMode, Scope, USAGE_UNAVAILABLE, bound_content, bound_question, parse_rfc3339_ms,
-    reported_label, store_path,
+    RecordMode, Scope, USAGE_UNAVAILABLE, bound_content, bound_error, bound_question,
+    bound_result_meta, bound_text_metadata, parse_rfc3339_ms, reported_label, store_path,
 };
 
 /// The intake's payload-level failure exit code: stdin was not readable JSON
@@ -57,6 +57,10 @@ impl IntakeOutcome {
 /// overrides and the events themselves.
 #[derive(Debug, Default, serde::Deserialize)]
 pub struct IntakePayload {
+    /// The harness session every event of this flush belongs to: the entry
+    /// envelope carries it once (`session`), so a report can group a session.
+    #[serde(default)]
+    pub session: Option<String>,
     /// The change this flush's events belong to; wins over the topic and over
     /// the binary's own resolution.
     #[serde(default)]
@@ -109,6 +113,48 @@ pub struct IngestedEvent {
     /// (`kind: "turn"`): its absence is a signal the record keeps as absent.
     #[serde(default)]
     pub usage: Option<Usage>,
+    /// The harness's own stop reason for the turn (`kind: "turn"`): a raw
+    /// word, kept verbatim and bounded as short descriptive text.
+    #[serde(default)]
+    pub stop_reason: Option<String>,
+    /// The turn's cost as the harness reports it (real and list price where
+    /// present) (`kind: "turn"`).
+    #[serde(default)]
+    pub cost: Option<Value>,
+    /// The list-price cost, where the harness reports it beside the real one
+    /// (`kind: "turn"`).
+    #[serde(default)]
+    pub list_cost: Option<Value>,
+    /// The turn's context size, where the harness measures one
+    /// (`kind: "turn"`).
+    #[serde(default)]
+    pub context_size: Option<u64>,
+    /// The model's context window, where the harness reports one
+    /// (`kind: "turn"`).
+    #[serde(default)]
+    pub context_window: Option<u64>,
+    /// The harness's own tool call id (`kind: "tool"`).
+    #[serde(default)]
+    pub tool_call_id: Option<String>,
+    /// The failed call's error text (`kind: "tool"`): the intake keeps its
+    /// first line within the error bound.
+    #[serde(default)]
+    pub error: Option<String>,
+    /// The tool output's size in bytes (`kind: "tool"`).
+    #[serde(default)]
+    pub output_bytes: Option<u64>,
+    /// The host's own result details (`kind: "tool"`): exit code, wall time,
+    /// truncation counts — bounded short values only.
+    #[serde(default)]
+    pub result_meta: Option<Value>,
+    /// Whether the measured duration came from the host or from the reporter
+    /// (`host` or `reporter`, `kind: "tool"`).
+    #[serde(default)]
+    pub duration_source: Option<String>,
+    /// A short descriptive value the record keeps bounded: a subagent's title,
+    /// a notification text, or another metadata label.
+    #[serde(default)]
+    pub title: Option<String>,
     /// The complete question text the reporter captured (`kind: "question"`):
     /// the one content value stored in every mode, under the question bound.
     #[serde(default)]
@@ -130,6 +176,9 @@ pub struct Usage {
     /// Tokens the model produced.
     #[serde(default)]
     pub output: Option<u64>,
+    /// Tokens the model produced as reasoning, where the harness reports them.
+    #[serde(default)]
+    pub reasoning: Option<u64>,
     /// Prompt tokens served from the prompt cache.
     #[serde(default)]
     pub cache_read: Option<u64>,
@@ -157,6 +206,7 @@ impl Usage {
         for (key, count) in [
             ("input", self.input),
             ("output", self.output),
+            ("reasoning", self.reasoning),
             ("cache_read", self.cache_read),
             ("cache_write", self.cache_write),
             ("total_tokens", self.total_tokens),
@@ -188,7 +238,10 @@ impl IngestedEvent {
             ));
         }
         match self.kind.as_str() {
-            "tool" if self.tool.is_some() => Ok(()),
+            "tool" if self.tool.is_some() => match self.duration_source.as_deref() {
+                None | Some("host") | Some("reporter") => Ok(()),
+                Some(other) => Err(format!("unknown duration_source `{other}`")),
+            },
             "tool" => Err("missing required field `tool`".to_string()),
             "subagent" if self.subagent.is_some() => Ok(()),
             "subagent" => Err("missing required field `subagent`".to_string()),
@@ -254,12 +307,63 @@ impl IngestedEvent {
         let mut entry = HistoryEntry::reported(scope.clone(), "turn", &name, &self.at);
         entry.duration_ms = self.duration_ms;
         entry.outcome = self.outcome_word();
-        if self.usage.is_none() {
-            // Gap honesty: a turn the harness did not measure is still a turn,
-            // and its usage is marked unavailable — never a zero-filled usage
-            // entry and never a fabricated model.
-            entry.data = Some(serde_json::json!({ "usage": USAGE_UNAVAILABLE }));
+        let mut data = serde_json::Map::new();
+        if let Some(index) = self.turn {
+            data.insert("index".to_string(), Value::from(index));
         }
+        // Gap honesty: a turn the harness did not measure records no model —
+        // the usage and its model arrive together, and an unmeasured turn is
+        // marked unavailable rather than filled with a bare model name.
+        if let Some(model) = &self.model
+            && self.usage.is_some()
+        {
+            data.insert("model".to_string(), Value::String(model.clone()));
+        }
+        if let Some(reason) = &self.stop_reason {
+            data.insert(
+                "stop_reason".to_string(),
+                Value::String(bound_text_metadata(reason)),
+            );
+        }
+        match &self.usage {
+            Some(usage) => {
+                data.insert(
+                    "usage".to_string(),
+                    usage.data(self.model.as_deref(), self.subagent.as_deref()),
+                );
+            }
+            None => {
+                // Gap honesty: a turn the harness did not measure is still a
+                // turn, and its usage is marked unavailable — never a
+                // zero-filled usage and never a fabricated model.
+                data.insert(
+                    "usage".to_string(),
+                    Value::String(USAGE_UNAVAILABLE.to_string()),
+                );
+            }
+        }
+        if let Some(cost) = &self.cost {
+            data.insert("cost".to_string(), cost.clone());
+        }
+        if let Some(cost) = &self.list_cost {
+            data.insert("list_cost".to_string(), cost.clone());
+        }
+        if let Some(error) = &self.error {
+            data.insert("error".to_string(), Value::String(bound_error(error)));
+        }
+        if let Some(size) = self.context_size {
+            data.insert("context_size".to_string(), Value::from(size));
+        }
+        if let Some(window) = self.context_window {
+            data.insert("context_window".to_string(), Value::from(window));
+        }
+        if let Some(title) = &self.title {
+            data.insert(
+                "title".to_string(),
+                Value::String(bound_text_metadata(title)),
+            );
+        }
+        entry.data = Some(Value::Object(data));
         self.attach_content(&mut entry, mode);
         let turn = batch.push(entry, batch.turn);
         batch.turn = Some(turn);
@@ -291,8 +395,21 @@ impl IngestedEvent {
         entry.label = Some(reported_label("question", question));
         entry.duration_ms = self.duration_ms;
         entry.outcome = self.outcome_word();
+        let mut data = serde_json::Map::new();
         if let Some(question) = &self.question {
-            entry.data = Some(serde_json::json!({ "question": bound_question(question) }));
+            data.insert(
+                "question".to_string(),
+                serde_json::json!(bound_question(question)),
+            );
+        }
+        if let Some(title) = &self.title {
+            data.insert(
+                "title".to_string(),
+                Value::String(bound_text_metadata(title)),
+            );
+        }
+        if !data.is_empty() {
+            entry.data = Some(Value::Object(data));
         }
         self.attach_content(&mut entry, mode);
         entry
@@ -320,6 +437,31 @@ impl IngestedEvent {
             .map(|label| reported_label("tool", label));
         entry.duration_ms = self.duration_ms;
         entry.outcome = self.outcome_word();
+        let mut data = serde_json::Map::new();
+        if let Some(id) = &self.tool_call_id {
+            data.insert("tool_call_id".to_string(), Value::String(id.clone()));
+        }
+        if let Some(error) = &self.error {
+            data.insert("error".to_string(), Value::String(bound_error(error)));
+        }
+        if let Some(bytes) = self.output_bytes {
+            data.insert("output_bytes".to_string(), Value::from(bytes));
+        }
+        if let Some(meta) = &self.result_meta {
+            data.insert("result_meta".to_string(), bound_result_meta(meta));
+        }
+        if let Some(source) = &self.duration_source {
+            data.insert("duration_source".to_string(), Value::String(source.clone()));
+        }
+        if let Some(title) = &self.title {
+            data.insert(
+                "title".to_string(),
+                Value::String(bound_text_metadata(title)),
+            );
+        }
+        if !data.is_empty() {
+            entry.data = Some(Value::Object(data));
+        }
         self.attach_content(&mut entry, mode);
         entry
     }
@@ -382,6 +524,14 @@ impl IngestedEvent {
         });
         entry.outcome = outcome.to_string();
         entry.data = Some(subagent_data(agent.as_deref(), identity));
+        if let Some(title) = &self.title
+            && let Some(data) = entry.data.as_mut().and_then(Value::as_object_mut)
+        {
+            data.insert(
+                "title".to_string(),
+                Value::String(bound_text_metadata(title)),
+            );
+        }
         if self.usage.is_none() {
             // Gap honesty: a harness that never reports a subagent's tokens
             // marks the span's usage unavailable, never zero.
@@ -457,6 +607,13 @@ pub struct HarnessPayload {
     /// The harness's own call id, on tool events.
     #[serde(default)]
     pub tool_use_id: Option<String>,
+    /// The failed call's error text, on `PostToolUseFailure`.
+    #[serde(default)]
+    pub error: Option<String>,
+    /// The tool's own response, on `PostToolUse`: its size is the recorded
+    /// output size.
+    #[serde(default)]
+    pub tool_response: Option<Value>,
     /// The harness's own measured duration, on completion events.
     #[serde(default)]
     pub duration_ms: Option<u64>,
@@ -546,6 +703,55 @@ fn question_subject(input: Option<&Value>) -> Option<String> {
     Some(reported_label("question", question))
 }
 
+/// Every question and option label of a question tool's input, joined: the
+/// always-captured text the record keeps in `data.question`. `None` when the
+/// payload carries no question text at all.
+fn question_text(input: Option<&Value>) -> Option<String> {
+    let questions = input
+        .and_then(Value::as_object)
+        .and_then(|input| input.get("questions"))
+        .and_then(Value::as_array)?;
+    let mut parts: Vec<String> = Vec::new();
+    for question in questions {
+        if let Some(text) = question.get("question").and_then(Value::as_str) {
+            parts.push(text.to_string());
+        }
+        if let Some(options) = question.get("options").and_then(Value::as_array) {
+            for option in options {
+                let label = option
+                    .get("label")
+                    .and_then(Value::as_str)
+                    .or_else(|| option.as_str());
+                if let Some(label) = label {
+                    parts.push(label.to_string());
+                }
+            }
+        }
+    }
+    (!parts.is_empty()).then(|| parts.join("\n"))
+}
+
+/// The question text as the wire shape the intake accepts: `{text, truncated,
+/// bytes}` with the reporter's own measurement (the intake re-caps it).
+fn reported_question(input: Option<&Value>) -> Option<BoundedText> {
+    question_text(input).map(|text| BoundedText {
+        bytes: text.len(),
+        truncated: false,
+        text,
+    })
+}
+
+/// The byte size of a tool response: a string's own bytes, otherwise the
+/// response's serialized size — what the harness reported as output.
+fn tool_response_bytes(response: &Value) -> u64 {
+    match response {
+        Value::String(text) => text.len() as u64,
+        other => serde_json::to_string(other)
+            .map(|text| text.len() as u64)
+            .unwrap_or(0),
+    }
+}
+
 /// One reported event from the mapper's own reading of the harness's payload.
 fn reported_event(kind: &str, at: &str) -> IngestedEvent {
     IngestedEvent {
@@ -561,6 +767,17 @@ fn reported_event(kind: &str, at: &str) -> IngestedEvent {
         turn: None,
         model: None,
         usage: None,
+        stop_reason: None,
+        cost: None,
+        list_cost: None,
+        context_size: None,
+        context_window: None,
+        tool_call_id: None,
+        error: None,
+        output_bytes: None,
+        result_meta: None,
+        duration_source: None,
+        title: None,
         question: None,
         content: None,
     }
@@ -671,20 +888,31 @@ fn map_tool_end(payload: &HarnessPayload, pending: &mut PendingState) -> Vec<Ing
         question.duration_ms = payload
             .duration_ms
             .or_else(|| measured_from(start.as_ref(), now));
+        question.question = reported_question(payload.tool_input.as_ref());
         question.outcome = Some(if failed { "failed" } else { "ok" }.to_string());
         events.push(question);
     } else {
         let mut tool_event = reported_event("tool", &at);
         tool_event.tool = Some(tool.clone());
+        tool_event.tool_call_id = payload.tool_use_id.clone();
         tool_event.label = Some(
             start
                 .as_ref()
                 .and_then(|start| start.label.clone())
                 .unwrap_or_else(|| tool_subject(&tool, payload.tool_input.as_ref())),
         );
-        tool_event.duration_ms = payload
-            .duration_ms
-            .or_else(|| measured_from(start.as_ref(), now));
+        let host_duration = payload.duration_ms;
+        tool_event.duration_ms = host_duration.or_else(|| measured_from(start.as_ref(), now));
+        tool_event.duration_source = tool_event.duration_ms.map(|_| {
+            if host_duration.is_some() {
+                "host"
+            } else {
+                "reporter"
+            }
+            .to_string()
+        });
+        tool_event.error = if failed { payload.error.clone() } else { None };
+        tool_event.output_bytes = payload.tool_response.as_ref().map(tool_response_bytes);
         tool_event.outcome = Some(if failed { "failed" } else { "ok" }.to_string());
         events.push(tool_event);
     }
@@ -784,11 +1012,33 @@ fn map_subagent_stop(payload: &HarnessPayload, pending: &mut PendingState) -> Ve
 /// its usage marked unavailable.
 fn map_turn_end(payload: &HarnessPayload) -> Vec<IngestedEvent> {
     let usage = session_record_usage(payload.transcript_path.as_deref());
+    let cost = session_record_cost(payload.transcript_path.as_deref());
     let mut event = reported_event("turn", &crate::history::now_rfc3339());
     event.status = Some("completed".to_string());
     event.model = usage.as_ref().and_then(|usage| usage.model.clone());
     event.usage = usage;
+    event.cost = cost;
     vec![event]
+}
+
+/// The session cost rollup one harness session record reports: the last
+/// `cost-state` entry's `totalCostUSD`, kept as the number the harness wrote.
+/// `None` when the record carries no rollup.
+fn session_record_cost(path: Option<&Path>) -> Option<Value> {
+    let text = std::fs::read_to_string(path?).ok()?;
+    let mut cost = None;
+    for line in text.lines().filter(|line| !line.trim().is_empty()) {
+        let Ok(record) = serde_json::from_str::<Value>(line) else {
+            continue;
+        };
+        if record.get("type").and_then(Value::as_str) != Some("cost-state") {
+            continue;
+        }
+        if let Some(total) = record.get("totalCostUSD") {
+            cost = Some(total.clone());
+        }
+    }
+    cost
 }
 
 /// The token usage one harness session record reports for its current turn:
@@ -835,6 +1085,7 @@ fn is_prompt(record: &Value) -> bool {
 struct SessionUsage {
     input: u64,
     output: u64,
+    reasoning: u64,
     cache_read: u64,
     cache_write: u64,
     model: Option<String>,
@@ -857,13 +1108,19 @@ impl SessionUsage {
         let count = |key: &str| usage.get(key).and_then(Value::as_u64).unwrap_or_default();
         let input = count("input_tokens");
         let output = count("output_tokens");
+        let reasoning = usage
+            .get("output_tokens_details")
+            .and_then(|details| details.get("thinking_tokens"))
+            .and_then(Value::as_u64)
+            .unwrap_or_default();
         let cache_read = count("cache_read_input_tokens");
         let cache_write = count("cache_creation_input_tokens");
-        if input + output + cache_read + cache_write == 0 {
+        if input + output + reasoning + cache_read + cache_write == 0 {
             return;
         }
         self.input += input;
         self.output += output;
+        self.reasoning += reasoning;
         self.cache_read += cache_read;
         self.cache_write += cache_write;
         self.counted = true;
@@ -877,6 +1134,7 @@ impl SessionUsage {
         Some(Usage {
             input: Some(self.input),
             output: Some(self.output),
+            reasoning: (self.reasoning > 0).then_some(self.reasoning),
             cache_read: Some(self.cache_read),
             cache_write: Some(self.cache_write),
             total_tokens: Some(
@@ -979,11 +1237,15 @@ pub fn harness_hook(harness: &str) -> Result<()> {
         return Ok(());
     }
     let scope = crate::history::resolve_scope(&root);
+    let session_id = payload.session_id.clone();
     let mut batch = IntakeBatch::default();
     for event in events {
         event.map(&scope, &mut batch, setting.mode);
     }
     batch.finish(&scope);
+    for entry in &mut batch.entries {
+        entry.session = session_id.clone();
+    }
     crate::history::ensure_ignored(&root);
     let store = HistoryStore::at(store_path(&root));
     if let Err(error) = store.append_linked(&mut batch.entries, &batch.parents) {
@@ -1118,12 +1380,17 @@ pub fn ingest(with_full_content: bool) -> Result<IntakeOutcome> {
     // The scope every accepted event is recorded under: the payload's named
     // override (a scope this project does not have is a per-event rejection,
     // never a silent fallback) or the project's own resolution.
+    let session = payload.session.clone();
     let scope = payload_scope(&root, &payload);
     let IntakeBatch {
         mut entries,
         parents,
         ..
     } = accepted_entries(&scope, payload.events, mode);
+    // The payload header is the session every entry of this flush belongs to.
+    for entry in &mut entries {
+        entry.session = session.clone();
+    }
     if entries.is_empty() {
         return Ok(IntakeOutcome::Read);
     }
