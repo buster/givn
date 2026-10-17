@@ -32,7 +32,9 @@ Color roles. Every role is a semantic name first, a value second.
 | `--color-lane-c` | `#d08a2f` | Third recorded session lane. |
 
 The lane hues stay distinguishable in greyscale (they differ in lightness, not
-only in hue), so a printed or monochrome report still separates lanes. Phase
+only in hue), so a printed or monochrome report still separates lanes; lanes
+beyond the four defined hues cycle them, and the lane name — never the hue —
+carries identity. Phase
 status uses `ok` (done), `warn` (active), `text-muted` (queued), and
 `surface-raised` with a dashed border (skipped).
 
@@ -56,8 +58,8 @@ else floats.
 | Primitive | States | Rules |
 |---|---|---|
 | Phase card | collapsed, expanded, active, done, queued, skipped, keyboard focus | One card per workflow phase, top to bottom; the header is an expander button with `aria-expanded`; the accessible name is `<phase>, <status>, <duration>`; the card shows wall/active/waiting, tools, subagents, and a decorative activity sparkline. |
-| Phase lane | default, hover, focus, selected, no-attributable-calls | One lane per recorded session inside an expanded phase; a lane that holds a subagent span is named by the recorded subagent, otherwise by the session's short id; the accessible name is `<lane>, <duration>`; a lane with no attributable entries states that in its log instead of inventing them. |
-| Lane tick | default, failed, repeated, aggregate, focus | One tick per entry at readable zoom; a failing entry uses `error`, a repeated-step member uses `warn`; an aggregate tick names how many entries and their total duration; the accessible name carries kind, label, and duration. |
+| Phase lane | default, hover, focus, selected, no-attributable-calls | One lane per recorded session inside an expanded phase; a lane is named by a subagent span only when the span's `data.subagent` equals the lane's session id, otherwise by the recorded session title, else by the session's short id; a lane that merely contains a subagent span keeps its own name; the lane header (not the lane column) is the button, with accessible name `<lane>, <duration>`; a lane with no attributable entries states that in its log instead of inventing them. |
+| Lane tick | default, failed, repeated, aggregate, focus | One tick per entry when the current zoom's time-per-pixel permits; a failing entry uses `error`, a repeated-step member uses `warn`; an aggregate tick names how many entries and their total duration and is applied at every zoom, so a dense 15 m window still renders a bounded number of ticks; the accessible name carries kind, label, and duration. |
 | Phase sparkline | decorative | Activity density across the phase; `aria-hidden`, never the only carrier of a fact. |
 | Zoom control | default, hover, focus, disabled at the zoom limit | Per expanded phase; visible text labels `Fit` / `1 h` / `15 m`, never an icon alone. |
 | Lane log | open, empty | A labelled region below the phase axis; lists the selected lane's entries with time, kind, label, duration, and outcome, and renders bounded content when captured; an empty lane names why. |
@@ -88,13 +90,15 @@ internal identifier or state name appears in visible text.
   `Enter`/`Space`; the expanded phase can be collapsed with `Escape`.
 - Semantics: one `h1`, `header`/`main` landmarks, the phase expanders carry
   `aria-expanded`, each expanded phase and the lane log are labelled regions,
-  and every lane and tick is exposed with its accessible name rather than as
-  undifferentiated graphics.
+  the lane header (not the lane column) is a button and ticks are separate
+  focusable elements, and every lane and tick is exposed with its accessible
+  name rather than as undifferentiated graphics.
 - Language: the document declares the configured language; all visible copy is
   English in this project.
 - Verification: the change that owns a screen asserts these in its browser
-  tier — control labels, heading, landmark presence, focus order, and the
-  reduced-motion behaviour — rather than leaving them to review prose.
+  tier — control labels, heading, landmark presence, focus order, the
+  reduced-motion behaviour, and the mobile one-column layout without page-level
+  horizontal overflow — rather than leaving them to review prose.
 
 ## Motion
 
@@ -114,11 +118,14 @@ disabled, so the captured state never depends on timing.
 
 Five concrete directions were prepared so the operator could choose one
 (`Style tile`: a rendered, concrete design option proposed when no approved
-design exists). Each view is a rendered reference, not a pixel specification.
-The operator approved the **hybrid workflow** (view 4) on 2026-10-17; the dense
-timeline (view 1), phase lanes (view 2), and dashboard (view 3) remain here as
-reference alternatives, and `design.md` records the approved direction in its
-Visual Design Contract and in its `Decides D6` ledger entry.
+design exists). Each view is a rendered reference, not a pixel specification;
+the views are illustrative, and the authoritative phase list is the nine
+workflow phases in `design.md` (the view-4 drawing shows a subset at a small
+canvas size). The operator approved the **hybrid workflow** (view 4) on
+2026-10-17; the dense timeline (view 1), phase lanes (view 2), and dashboard
+(view 3) remain here as reference alternatives, and `design.md` records the
+approved direction in its Visual Design Contract and in its `Decides D6`
+ledger entry.
 
 ### View 1 — Dense timeline (reference alternative)
 

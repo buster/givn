@@ -1009,12 +1009,14 @@ a tracked file's modification anyway. The Fossil entry is `givn/history/*`, not
 the embedded report asset: the CSS, JavaScript, and SVG are inline, the record
 model arrives as one machine-readable payload element (which the file's own
 script parses) plus the text-only initial view the file carries, and nothing is
-fetched. The document renders from the embedded timestamps alone, so a given
-record always produces the same pixels and the browser tier can assert rendered values
-deterministically. The details panel renders the captured facts (session and
-title, status, stop reason, model, cost, context size/window, tool call id,
-output bytes, bounded error, parent/agent, retry, permission mode) and one
-bounded, scrollable, escaped content region, in the selected lane's log. The report embeds full content up
+fetched. The document renders from the embedded timestamps and its embedded
+change-state snapshot alone, so a given record and change state always produce
+the same pixels and the browser tier can assert rendered values
+deterministically; a later state edit requires a re-render (R-96). The lane log
+renders the captured facts (session and title, status, stop reason, model, cost,
+context size/window, tool call id, output bytes, bounded error, parent/agent,
+retry, permission mode) and one bounded, scrollable, escaped content region. The
+report embeds full content up
 to a **8 MiB total budget**; beyond it the affected entry says
 `content omitted; see the record`, while the store keeps every byte. The report
 model is not published as JSON: the machine-readable view is
@@ -1029,10 +1031,12 @@ and no embedded database — DuckDB would outweigh the feature inside a
 size-optimized binary, and SQLite would add a schema and migration surface for a
 workload of one append and one scan. No bottleneck has been measured, and the
 plain file is the interface external tools read directly. To stay readable at
-that size, an expanded phase's lanes never draw one shape per entry: at the fit
-zoom, dense short activities collapse into per-bucket aggregate ticks naming
-their count and combined duration, individual ticks appear as the phase zoom
-narrows, and the summary and ranking always cover the full record — the ranking over every entry
+that size, an expanded phase's lanes never draw one shape per entry: the
+sub-pixel aggregation threshold is applied at every zoom (Fit, 1 h, 15 m), so
+dense short activities collapse into per-bucket aggregate ticks naming their
+count and combined duration even at 15 m; individual ticks appear only where
+the current zoom permits, the timeline's scroll height is capped, and the
+summary and ranking always cover the full record — the ranking over every entry
 kind that carries a measured duration, never only subprocess steps (D-23 tracks
 pruning and retention).
 

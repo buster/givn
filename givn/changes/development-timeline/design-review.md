@@ -1182,3 +1182,140 @@ pending tasks already own.
    and the Done-when use 46/8, and no pasted evidence was rewritten.
 
 **DESIGN-REVIEW: PASS**
+
+## Re-review round 6 (2026-10-17, hybrid workflow report delta)
+
+**Why it ran.** The operator approved the hybrid workflow report on 2026-10-17
+after five rendered mockups, superseding the dense horizontal timeline (D6).
+The delta at `307c0755` changes `design.md` (report generation, the hybrid
+section, the Visual Design Contract, the interaction matrix, D6), the usecase
+interaction inventory, `development-report.feature`, the design system, and
+arc42 chapters 05/06/08/11/12. A fresh-context grill (read-only planning; no
+suite run) read the served design-review and specs rules, the delta, the
+mockups (`/tmp/timeline-mockups/v5/index.html` and `data.js`), the existing
+implementation (`src/cli/timeline.rs`, `assets/timeline/report.html`,
+`src/state.rs`), and the four reporters. It re-derived the arc42 chapter set
+and the ADR qualification independently. The evidence that decided the largest
+finding was produced, not assumed: `givn timeline --change development-timeline`
+on the live record wrote a model with **472 entries, zero `phase` transitions,
+and every entry assigned to no stage** (`stages` all `None`), so the hybrid's
+phase stack would have had no recorded work on the operator's own report.
+
+**Branch outcomes.**
+
+| Branch | Outcome |
+|---|---|
+| Requirement fidelity — statistics first, workflow top to bottom, phase zoom, parallel lanes, lane log, current state, mobile, hybrid V1+V2+V4 | FINDING → F1/F2/F4/F5/F13. The top-to-bottom order and the statistics were specified, but the phase backbone had no data on the operator's record, the subagent-lane rule contradicted the record, and the V4 header count was dropped. |
+| Derivation precision — current phase, statuses, times, lanes, repeats, aggregates, ideation/archived, band rows | FINDING → F1/F2/F4. The artifact-id mapping, partial `tasks`, skipped precedence, archived-vs-missing, and the no-stage group were underspecified. |
+| Model/scale — `workflow`/`current_state`, asset-derived lanes, 8 MiB, DOM bound, text view, empty state | FINDING → F3/F5/F7. Lanes/groups/aggregates were declared asset-derived while regular scenarios asserted them; the DOM bound held only at Fit; the KPI totals were absent from the model. |
+| Specs/e2e/evidence — bindability, inventory, matrix, evidence paths, mobile assertion | FINDING → F8/F9/F10/F18. The phase expander was an un-inventoried click; two renamed e2e titles invalidated their evidence slugs; the mobile contract had no assertion; 14 delta scenarios carried no `@wip`. |
+| Visual contract/design system — primitives, breakpoints, accessibility, motion, approved reference, superseded D6 | FINDING → F6/F14/F15/F16/F20. The design's breakpoints contradicted the design system; the lane-button wording nested controls; the zoom mechanism named a control the hybrid does not have; view 4 is illustrative. |
+| Architecture documentation — 12 rows, chapter content, ADR qualification, glossary | FINDING → F11/F12/F17. Chapter 10 still claimed timestamp-only rendering and Fit-only bounding; the change-level assessment and glossary count were stale; no new ADR qualified. |
+| Decision ledger, use-case/persona, interface classification, deferrals | NO ISSUE. D1–D6 resolve; the two Personas are unchanged and never Gherkin actors; the surface is a Web UI with the real browser driver; no deferral. The proposal's D6 is the historical decision, superseded in the design ledger (accepted residual 1). |
+
+**Findings and resolutions.**
+
+| # | Severity | Area | Finding | Outcome |
+|---|---|---|---|---|
+| F1 | high | Lanes/attribution | The rule "a lane that holds a `subagent` entry is named by that entry's `data.subagent`" renames the spawning session's lane after a subagent. The live record proves the failure: one session holds 137 entries and one subagent span; renaming it would attribute all 137 to the subagent. The positive examples were also false: Claude's transcript is read for usage only, and opencode's flush carries one session id for its batch. | fixed — a lane is subagent-named only when the span's `data.subagent` equals the lane's session id; a lane that merely contains a span keeps its name; the session title is the next name source; the report states the attribution limit per harness; R-93, the glossary, the design-system lane primitive, and the lane scenario were rewritten. |
+| F2 | high | Phase coverage | The workflow stack's per-phase entries, times, lanes, and sparklines depend on artifact-appearance `phase` transitions. Production records none: `givn check --artifact` writes gate phases labelled with artifact ids, and the live store has zero transitions. A later-only first transition would also have labelled all earlier work `propose`. | fixed — the command dispatcher now emits one transition labelled with the `STAGE_ARTIFACTS` filename; gate phases are explicitly never transitions; entries before a first transition that is not `proposal.md` (or with no transition) render in one "no recorded stage transition" group; a new regular scenario asserts the gap; R-95 records the residual. |
+| F3 | high | Model/testability | The delta said lanes, logs, and repeated groups are derived in the asset, yet the new regular scenarios assert lanes, repeated groups, and aggregate ticks. Without a browser they could not see those structures; the scenarios were unprovable or would have to invent a rendering target. | fixed — `WorkflowPhase` carries `lanes`, `repeated`, and Fit `aggregates`; `ReportModel` carries `unstaged`; the scaffold holds ids/names/totals only and the raw entries appear once; the text view prints the phase lines, lane names, group counts, and Fit aggregate counts; the asset still renders ticks and logs. |
+| F4 | medium | Current phase | "The stage that owns the next required artifact (`STAGE_ARTIFACTS`' own index)" is not implementable against the state's ids: `arc42-docs` is not `arc42.md`, `tasks` partial would mark `tasks` active while the change is implementing, skipped precedence was unstated, and an archived change could not be told from a deleted one. | fixed — an explicit id→phase table, the `partial` `tasks` → `implement` rule, skipped precedence, `givn/archive/<id>` resolution, an outside-table fallback, and the ideation no-recorded-stage rule were added; the scenario fixture now produces a real derived state. |
+| F5 | medium | KPI model | The KPI strip promised elapsed, active, waiting, tool calls, subagent spans, and cost, but `Summary`/`WorkflowPhase` carried no active, tool-call, or cost total, and the text view could not print facts the model lacked. | fixed — `Summary` gains `active_ms`, `tool_calls`, `cost_total`; active is elapsed minus waiting (measured or "not measured"); cost sums the recorded real cost in both recorded shapes and reads "unavailable" when none exists. |
+| F6 | medium | Breakpoints | The Visual Design Contract said "two columns from 720 px" while the design system says one column at 720–1199 and 1200+ with statistics grids. Two implementable layouts cannot both be true. | fixed — the contract now matches the design system: one column at every breakpoint, two-column statistics from 720 px, three-column from 1200 px, full-width phase cards. |
+| F7 | medium | DOM scale | The aggregation threshold applied only at Fit; at 15 m the design promised individual ticks, so a dense 15-minute window could still flood the DOM, contradicting R-94's "bounded" claim. | fixed — the sub-pixel threshold applies at every zoom; the lane scroll height is capped; R-94, chapter 08's scale paragraph, and Q-101 were aligned; the model carries Fit aggregates for the regular proof. |
+| F8 | medium | Mobile | The contract declared the mobile layout but no scenario asserted it; a screenshot pair is evidence, not an assertion. | fixed — the open e2e outline now sets the mobile viewport and asserts the one-column layout and no page-level horizontal overflow; the contract and design-system verification line carry the same assertion. |
+| F9 | medium | Interaction coverage | The phase-expander click changes visible content but had no inventory row, and the select scenario bundled expand + lane selection into one observable behaviour. | fixed — a "expand a workflow phase" inventory row and `@e2e` scenario were added; the select scenario now only selects a lane and reads its log; the matrix and usecase carry nine rows and nine matching titles. |
+| F10 | medium | Evidence paths | The delta renamed two e2e titles, which changes their scenario slugs; the existing evidence directories would become stale while the design said the paths were merely refreshed. | fixed — the two titles keep their existing slugs for the same actions; only the new expand scenario introduces a new directory; the design's evidence bullet states this rule. |
+| F11 | medium | Determinism | The report now reads the change state, but chapters 06/08, Q-99, and the design's traceability row still claimed it renders from "embedded timestamps alone"; two renders could then differ without the docs saying why. | fixed — determinism is defined over the record plus the embedded state snapshot in 06/08/Q-99 and the traceability row; R-96 records the snapshot staleness. |
+| F12 | medium | arc42 assessment | The change-level `arc42.md` still described the panel/timeline asset, omitted R-93–R-96 from row 11, and claimed seventeen glossary entries after five new terms. | fixed — rows 05/06/08/10/11/12 and a dated delta note were updated; the glossary count is twenty-two; the chapter set was re-derived as 05/06/08/10/11/12. |
+| F13 | low | Header fidelity | The approved V4 header's done-phase count was dropped, and the mockup's "7 findings open / running 38 m" banner was not derivable from the change state. | fixed (count) / accepted (banner) — the header states done phases of nine; it explicitly does not count findings or claim running time, because the state does not expose them (residual 3). |
+| F14 | low | Zoom mechanism | The matrix said "click the zoom-in control" while the hybrid's per-phase control is Fit / 1 h / 15 m. | fixed — the matrix names the `15 m` control and the "narrower level" rule. |
+| F15 | low | Accessibility | "Each lane is a focusable button" would nest the lane's focusable ticks inside a button, which is invalid semantics. | fixed — the lane header is the button and the ticks are separate focusable elements, in the design and the design system. |
+| F16 | low | Lane colors | "One hue per lane" is unbounded while the system defines four lane hues. | fixed — hues cycle beyond four and the lane name, never the hue, carries identity. |
+| F17 | low | Ubiquitous language | The glossary's **Lane** repeated the false naming rule and lacked **Repeated-step group** and **Current state**. | fixed — Lane was corrected and the two terms were added; **Aggregate marker** now states the every-zoom threshold. |
+| F18 | low | Pending scenarios | The delta's new/changed scenarios had no `@wip` even though their steps are undefined, so lint reported a clean file while the suite would fail on them. | fixed — the 14 pending scenarios now carry `@wip`; lint exits 2 with exactly those 14 findings. |
+| F19 | low | Decision ledger | The proposal's D6 disposition still says the dense timeline was approved. | accepted — the proposal preserves the 2026-10-16 decision as history; `design.md`'s D6 and its *Open Technical Questions* carry the operator's 2026-10-17 supersession, and this step's rules forbid rewriting the proposal for a resolved decision. |
+| F20 | low | Reference view | The approved view-4 drawing shows eight phase rows and no header count, while the workflow has nine phases (including arc42). | accepted — reference views are illustrative; the design system now says the design's nine phases are authoritative and the drawing shows a subset. |
+
+**The decisions behind the fixes, with rejected alternatives.**
+
+- **Session lanes are the only lanes.** Rejected: creating a "subagent lane" for
+  a span the record places in the spawning session — it invents a lane and
+  attributes the spawning session's calls to the subagent (F1).
+- **The phase backbone is captured, then honestly degraded.** Rejected:
+  relabelling the first transition's era as the opening stage (it would have
+  called all pre-`review` work `propose`), and rejecting the report when a
+  record has no transition (the record is still the best available evidence).
+  The dispatcher writer plus the explicit no-stage group was chosen (F2).
+- **The regular scenarios assert model facts.** Rejected: making the lane,
+  repeat, and aggregate scenarios browser scenarios (it would add three
+  interactions and evidence sets for rendering rules), and keeping the
+  derivation asset-only (then the regular scenarios assert nothing). The model
+  scaffold carries ids and totals, not a second copy of the entries (F3).
+- **Fit/1 h/15 m all obey one threshold.** Rejected: a fixed per-entry cap at
+  15 m (it hides entries without saying how many were grouped) and a
+  virtualized list (a new rendering architecture for a static file) (F7).
+- **The phase expander is its own interaction.** Rejected: treating the expand
+  as part of "select a timeline element" (two clicks, two observable changes,
+  one row) and treating the expander as navigation (it changes the visible
+  timeline, not the scope) (F9).
+- **Existing e2e titles keep their slugs.** Rejected: renaming the two
+  scenarios and moving their evidence directories (needless evidence churn for
+  no assertion gain); the new expand scenario still gets its own pair (F10).
+
+**Checks run by this pass.**
+
+- `givn timeline --change development-timeline` → the live model carries 472
+  entries, `stages` all `None` (no `phase` transition), and one recorded
+  `subagent` entry in a payload session that also holds 137 other entries — the
+  evidence for F1 and F2.
+- Read the reporters: omp and Maki use one payload session; Claude reads the
+  subagent transcript only for usage; opencode flushes at
+  `session.execution.*` with one payload session id.
+- `givn lint --change development-timeline` → exit 2: **5 files checked, 14
+  findings**, all 14 the pending hybrid scenarios' `[WIP]` tags; the only other
+  output is the pre-existing `[SUBST] advisory` subset matches. No parse error
+  and no error-kind finding.
+- Mechanical counts: **58** scenario entries = **49 non-`@e2e` + 9 `@e2e`**;
+  **14 `@wip`**; per feature 1/2/13/20/22. The usecase's nine §Interactions
+  rows, the design's nine matrix rows, and the nine `@e2e` titles are the same
+  title set; the matrix and the features match one-to-one.
+- arc42: re-derived the affected chapter set as 05/06/08/10/11/12, verified the
+  chapter files' content against the amended design, and re-checked the ADR
+  qualification: no new candidate (D6 is a design decision owned by
+  `design.md` and the design system; ADR-073 is unchanged).
+- No suite was run: this pass changed planning prose, scenarios, the design
+  system, and durable documentation only. The hybrid implementation, the 14
+  pending step bindings, and the evidence refresh remain the follow-up tasks'
+  job.
+
+**Residuals noted by this pass.** None is an open question; each is named work
+or an accepted boundary.
+
+1. The proposal's D6 is the historical 2026-10-16 decision; the design's D6
+   supersedes it per the operator's 2026-10-17 approval. The proposal was not
+   edited, per this step's rule.
+2. The live record remains unstaged until the dispatcher writer exists; the
+   report shows the no-stage group and the state-derived phase statuses, and
+   R-95 records the gap. Existing records are not backfilled.
+3. The header does not count review findings or claim a running time because
+   the change state does not expose them; the approved mockup's banner was
+   illustrative.
+4. The reference views are illustrative; the nine-phase workflow is
+   authoritative.
+5. The hybrid implementation, the 14 pending scenarios, the new expand
+   evidence pair, and the `Summary`/`WorkflowPhase` model work are the
+   follow-up tasks; `tasks.md` was not edited here.
+6. Per-event subagent identity remains R-93: no reporter today tags a tool
+   entry with the subagent that made it; opencode's child-session flush is the
+   only attributable session, and the report states the limit.
+7. The `cost_total` normalization (cost object versus number) is specified
+   but must be exercised by the follow-up implementation test.
+8. The report-level "active" includes gaps between recorded entries by
+   definition (elapsed minus waiting); it is labelled with that derivation and
+   is not a claim of continuous work.
+9. The change-level `arc42.md`'s earlier 54/46/8 statements remain as dated
+   history; the new delta note carries the current 58/49/9 scope.
+
+**DESIGN-REVIEW: PASS**
