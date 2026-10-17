@@ -137,26 +137,20 @@ fn rendered_phases(document: &str) -> Vec<String> {
         .collect()
 }
 
-/// One span's own markup, as the written report draws the entry `entry` — the
-/// region an assertion reads a step's placement from.
-fn span_markup(document: &str, entry: u64) -> String {
-    let marker = format!("<g class=\"span\" data-entry-id=\"{entry}\"");
+/// The model payload the written report carries in its data slot: the
+/// machine-readable model the file's inline script and both tiers read.
+fn report_model_payload(document: &str) -> Value {
+    let marker = "<script id=\"report-model\" type=\"application/json\">";
     let start = document
-        .find(&marker)
-        .unwrap_or_else(|| panic!("the report draws no span for the entry {entry}"));
-    let region = &document[start..];
-    let end = region.find("</g>").expect("a drawn span is never closed");
-    region[..end].to_string()
-}
-
-/// One attribute of a markup fragment.
-fn attribute(markup: &str, name: &str) -> Option<String> {
-    let marker = format!("{name}=\"");
-    markup
-        .split(&marker)
-        .nth(1)
-        .and_then(|value| value.split('"').next())
-        .map(str::to_string)
+        .find(marker)
+        .unwrap_or_else(|| panic!("the report carries no model payload: {document}"))
+        + marker.len();
+    let end = start
+        + document[start..]
+            .find("</script>")
+            .expect("the model payload element is never closed");
+    serde_json::from_str(&document[start..end])
+        .unwrap_or_else(|error| panic!("the model payload is not JSON: {error}"))
 }
 
 /// Open the report the scenario's own command wrote in the scenario's one
@@ -252,16 +246,31 @@ fn report_names_the_workflow_phases(world: &mut GivnWorld) {
 fn report_places_the_post_transition_step(world: &mut GivnWorld, phase: String) {
     let document = report_document(world);
     let step = seeded(world).post_transition_step.clone();
-    let span = span_markup(&document, step.id);
-    let stage = attribute(&span, "data-stage")
-        .unwrap_or_else(|| panic!("the report places the step {} in no phase: {span}", step.id));
+    let model = report_model_payload(&document);
+    // The written file's model carries the one derivation the text view and the
+    // browser both read: the post-transition step's assignment names the phase
+    // its artifact opened.
+    let stage = model["stages"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the report carries no stage assignments: {model:#?}"))
+        .iter()
+        .find(|assignment| assignment["entry"] == json!(step.id))
+        .unwrap_or_else(|| {
+            panic!(
+                "the report assigns the step {} to no phase: {model:#?}",
+                step.id
+            )
+        })["stage"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the step {} has no recorded stage: {model:#?}", step.id))
+        .to_string();
     assert_eq!(
         stage, phase,
-        "the report places the step recorded after the last transition in another phase: {span}"
+        "the report places the step recorded after the last transition in another phase"
     );
     assert!(
         rendered_phases(&document).contains(&phase),
-        "the report places the step in a phase its row does not name: {phase}"
+        "the report places the step in a phase its text view does not name: {phase}"
     );
     commit_evidence(world, GENERATE_SCENARIO);
 }

@@ -1238,20 +1238,6 @@ fn report_names_the_token_total_for_every_model(world: &mut GivnWorld) {
     }
 }
 
-/// The timeline section of the written report: the region the band rows live
-/// in, so an assertion reads the steps *under* their band rather than anywhere
-/// in the document.
-fn timeline_region(document: &str) -> String {
-    let start = document
-        .find("<section class=\"timeline-section\"")
-        .expect("the report draws no timeline");
-    let region = &document[start..];
-    let end = region
-        .find("</section>")
-        .expect("the timeline section is never closed");
-    region[..end].to_string()
-}
-
 #[then("the report names the topic's steps under the topic scope")]
 fn report_names_the_topics_steps_under_the_topic_scope(world: &mut GivnWorld) {
     let document = report_text(world);
@@ -1310,31 +1296,57 @@ fn report_names_the_topics_steps_under_the_topic_scope(world: &mut GivnWorld) {
         "the band does not cover exactly the topic's own steps: {model:#?}"
     );
 
-    // The rendered timeline names the band and, inside it, every step: its
-    // label and its recorded duration.
-    let timeline = timeline_region(&document);
-    assert!(
-        timeline.contains(&band_label),
-        "the timeline does not name the topic band: {timeline}"
-    );
-    let band_at = timeline
-        .find(&format!("data-band=\"{topic}\""))
-        .unwrap_or_else(|| panic!("the timeline draws no band for the topic: {timeline}"));
+    // The model's entries carry the topic scope, and every step its label and
+    // its measured duration: the written file's own payload is what the text
+    // view and the browser both read.
+    let entries = model["entries"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the model carries no entries: {model:#?}"));
     for step in &steps {
         let label = step.label.clone().expect("the fixture labels its steps");
-        let duration = format_duration(step.duration_ms.expect("the fixture measures its steps"));
-        let at = timeline
-            .find(&label)
-            .unwrap_or_else(|| panic!("the timeline does not name the step {label}: {timeline}"));
-        assert!(
-            at > band_at,
-            "the step {label} is not drawn under the topic band: {timeline}"
+        let duration = step.duration_ms.expect("the fixture measures its steps");
+        let entry = entries
+            .iter()
+            .find(|entry| entry["id"] == json!(step.id))
+            .unwrap_or_else(|| panic!("the model carries no entry {}: {model:#?}", step.id));
+        assert_eq!(
+            entry["scope"]["kind"],
+            json!("ideation"),
+            "the entry {} is not scoped to the topic: {entry}",
+            step.id
         );
-        assert!(
-            timeline.contains(&duration),
-            "the timeline does not name the step's duration {duration}: {timeline}"
+        assert_eq!(
+            entry["scope"]["id"],
+            json!(topic),
+            "the entry {} is not scoped to the topic: {entry}",
+            step.id
+        );
+        assert_eq!(
+            entry["label"],
+            json!(label),
+            "the entry {} does not carry the step's label: {entry}",
+            step.id
+        );
+        assert_eq!(
+            entry["duration_ms"],
+            json!(duration),
+            "the entry {} does not carry the step's measured duration: {entry}",
+            step.id
         );
     }
+
+    // The text view's scope line names the topic, and its current-state line
+    // states that a topic has no live change state.
+    let scope = scope_line_text(&document);
+    assert!(
+        scope.contains(&topic),
+        "the text view's scope line does not name the topic: {scope}"
+    );
+    assert_eq!(
+        current_state_line(&document),
+        "<p class=\"report-current-state\" id=\"report-current-state\">no live change state</p>",
+        "the text view does not state that the topic has no live change state: {document}"
+    );
 }
 
 #[then("the report names no change that does not exist yet")]
@@ -1386,47 +1398,6 @@ fn report_names_no_change_that_does_not_exist_yet(world: &mut GivnWorld) {
     );
 }
 
-/// The spans the written report draws, in document order: each one's entry id
-/// and its recorded end timestamp (as milliseconds), read from the markup the
-/// screen renders.
-fn rendered_spans(document: &str) -> Vec<(u64, i64)> {
-    timeline_region(document)
-        .split("<g class=\"span\"")
-        .skip(1)
-        .map(|span| {
-            let id = span
-                .split("data-entry-id=\"")
-                .nth(1)
-                .and_then(|value| value.split('"').next())
-                .and_then(|value| value.parse().ok())
-                .unwrap_or_else(|| panic!("a drawn span carries no entry id: {span}"));
-            let at = span
-                .split("data-at=\"")
-                .nth(1)
-                .and_then(|value| value.split('"').next())
-                .and_then(givn::history::parse_rfc3339_ms)
-                .unwrap_or_else(|| panic!("a drawn span carries no readable `at`: {span}"));
-            (id, at)
-        })
-        .collect()
-}
-
-/// The axis ticks the written report draws, in document order, as recorded
-/// instants in milliseconds.
-fn rendered_ticks(document: &str) -> Vec<i64> {
-    timeline_region(document)
-        .split("<text class=\"tick\"")
-        .skip(1)
-        .map(|tick| {
-            tick.split("data-at-ms=\"")
-                .nth(1)
-                .and_then(|value| value.split('"').next())
-                .and_then(|value| value.parse().ok())
-                .unwrap_or_else(|| panic!("a drawn tick carries no instant: {tick}"))
-        })
-        .collect()
-}
-
 #[then("the report orders the entries by their recorded end time")]
 fn report_orders_the_entries_by_their_recorded_end_time(world: &mut GivnWorld) {
     let document = report_text(world);
@@ -1467,29 +1438,69 @@ fn report_orders_the_entries_by_their_recorded_end_time(world: &mut GivnWorld) {
         "the model's spans are not in recorded-time order: {model:#?}"
     );
 
-    // The rendered timeline agrees: its spans are drawn in the model's order,
-    // and their recorded times never run backwards.
-    let spans = rendered_spans(&document);
-    let drawn: Vec<u64> = spans.iter().map(|(id, _)| *id).collect();
-    assert_eq!(
-        drawn, time_order,
-        "the drawn spans are not in recorded-time order: {document}"
-    );
+    // The workflow stack agrees: every phase's lane and repeated-group members
+    // appear in the model's recorded-time order, so each list is a subsequence
+    // of the one order the model carries. The no-stage group is read too: work
+    // the record assigns to no phase still keeps that order.
+    let position = |id: u64| {
+        time_order
+            .iter()
+            .position(|known| *known == id)
+            .unwrap_or_else(|| panic!("the stack names the unrecorded entry {id}"))
+    };
+    let mut phases: Vec<&Value> = report_workflow(&model).iter().collect();
+    if model["unstaged"].is_object() {
+        phases.push(&model["unstaged"]);
+    }
+    let mut stack_lists: Vec<(String, Vec<u64>)> = Vec::new();
+    for phase in phases {
+        let stage = phase["stage"]
+            .as_str()
+            .unwrap_or("no recorded stage transition")
+            .to_string();
+        for lane in phase["lanes"]
+            .as_array()
+            .unwrap_or_else(|| panic!("a phase carries no lanes: {phase:#?}"))
+        {
+            let members: Vec<u64> = lane["entries"]
+                .as_array()
+                .unwrap_or_else(|| panic!("a lane carries no entries: {lane:#?}"))
+                .iter()
+                .map(|entry| entry.as_u64().expect("a lane member's entry id"))
+                .collect();
+            stack_lists.push((stage.clone(), members));
+        }
+        for group in phase["repeated"]
+            .as_array()
+            .unwrap_or_else(|| panic!("a phase carries no repeated groups: {phase:#?}"))
+        {
+            let members: Vec<u64> = group["entries"]
+                .as_array()
+                .unwrap_or_else(|| panic!("a repeated group carries no entries: {group:#?}"))
+                .iter()
+                .map(|entry| entry.as_u64().expect("a group member's entry id"))
+                .collect();
+            stack_lists.push((stage.clone(), members));
+        }
+    }
+    let populated = stack_lists.iter().any(|(_, members)| !members.is_empty());
     assert!(
-        spans.windows(2).all(|pair| pair[0].1 <= pair[1].1),
-        "the drawn spans' recorded times are not ascending: {document}"
+        populated,
+        "the stack carries no member list to compare: {model:#?}"
     );
-
-    // The rendered axis agrees too: its ticks run forwards in time.
-    let ticks = rendered_ticks(&document);
-    assert!(
-        !ticks.is_empty(),
-        "the report draws no axis ticks: {document}"
-    );
-    assert!(
-        ticks.windows(2).all(|pair| pair[0] < pair[1]),
-        "the drawn axis ticks are not ascending in time: {ticks:?}"
-    );
+    for (stage, members) in stack_lists {
+        let mut previous: Option<usize> = None;
+        for id in members {
+            let at = position(id);
+            if let Some(previous) = previous {
+                assert!(
+                    previous < at,
+                    "the {stage} phase's members are not in recorded-time order: {model:#?}"
+                );
+            }
+            previous = Some(at);
+        }
+    }
 }
 
 #[given(regex = r#"^a change "([^"]+)" whose record holds many short subagents$"#)]
@@ -1890,6 +1901,95 @@ fn change_artifacts_make_its_derived_state(world: &mut GivnWorld, stage: String,
         json!(next),
         "the fixture's artifacts do not derive the claimed next artifact: {status:#?}"
     );
+}
+
+/// The written report's scope line: the element the text view prints its scope
+/// in, so an assertion reads that line rather than a phrase that happens to
+/// appear elsewhere in the document.
+fn scope_line_text(document: &str) -> String {
+    let start = document
+        .find("<p class=\"report-scope\" id=\"report-scope\">")
+        .unwrap_or_else(|| panic!("the report prints no scope line: {document}"));
+    let line = &document[start..];
+    let end = line.find("</p>").expect("the scope line is closed") + "</p>".len();
+    line[..end].to_string()
+}
+
+/// The written report's current-state line: the element the header prints the
+/// live state in, so an assertion reads that line's own words.
+fn current_state_line(document: &str) -> String {
+    let start = document
+        .find("<p class=\"report-current-state\" id=\"report-current-state\">")
+        .unwrap_or_else(|| panic!("the report prints no current-state line: {document}"));
+    let line = &document[start..];
+    let end = line.find("</p>").expect("the current-state line is closed") + "</p>".len();
+    line[..end].to_string()
+}
+
+#[then("the written report names the current state and every workflow phase")]
+fn written_report_names_the_current_state_and_every_workflow_phase(world: &mut GivnWorld) {
+    let document = report_text(world);
+    // The current-state line: the stage the change's artifacts derived and the
+    // artifact the workflow requires next, in the file's own markup.
+    let state = current_state_line(&document);
+    assert!(
+        state.contains("data-stage-label=\"tasks-done\""),
+        "the current-state line does not name the derived stage tasks-done: {state}"
+    );
+    assert!(
+        state.contains("<span class=\"state-next\">review</span>"),
+        "the current-state line does not name review as the next artifact: {state}"
+    );
+
+    // The nine phase lines, top to bottom in the workflow's own order, each
+    // carrying its status: the stack is in the written file, not drawn by the
+    // inline script.
+    let phases: Vec<String> = document
+        .split("<p class=\"workflow-phase\" data-phase=\"")
+        .skip(1)
+        .map(|phase| {
+            phase
+                .split('"')
+                .next()
+                .unwrap_or_else(|| panic!("a phase line carries no stage name: {phase}"))
+                .to_string()
+        })
+        .collect();
+    assert_eq!(
+        phases,
+        WORKFLOW_PHASES.to_vec(),
+        "the text view does not name the nine workflow phases in order: {document}"
+    );
+    for stage in WORKFLOW_PHASES {
+        assert!(
+            document.contains(&format!("data-phase=\"{stage}\" data-status=\"")),
+            "the phase line for {stage} carries no status: {document}"
+        );
+    }
+}
+
+#[then("the written report draws no band timeline")]
+fn written_report_draws_no_band_timeline(world: &mut GivnWorld) {
+    let document = report_text(world);
+    // A change report's text view is the workflow stack: the superseded
+    // dense-timeline view is absent from the file, not merely hidden by the
+    // inline script.
+    assert!(
+        document.contains("class=\"workflow-stack\""),
+        "the change report draws no workflow stack: {document}"
+    );
+    for marker in [
+        "<svg",
+        "class=\"timeline-section\"",
+        "class=\"band\"",
+        "class=\"span\"",
+        "class=\"axis\"",
+    ] {
+        assert!(
+            !document.contains(marker),
+            "the change report draws {marker}: {document}"
+        );
+    }
 }
 
 /// The written report's model, with its workflow stack.
@@ -2921,16 +3021,6 @@ fn change_with_hundreds_of_short_agent_activities(world: &mut GivnWorld, id: Str
     world.last_change_id = Some(id);
 }
 
-/// The number of aggregate shapes the written report draws on its axis, read
-/// from the timeline region's own markup: the drawn aggregates, never the
-/// record's entries.
-fn rendered_aggregate_count(document: &str) -> usize {
-    timeline_region(document)
-        .split("<g class=\"aggregate\"")
-        .count()
-        .saturating_sub(1)
-}
-
 /// One workflow phase's own text line, from its `data-phase` marker to the end
 /// of the line, so a phase assertion reads that phase's words only.
 fn phase_line(document: &str, stage: &str) -> String {
@@ -3141,9 +3231,20 @@ fn report_summary_still_counts_every_recorded_entry(world: &mut GivnWorld) {
         entries_tile.contains(&format_count(recorded as u64)),
         "the entries tile does not name the record's entry count ({recorded}): {entries_tile}"
     );
+    // The phase's own Fit aggregate count stands for the collapsed entries: the
+    // model carries fewer aggregates than the record holds entries, and the
+    // phase line names that count in the file's own markup.
+    let aggregates = report_phase(&model, "implement")["aggregates"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the phase carries no aggregates: {model:#?}"));
     assert!(
-        rendered_aggregate_count(&document) < recorded,
-        "the axis draws no fewer shapes than the record holds entries: {document}"
+        aggregates.len() < recorded,
+        "the phase carries no fewer aggregates than the record holds entries: {model:#?}"
+    );
+    let line = phase_line(&document, "implement");
+    assert!(
+        line.contains(&format!("{} fit aggregates", aggregates.len())),
+        "the phase line does not name its Fit aggregate count: {line}"
     );
 }
 

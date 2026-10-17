@@ -134,7 +134,7 @@ Feature: Development Report
     And the report notes "content omitted; see the record" beyond the budget
     And the development record still holds every content byte
 
-  @givn.added @wip
+  @givn.added
   Scenario: The written report's text view presents the workflow
     Given a change "demo" whose record holds the workflow phases up to "tasks"
     And the change's artifacts make its derived state "tasks-done" with the next required artifact "review"
