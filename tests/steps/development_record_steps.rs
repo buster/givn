@@ -591,6 +591,13 @@ fn repository_ignore_glob_names_the_development_record(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
+    assert_ignore_glob_names_record(env);
+}
+
+/// The development record is named by both effective ignore sources of a
+/// Fossil checkout — the committed managed file and the repository-level
+/// setting — and it is neither a pending nor an extra change.
+fn assert_ignore_glob_names_record(env: &common::TestEnv) {
     let store = support::store_file(&env.root());
     assert!(
         store.is_file(),
@@ -887,5 +894,319 @@ fn recorded_entry_names_the_ideation_topic_as_its_scope(world: &mut GivnWorld) {
         scope,
         &json!({ "kind": "ideation", "id": topic }),
         "the entry's scope does not name the unfinished ideation topic: {scope}"
+    );
+}
+
+/// The full-content marker the record-hygiene fixture writes through the real
+/// intake. A real `data.content` entry is what makes "the store is ignored" a
+/// claim that can fail: an ignore rule that misses the store would show up as a
+/// pending change (Git) or an extra file (Fossil) carrying this text.
+const HYGIENE_CONTENT: &str =
+    "full-mode content written through the real intake: the ignore property must cover the store";
+
+/// The `#[...]` block of a fenced ignore file, or `None` when the file carries
+/// no record block.
+fn history_block(text: &str) -> Option<String> {
+    let mut block = String::new();
+    let mut inside = false;
+    let mut found = false;
+    for line in text.lines() {
+        if line.trim() == givn::history::HISTORY_BLOCK_BEGIN {
+            inside = true;
+            found = true;
+            continue;
+        }
+        if line.trim() == givn::history::HISTORY_BLOCK_END {
+            inside = false;
+            continue;
+        }
+        if inside {
+            block.push_str(line);
+            block.push('\n');
+        }
+    }
+    found.then_some(block)
+}
+
+/// Remove the record's managed block from a fenced ignore file, leaving the
+/// rest of the file intact. The scaffold-time safety net is then the
+/// scenario's own full-content write to re-assert, not a fixture's own earlier
+/// command.
+fn remove_history_block(path: &std::path::Path) {
+    let Ok(text) = std::fs::read_to_string(path) else {
+        return;
+    };
+    let mut kept: Vec<&str> = Vec::new();
+    let mut inside = false;
+    for line in text.lines() {
+        if line.trim() == givn::history::HISTORY_BLOCK_BEGIN {
+            inside = true;
+            continue;
+        }
+        if line.trim() == givn::history::HISTORY_BLOCK_END {
+            inside = false;
+            continue;
+        }
+        if !inside {
+            kept.push(line);
+        }
+    }
+    let mut content = kept.join("\n");
+    if !content.is_empty() {
+        content.push('\n');
+    }
+    std::fs::write(path, content).expect("rewrite the ignore file without the record block");
+}
+
+#[given("a project root with givn/ initialised without a repository")]
+fn project_root_initialised_without_a_repository(world: &mut GivnWorld) {
+    let env = common::make_init_root_without_git();
+    assert!(
+        !common::is_git_repo(&env),
+        "the fixture must start without a repository: {}",
+        env.root().display()
+    );
+    // The scenario asserts that the full-content write leaves the
+    // scaffold-time block behind, so the fixture starts from a file that does
+    // not already carry it.
+    remove_history_block(&env.path(".gitignore"));
+    assert!(
+        history_block(&std::fs::read_to_string(env.path(".gitignore")).unwrap_or_default())
+            .is_none(),
+        "the fixture could not clear the record block it must observe being written"
+    );
+    world.env = Some(env);
+}
+
+#[when("the project records a full-content entry in the full mode")]
+fn project_records_a_full_content_entry(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let payload = support::intake_payload(
+        Some("demo"),
+        None,
+        vec![json!({
+            "kind": "tool",
+            "at": "2026-10-17T08:00:00.000Z",
+            "tool": "Bash",
+            "label": "cargo build --locked",
+            "duration_ms": 1_200,
+            "outcome": "ok",
+            "content": {
+                "tool_input": {
+                    "text": "cargo build --locked",
+                    "truncated": false,
+                    "bytes": 19
+                },
+                "tool_output": {
+                    "text": HYGIENE_CONTENT,
+                    "truncated": false,
+                    "bytes": HYGIENE_CONTENT.len()
+                }
+            }
+        })],
+    );
+    let before = support::record_entries(&env.root()).len();
+    let out = support::report_intake_with_args(env, &payload, &["--with-full-content"]);
+    assert!(
+        out.status.success(),
+        "the full-content intake failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    // The write really carried content, so the ignore assertions that follow
+    // are about a store that could fail them: the reported entry and the
+    // intake invocation's own command entry are both appended.
+    let entries = support::record_entries(&env.root());
+    assert_eq!(
+        entries.len(),
+        before + 2,
+        "the full-content write did not append its entry and command: {entries:#?}"
+    );
+    let appended = &entries[before..];
+    let stored: Vec<&Value> = appended
+        .iter()
+        .filter(|entry| {
+            entry
+                .pointer("/data/content/tool_output/text")
+                .and_then(Value::as_str)
+                == Some(HYGIENE_CONTENT)
+        })
+        .collect();
+    assert_eq!(
+        stored.len(),
+        1,
+        "the record did not keep the full-mode content entry: {entries:#?}"
+    );
+}
+
+#[then(regex = r#"^the project's "\.gitignore" names the development record$"#)]
+fn gitignore_names_the_development_record(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let path = env.path(".gitignore");
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+    let block = history_block(&text).unwrap_or_else(|| {
+        panic!(
+            "{} carries no record block: the scaffold-time safety net was not written",
+            path.display()
+        )
+    });
+    assert!(
+        block.lines().any(|line| line.trim() == "givn/history/"),
+        "the record block does not name the store: {block:?}"
+    );
+}
+
+#[when("the project becomes a Git repository")]
+fn project_becomes_a_git_repository(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    common::git_init(env);
+    assert!(
+        common::is_git_repo(env),
+        "the fixture did not become a Git worktree: {}",
+        env.root().display()
+    );
+}
+
+#[then("the repository reports no pending change under the record directory")]
+fn repository_reports_no_pending_change_under_the_record_directory(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let store = support::store_file(&env.root());
+    let report = env.path("givn/history/reports/demo.html");
+    assert!(
+        store.is_file() && report.is_file(),
+        "the scenario wrote no record and report to ignore ({}, {})",
+        store.display(),
+        report.display()
+    );
+    let status = common::git(env, &["status", "--porcelain", "-uall"]);
+    assert!(
+        status.status.success(),
+        "git status failed: {}",
+        String::from_utf8_lossy(&status.stderr)
+    );
+    let porcelain = String::from_utf8_lossy(&status.stdout);
+    let named: Vec<&str> = porcelain
+        .lines()
+        .filter(|line| line.contains("givn/history/"))
+        .collect();
+    assert!(
+        named.is_empty(),
+        "the repository reports a pending change under the record directory:\n{porcelain}"
+    );
+    // Not a vacuous claim: both the store and the generated report are
+    // ignored, not merely absent from the listing.
+    for path in [
+        "givn/history/events.jsonl",
+        "givn/history/reports/demo.html",
+    ] {
+        let ignored = common::git(env, &["check-ignore", "-q", path]);
+        assert!(
+            ignored.status.success(),
+            "the repository does not ignore {path}:\n{porcelain}"
+        );
+    }
+}
+
+#[then("the Fossil checkout reports no extra file under the record directory")]
+fn fossil_checkout_reports_no_extra_file_under_the_record_directory(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let store = support::store_file(&env.root());
+    assert!(
+        store.is_file(),
+        "the scenario's own command wrote no record at {}: the assertion below would be vacuous",
+        store.display()
+    );
+    let extras = common::fossil(env, &["extras"]);
+    assert!(
+        extras.status.success(),
+        "fossil extras failed: {}",
+        String::from_utf8_lossy(&extras.stderr)
+    );
+    let listing = String::from_utf8_lossy(&extras.stdout);
+    let named: Vec<&str> = listing
+        .lines()
+        .filter(|line| line.contains("givn/history/"))
+        .collect();
+    assert!(
+        named.is_empty(),
+        "the Fossil checkout reports an extra file under the record directory:\n{listing}"
+    );
+}
+
+#[when("a lifecycle command runs")]
+fn a_lifecycle_command_runs(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let out = common::run_givn(env, &["status", "--change", "demo"]);
+    world.last_command = Some("status".to_string());
+    world.last_output = Some(out);
+}
+
+#[then("the repository's ignore glob still names the development record")]
+fn repository_ignore_glob_still_names_the_development_record(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    assert_ignore_glob_names_record(env);
+}
+
+#[then("the repository's ignore glob covers the generated reports")]
+fn repository_ignore_glob_covers_the_generated_reports(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let report = env.path("givn/history/reports/demo.html");
+    assert!(
+        report.is_file(),
+        "the timeline run wrote no report at {}: the assertion below would be vacuous",
+        report.display()
+    );
+    let entries = fossil_glob_entries(&env.path(".fossil-settings/ignore-glob"));
+    assert!(
+        entries.iter().any(|entry| entry == "givn/history/*"),
+        "the managed ignore file does not name the record directory the reports live in:\n{entries:#?}"
+    );
+    let setting = common::fossil(env, &["settings", "--value", "ignore-glob"]);
+    assert!(
+        setting.status.success(),
+        "read the repository ignore-glob setting: {}",
+        String::from_utf8_lossy(&setting.stderr)
+    );
+    let setting = String::from_utf8_lossy(&setting.stdout);
+    assert!(
+        setting
+            .split([',', '\n'])
+            .any(|entry| entry.trim() == "givn/history/*"),
+        "the effective ignore-glob setting does not cover the report directory: {setting:?}"
+    );
+    let extras = common::fossil(env, &["extras"]);
+    assert!(
+        extras.status.success(),
+        "fossil extras failed: {}",
+        String::from_utf8_lossy(&extras.stderr)
+    );
+    let listing = String::from_utf8_lossy(&extras.stdout);
+    assert!(
+        !listing.contains("givn/history/reports/demo.html"),
+        "the Fossil checkout reports the generated report as an extra file:\n{listing}"
     );
 }

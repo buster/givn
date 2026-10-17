@@ -492,6 +492,134 @@ pub fn reported_label(kind: &str, subject: &str) -> String {
     bound_label(subject)
 }
 
+/// The project's capture mode: what the record stores for new activity.
+///
+/// Task 11e extends this enumeration with the project-config `off` state and
+/// its resolver; the intake's content gate uses the `on`/`full` distinction
+/// from the start.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RecordMode {
+    /// Every available metadata field, bounded; no LLM-facing content.
+    On,
+    /// `on` plus the complete content set, under the content caps.
+    Full,
+}
+
+/// The always-captured question text's cap, in characters: the one content
+/// value stored even when the effective mode is `on`.
+pub const QUESTION_TEXT_LIMIT: usize = 4_000;
+
+/// The per-field cap for one `data.content` field, in bytes.
+pub const CONTENT_FIELD_LIMIT: usize = 64 * 1024;
+
+/// The per-entry cap across an entry's whole `data.content` bundle, in bytes.
+pub const CONTENT_ENTRY_LIMIT: usize = 256 * 1024;
+
+/// The `data.content` fields the record knows, in the order the per-entry
+/// aggregate cap is applied.
+pub const CONTENT_FIELDS: [&str; 9] = [
+    "tool_input",
+    "tool_output",
+    "assistant_text",
+    "thinking_text",
+    "user_prompt",
+    "compaction_summary",
+    "plan_content",
+    "draft_text",
+    "subagent_transcript",
+];
+
+/// One bounded text value on the wire: the reporter's `{text, truncated,
+/// bytes}` shape, and the intake's own output for `data.question` and each
+/// `data.content` field.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BoundedText {
+    /// The kept text.
+    pub text: String,
+    /// Whether a bound cut the text.
+    #[serde(default)]
+    pub truncated: bool,
+    /// The original text's UTF-8 byte length, kept through any cut.
+    #[serde(default)]
+    pub bytes: usize,
+}
+
+impl BoundedText {
+    /// `text` capped at `limit` bytes on a UTF-8 character boundary, recording
+    /// whether the cut happened and the original byte length.
+    fn clipped(text: &str, limit: usize) -> Self {
+        if text.len() <= limit {
+            return BoundedText {
+                text: text.to_string(),
+                truncated: false,
+                bytes: text.len(),
+            };
+        }
+        let mut end = limit;
+        while !text.is_char_boundary(end) {
+            end -= 1;
+        }
+        BoundedText {
+            text: text[..end].to_string(),
+            truncated: true,
+            bytes: text.len(),
+        }
+    }
+
+    /// Re-apply a byte cap to a reporter's value: the text is capped again,
+    /// and a truncation the reporter already marked survives with its original
+    /// size.
+    fn reclip(&self, limit: usize) -> Self {
+        let mut bounded = BoundedText::clipped(&self.text, limit);
+        bounded.truncated |= self.truncated;
+        bounded.bytes = bounded.bytes.max(self.bytes);
+        bounded
+    }
+}
+
+/// The always-captured question text: every question and option label the
+/// reporter joined, capped at [`QUESTION_TEXT_LIMIT`] characters (never bytes),
+/// with the truncation mark and the original byte length kept.
+pub fn bound_question(value: &BoundedText) -> BoundedText {
+    let mut chars = value.text.chars();
+    let text: String = chars.by_ref().take(QUESTION_TEXT_LIMIT).collect();
+    let cut = chars.next().is_some();
+    BoundedText {
+        text,
+        truncated: cut || value.truncated,
+        bytes: value.bytes.max(value.text.len()),
+    }
+}
+
+/// Re-apply the content caps to one entry's reported content: each documented
+/// field at [`CONTENT_FIELD_LIMIT`] bytes in [`CONTENT_FIELDS`] order, then the
+/// whole bundle at [`CONTENT_ENTRY_LIMIT`] bytes. Returns `None` when the
+/// payload carried no documented field. The object marks `truncated` when any
+/// field or the aggregate was cut.
+pub fn bound_content(fields: &BTreeMap<String, BoundedText>) -> Option<serde_json::Value> {
+    let mut bundle = serde_json::Map::new();
+    let mut remaining = CONTENT_ENTRY_LIMIT;
+    let mut any = false;
+    let mut truncated = false;
+    for name in CONTENT_FIELDS {
+        let Some(reported) = fields.get(name) else {
+            continue;
+        };
+        any = true;
+        let bounded = reported.reclip(CONTENT_FIELD_LIMIT.min(remaining));
+        truncated |= bounded.truncated;
+        remaining = remaining.saturating_sub(bounded.text.len());
+        bundle.insert(name.to_string(), serde_json::to_value(&bounded).ok()?);
+    }
+    if !any {
+        return None;
+    }
+    if truncated {
+        bundle.insert("truncated".to_string(), serde_json::Value::Bool(true));
+    }
+    Some(serde_json::Value::Object(bundle))
+}
+
 /// The project's store path: `givn/history/events.jsonl`.
 pub fn store_path(root: &Path) -> PathBuf {
     root.join("givn").join("history").join("events.jsonl")
