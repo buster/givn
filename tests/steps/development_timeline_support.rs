@@ -44,6 +44,30 @@ pub fn project_name(env: &common::TestEnv) -> String {
         .to_string()
 }
 
+/// Create one change through its own recorded command: `givn new <id>` is the
+/// command during which the change directory and its `proposal.md` appear, so
+/// the dispatcher's post-command artifact observation is exercised through the
+/// real binary instead of a handwritten record.
+pub fn create_change_during_a_recorded_command(
+    env: &common::TestEnv,
+    id: &str,
+) -> std::process::Output {
+    common::run_givn(env, &["new", id])
+}
+
+/// The record's artifact transitions for one change: the `phase` entries whose
+/// label is `label`, scoped to that change. The gate phase keeps the artifact
+/// id label, so it never matches a transition filename here.
+pub fn transitions_for<'a>(entries: &'a [Value], change: &str, label: &str) -> Vec<&'a Value> {
+    entries
+        .iter()
+        .filter(|entry| entry["kind"].as_str() == Some("phase"))
+        .filter(|entry| entry["scope"]["kind"].as_str() == Some("change"))
+        .filter(|entry| entry["scope"]["id"].as_str() == Some(change))
+        .filter(|entry| entry["label"].as_str() == Some(label))
+        .collect()
+}
+
 /// Assert the fixture project has no change a recorder could bind to: no
 /// directory under `givn/changes/` (every directory there is a change for
 /// `list_changes`).

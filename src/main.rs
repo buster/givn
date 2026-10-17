@@ -402,6 +402,7 @@ fn main() {
         ("failed", 1)
     };
     if let Some(recorder) = &recorder {
+        recorder.observe_artifacts();
         recorder.finish(outcome, exit_code);
     }
 

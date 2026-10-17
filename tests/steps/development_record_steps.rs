@@ -2413,6 +2413,164 @@ fn content_field_marks_truncation_and_original_size(world: &mut GivnWorld) {
     );
 }
 
+#[given(regex = r#"^a change "([^"]+)" whose proposal\.md appears while a recorded command runs$"#)]
+fn change_proposal_appears_during_a_recorded_command(world: &mut GivnWorld, id: String) {
+    let env = common::make_init_root();
+    let out = support::create_change_during_a_recorded_command(&env, &id);
+    world.env = Some(env);
+    world.last_change_id = Some(id);
+    world.last_command = Some("new".to_string());
+    world.last_output = Some(out);
+}
+
+#[when("the command finishes")]
+fn the_recorded_command_finishes(world: &mut GivnWorld) {
+    let out = world
+        .last_output
+        .as_ref()
+        .expect("no recorded command has run yet");
+    assert!(
+        out.status.success(),
+        "the recorded command failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let id = world
+        .last_change_id
+        .clone()
+        .expect("the fixture created no change");
+    let proposal = env.path(&format!("givn/changes/{id}/proposal.md"));
+    assert!(
+        proposal.is_file(),
+        "the artifact the command was supposed to create does not exist: {}",
+        proposal.display()
+    );
+}
+
+#[then(regex = r#"^the record holds one phase entry labelled "([^"]+)" for "([^"]+)"$"#)]
+fn record_holds_one_phase_entry(world: &mut GivnWorld, label: String, change: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let entries = support::record_entries(&env.root());
+    let transitions = support::transitions_for(&entries, &change, &label);
+    assert_eq!(
+        transitions.len(),
+        1,
+        "expected exactly one `{label}` transition for `{change}`; the record holds: {entries:#?}"
+    );
+    let entry = transitions[0];
+    assert_eq!(
+        entry["name"],
+        json!(label),
+        "the transition's name is not the artifact filename: {entry}"
+    );
+    assert_eq!(
+        entry["source"],
+        json!("givn"),
+        "the transition was not recorded by Givn: {entry}"
+    );
+    assert_eq!(
+        entry["outcome"],
+        json!("ok"),
+        "the transition does not record the observation as ok: {entry}"
+    );
+    assert!(
+        entry.get("duration_ms").is_none(),
+        "the transition invents a duration: {entry}"
+    );
+    assert!(
+        entry.get("data").is_none(),
+        "the transition carries data: {entry}"
+    );
+    let command = entries
+        .iter()
+        .find(|candidate| {
+            candidate["kind"] == json!("command") && candidate["name"] == json!("new")
+        })
+        .unwrap_or_else(|| {
+            panic!("the command that observed the artifact recorded no entry: {entries:#?}")
+        });
+    assert_eq!(
+        entry["parent"], command["id"],
+        "the transition is not parented to the observing command's own entry: {entry}"
+    );
+    world
+        .development_record
+        .get_or_insert_with(DevelopmentRecordState::default)
+        .last_entry = Some(entry.clone());
+}
+
+#[then("a later recorded command that sees the same artifact records no second transition")]
+fn later_recorded_command_records_no_second_transition(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let id = world
+        .last_change_id
+        .clone()
+        .expect("the fixture created no change");
+    let out = common::run_givn(env, &["status", "--change", &id]);
+    assert!(
+        out.status.success(),
+        "the later recorded command failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    world.last_command = Some("status".to_string());
+    world.last_output = Some(out);
+    let entries = support::record_entries(&env.root());
+    let later_commands = entries
+        .iter()
+        .filter(|entry| entry["kind"] == json!("command") && entry["name"] == json!("status"))
+        .count();
+    assert_eq!(
+        later_commands, 1,
+        "the later command was not recorded, so its observation proves nothing: {entries:#?}"
+    );
+    assert_eq!(
+        support::transitions_for(&entries, &id, "proposal.md").len(),
+        1,
+        "the later command recorded a second transition for the same artifact: {entries:#?}"
+    );
+}
+
+#[then("a gate check for the same artifact keeps its artifact id label and is not a transition")]
+fn gate_check_keeps_its_artifact_id_label(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let id = world
+        .last_change_id
+        .clone()
+        .expect("the fixture created no change");
+    let out = common::run_givn(env, &["check", "proposal", "--change", &id]);
+    assert!(
+        out.status.success(),
+        "givn check --artifact proposal failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let entries = support::record_entries(&env.root());
+    let gates = entries
+        .iter()
+        .filter(|entry| entry["kind"] == json!("phase") && entry["label"] == json!("proposal"))
+        .count();
+    assert_eq!(
+        gates, 1,
+        "expected exactly one gate phase labelled with the artifact id `proposal`: {entries:#?}"
+    );
+    assert_eq!(
+        support::transitions_for(&entries, &id, "proposal.md").len(),
+        1,
+        "the gate check stood in for or deduped away the artifact transition: {entries:#?}"
+    );
+}
+
 #[then("the entry's content never exceeds the 256 KiB per-entry cap")]
 fn entry_content_never_exceeds_the_entry_cap(world: &mut GivnWorld) {
     let entry = world

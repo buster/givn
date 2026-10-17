@@ -166,7 +166,7 @@ Feature: Development Record
     And the record holds the command's bounded metadata
     And `givn history settings --json` reports mode "on" with source "default"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An artifact appearance is recorded as one phase transition
     Given a change "demo" whose proposal.md appears while a recorded command runs
     When the command finishes

@@ -357,6 +357,67 @@ impl HistoryRecorder {
         }
     }
 
+    /// Record the artifact-appearance transitions of this command: one `phase`
+    /// entry per artifact the change has never been observed to reach `Done`
+    /// before, labelled with that artifact's [`STAGE_ARTIFACTS`] filename, at
+    /// the end of the first recorded command that observes it.
+    ///
+    /// The observation is the post-command state re-resolved from the root —
+    /// `givn new` creates the change (and its `proposal.md`) during the
+    /// command, when the recorder's start-resolved scope was still the project.
+    /// An ambiguous root resolves to no change and emits nothing. Deduplication
+    /// is per artifact and label-based, never a state diff: an artifact whose
+    /// filename label the change's record already carries emits nothing, and no
+    /// entry is ever rewritten or backfilled. A gate phase keeps its artifact
+    /// id label and can neither dedupe away nor stand in for a transition.
+    ///
+    /// Best-effort by construction: a store or state that cannot be read emits
+    /// nothing, and the command's outcome and exit code are untouched.
+    pub fn observe_artifacts(&self) {
+        if !should_record(&self.root) || !engages(&self.root) {
+            return;
+        }
+        let scope = resolve_scope(&self.root);
+        let Scope::Change { id } = scope.clone() else {
+            return;
+        };
+        let change_dir = self.root.join("givn").join("changes").join(&id);
+        if !change_dir.is_dir() {
+            return;
+        }
+        let Ok(manifest) = crate::config::overlay::load_effective() else {
+            return;
+        };
+        let Ok(recorded) = self.store.read() else {
+            return;
+        };
+        let state = crate::state::ChangeState::from_manifest(&change_dir, &manifest);
+        let mut transitions: Vec<&'static str> = state
+            .artifacts
+            .iter()
+            .filter(|artifact| artifact.status == crate::state::ArtifactStatus::Done)
+            .filter_map(|artifact| crate::cli::timeline::artifact_transition_label(&artifact.id))
+            .filter(|label| {
+                !recorded.iter().any(|entry| {
+                    entry.kind == "phase"
+                        && entry.scope == scope
+                        && entry.label.as_deref() == Some(*label)
+                })
+            })
+            .collect();
+        transitions.sort_by_key(|label| crate::cli::timeline::artifact_workflow_rank(label));
+        transitions.dedup();
+        for label in transitions {
+            let mut entry = self.entry("phase", label, Some(label.to_string()));
+            // The transition belongs to the change whose post-command state
+            // observed the artifact; the command's own entry keeps the
+            // start-resolved scope.
+            entry.scope = scope.clone();
+            entry.outcome = "ok".to_string();
+            self.record(entry);
+        }
+    }
+
     /// The entries recorded during this run, in the order they were recorded.
     fn take_pending(&self) -> Vec<HistoryEntry> {
         self.pending
