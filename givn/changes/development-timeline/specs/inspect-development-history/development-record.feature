@@ -174,6 +174,14 @@ Feature: Development Record
     And a later recorded command that sees the same artifact records no second transition
     And a gate check for the same artifact keeps its artifact id label and is not a transition
 
+  @givn.added @wip
+  Scenario: An ideation artifact appearance is recorded as one phase start
+    Given an ideation topic "ideas" whose personas file appears while a recorded command runs
+    When the command finishes
+    Then the record holds one phase entry labelled "personas" for the topic "ideas"
+    And a later observed marker records its own phase entry
+    And a change artifact appearance records no ideation phase entry
+
   @givn.added @e2e
   Scenario: Consumer runs a lifecycle step and reads its recorded actions
     Given a project root with givn/ initialised
