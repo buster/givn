@@ -1054,29 +1054,32 @@ fn phase_scaffold(
     let Some(scope) = scope else {
         return PhaseScaffold::default();
     };
-    let (workflow_stages, statuses, current_state) = match scope {
+    // The one workflow selector: the scope's own phase order, and the statuses
+    // derived from that workflow's own markers. Every band row, the stack, and
+    // the statuses read this order, never a second match on the scope.
+    let workflow_order = workflow_stages(scope);
+    let (statuses, current_state) = match scope {
         Scope::Change { .. } => {
             let resolution = change_resolution(scope);
-            let statuses = phase_statuses(&resolution);
             let current_state = match &resolution {
                 ChangeResolution::Live(state) => Some(current_state_of(state)),
                 ChangeResolution::Archived | ChangeResolution::Absent => None,
             };
-            (WORKFLOW_STAGES.as_slice(), statuses, current_state)
+            (phase_statuses(&resolution), current_state)
         }
         Scope::Ideation { .. } => {
             let own: Vec<&HistoryEntry> = entries
                 .iter()
                 .filter(|entry| &entry.scope == scope)
                 .collect();
-            (IDEATION_STAGES.as_slice(), ideation_statuses(&own), None)
+            (ideation_statuses(&own), None)
         }
         // The project report keeps its band rows and builds no phase stack: a
         // nine-phase scaffold of `None` statuses would claim a workflow the
         // project scope never records.
         Scope::Project { .. } => return PhaseScaffold::default(),
     };
-    let workflow = workflow_stages
+    let workflow = workflow_order
         .iter()
         .enumerate()
         .map(|(index, stage)| {

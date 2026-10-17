@@ -153,7 +153,7 @@ Feature: Development Report
     And the record still holds the recorder command entries
     And `givn history` still lists the recorder command entries
 
-  @givn.added @wip
+  @givn.added
   Scenario: An ideation topic report uses the ideation workflow
     Given an ideation topic "ideas" whose record holds the markers for personas and event storming
     When the developer generates the development report for the topic "ideas"

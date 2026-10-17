@@ -3854,3 +3854,177 @@ fn report_names_the_total_wait_duration_and_the_number_of_waits(world: &mut Givn
         "the waiting tile shows the enclosing turn's duration instead of the waits': {rendered}"
     );
 }
+
+/// The ideation workflow's phases, in the order a topic report's stack names
+/// them: the six the topic report renders in place of the change workflow's
+/// nine.
+const IDEATION_PHASES: [&str; 6] = [
+    "frame",
+    "personas",
+    "event-storming",
+    "use-case-definition",
+    "use-case-elaboration",
+    "handoff",
+];
+
+#[given(
+    regex = r#"^an ideation topic "([^"]+)" whose record holds the markers for personas and event storming$"#
+)]
+fn ideation_topic_with_persona_and_event_storming_markers(world: &mut GivnWorld, topic: String) {
+    let seeded = {
+        let env = project_root(world);
+        support::assert_no_active_change(env);
+        support::seed_ideation_topic_markers(env, &topic, &["personas", "event-storming"])
+    };
+    // The fixture's own claim, not a constant: the record carries exactly the
+    // two start markers the scenario names, and work before the first marker.
+    let markers: Vec<&str> = seeded
+        .iter()
+        .filter(|entry| entry.kind == "phase")
+        .filter_map(|entry| entry.label.as_deref())
+        .collect();
+    assert_eq!(
+        markers,
+        vec!["personas", "event-storming"],
+        "the fixture seeded the wrong markers: {seeded:#?}"
+    );
+    assert!(
+        seeded
+            .iter()
+            .any(|entry| entry.kind == "step" && entry.at.as_str() < "2026-10-16T08:30:00.000Z"),
+        "the fixture holds no work before the first marker: {seeded:#?}"
+    );
+    state(world).seeded = seeded;
+}
+
+/// The text view's phase lines, top to bottom: each line's stage name.
+fn text_view_phases(document: &str) -> Vec<String> {
+    document
+        .split("<p class=\"workflow-phase\" data-phase=\"")
+        .skip(1)
+        .map(|phase| {
+            phase
+                .split('"')
+                .next()
+                .unwrap_or_else(|| panic!("a phase line carries no stage name: {phase}"))
+                .to_string()
+        })
+        .collect()
+}
+
+/// The text view's phase line for one stage: its whole markup, so an assertion
+/// reads the status the screen shows.
+fn text_view_phase_line(document: &str, stage: &str) -> String {
+    let marker = format!("<p class=\"workflow-phase\" data-phase=\"{stage}\"");
+    let start = document
+        .find(&marker)
+        .unwrap_or_else(|| panic!("the text view holds no {stage} phase line: {document}"));
+    let line = &document[start..];
+    let end = line.find("</p>").expect("the phase line is closed") + "</p>".len();
+    line[..end].to_string()
+}
+
+#[then("the report names the ideation phases frame through handoff")]
+fn report_names_the_ideation_phases(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let workflow = model["workflow"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the report carries no workflow: {model:#?}"));
+    let stages: Vec<&str> = workflow
+        .iter()
+        .map(|phase| {
+            phase["stage"]
+                .as_str()
+                .unwrap_or_else(|| panic!("a workflow phase carries no stage: {phase}"))
+        })
+        .collect();
+    assert_eq!(
+        stages,
+        IDEATION_PHASES.to_vec(),
+        "the topic report's stack is not the ideation workflow: {model:#?}"
+    );
+    let rendered = text_view_phases(&document);
+    assert_eq!(
+        rendered,
+        IDEATION_PHASES.to_vec(),
+        "the text view does not name the six ideation phases in order: {document}"
+    );
+    // The topic report never builds the "no recorded stage transition" group:
+    // the ideation derivation always places an entry in a phase.
+    assert!(
+        model.get("unstaged").is_none(),
+        "the topic report carries a no-stage group: {model:#?}"
+    );
+}
+
+#[then("the report marks persona work done and event storming active")]
+fn report_marks_persona_done_and_event_storming_active(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let status_of = |stage: &str| -> String {
+        model["workflow"]
+            .as_array()
+            .and_then(|workflow| workflow.iter().find(|phase| phase["stage"] == json!(stage)))
+            .and_then(|phase| phase["status"].as_str())
+            .unwrap_or_else(|| panic!("the report names no status for {stage}: {model:#?}"))
+            .to_string()
+    };
+    assert_eq!(status_of("frame"), "done", "frame is not done: {model:#?}");
+    assert_eq!(
+        status_of("personas"),
+        "done",
+        "persona work is not done: {model:#?}"
+    );
+    assert_eq!(
+        status_of("event-storming"),
+        "active",
+        "event storming is not active: {model:#?}"
+    );
+    assert_eq!(
+        status_of("handoff"),
+        "queued",
+        "handoff is not queued: {model:#?}"
+    );
+    // The rendered line carries the same statuses.
+    for (stage, status) in [("personas", "done"), ("event-storming", "active")] {
+        let line = text_view_phase_line(&document, stage);
+        assert!(
+            line.contains(&format!("data-status=\"{status}\"")),
+            "the {stage} line does not state {status}: {line}"
+        );
+    }
+}
+
+#[then("the report names no change phase and no next required artifact")]
+fn report_names_no_change_phase_and_no_next_required_artifact(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    // A topic report has no live change state, so it names no next required
+    // artifact.
+    assert!(
+        model.get("current_state").is_none(),
+        "the topic report carries a change state: {model:#?}"
+    );
+    let state = current_state_line(&document);
+    assert!(
+        state.contains("no live change state"),
+        "the topic report claims a live change state: {state}"
+    );
+    assert!(
+        !state.contains("next artifact"),
+        "the topic report names a next required artifact: {state}"
+    );
+    // No change phase is named: the stack is the ideation workflow's alone.
+    let rendered = text_view_phases(&document);
+    let named: Vec<&str> = rendered.iter().map(String::as_str).collect();
+    for stage in WORKFLOW_PHASES {
+        if IDEATION_PHASES.contains(&stage) {
+            continue;
+        }
+        assert!(
+            !named.contains(&stage),
+            "the topic report names the change phase {stage}: {named:?}"
+        );
+    }
+}
