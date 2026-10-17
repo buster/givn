@@ -353,6 +353,12 @@ pub(crate) struct DevelopmentReportState {
     /// The store's bytes before the report ran, so the store-completeness
     /// assertion compares against the seeded record.
     pub(crate) store_before: Option<Vec<u8>>,
+    /// The ids of the recorder's own command entries the scenario seeded, so
+    /// the report's omission and the store's retention address the same rows.
+    pub(crate) recorder_entry_ids: Vec<u64>,
+    /// The record's entry count as seeded: the report run and the read view
+    /// must each leave it unchanged.
+    pub(crate) record_entry_count: Option<usize>,
 }
 
 /// The capability's state, created on first use.
@@ -2009,6 +2015,322 @@ fn written_report_draws_no_band_timeline(world: &mut GivnWorld) {
             "the change report draws {marker}: {document}"
         );
     }
+}
+
+/// The written report's visible text: the document with its JSON data slot
+/// removed, so a "names no …" assertion reads the page's own text rather than
+/// the model the slot embeds.
+fn visible_report_text(document: &str) -> String {
+    let Some(start) = document.find("<script id=\"report-model\"") else {
+        return document.to_string();
+    };
+    let Some(open) = document[start..].find('>').map(|offset| start + offset + 1) else {
+        return document.to_string();
+    };
+    let Some(end) = document[open..]
+        .find("</script>")
+        .map(|offset| open + offset)
+    else {
+        return document.to_string();
+    };
+    format!("{}{}", &document[..start], &document[end..])
+}
+
+/// The ids of the recorder's own command entries the scenario seeded.
+fn recorder_entry_ids(world: &GivnWorld) -> Vec<u64> {
+    world
+        .development_report
+        .as_ref()
+        .map(|state| state.recorder_entry_ids.clone())
+        .unwrap_or_default()
+}
+
+/// The recorder's own seeded entries, from the fixture the Given claims.
+fn seeded_recorder(world: &GivnWorld) -> Vec<&HistoryEntry> {
+    let ids = recorder_entry_ids(world);
+    seeded(world)
+        .iter()
+        .filter(|entry| ids.contains(&entry.id))
+        .collect()
+}
+
+#[given(
+    regex = r#"^a change "([^"]+)" whose record holds one tool call, one other command, and the recorder's own command entries, flagged and unflagged$"#
+)]
+fn change_with_the_recorders_own_command_entries(world: &mut GivnWorld, id: String) {
+    let seeded = {
+        let env = project_root(world);
+        support::seed_recorder_omission_history(env, &id)
+    };
+    let entries: Vec<HistoryEntry> = std::iter::once(seeded.tool)
+        .chain(std::iter::once(seeded.other_command))
+        .chain(seeded.recorder.iter().cloned())
+        .collect();
+    let recorder_entry_ids: Vec<u64> = seeded.recorder.iter().map(|entry| entry.id).collect();
+    let state = state(world);
+    state.seeded = entries;
+    state.recorder_entry_ids = recorder_entry_ids;
+    state.record_entry_count = Some(seeded.entry_count);
+    state.store_before = Some(seeded.store_bytes);
+    world.last_change_id = Some(id);
+}
+
+#[then("the report names the tool call and counts it")]
+fn report_names_the_tool_call_and_counts_it(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let tool = seeded(world)
+        .iter()
+        .find(|entry| entry.kind == "tool")
+        .expect("the fixture seeds one tool call")
+        .clone();
+    let label = tool
+        .label
+        .clone()
+        .expect("the fixture labels its tool call");
+    let measured = tool
+        .duration_ms
+        .expect("the fixture measures its tool call");
+    let entries = model["entries"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the model carries no entries: {model:#?}"));
+    assert!(
+        entries.iter().any(|entry| entry["id"] == json!(tool.id)),
+        "the model does not carry the tool call {}: {model:#?}",
+        tool.id
+    );
+    assert_eq!(
+        model["summary"]["tool_calls"],
+        json!(1),
+        "the model does not count the one recorded tool call: {model:#?}"
+    );
+    let ranked = model["summary"]["longest_steps"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the model ranks no steps: {model:#?}"));
+    let row = ranked
+        .iter()
+        .find(|step| step["id"] == json!(tool.id))
+        .unwrap_or_else(|| panic!("the ranking holds no row for the tool call: {model:#?}"));
+    assert_eq!(
+        row["duration_ms"],
+        json!(measured),
+        "the ranking does not carry the tool call's measured duration: {row:#?}"
+    );
+    assert_eq!(
+        row["label"],
+        json!(label),
+        "the ranking does not name the tool call: {row:#?}"
+    );
+    assert!(
+        list_entry_ids(&document, "longest-steps").contains(&tool.id),
+        "the rendered ranking does not list the tool call: {document}"
+    );
+    assert!(
+        visible_report_text(&document).contains(&label),
+        "the report's visible text does not name the tool call: {document}"
+    );
+}
+
+#[then("the report names the other command")]
+fn report_names_the_other_command(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let recorder = recorder_entry_ids(world);
+    let other = seeded(world)
+        .iter()
+        .find(|entry| entry.kind == "command" && !recorder.contains(&entry.id))
+        .expect("the fixture seeds one other command")
+        .clone();
+    let label = other
+        .label
+        .clone()
+        .expect("the fixture labels its other command");
+    let entries = model["entries"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the model carries no entries: {model:#?}"));
+    assert!(
+        entries
+            .iter()
+            .any(|entry| entry["id"] == json!(other.id) && entry["label"] == json!(label)),
+        "the model does not name the other command `{label}`: {model:#?}"
+    );
+    assert!(
+        visible_report_text(&document).contains(&label),
+        "the report's visible text does not name the other command: {document}"
+    );
+}
+
+#[then("the report names no recorder command entry")]
+fn report_names_no_recorder_command_entry(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let recorder: Vec<(u64, String)> = seeded_recorder(world)
+        .into_iter()
+        .map(|entry| {
+            (
+                entry.id,
+                entry
+                    .label
+                    .clone()
+                    .expect("the fixture labels every recorder entry"),
+            )
+        })
+        .collect();
+    assert_eq!(
+        recorder.len(),
+        3,
+        "the fixture seeds the two intakes and the hook mapper: {recorder:#?}"
+    );
+    let entries = model["entries"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the model carries no entries: {model:#?}"));
+    for (id, label) in &recorder {
+        assert!(
+            !entries.iter().any(|entry| entry["id"] == json!(id)),
+            "the model still carries the recorder's entry {id}: {model:#?}"
+        );
+        assert!(
+            !entries.iter().any(|entry| entry["label"] == json!(label)),
+            "the model still names the recorder's `{label}` entry: {model:#?}"
+        );
+    }
+    let visible = visible_report_text(&document);
+    for (id, label) in &recorder {
+        assert!(
+            !visible.contains(label.as_str()),
+            "the report's visible text names the recorder's `{label}` entry (id {id}): {document}"
+        );
+    }
+    let ranked = model["summary"]["longest_steps"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the model ranks no steps: {model:#?}"));
+    for (id, label) in &recorder {
+        assert!(
+            !ranked.iter().any(|step| step["id"] == json!(id)),
+            "the ranking lists the recorder's entry {id}: {model:#?}"
+        );
+        assert!(
+            !ranked.iter().any(|step| step["label"] == json!(label)),
+            "the ranking names the recorder's `{label}` entry: {model:#?}"
+        );
+    }
+    let rendered = list_entry_ids(&document, "longest-steps");
+    for (id, _) in &recorder {
+        assert!(
+            !rendered.contains(id),
+            "the rendered ranking lists the recorder's entry {id}: {document}"
+        );
+    }
+}
+
+#[then("the report's entry total excludes the recorder command entries")]
+fn report_entry_total_excludes_the_recorder_entries(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let recorded = world
+        .development_report
+        .as_ref()
+        .and_then(|state| state.record_entry_count)
+        .expect("the recorder fixture ran first");
+    let recorder = recorder_entry_ids(world);
+    assert!(
+        !recorder.is_empty() && recorded > recorder.len(),
+        "the fixture must hold recorder entries beside recorded work: {recorded} / {recorder:?}"
+    );
+    let expected = recorded - recorder.len();
+    assert_eq!(
+        model["summary"]["entries"],
+        json!(expected),
+        "the summary counts the recorder's own entries: {model:#?}"
+    );
+    assert_eq!(
+        model["entries"]
+            .as_array()
+            .map(Vec::len)
+            .unwrap_or_default(),
+        expected,
+        "the model's entries are not the non-recorder count: {model:#?}"
+    );
+    let entries_tile = tile(&document, "entries");
+    assert!(
+        entries_tile.contains(&format!(">{expected}<")),
+        "the entries tile does not print the excluded total {expected}: {entries_tile}"
+    );
+}
+
+#[then("the record still holds the recorder command entries")]
+fn record_still_holds_the_recorder_command_entries(world: &mut GivnWorld) {
+    let ids = recorder_entry_ids(world);
+    let expected = world
+        .development_report
+        .as_ref()
+        .and_then(|state| state.record_entry_count)
+        .expect("the recorder fixture ran first");
+    assert!(!ids.is_empty(), "the fixture seeds no recorder entry");
+    let env = project_root(world);
+    let entries = support::record_entries(&env.root());
+    assert_eq!(
+        entries.len(),
+        expected,
+        "the report run appended to the record it renders"
+    );
+    for id in &ids {
+        assert!(
+            entries
+                .iter()
+                .any(|entry| entry["id"].as_u64() == Some(*id)),
+            "the record lost the recorder's entry {id}: {entries:#?}"
+        );
+    }
+}
+
+#[then("`givn history` still lists the recorder command entries")]
+fn history_still_lists_the_recorder_command_entries(world: &mut GivnWorld) {
+    let ids = recorder_entry_ids(world);
+    let expected = world
+        .development_report
+        .as_ref()
+        .and_then(|state| state.record_entry_count)
+        .expect("the recorder fixture ran first");
+    let change = world
+        .last_change_id
+        .clone()
+        .expect("the recorder fixture names its change");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let out = common::run_givn(env, &["history", "--change", &change, "--json"]);
+    assert!(
+        out.status.success(),
+        "reading the record failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let entries: Vec<Value> = serde_json::from_slice(&out.stdout)
+        .unwrap_or_else(|error| panic!("the read view did not print JSON: {error}"));
+    for id in &ids {
+        let entry = entries
+            .iter()
+            .find(|entry| entry["id"].as_u64() == Some(*id))
+            .unwrap_or_else(|| {
+                panic!("the read view lost the recorder's entry {id}: {entries:#?}")
+            });
+        assert_eq!(
+            entry["kind"],
+            json!("command"),
+            "the read view no longer prints a command entry: {entry:#?}"
+        );
+        assert_eq!(
+            entry["name"],
+            json!("history"),
+            "the read view no longer prints the recorder's command: {entry:#?}"
+        );
+    }
+    assert_eq!(
+        entries.len(),
+        expected,
+        "the read view appended to the record it reads"
+    );
 }
 
 /// The written report's model, with its workflow stack.
