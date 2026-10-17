@@ -3465,7 +3465,7 @@ name it.
 
 ## Task 11c — `Default capture keeps the metadata a review needs` (`development-record`, added)
 
-- [ ] **Scenario: `Default capture keeps the metadata a review needs`**
+- [x] **Scenario: `Default capture keeps the metadata a review needs`**
   - Design constraints:
     - The scenario is **reporter-driven, not seeded**: it runs the generated
       omp reporter through the shared fake `pi` extension context and the real
@@ -3498,23 +3498,97 @@ name it.
       them, `tests/steps/development_record_steps.rs`,
       `tests/steps/development_timeline_support.rs`.
     - RED expected failure: the new Given/When/Then phrases are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Default capture keeps the metadata a review needs"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Default capture keeps the metadata a review needs"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: Default capture keeps the metadata a review needs
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✘  And the project records in the default mode
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:117:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+
+        thread 'main' (3825198) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
         ```
-  - [ ] **GREEN** — widen the intake and the reporters; compile first, re-run →
+  - [x] **GREEN** — widen the intake and the reporters; compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.09s
+        BUILD_EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Default capture keeps the metadata a review needs"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: Default capture keeps the metadata a review needs
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  And the project records in the default mode
+           ✔  When the omp reporter reports a completed turn and a failed tool call for "demo"
+           ✔  Then the turn entry names its model, its cost, its context size, and its stop reason
+           ✔  And the failed tool entry keeps its error text within the documented bound, its tool call id, and its output size
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — one bounds module and one metadata builder shared by the
+        Production files: `src/history.rs` (the `session` envelope,
+        `text_metadata` 240 / `error_text` 1000 bounds, `bound_result_meta`),
+        `src/cli/history.rs` (widened `Usage` with reasoning, turn cost/context/
+        stop-reason/index/usage data, tool `tool_call_id`/`error`/`output_bytes`/
+        `result_meta`/`duration_source`, the payload `session` carried onto every
+        entry, Claude's error/response/question/transcript-cost reads),
+        `assets/agent-integrations/omp/givn-timeline.js` (the driven reporter),
+        and the opencode/Maki assets plus the generated copies for the same
+        fields where their harnesses expose them.
+  - [x] **REFACTOR** — one bounds module and one metadata builder shared by the
         four reporters; re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        $ cargo fmt --all -- --check
+        FMT_EXIT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.97s
+        CLIPPY_EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Default capture keeps the metadata a review needs"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: Default capture keeps the metadata a review needs
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" exists with artifact "proposal.md"
+           ✔  And the project records in the default mode
+           ✔  When the omp reporter reports a completed turn and a failed tool call for "demo"
+           ✔  Then the turn entry names its model, its cost, its context size, and its stop reason
+           ✔  And the failed tool entry keeps its error text within the documented bound, its tool call id, and its output size
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        EXIT=0
+
+        The bounds live in one module (`src/history.rs`): `bound_label`,
+        `bound_text_metadata`, `bound_error`, `bound_question`, `bound_content`,
+        and `bound_result_meta`, each applied by the intake at its one site; the
+        four reporters build the same `{text, truncated, bytes}` metadata shape
+        through their own small helpers (`usageOf`/`costOf`/`contextOf`/
+        `reportedQuestion` in omp and opencode, `usage_of`/`transcript_question`
+        in Maki, `session_record_usage`/`reported_question` in the Claude mapper).
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+  - [x] **COMMIT** — `509263872c637196d31e35753257809917acb64b` — `feat(development-record): <release note>` with
         the scenario title in the body. Record the revision identifier.
 
 ## Task 11d — `Question text is captured in full` (`development-record`, added)
