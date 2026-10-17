@@ -6,7 +6,6 @@ requires-python = ">=3.12"
 dependencies = [
     "click>=8.4",
     "behave>=1.3",
-    "sandlock",
 ]
 
 [project.scripts]
@@ -22,8 +21,6 @@ use_nested_step_modules = true
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[tool.uv.sources]
-sandlock = { git = "https://github.com/multikernel/sandlock", rev = "6a4ec66", subdirectory = "python/" }
 
 [dependency-groups]
 dev = [

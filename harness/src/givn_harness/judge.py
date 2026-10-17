@@ -104,9 +104,14 @@ def run_judge(workspace_path: str, model: str | None = None) -> list[JudgeScore]
 
         proc: subprocess.Popen | None = None
         try:
-            cmd = ["opencode", "--prompt-file", prompt_file]
+            cmd = ["opencode", "run"]
             if model:
                 cmd.extend(["--model", model])
+            cmd.extend([
+                "--file", prompt_file,
+                "Read the attached file and follow its instructions exactly. "
+                "Output only the requested JSON.",
+            ])
             proc = subprocess.Popen(
                 cmd,
                 start_new_session=True,
