@@ -1322,16 +1322,20 @@ fn stage_opened_by(artifact: &str) -> Option<&'static str> {
     WORKFLOW_STAGES.get(index + 1).copied()
 }
 
-/// One recorded artifact transition: the `phase` entry whose label — or name,
-/// where the record carries no label — names a workflow artifact, and the
-/// instant the artifact appeared.
-fn artifact_transition(entry: &HistoryEntry) -> Option<(i64, &'static str)> {
+/// One recorded artifact transition: the instant the artifact appeared, the
+/// artifact label the record carries (the file whose appearance it records),
+/// and the workflow stage that appearance opens. The label is kept because the
+/// opening-stage rule must know whether the band's first transition is
+/// `proposal.md` — the only one that makes the record start where the workflow
+/// starts.
+fn artifact_transition(entry: &HistoryEntry) -> Option<(i64, &str, &'static str)> {
     if entry.kind != PHASE {
         return None;
     }
     let artifact = entry.label.as_deref().unwrap_or(&entry.name);
     Some((
         crate::history::parse_rfc3339_ms(&entry.at)?,
+        artifact,
         stage_opened_by(artifact)?,
     ))
 }
@@ -1362,22 +1366,28 @@ impl ReportModel {
 }
 
 /// Every band's entries with the stage they worked in: an entry belongs to the
-/// stage the latest artifact transition at or before its own `at` opened, and
-/// an entry recorded before the record's first transition stays in the
-/// workflow's opening stage. A scope whose record carries no transition gets
-/// one unnamed stage instead of an invented phase name. This is the report's
-/// one derivation of a phase: the model carries its result, so neither the
-/// renderer nor the browser script derives a stage a second time.
+/// stage the latest artifact transition at or before its own `at` opened.
+/// Entries recorded before the record's first transition stay in the workflow's
+/// opening stage only when that first transition is `proposal.md` — the record
+/// starts where the workflow starts; when the first transition is later, those
+/// entries belong to no stage, and a scope whose record carries no transition
+/// gets no stage either. A scope with no stage is never given an invented
+/// phase name. This is the report's one derivation of a phase: the model
+/// carries its result, so neither the renderer nor the browser script derives
+/// a stage a second time.
 fn stage_assignments(bands: &[Band], entries: &[HistoryEntry]) -> Vec<StageAssignment> {
     let mut assignments = Vec::new();
     for band in bands {
-        let mut transitions: Vec<(i64, &str)> = band
+        let mut transitions: Vec<(i64, &str, &'static str)> = band
             .entries
             .iter()
             .filter_map(|id| entries.iter().find(|entry| entry.id == *id))
             .filter_map(artifact_transition)
             .collect();
-        transitions.sort_by_key(|(at, _)| *at);
+        transitions.sort_by_key(|(at, _, _)| *at);
+        let starts_at_workflow_start = transitions
+            .first()
+            .is_some_and(|(_, artifact, _)| *artifact == "proposal.md");
         for id in &band.entries {
             let Some(entry) = entries.iter().find(|entry| entry.id == *id) else {
                 continue;
@@ -1386,13 +1396,13 @@ fn stage_assignments(bands: &[Band], entries: &[HistoryEntry]) -> Vec<StageAssig
                 transitions
                     .iter()
                     .rev()
-                    .find(|(transition_at, _)| *transition_at <= at)
-                    .map(|(_, stage)| (*stage).to_string())
+                    .find(|(transition_at, _, _)| *transition_at <= at)
+                    .map(|(_, _, stage)| (*stage).to_string())
             });
             let stage = match opened {
                 Some(stage) => Some(stage),
-                None if transitions.is_empty() => None,
-                None => Some(WORKFLOW_STAGES[0].to_string()),
+                None if starts_at_workflow_start => Some(WORKFLOW_STAGES[0].to_string()),
+                None => None,
             };
             assignments.push(StageAssignment { entry: *id, stage });
         }
@@ -2548,5 +2558,108 @@ mod tests {
         );
         assert_eq!(payload["summary"]["tool_calls"], serde_json::json!(1));
         assert_eq!(payload["summary"]["cost_total"], serde_json::json!(0.75));
+    }
+
+    /// The opening-stage rule's production proof: an entry recorded before a
+    /// band's first transition stays in the opening stage only when that
+    /// transition is `proposal.md`. When the first transition is later, the
+    /// early work belongs to the one no-stage group — never under a guessed
+    /// `propose` phase.
+    #[test]
+    fn entries_before_a_later_first_transition_belong_to_no_stage() {
+        let entries = vec![
+            FixtureEntry {
+                id: 1,
+                at: "2026-10-17T09:00:00.000Z",
+                kind: "step",
+                name: "early",
+                label: Some("early work"),
+                duration_ms: Some(1_000),
+                ..FixtureEntry::default()
+            }
+            .record(),
+            FixtureEntry {
+                id: 2,
+                at: "2026-10-17T10:00:00.000Z",
+                kind: "phase",
+                name: "design.md",
+                label: Some("design.md"),
+                ..FixtureEntry::default()
+            }
+            .record(),
+            FixtureEntry {
+                id: 3,
+                at: "2026-10-17T10:01:00.000Z",
+                kind: "step",
+                name: "later",
+                label: Some("later work"),
+                duration_ms: Some(2_000),
+                ..FixtureEntry::default()
+            }
+            .record(),
+        ];
+        let model = build_report_model(
+            Some(Scope::Change {
+                id: "demo".to_string(),
+            }),
+            entries,
+        );
+        let early = model
+            .stages
+            .iter()
+            .find(|assignment| assignment.entry == 1)
+            .expect("the early entry has a stage assignment");
+        assert!(
+            early.stage.is_none(),
+            "the early work is placed in an invented opening phase: {early:?}"
+        );
+        let later = model
+            .stages
+            .iter()
+            .find(|assignment| assignment.entry == 3)
+            .expect("the later entry has a stage assignment");
+        assert_eq!(
+            later.stage.as_deref(),
+            Some("arc42"),
+            "design.md opens the arc42 stage"
+        );
+
+        let unstaged = model
+            .unstaged
+            .as_ref()
+            .expect("the early work has no no-stage group");
+        assert!(
+            unstaged.stage.is_none(),
+            "the no-stage group carries a name"
+        );
+        assert!(
+            unstaged.status.is_none(),
+            "the no-stage group carries a status"
+        );
+        let members: Vec<u64> = unstaged
+            .lanes
+            .iter()
+            .flat_map(|lane| lane.entries.iter().copied())
+            .collect();
+        assert_eq!(
+            members,
+            vec![1],
+            "the no-stage group does not hold exactly the early work"
+        );
+
+        let propose = model
+            .workflow
+            .iter()
+            .find(|phase| phase.stage.as_deref() == Some("propose"))
+            .expect("the stack carries the propose phase");
+        assert!(
+            propose.lanes.iter().all(|lane| lane.entries.is_empty()),
+            "the report places the early work under a guessed opening phase"
+        );
+        let view = render_view(&model);
+        assert!(
+            view.contains("no recorded stage transition"),
+            "the text view does not state the gap: {view}"
+        );
     }
 }

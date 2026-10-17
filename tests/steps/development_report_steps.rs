@@ -2610,6 +2610,133 @@ fn report_names_no_next_required_artifact(world: &mut GivnWorld) {
     );
 }
 
+#[given(regex = r#"^a change "([^"]+)" whose record holds no artifact transition$"#)]
+fn change_whose_record_holds_no_artifact_transition(world: &mut GivnWorld, id: String) {
+    let scope = Scope::Change { id: id.clone() };
+    let seeded = {
+        let env = project_root(world);
+        run_fixture_command(env, &["new", &id]);
+        let mut history = support::SeededHistory::new();
+        let step = history.span(
+            &scope,
+            "step",
+            "verify",
+            "2026-10-16T09:10:00.000Z",
+            120_000,
+        );
+        history.label(step, "cargo test --locked");
+        let tool = history.span(&scope, "tool", "Bash", "2026-10-16T09:20:00.000Z", 5_000);
+        history.label(tool, "git status");
+        history.seed(env)
+    };
+    // The fixture's own claim: the record carries work and no artifact
+    // transition at all.
+    assert_eq!(seeded.len(), 2, "the fixture records its own work");
+    assert!(
+        seeded.iter().all(|entry| entry.kind != "phase"),
+        "the fixture's record carries an artifact transition: {seeded:#?}"
+    );
+    state(world).seeded = seeded;
+    world.last_change_id = Some(id);
+}
+
+#[then("the report groups the recorded work under no workflow phase")]
+fn report_groups_the_recorded_work_under_no_workflow_phase(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let recorded = seeded(world);
+    let unstaged = &model["unstaged"];
+    assert!(
+        !unstaged.is_null(),
+        "the report carries no no-stage group: {model:#?}"
+    );
+    assert!(
+        unstaged["stage"].is_null(),
+        "the no-stage group carries a phase name: {model:#?}"
+    );
+    assert!(
+        unstaged["status"].is_null(),
+        "the no-stage group carries a status: {model:#?}"
+    );
+    let mut members: Vec<u64> = unstaged["lanes"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the no-stage group carries no lanes: {model:#?}"))
+        .iter()
+        .flat_map(|lane| {
+            lane["entries"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .map(|id| id.as_u64().expect("a lane member id"))
+        })
+        .collect();
+    members.sort_unstable();
+    let mut expected: Vec<u64> = recorded.iter().map(|entry| entry.id).collect();
+    expected.sort_unstable();
+    assert_eq!(
+        members, expected,
+        "the no-stage group does not hold exactly the recorded work: {model:#?}"
+    );
+    // The group is rendered below the phase stack, with its entry count.
+    assert!(
+        document.contains("class=\"unstaged-group\"")
+            && document.contains(&format!("data-entries=\"{}\"", expected.len())),
+        "the text view does not print the no-stage group: {document}"
+    );
+    // No workflow phase draws the recorded work: the groups never overlap.
+    for phase in report_workflow(&model) {
+        for lane in phase["lanes"].as_array().into_iter().flatten() {
+            for id in lane["entries"].as_array().into_iter().flatten() {
+                assert!(
+                    !expected.contains(&id.as_u64().expect("a lane member id")),
+                    "the report places the recorded work under the phase {:?}: {model:#?}",
+                    phase["stage"]
+                );
+            }
+        }
+    }
+}
+
+#[then("the report states that the record carries no stage transition")]
+fn report_states_that_the_record_carries_no_stage_transition(world: &mut GivnWorld) {
+    let document = report_text(world);
+    assert!(
+        document.contains(
+            "entries carry no recorded stage transition; the record assigns them to no workflow phase."
+        ),
+        "the report does not state the gap: {document}"
+    );
+}
+
+#[then("the report names no phase for that recorded work")]
+fn report_names_no_phase_for_that_recorded_work(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let recorded = seeded(world);
+    for entry in recorded {
+        let assignment = model["stages"]
+            .as_array()
+            .and_then(|assignments| {
+                assignments
+                    .iter()
+                    .find(|assignment| assignment["entry"] == json!(entry.id))
+            })
+            .unwrap_or_else(|| {
+                panic!("the entry {} has no stage assignment: {model:#?}", entry.id)
+            });
+        assert!(
+            assignment["stage"].is_null(),
+            "the report names the phase {:?} for the entry {}: {model:#?}",
+            assignment["stage"],
+            entry.id
+        );
+    }
+    assert!(
+        !document.contains("data-stage="),
+        "the text view names a phase for the recorded work: {document}"
+    );
+}
+
 #[given(regex = r#"^a change "([^"]+)" whose record holds hundreds of short agent activities$"#)]
 fn change_with_hundreds_of_short_agent_activities(world: &mut GivnWorld, id: String) {
     let scope = Scope::Change { id: id.clone() };

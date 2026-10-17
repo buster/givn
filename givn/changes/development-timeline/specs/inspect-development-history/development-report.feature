@@ -95,7 +95,7 @@ Feature: Development Report
     And the report marks every workflow phase done
     And the report names no next required artifact
 
-  @givn.added @wip
+  @givn.added
   Scenario: The report states a record with no stage transition
     Given a change "demo" whose record holds no artifact transition
     When the developer generates the development report for "demo"
