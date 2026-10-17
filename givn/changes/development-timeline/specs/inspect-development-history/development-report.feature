@@ -134,6 +134,14 @@ Feature: Development Report
     And the report notes "content omitted; see the record" beyond the budget
     And the development record still holds every content byte
 
+  @givn.added @wip
+  Scenario: The written report's text view presents the workflow
+    Given a change "demo" whose record holds the workflow phases up to "tasks"
+    And the change's artifacts make its derived state "tasks-done" with the next required artifact "review"
+    When the developer generates the development report for "demo"
+    Then the written report names the current state and every workflow phase
+    And the written report draws no band timeline
+
   @givn.added @e2e
   Scenario: Consumer generates the development report for a change
     Given a project root with givn/ initialised
