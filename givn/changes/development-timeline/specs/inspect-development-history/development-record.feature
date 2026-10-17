@@ -179,6 +179,7 @@ Feature: Development Record
     Given an ideation topic "ideas" whose personas file appears while a recorded command runs
     When the command finishes
     Then the record holds one phase entry labelled "personas" for the topic "ideas"
+    And a later recorded command that sees the same personas file records no second phase entry
     And a later observed marker records its own phase entry
     And a change artifact appearance records no ideation phase entry
 

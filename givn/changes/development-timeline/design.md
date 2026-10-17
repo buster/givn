@@ -1187,13 +1187,18 @@ Missing data is rendered as missing, never as zero:
 `givn timeline` builds a `ReportModel` from the record and writes one HTML file:
 
 - **Workflow view**: a change or ideation report reads top to bottom. The
-  header states the scope, the derived current state, and how many of the nine
-  phases are done; the KPI strip states elapsed, active, waiting, tool calls,
-  subagent spans, and cost, each read from the model's summary; the workflow
-  stack lists the change workflow's phases (`propose`, `specs`, `design`,
-  `arc42`, `design-review`, `tasks`, `implement`, `review`, `archive`) in order,
-  each with its status, wall/active/waiting time, tool and subagent counts, the
-  names of its lanes, and an activity sparkline. Expanding a phase draws its
+  header states the scope, the derived current state, and how many of the
+  report scope's own phases are done — nine for a change report, six for a
+  topic's ideation workflow; the KPI strip states elapsed, active, waiting,
+  tool calls, subagent spans, and cost, each read from the model's summary; the
+  workflow stack lists the report scope's workflow phases in order: the change
+  workflow's nine (`propose`, `specs`, `design`, `arc42`, `design-review`,
+  `tasks`, `implement`, `review`, `archive`) for a change report, and the
+  ideation workflow's six (`frame`, `personas`, `event-storming`,
+  `use-case-definition`, `use-case-elaboration`, `handoff`) for a topic report
+  (*Linked ideation and the ideation workflow*), each with its status,
+  wall/active/waiting time, tool and subagent counts, the names of its lanes,
+  and an activity sparkline. Expanding a phase draws its
   vertical time axis (time flows down) with one lane per recorded session beside
   each other, the selected lane's log below the axis, and per-phase zoom
   Fit / 1 h / 15 m. Recorded work the record places in no workflow stage renders
@@ -1214,7 +1219,9 @@ Missing data is rendered as missing, never as zero:
   opening stage only when that first transition is `proposal.md` (the record
   starts where the workflow starts); when the first transition is later, those
   entries belong to the "no recorded stage transition" group, and a scope with
-  no transitions gets that one group instead of an invented phase name. The CLI
+  no transitions gets that one group instead of an invented phase name. The
+  ideation workflow uses its own marker-start derivation, never this table
+  (*Linked ideation and the ideation workflow*). The CLI
   `@e2e` scenario asserts one concrete stage name against a seeded record whose
   last transition is `tasks.md`.
 - **Ordering**: within every band the spans are ordered by `at` (the entry's
@@ -1294,8 +1301,9 @@ Missing data is rendered as missing, never as zero:
   per-phase zoom (Fit / 1 h / 15 m), and renders the selected lane's log,
   extended by the aggregation rule above. The script never calls `fetch`, never
   loads a remote resource, and never uses `Date.now()` — the view is derived
-  from the embedded timestamps and the current-state fields, so the same record
-  and change state always render identically, and the file stays one
+  from the embedded timestamps, the current-state fields, and the embedded
+  linked-ideation link, so the same record, change state, and link always
+  render identically, and the file stays one
   self-contained document with no server and no third-party JavaScript.
   `givn timeline` writes to `givn/history/reports/<scope>.html` when `--out`
   names no other path, which is the chapter 07 footprint.
@@ -1347,15 +1355,21 @@ asked for; the project report keeps its band rows. Its rules:
   report says "recorded only, no live change state" and marks no phase `done`,
   never assuming an archive. A topic or the project report likewise has no live
   state: `current_state` is `None` and the header says "no live change state".
-  For a topic the current phase is
-  the last stage its record names and every earlier stage is `done`, expressed
-  as the workflow statuses; when the record names none, no phase is current and
-  the header says so. The model carries the change result as
+  For a topic the current phase is the furthest ideation marker its record
+  names and every earlier ideation phase is `done` (*Linked ideation and the
+  ideation workflow*), expressed as the ideation workflow's statuses; when the
+  record names none, no ideation phase is current and the header says so. The
+  header's done count is over the scope's own workflow: nine change phases or
+  six ideation phases. The model carries the change result as
   `current_state: Option<CurrentState>`; the text view prints it. The scenario
   that proves this drives a real change directory whose artifacts produce the
   state, never a step that supplies the label.
-- **Phase statuses.** The workflow order is `WORKFLOW_STAGES` (nine phases, in
-  the change workflow's order). Phases before the current phase are `done`, the
+- **Phase statuses.** For a change report the workflow order is
+  `WORKFLOW_STAGES` (nine phases, in the change workflow's order); a topic
+  report's stages and statuses are the ideation derivation in *Linked ideation
+  and the ideation workflow*, and its header counts ideation phases of six, so
+  the e2e open scenario's topic row reads "of 6 phases done". Phases before the
+  current phase are `done`, the
   current phase is `active`, phases after it are `queued`. A phase whose mapped
   state artifact is `skipped` is `skipped`, which wins over `done` and `queued`;
   a skipped artifact is never the current phase, because `next_required()`
@@ -1473,10 +1487,21 @@ pre-change phase without merging scopes silently.
 
 - **Link.** A change's proposal records `Ideation topic: <id>` (falling back to
   a `Seed path: givn/ideation/<topic>/changes/<seed>.md` when the topic line is
-  absent); the link is used only when `givn/ideation/<id>/` exists. A proposal
-  with `Ideation topic: none` (or no seed) has no ideation group — no inference
-  from project entries, time proximity, or the mutable topic state. Archived
-  changes resolve their proposal from `givn/archive/<id>/`.
+  absent); the link is used only when `givn/ideation/<id>/` exists. The value is
+  normalized before use: surrounding whitespace, backticks, and quotes are
+  stripped; a bare `<id>` or a `givn/ideation/<id>` path (with or without a
+  trailing slash) resolves by taking the path's last segment; and a value whose
+  first token is `none` — including `none — <reason>` — means no link. A
+  `Seed path` value names the topic by its `givn/ideation/<topic>/changes/`
+  path segment; its filename is not validated, because the proposal template's
+  `<uc-id>` placeholder and the handoff's `<change-id>` seed names both occur.
+  A normalized value that names no existing topic directory is no link. A
+  proposal with `Ideation topic: none` (or no seed) has no ideation group — no
+  inference from project entries, time proximity, or the mutable topic state.
+  Archived changes resolve their proposal from `givn/archive/<id>/`. The
+  resolved link is embedded in the model at generation, so the written document
+  is deterministic over the record, the change state, and that link snapshot
+  (Q-99/R-96).
 - **Ideation phases.** The ideation workflow is `frame`, `personas`,
   `event-storming`, `use-case-definition`, `use-case-elaboration`, `handoff`
   (domain labels: Frame, Personas, Event Storming, Use Case Definition, Use
@@ -1488,36 +1513,66 @@ pre-change phase without merging scopes silently.
   `eventstorming.md` starts `event-storming`, `use-case-definitions.md` starts
   `use-case-definition`, the first `use-cases/*.md` starts
   `use-case-elaboration`, and the first `changes/*.md` or the published
-  `docs/ideation/<topic>.md` starts `handoff`. The command dispatcher records
-  one `phase` entry per marker at the end of the first recorded command that
-  observes it, under the ideation scope, deduplicated by label; gate entries
-  never count; `frame.md` is not a marker (it is Frame work, and Frame is the
-  opening stage).
+  `docs/ideation/<topic>.md` starts `handoff`. The dispatcher observes markers
+  for exactly the scope the command was recorded under — its start-resolved
+  scope, or the intake's topic override — never a new post-command resolution
+  and never a change- or project-scoped command's guess. A command recorded in
+  topic T scans T at its end and records one `phase` entry per first-observed
+  marker, even when that command appends T's `## Completion` section (the
+  handoff command's own start scope is still T); a change- or project-scoped
+  command records no ideation marker, so a finished or historical topic is
+  never backfilled. Entries are deduplicated by label in T's scope and parented
+  to the observing command's own entry exactly as a change transition is; gate
+  entries never count; `frame.md` is not a marker (it is Frame work, and Frame
+  is the opening stage).
 - **Topic report.** `givn timeline --topic <id>` renders the ideation workflow
-  in place of the change workflow: statuses from the recorded markers (Frame
-  active until a marker; each later marker marks the earlier phases done and
-  itself active), no change phase, no next required artifact. Entries before
-  the first marker are Frame, never a guessed later phase; a scope with no
-  entries keeps the empty state.
+  in place of the change workflow: statuses from the recorded markers (the
+  furthest marker in ideation order is active, every earlier ideation phase
+  `done`, every later one `queued`; before any marker Frame is active and the
+  rest queued), no change phase, no next required artifact, and a header count
+  of ideation phases done of six. Entries before the first marker are Frame,
+  never a guessed later phase; a scope with no entries keeps the empty state.
+  The topic report has no "no recorded stage transition" group: the ideation
+  derivation always places an entry in an ideation phase.
 - **Change report.** When the link exists, a labeled **ideation group** is
   rendered above the change workflow: the same phase-card stack with the six
-  ideation phases, each expandable into the same vertical lanes and lane log,
-  with the group's own recorded entries and totals. The change's current state,
-  KPIs, and totals remain the change's; the group states its own duration,
-  tools, subagents, and waits. The group is historical — it never becomes the
-  change's current phase. A linked topic whose record holds no entries renders
-  the group header with "no recorded activity (pre-dates the record)" and no
-  invented phases or durations.
+  ideation phases and the topic report's marker statuses, each expandable into
+  the same vertical lanes and lane log, with the group's own recorded entries
+  and totals. It is a separate labelled section with its own `.phase-stack`
+  (`#hybrid-ideation`), never inside the change workflow's `#hybrid-workflow`
+  stack, so the change stack's phase cards and the existing selectors stay
+  unambiguous; the text view prints the group's heading, its phases, and its
+  totals above the change stack. The change's current state, KPIs, and totals
+  remain the change's; the group states its own duration, tools, subagents, and
+  waits. The group is historical — it never becomes the change's current
+  phase. A linked topic whose record holds no entries renders the group header
+  with "no recorded activity (pre-dates the record)" and no invented phases or
+  durations.
 - **Model.** `ReportModel.ideation: Option<IdeationGroup>` carries the topic id,
   the ideation phases (the same `WorkflowPhase` shape), the group's entry ids,
-  its totals, and whether the record has activity. The linked topic's entries
-  join the model's entries once; their stage assignment uses the ideation
-  markers, never the change transitions. The topic report's `workflow` is the
-  ideation stack and `current_state` is absent. The model carries no second
-  copy of raw entries.
+  its totals, and whether the record has activity; it is `Some` only for a
+  change report. The linked topic's entries join the model's `entries` once and
+  form their own ideation band; they never join the change's band. The report
+  scope's summary, `empty` flag, ranking, wait totals, and KPI facts are
+  computed from the report scope's own entries; the group's totals are computed
+  from the topic's entries. A marker label resolves directly to its ideation
+  phase, never through `STAGE_ARTIFACTS` (whose labels open the following
+  change stage): an entry belongs to the latest marker at or before its `at`,
+  and entries before the first marker are `frame`. The ideation derivation
+  never produces the no-stage group, and band phase names are read against each
+  band scope's own workflow order, so an ideation band names ideation phases.
+  `empty` is true only when the model holds no entries at all: a change whose
+  own record is empty but whose linked topic holds activity renders the
+  change's zero-entry workflow plus the group, never the empty state; a report
+  with no entries anywhere keeps the empty state. The topic report's `workflow`
+  is the ideation stack and `current_state` is absent. The model carries no
+  second copy of raw entries.
 - **Scale and evidence.** The linked group uses the same aggregation, lane, log,
   and content-budget rules; the browser evidence includes the linked group in a
   change report and the ideation stack in a topic report, at both viewports.
+  The new linked-group scenario commits its own evidence pair under its own
+  slug; the refreshed topic row reads the ideation stack and the six-phase
+  header count.
 - **Risks.** R-97: the link is only as good as the proposal/seed record — a
   stale or missing link hides the group (never fabricates one), and topics that
   predate the record stay empty. R-98: the marker-start semantics record the
@@ -1574,7 +1629,7 @@ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test
 | `HarnessPayload` | `struct` | One raw hook payload from a process-per-hook harness, with the fields the mapper reads |
 | `map_harness_event` | `fn` | Raw harness payload → record events plus pending-state updates; the Claude mapper's only entry point, also usable by a future shell-based harness |
 | `PendingState` | `struct` | Start timestamps for process-per-hook harnesses, keyed by the harness's own call id; written atomically, pruned by age and at session end |
-| `ReportModel` | `struct` | Everything the report screen renders: scope, bands, entries, stages, summary (with the six KPI totals), the `workflow` phases with their lane/repeated-group/Fit-aggregate scaffold, the `unstaged` group, `current_state`, and the 8 MiB `content_budget_bytes`/`content_bytes` accounting |
+| `ReportModel` | `struct` | Everything the report screen renders: scope, bands, entries, stages, summary (with the six KPI totals), the `workflow` phases with their lane/repeated-group/Fit-aggregate scaffold, the `unstaged` group, `current_state`, the optional `ideation` group (topic id, its six ideation phases, its own entries and totals), and the 8 MiB `content_budget_bytes`/`content_bytes` accounting |
 | `WorkflowPhase` | `struct` | One workflow phase or the "no recorded stage transition" group: stage, status, first/last, wall/active/waiting ms, tool/subagent counts, lanes, repeated groups, Fit aggregates |
 | `Lane` | `struct` | One recorded session's lane inside a phase: session key, visible name, entry ids, first/last, measured duration |
 | `CurrentState` | `struct` | The change state embedded at generation: stage label, current phase, next required artifact, task progress |
@@ -1650,7 +1705,7 @@ Stated explicitly rather than left blank, per the instruction.
 | Browser state must persist across the steps of one scenario (page, zoom level, open panel) | `tests/e2e/browser-driver.mjs` starts **one** browser and **one** context per scenario and accepts commands as JSON lines on stdin; the Rust step helper owns the process for the scenario's lifetime. No step opens a second context |
 | `file://` and module loading | the report is one file with inline script and no imports, so no module resolution, no CORS, and no `fetch` is involved; the driver navigates with `page.goto("file://…")` |
 | Non-deterministic screenshots (animation, fonts, optional waits) | `prefers-reduced-motion: reduce` is emulated for the context, the driver awaits `document.fonts.ready` and a `requestIdleCallback` tick before capture, and the report animates nothing when reduced motion is set |
-| The report's clock | the report renders from embedded timestamps and its embedded change-state snapshot only (no `Date.now()`), so the same record and the same change state produce the same pixels; a later change-state edit requires a re-render and is not read at open time (R-96) |
+| The report's clock | the report renders from embedded timestamps, its embedded change-state snapshot, and its embedded linked-ideation link only (no `Date.now()`, no proposal read at open time), so the same record, change state, and link produce the same pixels; a later change-state or proposal edit requires a re-render and is not read at open time (R-96) |
 | A stray browser surviving a failure | the driver exits on stdin EOF and on a `quit` command; the Rust helper kills the child on drop, and the scenario's `TempDir` removal is what deletes the report |
 
 ## E2E Smoke Test Infrastructure
@@ -1748,7 +1803,7 @@ asserts it changed between two observations. The empty-scope scenario is the
 evidence for the contract's declared `empty` state: it is the `@e2e` traversal
 of that state and it commits `<viewport>--empty.png` at both viewports. The
 matrix has ten rows, one for each inventory entry in
-`specs/inspect-development-history/usecase.md` §Interactions, and the nine
+`specs/inspect-development-history/usecase.md` §Interactions, and the ten
 `@e2e` titles are exactly the titles in this table.
 
 ## Visual Design Contract

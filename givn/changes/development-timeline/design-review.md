@@ -1444,3 +1444,138 @@ or an accepted boundary.
    simply stops showing the recorder rows, and no store line is removed.
 
 **DESIGN-REVIEW: PASS**
+
+## Re-review round 8 (2026-10-17, linked ideation and ideation workflow delta)
+
+**Why it ran.** The delta adds a change report's optional linked ideation group,
+an ideation workflow for topic reports, dispatcher-recorded phase-start markers,
+D7, and four pending scenarios. A fresh-context grill (read-only planning; no
+suite run) read the served design-review rules, the delta commit
+(`38e38268`), the current `design.md`, both feature files, the usecase
+inventory, the report model and renderer (`src/cli/timeline.rs`), the recorder
+and marker writer (`src/history.rs`, `src/main.rs`), the browser steps
+(`tests/steps/development_report_e2e_steps.rs`,
+`tests/steps/development_timeline_support.rs`), the proposal and ideation
+templates (`assets/templates/proposal.md`, `assets/instructions/ideation.md`),
+the real `givn/ideation/*` topics and archived proposals, and the durable
+documentation (arc42 05/06/08/10/11/12 and the design system).
+
+**Branch outcomes.**
+
+| Branch | Outcome |
+|---|---|
+| Scope | FINDING → F1/F3/F6. The spec asserted "the group's own totals" and "no merged totals" but the one model's summary, ranking, waits, and empty flag are computed over every entry, and the link's real proposal forms were unparsed. |
+| Tech choices | NO ISSUE. `givn timeline` already takes `--topic` (`run(change, topic, out)`), the group is a model addition with no store change, and the existing phase/lane/log primitives carry it. |
+| Missing scenarios | FINDING → F6. No scenario covered a no-link proposal or an archived change's proposal, and the marker scenario never asserted label dedupe. |
+| Testability | FINDING → F2/F5/F6. The writer's observation scope was undefined (and the obvious implementation loses the handoff marker), the group's text-view surface was unnamed though the regular scenarios read the file, and the step for the new topic/group facts has no binding yet. |
+| E2E fidelity | FINDING → F4/F5. The existing outline's topic row asserts "of 9 phases done" and queries the change stack; a six-phase ideation stack and a separate group container must be stated. No `@e2e` tag was removed; the delta adds one and the matrix/title count is now ten. |
+| Interaction Coverage | NO ISSUE. The usecase inventory, the matrix, and the e2e titles are one-to-one: **10 rows, 10 distinct titles**; the new row/action is the linked-group read. |
+| Risk | FINDING (mitigated) → F2. The likely failure is observing the post-command scope (the handoff command appends `## Completion`, so the topic no longer resolves) or scanning every topic (a historical topic gains markers and its "no recorded activity" group disappears). |
+| Use-case and Persona context | NO ISSUE. Same use case `inspect-development-history`, same Web UI/report contract; no Persona is invented or used as a Gherkin actor. |
+| Decision ledger | NO ISSUE. D7 is recorded with its alternatives and date; D1–D6 keep their dispositions. The delta raises no unanswered proposal question. |
+| Visual design contract | FINDING (low) → F5. The group had no named container or accessible separation from `#hybrid-workflow`; the primitives and viewports themselves are unchanged. |
+| Deferrals | NO ISSUE. None requested; nothing was deferred. |
+| Persona disposition | NO ISSUE. Round 6's confirmed disposition covers the same screen. |
+| Interface classification | NO ISSUE. Still a Web UI with the real browser driver; the linked group is rendered in the same file. |
+| ADR qualification | NO ISSUE. No candidate qualifies; D7's rationale is owned by `design.md` (the cheaper canonical home), and ADR-073 is unchanged. |
+| Architecture documentation | FINDING → F7. Chapters 06/08/10/11/12 carried determinism and totals claims the delta invalidates; chapter 11's R-97 mitigation contradicted the marker writer's effect on a historical topic. |
+| Ubiquitous language | NO ISSUE. **Ideation phase**, **Linked ideation**, and **Change seed** are in the glossary; **Workflow phase** stays the change phase and the anti-terms keep the two apart. |
+
+**Findings and resolutions.**
+
+| # | Severity | Area | Finding | Outcome |
+|---|---|---|---|---|
+| F1 | high | Model/totals | The delta promised "the group's own recorded entries and totals" and "the change's current state, KPIs, and totals remain the change's", but the shared pipeline cannot deliver that as written: `bands_for(Some(scope), entries)` puts **every** model entry into the one scoped band (`src/cli/timeline.rs:1261-1274`), `Summary::of(&entries)` and `empty = entries.is_empty()` cover the whole vector (`:1100-1103`), and `render_view` returns the empty state before any workflow (`:1588-1596`). With the topic's entries joined once, the change's KPIs, ranking, waits, and empty gate would silently include the topic, and a change with no own entries but a linked topic would render only the empty state — the group would never appear. | fixed — the model rule now scopes the summary, `empty`, ranking, waits, and KPI facts to the report scope's own entries; the topic's entries form their own ideation band and never join the change's band; the group's totals are its own; `empty` means the whole model is empty, and a change with an empty own record but an active topic renders its zero-entry workflow plus the group. `ReportModel.ideation` is `Some` only for a change report. |
+| F2 | high | Writer scope | "under the ideation scope" named no observation source. `observe_artifacts` re-resolves the scope after the command and returns unless it is a change (`src/history.rs:376-383`); `resolve_scope` yields an ideation topic only when exactly one topic is unfinished (`:497-520`), and all three real topics carry `## Completion`. Scanning every topic would also backfill finished topics with markers on the next command, contradicting the "no recorded activity (pre-dates the record)" group; and observing the post-command resolution would lose the handoff marker, because the handoff command appends `## Completion` in the same run. | fixed — markers are observed only for the command's **start-resolved** scope (`HistoryRecorder.scope`, `src/history.rs:248,261`) or the intake topic override; a change- or project-scoped command records none; the end-of-command scan still records the handoff marker after `## Completion`; dedupe by label, parented to the observing command entry; no backfill. |
+| F3 | high | Link parsing | The real proposal values are not bare ids: e.g. `Ideation topic: \`multi-scm-support\`` (`givn/archive/convert-topic-persona-copies/proposal.md:6`) and `Ideation topic: none — the change originates…` (`givn/archive/dialog-question-quality/proposal.md:7`). A literal directory lookup fails on every backticked linked change. The template's seed placeholder is `<uc-id>` (`assets/templates/proposal.md:18`) while handoff names seeds `<change-id>` (`assets/instructions/ideation.md:148`), and a real `Seed path` can be prose (`givn/archive/stamp-change-seeds/proposal.md:7`). | fixed — the link rule normalizes whitespace/backticks/quotes, accepts a bare id or a `givn/ideation/<id>` path by its last segment, treats a leading `none` token (with trailing prose) as no link, takes the topic segment from a seed path without validating the filename, and embeds the resolved link in the model. |
+| F4 | medium | Report workflow claims | The delta changed topic reports to the ideation workflow but left the governing bullets saying the stack "lists the change workflow's phases" for a change **or ideation** report, the header counts "of the nine phases", the current phase is "the last stage its record names", and the statuses are `WORKFLOW_STAGES` (`design.md:1188-1201,1355-1361,1366-1367`). The existing browser step asserts `of 9 phases done` for both outline rows (`tests/steps/development_report_e2e_steps.rs:431-436`). | fixed — those bullets now scope the nine-phase change stack/count to change reports and name the six ideation phases for topics; the topic current phase is the furthest recorded marker; the e2e topic row reads "of 6 phases done". |
+| F5 | medium | Derivation/rendering surface | A marker label is a phase name, so it cannot pass through `stage_opened_by`/`STAGE_ARTIFACTS` (which opens the **following** change stage); `stage_assignments` and `band_phases` are shared and `band_phases` filters by `WORKFLOW_STAGES` (`src/cli/timeline.rs:1415-1462`). The linked group also had no named container, while the browser steps query `#hybrid-workflow .phase-stack > .phase-card` (`tests/steps/development_report_e2e_steps.rs:444-455`), and no text-view rendering was stated although the regular scenarios assert the written file. | fixed — the model rule maps a marker label directly to its ideation phase, keeps the ideation derivation out of the no-stage group, and reads band phase names against each band scope's own order; the group is a separate `#hybrid-ideation` section with its own `.phase-stack`, and the text view prints its heading, phases, and totals above the change stack. |
+| F6 | medium | Scenario coverage | The new record scenario proved a *different* later marker but never the claimed label dedupe; no scenario proved a no-link proposal (the `none` form) or an archived change's proposal path; the matrix sentence still said "the nine `@e2e` titles" although the delta makes ten. | fixed — the record scenario gains "a later recorded command that sees the same personas file records no second phase entry"; two regular scenarios cover `Ideation topic: none` and the archived proposal; the sentence now reads ten, and the counts are verified. |
+| F7 | low | Durable docs | Q-99, R-96, chapter 06, and chapter 08 claimed the report reads only the record and the state snapshot, but the link is a generation-time proposal read; Q-101 said the summary/ranking cover "the whole report model" and the glossary said every number counts the model's entries, which contradicts the scope-separated totals; R-97's mitigation did not name the marker-writer no-backfill rule. | fixed — determinism is now stated over record plus state snapshot plus link snapshot (Q-99, R-96, 06, 08); Q-101 and the glossary **Development report** scope the totals to the report scope and the group to its topic; R-97 names the start-scope observation. |
+
+**The decisions behind the fixes, with rejected alternatives.**
+
+- **One model, scope-separated totals.** Rejected: merging the topic's entries
+  into the change's summary (silently breaks the "no merged totals" promise and
+  makes the change's KPIs depend on unrelated ideation) and a second report
+  model for the group (two summaries the UI can disagree on; the delta promises
+  one model with the entries carried once).
+- **Markers follow the recorded scope, not a directory sweep.** Rejected:
+  scanning every `givn/ideation/*` topic after every command (backfills finished
+  topics, so a pre-record topic gains six markers and its required
+  "no recorded activity" state becomes unreachable) and observing the
+  post-command resolution (loses the handoff marker when the command completes
+  the session). The start-resolved scope is already captured for exactly this
+  kind of attribution and mirrors the change writer's parent/scope note.
+- **Marker labels map to their own phase.** Rejected: reusing
+  `artifact_transition`/`stage_opened_by` (their contract is "artifact opens the
+  following stage", one phase off for every ideation marker) and a second stage
+  derivation in the renderer (the model's one `stages` vector is what the
+  browser tier reads).
+- **A separately named group section.** Rejected: nesting the group's
+  `.phase-stack` inside `#hybrid-workflow` (the existing browser steps would
+  count the group's cards as change phases) and reusing the change stack's id
+  (the group is historical and must not become the change's stack).
+- **The empty state is the whole model.** Rejected: gating on the change's own
+  entries only (hides a linked topic that does have recorded work) and gating on
+  any entry (would label a change report "empty" while it renders a populated
+  group).
+
+**Checks run by this pass.**
+
+- Read `build_report_model` (`src/cli/timeline.rs:1057-1118`): recorder
+  omission, content budget, ordering, `bands_for`, `stage_assignments`,
+  `Summary::of`, `empty`, and the scaffold; `bands_for` (`:1261`),
+  `topic_statuses` (`:679`), `phase_scaffold` (`:980`), `render_view` (`:1588`),
+  `render_workflow` (`:1642`).
+- Read the recorder (`src/history.rs:245-358`): the start-resolved `scope`, the
+  command entry as parent, `observe_artifacts`'s post-command resolution and
+  change-only early return (`:376-383`), and the label-based dedupe; read
+  `resolve_scope`/`topic_scope` (`:479-520`) and the dispatch call
+  (`src/main.rs:396-405`).
+- Verified all three real topics (`multi-scm-support`,
+  `local-only-integrations`, `rules-through-instructions`) carry `## Completion`,
+  so no topic ever resolves today; verified archived proposals with backticked
+  ids and `none — …` values; verified the proposal template's `<uc-id>` seed
+  placeholder against the handoff's `<change-id>` seed names.
+- Read the browser steps: the `of 9 phases done` assertion
+  (`tests/steps/development_report_e2e_steps.rs:431-436`) and the
+  `#hybrid-workflow .phase-stack > .phase-card` selector (`:444-455`);
+  `transitions_for` filters to scope kind `change`
+  (`tests/steps/development_timeline_support.rs:61-68`), so the new record step
+  needs its own helper.
+- Counts: **68 scenario entries = 58 non-`@e2e` + 10 `@e2e`** (15/22/31 per
+  feature), **7 `@wip`**; usecase inventory **10 rows**, matrix **10 rows**,
+  **10 distinct `@e2e` titles**. No `@e2e` tag was removed.
+- `givn lint --change development-timeline` → exit 2, **5 files checked, 7
+  findings**, exactly the seven `@wip` scenarios; no parse or error-kind
+  finding.
+- arc42: re-derived the affected chapter set for this delta as
+  **05/06/08/10/11/12** (05 names the group, 06 the flow and markers, 08 the
+  packaging, 10 the determinism/scale scenarios, 11 the risks, 12 the terms);
+  opened each file, confirmed real content and no ASCII-art diagrams, and
+  aligned the claims above. `arc42.md`'s Yes/No set still matches; no new ADR
+  candidate (ADR-073 unchanged, D7 owned by `design.md`).
+- No suite was run: the pass changed planning prose, two pending feature files,
+  and durable documentation only.
+
+**Residuals noted by this pass.** None is an open question; each is named work
+or an accepted boundary.
+
+1. The implementation and most new step bindings do not exist yet. The change is
+   at `tasks-done` and this contract forbids editing `tasks.md`, so the delta's
+   now **seven** `@wip` scenarios need implementation tasks before archive; the
+   review gate will see them.
+2. The record scenario's ideation step cannot reuse `transitions_for` (it
+   filters `scope.kind == change`); a topic-scoped helper and the marker
+   fixture (a recorded command in the one unfinished topic) are named work.
+3. The existing open-outline browser step asserts the change count for both
+   rows; the implementation must branch to "of 6 phases done" for the topic row,
+   as the design now states. The test file is out of this pass's scope.
+4. The live store has no ideation-scope entries, so a real linked group can only
+   be exercised by fixtures; the linked-group evidence pair is not yet captured.
+5. Existing reports re-rendered from an old record gain the group or the
+   ideation stack only from the markers already in the store; the store is not
+   rewritten.
+
+**DESIGN-REVIEW: PASS**

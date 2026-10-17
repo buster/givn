@@ -178,6 +178,21 @@ Feature: Development Report
     Then the report names the linked topic "ideas" and that no activity is recorded
     And the report invents no ideation phase duration
 
+  @givn.added @wip
+  Scenario: A change whose proposal names no ideation topic shows no linked group
+    Given a change "solo" whose proposal records "Ideation topic: none"
+    When the developer generates the development report for "solo"
+    Then the report names no linked ideation group
+    And the report names the change workflow phases
+
+  @givn.added @wip
+  Scenario: An archived change resolves its linked ideation from the archive
+    Given an archived change "demo" whose archived proposal links the ideation topic "ideas"
+    And the topic's record holds the marker for personas
+    When the developer generates the development report for the archived change "demo"
+    Then the report names the linked ideation group "ideas" before the change workflow
+    And the change workflow marks every change phase done
+
   @givn.added @e2e
   Scenario: Consumer generates the development report for a change
     Given a project root with givn/ initialised
