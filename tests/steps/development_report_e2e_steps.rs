@@ -637,6 +637,253 @@ fn browser_lays_the_page_out_in_one_column_at_the_mobile_viewport(world: &mut Gi
     commit_evidence(world, OPEN_SCENARIO);
 }
 
+/// The `@e2e` browser scenario that expands a workflow phase.
+const EXPAND_SCENARIO: &str = "Consumer expands a workflow phase and sees its lanes";
+
+/// The selector every expand step drives: the phase's own expander button.
+fn phase_expander(phase: &str) -> String {
+    format!(".phase-card[data-phase=\"{phase}\"] .phase-expander")
+}
+
+/// The expanded phase's region.
+fn phase_region(phase: &str) -> String {
+    format!(".phase-card[data-phase=\"{phase}\"] .phase-region")
+}
+
+#[given("an open development report with a recorded history holding parallel sessions")]
+fn open_report_with_parallel_sessions(world: &mut GivnWorld) {
+    if world.env.is_none() {
+        world.env = Some(common::make_init_root());
+    }
+    {
+        let env = world
+            .env
+            .as_ref()
+            .expect("a project root is required first");
+        support::seed_parallel_sessions(env, "demo");
+    }
+    state(world).scope = Some(Scope::Change {
+        id: "demo".to_string(),
+    });
+    report_has_been_generated(world, "demo".to_string());
+    open_report(world);
+}
+
+#[when(regex = r#"^the consumer expands the "([^"]+)" phase$"#)]
+fn consumer_expands_the_phase(world: &mut GivnWorld, phase: String) {
+    let expander = phase_expander(&phase);
+    assert_eq!(
+        browser(world)
+            .attribute(&expander, "aria-expanded")
+            .as_deref(),
+        Some("false"),
+        "the {phase} phase expander does not start collapsed"
+    );
+    browser(world).click(&expander);
+    assert_eq!(
+        browser(world)
+            .attribute(&expander, "aria-expanded")
+            .as_deref(),
+        Some("true"),
+        "the {phase} phase expander did not report its expanded state"
+    );
+    let rendered = browser(world).evaluate(&format!(
+        r##"(() => {{
+  const region = document.querySelector({region});
+  return {{ hidden: region ? region.hidden : null, role: region ? region.getAttribute("role") : null }};
+}})()"##,
+        region = json!(phase_region(&phase))
+    ));
+    assert_eq!(
+        rendered["hidden"],
+        json!(false),
+        "the expanded {phase} phase is not visible: {rendered:#}"
+    );
+    assert_eq!(
+        rendered["role"],
+        json!("region"),
+        "the expanded {phase} phase is not a labelled region: {rendered:#}"
+    );
+}
+
+#[then("the browser shows that phase's vertical timeline with time flowing down")]
+fn browser_shows_the_vertical_timeline(world: &mut GivnWorld) {
+    let rendered = browser(world).evaluate(
+        r##"(() => {
+  const region = document.querySelector('.phase-card[data-phase="implement"] .phase-region');
+  const ticks = [...region.querySelectorAll(".axis-tick")].map((tick) => tick.getBoundingClientRect().top);
+  const tracks = [...region.querySelectorAll(".lane-track")].map((track) => track.getBoundingClientRect().height);
+  return {
+    axis: region.querySelectorAll(".phase-axis").length,
+    ticks,
+    tracks,
+  };
+})()"##,
+    );
+    assert_eq!(
+        rendered["axis"],
+        json!(1),
+        "the expanded phase draws no vertical axis: {rendered:#}"
+    );
+    let tops: Vec<f64> = rendered["ticks"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the vertical axis draws no tick: {rendered:#}"))
+        .iter()
+        .map(|top| top.as_f64().unwrap_or_default())
+        .collect();
+    assert!(
+        tops.len() >= 2 && tops.windows(2).all(|pair| pair[0] < pair[1]),
+        "the axis ticks do not flow downwards in time: {tops:?}"
+    );
+    let tracks: Vec<f64> = rendered["tracks"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the phase draws no lane track: {rendered:#}"))
+        .iter()
+        .map(|height| height.as_f64().unwrap_or_default())
+        .collect();
+    assert!(
+        !tracks.is_empty() && tracks.iter().all(|height| *height > 0.0),
+        "the phase's lane tracks have no vertical extent: {tracks:?}"
+    );
+}
+
+#[then("the browser shows one lane per session beside each other")]
+fn browser_shows_one_lane_per_session(world: &mut GivnWorld) {
+    let rendered = browser(world).evaluate(
+        r##"(() => {
+  const model = JSON.parse(document.getElementById("report-model").textContent);
+  const phase = model.workflow.find((candidate) => candidate.stage === "implement");
+  const lanes = [...document.querySelectorAll('.phase-card[data-phase="implement"] .lane')];
+  return {
+    expected: phase ? phase.lanes.map((lane) => lane.name) : null,
+    drawn: lanes.map((lane) => lane.dataset.lane),
+    lefts: lanes.map((lane) => lane.getBoundingClientRect().left),
+  };
+})()"##,
+    );
+    let expected: Vec<String> = rendered["expected"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the model carries no implement lanes: {rendered:#}"))
+        .iter()
+        .map(|name| {
+            name.as_str()
+                .unwrap_or_else(|| panic!("a lane carries no visible name: {rendered:#}"))
+                .to_string()
+        })
+        .collect();
+    let drawn: Vec<String> = rendered["drawn"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the browser draws no lane: {rendered:#}"))
+        .iter()
+        .map(|name| {
+            name.as_str()
+                .unwrap_or_else(|| panic!("a drawn lane carries no name: {rendered:#}"))
+                .to_string()
+        })
+        .collect();
+    assert_eq!(
+        drawn, expected,
+        "the browser does not draw one lane per recorded session: {rendered:#}"
+    );
+    assert!(
+        drawn.len() >= 2,
+        "the parallel-session fixture drew fewer than two lanes: {drawn:?}"
+    );
+    assert!(
+        drawn.contains(&support::PARALLEL_SCOUT_LANE.to_string())
+            && drawn.contains(&support::PARALLEL_SPAWN_LANE.to_string())
+            && drawn.contains(&support::PARALLEL_UNATTRIBUTED_LANE.to_string()),
+        "the browser does not name the recorded sessions' lanes and the unattributed lane: {drawn:?}"
+    );
+    let lefts: Vec<f64> = rendered["lefts"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the lanes carry no positions: {rendered:#}"))
+        .iter()
+        .map(|left| left.as_f64().unwrap_or_default())
+        .collect();
+    assert!(
+        lefts.windows(2).all(|pair| pair[0] < pair[1]),
+        "the session lanes are not beside each other: {lefts:?}"
+    );
+}
+
+#[then("the browser shows the Fit, 1 h, and 15 m zoom controls")]
+fn browser_shows_the_per_phase_zoom_controls(world: &mut GivnWorld) {
+    let rendered = browser(world).evaluate(
+        r##"(() => {
+  const region = document.querySelector('.phase-card[data-phase="implement"] .phase-region');
+  const controls = [...region.querySelectorAll(".zoom-control")].map((control) => ({
+    text: control.textContent.trim(),
+    pressed: control.getAttribute("aria-pressed"),
+  }));
+  return { controls };
+})()"##,
+    );
+    let controls = rendered["controls"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the phase draws no zoom control: {rendered:#}"));
+    let labels: Vec<String> = controls
+        .iter()
+        .map(|control| control["text"].as_str().unwrap_or_default().to_string())
+        .collect();
+    assert_eq!(
+        labels,
+        vec!["Fit".to_string(), "1 h".to_string(), "15 m".to_string()],
+        "the phase's zoom controls do not carry the visible labels the contract names: {labels:?}"
+    );
+    // The expanded phase survives the mobile layout change: still expanded,
+    // still one lane per session, and the lanes scroll horizontally inside the
+    // card instead of widening the page.
+    browser(world).viewport(360, 780);
+    let mobile = browser(world).evaluate(
+        r##"(() => {
+  const card = document.querySelector('.phase-card[data-phase="implement"]');
+  const region = card.querySelector(".phase-region");
+  const scroller = card.querySelector(".lane-scroll");
+  return {
+    expanded: card.querySelector(".phase-expander").getAttribute("aria-expanded"),
+    visible: !region.hidden,
+    lanes: card.querySelectorAll(".lane").length,
+    viewport: window.innerWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+    laneOverflow: getComputedStyle(scroller).overflowX,
+    laneScrollWidth: scroller.scrollWidth,
+    laneClientWidth: scroller.clientWidth,
+  };
+})()"##,
+    );
+    assert_eq!(
+        mobile["expanded"],
+        json!("true"),
+        "the expanded phase did not survive the mobile layout: {mobile:#}"
+    );
+    assert_eq!(
+        mobile["visible"],
+        json!(true),
+        "the expanded region is hidden at the mobile viewport: {mobile:#}"
+    );
+    assert!(
+        mobile["lanes"].as_u64().unwrap_or_default() >= 2,
+        "the mobile layout lost the session lanes: {mobile:#}"
+    );
+    assert!(
+        mobile["scrollWidth"].as_u64().unwrap_or_default()
+            <= mobile["viewport"].as_u64().unwrap_or_default(),
+        "the page scrolls horizontally at the mobile viewport: {mobile:#}"
+    );
+    assert_eq!(
+        mobile["laneOverflow"],
+        json!("auto"),
+        "the lanes do not scroll inside their card: {mobile:#}"
+    );
+    assert!(
+        mobile["laneScrollWidth"].as_u64().unwrap_or_default()
+            > mobile["laneClientWidth"].as_u64().unwrap_or_default(),
+        "the lanes do not need to scroll inside their card at the mobile viewport: {mobile:#}"
+    );
+    browser(world).capture_evidence_from(EXPAND_SCENARIO, &phase_region("implement"));
+}
+
 /// The `@e2e` browser scenario that selects a timeline element.
 const SELECT_SCENARIO: &str = "Consumer selects a timeline element and reads its details";
 
