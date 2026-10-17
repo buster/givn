@@ -3856,7 +3856,7 @@ name it.
 
 ## Task 11f — `The default mode records metadata without content` (`development-record`, added)
 
-- [ ] **Scenario: `The default mode records metadata without content`**
+- [x] **Scenario: `The default mode records metadata without content`**
   - Design constraints:
     - The default mode is **`on`**: all available metadata, bounded text per the
       bounds table, and question text in full — but **no** LLM-facing content
@@ -3885,24 +3885,89 @@ name it.
       `src/main.rs` (the read-view exemption), the four reporter assets,
       `tests/steps/development_record_steps.rs`.
     - RED expected failure: the new Then/Givens phrases are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The default mode records metadata without content"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The default mode records metadata without content"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: The default mode records metadata without content
+           ✘  Given a change "demo" whose project has no record mode configured
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:147:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+
+        thread 'main' (3843973) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
         ```
-  - [ ] **GREEN** — implement the settings query (human and `--json`), the
+  - [x] **GREEN** — implement the settings query (human and `--json`), the
         read-view exemption, and the intake drop/bounds; compile first, re-run →
         exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.94s
+        BUILD_EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The default mode records metadata without content"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: The default mode records metadata without content
+           ✔  Given a change "demo" whose project has no record mode configured
+           ✔  When the agent reports a tool call with its complete input and output
+           ✔  Then the record drops the complete content
+           ✔  And no entry carries a data.content object
+           ✔  And the record keeps the tool call's metadata
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — one mode resolver shared by intake and settings; re-run
+        Production files: the intake's drop (already the one site, `src/cli/history.rs`
+        `attach_content` gated on `RecordMode::Full`) and the reporters'
+        `full`-only content builders in `assets/agent-integrations/omp`,
+        `opencode`, and `maki/givn-timeline.lua` plus the generated copies; the
+        Claude in-process mapper gates its content on the resolved mode
+        (`src/cli/history.rs::map_harness_event`). No reporter builds or sends
+        content in `on`.
+  - [x] **REFACTOR** — one mode resolver shared by intake and settings; re-run
         → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        $ cargo fmt --all -- --check
+        FMT_EXIT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.15s
+        CLIPPY_EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The default mode records metadata without content"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: The default mode records metadata without content
+           ✔  Given a change "demo" whose project has no record mode configured
+           ✔  When the agent reports a tool call with its complete input and output
+           ✔  Then the record drops the complete content
+           ✔  And no entry carries a data.content object
+           ✔  And the record keeps the tool call's metadata
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
+
+        The intake and the settings query read the same resolver
+        (`history::record_setting`); each reporter caches its one
+        `givn history settings --json` result and uses it both for the `off`
+        skip and the `full` content gate.
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+  - [x] **COMMIT** — `9210247f05fa29b5960937e6686e784f77c04e68` — `feat(development-record): <release note>` with
         the scenario title in the body. Record the revision identifier.
 
 ## Task 11g — `The full mode records complete content` (`development-record`, added)
