@@ -1389,6 +1389,27 @@ asked for; the project report keeps its band rows. Its rules:
   fact list, outcome, duration, and content when captured; failed and repeated
   entries are marked. The log is bounded by the 8 MiB content budget and the
   existing caps; the store keeps every byte.
+- **Recorder self-recording.** The recorder's own command entries are
+  recorded — the store keeps them and `givn history` still reads them — but
+  they are recording infrastructure, not development work. Two invocations
+  qualify: the intake, `givn history ingest` (one flush per turn), and the
+  process-per-hook mapper, `givn history harness-hook --harness <name>` (one
+  process per harness hook event). `build_report_model` drops them as its
+  first step, before the content budget and before every derivation (bands,
+  stage assignment, the phase scaffold, lanes, lane logs, repeated-step
+  groups, aggregates, the ranking, elapsed, phase counts, and entry totals),
+  so no derived number or surface can disagree and neither the budget nor
+  `omitted_content` ever names one. The project, change, and topic reports
+  share that one model and therefore the same omission.
+  The exclusion is exact: a `command` entry whose `name` is `history` and
+  whose bounded invocation label is `history ingest` or begins with
+  `history ingest `, or begins with `history harness-hook ` — the subcommand
+  is followed by a word boundary, never a substring match. A label such as
+  `history ingest-extra`, and a `commit` message or tool label that merely
+  quotes the phrase, never matches; no other command is hidden. A scope whose
+  record holds only these entries renders the empty state. In the rules
+  below, "recorded entry" means an entry of the report's model after this
+  omission.
 - **Repeated-step groups.** Within a phase, entries with the same kind and the
   same normalized label (trimmed, whitespace collapsed) are grouped when the
   group holds at least five entries; the report names the count and the combined
