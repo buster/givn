@@ -12589,7 +12589,7 @@ Repository checks are secondary only.
 
 ## Task H8 — `The report states a record with no stage transition` (`development-report`, added)
 
-- [ ] **Scenario: `The report states a record with no stage transition`** (`@wip` until its RED)
+- [x] **Scenario: `The report states a record with no stage transition`** (`@wip` until its RED)
   - Design constraints:
     - **Phase derivation rule (the one derivation).** Givn records one `phase`
       entry when an artifact file of the change appears — the dispatcher emits
@@ -12630,34 +12630,102 @@ Repository checks are secondary only.
       fixture).
     - RED expected failure: the three Then phrases are undefined and the
       current derivation invents `propose` for the work.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report states a record with no stage transition"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Report
+          Scenario: The report states a record with no stage transition
+           ✘  Given a change "demo" whose record holds no artifact transition
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:100:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+
+        thread 'main' (4026926) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
         ```
-  - [ ] **GREEN** — fix the derivation, add `unstaged`, print the gap, and add
+  - [x] **GREEN** — fix the derivation, add `unstaged`, print the gap, and add
         the later-first unit assertion. Files: `src/cli/timeline.rs`,
         `tests/steps/development_report_steps.rs`,
         `tests/steps/development_timeline_support.rs`. Re-run this scenario →
         exit 0 and the unit test → exit 0. Paste both.
         ```
-        PASTE THE GREEN RUN (SCENARIO) HERE
+        Feature: Development Report
+          Scenario: The report states a record with no stage transition
+           ✔  Given a change "demo" whose record holds no artifact transition
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report groups the recorded work under no workflow phase
+           ✔  And the report states that the record carries no stage transition
+           ✔  And the report names no phase for that recorded work
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
         ```
-        PASTE THE GREEN RUN (UNIT TEST) HERE
+        running 2 tests
+        test cli::timeline::tests::entries_before_a_later_first_transition_belong_to_no_stage ... ok
+        test cli::timeline::tests::hybrid_model_carries_the_phase_scaffold_and_kpi_totals ... ok
+
+        test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 272 filtered out; finished in 0.00s
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — the derivation stays one function returning
+  - [x] **REFACTOR** — the derivation stays one function returning
         `Option<&'static str>` per entry, read by `stages`, `workflow`, and
         `unstaged`; `cargo fmt --all -- --check` and `cargo clippy --locked
         --all-targets -- -D warnings` green; re-run → still exit 0. Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+
+        Feature: Development Report
+          Scenario: The report states a record with no stage transition
+           ✔  Given a change "demo" whose record holds no artifact transition
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report groups the recorded work under no workflow phase
+           ✔  And the report states that the record carries no stage transition
+           ✔  And the report names no phase for that recorded work
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
+
+        running 2 tests
+        test cli::timeline::tests::entries_before_a_later_first_transition_belong_to_no_stage ... ok
+        test cli::timeline::tests::hybrid_model_carries_the_phase_scaffold_and_kpi_totals ... ok
+
+        test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 272 filtered out; finished in 0.00s
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `1839d419` — `feat(development-report): state a record with no stage transition` with
         the scenario title in the body. Record the revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit 1839d419b8b024fe905d4f7eb089f1f4550d6dd6
+        feat(development-report): state a record with no stage transition
+
+        The report states a record with no stage transition
+
+        The one phase derivation now keeps pre-first-transition entries in the opening
+        stage only when the first transition is proposal.md; a later first transition
+        leaves them, like a record with no transition at all, in one no-stage group
+        rendered below the phase stack with its entry count and the exact gap sentence.
+        No workflow phase is invented for that work. A production unit test pins the
+        later-first-transition rule.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../development-report.feature                     |   2 +-
+         src/cli/timeline.rs                                | 145 ++++++++++++++++++---
+         tests/steps/development_report_steps.rs            | 127 ++++++++++++++++++
+         3 files changed, 257 insertions(+), 17 deletions(-)
         ```
 
 ## Task H9 — `The report groups repeated steps` (`development-report`, added)
