@@ -1000,7 +1000,10 @@ fn phase_scaffold(
             (statuses, current_state)
         }
         Scope::Ideation { .. } => (topic_statuses(stages), None),
-        Scope::Project { .. } => (vec![None; WORKFLOW_STAGES.len()], None),
+        // The project report keeps its band rows and builds no phase stack: a
+        // nine-phase scaffold of `None` statuses would claim a workflow the
+        // project scope never records.
+        Scope::Project { .. } => return PhaseScaffold::default(),
     };
     let workflow = WORKFLOW_STAGES
         .iter()
@@ -1537,8 +1540,9 @@ pub fn render_report(model: &ReportModel) -> String {
 
 /// The model as the page's own text: the scope line, and then either the
 /// report's empty state — the scope holds no recorded activity — or the summary
-/// and the timeline's initial view, one visible row per scope the window
-/// covers, with the band's spans drawn on the report's time axis.
+/// and the scope's own view: the workflow stack for a change or ideation
+/// report, the band rows on the time axis for the project report. The gate is
+/// the scope, never the entries.
 fn render_view(model: &ReportModel) -> String {
     let scope = scope_line(model.scope.as_ref());
     let mut view = format!(
@@ -1552,11 +1556,22 @@ fn render_view(model: &ReportModel) -> String {
     view.push_str(&render_current_state(model.current_state.as_ref()));
     view.push_str(&render_summary(&model.summary));
     view.push('\n');
-    view.push_str(&render_workflow(model));
-    view.push_str(&render_timeline(model));
+    if is_project_report(model.scope.as_ref()) {
+        view.push_str(&render_timeline(model));
+    } else {
+        view.push_str(&render_workflow(model));
+    }
     view.push('\n');
     view.push_str(&render_content_omissions(&model.omitted_content));
     view
+}
+
+/// Whether the report covers the project itself rather than a live change or
+/// ideation scope: the one gate between the report's two views. A project
+/// report keeps its band rows and draws no workflow stack; a change or ideation
+/// report draws the workflow stack and no band timeline.
+fn is_project_report(scope: Option<&Scope>) -> bool {
+    matches!(scope, None | Some(Scope::Project { .. }))
 }
 
 /// The header's current-state line: exactly what the change state exposes —
@@ -1589,7 +1604,7 @@ fn render_current_state(state: Option<&CurrentState>) -> String {
 /// project report carries no stack — its model builds none — so it keeps its
 /// band rows.
 fn render_workflow(model: &ReportModel) -> String {
-    if model.workflow.is_empty() && model.unstaged.is_none() {
+    if is_project_report(model.scope.as_ref()) {
         return String::new();
     }
     let mut html = String::from(
@@ -1792,11 +1807,12 @@ const TICK_STEPS_MS: [i64; 12] = [
     12 * 3_600_000,
 ];
 
-/// The timeline section: one row per band, each row naming its scope and
-/// drawing its spans across the window's time range, above an axis strip of
-/// round tick labels. A window with no bands draws no timeline at all.
+/// The project report's timeline section: one row per band, each row naming its
+/// scope and drawing its spans across the window's time range, above an axis
+/// strip of round tick labels. A change or ideation report draws the workflow
+/// stack instead, and a window with no bands draws no timeline at all.
 fn render_timeline(model: &ReportModel) -> String {
-    if model.bands.is_empty() {
+    if !is_project_report(model.scope.as_ref()) || model.bands.is_empty() {
         return String::new();
     }
     let scale = TimeScale::of(&model.entries);
@@ -2385,6 +2401,15 @@ mod tests {
                 data: self.data,
             }
         }
+
+        /// The same record line scoped to the given scope: the project report's
+        /// own fixture needs a project-scoped entry.
+        fn record_in(self, scope: Scope) -> HistoryEntry {
+            HistoryEntry {
+                scope,
+                ..self.record()
+            }
+        }
     }
 
     /// The shared scaffold's proof: the model carries the nine-phase workflow
@@ -2582,6 +2607,96 @@ mod tests {
         );
         assert_eq!(payload["summary"]["tool_calls"], serde_json::json!(1));
         assert_eq!(payload["summary"]["cost_total"], serde_json::json!(0.75));
+    }
+
+    /// The scope gate's production proof: the same record renders the workflow
+    /// stack and no band timeline when the report is scoped to a change, and
+    /// the band timeline and no workflow stack when it is scoped to the
+    /// project. The entries are identical, so only the scope decides.
+    #[test]
+    fn text_view_is_gated_on_the_scope() {
+        let change_entry = FixtureEntry {
+            id: 1,
+            at: "2026-10-17T10:00:00.000Z",
+            kind: "step",
+            name: "cargo test",
+            label: Some("cargo test"),
+            duration_ms: Some(1_000),
+            ..FixtureEntry::default()
+        }
+        .record();
+        let change = build_report_model(
+            Some(Scope::Change {
+                id: "demo".to_string(),
+            }),
+            vec![change_entry],
+        );
+        let change_view = render_view(&change);
+        for marker in [
+            "class=\"workflow-stack\"",
+            "data-phase=\"propose\"",
+            "data-phase=\"archive\"",
+        ] {
+            assert!(
+                change_view.contains(marker),
+                "the change report's text view does not draw {marker}: {change_view}"
+            );
+        }
+        for marker in [
+            "<svg",
+            "class=\"timeline-section\"",
+            "class=\"band\"",
+            "class=\"span\"",
+            "class=\"axis\"",
+        ] {
+            assert!(
+                !change_view.contains(marker),
+                "the change report's text view still draws {marker}: {change_view}"
+            );
+        }
+
+        let project_entry = FixtureEntry {
+            id: 2,
+            at: "2026-10-17T10:00:00.000Z",
+            kind: "step",
+            name: "cargo build",
+            label: Some("cargo build"),
+            duration_ms: Some(2_000),
+            ..FixtureEntry::default()
+        }
+        .record_in(Scope::Project {
+            id: "demo".to_string(),
+        });
+        let project = build_report_model(
+            Some(Scope::Project {
+                id: "demo".to_string(),
+            }),
+            vec![project_entry],
+        );
+        let project_view = render_view(&project);
+        for marker in [
+            "<svg",
+            "class=\"timeline-section\"",
+            "class=\"band\"",
+            "class=\"span\"",
+            "class=\"axis\"",
+        ] {
+            assert!(
+                project_view.contains(marker),
+                "the project report's text view does not draw {marker}: {project_view}"
+            );
+        }
+        for marker in ["class=\"workflow-stack\"", "data-phase=", "data-status="] {
+            assert!(
+                !project_view.contains(marker),
+                "the project report's text view still draws {marker}: {project_view}"
+            );
+        }
+        assert!(
+            project.workflow.is_empty() && project.unstaged.is_none(),
+            "the project report builds a workflow scaffold: {:?}",
+            project.workflow
+        );
     }
 
     /// The opening-stage rule's production proof: an entry recorded before a
