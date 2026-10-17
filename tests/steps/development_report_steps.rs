@@ -2431,6 +2431,92 @@ fn report_states_when_no_tool_call_was_attributable(world: &mut GivnWorld) {
     );
 }
 
+#[given(regex = r#"^the change skips the "([^"]+)" artifact$"#)]
+fn the_change_skips_the_artifact(world: &mut GivnWorld, artifact: String) {
+    let id = world
+        .last_change_id
+        .clone()
+        .expect("the change Given names a change");
+    let env = project_root(world);
+    // The fixture's project enables the arc42 artifact graph, then records the
+    // artifact as intentionally not produced, so the production state derives
+    // it `skipped` — never a label the step writes into the report.
+    run_fixture_command(env, &["addons", "enable", "arc42"]);
+    let change_dir = env.root().join("givn").join("changes").join(&id);
+    std::fs::write(change_dir.join(".givn-skip"), format!("{artifact}\n"))
+        .unwrap_or_else(|error| panic!("write the change's skip file: {error}"));
+    let out = common::run_givn(env, &["status", "--change", &id, "--json"]);
+    assert!(
+        out.status.success(),
+        "givn status failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let status: Value = serde_json::from_slice(&out.stdout)
+        .unwrap_or_else(|error| panic!("the status output is not JSON: {error}"));
+    let skipped = status["artifacts"]
+        .as_array()
+        .and_then(|artifacts| {
+            artifacts
+                .iter()
+                .find(|candidate| candidate["id"] == json!(artifact))
+        })
+        .unwrap_or_else(|| panic!("the state carries no artifact {artifact}: {status:#?}"));
+    assert_eq!(
+        skipped["status"],
+        json!("skipped"),
+        "the fixture's artifact is not skipped: {status:#?}"
+    );
+    // Skipping the optional artifact leaves the state where it was: the
+    // skipped artifact is never the next required one.
+    assert_eq!(
+        status["stage"],
+        json!("tasks-done"),
+        "skipping the artifact moved the stage: {status:#?}"
+    );
+    assert_eq!(
+        status["next_required"]["id"],
+        json!("review"),
+        "skipping the artifact moved the next required artifact: {status:#?}"
+    );
+}
+
+#[then(regex = r#"^the report marks "([^"]+)" skipped$"#)]
+fn report_marks_phase_skipped(world: &mut GivnWorld, stage: String) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let phase = report_phase(&model, &stage);
+    assert_eq!(
+        phase["status"],
+        json!("skipped"),
+        "the report does not mark {stage} skipped: {model:#?}"
+    );
+    assert!(
+        document.contains(&format!("data-phase=\"{stage}\" data-status=\"skipped\"")),
+        "the text view does not mark {stage} skipped: {document}"
+    );
+    // The skipped phase's wall time is the record's own measured span (zero
+    // when it recorded nothing), never an invented duration.
+    assert!(
+        phase["wall_ms"].is_u64(),
+        "the skipped phase carries no measured wall time: {model:#?}"
+    );
+}
+
+#[then(regex = r#"^the report does not mark "([^"]+)" done$"#)]
+fn report_does_not_mark_phase_done(world: &mut GivnWorld, stage: String) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    assert_ne!(
+        report_phase(&model, &stage)["status"],
+        json!("done"),
+        "the report marks {stage} done as well as skipped: {model:#?}"
+    );
+    assert!(
+        !document.contains(&format!("data-phase=\"{stage}\" data-status=\"done\"")),
+        "the text view marks {stage} done as well as skipped: {document}"
+    );
+}
+
 #[given(regex = r#"^a change "([^"]+)" whose record holds hundreds of short agent activities$"#)]
 fn change_with_hundreds_of_short_agent_activities(world: &mut GivnWorld, id: String) {
     let scope = Scope::Change { id: id.clone() };
