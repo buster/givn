@@ -210,6 +210,22 @@ is already required on `PATH` by the existing omp/OpenCode attribution E2E.
   in `docs/design/design-system.md`. Realized in `assets/timeline/report.html`
   and the Visual Design Contract below.
 
+- **Decides D7: linked ideation is an optional, labeled group with start markers.**
+  The operator asked to include the optional ideation and its sub-phases
+  (2026-10-17). Chosen over a silent scope merge, time-proximity inference, and
+  deriving phases from the mutable `session.md` phase line: the group is shown
+  only when the change's proposal (or seed path) names a topic and the topic
+  directory exists; the group has its own ideation stack (`frame` through
+  `handoff`), entries, lanes, log, and totals, while the change keeps its own
+  current state and KPIs. Ideation phases are recorded as start markers at the
+  first observed artifact (the first persona file, `eventstorming.md`,
+  `use-case-definitions.md`, the first elaborated use case, the first seed or
+  the published topic doc) because ideation produces several artifacts while a
+  phase is active; Frame is the opening stage. Historical topics that predate
+  the record stay empty and say so. Rejected: backfilling from git history or
+  file mtimes (not recorded work), and merging the two scopes' totals.
+
+
 ## Record Model And Intake Contract
 
 ### When the recorder engages
@@ -1450,6 +1466,64 @@ asked for; the project report keeps its band rows. Its rules:
   this delta refreshes in place; the new expand scenario commits its own pair
   under its own slug.
 
+### Linked ideation and the ideation workflow
+
+A change may begin in an ideation topic. The report includes that optional
+pre-change phase without merging scopes silently.
+
+- **Link.** A change's proposal records `Ideation topic: <id>` (falling back to
+  a `Seed path: givn/ideation/<topic>/changes/<seed>.md` when the topic line is
+  absent); the link is used only when `givn/ideation/<id>/` exists. A proposal
+  with `Ideation topic: none` (or no seed) has no ideation group — no inference
+  from project entries, time proximity, or the mutable topic state. Archived
+  changes resolve their proposal from `givn/archive/<id>/`.
+- **Ideation phases.** The ideation workflow is `frame`, `personas`,
+  `event-storming`, `use-case-definition`, `use-case-elaboration`, `handoff`
+  (domain labels: Frame, Personas, Event Storming, Use Case Definition, Use
+  Case Elaboration, Handoff). `frame` is the opening stage: entries before the
+  first marker belong to it.
+- **Start markers.** Unlike the change workflow (whose artifacts conclude a
+  stage), ideation phases produce several artifacts while active, so a marker
+  names the stage it **starts**: the first `personas/*.md` starts `personas`,
+  `eventstorming.md` starts `event-storming`, `use-case-definitions.md` starts
+  `use-case-definition`, the first `use-cases/*.md` starts
+  `use-case-elaboration`, and the first `changes/*.md` or the published
+  `docs/ideation/<topic>.md` starts `handoff`. The command dispatcher records
+  one `phase` entry per marker at the end of the first recorded command that
+  observes it, under the ideation scope, deduplicated by label; gate entries
+  never count; `frame.md` is not a marker (it is Frame work, and Frame is the
+  opening stage).
+- **Topic report.** `givn timeline --topic <id>` renders the ideation workflow
+  in place of the change workflow: statuses from the recorded markers (Frame
+  active until a marker; each later marker marks the earlier phases done and
+  itself active), no change phase, no next required artifact. Entries before
+  the first marker are Frame, never a guessed later phase; a scope with no
+  entries keeps the empty state.
+- **Change report.** When the link exists, a labeled **ideation group** is
+  rendered above the change workflow: the same phase-card stack with the six
+  ideation phases, each expandable into the same vertical lanes and lane log,
+  with the group's own recorded entries and totals. The change's current state,
+  KPIs, and totals remain the change's; the group states its own duration,
+  tools, subagents, and waits. The group is historical — it never becomes the
+  change's current phase. A linked topic whose record holds no entries renders
+  the group header with "no recorded activity (pre-dates the record)" and no
+  invented phases or durations.
+- **Model.** `ReportModel.ideation: Option<IdeationGroup>` carries the topic id,
+  the ideation phases (the same `WorkflowPhase` shape), the group's entry ids,
+  its totals, and whether the record has activity. The linked topic's entries
+  join the model's entries once; their stage assignment uses the ideation
+  markers, never the change transitions. The topic report's `workflow` is the
+  ideation stack and `current_state` is absent. The model carries no second
+  copy of raw entries.
+- **Scale and evidence.** The linked group uses the same aggregation, lane, log,
+  and content-budget rules; the browser evidence includes the linked group in a
+  change report and the ideation stack in a topic report, at both viewports.
+- **Risks.** R-97: the link is only as good as the proposal/seed record — a
+  stale or missing link hides the group (never fabricates one), and topics that
+  predate the record stay empty. R-98: the marker-start semantics record the
+  first observed artifact, not the historical start instant for work that
+  predates the writer; a marker never backdates a phase.
+
 ## Step Definitions
 
 | Capability | Unit/integration steps | E2E steps |
@@ -1656,6 +1730,7 @@ Every row is one normalized inventory entry from
 | agent-activity-reporting: report agent activity | Consumer installs the agent reporter and its reported activity lands in the record | CLI (harness integration) | one `@e2e` Scenario Outline with one Examples row per harness (omp, opencode, Claude Code, Maki): install the project (`givn init --agents <target>`), then drive that harness's generated reporter through its real entry point — `node` with a fake `pi` for omp, `node` with a fake plugin context for opencode, the generated Claude shim with a real hook payload on stdin (mapper in the binary), and for Maki the real binary loading the plugin (`maki --trust prompt`) plus a test-only Lua driver firing synthetic autocmds — emitting a tool call, a subagent start/stop, and a question wait; every reporter calls the real `givn history ingest`, and `givn history --change demo --json` is asserted |
 | development-report: generate the development report for a change | Consumer generates the development report for a change | CLI | `common::run_givn`: `givn timeline --change demo --out report.html`; the assertion reads the written file |
 | development-report: open the report in a browser | Consumer opens the generated development report in a browser | Web UI | Playwright: one `@e2e` Scenario Outline with a change row and a topic row — one normalized action with input variants, so it adds no second inventory row — `page.goto("file://<root>/report.html")`, then read the rendered heading, the current-state line, the workflow phase list, and the longest step's duration from the DOM; set the mobile viewport and assert the one-column layout and no page-level horizontal overflow |
+| development-report: read a change's linked ideation | Consumer reads a change's linked ideation group | Web UI | Playwright: open a change report whose proposal links a topic; read the ideation group and its ideation phases from the DOM, expand the group's `personas` phase, and read its lanes |
 | development-report: expand a workflow phase | Consumer expands a workflow phase and sees its lanes | Web UI | Playwright: `page.goto("file://<root>/report.html")`, click the `implement` phase expander; read the phase's vertical axis (time flowing down), one lane per session beside each other, the lane names, and the Fit / 1 h / 15 m controls from the DOM |
 | development-report: select a timeline element | Consumer selects a timeline element and reads its details | Web UI | Playwright: expand the phase, then click the `Architect.Scout` lane (or focus it and press Enter); read the lane log's span facts (start, duration, outcome), the entry's tool call id, and the bounded content region from the DOM |
 | development-report: zoom the timeline | Consumer zooms the timeline to a shorter time range | Web UI | Playwright: expand the phase, click the `15 m` control (the next narrower level), then read the rendered range label before and after and assert it narrowed |
@@ -1672,7 +1747,7 @@ it reads a value the page's own script produced (the visible time range) and
 asserts it changed between two observations. The empty-scope scenario is the
 evidence for the contract's declared `empty` state: it is the `@e2e` traversal
 of that state and it commits `<viewport>--empty.png` at both viewports. The
-matrix has nine rows, one for each inventory entry in
+matrix has ten rows, one for each inventory entry in
 `specs/inspect-development-history/usecase.md` §Interactions, and the nine
 `@e2e` titles are exactly the titles in this table.
 
@@ -1709,8 +1784,9 @@ the change-specific rules.
 expanded, active, done, queued, skipped, keyboard focus), lane (default, hover,
 focus, selected, no-attributable-calls), lane tick (default, failed, repeated,
 aggregate, focus), phase sparkline, per-phase zoom control (default, hover,
-focus, disabled at the zoom limit), the lane log (entries; empty), the summary
-tile (default, zero-value), and the empty state (empty, error). Every primitive
+focus, disabled at the zoom limit), the lane log (entries; empty), the linked
+ideation group (present, no recorded activity), the summary tile (default,
+zero-value), and the empty state (empty, error). Every primitive
 has a visible label requirement: a lane's accessible name is always its name
 plus its duration; a tick's is its kind plus its label plus its duration.
 
@@ -1885,8 +1961,9 @@ D1 (one local project store kept out of repository history, 2026-10-16), D2
 (bounded metadata by default behind the three-state `record.mode`, default
 `on`, with complete content only in `full`, 2026-10-16 and extended 2026-10-17),
 and D6 (the hybrid workflow report, 2026-10-17; the dense timeline of 2026-10-16
-was superseded by the operator's choice of the hybrid after five mockups). The
-capture-completeness round resolved
+was superseded by the operator's choice of the hybrid after five mockups), and
+D7 (linked ideation as an optional labeled group with ideation start markers,
+2026-10-17). The capture-completeness round resolved
 four further questions on 2026-10-17: `--with-full-content` versus `off` (Q1:
 `off` absolute, the flag is ignored with a warning and exit 0), retention when
 the mode is lowered (Q2: forward-looking, no purge), the report content budget

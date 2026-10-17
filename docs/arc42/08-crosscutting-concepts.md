@@ -1015,7 +1015,10 @@ the same pixels and the browser tier can assert rendered values
 deterministically; a later state edit requires a re-render (R-96). The lane log
 renders the captured facts (session and title, status, stop reason, model, cost,
 context size/window, tool call id, output bytes, bounded error, parent/agent,
-retry, permission mode) and one bounded, scrollable, escaped content region. The
+retry, permission mode) and one bounded, scrollable, escaped content region. A
+change whose proposal or seed links an existing ideation topic also renders the
+topic's ideation phases as a labeled group above the change workflow, with the
+topic's own entries and totals and without merging the two scopes' figures. The
 report embeds full content up
 to a **8 MiB total budget**; beyond it the affected entry says
 `content omitted; see the record`, while the store keeps every byte. The report

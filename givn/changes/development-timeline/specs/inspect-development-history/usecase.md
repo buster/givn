@@ -96,6 +96,7 @@ scope.
 | agent-activity-reporting | report agent activity from a supported harness | Consumer installs the agent reporter and its reported activity lands in the record |
 | development-report | generate the development report for a change | Consumer generates the development report for a change |
 | development-report | open the report in a browser | Consumer opens the generated development report in a browser |
+| development-report | read a change's linked ideation | Consumer reads a change's linked ideation group |
 | development-report | open the report of a scope with no recorded activity | Consumer opens the report of a scope with no recorded activity |
 | development-report | expand a workflow phase | Consumer expands a workflow phase and sees its lanes |
 | development-report | select a timeline element | Consumer selects a timeline element and reads its details |

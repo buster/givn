@@ -153,6 +153,31 @@ Feature: Development Report
     And the record still holds the recorder command entries
     And `givn history` still lists the recorder command entries
 
+  @givn.added @wip
+  Scenario: An ideation topic report uses the ideation workflow
+    Given an ideation topic "ideas" whose record holds the markers for personas and event storming
+    When the developer generates the development report for the topic "ideas"
+    Then the report names the ideation phases frame through handoff
+    And the report marks persona work done and event storming active
+    And the report names no change phase and no next required artifact
+
+  @givn.added @wip
+  Scenario: A change report shows its linked ideation group
+    Given a change "demo" whose proposal links the ideation topic "ideas"
+    And the topic's record holds the marker for personas
+    When the developer generates the development report for "demo"
+    Then the report names the linked ideation group "ideas" before the change workflow
+    And the group names the ideation phases and the group's own duration
+    And the change workflow still names its own phases
+
+  @givn.added @wip
+  Scenario: A linked ideation with no recorded activity is stated
+    Given a change "demo" whose proposal links the ideation topic "ideas"
+    And the topic has no recorded activity
+    When the developer generates the development report for "demo"
+    Then the report names the linked topic "ideas" and that no activity is recorded
+    And the report invents no ideation phase duration
+
   @givn.added @e2e
   Scenario: Consumer generates the development report for a change
     Given a project root with givn/ initialised
@@ -185,6 +210,17 @@ Feature: Development Report
     Then the browser shows that phase's vertical timeline with time flowing down
     And the browser shows one lane per session beside each other
     And the browser shows the Fit, 1 h, and 15 m zoom controls
+
+  @givn.added @wip @e2e
+  Scenario: Consumer reads a change's linked ideation group
+    Given a change "demo" whose proposal links the ideation topic "ideas"
+    And the topic's record holds the markers for personas and event storming
+    And the development report for "demo" has been generated
+    When the consumer opens the development report in a browser
+    Then the browser shows the linked ideation group before the change workflow
+    And the group names the ideation phases
+    And the consumer expands the group's personas phase
+    Then the browser shows that phase's vertical lanes
 
   @givn.added @e2e
   Scenario: Consumer selects a timeline element and reads its details
