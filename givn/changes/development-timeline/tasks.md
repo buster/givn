@@ -14854,31 +14854,80 @@ untouched; this part is appended after its completion statement.
       `tests/steps/development_timeline_support.rs` (the marker fixture).
     - RED expected failure: the Given and three Then phrases are undefined and
       the model has no ideation workflow.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::An ideation topic report uses the ideation workflow"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Report
+          Scenario: An ideation topic report uses the ideation workflow
+           ✘  Given an ideation topic "ideas" whose record holds the markers for personas and event storming
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:158:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        EXIT=101
         ```
-  - [ ] **GREEN** — render the six-phase ideation stack and the three Thens.
+  - [x] **GREEN** — render the six-phase ideation stack and the three Thens.
         Files: `src/cli/timeline.rs`,
         `tests/steps/development_report_steps.rs`,
         `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
         it.
         ```
-        PASTE THE GREEN RUN HERE
+        Feature: Development Report
+          Scenario: An ideation topic report uses the ideation workflow
+           ✔  Given an ideation topic "ideas" whose record holds the markers for personas and event storming
+           ✔  When the developer generates the development report for the topic "ideas"
+           ✔  Then the report names the ideation phases frame through handoff
+           ✔  And the report marks persona work done and event storming active
+           ✔  And the report names no change phase and no next required artifact
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — one `workflow_stages(scope)` selector feeding the
+  - [x] **REFACTOR** — one `workflow_stages(scope)` selector feeding the
         statuses and the stack; `cargo fmt --all -- --check` and `cargo clippy
         --locked --all-targets -- -D warnings` green; re-run → still exit 0.
         Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+        (the scenario re-run)
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `31af52cb` — `feat(development-report): <release note>` with
         the scenario title in the body. Record the revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit 31af52cb
+        feat(development-report): an ideation topic report uses the ideation workflow
+
+        Scenario: An ideation topic report uses the ideation workflow
+
+        The topic report binds the ideation workflow end to end: the fixture seeds a
+        topic whose record holds the opening frame work, the personas and event-storming
+        start markers, and each phase's work; the Given and three Thens read the written
+        report's model and text view. The topic stack is the six ideation phases in
+        order (frame through handoff) with the marker statuses (earlier phases done, the
+        furthest marker active, later phases queued), no live change state, no next
+        required artifact, and no no-stage group. The phase scaffold now reads the one
+        workflow_stages(scope) selector for its order and statuses instead of a second
+        scope match.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../development-report.feature                     |   2 +-
+         src/cli/timeline.rs                                |  13 +-
+         tests/steps/development_report_steps.rs            | 174 +++++++++++++++++++++
+         tests/steps/development_timeline_support.rs        |  57 +++++++
+         4 files changed, 240 insertions(+), 6 deletions(-)
         ```
 
 ## Task H17 — `A change report shows its linked ideation group` (`development-report`, added)
