@@ -11561,3 +11561,1286 @@ strictly less), every `@e2e` scenario has committed `mobile.png` + `desktop.png`
 under its slug with the empty-scope scenario's `mobile--empty.png` /
 `desktop--empty.png`, and no `@wip` tag remains on any scenario this change
 implements.
+
+---
+
+## Delta part 2 — hybrid workflow report (2026-10-17)
+
+The operator approved the **hybrid workflow report** on 2026-10-17 after five
+rendered mockups; design-review round 6 passed at `6b56c193` on the design delta
+`307c0755`. The hybrid supersedes the dense horizontal timeline (D6) that
+Tasks 25–33 and E5–E9 implemented: the report now reads top to bottom — the
+header with the derived current state, the KPI strip, the nine-phase workflow
+stack (each phase expandable into a vertical lane timeline with the selected
+lane's log), then the statistics. This part schedules the delta's **15 pending
+`@wip` scenarios** (14 in `development-report.feature`, 1 in
+`development-record.feature`), the **shared model scaffold** the design names
+(a shared task with a unit-level proof, because no scenario asserts its three
+KPI totals directly), the **asset rewrite**, and one change-wide evidence and
+scope-run task.
+
+The earlier sections stay untouched and historical: their pasted evidence
+records the dense-timeline implementation the delta re-tagged. A scenario this
+delta re-opened is implemented again in its own section below and committed
+again there; nothing above is re-run or rewritten.
+
+### Preconditions and interaction-coverage pre-flight (verified 2026-10-17)
+
+- `givn status --change development-timeline`: `design-review` **done**
+  (`DESIGN-REVIEW: PASS` at `6b56c193`), `tasks` at **274/274** boxes, next
+  required **review**. The tasks precondition holds and no `design.md` edit
+  un-gated it.
+- **Pre-flight result: PASS — 9 inventory entries, 9 matrix rows, 9 existing
+  `@e2e` scenarios, one-to-one.** The use case's
+  `specs/inspect-development-history/usecase.md` §Interactions (9 rows), the
+  design's §Interaction Coverage Matrix (9 rows), and the delta features' nine
+  `@e2e` titles name the same title set. The 8-row table near the top of this
+  file is the 2026-10-16 state; the delta added the **expand a workflow phase**
+  row (review F9) and retargeted the select and zoom rows at the hybrid (lane
+  selection; the `15 m` control). The two lists order the rows differently
+  (the use case lists the empty scope before the expand; the matrix lists the
+  expand before select/zoom and the empty scope last) — the sets match exactly.
+  No gap, and no task below is written for a scenario that does not exist.
+
+| # | `usecase.md` §Interactions — capability: consumer action | `design.md` matrix — real interface / driving mechanism | `@e2e` title (`.feature`) |
+|---|---|---|---|
+| 1 | development-record: run a lifecycle command | CLI / `common::run_givn`: `givn status --change demo`, then `givn history --change demo --json` | `Consumer runs a lifecycle step and reads its recorded actions` |
+| 2 | development-record: read the development record | CLI / `givn history --change demo --json` against a seeded record | `Consumer reads the development record as machine-readable output` |
+| 3 | agent-activity-reporting: report agent activity from a supported harness | CLI (harness integration) / one outline, one Examples row per harness, driving each generated reporter through its real entry point | `Consumer installs the agent reporter and its reported activity lands in the record` |
+| 4 | development-report: generate the development report for a change | CLI / `givn timeline --change demo --out report.html`, assertion reads the written file | `Consumer generates the development report for a change` |
+| 5 | development-report: open the report in a browser | Web UI / Playwright `page.goto("file://<root>/report.html")`, one outline with a `change` and a `topic` row; mobile viewport assertion | `Consumer opens the generated development report in a browser` |
+| 6 | development-report: expand a workflow phase | Web UI / Playwright: click the `implement` phase expander; read the vertical axis, one lane per session, and the Fit / 1 h / 15 m controls | `Consumer expands a workflow phase and sees its lanes` |
+| 7 | development-report: select a timeline element | Web UI / Playwright: expand the phase, then select the `Architect.Scout` lane; read the lane log's start/duration/outcome, the tool call id, and the bounded content region | `Consumer selects a timeline element and reads its details` |
+| 8 | development-report: zoom the timeline | Web UI / Playwright: expand the phase, click `15 m`, compare the rendered range label before and after | `Consumer zooms the timeline to a shorter time range` |
+| 9 | development-report: open the report of a scope with no recorded activity | Web UI / Playwright: open the generated empty-scope report; read the empty-state heading and the absence of any phase | `Consumer opens the report of a scope with no recorded activity` |
+
+**Primary-assertion rule (copied from the matrix):** every browser scenario
+asserts on what the browser rendered (DOM text, accessible names, the rendered
+range label) — never on the report file's raw bytes as its primary assertion;
+the CLI scenarios assert on the subprocess's stdout and the files it wrote.
+Repository checks are secondary only.
+
+### Delta inventory (verified mechanically against the five delta features)
+
+| Feature (path relative to `GIVN_FEATURES`) | Entries | Non-`@e2e` | `@e2e` |
+|---|---|---|---|
+| `inspect-development-history/development-record.feature` | 21 | 19 | 2 |
+| `inspect-development-history/agent-activity-reporting.feature` | 15 | 14 | 1 |
+| `inspect-development-history/development-report.feature` | 23 | 17 | 6 |
+| `fragments/adr-qualification-gate.feature` (`@givn.modified`) | 1 | 1 | 0 |
+| `initialize-project/initialize-a-project.feature` (`@givn.modified`, two) | 2 | 2 | 0 |
+| **Total** | **62** | **53** | **9** |
+
+- **62** executable scenario entries = **59 `@givn.added`** + **3
+  `@givn.modified`**; **53 non-`@e2e`** + **9 `@e2e`**. The third column counts
+  a `Scenario Outline` as one entry (its Examples rows are input variation).
+- **15 `@wip`** scenarios are pending: 1 in `development-record.feature` and 14
+  in `development-report.feature` (8 non-`@e2e`, 6 `@e2e`). `givn lint --change
+  development-timeline` at the baseline of this part reports exactly those 15
+  `[WIP]` findings plus the pre-existing `[SUBST] advisory` lines, exit 2 — the
+  pending tags, not a parse error.
+- **Scheduled here:** 17 sections = **15 scenario tasks** (H1, H3–H10, HE1–HE6)
+  + **1 shared prerequisite** (H2, report-model scaffold; no new scenario) +
+  **1 change-wide evidence/scope-run task** (HE7; no new scenario). The three
+  `@givn.modified` entries stay with S2b and Task 24a; this part adds none.
+- **Box accounting:** 17 sections × 5 boxes = **85 new boxes**; `tasks.md`
+  moves from **274/274** boxes to **359 total / 274 done / 85 pending**.
+  `givn status` reports the tasks artifact as partial until every new box is
+  checked with its evidence and revision.
+- **Work order:** H1 (the dispatcher writer its own scenario needs) → H2 (the
+  shared model scaffold every report scenario asserts through) → H3–H10 (the
+  eight regular report scenarios in `.feature` order) → HE1–HE6 (the six
+  `@e2e` scenarios in `.feature` order, the asset rewrite beginning in HE2) →
+  HE7 (evidence refresh and both scope runs). Non-`@e2e` first, `@e2e` last, as
+  the tasks instruction requires.
+
+### Decision constraints that apply to every task in this part
+
+- **The workflow order** is exactly `WORKFLOW_STAGES` in `src/cli/timeline.rs`
+  (nine phases): `propose`, `specs`, `design`, `arc42`, `design-review`,
+  `tasks`, `implement`, `review`, `archive`. No phase name outside that list is
+  ever rendered or invented.
+- **The record is the only evidence.** A duration the record does not carry
+  reads "not measured"; an outcome it does not carry reads "unknown"; a fact the
+  harness did not report reads "not reported"/"unavailable", never zero. Never
+  modify `givn/history/events.jsonl`.
+- **Determinism** is over the record **plus the embedded change-state snapshot**
+  (R-96): the asset never calls `fetch`, never loads a remote resource, never
+  reads the wall clock (`Date.now()`), and the same record + state always
+  renders identically. Two renders may differ only when the change state moved.
+- **Server absence:** the report stays one self-contained HTML document; no
+  server, no third-party JavaScript, no `Date.now()`, and the generator
+  substitutes exactly the two documented markers once each
+  (`/*__GIVN_REPORT_DATA__*/` with `<` escaped as `\u003c`, and
+  `<!--__GIVN_REPORT_VIEW__-->`).
+- **No store change:** `ReportModel`, `WorkflowPhase`, `Lane`, `RepeatedGroup`,
+  `PhaseAggregate`, and `CurrentState` are serialized only inside the generated
+  report. The record schema gains no field: the transition is a `phase` entry
+  with an existing label form.
+- **Evidence rule (Visual Design Contract):** each `@e2e` scenario commits its
+  final-state pair under
+  `givn/changes/development-timeline/evidence/visual/<scenario-slug>/{mobile.png,desktop.png}`
+  — mobile at **360x780**, desktop at **1920x1080**, animations disabled, no
+  intermediate captures under the change directory. The **existing titles and
+  therefore slugs are preserved**; the open, select, zoom, generate, and empty
+  scenarios refresh their pairs in place, and only the **new expand** scenario
+  introduces a new directory. `scenario_slug` is lowercase ASCII, every run of
+  non-alphanumerics becomes one `-`, leading/trailing `-` removed.
+- Every command below is the canonical single-scenario form the earlier tasks
+  use. **`--name` is banned.** Never infer a scenario's green from whole-suite
+  output.
+
+## Task H1 — `An artifact appearance is recorded as one phase transition` (`development-record`, added)
+
+- [ ] **Scenario: `An artifact appearance is recorded as one phase transition`** (`@wip` until its RED)
+  - Design constraints:
+    - **Capture point.** The command dispatcher emits exactly one `phase`
+      entry — the report's artifact-appearance transition — labelled with the
+      artifact's `STAGE_ARTIFACTS` filename, at the **end of the first recorded
+      command that observes the artifact `Done`**. Nothing is emitted before
+      the project carries the Givn scaffold; the emission is best-effort and
+      never changes the command's outcome or exit code.
+    - **Per-artifact dedupe, never a state diff.** An artifact is newly observed
+      `Done` when this change's record holds **no** `phase` entry with that same
+      filename label yet. A later recorded command that sees the same artifact
+      `Done` emits nothing; existing records are never backfilled and no entry
+      is ever rewritten.
+    - **Gate phases are never transitions.** `givn check --artifact <id>`
+      labels its mandatory-check phase with the **artifact id** (`proposal`,
+      `tasks`, …), never with a filename, so it can neither dedupe away nor
+      stand in for a transition. The scenario asserts both facts: the gate
+      entry keeps label `proposal`, and the record still holds exactly one
+      `proposal.md` transition.
+    - **State → filename mapping** (the design's current-phase table, read in
+      the same direction, with the filename at the mapped stage's index):
+      `proposal`→`propose`→`proposal.md`; `specs`→`specs`→`specs`;
+      `design`→`design`→`design.md`; `arc42-docs`→`arc42`→`arc42.md`;
+      `design-review`→`design-review`→`design-review.md`;
+      `tasks`→`tasks`→`tasks.md` (a `partial` tasks artifact is not `Done`, so
+      it emits nothing); `review`→`review`→`review.md`. Read the filename from
+      `STAGE_ARTIFACTS` at the mapped `WORKFLOW_STAGES` index in
+      `src/cli/timeline.rs`; make both lookup tables `pub(crate)` instead of
+      copying them. An artifact the table does not map emits nothing.
+    - **Scope.** The entry belongs to the change scope whose post-command state
+      observed the artifact: re-resolve the change from the post-command root
+      (its `givn/changes/<id>` directory exists) instead of reusing the
+      start-resolved scope, because `givn new <id>` creates the change and its
+      `proposal.md` *during* the command, when the recorder's start-resolved
+      scope was still the project. The command's own `command` entry keeps its
+      start-resolved scope (no rewrite, no backfill). An ambiguous root
+      (several active changes) resolves to none: no transition is emitted.
+    - **Entry shape.** `kind: "phase"`, `source: "givn"`, `name` and `label`
+      both the artifact filename (`HistoryRecorder::record` bounds the label at
+      120), `outcome: "ok"`, `duration_ms: None` (an observation instant, never
+      an invented duration), parented to this command's entry by the recorder's
+      own flush, `data` absent.
+    - **Ordering.** Transitions for the artifacts one command first observes
+      are emitted in workflow order at the command's end instant; the report's
+      derivation orders by `at`, and workflow order breaks the tie
+      deterministically.
+    - Files: `src/main.rs` (the post-dispatch emission beside
+      `recorder.finish`), `src/history.rs` (the scope's existing `phase` labels
+      and the post-command scope resolution), `src/cli/timeline.rs` (the two
+      tables' `pub(crate)` visibility), `tests/steps/development_record_steps.rs`
+      (the scenario's steps), `tests/steps/development_timeline_support.rs`
+      (the fixture).
+    - RED expected failure: the three new Then phrases are undefined and no
+      production command emits a transition.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::An artifact appearance is recorded as one phase transition"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — implement the emission, the dedupe, and the gate-label
+        distinction. Files: `src/main.rs`, `src/history.rs`,
+        `src/cli/timeline.rs`, `tests/steps/development_record_steps.rs`,
+        `tests/steps/development_timeline_support.rs`. Compile first, then
+        re-run this scenario → exit 0. Paste it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — one emission path (post-command state → mapped filename
+        → label-absent check → one entry); `cargo fmt --all -- --check` and
+        `cargo clippy --locked --all-targets -- -D warnings` green; re-run
+        this scenario → still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+        the scenario title `An artifact appearance is recorded as one phase
+        transition` in the body. Record the revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task H2 — Shared report-model scaffold and text view (no new scenario; the delta's model prerequisite)
+
+- [ ] **Shared prerequisite: `cli::timeline::tests::hybrid_model_carries_the_phase_scaffold_and_kpi_totals`**
+  - Design constraints:
+    - **Why a shared task.** Every report scenario below asserts facts only the
+      new model can carry (phases, statuses, lanes, repeated groups, Fit
+      aggregates, the current state, the no-stage group), and the KPI strip's
+      three new totals are asserted nowhere else. This task adds the scaffold
+      and proves it at the unit boundary; the scenarios below prove the
+      behaviours. It introduces no scenario, no feature tag, and no `@e2e`.
+    - **`ReportModel` gains** `workflow: Vec<WorkflowPhase>`,
+      `current_state: Option<CurrentState>`, and
+      `unstaged: Option<WorkflowPhase>` (the same scaffold with `stage: None`
+      and no status, absent when every entry has a stage), serialized only
+      inside the report. The existing `bands`, `entries`, `stages`, `empty`,
+      `aggregates`, and content-budget fields stay; the one phase derivation
+      (`stages`) stays the only assignment source.
+    - **`WorkflowPhase`** carries: stage, status, first/last recorded instants,
+      wall/active/waiting ms, tool count, subagent count,
+      `lanes: Vec<Lane>` (session key, visible name, entry ids, first/last,
+      measured duration), `repeated: Vec<RepeatedGroup>` (kind, normalized
+      label, count, combined measured duration, entry ids), and
+      `aggregates: Vec<PhaseAggregate>` (Fit-zoom bucket bounds, entry ids,
+      count, combined measured duration).
+    - **`CurrentState`** carries the change stage label, the current workflow
+      phase, the next required artifact, and task progress
+      (`TasksProgress { total, done }`) where the change state has them. The
+      struct is `None` for a topic, the project report, and an archived change.
+    - **`Summary` gains** `active_ms: Option<u64>`, `tool_calls: usize`, and
+      `cost_total: Option<f64>`. `active` is elapsed minus waiting when both
+      are measured, else "not measured". `tool_calls` counts `kind == "tool"`
+      entries. `cost_total` sums every recorded real cost — `data.cost.total`
+      when `data.cost` is the cost object, `data.cost` when it is a number —
+      and is `None` ("unavailable") when the record carries none.
+    - **The scaffold holds ids, names, and totals only.** The entries appear
+      once in `entries`; the model must never carry a second copy of the
+      record. The unit test asserts `entries.len()` is unchanged by the
+      scaffold and that every lane/group/aggregate member id exists in
+      `entries`.
+    - **Text view.** `render_view` prints the current-state line, one line per
+      workflow phase (status, wall/active/waiting, tools, subagents, its lane
+      names, its repeated-group count, its Fit aggregate count), the
+      "no recorded stage transition" line when `unstaged` is present, the
+      summary including the six KPI facts, and the empty state. The model
+      payload element carries the same facts. The project report keeps its band
+      rows instead of the phase stack.
+    - **The content budget is unchanged:** `content_budget_bytes: 8_388_608`,
+      `content_bytes`, and the omission markers stay; the scaffold never
+      re-embeds content.
+    - Files: `src/cli/timeline.rs` only (`build_report_model`, the new structs,
+      `render_view`, and the `#[cfg(test)] mod tests` fixture).
+    - RED expected failure: the unit test does not compile (the fields do not
+      exist), so `cargo test` exits non-zero.
+  - [ ] **RED** — add the unit test under `#[cfg(test)] mod tests` in
+        `src/cli/timeline.rs` (a small entry vector: one `proposal.md`
+        transition, one tool entry in one session, one numeric cost, one cost
+        object, one question wait) and run:
+        `cargo test --locked --lib cli::timeline::tests::hybrid_model_carries_the_phase_scaffold_and_kpi_totals`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — add the structs, the builders, the three `Summary` totals,
+        the `render_view` lines, and the model payload fields. File:
+        `src/cli/timeline.rs`. Re-run the unit test → exit 0. Paste it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — one phase builder feeding the stack and the unstaged
+        group, one lane builder, one group/aggregate builder; `cargo fmt --all
+        -- --check` and `cargo clippy --locked --all-targets -- -D warnings`
+        green; re-run the unit test → still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the body naming the shared scaffold (model fields, the three KPI totals,
+        the text-view lines) and the unit test; no scenario changes. Record the
+        revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task H3 — `The report shows the empty state for a scope with no recorded activity` (`development-report`, added)
+
+- [ ] **Scenario: `The report shows the empty state for a scope with no recorded activity`** (`@wip` until its RED)
+  - Design constraints:
+    - **The empty state is the whole report root.** For a scope with no
+      recorded activity the report renders the heading, the one sentence naming
+      the scope, and the labelled way back to the report root — never a blank
+      page, an error, or a stack drawn over nothing. This branch is shared with
+      the browser tier (HE6).
+    - **No workflow phase is drawn.** The delta replaces the old assertion:
+      the report draws **no workflow phase** for the scope — the text view
+      prints no phase line and no phase name, and the asset draws no phase
+      card, no axis, and no lane. `model.empty` gates the branch once; the
+      workflow stack and the KPI strip do not render.
+    - The workflow order is exactly the nine `WORKFLOW_STAGES`; the empty state
+      must not name any of them.
+    - **Determinism:** the empty state reads only the record and the embedded
+      state snapshot; no wall clock, no network.
+    - Files: `src/cli/timeline.rs` (the shared empty-state branch and
+      `render_view`) and `tests/steps/development_report_steps.rs` (the new
+      Then step replacing `the report draws no timeline axis for it`; that old
+      step and its phrase are deleted, not kept as an alias).
+    - RED expected failure: `the report draws no workflow phase for it` is
+      undefined; the reused empty-state Given/When still build a real empty
+      fixture, so the RED is the missing branch assertion, never a vacuous
+      setup.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report shows the empty state for a scope with no recorded activity"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — implement the single `empty` branch and the step. Files:
+        `src/cli/timeline.rs`, `tests/steps/development_report_steps.rs`.
+        Re-run this scenario → exit 0. Paste it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — one `render_empty_state` used by the report root, and
+        the absence of phases expressed by the one `empty` condition; `cargo
+        fmt --all -- --check` and `cargo clippy --locked --all-targets --
+        -D warnings` green; re-run → still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task H4 — `The report derives the current workflow state` (`development-report`, added)
+
+- [ ] **Scenario: `The report derives the current workflow state`** (`@wip` until its RED)
+  - Design constraints:
+    - **Source of the state.** For a change scope whose directory exists at
+      `givn/changes/<id>`, `givn timeline` reads the change's derived state
+      (`src/state.rs`: `stage_label()`, `next_required()`, task progress, and
+      the `.givn-skip` list) through `crate::config::overlay::load_effective()`
+      — the same manifest `givn status` uses, addons included — and reports the
+      stage label, the next required artifact, and the task counts. The step
+      **drives a real change directory whose artifacts produce the state**; no
+      step may supply the label.
+    - **The artifact-id → phase table** (never by list position):
+
+      | State artifact id | Workflow phase |
+      |---|---|
+      | `proposal` | `propose` |
+      | `specs` | `specs` |
+      | `design` | `design` |
+      | `arc42-docs` | `arc42` |
+      | `design-review` | `design-review` |
+      | `tasks` | `tasks`, or `implement` while its status is `partial` |
+      | `review` | `review` |
+
+      The current phase is that mapping of `next_required()`; a `partial`
+      `tasks` artifact means the change is implementing, so the current phase
+      is `implement`. With every required artifact done the current phase is
+      `archive`. A `next_required()` artifact outside the table leaves the
+      current phase **underived**: the header still prints the stage label and
+      the artifact, and no phase is marked active instead of guessing one.
+    - **Phase statuses.** `WORKFLOW_STAGES` order (nine phases). Phases before
+      the current phase are `done`, the current phase is `active`, phases after
+      it are `queued`. A phase whose mapped state artifact is `skipped` is
+      `skipped`, which wins over `done` and `queued`; a skipped artifact is
+      never the current phase because `next_required()` ignores it. A phase
+      with no recorded entries renders its status and **zero recorded
+      minutes**, never an invented duration.
+    - **Header facts, and only those.** The header states the scope, the stage
+      label and the current phase as separate words (so "tasks-done, next
+      review" and the active `review` phase are not conflated), the next
+      required artifact, the task counts, and the count of done phases of nine.
+      It **does not** count review findings or claim a running time — the state
+      exposes neither (review F13, accepted residual).
+    - **Resolution.** `givn/changes/<id>` existing → live state. Else
+      `givn/archive/<id>` existing → archived (all phases `done`, no current
+      state; HE6/H7). Neither → the report says "recorded only, no live change
+      state" and marks **no** phase `done`, never assuming an archive. A topic
+      or the project report has `current_state: None` and the header says "no
+      live change state".
+    - **Model and text view.** `ReportModel.current_state: Option<CurrentState>`
+      (stage label, current phase, next required artifact, task progress) and
+      the nine `workflow` statuses; `render_view` prints the current-state line
+      and one line per phase carrying its status. The scenario's steps read the
+      written file's text view: the stage label verbatim, each phase's status,
+      and the absence of any name outside the nine.
+    - **Fixture.** A project initialised without the arc42 addon; a real change
+      directory holding `proposal.md`, `specs/demo.feature`, `design.md`,
+      `design-review.md`, and a `tasks.md` whose boxes are all checked (so the
+      artifact is `Done`, not `Partial`, and the task counts are non-zero),
+      plus a seeded record whose phase transitions run up to `tasks.md`.
+    - Files: `src/cli/timeline.rs` (state resolution, statuses, current state,
+      text view), `tests/steps/development_report_steps.rs` (the three Givens
+      and the five Thens), `tests/steps/development_timeline_support.rs` (the
+      real-change fixture).
+    - RED expected failure: the new Given/Then phrases are undefined and the
+      model has no current state or statuses.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report derives the current workflow state"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — implement the mapping, the statuses, the header, and the
+        text view. Files: `src/cli/timeline.rs`,
+        `tests/steps/development_report_steps.rs`,
+        `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
+        it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — one id→phase mapping and one status pass shared by the
+        header, the stack, and the text view; `cargo fmt --all -- --check` and
+        `cargo clippy --locked --all-targets -- -D warnings` green; re-run →
+        still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task H5 — `The report lays parallel sessions side by side` (`development-report`, added)
+
+- [ ] **Scenario: `The report lays parallel sessions side by side`** (`@wip` until its RED)
+  - Design constraints:
+    - **One lane per distinct recorded session** inside a phase; entries whose
+      `session` the record does not name go to the **unattributed lane** (an
+      absent session key; the design's own word `unattributed` is its visible
+      name).
+    - **Naming rule (review F1, R-93).** A lane is named by a recorded subagent
+      span **only when the span's `data.subagent` equals the lane's session
+      id** (opencode's child-session flush); it then carries that span's
+      `data.agent` definition as well. Otherwise the lane is named by the
+      recorded `session` entry's `data.title` when one exists (the `session`
+      kind entry for that session id), else by the session's **short id** —
+      the first 8 characters of the session id, the whole id when shorter.
+    - **A lane that merely contains a subagent span keeps its own name.** The
+      span is drawn inside that lane and never renames it, and **no "subagent
+      lane" is created** for a span the record places in the spawning session.
+    - **Tool calls are never assigned to a subagent the record does not name.**
+      omp and Maki report one session, so their subagent spans sit in the
+      agent's lane; Claude's subagent transcript is read for usage, not for
+      tool entries; opencode's flush carries one session id for its whole
+      batch, so a flush that mixed sessions attributes its entries to the
+      flush's session id. The report **states each limit instead of inventing
+      per-entry parentage**: when a lane holds a subagent span with no
+      attributable tool calls, the text view prints the R-93 sentence (no tool
+      call was attributable to that span) and the asset renders the same
+      statement in the selected span's log.
+    - **Lanes beyond the four defined hues cycle those hues**; the lane name,
+      never the hue, carries identity.
+    - **Model.** `WorkflowPhase.lanes: Vec<Lane>` with session key, visible
+      name, member entry ids, first/last, and measured duration; entries appear
+      once in `entries`. The text view prints the phase's lane names, so the
+      scenario reads them from the written file.
+    - **Fixture.** One phase (after a `tasks.md` transition, i.e. `implement`)
+      holding two sessions: a subagent's own recorded session whose `session`
+      id matches a subagent span's `data.subagent` and whose `data.agent` names
+      `Architect.Scout` (its own entries carry that session id); and a spawning
+      session whose own entries carry its session id and which holds a subagent
+      span the record places in it; plus one entry with no `session` field and
+      one tool call under the subagent's session id so the attribution is
+      observable.
+    - Files: `src/cli/timeline.rs`, `tests/steps/development_report_steps.rs`,
+      `tests/steps/development_timeline_support.rs` (the two-session fixture and
+      its `session` entries with `data.title`).
+    - RED expected failure: the six new Given/Then phrases are undefined and no
+      lane scaffold exists.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report lays parallel sessions side by side"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — implement the lane builder, the naming rule, the
+        unattributed lane, and the R-93 statement. Files:
+        `src/cli/timeline.rs`, `tests/steps/development_report_steps.rs`,
+        `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
+        it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — one `lane_for` naming function (span/session-id match →
+        title → short id) and one attribution-limit derivation; `cargo fmt
+        --all -- --check` and `cargo clippy --locked --all-targets --
+        -D warnings` green; re-run → still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task H6 — `The report marks a skipped workflow phase` (`development-report`, added)
+
+- [ ] **Scenario: `The report marks a skipped workflow phase`** (`@wip` until its RED)
+  - Design constraints:
+    - **Skip source.** The state's `.givn-skip` list (`src/state.rs`:
+      `is_skipped`, `ArtifactStatus::Skipped`) makes the mapped phase
+      `skipped`. The fixture enables the arc42 addon (`givn addons enable
+      arc42`) so `arc42-docs` exists in the effective manifest, then writes
+      `.givn-skip` with `arc42-docs`; the report reads the real state through
+      `load_effective()`.
+    - **Precedence.** `skipped` wins over `done` and `queued`. A skipped
+      artifact is never the current phase because `next_required()` ignores it;
+      the scenario's state stays `tasks-done` with next required `review`.
+    - **Never both.** The report marks `arc42` skipped and **not** done — one
+      status per phase, no two labels.
+    - **Phase with no recorded entries** still renders its status and zero
+      recorded minutes (the skipped phase may have no entries).
+    - The workflow is exactly the nine `WORKFLOW_STAGES`; `arc42` is the
+      mapped phase for `arc42-docs`.
+    - Files: `src/cli/timeline.rs` (skip precedence in the one status pass),
+      `tests/steps/development_report_steps.rs` (the skip Given and the two
+      Thens), `tests/steps/development_timeline_support.rs` (the addon + skip
+      fixture).
+    - RED expected failure: the skip Given and the two Then phrases are
+      undefined; the current model has no `skipped` status.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report marks a skipped workflow phase"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — implement skip precedence and the steps. Files:
+        `src/cli/timeline.rs`, `tests/steps/development_report_steps.rs`,
+        `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
+        it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — the status pass stays one function (skipped → done →
+        active → queued precedence in one place); `cargo fmt --all --
+        --check` and `cargo clippy --locked --all-targets -- -D warnings`
+        green; re-run → still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task H7 — `The report of an archived change marks every phase done` (`development-report`, added)
+
+- [ ] **Scenario: `The report of an archived change marks every phase done`** (`@wip` until its RED)
+  - Design constraints:
+    - **Archive resolution.** A change id whose `givn/changes/<id>` directory
+      does **not** exist is resolved against `givn/archive/<id>`. When the
+      archive directory exists the change is **archived**: every one of the
+      nine phases is `done`, `current_state` is `None`, and there is **no**
+      next required artifact. When neither directory exists the report says
+      "recorded only, no live change state" and marks **no** phase done —
+      never assume an archive for a missing directory.
+    - **Archived header.** The header says "no live change state"; it prints no
+      stage label, no next artifact, and no task counts, because the archived
+      change exposes no live state.
+    - **Every phase done, including empty ones.** A phase with no recorded
+      entries is still `done` (archived) and shows zero recorded minutes; no
+      status is invented from the record.
+    - The scenario asserts three things against the written file: no live
+      change state is named, every workflow phase reads done, and no next
+      required artifact is named.
+    - **Fixture.** `givn/archive/demo/` exists (a real archived change
+      directory), `givn/changes/demo` does not, and the seeded record holds
+      phase transitions up to `review.md`; the state is never read from a live
+      change.
+    - Files: `src/cli/timeline.rs` (the archive/neither-dir resolution and the
+      archived statuses), `tests/steps/development_report_steps.rs` (the
+      archived Given and the three Thens),
+      `tests/steps/development_timeline_support.rs` (the archive fixture).
+    - RED expected failure: the archived Given and the three Then phrases are
+      undefined; the model has no archived resolution.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report of an archived change marks every phase done"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — implement the three-way resolution (live / archived /
+        neither) and the archived statuses. Files: `src/cli/timeline.rs`,
+        `tests/steps/development_report_steps.rs`,
+        `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
+        it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — one `resolve_change_state` returning live/archived/
+        absent, read by the header and the status pass; `cargo fmt --all --
+        --check` and `cargo clippy --locked --all-targets -- -D warnings`
+        green; re-run → still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task H8 — `The report states a record with no stage transition` (`development-report`, added)
+
+- [ ] **Scenario: `The report states a record with no stage transition`** (`@wip` until its RED)
+  - Design constraints:
+    - **Phase derivation rule (the one derivation).** Givn records one `phase`
+      entry when an artifact file of the change appears — the dispatcher emits
+      it (Task H1), labelled with the artifact's `STAGE_ARTIFACTS` filename —
+      and an entry belongs to the stage of the **latest such transition at or
+      before its own `at`**. The gate entry `givn check --artifact <id>` keeps
+      the artifact id label and is **never** a transition.
+    - **No-stage group.** Entries the record assigns to no stage belong to
+      **one** "no recorded stage transition" group rendered below the phase
+      stack, with the same lane timeline, and the report **states the gap**.
+      They are never placed under a phase the record does not support and
+      never under a guessed opening phase.
+    - **Opening-stage rule.** Entries recorded before the band's first
+      transition stay in the opening stage (`propose`) **only when that first
+      transition is `proposal.md`** (the record starts where the workflow
+      starts). When the first transition is later, those entries belong to the
+      no-stage group. A scope with no transitions gets that one group instead
+      of an invented phase name.
+    - **Known defect this task must fix:** `stage_assignments` in
+      `src/cli/timeline.rs` currently places every pre-first-transition entry
+      in `WORKFLOW_STAGES[0]` unconditionally. Replace that with the rule
+      above; the later-first-transition case is asserted by a production unit
+      test in the same module (no new scenario, no feature edit), because the
+      delta's scenario covers the no-transition case and the rule must not be
+      lost.
+    - **Model.** `ReportModel.unstaged: Option<WorkflowPhase>` — the same
+      scaffold with `stage: None` and **no status** — absent when every entry
+      has a stage; `stages` entries for unstaged work stay `None` (no invented
+      name). The text view prints the group (its entry count) and the exact gap
+      sentence; it prints **no** phase line for that work.
+    - **Fixture.** A change profile whose record holds entries (steps/tools)
+      and **no** `phase` transition at all; the report must print the gap and
+      group the work rather than naming `propose`.
+    - Files: `src/cli/timeline.rs` (the derivation fix, `unstaged`, the text
+      view, the unit test), `tests/steps/development_report_steps.rs` (the
+      Given and the three Thens),
+      `tests/steps/development_timeline_support.rs` (the no-transition
+      fixture).
+    - RED expected failure: the three Then phrases are undefined and the
+      current derivation invents `propose` for the work.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report states a record with no stage transition"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — fix the derivation, add `unstaged`, print the gap, and add
+        the later-first unit assertion. Files: `src/cli/timeline.rs`,
+        `tests/steps/development_report_steps.rs`,
+        `tests/steps/development_timeline_support.rs`. Re-run this scenario →
+        exit 0 and the unit test → exit 0. Paste both.
+        ```
+        PASTE THE GREEN RUN (SCENARIO) HERE
+        ```
+        ```
+        PASTE THE GREEN RUN (UNIT TEST) HERE
+        ```
+  - [ ] **REFACTOR** — the derivation stays one function returning
+        `Option<&'static str>` per entry, read by `stages`, `workflow`, and
+        `unstaged`; `cargo fmt --all -- --check` and `cargo clippy --locked
+        --all-targets -- -D warnings` green; re-run → still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task H9 — `The report groups repeated steps` (`development-report`, added)
+
+- [ ] **Scenario: `The report groups repeated steps`** (`@wip` until its RED)
+  - Design constraints:
+    - **Grouping rule.** Within a phase, entries with the **same kind and the
+      same normalized label** (trimmed, whitespace collapsed) are grouped when
+      the group holds **at least five** entries. The report names the **count**
+      and the **combined measured duration**.
+    - **Different kinds never merge**, and a group **never hides an entry from
+      the ranking**: the ranking still lists every measured entry, one row
+      each, alongside the group.
+    - **Model.** `WorkflowPhase.repeated: Vec<RepeatedGroup>` (kind, normalized
+      label, count, combined measured duration, entry ids); the group holds
+      ids and totals only, never a second copy of the entries. The text view
+      prints each phase's repeated-group count; the asset marks the group's
+      members.
+    - **Phase scope.** Groups are computed per phase from the entries the
+      phase derivation assigned to it — never across phases; the same command
+      repeated under two phases yields one group per phase.
+    - **Fixture.** Six identical `command` entries in one phase (after the
+      `tasks.md` transition, i.e. `implement`) with distinct measured
+      durations, plus the ranking's other measured entries; the steps assert
+      one group, its count 6, its combined duration (the sum), and that every
+      measured entry is still ranked.
+    - Files: `src/cli/timeline.rs` (the grouping pass and the text view),
+      `tests/steps/development_report_steps.rs` (the Given and the two Thens),
+      `tests/steps/development_timeline_support.rs` (the six-command fixture).
+    - RED expected failure: the Given and the two Then phrases are undefined;
+      no group scaffold exists.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report groups repeated steps"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — implement the normalized-label grouping and the text-view
+        count. Files: `src/cli/timeline.rs`,
+        `tests/steps/development_report_steps.rs`,
+        `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
+        it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — one `normalized_label` used by the grouping and the
+        ranking rows; `cargo fmt --all -- --check` and `cargo clippy --locked
+        --all-targets -- -D warnings` green; re-run → still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task H10 — `A dense record is reported as aggregates instead of raw ticks` (`development-report`, added)
+
+- [ ] **Scenario: `A dense record is reported as aggregates instead of raw ticks`** (`@wip` until its RED)
+  - Design constraints:
+    - **Threshold.** Within an expanded phase, a lane never draws one shape per
+      entry when that would be unreadable. The threshold is the lane's
+      **time-per-pixel at the current zoom**, applied **at every level and not
+      only at Fit**. Entries shorter than that threshold — dense agent ticks
+      and short steps in particular — collapse into **one aggregate tick per
+      time bucket**; the tick names **how many entries it covers and their
+      combined measured duration**. Individual ticks replace their aggregate as
+      the zoom narrows and the threshold permits.
+    - **Bounded DOM.** A record of tens of thousands of entries renders a
+      bounded number of shapes at Fit, 1 h, and 15 m; the timeline's scroll
+      height is capped and the lane scrolls, so 15 m never forces one tick per
+      sub-second entry.
+    - **Full-record summary.** The summary and the longest-step ranking always
+      cover the **full record**, never only the visible window or the
+      aggregates; clicking an aggregate zooms the phase to that bucket instead
+      of opening a log entry that stands for many.
+    - **Model.** `WorkflowPhase.aggregates: Vec<PhaseAggregate>` carries the
+      **Fit-zoom** bucket bounds, member entry ids, count, and combined
+      measured duration; the asset re-applies the same criterion for the
+      narrower zooms. The text view prints each phase's Fit aggregate count so
+      the regular scenario reads it from the written file.
+    - **Fixture.** A record holding hundreds of short `tool` activities in one
+      phase (after a transition) plus a few ordinary entries, so the aggregate
+      covers the dense entries while the summary still counts every entry.
+    - The delta's phrase is **aggregate tick on the phase lane** (not the old
+      "aggregate marker"); the old step phrases
+      `the report collapses the short agent activities into aggregate markers`
+      and `each aggregate marker names how many entries it covers and their
+      total duration` are replaced, not aliased.
+    - Files: `src/cli/timeline.rs` (the per-phase bucket derivation shared with
+      the axis scale and the text view),
+      `tests/steps/development_report_steps.rs` (the Given and the three
+      Thens), `tests/steps/development_timeline_support.rs` (the dense
+      fixture).
+    - RED expected failure: the three new Then phrases are undefined; the
+      model carries no per-phase aggregates.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::A dense record is reported as aggregates instead of raw ticks"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — implement the per-phase Fit buckets and the three
+        assertions. Files: `src/cli/timeline.rs`,
+        `tests/steps/development_report_steps.rs`,
+        `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
+        it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — one bucket criterion (`Scale::time_per_pixel`) feeding
+        the model's aggregate list and the asset's every-zoom threshold;
+        `cargo fmt --all -- --check` and `cargo clippy --locked --all-targets
+        -- -D warnings` green; re-run → still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task HE1 — `Consumer generates the development report for a change` (`@e2e`, `development-report`)
+
+- [ ] **Scenario: `Consumer generates the development report for a change`** (`@wip` until its RED)
+  - Design constraints:
+    - Matrix row 4: real interface **CLI**; driving mechanism `common::run_givn`:
+      `givn timeline --change demo --out report.html`; the assertion reads the
+      **written file**. The e2e runner, browser driver, and evidence helper are
+      Task E1's; this task adds no setup.
+    - **Phase derivation, asserted concretely:** the record holds artifact
+      transitions up to **`tasks.md`**, and the step recorded after that
+      transition must land in the **`implement`** phase (the artifact file of
+      stage N opens stage N+1; `tasks.md` opens `implement`). The
+      gate-entry distinction is Task H1's; this scenario's fixture seeds the
+      transitions in the record.
+    - **Workflow names, not "recorded phases":** the delta's Then is
+      `the report file exists and names the workflow phases` — the text view
+      must name all **nine** `WORKFLOW_STAGES` in order. The old step phrase
+      `the report file exists and names the recorded phases` and its step are
+      replaced, not aliased.
+    - Assertions: exit 0; the printed path of the written report; the file
+      exists and names the nine workflow phases; the post-transition step is
+      placed in `implement`. The default-path assertion (flagless
+      `givn timeline --change demo` writes `givn/history/reports/demo.html`) is
+      allowed by the same decision and stays from Task E5.
+    - Steps in `tests/steps/development_report_e2e_steps.rs`; the seeded record
+      comes from the shared builder in
+      `tests/steps/development_timeline_support.rs`; the evidence capture is
+      the shared `commit_evidence(world, GENERATE_SCENARIO)` helper — the
+      title is untouched, so the slug stays
+      `consumer-generates-the-development-report-for-a-change`.
+    - **Evidence:** refresh
+      `evidence/visual/consumer-generates-the-development-report-for-a-change/{mobile.png,desktop.png}`
+      in place — the report this scenario wrote, rendered in the browser at
+      360x780 and 1920x1080, animations disabled, both files non-empty.
+    - Files: `src/cli/timeline.rs` (the nine-phase text view),
+      `tests/steps/development_report_e2e_steps.rs`,
+      `tests/steps/development_timeline_support.rs`, the two refreshed PNGs.
+    - RED expected failure: `names the workflow phases` is undefined (the old
+      phrase binds) and the text view cannot yet name a phase stack.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer generates the development report for a change"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — implement the workflow-phase text view and the step. Files:
+        `src/cli/timeline.rs`, `tests/steps/development_report_e2e_steps.rs`,
+        `tests/steps/development_timeline_support.rs`, plus the refreshed pair.
+        Compile first, re-run → exit 0. Paste it and the refreshed capture
+        list.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — one phase-line renderer shared by the text view's stack
+        and the no-stage group; `cargo fmt --all -- --check` and `cargo clippy
+        --locked --all-targets -- -D warnings` green; re-run → still exit 0.
+        Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+        title in the body (including the refreshed evidence pair). Record the
+        revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task HE2 — `Consumer opens the generated development report in a browser` (`@e2e`, `development-report`, Scenario Outline, `change` and `topic` rows) — the asset rewrite
+
+- [ ] **Scenario: `Consumer opens the generated development report in a browser`** (`@wip` until its RED)
+  - Design constraints:
+    - Matrix row 5: real interface **Web UI**; Playwright opens
+      `file://<root>/report.html` and reads the **rendered** heading, the
+      current-state line, the workflow phase list, and the longest recorded
+      step's duration from the DOM. One outline with a `change` row and a
+      `topic` row: one normalized action with input variants, one inventory
+      row, one evidence set.
+    - **This task carries the asset rewrite to the hybrid workflow view**
+      (`assets/timeline/report.html`): the header (scope, stage label and
+      current phase as separate words, done phases of nine), the KPI strip
+      (elapsed, active, waiting, tool calls, subagent spans, cost — "not
+      measured"/"unavailable" where the record has none), and the **workflow
+      stack top to bottom** (the nine phase cards in `WORKFLOW_STAGES` order,
+      each with status, wall/active/waiting, tool and subagent counts, its lane
+      names, and an activity sparkline). The inline script renders the stack
+      from the model payload, never by calling `fetch` and never with
+      `Date.now()`.
+    - **Then assertions:** the browser shows the report heading and the
+      **current workflow state**; the workflow phases appear **top to bottom**
+      in the nine-phase order; the longest recorded step appears with its
+      duration; at the **mobile viewport (360x780)** the page lays out in **one
+      column without page-level horizontal scrolling** —
+      `document.documentElement.scrollWidth <= window.innerWidth` — with the KPI
+      strip in two columns and the phase cards full width. The lanes of an
+      expanded phase may still scroll horizontally **inside** their card.
+    - **Accessibility (Visual Design Contract):** a real `title`, one `h1`,
+      `header`/`main` landmarks; the phase expander is a button carrying
+      `aria-expanded`; every control is Tab-reachable with a visible focus ring;
+      the driver emulates `prefers-reduced-motion: reduce` and screenshots are
+      captured with animations disabled.
+    - **Fixtures:** the `change` row creates a real change directory whose
+      artifacts yield a live derived state (the H4 fixture shape); the `topic`
+      row has no live change state and its header says so.
+    - Steps in `tests/steps/development_report_e2e_steps.rs`; the shared
+      builder and the real-change fixture live in
+      `tests/steps/development_timeline_support.rs`; capture with the shared
+      helper under the untouched title, so the slug stays
+      `consumer-opens-the-generated-development-report-in-a-browser`.
+    - **Evidence:** refresh
+      `evidence/visual/consumer-opens-the-generated-development-report-in-a-browser/{mobile.png,desktop.png}`
+      in place (desktop 1920x1080 and mobile 360x780 of the hybrid view,
+      animations disabled).
+    - Files: `assets/timeline/report.html` (the rewrite: tokens, breakpoints,
+      header, KPI strip, phase cards, sparkline, mobile one-column rules),
+      `tests/steps/development_report_e2e_steps.rs`,
+      `tests/steps/development_timeline_support.rs`, the two refreshed PNGs.
+    - RED expected failure: `the report heading and the current workflow state`,
+      `the workflow phases top to bottom`, and the mobile-layout assertion are
+      undefined; the current asset draws the superseded dense timeline.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer opens the generated development report in a browser"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — rewrite the asset to the hybrid workflow view and implement
+        the three Then steps (heading + current state, top-to-bottom phases,
+        mobile one-column with no page-level horizontal scrolling). Files:
+        `assets/timeline/report.html`, `src/cli/timeline.rs` (only if the
+        rendered model needs a field the text view already prints),
+        `tests/steps/development_report_e2e_steps.rs`,
+        `tests/steps/development_timeline_support.rs`, plus the refreshed pair.
+        `node --check` on the extracted inline layer, compile, re-run → exit 0.
+        Paste it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — one phase-card renderer, one KPI tile renderer, one
+        `prefers-reduced-motion` block; `cargo fmt --all -- --check`,
+        `cargo clippy --locked --all-targets -- -D warnings`, and `node --check`
+        green; re-run → still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+        title in the body (including the refreshed evidence pair). Record the
+        revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task HE3 — `Consumer expands a workflow phase and sees its lanes` (`@e2e`, `development-report`)
+
+- [ ] **Scenario: `Consumer expands a workflow phase and sees its lanes`** (`@wip` until its RED)
+  - Design constraints:
+    - Matrix row 6: real interface **Web UI**; Playwright clicks the
+      **`implement`** phase expander and reads from the DOM: the phase's
+      **vertical timeline with time flowing down**, **one lane per session
+      beside each other**, the lane names, and the **Fit**, **1 h**, and
+      **15 m** zoom controls (visible text labels, never icons alone).
+    - **This scenario is the new interaction** (review F9): the expander changes
+      the visible timeline and is its own inventory row, `@e2e` scenario, and
+      evidence set. It is **not** part of select and not navigation.
+    - **Accessibility/semantics:** the expander is a button carrying
+      `aria-expanded`; the expanded phase is a labelled region; each lane's
+      **header** (not the lane column containing the ticks) is a focusable
+      button whose accessible name carries the lane name and its duration;
+      ticks are separate focusable elements and **no button nests another
+      control**.
+    - **Mobile rule:** after expanding at desktop, resize to 360x780 and assert
+      the **expanded phase survives** the layout change (still expanded, still
+      one lane per session, lanes scroll horizontally inside the card only).
+    - **Fixture:** an open report whose record holds parallel sessions (the H5
+      fixture: a subagent-owned session `Architect.Scout` and a spawning
+      session holding a subagent span), so the expanded phase has at least two
+      lanes.
+    - Steps in `tests/steps/development_report_e2e_steps.rs`; capture with the
+      shared helper under the **new** title.
+    - **Evidence (the only new directory this delta adds):**
+      `evidence/visual/consumer-expands-a-workflow-phase-and-sees-its-lanes/{mobile.png,desktop.png}`
+      — the expanded phase at 360x780 and 1920x1080, animations disabled, both
+      non-empty.
+    - Files: `assets/timeline/report.html` (phase expansion, the vertical axis,
+      lane columns and lane headers, the per-phase zoom controls and their
+      labels), `tests/steps/development_report_e2e_steps.rs`,
+      `tests/steps/development_timeline_support.rs`, the two new PNGs.
+    - RED expected failure: the Given, When, and three Then phrases are all
+      undefined (the scenario is new).
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer expands a workflow phase and sees its lanes"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — implement expansion, the vertical axis, the lanes, and the
+        three controls. Files: `assets/timeline/report.html`,
+        `tests/steps/development_report_e2e_steps.rs`,
+        `tests/steps/development_timeline_support.rs`, plus the new pair.
+        `node --check`, compile, re-run → exit 0. Paste it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — one `expandPhase`/`renderAxis`/`renderLanes` path shared
+        with select and zoom; `cargo fmt --all -- --check`, `cargo clippy
+        --locked --all-targets -- -D warnings`, and `node --check` green;
+        re-run → still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+        title in the body (including the new evidence pair). Record the
+        revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task HE4 — `Consumer selects a timeline element and reads its details` (`@e2e`, `development-report`)
+
+- [ ] **Scenario: `Consumer selects a timeline element and reads its details`** (`@wip` until its RED)
+  - Design constraints:
+    - Matrix row 7: real interface **Web UI**; Playwright expands the phase,
+      then clicks the **`Architect.Scout`** lane header (or focuses it and
+      presses `Enter`) and reads the **lane log** from the DOM. The delta
+      removed the expand from this scenario's observable behaviour: **select
+      only selects**.
+    - **Lane log facts:** the selected lane's entries sorted by `at` — tool
+      calls, turns, revisions, questions, and the subagent span itself — each
+      with its recorded fact list, outcome, duration, and content when
+      captured; failed and repeated entries are marked. The Thens assert the
+      lane's **start**, its **duration**, its **outcome**, the entry's **tool
+      call id**, and the **bounded content region**.
+    - **R-93 honesty:** the log never assigns a tool call to a subagent the
+      record does not name; when the selected span has no attributable tool
+      calls, the log **states** that instead of inventing parentage.
+    - **Content budget:** the log embeds content only within the 8 MiB
+      `content_budget_bytes`; beyond it the entry reads exactly
+      `content omitted; see the record` and the store keeps every byte. The
+      content region is one bounded, scrollable, escaped block per named field,
+      with its truncation mark; it is not part of the accessible summary line.
+    - **Fixture:** the `Architect.Scout` lane is a subagent's own session; its
+      span carries `tool_call_id` and one bounded `data.content` field, so the
+      same selection reads the tool call id and the content region.
+    - Steps in `tests/steps/development_report_e2e_steps.rs`; capture with the
+      shared helper under the untouched title, so the slug stays
+      `consumer-selects-a-timeline-element-and-reads-its-details`.
+    - **Evidence:** refresh
+      `evidence/visual/consumer-selects-a-timeline-element-and-reads-its-details/{mobile.png,desktop.png}`
+      in place, anchored on the lane log, both viewports, animations disabled.
+    - Files: `assets/timeline/report.html` (lane selection, the lane log, the
+      fact list, the content region), `tests/steps/development_report_e2e_steps.rs`,
+      `tests/steps/development_timeline_support.rs`, the two refreshed PNGs.
+    - RED expected failure: the new Given/When/Then phrases are undefined (the
+      old `selects the longest recorded step` / `details panel` steps are
+      replaced, not aliased).
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer selects a timeline element and reads its details"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — implement lane selection and the lane log. Files:
+        `assets/timeline/report.html`,
+        `tests/steps/development_report_e2e_steps.rs`,
+        `tests/steps/development_timeline_support.rs`, plus the refreshed pair.
+        `node --check`, compile, re-run → exit 0. Paste it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — one `selectLane`/`renderLog` path and one content-region
+        renderer shared with the omission marker; `cargo fmt --all -- --check`,
+        `cargo clippy --locked --all-targets -- -D warnings`, and `node --check`
+        green; re-run → still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+        title in the body (including the refreshed evidence pair). Record the
+        revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task HE5 — `Consumer zooms the timeline to a shorter time range` (`@e2e`, `development-report`)
+
+- [ ] **Scenario: `Consumer zooms the timeline to a shorter time range`** (`@wip` until its RED)
+  - Design constraints:
+    - Matrix row 8: real interface **Web UI**; Playwright expands the phase and
+      clicks the **`15 m`** control (the next narrower level), then reads the
+      **rendered range label** before and after and asserts it **narrowed**.
+      There is no global zoom-in button in the hybrid: the control is
+      **per phase** (review F14).
+    - **Rendered-state evidence:** the assertion reads a value the page's own
+      script produced (the visible time range) and observes it change between
+      two observations; the report never reads the wall clock (`Date.now()`),
+      which is what makes the comparison deterministic.
+    - **Every-zoom threshold:** the aggregation threshold (H10) applies at Fit,
+      1 h, and **15 m** alike; the lane's scroll height is capped and the lane
+      scrolls, so 15 m never forces one tick per sub-second entry. Individual
+      ticks replace their aggregate only where the threshold permits.
+    - **Motion:** the zoom transition is short and removed entirely under
+      `prefers-reduced-motion: reduce` (the driver emulates it, screenshots are
+      captured with animations disabled); assert the emulated preference and
+      that the zoom then applies instantly.
+    - **Mobile rule:** after zooming, resize to 360x780 and assert the **zoom
+      state survives** the layout change (the narrowed range is still the
+      rendered range).
+    - Steps in `tests/steps/development_report_e2e_steps.rs`; capture with the
+      shared helper under the untouched title, so the slug stays
+      `consumer-zooms-the-timeline-to-a-shorter-time-range`.
+    - **Evidence:** refresh
+      `evidence/visual/consumer-zooms-the-timeline-to-a-shorter-time-range/{mobile.png,desktop.png}`
+      in place at the narrowed range, both viewports, animations disabled.
+    - Files: `assets/timeline/report.html` (per-phase zoom state, the range
+      label, the every-zoom threshold, the capped lane height),
+      `tests/steps/development_report_e2e_steps.rs`, the two refreshed PNGs.
+    - RED expected failure: `zooms the expanded phase's timeline in` is
+      undefined (the old `zooms the timeline in` step is replaced) and the
+      asset has no per-phase control.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer zooms the timeline to a shorter time range"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — implement the per-phase zoom, the rendered range, and the
+        before/after assertion. Files: `assets/timeline/report.html`,
+        `tests/steps/development_report_e2e_steps.rs`, plus the refreshed pair.
+        `node --check`, compile, re-run → exit 0. Paste it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — one range derivation every zoom path goes through, one
+        threshold function used at every level; `cargo fmt --all -- --check`,
+        `cargo clippy --locked --all-targets -- -D warnings`, and `node --check`
+        green; re-run → still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+        title in the body (including the refreshed evidence pair). Record the
+        revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task HE6 — `Consumer opens the report of a scope with no recorded activity` (`@e2e`, `development-report`)
+
+- [ ] **Scenario: `Consumer opens the report of a scope with no recorded activity`** (`@wip` until its RED)
+  - Design constraints:
+    - Matrix row 9: real interface **Web UI**; the scenario generates the report
+      for a scope with no recorded activity and reads the rendered **empty-state
+      heading** and the **absence of any phase** from the DOM. This is the
+      `@e2e` traversal of the contract's declared **`empty`** state.
+    - **Then assertions:** the browser shows the empty state for `demo`; the
+      browser draws **no workflow phase** for it — `section`/`.phase-card`/
+      phases named in the DOM all count zero, and no axis is drawn. The old
+      `draws no timeline axis` step is replaced, not aliased.
+    - The empty state shares H3's one `empty` branch: heading, one sentence
+      naming the scope, the labelled way back to the report root.
+    - Steps in `tests/steps/development_report_e2e_steps.rs`; capture with the
+      shared helper under the untouched title, so the slug stays
+      `consumer-opens-the-report-of-a-scope-with-no-recorded-activity`.
+    - **Evidence:** refresh the final-state pair **and** the declared state's
+      pair in place:
+      `evidence/visual/consumer-opens-the-report-of-a-scope-with-no-recorded-activity/{mobile.png,desktop.png,mobile--empty.png,desktop--empty.png}`
+      — all four non-empty; the enforced rule requires a non-empty
+      `<viewport>--<state>.png` for every declared state and viewport.
+    - Files: `assets/timeline/report.html` (the empty branch and the inert
+      script), `tests/steps/development_report_e2e_steps.rs`, the four
+      refreshed PNGs.
+    - RED expected failure: `the browser draws no workflow phase for it` is
+      undefined and the asset still draws the superseded timeline markup.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer opens the report of a scope with no recorded activity"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — implement the asset's empty branch and the two Thens. Files:
+        `assets/timeline/report.html`,
+        `tests/steps/development_report_e2e_steps.rs`, plus the four refreshed
+        PNGs. `node --check`, compile, re-run → exit 0. Paste it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — the same one `empty` condition gates the stack, the
+        axis, and the log; `cargo fmt --all -- --check`, `cargo clippy
+        --locked --all-targets -- -D warnings`, and `node --check` green;
+        re-run → still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+        title in the body (including the four refreshed captures). Record the
+        revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task HE7 — Evidence refresh, slug preservation, and both declared scope runs (no new scenario)
+
+- [ ] **Shared verification task: nine `@e2e` evidence sets and the two scope runs**
+  - Design constraints:
+    - **Slug preservation (review F10).** The delta keeps the existing titles,
+      so these slugs are unchanged and their directories are refreshed in
+      place: `consumer-generates-the-development-report-for-a-change`,
+      `consumer-opens-the-generated-development-report-in-a-browser`,
+      `consumer-selects-a-timeline-element-and-reads-its-details`,
+      `consumer-zooms-the-timeline-to-a-shorter-time-range`,
+      `consumer-opens-the-report-of-a-scope-with-no-recorded-activity`. The
+      **only new directory** is
+      `consumer-expands-a-workflow-phase-and-sees-its-lanes`. The record and
+      agent-reporter `@e2e` pairs are untouched.
+    - Every one of the nine change-level `@e2e` scenarios has a non-empty
+      `desktop.png` (1920x1080) and `mobile.png` (360x780) under its slug; the
+      empty-scope scenario additionally has non-empty `desktop--empty.png` and
+      `mobile--empty.png`; no intermediate captures live under the change
+      directory; every PNG is the contract viewport size.
+    - **Both declared scopes exit 0:** `./run-tests.sh --non-e2e`
+      (`verify.command`) and `./run-tests.sh --e2e` (`verify.e2e_command`) on
+      the full delta; paste the summary lines. Every scenario this part
+      schedules appears PASS in its own tier; the earlier scenarios stay green;
+      the e2e count is strictly less than the full count (Task E1's proof
+      still holds — paste the two summary lines side by side).
+    - `givn lint --change development-timeline` exits **0** with no `[WIP]`
+      finding (the only remaining output is the pre-existing `[SUBST]
+      advisory` lines).
+    - The inventory stays 62/53/9. If a runner summary disagrees by name,
+      reconcile by name against the inventory and report it — never edit the
+      inventory to match a surprise.
+    - Files: none in production; this task records evidence, the two scope
+      summaries, and the evidence listing.
+  - [ ] **VERIFY** — run the two scopes and paste both summaries with the
+        per-scenario PASS lines for the 15 new scenarios.
+        ```
+        PASTE BOTH SCOPE RUNS HERE
+        ```
+  - [ ] **EVIDENCE** — list the nine directories and their files with sizes and
+        `file` dimensions; confirm the only new directory is the expand
+        scenario's and all files are non-empty.
+        ```
+        PASTE THE EVIDENCE LISTING HERE
+        ```
+  - [ ] **LINT** — `givn lint --change development-timeline` → exit 0, no
+        `[WIP]` finding.
+        ```
+        PASTE THE LINT RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `docs(development-timeline): hybrid workflow
+        report evidence and scope runs` with the scenario titles and the counts
+        in the body. Record the revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+**Part-2 done when:** all 15 pending scenarios have completed RED/GREEN/REFACTOR
+loops with pasted evidence and a revision each, H2's unit test and H8's
+later-first-transition unit assertion are green, the asset is the hybrid
+workflow view, the nine `@e2e` scenarios each have a committed non-empty pair
+at both contract viewports (plus the empty-scope declared-state pairs), the
+existing five report slugs are unchanged, the expand scenario owns the only new
+directory, `git grep -c "@wip" -- givn/changes/development-timeline/specs`
+finds none, `givn lint --change development-timeline` exits 0, and both
+`verify.command` and `verify.e2e_command` exit 0 on the full delta. The box
+counts then read **359 total / 359 done / 0 pending**.
+
