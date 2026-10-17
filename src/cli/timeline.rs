@@ -26,10 +26,6 @@ const DATA_SLOT: &str = "/*__GIVN_REPORT_DATA__*/";
 /// The report asset, embedded so the binary needs no data directory.
 const REPORT_ASSET: &str = include_str!("../../assets/timeline/report.html");
 
-/// The recorded `step` kind: the shell steps Givn ran, and the entries the
-/// summary's longest-step ranking is about.
-const STEP: &str = "step";
-
 /// The recorded `phase` kind: one entry per artifact file whose appearance
 /// marks a workflow stage's work as done, and per gate phase the archive and
 /// check runs record.
@@ -155,7 +151,9 @@ pub struct Summary {
     /// The spanning entries whose duration the record does not carry. Missing
     /// data is stated, never summed as zero.
     pub unmeasured_durations: usize,
-    /// The recorded steps, longest first.
+    /// Every entry the record measured, longest first — of any kind, so an
+    /// agent tool call and a shell step compete on the time they took. The JSON
+    /// field name stays `longest_steps` for the readers that already use it.
     pub longest_steps: Vec<RankedStep>,
     /// The recorded question waits the window holds. A wait the record does not
     /// time is still a wait.
@@ -359,11 +357,20 @@ fn usage_unavailable(entry: &HistoryEntry) -> bool {
             == Some(crate::history::USAGE_UNAVAILABLE)
 }
 
-/// One ranked step: the recorded step and the duration it was measured with.
+/// One ranked entry: the recorded entry, the kind that recorded it, and the
+/// duration it was measured with. Every entry carrying a measured `duration_ms`
+/// is ranked, whichever layer recorded it — a Givn command, a gate phase, a
+/// hook run, a shell step, an agent turn, a tool call, a subagent span, or a
+/// question wait — because the operator's question is what took the time, not
+/// which subprocess took it.
 #[derive(Debug, Serialize)]
 pub struct RankedStep {
     /// The recorded entry's id.
     pub id: u64,
+    /// The kind that recorded the entry (`command`, `phase`, `hook`, `step`,
+    /// `revision`, `session`, `turn`, `tool`, `subagent`, `question`), so the
+    /// row says which layer spent the time.
+    pub kind: String,
     /// The entry's visible label (its bounded subject label, or its name).
     pub label: String,
     /// The measured duration the ranking orders by.
@@ -707,27 +714,34 @@ fn add_measured(total: &mut Option<u64>, duration: Option<u64>) -> bool {
     }
 }
 
-/// The recorded steps, longest first — the report's one ranking: the summary
-/// shows it, and every other view (the axis's longest-step mark) reads the
-/// ranked list the model carries rather than sorting a second time. The order
-/// is by the recorded duration, never by the store's line order; ties fall back
-/// to the recorded time and then the entry id, so the ranking is deterministic
-/// for every record.
+/// Every entry the record measured, longest first — the report's one ranking:
+/// the summary shows it, and every other view (the axis's longest-step mark,
+/// the details panel) reads the ranked list the model carries rather than
+/// sorting a second time. Any kind is ranked that carries a measured
+/// `duration_ms` — a command, a gate phase, a hook run, a shell step, an agent
+/// turn, a tool call, a subagent span, a question wait — because the ranking
+/// answers "what took the time", whatever layer recorded it. An entry without a
+/// measured duration is absent, never ranked as a zero. The order is by the
+/// recorded duration, never by the store's line order; ties fall back to the
+/// recorded time and then the entry id, so the ranking is deterministic for
+/// every record. The list is deliberately uncapped: the design bounds the
+/// *drawn shapes* (the aggregation rule), never the summary rows.
 fn ranked_steps(entries: &[HistoryEntry]) -> Vec<RankedStep> {
-    let mut steps: Vec<&HistoryEntry> = entries
+    let mut measured: Vec<&HistoryEntry> = entries
         .iter()
-        .filter(|entry| entry.kind == STEP && entry.duration_ms.is_some())
+        .filter(|entry| entry.duration_ms.is_some())
         .collect();
-    steps.sort_by(|a, b| {
+    measured.sort_by(|a, b| {
         b.duration_ms
             .cmp(&a.duration_ms)
             .then_with(|| a.at.cmp(&b.at))
             .then_with(|| a.id.cmp(&b.id))
     });
-    steps
+    measured
         .into_iter()
         .map(|entry| RankedStep {
             id: entry.id,
+            kind: entry.kind.clone(),
             label: visible_label(entry),
             duration_ms: entry.duration_ms.unwrap_or_default(),
         })
@@ -1178,13 +1192,7 @@ fn render_summary(summary: &Summary) -> String {
     html.push_str("<h2>Longest steps</h2>\n");
     html.push_str("<ol class=\"longest-steps\" id=\"longest-steps\">\n");
     for step in &summary.longest_steps {
-        html.push_str(&format!(
-            "<li data-entry-id=\"{}\" data-duration-ms=\"{}\"><span class=\"step-label\">{}</span><span class=\"step-duration\">{}</span></li>\n",
-            step.id,
-            step.duration_ms,
-            escape(&step.label),
-            format_duration(step.duration_ms),
-        ));
+        html.push_str(&ranked_row(step));
     }
     html.push_str("</ol>\n");
     html.push_str("<h2>Tokens per model</h2>\n");
@@ -1202,6 +1210,22 @@ fn render_summary(summary: &Summary) -> String {
     ));
     html.push_str("\n</section>");
     html
+}
+
+/// One row of the ranking list: the entry's visible label, the kind that
+/// recorded it, and its rendered duration. The report renders every ranked
+/// entry through this one function, so the two markers the row carries
+/// (`data-entry-id`, `data-kind`) and the three elements stay in one place.
+fn ranked_row(step: &RankedStep) -> String {
+    format!(
+        "<li data-entry-id=\"{}\" data-kind=\"{}\" data-duration-ms=\"{}\"><span class=\"step-label\">{}</span><span class=\"step-kind\">{}</span><span class=\"step-duration\">{}</span></li>\n",
+        step.id,
+        escape(&step.kind),
+        step.duration_ms,
+        escape(&step.label),
+        escape(&step.kind),
+        format_duration(step.duration_ms),
+    )
 }
 
 /// One token list: one row per model or subagent, naming the account and the

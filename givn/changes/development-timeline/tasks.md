@@ -6305,13 +6305,42 @@ name it.
       `tests/steps/development_report_steps.rs`.
     - RED expected failure: the three new step phrases (one Given, two
       Then/And) are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Measured agent activity is ranked alongside Givn's own steps"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Measured agent activity is ranked alongside Givn's own steps"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 11.75s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: Measured agent activity is ranked alongside Givn's own steps
+           ✔  Given a change "demo" whose record holds an agent tool call longer than any step
+           ✔  When the developer generates the development report for "demo"
+           ✘  Then the report ranks the agent tool call first
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:69:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+
+        thread 'main' (3506849) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
+
+        RED category: undefined step — the three new step phrases (the Given,
+        both Then/And) start undefined, and the Given and the When are stated in
+        this step so the run stops exactly at the first assertion that does not
+        exist yet. The report at this revision cannot satisfy it either way:
+        `ranked_steps` filtered `entry.kind == STEP`, so the fixture's measured
+        `tool` entry — longer than every step — is absent from the ranking
+        entirely, and `RankedStep` carried no kind for a row to name.
         ```
-  - [ ] **GREEN** — widen the ranking, add the kind to the model and the row,
+  - [x] **GREEN** — widen the ranking, add the kind to the model and the row,
         and implement the steps; then re-run the whole existing ranking scenario
         (`The report ranks the longest single step first`) as well, so the wider
         rule is proven not to break the narrower claim. Re-run the `@e2e` scope
@@ -6322,12 +6351,137 @@ name it.
         refreshed the same evidence in its own commit). Compile first, re-run →
         exit 0. Paste them.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.41s
+        BUILD=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Measured agent activity is ranked alongside Givn's own steps"
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 9.60s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: Measured agent activity is ranked alongside Givn's own steps
+           ✔  Given a change "demo" whose record holds an agent tool call longer than any step
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report ranks the agent tool call first
+           ✔  And the ranking names the kind of every entry it lists
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report ranks the longest single step first"
+            Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report ranks the longest single step first
+           ✔  Given a change "demo" whose record holds steps of different durations
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report ranks the longest step first
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        3 steps (3 passed)
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — keep one ranking function and one row renderer (no
+        Both scopes, run in this GREEN step (the refreshed evidence pairs below
+        are this run's output; the e2e scope was re-run after this scenario's
+        REFACTOR and wrote byte-identical files, so the committed pairs are the
+        post-refactor rendering):
+        ```
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e
+        … PASS (39/39) givn::features_runner inspect-development-history/development-record.feature::A verification run is recorded as its own step
+        ────────────
+             Summary [   4.140s] 39 tests run: 39 passed, 8 skipped
+        EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --e2e
+        … PASS (8/8) givn::features_runner inspect-development-history/agent-activity-reporting.feature::Consumer installs the agent reporter and its reported activity lands in the record
+        ────────────
+             Summary [   7.631s] 8 tests run: 8 passed, 39 skipped
+        EXIT=0
+        ```
+        Refreshed evidence pairs (14 files, 7 directories; the empty-state
+        scenario's report renders no ranking rows, so its pair and its
+        `--empty` pair are byte-identical and stay as committed):
+        ```
+        evidence/visual/consumer-generates-the-development-report-for-a-change/{mobile,desktop}.png
+        evidence/visual/consumer-installs-the-agent-reporter-and-its-reported-activity-lands-in-the-record/{mobile,desktop}.png
+        evidence/visual/consumer-opens-the-generated-development-report-in-a-browser/{mobile,desktop}.png
+        evidence/visual/consumer-reads-the-development-record-as-machine-readable-output/{mobile,desktop}.png
+        evidence/visual/consumer-runs-a-lifecycle-step-and-reads-its-recorded-actions/{mobile,desktop}.png
+        evidence/visual/consumer-selects-a-timeline-element-and-reads-its-details/{mobile,desktop}.png
+        evidence/visual/consumer-zooms-the-timeline-to-a-shorter-time-range/{mobile,desktop}.png
+        ```
+
+        Production files created/modified by this GREEN step:
+        - `src/cli/timeline.rs` (modified — `ranked_steps` now filters on
+          `duration_ms.is_some()` alone, so every kind the record measured
+          competes on its own duration; `RankedStep` gains `kind`;
+          `Summary.longest_steps`' doc states the record-wide rule and keeps the
+          JSON field name; the unused `STEP` constant is gone; the row markup
+          emits `<span class="step-kind">` beside the label and the duration,
+          and the `<li>` carries `data-kind`);
+        - `assets/timeline/report.html` (modified — only the kind element's
+          style rule: the muted token, tabular-free 12 px chip on the raised
+          surface, `--radius-span`);
+        - `tests/steps/development_report_steps.rs` (modified — the widened
+          fixture Given (`MEASURED_ACTIVITY_FIXTURE`: two measured steps and one
+          measured `tool` call longer than both), the `MeasuredEntry` fixture
+          shape, the `RenderedRow`/`list_rows`/`row_element`/`modelled_ranking`
+          readers, and both Then steps: the model's ranking is every measured
+          entry plus the tool call first, and the rendered rows agree with the
+          model row by row including the kind).
+        ```
+  - [x] **REFACTOR** — keep one ranking function and one row renderer (no
         second list for agent activity); re-run → still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        One row renderer: `ranked_row(step)` owns the ranking row's whole markup
+        — the two data markers and the label/kind/duration elements — so the
+        summary's list is one loop over the model's ranking and there is exactly
+        one place a row can be rendered. There is still one ranking
+        (`ranked_steps`) and one list (`#longest-steps`): the widened rule fed
+        agent activity into the existing ranking rather than adding a second
+        list for it, which is what the design's ranking rule asks for. No
+        behaviour change: the same rows, byte for byte — the e2e scope re-run
+        after this step rewrote the same 14 evidence files with no further
+        change.
+
+        $ cargo fmt --all -- --check
+        FMT OK
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.32s
+        CLIPPY=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Measured agent activity is ranked alongside Givn's own steps"
+        Feature: Development Report
+          Scenario: Measured agent activity is ranked alongside Givn's own steps
+           ✔  Given a change "demo" whose record holds an agent tool call longer than any step
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report ranks the agent tool call first
+           ✔  And the ranking names the kind of every entry it lists
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
+
+        $ ... --exact "...::The report ranks the longest single step first"
+        Feature: Development Report
+          Scenario: The report ranks the longest single step first
+           ✔  Given a change "demo" whose record holds steps of different durations
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report ranks the longest step first
+        1 feature, 1 scenario (1 passed), 3 steps (3 passed)        EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --e2e
+        … PASS (8/8)
+        ────────────
+             Summary [   7.110s] 8 tests run: 8 passed, 39 skipped
+        EXIT=0
         ```
   - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
         the scenario title `Measured agent activity is ranked alongside Givn's own

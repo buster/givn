@@ -307,6 +307,48 @@ struct DrawnAggregate {
     name: String,
 }
 
+/// One measured entry the widened-ranking fixture's record holds: the entry
+/// kind, its name and bounded label, its recorded end, and its measured
+/// duration. The agent activity is an ordinary `tool` entry — the kind an agent
+/// reporter produces — never a step in disguise.
+#[derive(Debug, Clone, Copy)]
+struct MeasuredEntry {
+    kind: &'static str,
+    name: &'static str,
+    label: &'static str,
+    at: &'static str,
+    duration_ms: u64,
+}
+
+/// The steps and the agent tool call the widened-ranking fixture's record holds,
+/// in the order the store holds them: two measured `step` entries Givn ran, and
+/// one measured `tool` entry an agent reported that is longer than both — so the
+/// ranking's first row is a non-step entry, and a ranking restricted to `step`
+/// entries cannot pass.
+const MEASURED_ACTIVITY_FIXTURE: [MeasuredEntry; 3] = [
+    MeasuredEntry {
+        kind: "step",
+        name: "lint",
+        label: "cargo clippy --locked --all-targets -- -D warnings",
+        at: "2026-10-16T09:16:00.000Z",
+        duration_ms: 120_000,
+    },
+    MeasuredEntry {
+        kind: "step",
+        name: "verification",
+        label: "cargo test --locked --test features_runner",
+        at: "2026-10-16T09:55:00.000Z",
+        duration_ms: 600_000,
+    },
+    MeasuredEntry {
+        kind: "tool",
+        name: "Bash",
+        label: "cargo llvm-cov nextest --locked --test features_runner",
+        at: "2026-10-16T10:30:00.000Z",
+        duration_ms: 2_460_000,
+    },
+];
+
 /// State for the development-report scenarios: the report the last generation
 /// step wrote, so a following step reads the file the command produced rather
 /// than the store, and the record the scenario's Given seeded, so the
@@ -599,6 +641,31 @@ fn change_with_an_entry_appended_after_a_later_end(world: &mut GivnWorld, id: St
         let env = project_root(world);
         run_fixture_command(env, &["new", &id]);
         support::seed_out_of_order_steps(env, &scope)
+    };
+    state(world).seeded = seeded;
+    world.last_change_id = Some(id);
+}
+
+#[given(
+    regex = r#"^a change "([^"]+)" whose record holds an agent tool call longer than any step$"#
+)]
+fn change_with_an_agent_tool_call_longer_than_any_step(world: &mut GivnWorld, id: String) {
+    let scope = Scope::Change { id: id.clone() };
+    let seeded = {
+        let env = project_root(world);
+        run_fixture_command(env, &["new", &id]);
+        let mut history = support::SeededHistory::new();
+        for fixture in MEASURED_ACTIVITY_FIXTURE {
+            let entry = history.span(
+                &scope,
+                fixture.kind,
+                fixture.name,
+                fixture.at,
+                fixture.duration_ms,
+            );
+            history.label(entry, fixture.label);
+        }
+        history.seed(env)
     };
     state(world).seeded = seeded;
     world.last_change_id = Some(id);
@@ -1788,6 +1855,202 @@ fn report_summary_still_counts_every_recorded_entry(world: &mut GivnWorld) {
     assert!(
         rendered_aggregates(&document).len() < recorded,
         "the axis draws no fewer shapes than the record holds entries: {document}"
+    );
+}
+
+/// One row of a generated list as the report renders it: the entry it names,
+/// the visible kind it shows, the visible label, and the rendered duration.
+#[derive(Debug, PartialEq)]
+struct RenderedRow {
+    id: u64,
+    kind: String,
+    label: String,
+    duration: String,
+}
+
+/// The text of one `<span class="…">` element inside a rendered row.
+fn row_element(row: &str, class: &str) -> String {
+    let marker = format!("class=\"{class}\">");
+    row.split(&marker)
+        .nth(1)
+        .and_then(|rest| rest.split('<').next())
+        .unwrap_or_else(|| panic!("the row carries no `.`{class}`` element: {row}"))
+        .to_string()
+}
+
+/// The rows of a generated list as the report renders them, in document order.
+fn list_rows(document: &str, list_id: &str) -> Vec<RenderedRow> {
+    let marker = format!("id=\"{list_id}\"");
+    let start = document
+        .find(&marker)
+        .unwrap_or_else(|| panic!("the report holds no #{list_id} list"));
+    let region = &document[start..];
+    let end = region.find("</ol>").expect("the list is never closed");
+    region[..end]
+        .split("<li ")
+        .skip(1)
+        .map(|row| RenderedRow {
+            id: row
+                .split("data-entry-id=\"")
+                .nth(1)
+                .and_then(|value| value.split('"').next())
+                .and_then(|value| value.parse().ok())
+                .unwrap_or_else(|| panic!("a listed row carries no entry id: {row}")),
+            kind: row_element(row, "step-kind"),
+            label: row_element(row, "step-label"),
+            duration: row_element(row, "step-duration"),
+        })
+        .collect()
+}
+
+/// The ranking the model carries: every measured entry, longest first, as
+/// `(id, kind, label, duration_ms)`.
+fn modelled_ranking(model: &Value) -> Vec<(u64, String, String, u64)> {
+    model["summary"]["longest_steps"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the model ranks no entries: {model:#?}"))
+        .iter()
+        .map(|ranked| {
+            (
+                ranked["id"]
+                    .as_u64()
+                    .unwrap_or_else(|| panic!("a ranked entry carries no id: {ranked}")),
+                ranked["kind"]
+                    .as_str()
+                    .unwrap_or_else(|| panic!("a ranked entry carries no kind: {ranked}"))
+                    .to_string(),
+                ranked["label"]
+                    .as_str()
+                    .unwrap_or_else(|| panic!("a ranked entry carries no label: {ranked}"))
+                    .to_string(),
+                ranked["duration_ms"]
+                    .as_u64()
+                    .unwrap_or_else(|| panic!("a ranked entry carries no duration: {ranked}")),
+            )
+        })
+        .collect()
+}
+
+#[then("the report ranks the agent tool call first")]
+fn report_ranks_the_agent_tool_call_first(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let entries = seeded(world);
+    let tool = entries
+        .iter()
+        .find(|entry| entry.kind == "tool")
+        .expect("the fixture seeds the agent's tool call");
+    let tool_duration = tool
+        .duration_ms
+        .expect("the fixture measures its tool call");
+
+    // The fixture's own claim: the agent's call outlasts every step, so a
+    // ranking restricted to `step` entries cannot put it first.
+    let steps: Vec<&HistoryEntry> = entries
+        .iter()
+        .filter(|entry| entry.kind == "step")
+        .collect();
+    assert!(!steps.is_empty(), "the fixture seeds Givn's own steps too");
+    for step in &steps {
+        assert!(
+            step.duration_ms.unwrap_or_default() < tool_duration,
+            "the fixture's tool call must outlast every step: {step:#?}"
+        );
+    }
+
+    // The ranking covers every measured entry of the record, longest first.
+    let mut expected: Vec<&HistoryEntry> = entries
+        .iter()
+        .filter(|entry| entry.duration_ms.is_some())
+        .collect();
+    expected.sort_by(|a, b| {
+        b.duration_ms
+            .cmp(&a.duration_ms)
+            .then_with(|| a.at.cmp(&b.at))
+            .then_with(|| a.id.cmp(&b.id))
+    });
+    let expected_ids: Vec<u64> = expected.iter().map(|entry| entry.id).collect();
+    let ranked = modelled_ranking(&model);
+    let ranked_ids: Vec<u64> = ranked.iter().map(|(id, ..)| *id).collect();
+    assert_eq!(
+        ranked_ids, expected_ids,
+        "the ranking is not every measured entry of the record, longest first: {model:#?}"
+    );
+
+    // The first row is the agent's tool call, and the ranking says which layer
+    // recorded it.
+    let (id, kind, label, duration) = &ranked[0];
+    assert_eq!(*id, tool.id, "the agent's tool call is not ranked first");
+    assert_eq!(kind, "tool", "the first ranked entry is not the tool call");
+    assert_eq!(
+        label,
+        &tool
+            .label
+            .clone()
+            .expect("the fixture labels its tool call"),
+        "the first ranked entry does not carry the tool call's own label"
+    );
+    assert_eq!(*duration, tool_duration);
+}
+
+#[then("the ranking names the kind of every entry it lists")]
+fn the_ranking_names_the_kind_of_every_entry_it_lists(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let ranked = modelled_ranking(&model);
+    let ranked_ids: Vec<u64> = ranked.iter().map(|(id, ..)| *id).collect();
+    assert_eq!(
+        list_entry_ids(&document, "longest-steps"),
+        ranked_ids,
+        "the rendered ranking is not the model's: {document}"
+    );
+
+    let rows = list_rows(&document, "longest-steps");
+    assert_eq!(
+        rows.len(),
+        ranked.len(),
+        "the rendered ranking has a different number of rows than the model: {document}"
+    );
+    for (row, (id, kind, label, duration_ms)) in rows.iter().zip(&ranked) {
+        assert_eq!(row.id, *id, "a rendered row names another entry: {row:?}");
+        assert_eq!(
+            row.kind, *kind,
+            "the rendered row does not name its entry's kind: {row:?}"
+        );
+        assert_eq!(
+            row.label, *label,
+            "the rendered row does not name its entry's label: {row:?}"
+        );
+        assert_eq!(
+            row.duration,
+            format_duration(*duration_ms),
+            "the rendered row does not name its entry's duration: {row:?}"
+        );
+    }
+
+    // The kinds the fixture's own record carries are all named, and the agent's
+    // activity is visibly not a Givn step.
+    assert_eq!(
+        rows[0].kind, "tool",
+        "the first row is not the agent's call: {rows:?}"
+    );
+    assert!(
+        rows.iter().any(|row| row.kind == "step"),
+        "the ranking does not name Givn's own steps: {rows:?}"
+    );
+    let mut kinds: Vec<&str> = rows.iter().map(|row| row.kind.as_str()).collect();
+    kinds.sort_unstable();
+    kinds.dedup();
+    let mut seeded_kinds: Vec<&str> = seeded(world)
+        .iter()
+        .filter(|entry| entry.duration_ms.is_some())
+        .map(|entry| entry.kind.as_str())
+        .collect();
+    seeded_kinds.sort_unstable();
+    seeded_kinds.dedup();
+    assert_eq!(
+        kinds, seeded_kinds,
+        "the ranking's kinds are not the measured entries' kinds: {rows:?}"
     );
 }
 
