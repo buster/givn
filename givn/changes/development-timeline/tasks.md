@@ -15138,7 +15138,7 @@ untouched; this part is appended after its completion statement.
 
 ## Task H19 — `A change whose proposal names no ideation topic shows no linked group` (`development-report`, added)
 
-- [ ] **Scenario: `A change whose proposal names no ideation topic shows no linked group`** (`@wip` until its RED)
+- [x] **Scenario: `A change whose proposal names no ideation topic shows no linked group`** (`@wip` until its RED)
   - Design constraints:
     - **No inference.** `Ideation topic: none` in the proposal (and no seed
       path) resolves to no link: the report renders **no** linked ideation
@@ -15155,31 +15155,82 @@ untouched; this part is appended after its completion statement.
       `ReportModel.ideation`), `tests/steps/development_report_steps.rs` (the
       Given and two Thens), `tests/steps/development_timeline_support.rs`.
     - RED expected failure: the Given and two Then phrases are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::A change whose proposal names no ideation topic shows no linked group"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Report
+          Scenario: A change whose proposal names no ideation topic shows no linked group
+           ✘  Given a change "solo" whose proposal records "Ideation topic: none"
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:183:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        EXIT=101
         ```
-  - [ ] **GREEN** — resolve the `none` form to no group and implement the two
+  - [x] **GREEN** — resolve the `none` form to no group and implement the two
         Thens. Files: `src/cli/timeline.rs`,
         `tests/steps/development_report_steps.rs`,
         `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
         it.
         ```
-        PASTE THE GREEN RUN HERE
+        Feature: Development Report
+          Scenario: A change whose proposal names no ideation topic shows no linked group
+           ✔  Given a change "solo" whose proposal records "Ideation topic: none"
+           ✔  When the developer generates the development report for "solo"
+           ✔  Then the report names no linked ideation group
+           ✔  And the report names the change workflow phases
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — the absence is the one `ReportModel.ideation.is_none()`
+  - [x] **REFACTOR** — the absence is the one `ReportModel.ideation.is_none()`
         condition in the text view and the asset; `cargo fmt --all -- --check`
         and `cargo clippy --locked --all-targets -- -D warnings` green; re-run →
         still exit 0. Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        render_view passes model.ideation.as_ref() to render_ideation_group, which
+        returns the empty string when it is None: no second absence check exists.
+        The asset carries no ideation rendering yet (HE8's rewrite), so no asset
+        change was needed here.
+
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+        (the scenario re-run)
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `8ea0bda3` — `feat(development-report): <release note>` with
         the scenario title in the body. Record the revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit 8ea0bda3
+        feat(development-report): a change whose proposal names no ideation topic shows no linked group
+
+        Scenario: A change whose proposal names no ideation topic shows no linked group
+
+        The fixture creates a change whose proposal records Ideation topic: none,
+        leaves an unlinked topic directory in the project, and seeds only the
+        change's own record. The two Thens read the written report: no linked
+        ideation group (no model field, no ideation-group markup, no group line) is
+        rendered, so no group is inferred from the unlinked directory, project
+        entries, or time proximity, while the change stack still names its own nine
+        phases. The absence is the one ReportModel.ideation.is_none() condition in
+        the text view.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../development-report.feature                     |   2 +-
+         tests/steps/development_report_steps.rs            |  76 ++++++++++++++++++++++
+         tests/steps/development_timeline_support.rs        |  31 +++++++++
+         3 files changed, 108 insertions(+), 1 deletion(-)
         ```
 
 ## Task H20 — `An archived change resolves its linked ideation from the archive` (`development-report`, added)
