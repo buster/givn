@@ -831,14 +831,32 @@ fn lanes_of(members: &[&HistoryEntry]) -> Vec<Lane> {
     lanes
 }
 
-/// The visible name of one lane: the recorded `session` entry's title when the
-/// phase holds one for the session id, else the session's short id (the first
-/// eight characters, the whole id when shorter), and `unattributed` for the
-/// entries the record names no session for.
+/// The child session one subagent span names (`data.subagent`): the session id
+/// a reporter delivered for that subagent's own entries. A span whose
+/// `data.subagent` equals a lane's session id is that session's own recorded
+/// span (opencode's child-session flush); a span recorded in any other session
+/// sits in that spawning session's lane and never renames it.
+fn subagent_session(entry: &HistoryEntry) -> Option<&str> {
+    entry.data.as_ref()?.get("subagent")?.as_str()
+}
+
+/// The visible name of one lane: the recorded subagent span's `data.agent` when
+/// a span in the phase names this lane's session id as its own child session,
+/// else the recorded `session` entry's title, else the session's short id (the
+/// first eight characters, the whole id when shorter), and `unattributed` for
+/// the entries the record names no session for.
 fn lane_name(session: Option<&str>, members: &[&HistoryEntry]) -> String {
     let Some(session) = session else {
         return "unattributed".to_string();
     };
+    let subagent_agent = members
+        .iter()
+        .filter(|entry| entry.kind == SUBAGENT)
+        .filter(|entry| subagent_session(entry) == Some(session))
+        .find_map(|entry| entry.data.as_ref()?.get("agent")?.as_str());
+    if let Some(agent) = subagent_agent {
+        return agent.to_string();
+    }
     let title = members
         .iter()
         .filter(|entry| entry.kind == "session")
@@ -852,6 +870,35 @@ fn lane_name(session: Option<&str>, members: &[&HistoryEntry]) -> String {
                 .map(str::to_string)
         });
     title.unwrap_or_else(|| session.chars().take(8).collect())
+}
+
+/// The subagent spans a phase holds with no attributable tool calls: no `tool`
+/// entry is nested in the span and no tool entry carries the span's own child
+/// session. The report states this limit (R-93) instead of assigning a tool call
+/// to a subagent the record does not name.
+fn unattributed_spans<'a>(
+    phase: &WorkflowPhase,
+    entries: &'a [HistoryEntry],
+) -> Vec<&'a HistoryEntry> {
+    let members: Vec<&HistoryEntry> = phase
+        .lanes
+        .iter()
+        .flat_map(|lane| lane.entries.iter())
+        .filter_map(|id| entries.iter().find(|entry| entry.id == *id))
+        .collect();
+    members
+        .iter()
+        .filter(|entry| entry.kind == SUBAGENT)
+        .filter(|span| {
+            let child = subagent_session(span);
+            !members.iter().any(|entry| {
+                entry.kind == "tool"
+                    && (entry.parent == Some(span.id)
+                        || child.is_some_and(|child| entry.session.as_deref() == Some(child)))
+            })
+        })
+        .copied()
+        .collect()
 }
 
 /// The normalized label a repeated-step group groups by: the entry's bounded
@@ -1541,7 +1588,7 @@ fn render_workflow(model: &ReportModel) -> String {
         "<section class=\"workflow-stack\" id=\"workflow-stack\" aria-label=\"Workflow phases\">\n",
     );
     for phase in &model.workflow {
-        html.push_str(&render_workflow_phase(phase));
+        html.push_str(&render_workflow_phase(phase, &model.entries));
     }
     if let Some(unstaged) = &model.unstaged {
         html.push_str(&render_unstaged_group(unstaged));
@@ -1552,9 +1599,10 @@ fn render_workflow(model: &ReportModel) -> String {
 
 /// One workflow phase line: the phase's status, its wall/active/waiting time,
 /// its tool and subagent counts, the names of its lanes, and its repeated-group
-/// and Fit-aggregate counts. A phase with no recorded entries states zero
-/// recorded minutes, never an invented duration.
-fn render_workflow_phase(phase: &WorkflowPhase) -> String {
+/// and Fit-aggregate counts, followed by the R-93 statement for every subagent
+/// span whose tool calls the record never attributes to it. A phase with no
+/// recorded entries states zero recorded minutes, never an invented duration.
+fn render_workflow_phase(phase: &WorkflowPhase, entries: &[HistoryEntry]) -> String {
     let stage = phase
         .stage
         .as_deref()
@@ -1573,7 +1621,7 @@ fn render_workflow_phase(phase: &WorkflowPhase) -> String {
             .collect::<Vec<_>>()
             .join(", ")
     };
-    format!(
+    let mut html = format!(
         "<p class=\"workflow-phase\" data-phase=\"{}\" data-status=\"{}\">phase {}: {}, wall {}, active {}, waiting {}, {} tools, {} subagents, lanes: {}, {} repeated groups, {} fit aggregates</p>\n",
         escape(stage),
         escape(status),
@@ -1587,7 +1635,15 @@ fn render_workflow_phase(phase: &WorkflowPhase) -> String {
         escape(&lanes),
         phase.repeated.len(),
         phase.aggregates.len(),
-    )
+    );
+    for span in unattributed_spans(phase, entries) {
+        html.push_str(&format!(
+            "<p class=\"attribution-limit\" data-subagent=\"{}\">no tool call was attributable to subagent span \"{}\"; the record names no per-subagent tool identity for it.</p>\n",
+            escape(&span.name),
+            escape(&span.name),
+        ));
+    }
+    html
 }
 
 /// The "no recorded stage transition" group: the work the record assigns to no

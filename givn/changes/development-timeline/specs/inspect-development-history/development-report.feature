@@ -65,7 +65,7 @@ Feature: Development Report
     And the report marks "archive" queued
     And the report names no phase the workflow does not have
 
-  @givn.added @wip
+  @givn.added
   Scenario: The report lays parallel sessions side by side
     Given a change "demo" whose record holds one phase with two sessions
     And one session is a subagent's own recorded session named "Architect.Scout"

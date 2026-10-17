@@ -2034,6 +2034,403 @@ fn report_names_no_phase_the_workflow_does_not_have(world: &mut GivnWorld) {
     );
 }
 
+/// The two recorded sessions of the parallel-lane fixture: the spawning
+/// session, the subagent's own child session, and the session id its span names
+/// without any recorded entries — the span no tool call is attributable to.
+const SPAWN_SESSION: &str = "spawn-0a1b2c3d4e5f";
+const CHILD_SESSION: &str = "child-9f8e7d6c5b4a";
+const GHOST_SESSION: &str = "ghost-111213141516";
+
+/// The subagent span's own child session (`data.subagent`).
+fn subagent_child(entry: &HistoryEntry) -> Option<&str> {
+    entry.data.as_ref()?.get("subagent")?.as_str()
+}
+
+/// The subagent span's agent definition (`data.agent`).
+fn subagent_agent(entry: &HistoryEntry) -> Option<&str> {
+    entry.data.as_ref()?.get("agent")?.as_str()
+}
+
+#[given(regex = r#"^a change "([^"]+)" whose record holds one phase with two sessions$"#)]
+fn change_whose_record_holds_one_phase_with_two_sessions(world: &mut GivnWorld, id: String) {
+    let scope = Scope::Change { id: id.clone() };
+    let seeded = {
+        let env = project_root(world);
+        run_fixture_command(env, &["new", &id]);
+        let mut history = support::SeededHistory::new();
+        let transition = history.point(&scope, "phase", "tasks.md", "2026-10-16T13:00:00.000Z");
+        history.label(transition, "tasks.md");
+        let spawn_session = history.point(
+            &scope,
+            "session",
+            "opencode-session",
+            "2026-10-16T13:05:00.000Z",
+        );
+        history.session(spawn_session, SPAWN_SESSION);
+        history.data(spawn_session, json!({ "title": "Opencode main" }));
+        let child_session = history.point(
+            &scope,
+            "session",
+            "subagent-session",
+            "2026-10-16T13:06:00.000Z",
+        );
+        history.session(child_session, CHILD_SESSION);
+        history.data(child_session, json!({ "title": "Subagent transcript" }));
+        let child_turn = history.span(&scope, "turn", "turn", "2026-10-16T13:07:00.000Z", 30_000);
+        history.session(child_turn, CHILD_SESSION);
+        let child_span = history.point(
+            &scope,
+            "subagent",
+            "Architect.Scout",
+            "2026-10-16T13:08:00.000Z",
+        );
+        history.session(child_span, CHILD_SESSION);
+        history.data(
+            child_span,
+            json!({ "subagent": CHILD_SESSION, "agent": "Architect.Scout" }),
+        );
+        let tool = history.span(&scope, "tool", "Bash", "2026-10-16T13:09:00.000Z", 12_000);
+        history.session(tool, CHILD_SESSION);
+        history.nested_in(tool, child_span);
+        let spawn_turn = history.span(&scope, "turn", "turn", "2026-10-16T13:10:00.000Z", 45_000);
+        history.session(spawn_turn, SPAWN_SESSION);
+        let spawn_span = history.point(&scope, "subagent", "Reviewer", "2026-10-16T13:11:00.000Z");
+        history.session(spawn_span, SPAWN_SESSION);
+        history.data(
+            spawn_span,
+            json!({ "subagent": GHOST_SESSION, "agent": "Reviewer" }),
+        );
+        history.span(&scope, "step", "verify", "2026-10-16T13:12:00.000Z", 20_000);
+        history.seed(env)
+    };
+    state(world).seeded = seeded;
+    world.last_change_id = Some(id);
+}
+
+#[given(regex = r#"^one session is a subagent's own recorded session named "([^"]+)"$"#)]
+fn one_session_is_a_subagents_own_recorded_session(world: &mut GivnWorld, name: String) {
+    let entries = seeded(world);
+    let span = entries
+        .iter()
+        .find(|entry| {
+            entry.kind == "subagent"
+                && subagent_agent(entry) == Some(name.as_str())
+                && subagent_child(entry) == entry.session.as_deref()
+        })
+        .unwrap_or_else(|| {
+            panic!("the record holds no subagent session named {name}: {entries:#?}")
+        });
+    assert!(
+        entries
+            .iter()
+            .any(|entry| entry.session == span.session && entry.id != span.id),
+        "the subagent's session records no entries of its own: {entries:#?}"
+    );
+}
+
+#[given("one session holds a subagent span the record places in the spawning session")]
+fn one_session_holds_a_span_in_the_spawning_session(world: &mut GivnWorld) {
+    let entries = seeded(world);
+    let span = entries
+        .iter()
+        .find(|entry| {
+            entry.kind == "subagent"
+                && entry
+                    .session
+                    .as_deref()
+                    .is_some_and(|session| subagent_child(entry) != Some(session))
+        })
+        .unwrap_or_else(|| {
+            panic!("the record holds no subagent span in a spawning session: {entries:#?}")
+        });
+    assert!(
+        entries
+            .iter()
+            .any(|entry| entry.session == span.session && entry.kind != "subagent"),
+        "the spawning session records no entries of its own: {entries:#?}"
+    );
+}
+
+/// The written report's phase named `stage`, its lanes' session keys included.
+fn workflow_phase_lanes<'a>(model: &'a Value, stage: &str) -> &'a Vec<Value> {
+    report_phase(model, stage)["lanes"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the report's {stage} phase carries no lanes: {model:#?}"))
+}
+
+#[then("the report draws one lane per session beside each other in that phase")]
+fn report_draws_one_lane_per_session_in_that_phase(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let lanes = workflow_phase_lanes(&model, "implement");
+    let entries = seeded(world);
+
+    // The fixture's own claim: the record names two sessions in this phase, one
+    // of them the subagent's own, plus an entry the record names no session for.
+    let mut expected: Vec<Option<&str>> = Vec::new();
+    for entry in entries {
+        let key = entry.session.as_deref();
+        if !expected.contains(&key) {
+            expected.push(key);
+        }
+    }
+    assert_eq!(
+        expected.iter().filter(|key| key.is_some()).count(),
+        2,
+        "the fixture must record two sessions: {entries:#?}"
+    );
+    assert!(
+        expected.contains(&None),
+        "the fixture records an entry with no session: {entries:#?}"
+    );
+
+    let drawn: Vec<Option<&str>> = lanes.iter().map(|lane| lane["session"].as_str()).collect();
+    assert_eq!(
+        drawn.len(),
+        expected.len(),
+        "the report draws {} lanes for {} recorded session keys: {model:#?}",
+        drawn.len(),
+        expected.len()
+    );
+    for key in &expected {
+        assert!(
+            drawn.contains(key),
+            "the report draws no lane for the session key {key:?}: {model:#?}"
+        );
+    }
+    // The lanes sit beside each other in one phase: every entry is a member of
+    // exactly one lane, and no lane is empty.
+    let mut members: Vec<u64> = Vec::new();
+    for lane in lanes {
+        let ids: Vec<u64> = lane["entries"]
+            .as_array()
+            .unwrap_or_else(|| panic!("a lane carries no entries: {lane:#?}"))
+            .iter()
+            .map(|id| id.as_u64().expect("a lane member id"))
+            .collect();
+        assert!(!ids.is_empty(), "the report draws an empty lane: {lane:#?}");
+        let name = lane["name"].as_str().expect("a lane name");
+        assert!(
+            document.contains(name),
+            "the text view does not print the lane {name}: {document}"
+        );
+        members.extend(ids);
+    }
+    let mut unique = members.clone();
+    unique.sort_unstable();
+    unique.dedup();
+    assert_eq!(
+        unique.len(),
+        members.len(),
+        "an entry appears in more than one lane: {model:#?}"
+    );
+}
+
+#[then(regex = r#"^the lane named "([^"]+)" carries that subagent's own entries$"#)]
+fn lane_named_carries_the_subagents_own_entries(world: &mut GivnWorld, name: String) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let lanes = workflow_phase_lanes(&model, "implement");
+    let entries = seeded(world);
+    let span = entries
+        .iter()
+        .find(|entry| {
+            entry.kind == "subagent"
+                && subagent_agent(entry) == Some(name.as_str())
+                && subagent_child(entry) == entry.session.as_deref()
+        })
+        .unwrap_or_else(|| panic!("the record holds no subagent session named {name}"));
+    let lane = lanes
+        .iter()
+        .find(|lane| lane["name"] == json!(name))
+        .unwrap_or_else(|| panic!("the report draws no lane named {name}: {model:#?}"));
+    assert_eq!(
+        lane["session"].as_str(),
+        span.session.as_deref(),
+        "the lane named {name} is not the subagent's own session: {model:#?}"
+    );
+    let ids: Vec<u64> = lane["entries"]
+        .as_array()
+        .expect("the lane's members")
+        .iter()
+        .map(|id| id.as_u64().expect("a lane member id"))
+        .collect();
+    assert!(
+        ids.contains(&span.id),
+        "the lane named {name} does not carry the subagent's own span: {model:#?}"
+    );
+    for id in ids {
+        let entry = entries
+            .iter()
+            .find(|entry| entry.id == id)
+            .unwrap_or_else(|| panic!("the lane holds an entry outside the record: {id}"));
+        assert_eq!(
+            entry.session.as_deref(),
+            span.session.as_deref(),
+            "the lane named {name} carries an entry of another session: {entry:#?}"
+        );
+    }
+}
+
+#[then("the spawning session's lane keeps its own name and carries the subagent span")]
+fn spawning_sessions_lane_keeps_its_own_name(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let lanes = workflow_phase_lanes(&model, "implement");
+    let entries = seeded(world);
+    let span = entries
+        .iter()
+        .find(|entry| {
+            entry.kind == "subagent"
+                && entry
+                    .session
+                    .as_deref()
+                    .is_some_and(|session| subagent_child(entry) != Some(session))
+        })
+        .unwrap_or_else(|| panic!("the record holds no spawned subagent span: {entries:#?}"));
+    let lane = lanes
+        .iter()
+        .find(|lane| lane["session"].as_str() == span.session.as_deref())
+        .unwrap_or_else(|| panic!("the spawning session has no lane: {model:#?}"));
+    let title = entries
+        .iter()
+        .filter(|entry| entry.kind == "session")
+        .filter(|entry| entry.session == span.session)
+        .find_map(|entry| entry.data.as_ref()?.get("title")?.as_str())
+        .expect("the spawning session records a title");
+    assert_eq!(
+        lane["name"].as_str(),
+        Some(title),
+        "the spawning session's lane was renamed by the span it contains: {model:#?}"
+    );
+    let ids: Vec<u64> = lane["entries"]
+        .as_array()
+        .expect("the lane's members")
+        .iter()
+        .map(|id| id.as_u64().expect("a lane member id"))
+        .collect();
+    assert!(
+        ids.contains(&span.id),
+        "the spawning session's lane does not carry the subagent span: {model:#?}"
+    );
+    assert!(
+        !lanes
+            .iter()
+            .any(|lane| { subagent_agent(span).is_some_and(|agent| lane["name"] == json!(agent)) }),
+        "the report created a subagent lane for the spawning session's span: {model:#?}"
+    );
+}
+
+#[then("an entry whose session the record does not name stays in the unattributed lane")]
+fn unnamed_session_entry_stays_unattributed(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let lanes = workflow_phase_lanes(&model, "implement");
+    let entry = seeded(world)
+        .iter()
+        .find(|entry| entry.session.is_none())
+        .unwrap_or_else(|| panic!("the fixture records an entry with no session"));
+    let lane = lanes
+        .iter()
+        .find(|lane| lane["session"].is_null())
+        .unwrap_or_else(|| panic!("the report draws no unattributed lane: {model:#?}"));
+    assert_eq!(
+        lane["name"].as_str(),
+        Some("unattributed"),
+        "the unattributed lane carries another name: {model:#?}"
+    );
+    let ids: Vec<u64> = lane["entries"]
+        .as_array()
+        .expect("the lane's members")
+        .iter()
+        .map(|id| id.as_u64().expect("a lane member id"))
+        .collect();
+    assert!(
+        ids.contains(&entry.id),
+        "the entry with no session is not in the unattributed lane: {model:#?}"
+    );
+}
+
+#[then("the report never assigns an entry to a subagent the record does not name")]
+fn report_never_assigns_an_entry_to_an_unrecorded_subagent(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let lanes = workflow_phase_lanes(&model, "implement");
+    let entries = seeded(world);
+    for lane in lanes {
+        let session = lane["session"].as_str();
+        for id in lane["entries"].as_array().expect("the lane's members") {
+            let id = id.as_u64().expect("a lane member id");
+            let entry = entries
+                .iter()
+                .find(|entry| entry.id == id)
+                .unwrap_or_else(|| panic!("a lane holds an entry outside the record: {id}"));
+            assert_eq!(
+                entry.session.as_deref(),
+                session,
+                "the report assigns the entry {id} to a session the record does not name: {entry:#?}"
+            );
+        }
+    }
+    // No lane exists for a session the record never delivered: the ghost child
+    // session its span names stays a statement, never a lane.
+    assert!(
+        !lanes
+            .iter()
+            .any(|lane| lane["session"].as_str() == Some(GHOST_SESSION)),
+        "the report invented a lane for a session it does not carry: {model:#?}"
+    );
+    assert!(
+        document.contains("the record names no per-subagent tool identity"),
+        "the text view does not state the attribution limit: {document}"
+    );
+}
+
+#[then("the report states when no tool call was attributable to a subagent span")]
+fn report_states_when_no_tool_call_was_attributable(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let entries = seeded(world);
+    let ghost = entries
+        .iter()
+        .find(|entry| {
+            entry.kind == "subagent"
+                && subagent_child(entry).is_some_and(|child| {
+                    !entries.iter().any(|candidate| {
+                        candidate.kind == "tool"
+                            && (candidate.parent == Some(entry.id)
+                                || candidate.session.as_deref() == Some(child))
+                    })
+                })
+        })
+        .unwrap_or_else(|| {
+            panic!("the fixture holds no subagent span without tool calls: {entries:#?}")
+        });
+    assert!(
+        document.contains("no tool call was attributable"),
+        "the report does not state the attribution limit: {document}"
+    );
+    assert!(
+        document.contains(&format!(
+            "class=\"attribution-limit\" data-subagent=\"{}\"",
+            ghost.name
+        )),
+        "the report does not name the span no tool call was attributable to: {document}"
+    );
+    // The span whose child session flushed a tool call carries no such
+    // statement: the limit is stated where it holds, not everywhere.
+    let attributable = entries
+        .iter()
+        .find(|entry| entry.kind == "subagent" && subagent_child(entry) == entry.session.as_deref())
+        .expect("the fixture records the subagent's own session");
+    assert!(
+        !document.contains(&format!(
+            "class=\"attribution-limit\" data-subagent=\"{}\"",
+            attributable.name
+        )),
+        "the report states an attribution limit for a subagent whose tool call it carries: {document}"
+    );
+}
+
 #[given(regex = r#"^a change "([^"]+)" whose record holds hundreds of short agent activities$"#)]
 fn change_with_hundreds_of_short_agent_activities(world: &mut GivnWorld, id: String) {
     let scope = Scope::Change { id: id.clone() };
