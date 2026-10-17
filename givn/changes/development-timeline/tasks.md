@@ -14932,7 +14932,7 @@ untouched; this part is appended after its completion statement.
 
 ## Task H17 — `A change report shows its linked ideation group` (`development-report`, added)
 
-- [ ] **Scenario: `A change report shows its linked ideation group`** (`@wip` until its RED)
+- [x] **Scenario: `A change report shows its linked ideation group`** (`@wip` until its RED)
   - Design constraints:
     - **Link + group.** With `Ideation topic: ideas` in the change's
       `proposal.md` and `givn/ideation/ideas/` existing, the change report
@@ -14957,31 +14957,84 @@ untouched; this part is appended after its completion statement.
       `tests/steps/development_timeline_support.rs` (the linked fixture).
     - RED expected failure: the Givens and three Then phrases are undefined and
       the model carries no ideation group.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::A change report shows its linked ideation group"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Report
+          Scenario: A change report shows its linked ideation group
+           ✘  Given a change "demo" whose proposal links the ideation topic "ideas"
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:166:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        EXIT=101
         ```
-  - [ ] **GREEN** — render the group above the change stack and implement the
+  - [x] **GREEN** — render the group above the change stack and implement the
         three Thens. Files: `src/cli/timeline.rs`,
         `tests/steps/development_report_steps.rs`,
         `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
         it.
         ```
-        PASTE THE GREEN RUN HERE
+        Feature: Development Report
+          Scenario: A change report shows its linked ideation group
+           ✔  Given a change "demo" whose proposal links the ideation topic "ideas"
+           ✔  And the topic's record holds the marker for personas
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report names the linked ideation group "ideas" before the change workflow
+           ✔  And the group names the ideation phases and the group's own duration
+           ✔  And the change workflow still names its own phases
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — the group reuses the phase-card renderer and the one
+  - [x] **REFACTOR** — the group reuses the phase-card renderer and the one
         group-totals derivation (never a second summary); `cargo fmt --all --
         --check` and `cargo clippy --locked --all-targets -- -D warnings`
         green; re-run → still exit 0. Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        The group already reads render_workflow_phase for its six phase lines
+        and Summary::of for its duration/tools/subagents/waits: no second
+        renderer and no second summary exist. The fixture's timestamps were
+        corrected so the frame work really precedes the first marker.
+
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+        (the scenario re-run)
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `3c6a485f` — `feat(development-report): <release note>` with
         the scenario title in the body. Record the revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit 3c6a485f
+        feat(development-report): a change report shows its linked ideation group
+
+        Scenario: A change report shows its linked ideation group
+
+        The fixtures create a real change whose proposal names the ideation topic
+        and seed one record holding the topic's marker-bearing entries and the
+        change's own entries. The three Thens read the written report: the linked
+        group (ReportModel.ideation) renders before the change workflow with its
+        topic id, its six ideation phases and the topic's own recorded window as
+        its duration, and the change stack still names its own nine phases. The
+        group reuses the one phase-card renderer and the one Summary::of
+        derivation; the change's totals stay the change's.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../development-report.feature                     |   2 +-
+         tests/steps/development_report_steps.rs            | 211 ++++++++++++++++++++-
+         tests/steps/development_timeline_support.rs        |  84 +++++++-
+         3 files changed, 293 insertions(+), 4 deletions(-)
         ```
 
 ## Task H18 — `A linked ideation with no recorded activity is stated` (`development-report`, added)
