@@ -27,6 +27,7 @@ Status values:
 - [Reference](reference.md) - `current`; CLI command table, agent skills, addons, configuration keys, generated project layout, repository development scripts.
 - [Use-Case Model](use-case-model.md) - `current`; the canonical use-case definition, scoping rules, authoring requirements, and review rejection criteria.
 - [Design System](design/design-system.md) - `current`; the development report's design system: tokens, component primitives and their states, breakpoints, accessibility rules, and the rendered reference views.
+- [Development Record and Report](development-report.md) - `current`; record settings (mode and default, privacy, bounds), the report at desktop and mobile, and analytics recipes (jq, SQLite, DuckDB) over the local JSONL store.
 
 ## Project Planning
 
