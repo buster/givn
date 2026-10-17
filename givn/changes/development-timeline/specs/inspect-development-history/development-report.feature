@@ -142,6 +142,17 @@ Feature: Development Report
     Then the written report names the current state and every workflow phase
     And the written report draws no band timeline
 
+  @givn.added @wip
+  Scenario: The report omits the recorder's own command entries
+    Given a change "demo" whose record holds one tool call, one other command, and the recorder's own command entries, flagged and unflagged
+    When the developer generates the development report for "demo"
+    Then the report names the tool call and counts it
+    And the report names the other command
+    And the report names no recorder command entry
+    And the report's entry total excludes the recorder command entries
+    And the record still holds the recorder command entries
+    And `givn history` still lists the recorder command entries
+
   @givn.added @e2e
   Scenario: Consumer generates the development report for a change
     Given a project root with givn/ initialised

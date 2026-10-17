@@ -1319,3 +1319,128 @@ or an accepted boundary.
    history; the new delta note carries the current 58/49/9 scope.
 
 **DESIGN-REVIEW: PASS**
+
+## Re-review round 7 (2026-10-17, recorder self-recording delta)
+
+**Why it ran.** The report records the intake's own `command` entries and then
+displays them. The delta adds *Recorder self-recording* to the hybrid report
+rules and one `@givn.added @wip` scenario to `development-report.feature`. A
+fresh-context grill (read-only planning; no suite run) read the served
+design-review rules, the delta, `build_report_model` and the report surfaces
+(`src/cli/timeline.rs`), the recorder and the command-entry writer
+(`src/history.rs`, `src/main.rs`), the intake's validation table
+(`src/cli/history.rs`), the Claude shim
+(`assets/agent-integrations/claude/givn-timeline.sh`), the feature file, and
+the durable documentation (arc42 05/06/08/10/12). It quantified the gap on the
+live store rather than assuming it.
+
+**Branch outcomes.**
+
+| Branch | Outcome |
+|---|---|
+| Scope | FINDING → F1/F5. The rule hid the intake only, though the recorder writes a second infrastructure command; the rule also did not say every report scope inherits the omission. |
+| Tech choices | NO ISSUE. The model is the one seam every surface reads, and a first-step filter before the budget is the simplest exact implementation; the read views stay on `entries_in_scope`. |
+| Missing scenarios | FINDING → F3/F4. The scenario proved neither a non-recorder command surviving the filter nor the read view still listing the entries. |
+| Testability | FINDING → F3/F4. The predicate was ambiguous enough that a `starts_with` implementation would match `history ingest-extra`; the retention claim had no read-view assertion. All new steps are concrete model/store/read-view facts and can go RED before the filter exists. |
+| E2E fidelity | NO ISSUE. No `@e2e` scenario is added, changed, or untagged; the delta is a non-browser claim asserted through the model and the read view. |
+| Interaction Coverage | NO ISSUE. No visible interaction is added; the omission changes content, not controls, so the usecase inventory and the matrix are unchanged. |
+| Risk | FINDING (mitigated) → F4. The likely failure is putting the filter in `entries_in_scope` (shared by the read view) instead of `build_report_model`; the scenario now fails such a seam mistake by asserting the read view still lists the entries. |
+| Use-case and Persona context | NO ISSUE. Same use case `inspect-development-history`, same Web UI/report contract; no Persona is invented and none appears as a Gherkin actor. |
+| Decision ledger | NO ISSUE. The delta raises no `D<n>` item; D1–D6 keep their dispositions, including D6's 2026-10-17 supersession. |
+| Visual design contract | NO ISSUE. No screen, state, viewport, or rendering primitive changes; no new evidence state. |
+| Deferrals | NO ISSUE. None requested; nothing was deferred. |
+| Persona disposition | NO ISSUE. Round 6's confirmed disposition covers this surface unchanged. |
+| Interface classification | NO ISSUE. Still a Web UI with the real browser driver; no opposite classification to test for this content rule. |
+| ADR qualification | NO ISSUE. No candidate qualifies; the rule is a report-model decision owned by `design.md`, and ADR-073's intake/ownership decision is unchanged. |
+| Architecture documentation | FINDING → F6. Chapters 05, 06, 08, 10, and 12 carried claims the rule invalidates ("summary and ranking cover the full record", "a scope with no recorded entries", the report's totals). |
+| Ubiquitous language | NO ISSUE. **Intake** stays `givn history ingest` only; the rule names the second writer with chapter 05's existing "process-per-hook mapper" wording instead of stretching the term. |
+
+**Findings and resolutions.**
+
+| # | Severity | Area | Finding | Outcome |
+|---|---|---|---|---|
+| F1 | high | Identification/scope | The rule excluded only `history ingest`, but the recorder also writes one `command` entry per `givn history harness-hook --harness <name>` invocation: `records()` keeps `HistoryCommands::HarnessHook` (`src/main.rs:422-428`), the main wrapper installs the recorder for it (`src/main.rs:397`), and the generated Claude shim execs exactly that command on every hook event (`assets/agent-integrations/claude/givn-timeline.sh:3`). A Claude-driven record would therefore show one infrastructure command per hook event in lanes, phase counts, elapsed, entry totals, and the ranking — the cadence the rule exists to exclude — while the text still claimed "no other command is hidden". | fixed — the rule is now *Recorder self-recording* and covers both recorder invocations: the intake (one flush per turn) and the process-per-hook mapper (one process per hook event); the scenario is renamed and its Given seeds both, flagged and unflagged. |
+| F2 | medium | Seam | "Before any derivation" did not dispose of the content budget: `build_report_model` starts with `apply_content_budget`, which reads and mutates entries, and `omitted_content` is later embedded in the document. A filter placed after it would let a recorder entry consume budget and be named in the omission note. | fixed — the rule now says the omission is the model's first step, before the content budget and before every derivation, so neither the budget nor `omitted_content` ever names one. |
+| F3 | medium | Exactness/implementability | "Whose invocation is `history ingest` (with any trailing flags), never a substring match" still admits a `starts_with("history ingest")` reading that matches `history ingest-extra`, and it called the matched field an "invocation" although the record stores it in the bounded `label`. The scenario also never proved a non-recorder command survives, so an over-broad filter could pass. | fixed — the predicate is now exact: `kind: command`, `name: history`, and a bounded label equal to `history ingest` or beginning with `history ingest `, or beginning with `history harness-hook ` (subcommand followed by a word boundary); the scenario seeds one other command and asserts the report still names it. |
+| F4 | medium | Testability/retention | The design claims the store keeps the entries *and* `givn history` still reads them, but the scenario asserted only that the record still holds them. That passes a filter mistakenly placed in `entries_in_scope`, which both writers' callers share. | fixed — the scenario gains "the report's entry total excludes the recorder command entries", "the record still holds the recorder command entries", and "`givn history` still lists the recorder command entries" (the read view is non-recorded, so it appends nothing). |
+| F5 | medium | Scope/empty state | The rule said "the report" without saying the omission is scope-independent, although the project report (and a topic report) reaches the same `build_report_model`, and `empty` is computed from the filtered vector. A reader could implement it only for change reports, and a record holding only recorder rows had no stated rendering. | fixed — the rule states that change, topic, and project reports share the one model and the omission, and that a scope whose record holds only these entries renders the empty state; chapter 06 carries both clauses. |
+| F6 | low | Doc consistency | The universal claims this rule invalidates: chapter 08's "the summary and ranking always cover the full record", Q-101's "cover the whole record", the feature's existing "the report summary still counts every recorded entry", chapter 05's `cli::timeline` row without the omission, chapter 06's "a scope with no recorded entries", and the glossary's **Development report**. Before the fix, "recorded entry" meant both the store row and the model entry. | fixed — 05/06/08/10/12 and the glossary now define coverage over the report model and name the omitted entries; the rule defines "recorded entry" in the other report rules as a model entry after the omission, so the dense-record scenario's wording stays true. |
+
+**The decisions behind the fixes, with rejected alternatives.**
+
+- **Both recorder invocations are infrastructure.** Rejected: hiding only the
+  intake (a Claude record keeps one hook-mapper command per event, which is the
+  same cadence the rule rejects) and hiding every `history` command by name
+  (the read views are non-recorded today, so it changes nothing now, but it
+  would silently hide a future recorded read command and violates "no other
+  command is hidden"). The glossary's **Intake** keeps its single meaning; the
+  mapper is named with chapter 05's existing term.
+- **The omission is a model step, not a read-path filter.** Rejected: filtering
+  in `entries_in_scope` (it is also the read view's source, so `givn history`
+  would lose the rows the design promises it keeps) and filtering in the
+  renderer/asset (the text view, summary, phase scaffold, and totals would
+  derive from different vectors). `build_report_model` is the only place every
+  surface reads.
+- **The predicate is name plus label boundary, not a label search.** Rejected:
+  substring matching (a commit message or edit subject quoting "history ingest"
+  would vanish from the report) and kind-only (every Givn command is
+  `command`). The bounded label preserves the prefix at 120 characters, so the
+  prefix test is safe after truncation.
+
+**Checks run by this pass.**
+
+- Read `build_report_model` (`src/cli/timeline.rs:1028`): content budget, then
+  ordering, bands, stage assignment, phase scaffold, aggregates, and
+  `Summary::of`; `empty` is `entries.is_empty()` after that pipeline. `run()`
+  (`:2339`) is the only report writer; `entries_in_scope`
+  (`src/cli/history.rs:1317`) is shared with the read view.
+- Counted the live store: **4,481** rows, **1,031** of them `kind: command`,
+  `name: history`, label exactly `history ingest` (23%); all rows are in the
+  `development-timeline` change scope. The current report would count and rank
+  all of them; the rule removes 1,031 rows from the model while the store is
+  untouched. The store has no `harness-hook` rows (this project reports through
+  omp), so that half is proven by the recorder code and must be seeded in the
+  fixture.
+- Read the command writer (`src/history.rs:322-354`): name is the top-level
+  subcommand, label is `invocation_label()` (arguments joined), data is
+  `exit_code` only; `bound_label` preserves the prefix, so the exact prefix
+  test survives truncation.
+- Read `records()` and dispatch (`src/main.rs:397,422`): `History` without a
+  subcommand and `settings` are not recorded; `ingest` and `harness-hook` are.
+  The intake's validation table (`src/cli/history.rs:236-262`) accepts only
+  `tool`, `subagent`, `question`, `phase`, and `turn`, so an agent-reported
+  entry cannot carry `kind: command` today; the exact name/label pair keeps it
+  out even if one ever could.
+- `givn lint --change development-timeline` → exit 2, **5 files checked, 1
+  finding**, exactly the new scenario's `@wip`; no parse error and no
+  error-kind finding.
+- Mechanical counts: **61** scenario entries = **52 non-`@e2e` + 9 `@e2e`**;
+  **1 `@wip`**; per feature 1/2/13/21/24. No `@e2e` tag was removed. The
+  usecase's interaction inventory and the design's matrix are unchanged and
+  still match one-to-one.
+- arc42: re-derived the affected chapter set for this delta as
+  **05/06/08/10/12** (01/02/03/04/07/09/11 keep their content); opened each
+  file, confirmed real content, no ASCII-art diagrams, and aligned the claims
+  above; the glossary's **Development report** now carries the model rule. No
+  new ADR candidate (ADR-073 unchanged).
+- No suite was run: the pass changed planning prose, one pending scenario, and
+  durable documentation only.
+
+**Residuals noted by this pass.** None is an open question; each is named work
+or an accepted boundary.
+
+1. The implementation and the scenario's step bindings do not exist yet. The
+   change is already at `tasks-done` (364/364) and this contract forbids editing
+   `tasks.md`, so the delta needs an implementation task before archive; the
+   review gate will see the single `@wip`.
+2. The `harness-hook` half of the rule is provable only on a Claude-driven
+   record; this project's store has none, so the scenario fixture must seed
+   `history harness-hook --harness claude` explicitly (F1).
+3. The read-view assertion must invoke the non-recorded read view; recording it
+   would change the store between the pre- and post-report comparisons.
+4. Round 6's 58/49/9 inventory is dated history; the delta inventory is
+   61/52/9 with one `@wip` (the change-level arc42 note names both).
+5. Existing records are not rewritten: re-rendering a report from an old record
+   simply stops showing the recorder rows, and no store line is removed.
+
+**DESIGN-REVIEW: PASS**

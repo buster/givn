@@ -341,6 +341,26 @@ ADR candidate qualified: the visual direction is a design decision recorded in
 are refinements of ADR-073's intake and report surface, not a new ownership
 decision.
 
+## Recorder self-recording delta (2026-10-17)
+
+The report recorded the recorder's own `command` entries and then displayed
+them. This delta drops them from the report model (design.md *Recorder
+self-recording*, design review round 7) while the store and every read view
+keep them. The affected chapters are updated in place: chapter 05's
+`cli::timeline` row names the first-step omission; chapter 06's report flow
+drops them before any derivation and derives the empty state from the model;
+chapter 08's scale paragraph defines summary and ranking coverage over the
+model and names the omitted entries; chapter 10's Q-101 follows; chapter 12's
+**Development report** states that every number and lane counts the model.
+The exclusion covers both recorder invocations — the intake
+(`givn history ingest`, with trailing flags) and the process-per-hook mapper
+(`givn history harness-hook --harness <name>`) — and matches the subcommand's
+word boundary, never a substring. Delta inventory after this delta is 61
+entries (52 non-`@e2e`, 9 `@e2e`), one of them `@wip`; the earlier 54- and
+58-entry statements stay as dated history of their rounds. No new ADR
+candidate qualified: the rule is a report-model decision owned by
+`design.md`, not a new ownership or intake decision.
+
 ## Status
 
 STATUS: DONE

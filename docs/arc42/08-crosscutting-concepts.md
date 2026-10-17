@@ -1036,9 +1036,12 @@ sub-pixel aggregation threshold is applied at every zoom (Fit, 1 h, 15 m), so
 dense short activities collapse into per-bucket aggregate ticks naming their
 count and combined duration even at 15 m; individual ticks appear only where
 the current zoom permits, the timeline's scroll height is capped, and the
-summary and ranking always cover the full record — the ranking over every entry
-kind that carries a measured duration, never only subprocess steps (D-23 tracks
-pruning and retention).
+summary and ranking always cover the full report model — the ranking over
+every entry kind that carries a measured duration, never only subprocess steps
+(D-23 tracks pruning and retention). The model is the record minus the
+recorder's own command entries (the intake's flush and the process-per-hook
+mapper's invocation), which are dropped before any derivation so no surface or
+total counts them; the store keeps them and the read views still show them.
 
 **Browser tier.** The report is a Web UI, so its acceptance is browser-driven:
 the repository's e2e tier installs Node.js (current LTS) and Playwright's

@@ -584,7 +584,9 @@ query is treated as `on`, warns once, and never blocks the harness.
 one scope — or, with no scope flag, renders the project report, whose "outside a
 scope" band carries the project's own entries — builds the report model (the workflow phase scaffold with the current state,
 phase aggregates, lane groups, the no-stage group, the ranked longest measured entries of any kind, question wait totals,
-repeated-step groups, subagent fan-out, token totals overall, per model, and per subagent), substitutes that model into the
+repeated-step groups, subagent fan-out, token totals overall, per model, and per subagent), first dropping the recorder's own
+command entries (the intake's flush and the process-per-hook mapper's invocation) from the model before any derivation,
+substitutes that model into the
 embedded report document twice — as the machine-readable model payload element
 the document's inline script parses, and as the text-only initial view the
 written file itself carries — writes one self-contained HTML file (by
@@ -597,7 +599,8 @@ the same change state always produce the same pixels (R-96). The
 lane log carries the captured metadata facts and one bounded content region;
 the report embeds full content only up to the **8 MiB total budget** and marks
 the rest `content omitted; see the record`, while the store keeps every byte.
-A scope with no recorded entries renders the empty state rather than an empty
+A scope whose model holds no entries — including a record that holds only the
+recorder's own command entries — renders the empty state rather than an empty
 workflow.
 
 *[Architecture documentation index](README.md)*
