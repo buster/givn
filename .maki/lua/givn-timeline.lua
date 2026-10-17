@@ -369,6 +369,36 @@ local function transcript_question()
   return table.concat(joined, "\n")
 end
 
+-- One content field on the wire; the intake re-applies the content caps.
+local function content_field(text)
+  if type(text) ~= "string" or text == "" then
+    return nil
+  end
+  return { text = text, truncated = false, bytes = #text }
+end
+
+-- A value as content text: a string as-is, anything else JSON-encoded.
+local function content_text(value)
+  if type(value) == "string" then
+    return value
+  end
+  if value == nil then
+    return nil
+  end
+  local ok, text = pcall(function()
+    return maki.json.encode(value)
+  end)
+  if ok and type(text) == "string" then
+    return text
+  end
+  return nil
+end
+
+-- Whether this project captures the complete content set.
+local function captures_content()
+  return record_mode() == "full"
+end
+
 -- The callback table, exported so a test driver can drive a handler directly;
 -- the host reaches the same table through `setup()`.
 local handlers = {}
@@ -408,14 +438,22 @@ handlers.ToolDone = function(ev)
   end
   event.tool_call_id = data.tool_id
   event.output_bytes = data.bytes
+  if captures_content() then
+    local input = content_field(content_text(data.input))
+    if input then
+      event.content = { tool_input = input }
+    end
+  end
   push(event)
 end
 
 handlers.TurnStart = function(ev)
   local data = ev.data or {}
   local state = session_state(data.session_id)
-  -- data.text is the prompt that started the turn: stamped, never stored.
+  -- data.text is the prompt that started the turn: stamped, and stored as
+  -- content only when the project captures content.
   state.turn_started = os.clock()
+  state.prompt = captures_content() and data.text or nil
 end
 
 handlers.TurnEnd = function(ev)
@@ -444,7 +482,14 @@ handlers.TurnEnd = function(ev)
   -- A turn with no TurnStart (a headless or ACP session) is recorded
   -- unmeasured rather than invented.
   event.duration_ms = measured(state.turn_started)
+  if captures_content() then
+    local prompt = content_field(state.prompt)
+    if prompt then
+      event.content = { user_prompt = prompt }
+    end
+  end
   state.turn_started = nil
+  state.prompt = nil
   push(event)
   flush(nil)
 end
@@ -481,6 +526,12 @@ handlers.CompactionDone = function(ev)
   local event = { kind = "phase", at = at_now(), label = "compacted", outcome = "ok" }
   event.duration_ms = measured(state.compaction_started)
   state.compaction_started = nil
+  if captures_content() then
+    local summary = content_field(data.summary)
+    if summary then
+      event.content = { compaction_summary = summary }
+    end
+  end
   push(event)
 end
 

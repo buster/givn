@@ -632,6 +632,10 @@ pub struct HarnessPayload {
     /// The subagent's own session record, on `SubagentStop`.
     #[serde(default)]
     pub agent_transcript_path: Option<PathBuf>,
+    /// The turn's final assistant message, on `Stop`: content the reporter
+    /// stores only when the project captures content.
+    #[serde(default)]
+    pub last_assistant_message: Option<String>,
 }
 
 impl HarnessPayload {
@@ -752,6 +756,20 @@ fn tool_response_bytes(response: &Value) -> u64 {
     }
 }
 
+/// A harness value as one content field: a string as-is, anything else
+/// serialized. The intake re-applies the content caps.
+fn reported_content(value: &Value) -> BoundedText {
+    let text = match value {
+        Value::String(text) => text.clone(),
+        other => serde_json::to_string(other).unwrap_or_default(),
+    };
+    BoundedText {
+        bytes: text.len(),
+        truncated: false,
+        text,
+    }
+}
+
 /// One reported event from the mapper's own reading of the harness's payload.
 fn reported_event(kind: &str, at: &str) -> IngestedEvent {
     IngestedEvent {
@@ -792,13 +810,14 @@ fn reported_event(kind: &str, at: &str) -> IngestedEvent {
 pub fn map_harness_event(
     payload: &HarnessPayload,
     pending: &mut PendingState,
+    mode: RecordMode,
 ) -> Result<Vec<IngestedEvent>> {
     Ok(match payload.event() {
         "PreToolUse" => {
             map_pre_tool_use(payload, pending);
             Vec::new()
         }
-        "PostToolUse" | "PostToolUseFailure" => map_tool_end(payload, pending),
+        "PostToolUse" | "PostToolUseFailure" => map_tool_end(payload, pending, mode),
         "PermissionRequest" => {
             map_permission_request(payload, pending);
             Vec::new()
@@ -812,7 +831,7 @@ pub fn map_harness_event(
             Vec::new()
         }
         "SubagentStop" => map_subagent_stop(payload, pending),
-        "Stop" => map_turn_end(payload),
+        "Stop" => map_turn_end(payload, mode),
         "SessionEnd" => {
             // Session end prunes the whole session's pending state: a start
             // whose end never arrived costs a duration, never an entry.
@@ -856,7 +875,11 @@ fn map_pre_tool_use(payload: &HarnessPayload, pending: &mut PendingState) {
 /// one, the reporter's stamped start otherwise — and the permission or idle
 /// wait the same completion closes, whose duration the harness's own
 /// `duration_ms` excludes.
-fn map_tool_end(payload: &HarnessPayload, pending: &mut PendingState) -> Vec<IngestedEvent> {
+fn map_tool_end(
+    payload: &HarnessPayload,
+    pending: &mut PendingState,
+    mode: RecordMode,
+) -> Vec<IngestedEvent> {
     let at = crate::history::now_rfc3339();
     let now = crate::history::now_ms();
     let tool = payload
@@ -914,6 +937,18 @@ fn map_tool_end(payload: &HarnessPayload, pending: &mut PendingState) -> Vec<Ing
         tool_event.error = if failed { payload.error.clone() } else { None };
         tool_event.output_bytes = payload.tool_response.as_ref().map(tool_response_bytes);
         tool_event.outcome = Some(if failed { "failed" } else { "ok" }.to_string());
+        if mode == RecordMode::Full {
+            let mut content = BTreeMap::new();
+            if let Some(input) = &payload.tool_input {
+                content.insert("tool_input".to_string(), reported_content(input));
+            }
+            if let Some(response) = &payload.tool_response {
+                content.insert("tool_output".to_string(), reported_content(response));
+            }
+            if !content.is_empty() {
+                tool_event.content = Some(content);
+            }
+        }
         events.push(tool_event);
     }
     if let Some(wait) = wait {
@@ -1010,7 +1045,7 @@ fn map_subagent_stop(payload: &HarnessPayload, pending: &mut PendingState) -> Ve
 /// and may lag the live turn, so its usage is read here, at the turn's end —
 /// and a turn whose usage the record does not report is still recorded, with
 /// its usage marked unavailable.
-fn map_turn_end(payload: &HarnessPayload) -> Vec<IngestedEvent> {
+fn map_turn_end(payload: &HarnessPayload, mode: RecordMode) -> Vec<IngestedEvent> {
     let usage = session_record_usage(payload.transcript_path.as_deref());
     let cost = session_record_cost(payload.transcript_path.as_deref());
     let mut event = reported_event("turn", &crate::history::now_rfc3339());
@@ -1018,6 +1053,18 @@ fn map_turn_end(payload: &HarnessPayload) -> Vec<IngestedEvent> {
     event.model = usage.as_ref().and_then(|usage| usage.model.clone());
     event.usage = usage;
     event.cost = cost;
+    if mode == RecordMode::Full
+        && let Some(message) = &payload.last_assistant_message
+    {
+        event.content = Some(BTreeMap::from([(
+            "assistant_text".to_string(),
+            BoundedText {
+                text: message.clone(),
+                truncated: false,
+                bytes: message.len(),
+            },
+        )]));
+    }
     vec![event]
 }
 
@@ -1223,7 +1270,7 @@ pub fn harness_hook(harness: &str) -> Result<()> {
         Some(session) => session.state(),
         None => &mut sessionless,
     };
-    let events = match map_harness_event(&payload, pending) {
+    let events = match map_harness_event(&payload, pending, setting.mode) {
         Ok(events) => events,
         Err(error) => {
             eprintln!("warning: the {harness} hook payload could not be mapped: {error:#}");

@@ -119,6 +119,55 @@ const reportedQuestion = (args) => {
     : undefined
 }
 
+/** One content field on the wire; the intake re-applies the content caps. */
+const contentField = (text) => {
+  if (typeof text !== "string" || text.length === 0) return undefined
+  return { text, truncated: false, bytes: Buffer.byteLength(text) }
+}
+
+/** A value as content text: a string as-is, anything else serialized. */
+const contentText = (value) => {
+  if (typeof value === "string") return value
+  if (value === undefined || value === null) return undefined
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return String(value)
+  }
+}
+
+/** The tool call's content set, built only when the mode captures content. */
+const toolContent = (input, result) => {
+  const content = {
+    tool_input: contentField(contentText(input)),
+    tool_output: contentField(
+      contentText(result?.output ?? result?.text ?? result?.content ?? result),
+    ),
+  }
+  for (const key of Object.keys(content)) {
+    if (content[key] === undefined) delete content[key]
+  }
+  return Object.keys(content).length > 0 ? content : undefined
+}
+
+/** The turn's assistant and thinking text, built only when content is captured. */
+const turnContent = (message) => {
+  const parts = Array.isArray(message?.content) ? message.content : []
+  const join = (type, key) =>
+    parts
+      .filter((part) => part?.type === type && typeof part[key] === "string")
+      .map((part) => part[key])
+      .join("")
+  const content = {
+    assistant_text: contentField(join("text", "text")),
+    thinking_text: contentField(join("thinking", "thinking")),
+  }
+  for (const key of Object.keys(content)) {
+    if (content[key] === undefined) delete content[key]
+  }
+  return Object.keys(content).length > 0 ? content : undefined
+}
+
 /** The failed call's error text, from the result the harness reports. */
 const errorOf = (result, event) => {
   const error = result && typeof result === "object" ? result.error : undefined
@@ -179,8 +228,10 @@ export default function givnTimeline(pi) {
   // stale payload too.
   const mode = queryMode(pi)
   let off = false
+  let captureContent = false
   mode.then((resolved) => {
     off = resolved === "off"
+    captureContent = resolved === "full"
   })
   // The session's open spans, keyed by the harness's own call id. omp emits no
   // durations, so each start carries the reporter's own stamp.
@@ -288,6 +339,7 @@ export default function givnTimeline(pi) {
       context_size: context.size,
       context_window: context.window,
       usage: usageOf(message),
+      content: captureContent ? turnContent(message) : undefined,
     })
     materialize()
     await flush()
@@ -307,6 +359,7 @@ export default function givnTimeline(pi) {
       started,
       tool: event?.toolName,
       label: toolSubject(event?.toolName, event?.args),
+      input: event?.args,
     })
   })
 
@@ -342,6 +395,7 @@ export default function givnTimeline(pi) {
           ? result.bytes
           : undefined,
       result_meta: resultMetaOf(result),
+      content: captureContent ? toolContent(start?.input ?? event?.args, result) : undefined,
     })
   })
 

@@ -72,6 +72,35 @@ const reportedQuestion = (text) =>
     ? { text, truncated: false, bytes: Buffer.byteLength(text) }
     : undefined
 
+/** One content field on the wire; the intake re-applies the content caps. */
+const contentField = (text) => {
+  if (typeof text !== "string" || text.length === 0) return undefined
+  return { text, truncated: false, bytes: Buffer.byteLength(text) }
+}
+
+/** A value as content text: a string as-is, anything else serialized. */
+const contentText = (value) => {
+  if (typeof value === "string") return value
+  if (value === undefined || value === null) return undefined
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return String(value)
+  }
+}
+
+/** The tool call's content set, built only when the mode captures content. */
+const toolContent = (input, output) => {
+  const content = {
+    tool_input: contentField(contentText(input)),
+    tool_output: contentField(contentText(output)),
+  }
+  for (const key of Object.keys(content)) {
+    if (content[key] === undefined) delete content[key]
+  }
+  return Object.keys(content).length > 0 ? content : undefined
+}
+
 /** opencode's `Tokens.Info` as the intake's `usage`, counts kept as reported. */
 const usageOf = (tokens) => {
   if (!tokens || typeof tokens !== "object") return undefined
@@ -126,9 +155,11 @@ export default {
     // The mode is resolved once per session before any registration: under
     // `off` the reporter registers nothing, buffers nothing, and writes
     // nothing (the intake refuses a stale payload too).
-    if ((await queryMode()) === "off") {
+    const mode = await queryMode()
+    if (mode === "off") {
       return () => {}
     }
+    const captureContent = mode === "full"
     let session
     let buffer = []
     let dropped = 0
@@ -232,6 +263,9 @@ export default {
                 : undefined,
             cost: data.cost,
             usage: usageOf(data.tokens),
+            content: captureContent
+              ? { assistant_text: contentField(contentText(data.content)) }
+              : undefined,
             status: type === "session.step.ended" ? "completed" : "failed",
           })
           break
@@ -252,6 +286,7 @@ export default {
             created,
             name,
             label: toolSubject(name, data.input),
+            input: data.input,
           })
           break
         }
@@ -281,6 +316,9 @@ export default {
                   ? Buffer.byteLength(data.content)
                   : undefined,
             result_meta: data.result_meta,
+            content: captureContent
+              ? toolContent(start?.input ?? data.input, data.content ?? data.output)
+              : undefined,
           })
           break
         }

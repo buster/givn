@@ -142,7 +142,7 @@ Feature: Development Record
     Then the intake exits 0 and warns once that the record is off
     And the record gains no new entry
 
-  @givn.added @wip
+  @givn.added
   Scenario: The default mode records metadata without content
     Given a change "demo" whose project has no record mode configured
     When the agent reports a tool call with its complete input and output
