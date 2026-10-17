@@ -198,13 +198,16 @@ is already required on `PATH` by the existing omp/OpenCode attribution E2E.
   `src/history.rs` (mode resolution and `bound_label`),
   `src/config/overlay.rs` (lenient `record` field), and `src/cli/history.rs`
   (the settings query, intake enforcement, and the two off-enforcement sites).
-- **Decides D6: the dense timeline (view 1) is the report's visual direction.**
-  Approved by the operator on 2026-10-16 after reviewing the three rendered
-  reference views in `docs/design/design-system.md`; views 2 (phase lanes) and 3
-  (dashboard) stay there as reference alternatives. The direction was chosen
-  because it is the only one that shows the absolute time axis *and* the
-  nesting of subagent work inside the step that spawned it, which are the two
-  things the requester asked to see. Realized in `assets/timeline/report.html`
+- **Decides D6: the hybrid workflow report is the report's visual direction.**
+  Approved by the operator on 2026-10-17 after five rendered mockups (vertical
+  pipeline, workbench, dense gantt, workflow cards, hybrid). The hybrid keeps
+  the two things the requester needs — a real time axis and the nested subagent
+  work — but reads top to bottom: overall statistics, the change workflow as a
+  phase stack, each phase expandable into a vertical time axis whose session
+  lanes stand side by side with the selected lane's log, then the detailed
+  statistics. The dense horizontal timeline approved on 2026-10-16 is
+  superseded; the phase-lane and dashboard views remain reference alternatives
+  in `docs/design/design-system.md`. Realized in `assets/timeline/report.html`
   and the Visual Design Contract below.
 
 ## Record Model And Intake Contract
@@ -589,7 +592,7 @@ command, file, prompt, or tool output is captured with that work. The default
 `on` mode stores no LLM-facing content, so it avoids that class; `full` is the
 project's explicit decision, and R-92 records the residual.
 
-**Report rendering.** The details panel surfaces exactly these facts for a
+**Report rendering.** The lane log surfaces exactly these facts for a
 selected entry, each escaped and each stated as "not reported" when the record
 does not carry it: session id and title; status; stop reason; model; cost (real
 and list price where present); context size and context window; tool call id;
@@ -1167,12 +1170,19 @@ Missing data is rendered as missing, never as zero:
 
 `givn timeline` builds a `ReportModel` from the record and writes one HTML file:
 
-- **Bands and the report window**: one row per archived change, one per change
-  or ideation topic in flight, and the "outside a scope" band in the project
-  report (*Scope resolution and the report window*); a change's row carries its
-  phases (propose, specs, design, arc42, design-review, tasks, implement,
-  review, archive) and, beneath them, commands, gate phases, steps, agent turns,
-  tool ticks, subagent spans, and question waits.
+- **Workflow view**: a change or ideation report reads top to bottom. The
+  header states the scope and the derived current state; the KPI strip states
+  elapsed, active, waiting, tool calls, subagent spans, and cost; the workflow
+  stack lists the change workflow's phases (`propose`, `specs`, `design`,
+  `arc42`, `design-review`, `tasks`, `implement`, `review`, `archive`) in order,
+  each with its status, wall/active/waiting time, tool and subagent counts, and
+  an activity sparkline. Expanding a phase draws its vertical time axis (time
+  flows down) with one lane per recorded session beside each other, the selected
+  lane's log below the axis, and per-phase zoom Fit / 1 h / 15 m. Statistics
+  follow: longest steps, question waits, repeated-step groups, the phase table,
+  and token totals. The project report keeps the existing band rows — one row
+  per scope — and this workflow view applies to the change or ideation scope the
+  report was asked for.
 - **Phase derivation rule**: Givn records one `phase` entry when an artifact
   file of the change appears, and an entry belongs to the stage of the latest
   such transition at or before its own `at`; entries recorded before the band's
@@ -1204,31 +1214,32 @@ Missing data is rendered as missing, never as zero:
   **"Longest steps"**: these are the longest measured steps of the development,
   whatever layer recorded them, and the new kind element carries the
   distinction, so no design-system wording changes.
-- **Aggregation at low zoom**: the timeline never draws one shape per entry
-  when that would be unreadable. At the initial zoom, entries shorter than the
-  time-per-pixel of the visible range — dense agent ticks and short steps in
-  particular — collapse into one aggregate marker per band and time bucket that
-  names how many entries it covers and their combined duration; a record of tens
-  of thousands of entries therefore renders at a bounded number of shapes and
-  stays readable. Individual spans replace their aggregate as the zoom narrows,
-  and a click on an aggregate zooms to its bucket instead of opening a details
-  panel for an entry that stands for many. The summary and the longest-step
-  ranking always cover the full record, never only the visible window. This is
-  proven by the regular scenario "A dense record is reported as aggregates
-  instead of raw ticks", which is a rendering rule rather than a second
-  interaction, so it adds no `@e2e` scenario and no inventory row.
+- **Aggregation at low zoom**: within an expanded phase, a lane never draws one
+  shape per entry when that would be unreadable. At the fit zoom, entries
+  shorter than the lane's time-per-pixel — dense agent ticks and short steps in
+  particular — collapse into one aggregate tick per time bucket; the tick names
+  how many entries it covers and their combined measured duration, and clicking
+  it zooms the phase to that bucket instead of opening a log entry that stands
+  for many. A record of tens of thousands of entries therefore renders at a
+  bounded number of shapes and stays readable. Individual ticks replace their
+  aggregate as the phase's zoom narrows (1 h, 15 m), and the summary and the
+  longest-step ranking always cover the full record, never only the visible
+  window. This is proven by the regular scenario "A dense record is reported as
+  aggregates instead of raw ticks", which is a rendering rule rather than a
+  second interaction, so it adds no `@e2e` scenario and no inventory row.
 - **Details facts and content budget**: the report model carries every entry's
   new `session` and `data` members unchanged — `stop_reason`, `cost`,
   `context_size`/`context_window`, `tool_call_id`, `output_bytes`, `error`,
-  `parent`/`agent`, retry, and `permission_mode` — and the details panel renders
-  the exact fact list in *Report rendering*. `ReportModel` gains
+  `parent`/`agent`, retry, and `permission_mode` — and the lane log renders the
+  exact fact list in *Hybrid workflow report*. `ReportModel` gains
   `content_budget_bytes: 8_388_608` and `content_bytes`; `render_report` embeds
   `data.content` fields in record order until the budget is exhausted, then
   replaces the remaining fields with the omission marker
   (`content_omitted: true` on the entry and the text
   `content omitted; see the record`), never modifying the store. The model
   payload element carries the same budget and omission facts, so the regular
-  scenario and the e2e panel assertion read them from the written file itself.
+  scenario and the e2e lane-log assertion read them from the written file
+  itself.
 - **Rendering**: the generator substitutes exactly two markers in the asset,
   each once, and nothing else. (1) The **model payload element** —
   `<script id="report-model" type="application/json">` — receives the JSON model
@@ -1236,27 +1247,98 @@ Missing data is rendered as missing, never as zero:
   `\u003c` so a recorded label can never close the element; this is the
   machine-readable model the asset's inline script parses and the e2e tiers
   read. (2) The **text-view marker** `<!--__GIVN_REPORT_VIEW__-->` receives the
-  same model rendered as the file's own visible text — the scope line, then
-  either the empty state or the summary and the timeline's initial view (one
-  visible row per band, with the band's spans drawn on the shared axis) — so the
-  written file reads without script and the non-browser scenarios assert its
-  content directly. On top of that text view the inline script builds the
-  interactive SVG axis: it nests spans by `parent` and wires zoom (wheel,
-  buttons), pan (drag), selection (click/Enter) and the details panel, extended
-  by the aggregation rule above. The script never calls `fetch`, never loads a
-  remote resource, and never uses `Date.now()` — the axis is derived from the
-  embedded timestamps, so the same record always renders identically, and the
-  file stays one self-contained document with no server and no third-party
-  JavaScript. Panning (drag) is an implementation detail
-  of that same axis: it only changes which part of the already-rendered range is
-  in view, so it adds no interaction-inventory row and no `@e2e` scenario of its
-  own — the zoom scenario is the axis-state evidence. `givn timeline` writes to
-  `givn/history/reports/<scope>.html` when `--out` names no other path, which is
-  the chapter 07 footprint.
-- **Accessibility**: the timeline is a labelled `svg` inside `main`; every span
-  is a focusable element with an accessible name; the detail panel is a
-  labelled region with a close control; `prefers-reduced-motion` disables the
-  zoom transition and the panel animation.
+  same model rendered as the file's own visible text — the scope line, the
+  current-state line, one line per workflow phase (status, wall/active/waiting,
+  tools, subagents), the summary, and the empty state — so the written file
+  reads without script and the non-browser scenarios assert its content
+  directly. On top of that text view the inline script builds the interactive
+  workflow stack: it renders the phase cards from the model's `workflow`,
+  expands a phase into a vertical axis whose lanes are the phase's distinct
+  sessions, wires phase expansion, lane selection, tick focus, and the
+  per-phase zoom (Fit / 1 h / 15 m), and renders the selected lane's log,
+  extended by the aggregation rule above. The script never calls `fetch`, never
+  loads a remote resource, and never uses `Date.now()` — the view is derived
+  from the embedded timestamps and the current-state fields, so the same record
+  and change state always render identically, and the file stays one
+  self-contained document with no server and no third-party JavaScript.
+  `givn timeline` writes to `givn/history/reports/<scope>.html` when `--out`
+  names no other path, which is the chapter 07 footprint.
+- **Accessibility**: the workflow stack is a sequence of labelled expander
+  buttons with `aria-expanded` inside `main`; each expanded phase is a labelled
+  region with a vertical axis; each lane is a focusable button whose accessible
+  name carries the lane name and its duration; the lane log is a labelled
+  region; the per-phase zoom controls are buttons with a visible focus ring;
+  the page has a real `title`, one `h1`, and `header`/`main` landmarks;
+  `prefers-reduced-motion` disables the phase-expansion and zoom transitions.
+
+### Hybrid workflow report
+
+The hybrid is the report screen for the change or ideation scope the report was
+asked for; the project report keeps its band rows. Its rules:
+
+- **Current state.** For a change scope, `givn timeline` reads the change's
+  derived state (`src/state.rs`: `stage_label()`, `next_required()`, task
+  progress) and the record's phase transitions, then reports the change's stage
+  label, the next required artifact, and the task counts. The current workflow
+  phase is the stage that owns the next required artifact
+  (`STAGE_ARTIFACTS`' own index), or `archive` when every required artifact is
+  done; the header prints both words, so "tasks-done, next review" and the
+  active `review` phase are not conflated. For an ideation topic or an archived
+  change no live state exists: the current phase is the last recorded stage,
+  every earlier phase is `done`, and no "next required" is invented. The model
+  carries the result as `current_state: Option<CurrentState>`; the text view
+  prints it.
+- **Phase statuses.** The workflow order is `WORKFLOW_STAGES` (nine phases, in
+  the change workflow's order). Phases before the current phase are `done`, the
+  current phase is `active`, phases after it are `queued`; a phase the change
+  state marks skipped is `skipped`. A phase with no recorded entries renders its
+  status and zero recorded minutes, never an invented duration. Archived
+  changes render every phase `done`.
+- **Phase facts.** Wall time is the first to the last recorded entry assigned to
+  the phase (the existing phase derivation); active time is wall time minus the
+  question waits inside the phase; tools, subagents, and waits are counted from
+  the entries; none is inferred. The activity sparkline buckets the phase's
+  entries by recorded time.
+- **Lanes.** Within a phase, one lane per distinct recorded `session`; entries
+  whose `session` the record does not name go to the unattributed lane. A lane
+  that holds a `subagent` entry is named by that entry's `data.subagent` (with
+  its agent definition); otherwise the lane is named by the session's short id.
+  **Tool calls are never assigned to a subagent the record does not name**: the
+  record carries no per-subagent identity on tool entries today, so a subagent
+  lane without its own recorded session shows its span and usage, and its log
+  states that no tool calls were attributable (R-93). Where a reporter delivers
+  a subagent's entries under that subagent's session (Claude's subagent
+  transcripts, opencode's session ids), the lane log holds them and the
+  per-subagent log goal is met; where it does not, the report says so instead of
+  inventing parentage.
+- **Lane log.** The selected lane's entries sorted by `at`: tool calls, turns,
+  revisions, questions, and the subagent span itself, each with its recorded
+  fact list, outcome, duration, and content when captured; failed and repeated
+  entries are marked. The log is bounded by the 8 MiB content budget and the
+  existing caps; the store keeps every byte.
+- **Repeated-step groups.** Within a phase, entries with the same kind and the
+  same normalized label (trimmed, whitespace collapsed) are grouped when the
+  group holds at least five entries; the report names the count and the combined
+  measured duration. Different kinds never merge, and a group never hides an
+  entry from the ranking. This answers the "loops around a task / too many small
+  tasks" question at the phase level.
+- **Model delta.** `ReportModel` gains `workflow: Vec<WorkflowPhase>` and
+  `current_state: Option<CurrentState>` (serialized only inside the report; no
+  store change). `WorkflowPhase` carries the stage, status, first/last recorded
+  instants, wall/active/waiting ms, tool count, and subagent count;
+  `CurrentState` carries the change stage label, the current workflow phase, the
+  next required artifact, and task progress where the change state has them.
+  Lanes, logs, and repeated-step groups are derived in the asset from `entries`
+  plus `stages` — never a second copy of the raw entries — so the embedded model
+  grows only by the phase scaffold.
+- **Mobile.** Below 720 px the report is one column: the KPI strip becomes two
+  columns, the phase cards are full width with their stats wrapping, the
+  expanded phase's lanes scroll horizontally inside the card, the lane log sits
+  below the axis, and the phase table scrolls inside its card. The expanded
+  phase, the selected lane, and the zoom state survive the layout change.
+- **Evidence.** The three browser scenarios (open, expand a phase and read a
+  lane log, zoom a phase's timeline) capture the hybrid at desktop 1920x1080 and
+  mobile 360x780, refreshing the existing evidence paths.
 
 ## Step Definitions
 
@@ -1460,9 +1542,9 @@ Every row is one normalized inventory entry from
 | development-record: read the development record | Consumer reads the development record as machine-readable output | CLI | `common::run_givn`: `givn history --change demo --json` against a seeded record; the assertion parses the printed entries |
 | agent-activity-reporting: report agent activity | Consumer installs the agent reporter and its reported activity lands in the record | CLI (harness integration) | one `@e2e` Scenario Outline with one Examples row per harness (omp, opencode, Claude Code, Maki): install the project (`givn init --agents <target>`), then drive that harness's generated reporter through its real entry point — `node` with a fake `pi` for omp, `node` with a fake plugin context for opencode, the generated Claude shim with a real hook payload on stdin (mapper in the binary), and for Maki the real binary loading the plugin (`maki --trust prompt`) plus a test-only Lua driver firing synthetic autocmds — emitting a tool call, a subagent start/stop, and a question wait; every reporter calls the real `givn history ingest`, and `givn history --change demo --json` is asserted |
 | development-report: generate the development report for a change | Consumer generates the development report for a change | CLI | `common::run_givn`: `givn timeline --change demo --out report.html`; the assertion reads the written file |
-| development-report: open the report in a browser | Consumer opens the generated development report in a browser | Web UI | Playwright: one `@e2e` Scenario Outline with a change row and a topic row — one normalized action with input variants, so it adds no second inventory row — `page.goto("file://<root>/report.html")`, then read the rendered heading, the timeline SVG, and the longest step's duration from the DOM |
-| development-report: select a timeline element | Consumer selects a timeline element and reads its details | Web UI | Playwright: click the longest step's span (or focus it and press Enter), then read the details panel's rendered text — including one new metadata fact and the bounded content region (same action, extended assertions) |
-| development-report: zoom the timeline | Consumer zooms the timeline to a shorter time range | Web UI | Playwright: click the zoom-in control, then read the rendered range label before and after and assert it narrowed |
+| development-report: open the report in a browser | Consumer opens the generated development report in a browser | Web UI | Playwright: one `@e2e` Scenario Outline with a change row and a topic row — one normalized action with input variants, so it adds no second inventory row — `page.goto("file://<root>/report.html")`, then read the rendered heading, the current-state line, the workflow phase list, and the longest step's duration from the DOM |
+| development-report: select a timeline element | Consumer expands a workflow phase and reads a subagent's log | Web UI | Playwright: click the `implement` phase expander, then a session lane; read the phase's vertical axis (time flowing down), the lane's log, its span facts, the tool call id, and the bounded content region from the DOM |
+| development-report: zoom the timeline | Consumer zooms a phase's timeline to a shorter time range | Web UI | Playwright: expand the phase, click the zoom-in control, then read the rendered range label before and after and assert it narrowed |
 | development-report: open the report of a scope with no recorded activity | Consumer opens the report of a scope with no recorded activity | Web UI | Playwright: generate the report for a scope with no recorded activity, `page.goto("file://<root>/report.html")`, then read the rendered empty-state heading and the absence of any axis from the DOM |
 
 **Primary-assertion rule:** every browser scenario asserts on what the browser
@@ -1491,48 +1573,53 @@ the visual review gate reads them):
 - Design system: docs/design/design-system.md
 
 The full contract — tokens, primitives, breakpoints, accessibility, screens,
-and the three rendered reference views — lives in
+and the rendered reference views — lives in
 `docs/design/design-system.md`, created by this change. This section records
 the change-specific rules.
 
 **Tokens** (in the design system; the report carries them inline):
 
 - Color roles: `surface`, `surface-raised`, `border`, `text`, `text-muted`,
-  `accent` (the scope bar and focus ring), `ok`, `warn`, `error`, plus one hue
-  per band class (command, gate/step, agent, wait) that stays distinguishable
-  in greyscale.
+  `accent` (the current-state banner and focus ring), `ok`, `warn`, `error`,
+  one phase-status color pair (done, active, queued, skipped), plus one hue per
+  lane (the main agent and each recorded session) and one per tick class
+  (command, gate/step, agent, wait) that stays distinguishable in greyscale.
 - Spacing scale: 4/8/12/16/24/32 px. Typography scale: 12/14/16/20/28 px, one
   family (system UI stack), tabular numerals for every duration.
-- Radii: 4 px for spans, 8 px for panels. Elevation: one level (the details
-  panel).
+- Radii: 4 px for ticks, 8 px for the lane log and panels, 12 px for phase
+  cards. Elevation: one level (the lane log and the active phase card).
 
-**Component primitives** (each with all its states): timeline span (default,
-hover, focus, selected, overlong/label-omitted), band label, zoom control
-(default, hover, focus, disabled at the zoom limit, loading never applies), the
-details panel (closed, open, empty), the summary tile (default, zero-value),
-and the empty state (empty, error). Every primitive has a visible label
-requirement: a span's accessible name is always its name plus its duration.
+**Component primitives** (each with all its states): phase card (collapsed,
+expanded, active, done, queued, skipped, keyboard focus), lane (default, hover,
+focus, selected, no-attributable-calls), lane tick (default, failed, repeated,
+aggregate, focus), phase sparkline, per-phase zoom control (default, hover,
+focus, disabled at the zoom limit), the lane log (entries; empty), the summary
+tile (default, zero-value), and the empty state (empty, error). Every primitive
+has a visible label requirement: a lane's accessible name is always its name
+plus its duration; a tick's is its kind plus its label plus its duration.
 
-**Breakpoints:** one column below 720 px (mobile: the timeline scrolls
-horizontally, the details panel becomes a full-width sheet, the summary stacks
-vertically); two columns from 720 px; the desktop viewport shows the summary
-beside the timeline. Both mandatory viewports are covered by the e2e tier.
+**Breakpoints:** one column below 720 px (mobile: the phase cards are full
+width, the expanded phase's lanes scroll horizontally inside the card, the lane
+log sits below the axis, the KPI strip is two columns, the summary and tables
+stack); two columns from 720 px. Both mandatory viewports are covered by the e2e
+tier.
 
 **Accessibility:** body text meets 4.5:1 contrast against its surface and
 non-text UI meets 3:1; every control is reachable by Tab with a visible focus
-ring; the page has a real `title`, one `h1`, `header`/`main`/`aside` landmarks,
-and the timeline `svg` carries an accessible name. Verification is part of the
-e2e assertions (labels, heading, focus order, landmark presence) and the
-`prefers-reduced-motion` assertion.
+ring; the phase expanders carry `aria-expanded`; each expanded phase is a
+labelled region; the page has a real `title`, one `h1`, and
+`header`/`main` landmarks. Verification is part of the e2e assertions (labels,
+heading, focus order, landmark presence) and the `prefers-reduced-motion`
+assertion.
 
 **Screens covered:** the development report screen for a change or ideation
 (declared state: empty; a populated report is the implicit final state); no
 other screen is introduced or visibly changed.
 
-**Rendered reference:** `docs/design/design-system.md` carries three rendered
-directions as inline SVG reference views; the operator approved the **dense
-timeline** (view 1) on 2026-10-16, and the phase-lane and dashboard views stay
-there as reference alternatives (D6).
+**Rendered reference:** `docs/design/design-system.md` carries the rendered
+directions as inline SVG reference views; the operator approved the **hybrid
+workflow view** on 2026-10-17, and the dense-timeline, phase-lane, and dashboard
+views stay there as reference alternatives (D6).
 
 **Capture mechanism and evidence path:**
 
@@ -1559,9 +1646,9 @@ there as reference alternatives (D6).
 - intermediate captures, if any, go to `reports/visual/` and are not review
   evidence.
 
-**Motion:** the report's only motion is the zoom transition and the details
-panel's entrance, both short and both disabled under
-`prefers-reduced-motion: reduce`; the e2e tier asserts that emulated
+**Motion:** the report's only motion is the phase-expansion transition, the
+lane selection, and the per-phase zoom transition, all short and all disabled
+under `prefers-reduced-motion: reduce`; the e2e tier asserts that emulated
 preference, and screenshots are captured with animations disabled.
 
 ## Coverage Process Boundaries
@@ -1630,7 +1717,7 @@ flowchart LR
 | `src/config/overlay.rs` | the project-config parse path (`OverlayDoc`) gains a lenient raw `record` value so `record.mode` is read by the resolver; an invalid value is a one-warning fallback to `on`, never a config-parse failure, and `givn upgrade` preserves the uncommented key |
 | `src/cli/history.rs` | **new** — `givn history` (read), `givn history settings [--json]` (the non-recorded mode query), `givn history ingest` (the one intake and the single enforcement site for every bound, plus mode enforcement for payloads), and `givn history harness-hook --harness claude` (the raw-payload mapper, in-process mode resolution, the second `off` site, and transcript reader for process-per-hook harnesses) |
 | `src/cli/timeline.rs` | **new** — report model and HTML rendering; `ranked_steps` covers every entry kind with a measured duration (not only `step`), `RankedStep` carries the entry's kind, and the model carries the panel facts plus the 8 MiB content budget and omission markers |
-| `assets/timeline/report.html` | **new** — the self-contained report asset (inline CSS/JS/SVG) with two substituted markers: the model payload element the script parses and the text-only initial view the file carries; the details panel renders the captured facts and the bounded content region, the ranking rows carry label, kind, and duration, and content beyond the report budget reads `content omitted; see the record` |
+| `assets/timeline/report.html` | **new** — the self-contained report asset (inline CSS/JS/SVG) with two substituted markers: the model payload element the script parses and the text-only initial view the file carries; the workflow stack, the expanded phase's vertical lane timeline and lane log render the captured facts and the bounded content region, the ranking rows carry label, kind, and duration, and content beyond the report budget reads `content omitted; see the record` |
 | `assets/agent-integrations/omp/givn-timeline.js` | **new** — the omp reporter (`pi.on` handlers plus one event-bus subscription) |
 | `assets/agent-integrations/opencode/givn-timeline.js` | **new** — the opencode reporter (`setup(ctx)`: domain hooks plus one `ctx.event.subscribe` iterable) |
 | `assets/agent-integrations/claude/givn-timeline.sh` | **new** — the Claude Code shim that pipes its payload to the binary-side mapper |
@@ -1659,7 +1746,9 @@ change. The change adds one new on-disk format (the record, described in
 **Record Model And Intake Contract**) with the additive `session` envelope
 field and the `data.question`/`data.content` members, and one new in-memory
 model (`ReportModel`) that is serialized only inside the generated HTML and
-carries the 8 MiB content budget. `src/state.rs` keeps its derived-state
+carries the 8 MiB content budget; the hybrid report adds only the in-memory
+`workflow` phase scaffold and `current_state` to that model (no store change).
+`src/state.rs` keeps its derived-state
 contract and gains no file.
 
 ## Open Technical Questions
@@ -1670,7 +1759,9 @@ above, and the operator answered the three questions that were carried here:
 D1 (one local project store kept out of repository history, 2026-10-16), D2
 (bounded metadata by default behind the three-state `record.mode`, default
 `on`, with complete content only in `full`, 2026-10-16 and extended 2026-10-17),
-and D6 (the dense timeline, 2026-10-16). The capture-completeness round resolved
+and D6 (the hybrid workflow report, 2026-10-17; the dense timeline of 2026-10-16
+was superseded by the operator's choice of the hybrid after five mockups). The
+capture-completeness round resolved
 four further questions on 2026-10-17: `--with-full-content` versus `off` (Q1:
 `off` absolute, the flag is ignored with a warning and exit 0), retention when
 the mode is lowered (Q2: forward-looking, no purge), the report content budget

@@ -52,14 +52,42 @@ Feature: Development Report
     Given a change "demo" with no recorded activity
     When the developer generates the development report for "demo"
     Then the report shows the empty state for "demo"
-    And the report draws no timeline axis for it
+    And the report draws no workflow phase for it
+
+  @givn.added
+  Scenario: The report derives the current workflow state
+    Given a change "demo" whose record holds the workflow phases up to "tasks"
+    And the change's current state names "tasks-done" and the next required artifact "review"
+    When the developer generates the development report for "demo"
+    Then the report names the current stage "tasks-done"
+    And the report marks the phases before "review" done
+    And the report marks "review" active
+    And the report marks "archive" queued
+    And the report names no phase the workflow does not have
+
+  @givn.added
+  Scenario: The report lays parallel sessions side by side
+    Given a change "demo" whose record holds one phase with two sessions
+    And one session holds a subagent span named "Architect.Scout"
+    When the developer generates the development report for "demo"
+    Then the report draws one lane per session beside each other in that phase
+    And the lane named "Architect.Scout" carries that subagent span
+    And an entry whose session the record does not name stays in the unattributed lane
+    And the report never assigns an entry to a subagent the record does not name
+
+  @givn.added
+  Scenario: The report groups repeated steps
+    Given a change "demo" whose record holds the same command six times in one phase
+    When the developer generates the development report for "demo"
+    Then the report names one repeated-step group with its count and combined duration
+    And the report still ranks every measured entry
 
   @givn.added
   Scenario: A dense record is reported as aggregates instead of raw ticks
     Given a change "demo" whose record holds hundreds of short agent activities
     When the developer generates the development report for "demo"
-    Then the report collapses the short agent activities into aggregate markers
-    And each aggregate marker names how many entries it covers and their total duration
+    Then the report collapses the short agent activities into aggregate ticks on the phase lane
+    And each aggregate tick names how many entries it covers and their total duration
     And the report summary still counts every recorded entry
 
   @givn.added
@@ -70,7 +98,7 @@ Feature: Development Report
     And the ranking names the kind of every entry it lists
 
   @givn.added
-  Scenario: The report details panel carries the captured metadata and content
+  Scenario: The lane log carries the captured metadata and content
     Given a change "demo" whose record holds captured metadata and full-mode content
     When the developer generates the development report for "demo"
     Then the report model names the session, its title, the status, the stop reason, the cost, the context size and window, the tool call id, the output size, the error, the parent, the retry, and the permission mode
@@ -85,7 +113,7 @@ Feature: Development Report
     When the user runs `givn timeline --change demo --out report.html`
     Then the command exits 0
     And the command prints the path of the written report
-    And the report file exists and names the recorded phases
+    And the report file exists and names the workflow phases
     And the report file places the step recorded after that transition in the "implement" phase
 
   @givn.added @e2e
@@ -93,7 +121,8 @@ Feature: Development Report
     Given a <scope> "demo" with a recorded history
     And the development report for "demo" has been generated
     When the consumer opens the development report in a browser
-    Then the browser shows the report heading and the development timeline
+    Then the browser shows the report heading and the current workflow state
+    And the browser shows the workflow phases top to bottom
     And the browser shows the longest recorded step with its duration
 
     Examples:
@@ -102,18 +131,20 @@ Feature: Development Report
       | topic  |
 
   @givn.added @e2e
-  Scenario: Consumer selects a timeline element and reads its details
-    Given an open development report with a recorded history
-    When the consumer selects the longest recorded step
-    Then the browser shows a details panel for that step
-    And the panel names its start, its duration, and its outcome
-    And the panel names the entry's tool call id
-    And the panel renders the entry's content in its bounded content region
+  Scenario: Consumer expands a workflow phase and reads a subagent's log
+    Given an open development report with a recorded history holding parallel sessions
+    When the consumer expands the "implement" phase and selects the "Architect.Scout" lane
+    Then the browser shows that phase's vertical timeline with time flowing down
+    And the browser shows the session lanes beside each other
+    And the browser shows that lane's log
+    And the log names the lane's start, its duration, and its outcome
+    And the log names the entry's tool call id
+    And the log renders the entry's content in its bounded content region
 
   @givn.added @e2e
-  Scenario: Consumer zooms the timeline to a shorter time range
+  Scenario: Consumer zooms a phase's timeline to a shorter time range
     Given an open development report with a recorded history
-    When the consumer zooms the timeline in
+    When the consumer zooms the expanded phase's timeline in
     Then the browser shows a narrower time range than before
 
   @givn.added @e2e
@@ -122,4 +153,4 @@ Feature: Development Report
     And the development report for "demo" has been generated
     When the consumer opens the development report in a browser
     Then the browser shows the empty state for "demo"
-    And the browser draws no timeline axis for it
+    And the browser draws no workflow phase for it

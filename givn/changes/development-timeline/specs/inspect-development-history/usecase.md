@@ -29,8 +29,9 @@ The developer asks for the development history of a change or an ideation.
    runs and the agent activity reported to it.
 2. The developer asks for the development report of one change or ideation; the
    system renders the recorded history as one interactive report.
-3. The developer inspects the timeline: the phases, the longest steps, the
-   subagent work, the question waits, and the token totals.
+3. The developer inspects the workflow top to bottom: the current state, each
+   phase's vertical timeline with its subagent lanes and lane log, the longest
+   steps, the question waits, the repeated steps, and the token totals.
 
 ## Extensions
 
@@ -95,8 +96,8 @@ scope.
 | development-report | generate the development report for a change | Consumer generates the development report for a change |
 | development-report | open the report in a browser | Consumer opens the generated development report in a browser |
 | development-report | open the report of a scope with no recorded activity | Consumer opens the report of a scope with no recorded activity |
-| development-report | select a timeline element | Consumer selects a timeline element and reads its details |
-| development-report | zoom the timeline | Consumer zooms the timeline to a shorter time range |
+| development-report | select a timeline element | Consumer expands a workflow phase and reads a subagent's log |
+| development-report | zoom the timeline | Consumer zooms a phase's timeline to a shorter time range |
 
 ## Includes
 
