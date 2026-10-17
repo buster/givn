@@ -178,7 +178,7 @@ Feature: Development Report
     Then the report names the linked topic "ideas" and that no activity is recorded
     And the report invents no ideation phase duration
 
-  @givn.added @wip
+  @givn.added
   Scenario: A change whose proposal names no ideation topic shows no linked group
     Given a change "solo" whose proposal records "Ideation topic: none"
     When the developer generates the development report for "solo"
