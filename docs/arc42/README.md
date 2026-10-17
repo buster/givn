@@ -77,8 +77,8 @@ record itself (the `agents` target is a skills mirror with no runtime, and
 ADR-013 is amended to add `maki` as a full target — skills in `.maki/skills/`,
 commands in `.maki/commands/`, and the development reporter, with
 `.maki/init.lua` and `.maki/plugin.toml` merged rather than replaced). Durable facts
-live in chapters 2 (TC-34, TC-35, TC-36), 3, 4, 5, 6.18, 7.3/7.4, 8.25, 10 (Q-98 to
-Q-102), 11 (R-83 to R-86, R-88, R-89, R-90, D-22, D-23), and the glossary; the record's ownership
+live in chapters 2 (TC-34, TC-35, TC-36, TC-37), 3, 4, 5, 6.18, 7.3/7.4, 8.25, 10 (Q-98 to
+Q-103), 11 (R-83 to R-86, R-88 to R-92, D-22, D-23), and the glossary; the record's ownership
 boundary is deliberately separate from ADR-014's filesystem-derived state,
 ADR-013's generated-integration ownership, and ADR-028's gate boundary. The
 browser report and its visual contract are documented in

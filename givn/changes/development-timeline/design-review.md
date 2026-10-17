@@ -1048,3 +1048,137 @@ question; it changes no mechanism, decision, scenario, count, or gate.
   states the evidence set without restating a number.
 
 **DESIGN-REVIEW: PASS**
+
+## Re-review round 5 (2026-10-17, capture completeness: record mode, metadata, full content)
+
+**Why it ran.** After the implementation landed, the operator extended the
+change with four record-side requirements: a durable three-state capture mode
+(`record.mode: on | off | full`), default metadata rich enough for a review,
+always-captured full question text, and complete LLM-facing content in `full`.
+A fresh-context grill (high effort, read-only; no suite run) interrogated the
+planning layer across the nine branches below and returned four operator-level
+questions (Q1–Q4) and twelve findings (F1–F12), with no blocker. The operator
+settled the four questions; this hardening pass applied every decision and
+finding to `design.md`, the delta features, `tasks.md`, the change-level
+`arc42.md`, the affected `docs/arc42/` chapters, and the config scaffold
+(`assets/config.yaml.tmpl`, the scaffold documentation). No code, test, or
+asset changed, and no suite was run. The record below states what changed and
+where; the implementation evidence remains the pending tasks' job.
+
+**The grill's branch outcomes.**
+
+| Branch | Outcome |
+|---|---|
+| 1. Mode semantics — off/on/full, absent/invalid fallback, `--with-full-content`, engagement, existing store, mid-project switching | PARTIAL → Q1/Q2 + F2. `on`/`full` and the absent/invalid fallback were coherent; `off` was not enforced at the intake or Claude's in-process hook, the flag-versus-`off` question was open, and lowering the mode had no retention statement. |
+| 2. Config key — parser acceptance, scaffold block, upgrade preservation | FINDING → F3. `record:` is parsed by `src/config/overlay.rs::OverlayDoc`, not `src/config/manifest.rs`; `OverlayDoc` has no `record` field today, and a typed field would fail the whole parse on a non-string value. |
+| 3. `givn history settings --json` — payload, exit behavior, discovery | FINDING → F4/F5. The payload named an unreachable `source: flag`; the command would be recorded by `records()`; human output, exits, and errors were unspecified; no scenario drove it; Claude can resolve in-process, so the pending-file mode cache was both unnecessary and contrary to `off`'s no-write rule. |
+| 4. Bounds — 120/240/1000/4000/64 KiB/256 KiB, single site, assertions | FINDING → F6. Values were documented, but the intake was not named as the single enforcement site, the `content`/`question` wire schema was missing, and the caps were largely unasserted. |
+| 5. Scenarios — bindability, discrimination, counts, no `@e2e` change | PARTIAL → F1/F8/F10/F11/F12. The new phrases are bindable and would fail RED; the default-metadata scenario was seeded, no scenario asserted the report facts/content, and the counts/task arithmetic were stale. |
+| 6. SCM ignore — placement, Git/Fossil destinations, extended hygiene | PARTIAL/POSITIVE → F10. Destinations and the report assertion were correct, but the hygiene `Given` created no full-content entry, so the assertion was vacuous; the bare-root `.gitignore` fallback was not covered. |
+| 7. Report surfacing — details facts, bounded full content | FINDING (high) → F1. The design paragraph existed but no task added the panel facts, no scenario asserted the report, and the file had no content budget. |
+| 8. Consistency — TC-37, Q-103, R-91/R-92, glossary, chapters, counts | FINDING → F9/F11. Stale "never stored"/"credentials never captured" claims contradicted `full` and R-92; chapter 08 kept a single-bound claim; Q-103 overpromised per-harness fields; the scaffold cited ch.8.20 instead of 8.25. |
+| 9. Defaults — `on` everywhere, fallback, no scenario assumes `full` | NO ISSUE. The default and fallback are consistent in the design, scaffold, chapters, and scenarios; only R-92's "off by default" wording needed correction (F9). |
+
+**The four decisions, with rejected alternatives.**
+
+- **Q1 — `--with-full-content` versus `off`: `off` is absolute.** The flag is
+  an explicit per-payload override of `on`/`full` only. When the project mode is
+  `off`, the flag is ignored with a one-line warning and exit 0. Documented in
+  D2 (`design.md:163-199`), the mode table (`:481-489`), the intake rules
+  (`:662-668`), `givn history --help`-facing wording in the design, the privacy
+  chapter (`docs/arc42/08-crosscutting-concepts.md:957-980`), TC-37
+  (`docs/arc42/02-architecture-constraints.md:37`), and the scaffold
+  (`assets/config.yaml.tmpl:42-48`). Rejected: **letting the flag override
+  `off`** — a durable privacy decision must not be silently bypassed by a
+  one-shot flag; rejecting the flag with an error was also rejected because the
+  manual/test path must stay non-failing and the warning already names the
+  reason.
+- **Q2 — lowering the mode retains captured content.** The switch is
+  forward-looking; `full` → `on`/`off` never deletes, rewrites, or hides
+  existing entries. Recorded in D2, the mode table, §Privacy bound, TC-37, the
+  glossary's **Record mode**, and the scaffold. Rejected: **an implicit purge**
+  — it destroys operator data as a side effect of a config edit and needs its
+  own command and review.
+- **Q3 — the report content budget is 8 MiB.** The self-contained report embeds
+  full content in record order up to 8 MiB (`8_388_608` bytes) across the whole
+  document, then omits the rest with the exact note
+  `content omitted; see the record` on the affected entry; the store keeps every
+  byte. Recorded in D2, the report-rendering rule (`design.md:592-603`), the
+  report-generation bullet (`:1220-1227`), `ReportModel`/`render_report`
+  (`:1311`, `:1315`), the Architecture Impact rows (`:1632-1633`), the asset
+  contract (`tasks.md:233-246`), and chapters 05/06/08/12. Rejected:
+  **unlimited embedding** — a long full-mode record would produce a report of
+  the same order while only the viewport is visually bounded; **visual-only
+  bounding** — it leaves the file itself unbounded.
+- **Q4 — Maki question text is in scope via `maki.session.messages`.** At the
+  wait's close the reporter reads the live transcript (works in TUI, `-p`, SDK,
+  and ACP) and stores the blocking `question` tool call's
+  `input.questions[]` as `data.question`, with no new grants. When no matching
+  question is present (a permission prompt, plan form, or Lua float also
+  produces `needs_input`, or the session has ended), the entry keeps the bounded
+  title label and no full text; the wait duration is still recorded. Recorded in
+  the Maki mapping and trade-off paragraph (`design.md:989`, `:1000-1006`), the
+  question scenario (`development-record.feature:123-130`), Task 11d
+  (`tasks.md:3309-3345`), and R-90
+  (`docs/arc42/11-risks-and-technical-debt.md:76`). Rejected: **the
+  `tool.question.input` slot** — an undeclared-tool slot requires **every**
+  permission (`fs_read`, `fs_write`, `net`, `env`, `run`, `agent`), including
+  network and agent access the reporter does not need; **deferring Maki** — the
+  operator requires the question text and the transcript surface can deliver it
+  without a permission widening.
+
+**F1–F12 resolutions and anchors.**
+
+| # | Resolution | Anchor |
+|---|---|---|
+| F1 (high) | The report contract now names the exact panel facts (session/title, status, stop reason, model, cost, context size/window, tool call id, output bytes, bounded error, parent/agent, retry, permission mode) and the bounded content region; a new regular scenario asserts the model/report facts, the 8 MiB embedding budget, the omission note, and a complete store; Task 25b carries the scenario and extends the E7 `@e2e` assertions to one new fact plus the content region (same action, evidence refreshed in that task); the model/asset rows and the copied contract carry the budget/omission fields. | `design.md:592-603`, `:1220-1227`, `:1311-1315`, `:1632-1633`; `development-report.feature:72-79` and `:105-111`; `tasks.md:6907-6963`, `:3462-3513`, `:233-246` |
+| F2 | `givn history ingest` and the Claude `harness_hook` are named as the two `off`-enforcement sites: no append, no pending write, no ignore write, one warning and exit 0; the off scenario asserts no pending state, no ignore write, and the intake's warning in addition to no new entry. | `design.md:488`, `:664-670`, `:542-551`; `development-record.feature:133-141`; `tasks.md:3358-3407` |
+| F3 | `src/config/overlay.rs::OverlayDoc` is the parse site (not `manifest.rs`); it gains a lenient raw `record` value so an invalid value is a one-warning fallback to `on`, never a parse failure; `givn upgrade` preserves the key; the scaffold cites ch.8.25 and the numeric bounds (120/240/1 000/4 000); the task file lists name `overlay.rs`. | `design.md:183-187`, `:493-499`; `docs/arc42/02-architecture-constraints.md:37`; `assets/config.yaml.tmpl:42-54`; `tasks.md:3362-3372`, `:3519-3531` |
+| F4 | `givn history settings` joins the non-recorded read views (`records()` exemption alongside `history`/`timeline`); `source: flag` is dropped (`config`/`default` only); human output, `--json` payload, exit codes, and the outside-a-project error are specified; the invalid-mode scenario asserts the JSON payload and source; Task 11f/11h name the files. | `design.md:518-529`, `:700-706`; `development-record.feature:162-167`; `tasks.md:3411-3470`, `:3515-3550` |
+| F5 | Claude resolves the mode in-process inside `harness_hook` (no query, no pending-file mode cache); omp/opencode query by subprocess at setup and Maki at its first event callback (the flush's jobstart/jobwait mechanism; the setup-time blocking job is unverified and unused); the pending schema stays starts/kind/label and is never written under `off`. | `design.md:536-551`, `:609-621`; `docs/arc42/06-runtime-view.md:575-581`; `tasks.md:3362-3389`, `:3411-3440` |
+| F6 | The bounds table names the intake as the single enforcement site; `data.question` and `data.content` gain a wire schema with named fields, 64 KiB/256 KiB caps, `truncated`, and original `bytes`; scenarios assert the question cap/truncation, a metadata bound, a content cap/`truncated`, and the report omission note. | `design.md:466-477`; `development-record.feature:114-130`, `:146-159`; `development-report.feature:72-79`; `tasks.md:3411-3513` |
+| F7 | The default-metadata table is explicitly "where the harness exposes it", with a per-harness availability table (Claude no stop reason/turn index; opencode no turn count/context; Maki model/title/transcript gaps); Q-103 and Task 11c carry the same qualification. | `design.md:390-424`; `docs/arc42/10-quality-requirements.md:104`; `tasks.md:3255-3307` |
+| F8 | The default-metadata scenario now drives the generated omp reporter through the real intake and asserts the new fields; Task 11c names the driver and states that seeded records are only for fields a harness cannot expose. | `development-record.feature:114-120`; `tasks.md:3257-3289` |
+| F9 | Stale privacy claims corrected: the traceability row, "never captured as structured values" plus the credential/R-92 caveat, Q-100, chapter 08's per-tier bound and single-site wording, the glossary's bounded-label/record-mode entries, R-92's default wording, the pending-state description, and `bound_label`'s primitive row; Maki's "never stored" tool/turn/compaction sentences became "stored only in `full`". | `design.md:43`, `:580-586`, `:1304`, `:991-996`; `docs/arc42/08-crosscutting-concepts.md:957-980`; `docs/arc42/10-quality-requirements.md:101`; `docs/arc42/11-risks-and-technical-debt.md:78`; `docs/arc42/12-glossary.md:182-188` |
+| F10 | The Git/Fossil hygiene `Given` now writes a real full-mode `data.content` entry before asserting porcelain/extras; the Git scenario also covers the bare-root `.gitignore` fallback before `git init`; the report-generation assertion is kept. | `development-record.feature:76-98`; `tasks.md:3204-3253` |
+| F11 | Counts and references recounted: the delta inventory is 54 entries = 51 added + 3 modified, 46 non-`@e2e` + 8 `@e2e`, 7 pending `@wip`; the task file schedules Tasks 1–44 (43 scenario sections + the extended-evidence Task 11b); the e2e count stays 8; chapter 02 now says four durable constraints (TC-34…TC-37); chapter 03 says eight interfaces including `givn history settings`; the scaffold cites ch.8.25; the glossary count is seventeen; the Done-when proof is 46 regular vs 8 e2e. | `tasks.md:3-7`, `:22-40`, `:42-55`, `:271`, `:10820-10821`; `arc42.md:15-25`; `assets/config.yaml.tmpl:42`; `docs/arc42/README.md:80-81` |
+| F12 | Task 11b gains its own RED step (the new full-content/bare-root/pending/extra-file phrases are undefined today) and a commit instruction that names only the extended assertions and points at the Tasks 10/11 commits, never restating their titles, so the per-scenario gate sees no duplicate scenario commit. | `tasks.md:3204-3253` |
+
+**Checks run by this pass.**
+
+- `givn lint --change development-timeline` → exit 2: **5 files checked, 7
+  findings**, all seven the pending scenarios' `[WIP]` tags (`development-record`
+  six, `development-report` one) plus the pre-existing `[SUBST] advisory`
+  permanent-corpus subset matches; no parse error and no error-kind finding.
+- Mechanical recount: **54** scenario entries = 51 `@givn.added` + 3
+  `@givn.modified`, 0 removed; **46** non-`@e2e` + **8** `@e2e`; **7** `@wip`;
+  per feature 20/15/16/1/2. Task sections: **53** total = 44 non-`@e2e`
+  sections (43 added-scenario sections + the extended-evidence Task 11b) + the
+  E1 setup task + 8 `@e2e` tasks. The use case's eight §Interactions rows, the
+  design's eight matrix rows, and the eight `@e2e` titles are unchanged.
+- No suite was run (read-only hardening scope): the grill's evidence was
+  re-read against the live store/log/report, and this pass changed only planning
+  prose and the config scaffold. The pending tasks carry every RED/GREEN/REFACTOR
+  evidence field.
+
+**Residuals noted by this pass.** None is an open question; each is work the
+pending tasks already own.
+
+1. The F1 implementation evidence is pending: Task 25b must generate the
+   over-budget fixture, prove the omission note and the store's completeness,
+   extend E7's step assertions, and refresh E7's two captures. No new `@e2e`
+   scenario is added, and E7's existing commit/hash/evidence stay untouched.
+2. The 8 MiB budget fixture is deliberately large; Task 25b must keep it
+   deterministic and assert both the embedded and the omitted sides.
+3. The Maki transcript read is exercised through the real binary's Lua driver
+   with a test-written `maki.session.messages` fixture (the harness has no
+   offline question turn); the reporter code is the real generated asset, and
+   R-90 records the residual.
+4. The grill's earlier 45/43 counts are superseded by the final 46 regular
+   scenarios after F1's new report scenario; every current count statement now
+   uses the final numbers.
+5. E1's pasted 35/8 scope proof and the 2026-10-16 final-scope runs are dated
+   evidence from before the capture/report scenarios; the current E1 instruction
+   and the Done-when use 46/8, and no pasted evidence was rewritten.
+
+**DESIGN-REVIEW: PASS**

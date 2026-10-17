@@ -74,17 +74,29 @@ Feature: Development Record
 
   @givn.added
   Scenario: The record stays out of the repository's own history
-    Given a project root with givn/ initialised under Git
+    Given a project root with givn/ initialised without a repository
     And a change "demo" exists with artifact "proposal.md"
-    When the user runs `givn status --change demo`
+    When the project records a full-content entry in the full mode
+    Then the project's ".gitignore" names the development record
+    When the project becomes a Git repository
     Then the repository reports no pending change for the development record
+    When the project records a full-content entry in the full mode
+    Then the repository reports no pending change for the development record
+    When the user runs `givn timeline --change demo`
+    Then the repository reports no pending change under the record directory
 
   @givn.added
   Scenario: A Fossil project ignores the record through its own ignore file
     Given a project root with givn/ initialised in a Fossil checkout
     And a change "demo" exists with artifact "proposal.md"
-    When the user runs `givn status --change demo`
+    When the project records a full-content entry in the full mode
     Then the repository's ignore glob names the development record
+    And the Fossil checkout reports no extra file under the record directory
+    When a lifecycle command runs
+    Then the repository's ignore glob still names the development record
+    When the user runs `givn timeline --change demo`
+    Then the repository's ignore glob covers the generated reports
+    And the Fossil checkout reports no extra file under the record directory
 
   @givn.added
   Scenario: A refused command outside a Givn project creates no record
@@ -97,6 +109,62 @@ Feature: Development Record
     Then the command exits 0
     And the directory "givn" exists
     And the project root holds a development record
+
+  @givn.added @wip
+  Scenario: Default capture keeps the metadata a review needs
+    Given a project root with givn/ initialised
+    And a change "demo" exists with artifact "proposal.md"
+    And the project records in the default mode
+    When the omp reporter reports a completed turn and a failed tool call for "demo"
+    Then the turn entry names its model, its cost, its context size, and its stop reason
+    And the failed tool entry keeps its error text within the documented bound, its tool call id, and its output size
+
+  @givn.added @wip
+  Scenario: Question text is captured in full
+    Given a change "demo" whose Maki reporter reads a question from its session transcript
+    When the reported question is longer than the entry label bound
+    Then the record holds the complete question text up to the 4 000-character cap
+    And the entry marks the text truncated with its original size
+    And the entry's label stays within the label bound
+    When the Maki session transcript holds no matching question
+    Then the record keeps the bounded title label and no full question text
+
+  @givn.added @wip
+  Scenario: The record can be turned off for a project
+    Given a change "demo" whose record already holds entries
+    When the project sets the record mode to "off"
+    And a lifecycle command runs for "demo"
+    Then the record gains no new entry
+    And the record directory gains no pending state
+    And no record-side ignore entry is written
+    And the developer still reads the earlier entries for "demo"
+    When the agent reports a tool call with its complete input through the intake
+    Then the intake exits 0 and warns once that the record is off
+    And the record gains no new entry
+
+  @givn.added @wip
+  Scenario: The default mode records metadata without content
+    Given a change "demo" whose project has no record mode configured
+    When the agent reports a tool call with its complete input and output
+    Then the record drops the complete content
+    And no entry carries a data.content object
+    And the record keeps the tool call's metadata
+
+  @givn.added @wip
+  Scenario: The full mode records complete content
+    Given a change "demo" whose project sets the record mode to "full"
+    When the agent reports a tool call whose complete input exceeds the per-field cap
+    Then the record keeps the input up to the 64 KiB per-field cap
+    And the content field marks truncation and records its original size
+    And the entry's content never exceeds the 256 KiB per-entry cap
+
+  @givn.added @wip
+  Scenario: An invalid record mode falls back to the default
+    Given a change "demo" whose project sets an unknown record mode
+    When a lifecycle command runs for "demo"
+    Then the command warns once that the record falls back to the default mode
+    And the record holds the command's bounded metadata
+    And `givn history settings --json` reports mode "on" with source "default"
 
   @givn.added @e2e
   Scenario: Consumer runs a lifecycle step and reads its recorded actions

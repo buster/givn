@@ -954,10 +954,32 @@ exclude `givn/history/**` when they check that a command "changed nothing": the
 exclusion is scoped to the record directory, so no other path's behavior
 changes, and a legitimate command entry no longer reads as a modified project.
 
-**Privacy bound.** An entry keeps metadata plus one label truncated to 120
-characters. Complete tool inputs, complete command lines, and complete question
-text are never stored. The bound lives in one function (`bound_label`), so the
-privacy rule has one enforcement site rather than one per capture point.
+**Privacy bound.** An entry keeps bounded metadata — the label at 120
+characters, text metadata at 240, error text at 1 000 — plus whichever capture
+mode is active. The record has three modes (`record.mode`, default `on`):
+`off` writes nothing new and is absolute (`--with-full-content` is ignored with
+one warning and exit 0); `on` captures bounded metadata plus full question text
+and no LLM-facing content; and `full` adds complete LLM-facing content (tool
+inputs and outputs, assistant and thinking text, user prompts, compaction
+summaries, plan content, draft text, and subagent transcripts) under the
+64 KiB-per-field / 256 KiB-per-entry caps. Lowering the mode is forward-looking:
+already-captured entries are retained, never purged. The intake is the single
+enforcement site for every bound and enforces the mode for payloads; Claude's
+in-process `harness_hook` is the second `off` site (no append, no pending write,
+no ignore write). An absent or invalid value falls back to `on` with one
+warning, and the key is parsed leniently by `OverlayDoc` so the invalid value
+never fails the config parse. Question text is the one
+exception captured in full under both `on` and `full` (up to a 4 000-character
+cap), because a question is the human-workflow event the report exists to
+explain. Provider wire payloads and headers, MCP protocol frames and params,
+harness system prompts, credentials and environment secrets as dedicated
+fields, UI dialog internals, and control-surface results are never captured at
+any tier. Full content is not a secret filter: a credential that appears inside
+a captured command, file, prompt, or tool output travels with that work, which
+is why the default `on` mode stores no LLM-facing content and `full` is the
+project's explicit decision (R-92). The label bound lives in `bound_label`; the
+question and content bounds live in the intake's validators, so the privacy
+rule has one enforcement site rather than one per capture point.
 
 **Ignore entry.** Keeping the store out of repository history splits by who owns
 the destination, and the recorder never writes a versioned file: with a Git
@@ -989,9 +1011,15 @@ model arrives as one machine-readable payload element (which the file's own
 script parses) plus the text-only initial view the file carries, and nothing is
 fetched. The document renders from the embedded timestamps alone, so a given
 record always produces the same pixels and the browser tier can assert rendered values
-deterministically. The report model is not published as JSON: the
-machine-readable view is `givn history --json`, which reads the record itself,
-and `givn timeline` writes its one HTML file and prints that file's path.
+deterministically. The details panel renders the captured facts (session and
+title, status, stop reason, model, cost, context size/window, tool call id,
+output bytes, bounded error, parent/agent, retry, permission mode) and one
+bounded, scrollable, escaped content region. The report embeds full content up
+to a **8 MiB total budget**; beyond it the affected entry says
+`content omitted; see the record`, while the store keeps every byte. The report
+model is not published as JSON: the machine-readable view is
+`givn history --json`, which reads the record itself, and `givn timeline` writes
+its one HTML file and prints that file's path.
 
 **Scale.** A whole ideation can run for hours to days and produce hundreds of
 tasks and thousands of tool calls; the expected order of magnitude is at most

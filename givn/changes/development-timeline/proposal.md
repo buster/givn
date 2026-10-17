@@ -57,6 +57,14 @@ directory exists, so even the current-state answer has nothing to say.
   installed with the other generated integrations and reports through one Givn
   interface, so a harness that is not the agent's is not needed to see its work,
   and a second harness can report later without changing the record's shape.
+- **The project controls how much is recorded.** The default record keeps the
+  workflow metadata that answers the developer's questions — timings, phases,
+  subagent structure, token usage, and the full text of every question the agent
+  asked — without storing the content the agent read or wrote. A project can
+  deliberately widen that to keep the complete content of its tool calls,
+  prompts, and reasoning, or narrow it to record nothing at all; the setting is
+  the project's own, it applies to every harness at once, and turning recording
+  off leaves the history already recorded readable.
 - **Recording is never in the way.** A record that cannot be written never fails
   the command or the agent action it was recording, and it never changes that
   action's outcome. The record is append-only: a recorded entry is never
@@ -216,10 +224,14 @@ no second use case includes it.
      In practice: the timeline shows "14 tool calls, 3.1 s" with no hint of what
      they were.
 - Disposition: answered — the operator chose **option 1, metadata plus a bounded
-  120-character label**, on 2026-10-16. Rejected: option 2, complete payloads,
-  because credentials and private code that pass through a command would be
-  written into the record; and option 3, counts only, because the developer
-  could not see which task the agent looped around — one of the stated goals.
+  120-character label**, on 2026-10-16, and extended it on 2026-10-17 into a
+  project-owned three-state capture mode (see the bullet in Proposed Solution):
+  option 1 is the default tier, option 2 becomes an explicit opt-in for one
+  project or one report-worthy session, and a third state turns recording off
+  entirely. Rejected: option 2 as the default, because credentials and private
+  code that pass through a command would be written into the record without the
+  project deciding to; and option 3, counts only, because the developer could
+  not see which task the agent looped around — one of the stated goals.
   Recorded as `Decides D2` in `design.md`.
 
 ### D3 — How agent-reported activity reaches the record

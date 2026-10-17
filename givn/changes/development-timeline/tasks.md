@@ -1,10 +1,10 @@
 # Tasks: development-timeline
 
 Scenario-by-scenario RED→GREEN→REFACTOR→COMMIT loop. One section per executable
-scenario: the 36 non-`@e2e` scenario sections first, in `.feature` order (the
-three `@givn.modified` entries are reconciled in S2b and Task 24a, not as
-scenario tasks), then the
-E2E setup task, then the 8 `@e2e` scenarios in the same order.
+scenario (plus the extended-evidence Task 11b, which adds no scenario): the 43
+non-`@e2e` scenario sections first, in `.feature` order (the three
+`@givn.modified` entries are reconciled in S2b and Task 24a, not as scenario
+tasks), then the E2E setup task, then the 8 `@e2e` scenarios in the same order.
 
 Legend: an unchecked box means pending; a box is checked only when the pasted
 evidence and the revision identifier are filled in. Check each box immediately
@@ -20,10 +20,10 @@ copied verbatim from `proposal.md` §Release note):**
 > report that opens in a browser.
 
 **Delta inventory (verified mechanically against every delta `.feature` under
-`givn/changes/development-timeline/specs/`):** 47 executable scenario entries in
-5 features = 44 `@givn.added`, 3 `@givn.modified` (the S2b corpus-pin
+`givn/changes/development-timeline/specs/`):** 54 executable scenario entries in
+5 features = 51 `@givn.added`, 3 `@givn.modified` (the S2b corpus-pin
 reconciliation plus the two target-list reconciliations in Task 24a),
-0 `@givn.removed`; 39 non-`@e2e` + 8 `@e2e`. A `Scenario
+0 `@givn.removed`; 46 non-`@e2e` + 8 `@e2e`. A `Scenario
 Outline` counts as one entry (its Examples rows are input variation, not
 additional scenarios). Every still-pending entry carries `@wip` today and stays
 `@wip` until its own RED step removes the tag from that one scenario; the three
@@ -32,20 +32,21 @@ Task 24a.
 
 | Feature (path relative to `GIVN_FEATURES`) | Entries | Non-`@e2e` | `@e2e` |
 |---|---|---|---|
-| `inspect-development-history/development-record.feature` | 14 | 12 | 2 |
+| `inspect-development-history/development-record.feature` | 20 | 18 | 2 |
 | `inspect-development-history/agent-activity-reporting.feature` | 15 | 14 | 1 |
-| `inspect-development-history/development-report.feature` | 15 | 10 | 5 |
+| `inspect-development-history/development-report.feature` | 16 | 11 | 5 |
 | `fragments/adr-qualification-gate.feature` (`@givn.modified`) | 1 | 1 | 0 |
 | `initialize-project/initialize-a-project.feature` (`@givn.modified`, two scenarios) | 2 | 2 | 0 |
-| **Total** | **47** | **39** | **8** |
+| **Total** | **54** | **46** | **8** |
 
 **Work order (recorded choice).** `design.md` names no implementation sequencing
 section, so this file follows `.feature` order — the features in the inventory
-order above, scenarios in their in-file order — in three phases: Tasks 1–36
-(the 39 non-`@e2e` scenarios, numbered Tasks 1–33 plus **Task 11a**, **Task 24a**
-and **Task 25a**, each inserted with an `a` suffix so the later task numbers stay
-stable),
-Task E1 (E2E setup), Tasks E2–E9 (the `@e2e` scenarios, same feature order). The
+order above, scenarios in their in-file order — in three phases: Tasks 1–44
+(the 46 non-`@e2e` scenarios: 43 added-scenario sections numbered Tasks 1–33,
+**Task 11a**, the record-side capture tasks **11c–11h**, **Task 24a**, **Task
+25a**, and **Task 25b**, plus the extended-evidence **Task 11b**), each inserted
+with a suffix so the later task numbers stay stable, then Task E1 (E2E setup),
+Tasks E2–E9 (the 8 `@e2e` scenarios, same feature order). The
 three `@givn.modified` entries are not scenario tasks: ADR-073 raises the register
 count the permanent `adr-qualification-gate` scenario pins, and the new `maki`
 target extends the `all` targets list two permanent `initialize-a-project`
@@ -110,9 +111,13 @@ millisecond precision), `scope`
 truncation marked with `…`), `duration_ms` (optional; absent for a point entry),
 `outcome` (`ok`|`failed`|`skipped`|`unknown`), `parent` (optional id of the
 enclosing entry; a parent is only ever an id minted by the same process, so a
-parent link always names an existing entry), `data` (only where the report needs
-a non-generic value, e.g. `exit_code` on a step; `kind: "usage"` entries carry
-`{input, output, cache_read, cache_write, total_tokens, model, subagent}`).
+parent link always names an existing entry), `session` (optional harness session
+id, carried by every entry), `data` (only where the report needs a non-generic
+value, e.g. `exit_code` on a step; `kind: "usage"` entries carry
+`{input, output, cache_read, cache_write, total_tokens, model, subagent}`;
+`question` entries always carry `data.question` = `{text, truncated, bytes}`;
+`full`-mode content lives in `data.content`'s named fields, each
+`{text, truncated, bytes}`, with the intake's 64 KiB/256 KiB caps).
 
 **Kinds:** `command`, `phase`, `hook`, `step`, `revision`, `session`, `turn`,
 `tool`, `subagent`, `question`, `usage`.
@@ -140,9 +145,19 @@ numbered phases) parented to the archive command; `src/cli/archive.rs::run_scope
 as `phase` entries. Durations are measured with `std::time::Instant` around the
 step itself (`HistoryRecorder::span`), never inferred from two entries.
 
-**Deliberate exclusion:** `givn history` and `givn timeline` run **without** a
-recorder — reading the record never mutates it. Every other command, including
-`givn history ingest`, records normally.
+**Deliberate exclusion:** `givn history`, `givn history settings`, and
+`givn timeline` run **without** a recorder — reading the record never mutates
+it. Every other command, including `givn history ingest`, records normally.
+`src/main.rs::records` excludes the `History` read view and its `settings`
+subcommand.
+
+**Capture mode:** `record.mode: on | off | full` in `givn/config.yaml`, parsed
+leniently through `src/config/overlay.rs::OverlayDoc` (the project-config parse
+path — not `src/config/manifest.rs`), default `on`, and an invalid value falls
+back to `on` with one warning. `off` is absolute: no append, no pending state,
+no record-side ignore write, and `--with-full-content` is ignored with one
+warning and exit 0. Lowering the mode is forward-looking: already-captured
+entries are retained, never purged.
 
 **Intake (`givn history ingest`):** reads one JSON object from stdin
 (`schema`, `reporter`, `session`, `change`, `topic`, `events`). An event whose
@@ -150,13 +165,29 @@ recorder — reading the record never mutates it. Every other command, including
 its kind is rejected **individually**: it is named on stderr and the remaining
 events are appended. Exit codes: `0` when the payload was read (rejected events
 are warnings), `2` when stdin is not readable JSON at all; a record that cannot
-be written warns and still exits `0`.
+be written warns and still exits `0`. The intake is the **single enforcement
+site** for the mode and every bound: under `off` it appends nothing and warns
+once; under `on` it drops `content` while keeping the event; it re-applies the
+label 120, text-metadata 240, error 1 000, question 4 000, per-field 64 KiB, and
+per-entry 256 KiB bounds to every event. `--with-full-content` overrides
+`on`/`full` for one payload only; under `off` it is ignored with one warning and
+exit 0. The Claude `harness_hook` enforces the same `off` rule in-process (no
+append, no pending write, no ignore write).
+
+**Mode query (`givn history settings`):** human output is
+`record mode: <on|off|full> (source: <config|default>)`; `--json` prints
+`{"mode":"on|off|full","source":"config|default"}`; both exit 0. An
+unknown/unreadable value warns once and reports `on`/`default`; outside a Givn
+project it exits 1 with `error: not a Givn project (givn/ not found)`. It is a
+non-recorded read view (`source: flag` is unreachable and is not a value).
 
 **Process-per-hook pending state** (Claude Code): one file per session at
 `givn/history/pending/<harness>-<session-id>.json`, shaped
 `{<tool_use_id>: {started_at, kind, label}}` — written atomically before the tool
 runs, consumed by the matching end event, pruned by age (older than 24 h) and at
-session end, no payload content. Losing it costs a duration, never an entry.
+session end, no payload content. **No mode is cached in it:** Claude resolves
+the mode in-process inside the binary's `harness_hook`, and under `off` writes
+no pending file. Losing it costs a duration, never an entry.
 
 **Ignore block (D1, corrected):** keeping the store out of repository history is
 split by who owns the destination. **The recorder never writes a versioned
@@ -199,12 +230,20 @@ one unnamed stage instead of an invented phase name. Aggregation: at the initial
 zoom, entries shorter than the time-per-pixel collapse into one aggregate marker
 per band and time bucket that names how many entries it covers and their
 combined duration; a click on an aggregate zooms to its bucket; the summary and
-the longest-step ranking always cover the full record. Rendering: the generator
-fills the asset's single data slot (`/*__GIVN_REPORT_DATA__*/`) with the JSON
-model; the inline script builds an SVG time axis, nests spans by `parent`, and
-wires zoom (wheel, buttons), pan (drag), selection (click/`Enter`) and the
-details panel — it never calls `fetch`, never loads a remote resource, and never
-uses `Date.now()`. Summary: total elapsed, the ranked longest entries, entry count,
+the longest-step ranking always cover the full record. Details facts: the panel
+renders session and title, status, stop reason, model, cost, context size and
+window, tool call id, output bytes, bounded error, parent/agent, retry, and
+permission mode (or "not reported"), plus one bounded, scrollable, escaped
+content region when the entry carries `data.content`. Report content budget:
+the model/payload embeds full content in record order up to **8 MiB** in total;
+beyond it the affected entry carries `content_omitted: true` and the text
+`content omitted; see the record`, while the store keeps every byte. Rendering:
+the generator substitutes the asset's two markers — the model payload element
+(`/*__GIVN_REPORT_DATA__*/`, JSON with `<` escaped) and the text-only initial
+view (`<!--__GIVN_REPORT_VIEW__-->`) — and nothing else; the inline script builds
+an SVG time axis, nests spans by `parent`, and wires zoom (wheel, buttons), pan
+(drag), selection (click/`Enter`) and the details panel — it never calls
+`fetch`, never loads a remote resource, and never uses `Date.now()`. Summary: total elapsed, the ranked longest entries, entry count,
 question-wait total and count, subagent count and combined duration, token
 totals overall / per model / per subagent. Accessibility: a labelled `svg`
 inside `main`, every span focusable with an accessible name, the details panel a
@@ -229,7 +268,7 @@ zoom transition and the panel animation.
   GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/<feature>.feature::<scenario title>"
   ```
   Scope commands: full delta `GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e`
-  (39 scenarios, `verify.command` after Task S2 — the 36 non-`@e2e` scenario
+  (46 scenarios, `verify.command` after Task S2 — the 43 non-`@e2e` scenario
   sections plus the three `@givn.modified` entries) and
   `GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --e2e`
   (8 scenarios, `verify.e2e_command`). Run a `Scenario Outline`'s unit once: it
@@ -359,9 +398,9 @@ name it.
 | `development-record` recording | A recorded duration is measured, never inferred from two entries that disagree | Tasks 1, 2, 23, 24 | `developer--primary-user` can trust the durations the report ranks. |
 | `development-record` recording | The record is append-only: a recorded entry is never rewritten | Task 4 | `developer--primary-user` keeps history across restarts ("A record written before a restart is still in the report afterwards"). |
 | `development-record` scope | Every recorded entry belongs to exactly one scope: a change, an ideation topic, or the project | Tasks 1, 5, 7, E2 | `developer--primary-user` sees one scope's history, not a mixture. |
-| `development-record` privacy | The record keeps metadata plus one bounded label; the complete command text is never stored (D2) | Task 8 | `developer--primary-user`'s credentials and private code stay out of the store. |
+| `development-record` privacy | The record keeps bounded metadata; question text is always stored in full (4 000-character cap), and complete command/tool content is stored only in `full` (D2, Tasks 11d/11g) | Tasks 8, 11d, 11g | `developer--primary-user`'s credentials and private code stay out of the store unless the project explicitly enables `full`. |
 | `development-record` observation | Recording is the observation substrate: no gate, no proof, no exit code, no artifact lifecycle changes | Tasks 3, 6, 9, 21, 22 | `agent--technical-role` executes the same workflow; nothing it observes mutates. |
-| `development-record` reading | Reading the record never extends it (`givn history`, `givn timeline`) | Task 9 | `developer--primary-user` can re-read a report as often as wanted. |
+| `development-record` reading | Reading the record never extends it (`givn history`, `givn history settings`, `givn timeline`) | Task 9, Task 11f | `developer--primary-user` can re-read a report as often as wanted, and a mode query appends nothing. |
 | `development-record` hygiene | One local project store, kept out of repository history through both backends' ignore destinations (D1) | Tasks 10, 11 | `developer--primary-user`'s telemetry never enters repository history; a Fossil project is covered too. |
 | `agent-activity-reporting` intake | Extension: a reported agent event that does not match the intake contract is rejected with a warning and the record is not corrupted; the previously recorded history is unchanged | Tasks 17, 20 | `agent--technical-role`'s stale reporter cannot damage the record. |
 | `agent-activity-reporting` intake | Extension: the record cannot be written → the reported agent action continues and reports its own outcome | Task 18 | `agent--technical-role`'s tool call is never blocked by Givn's disk. |
@@ -3162,6 +3201,355 @@ name it.
         EXIT 0
         ```
 
+## Task 11b — `The record and its content stay ignored in both backends` (extended evidence; no new scenario)
+
+- [ ] **Scenario extension: `The record stays out of the repository's own history`
+      and `A Fossil project ignores the record through its own ignore file`**
+  - Design constraints:
+    - The two record-hygiene scenarios were extended in place (no new entry, so
+      the inventory and `@e2e` accounting are unchanged) with the addendum's
+      assertions: the fixture first writes a **real full-mode `data.content`
+      entry** (both the Git and the Fossil arm), so the ignore property can
+      actually fail; after it the worktree is still clean; after `givn timeline`
+      nothing under `givn/history/` shows as pending; and in a Fossil checkout
+      the effective `ignore-glob` covers the record, the content, and the
+      reports, with `fossil extras`/status showing nothing under the record
+      directory.
+    - The Git scenario also covers the bare-root scaffold fallback: the project
+      starts with `givn/` but no repository, the first full-content record write
+      must leave the `# givn:begin:history` block in `.gitignore` (the
+      scaffold-time safety net), and only then does `git init` happen; the
+      pending-change assertions run against that repository.
+    - Placement rule (design §Capture completeness): the record, the inline full
+      content, the reports, and the pending state all live under
+      `givn/history/`, which the managed block already covers (`givn/history/` in
+      `.git/info/exclude`, re-asserted on every write; `givn/history/*` in the
+      Fossil managed entry list; the scaffold `.gitignore` block before a
+      repository exists). No new ignore destination.
+    - Step files: `tests/steps/development_record_steps.rs` (the new
+      assertions/steps for both backends).
+    - RED expected failure: the new phrases are undefined — the full-content
+      fixture step, the bare-root `.gitignore` assertion, the pending-state
+      absence assertion, and the Fossil extra-file assertions.
+  - [ ] **RED** — run both scenarios before any step implementation; the new
+        phrases are undefined, so the runner exits non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN (evidence)** — implement the steps, re-run both scenarios and
+        paste the exit-0 output, together with the raw `git status --porcelain`
+        after a full-content capture and after `givn timeline`, the
+        `.gitignore` fallback assertion, and the effective
+        `fossil settings --value ignore-glob` plus `fossil extras`:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record stays out of the repository's own history"`
+        and the same for the Fossil scenario. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `test(development-record): <release note>` with
+        a body that names only the extended assertions and points at the Tasks
+        10/11 commits; it MUST NOT restate the two scenario titles, so the
+        per-scenario gate sees no duplicate scenario commit. Record the revision
+        identifier.
+
+## Task 11c — `Default capture keeps the metadata a review needs` (`development-record`, added)
+
+- [ ] **Scenario: `Default capture keeps the metadata a review needs`**
+  - Design constraints:
+    - The scenario is **reporter-driven, not seeded**: it runs the generated
+      omp reporter through the shared fake `pi` extension context and the real
+      `givn history ingest`, then reads the record. omp exposes every asserted
+      field (per-harness availability table, design §Capture completeness), so
+      no fixture stands in for the reporter.
+    - Default metadata table (design §Capture completeness): a `turn` entry
+      carries `model`, `cost` (real and list where present), `context_size` /
+      `context_window`, `stop_reason`, `index`, `usage` (with reasoning and cache
+      fields); a failed `tool` entry carries `error` bounded to 1 000 characters
+      (first line kept), plus `tool_call_id`, `output_bytes`, `result_meta`, and
+      `duration_source`.
+    - Per-harness availability is authoritative: never assert a field the
+      harness cannot expose (Claude Code has no turn index or stop reason,
+      opencode no turn count or context size, headless Maki may omit model and
+      title). A seeded record is used only to exercise a field a harness cannot
+      expose, and then the assertion is about the record's handling of absence,
+      never a substitute for the reporter path.
+    - The intake's `Usage` struct widens to the inventory's fields (reasoning,
+      cache-read/cache-write, per-model), and the entry envelope gains `session`.
+      Schema stays 1 (additive `data`); no rewrite of existing lines.
+    - Reporter field sources per harness are the inventory rows (design §Capture
+      completeness, per-harness list); the opencode id-key mismatches
+      (`data.id` vs `data.sessionID`, `data.form.id`,
+      `permission.replied.requestID`) are fixed as part of this work.
+    - Files: `src/history.rs` (bounds `text_metadata`/`error_text`, the widened
+      data), `src/cli/history.rs` (intake fields + validation),
+      `assets/agent-integrations/omp/givn-timeline.js` (the driven reporter),
+      the other three reporter assets for the same fields where they expose
+      them, `tests/steps/development_record_steps.rs`,
+      `tests/steps/development_timeline_support.rs`.
+    - RED expected failure: the new Given/When/Then phrases are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Default capture keeps the metadata a review needs"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — widen the intake and the reporters; compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one bounds module and one metadata builder shared by the
+        four reporters; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+
+## Task 11d — `Question text is captured in full` (`development-record`, added)
+
+- [ ] **Scenario: `Question text is captured in full`**
+  - Design constraints:
+    - Question text is the one content value captured **always**, never behind
+      the switch and never reduced to the label: every question and its option
+      labels are joined and stored in `data.question`
+      (`{text, truncated, bytes}`), capped at **4 000 characters per question
+      entry** with `truncated: true` and the original `bytes` when the cap is
+      hit (design bounds table and wire schema).
+    - The entry's `label` stays bounded to 120 characters, so the label rule and
+      the full text coexist.
+    - Sources: omp `ask.questions[]`; Claude Code `AskUserQuestion.tool_input.
+      questions[]`; opencode `form.fields[].description/title` and the question
+      tool's `input.questions`; **Maki reads `maki.session.messages` at the
+      wait's close** (live transcript, no new grants) and matches the blocking
+      `question` tool_use's `input.questions[]`. The alternative
+      `tool.question.input` slot is rejected because an undeclared-tool slot
+      needs **every** permission (including `net`, `env`, and `agent`). Residual,
+      tested and documented: when no matching question is in the transcript (a
+      permission prompt, plan form, or Lua float also produces `needs_input`),
+      the entry keeps the bounded `data.title` label and no full text; the wait
+      duration is still recorded.
+    - Files: `src/history.rs` (the question bound), `src/cli/history.rs`
+      (question event validation), the four reporter assets (the Maki asset
+      gains the transcript read), `tests/steps/development_record_steps.rs`,
+      `tests/steps/development_timeline_support.rs` (the Maki driver's
+      transcript fixture).
+    - RED expected failure: the new Given/When/Then phrases (including the
+      no-match residual) are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::Question text is captured in full"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — capture and cap the text; compile first, re-run → exit 0.
+        Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — reuse the bounded-text helper; re-run → still exit 0.
+        Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+
+## Task 11e — `The record can be turned off for a project` (`development-record`, added)
+
+- [ ] **Scenario: `The record can be turned off for a project`**
+  - Design constraints:
+    - The control is the three-state project key `record.mode: on | off | full`
+      in `givn/config.yaml` (design §Capture completeness). The parse site is
+      **`src/config/overlay.rs::OverlayDoc`** (the project-config path), not
+      `src/config/manifest.rs`: `OverlayDoc` gains a lenient raw `record` value
+      so an invalid value warns once and falls back to `on`, never failing the
+      config parse. `givn upgrade` preserves the uncommented key.
+    - **`off` is absolute:** no new entry at all — no store append, no
+      pending-state write, and no record-side ignore write. The two enforcement
+      sites are `src/cli/history.rs::ingest` and
+      `src/cli/history.rs::harness_hook` (the in-process Claude path); both warn
+      once and exit 0 without touching the store or pending state, even for a
+      payload carrying content. `--with-full-content` is ignored under `off`
+      with a one-line warning and exit 0. Reporters skip their work entirely,
+      and `givn history` / `givn history settings` / `givn timeline` still read
+      whatever the store already holds.
+    - Lowering the mode is forward-looking: already-captured entries are
+      retained, never purged; the scenario asserts the earlier entries remain
+      readable after `off`.
+    - An absent value resolves to **`on`** (the default); the resolved mode is
+      what `givn history settings --json` reports. Every capture point also
+      checks the mode before it touches the store
+      (`src/history.rs::should_record`).
+    - Files: `src/history.rs`, `src/config/overlay.rs` (the lenient `record`
+      field), `src/cli/history.rs` (intake + harness_hook off enforcement),
+      `src/main.rs` (the settings read-view exemption alongside `history` /
+      `timeline`), the four reporter assets (early return when off),
+      `tests/steps/development_record_steps.rs`.
+    - RED expected failure: the new Then phrases (no pending state, no
+      record-side ignore write, the intake warning) are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The record can be turned off for a project"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the lenient key, the resolver, the intake and
+        harness_hook enforcement, and the reporters' early return; compile
+        first, re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one mode resolver shared by capture points and the
+        settings query; re-run → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+
+## Task 11f — `The default mode records metadata without content` (`development-record`, added)
+
+- [ ] **Scenario: `The default mode records metadata without content`**
+  - Design constraints:
+    - The default mode is **`on`**: all available metadata, bounded text per the
+      bounds table, and question text in full — but **no** LLM-facing content
+      (the scenario also asserts that no entry carries a `data.content` object).
+    - The **intake** is the single enforcement site for every bound and for the
+      mode on payloads: an event carrying a `content` object is appended metadata-only
+      when the effective mode is not `full`, and the content is dropped while
+      the event is kept; the label 120, text-metadata 240, error 1 000,
+      question 4 000, per-field 64 KiB, and per-entry 256 KiB bounds are
+      re-applied to every event. A stale reporter cannot bloat or leak the
+      store.
+    - Reporters learn the mode once per session from
+      `givn history settings --json` (`{"mode": …, "source": "config|default"}`)
+      so content is not sent when it would be dropped; discovery per harness and
+      the failure discipline (treat as `on`, warn once, never block the harness)
+      are in design §Capture completeness. `source: flag` does not exist.
+    - The settings command's surface is fixed: human output
+      `record mode: <mode> (source: <config|default>)`; `--json` the payload
+      above; both exit 0; an unknown/unreadable value warns once and reports
+      `on`/`default`; outside a Givn project it exits 1 with
+      `error: not a Givn project (givn/ not found)`. It is a non-recorded read
+      view: `src/main.rs::records` excludes `history settings` alongside
+      `history` and `timeline`, so a query appends no `command` entry.
+    - Files: `src/history.rs`, `src/config/overlay.rs` (the lenient `record`
+      field), `src/cli/history.rs` (`settings` + intake enforcement),
+      `src/main.rs` (the read-view exemption), the four reporter assets,
+      `tests/steps/development_record_steps.rs`.
+    - RED expected failure: the new Then/Givens phrases are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The default mode records metadata without content"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the settings query (human and `--json`), the
+        read-view exemption, and the intake drop/bounds; compile first, re-run →
+        exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one mode resolver shared by intake and settings; re-run
+        → still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+
+## Task 11g — `The full mode records complete content` (`development-record`, added)
+
+- [ ] **Scenario: `The full mode records complete content`**
+  - Design constraints:
+    - With `record.mode: full` (or `givn history ingest --with-full-content` for
+      one payload, except under `off`), the entry keeps the complete
+      LLM-facing content inline in `data.content`'s named fields:
+      `tool_input`, `tool_output`, `assistant_text`, `thinking_text`,
+      `user_prompt`, `compaction_summary`, `plan_content`, `draft_text`, and
+      `subagent_transcript`, each `{text, truncated, bytes}` — per-field cap
+      **64 KiB**, then per-entry aggregate cap **256 KiB**, applied in that
+      order. A field cut at either bound keeps `truncated: true` and its original
+      `bytes`.
+    - **The intake is the single enforcement site** for both caps (and every
+      other bound); a reporter's own truncation is an optimization. The scenario
+      reports an input larger than the per-field cap and asserts the stored
+      text, `truncated`, the original `bytes`, and the per-entry total.
+    - Content stays inside `givn/history/events.jsonl` (no second store), so the
+      placement/ignore rule holds by construction.
+    - The details panel implements the exact fact list and one bounded,
+      scrollable, escaped content region (design §Report rendering); the region
+      names the cap and marks truncation and is not part of the accessible
+      summary. `src/cli/timeline.rs` also implements the 8 MiB report content
+      budget and the `content omitted; see the record` marker; Task 25b carries
+      the regular scenario and the E7 assertion extension that prove them.
+    - Files: `src/history.rs` (content caps), `src/cli/history.rs` (intake
+      acceptance and the single bound enforcement), `src/cli/timeline.rs` +
+      `assets/timeline/report.html` (panel facts, content region, budget and
+      omission marker), the four reporters,
+      `tests/steps/development_record_steps.rs`,
+      `tests/steps/development_report_steps.rs`.
+    - RED expected failure: the new Then phrases (field cap, truncated, original
+      size, per-entry total) are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The full mode records complete content"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — accept, cap, store, and render the content; compile first,
+        re-run → exit 0. Paste it, together with a `git status --porcelain`
+        showing nothing under `givn/history/` (Task 11b's rule).
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one content-capping helper and one renderer; re-run →
+        still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+
+## Task 11h — `An invalid record mode falls back to the default` (`development-record`, added)
+
+- [ ] **Scenario: `An invalid record mode falls back to the default`**
+  - Design constraints:
+    - The value is parsed through **`src/config/overlay.rs::OverlayDoc`** (the
+      project-config path) as a lenient raw `record` value. A non-string or
+      unknown `record.mode` resolves to **`on`** and prints one warning per
+      process naming the key and the fallback; it must **not** fail the whole
+      config parse (a broken value must not stop the work being recorded).
+    - The fallback is visible in `givn history settings --json` as
+      `{"mode": "on", "source": "default"}` so a reporter and a human see the same
+      resolution; the human form prints
+      `record mode: on (source: default)` and both exit 0.
+    - Files: `src/config/overlay.rs` (the lenient `record` field),
+      `src/history.rs` (mode parsing + the one warning),
+      `src/cli/history.rs` (settings source/payload),
+      `src/main.rs` (read-view exemption), `tests/steps/development_record_steps.rs`.
+    - RED expected failure: the new Then phrase (`givn history settings --json`
+      reporting mode `on` and source `default`) is undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::An invalid record mode falls back to the default"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the parse, the warning, and the settings source;
+        compile first, re-run → exit 0. Paste it.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one parser and one warning site; re-run → still exit 0.
+        Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+
 ## Task 12 — `A reported tool call is recorded for its scope` (`agent-activity-reporting`, added)
 
 - [x] **Scenario: `A reported tool call is recorded for its scope`**
@@ -3592,7 +3980,8 @@ name it.
           own span (nested in the enclosing turn when the payload reported one,
           never merged into it).
         - `src/history.rs` — `bound_question_label`: the question's first line
-          only (the complete question text is never stored, D2), then the same
+          only (the complete text is stored separately in `data.question` by
+          Task 11d; this task's label path keeps the first line), then the same
           `bound_label` bound as every other label.
         - `tests/steps/agent_activity_reporting_steps.rs` — the two `Then` steps
           (the recorded wait's duration, and a label equal to the payload's own
@@ -5765,8 +6154,10 @@ name it.
       the record's 120-character bound) and the tool name when the call never ran
       or carries no usable subject;
       `TurnStart`/`TurnEnd`/`TurnError` for turns and the flush, with `data.text`
-      never stored; `AutoCompacting`/`CompactionDone` as `phase` entries
-      (`compacting`, `compacted`) without `data.summary`; `SessionStatusChanged`
+      stored only in `full` as `data.content.user_prompt`; `AutoCompacting`/
+      `CompactionDone` as `phase` entries (`compacting`, `compacted`) with
+      `data.summary` stored only in `full` as `data.content.compaction_summary`;
+      `SessionStatusChanged`
       (`needs_input` → wait open, `working` → close) for question waits, labelled
       with the harness's own bounded `data.title` or `needs input` when absent;
       `TaskStatusChanged` (`working` →
@@ -5986,8 +6377,10 @@ name it.
           measured call without a host duration still gets the reporter's own
           stamp;
         - the wait's label for `SessionStatusChanged` is the harness's own
-          `data.title` (bounded), falling back to `needs input`: Maki's status
-          change carries no question text, and the record requires a label.
+          `data.title` (bounded), falling back to `needs input`: the status
+          change itself carries no question text (Task 11d reads the full text
+          separately from `maki.session.messages`), and the record requires a
+          label regardless.
         ```
   - [x] **REFACTOR** — keep one install helper and one flush helper shared with
         the other reporters; re-run → still exit 0. Paste it.
@@ -6510,6 +6903,68 @@ name it.
         stale by content into the archive finalization. The refresh ran twice —
         once in GREEN, once after REFACTOR — and the second run wrote the same 14
         files, so the committed pairs are the post-refactor rendering.
+
+## Task 25b — `The report details panel carries the captured metadata and content` (`development-report`, added)
+
+- [ ] **Scenario: `The report details panel carries the captured metadata and content`**
+  - Design constraints:
+    - The fixture is a `demo` record holding the captured metadata and
+      `full`-mode `data.content`; the content exceeds the 8 MiB report budget, so
+      the fixture must include both embedded and omitted content.
+    - The report model carries the exact facts the panel renders: session and
+      title, status, stop reason, model, cost (real and list), context size and
+      window, tool call id, output bytes, bounded error, parent/agent, retry,
+      and permission mode. Values the entry does not carry render "not reported",
+      never zero.
+    - `ReportModel` gains `content_budget_bytes: 8_388_608` and `content_bytes`;
+      `render_report` embeds `data.content` fields in record order up to the
+      budget, then marks the affected entries `content_omitted: true` and writes
+      the exact note `content omitted; see the record` in the text view and the
+      model payload. The store is never modified (the scenario asserts every
+      content byte remains).
+    - The content region is one bounded, scrollable, escaped region beneath the
+      facts, one labelled block per named content field, with its cap and
+      `truncated` mark; it is not part of the accessible summary line.
+    - **E7 extension (same scenario/action, no new `@e2e`):** extend the existing
+      `Consumer selects a timeline element and reads its details` step assertions
+      to read one new metadata fact (the tool call id) and the bounded content
+      region from the panel. Re-run that scenario and refresh its two committed
+      captures
+      (`evidence/visual/consumer-selects-a-timeline-element-and-reads-its-details/{mobile,desktop}.png`)
+      in this task's GREEN; the commit carries this task's scenario title only,
+      so E7 is not committed twice. The E7 fixture's longest recorded step is a
+      `tool` entry carrying `tool_call_id` and one bounded `data.content`
+      field, so the same selection action reads the new fact and the region.
+    - Files: `src/cli/timeline.rs` (facts passthrough, budget/omission model),
+      `assets/timeline/report.html` (fact list and content region),
+      `tests/steps/development_report_steps.rs` (the new scenario),
+      `tests/steps/development_report_e2e_steps.rs` (the E7 extended
+      assertions), `tests/steps/development_timeline_support.rs` (the
+      over-budget full-content fixture), and the refreshed E7 captures.
+    - RED expected failure: the new Then phrases (facts list, budget, omission
+      note, store completeness) are undefined, and the extended E7 assertions
+      match no step function.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report details panel carries the captured metadata and content"`
+        → must exit non-zero. Paste it.
+        ```
+        <!-- paste RED evidence (command + output, non-zero exit) -->
+        ```
+  - [ ] **GREEN** — implement the facts/budget/omission rendering, extend the E7
+        assertions, re-run both scenarios → exit 0, and refresh the E7 captures.
+        Paste both runs and the refreshed capture list.
+        ```
+        <!-- paste GREEN evidence (command + output, exit 0) -->
+        ```
+  - [ ] **REFACTOR** — one fact renderer and one content-budget pass; re-run →
+        still exit 0. Paste it.
+        ```
+        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        this scenario's title in the body and a line noting the E7 assertion
+        extension (same scenario/action; no new `@e2e`). Record the revision
+        identifier.
 
 ## Task 26 — `The report totals the time spent waiting for questions` (`development-report`, added)
 
@@ -8014,11 +8469,11 @@ name it.
       is a hard-stop, fix-before-continuing condition.
     - **Scenario-count proof (the subset must be real).** `verify.command` runs
       the `not @e2e` tag set and `verify.e2e_command` the `@e2e` set; with this
-      change in scope that is 39 vs 8 units, so the e2e count is strictly less
+      change in scope that is 46 vs 8 units, so the e2e count is strictly less
       than the full count. Prove it with the runner's own listing (or the
       summary line of each run) and paste both counts:
       `GIVN_FEATURES=givn/changes/development-timeline/specs ./run-tests.sh --non-e2e`
-      → 39 scenarios, `GIVN_FEATURES=givn/changes/development-timeline/specs
+      → 46 scenarios, `GIVN_FEATURES=givn/changes/development-timeline/specs
       ./run-tests.sh --e2e` → 8 scenarios.
     - **Health check before any scenario step.** `npx --prefix tests/e2e
       playwright --version` reports 1.64.1 and the driver can launch Chromium and
@@ -10362,7 +10817,7 @@ asset's extracted inline layer were green at every commit of the tier.
 **Done when:** every box above is checked with its pasted evidence and revision
 identifier, `verify.command` (`./run-tests.sh --non-e2e`) and
 `verify.e2e_command` (`./run-tests.sh --e2e`) both exit 0 on the full suite, the
-e2e setup task's scenario-count proof is pasted (39 regular vs 8 `@e2e`, e2e
+e2e setup task's scenario-count proof is pasted (46 regular vs 8 `@e2e`, e2e
 strictly less), every `@e2e` scenario has committed `mobile.png` + `desktop.png`
 under its slug with the empty-scope scenario's `mobile--empty.png` /
 `desktop--empty.png`, and no `@wip` tag remains on any scenario this change
