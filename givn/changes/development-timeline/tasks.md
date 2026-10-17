@@ -15235,7 +15235,7 @@ untouched; this part is appended after its completion statement.
 
 ## Task H20 — `An archived change resolves its linked ideation from the archive` (`development-report`, added)
 
-- [ ] **Scenario: `An archived change resolves its linked ideation from the archive`** (`@wip` until its RED)
+- [x] **Scenario: `An archived change resolves its linked ideation from the archive`** (`@wip` until its RED)
   - Design constraints:
     - **Archive link source.** `givn/changes/<id>` does not exist;
       `givn/archive/<id>/proposal.md` links `ideas`; the link resolves from the
@@ -15256,31 +15256,83 @@ untouched; this part is appended after its completion statement.
       `tests/steps/development_timeline_support.rs`.
     - RED expected failure: the archived Given and two Then phrases are
       undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::An archived change resolves its linked ideation from the archive"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Report
+          Scenario: An archived change resolves its linked ideation from the archive
+           ✘  Given an archived change "demo" whose archived proposal links the ideation topic "ideas"
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:190:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        EXIT=101
         ```
-  - [ ] **GREEN** — wire the archive proposal path into the existing group
+  - [x] **GREEN** — wire the archive proposal path into the existing group
         rendering and implement the steps. Files: `src/cli/timeline.rs`,
         `tests/steps/development_report_steps.rs`,
         `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
         it.
         ```
-        PASTE THE GREEN RUN HERE
+        Feature: Development Report
+          Scenario: An archived change resolves its linked ideation from the archive
+           ✔  Given an archived change "demo" whose archived proposal links the ideation topic "ideas"
+           ✔  And the topic's record holds the marker for personas
+           ✔  When the developer generates the development report for the archived change "demo"
+           ✔  Then the report names the linked ideation group "ideas" before the change workflow
+           ✔  And the change workflow marks every change phase done
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — one proposal-path resolver (live, then archive) read by
+  - [x] **REFACTOR** — one proposal-path resolver (live, then archive) read by
         the link resolution; `cargo fmt --all -- --check` and `cargo clippy
         --locked --all-targets -- -D warnings` green; re-run → still exit 0.
         Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        proposal_path is the one resolver: it returns the live change's
+        proposal.md when the directory exists, else the archived proposal when
+        it is a file; resolve_link reads it once. run() resolves the link for any
+        Change scope, so an archived change takes the same group path. No code
+        change was needed beyond the fixture.
+
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+        (the scenario re-run)
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `349f7096` — `feat(development-report): <release note>` with
         the scenario title in the body. Record the revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit 349f7096
+        feat(development-report): an archived change resolves its linked ideation from the archive
+
+        Scenario: An archived change resolves its linked ideation from the archive
+
+        The fixture writes givn/archive/demo/proposal.md naming the ideation topic,
+        leaves no givn/changes/demo, and seeds the topic's personas marker plus the
+        archived change's own entries. The two Thens read the written report: the
+        archived proposal's link resolves through the one proposal-path resolver
+        (live, then archive) and the linked group renders before the change
+        workflow, while the change workflow marks every phase done and names no
+        live state or next required artifact.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../development-report.feature                     |   2 +-
+         tests/steps/development_report_steps.rs            |  73 ++++++++++++++++++++++
+         tests/steps/development_timeline_support.rs        |  24 +++++++
+         3 files changed, 98 insertions(+), 1 deletion(-)
         ```
 
 ## Task HE8 — `Consumer reads a change's linked ideation group` (`@e2e`, `development-report`)
