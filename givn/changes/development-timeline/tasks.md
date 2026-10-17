@@ -31,9 +31,9 @@ additional scenarios). Every still-pending entry carries `@wip` today and stays
 `@givn.modified` entries carry no `@wip` and are reconciled green in S2b and
 Task 24a.
 
-**Superseded by the hybrid delta (2026-10-17):** the current totals are **63
-entries / 54 non-`@e2e` / 9 `@e2e`**, and the delta's 18 new
-sections are **H1–H11** and **HE1–HE7** under **Delta part 2 — hybrid workflow
+**Superseded by the hybrid delta (2026-10-17):** the current totals are **64
+entries / 55 non-`@e2e` / 9 `@e2e`**, and the delta's 19 new
+sections are **H1–H12** and **HE1–HE7** under **Delta part 2 — hybrid workflow
 report** at the end of this file. The table below is the 2026-10-16 state and is
 kept as history, not as the current count.
 
@@ -11593,7 +11593,10 @@ lane's log), then the statistics. This part schedules the delta's **15 pending
 KPI totals directly), the **asset rewrite**, and one change-wide evidence and
 scope-run task. **Follow-up (2026-10-17):** Task **H11** adds the written
 view's one new scenario and the three readings that must move off the removed
-band SVG; its section sits after H10 and before the `@e2e` tasks.
+band SVG; its section sits after H10 and before the `@e2e` tasks. Task **H12**
+carries the recorder-omission delta from design-review round 7 (`9842c253`): the
+model's first-step filter, its exact predicate and read-view proof, and the one
+new `@wip` scenario; its section sits after H11 and before the `@e2e` tasks.
 
 The earlier sections stay untouched and historical: their pasted evidence
 records the dense-timeline implementation the delta re-tagged. A scenario this
@@ -11642,36 +11645,36 @@ Repository checks are secondary only.
 |---|---|---|---|
 | `inspect-development-history/development-record.feature` | 21 | 19 | 2 |
 | `inspect-development-history/agent-activity-reporting.feature` | 15 | 14 | 1 |
-| `inspect-development-history/development-report.feature` | 24 | 18 | 6 |
+| `inspect-development-history/development-report.feature` | 25 | 19 | 6 |
 | `fragments/adr-qualification-gate.feature` (`@givn.modified`) | 1 | 1 | 0 |
 | `initialize-project/initialize-a-project.feature` (`@givn.modified`, two) | 2 | 2 | 0 |
-| **Total** | **63** | **54** | **9** |
+| **Total** | **64** | **55** | **9** |
 
-- **63** executable scenario entries = **60 `@givn.added`** + **3
-  `@givn.modified`**; **54 non-`@e2e`** + **9 `@e2e`**. The third column counts
+- **64** executable scenario entries = **61 `@givn.added`** + **3
+  `@givn.modified`**; **55 non-`@e2e`** + **9 `@e2e`**. The third column counts
   a `Scenario Outline` as one entry (its Examples rows are input variation).
-  **Follow-up (2026-10-17):** Task H11 adds the 63rd entry, the written
-  text-view scenario.
-- **Pending `@wip` today:** the 15 delta scenarios H1–HE6 implemented are green
-  and their tags are gone; the **one** pending scenario is H11's
-  `The written report's text view presents the workflow`. `givn lint --change
+  H11 added the 63rd entry (the written text-view scenario) and H12 adds the
+  64th (the recorder-omission scenario).
+- **Pending `@wip` today:** every earlier delta scenario (H1, H3–H11,
+  HE1–HE6) is implemented and untagged; the **one** pending scenario is H12's
+  `The report omits the recorder's own command entries`. `givn lint --change
   development-timeline` at this follow-up reports exactly that **1 `[WIP]`
   finding** plus the pre-existing `[SUBST] advisory` lines, exit 2.
-- **Scheduled here:** 18 sections = **16 scenario tasks** (H1, H3–H11, HE1–HE6)
+- **Scheduled here:** 19 sections = **17 scenario tasks** (H1, H3–H12, HE1–HE6)
   + **1 shared prerequisite** (H2, report-model scaffold; no new scenario) +
   **1 change-wide evidence/scope-run task** (HE7; no new scenario). The three
   `@givn.modified` entries stay with S2b and Task 24a; this part adds none.
-- **Box accounting:** 18 sections × 5 boxes = **90 new boxes**; `tasks.md`
-  moves from **274/274** boxes to **364 total** — currently **354 done / 10
-  pending** (H11's five and HE7's five). `givn status` reports the tasks
-  artifact as partial until every new box is checked with its evidence and
-  revision.
+- **Box accounting:** 19 sections × 5 boxes = **95 new boxes**; `tasks.md`
+  moves from **274/274** boxes to **369 total** — currently **364 done / 5
+  pending** (H12's five). `givn status` reports the tasks artifact as partial
+  until every new box is checked with its evidence and revision.
 - **Work order:** H1 (the dispatcher writer its own scenario needs) → H2 (the
-  shared model scaffold every report scenario asserts through) → H3–H11 (the
-  nine regular report scenarios in `.feature` order; H11 is the follow-up
-  text-view removal) → HE1–HE6 (the six `@e2e` scenarios in `.feature` order,
-  the asset rewrite beginning in HE2) → HE7 (evidence refresh and both scope
-  runs). Non-`@e2e` first, `@e2e` last, as the tasks instruction requires.
+  shared model scaffold every report scenario asserts through) → H3–H12 (the
+  ten regular report scenarios in `.feature` order; H11 is the text-view
+  removal, H12 the recorder-omission follow-up) → HE1–HE6 (the six `@e2e`
+  scenarios in `.feature` order, the asset rewrite beginning in HE2) → HE7
+  (evidence refresh and both scope runs). Non-`@e2e` first, `@e2e` last, as the
+  tasks instruction requires.
 
 ### Decision constraints that apply to every task in this part
 
@@ -13206,6 +13209,114 @@ Repository checks are secondary only.
          4 files changed, 368 insertions(+), 143 deletions(-)
         ```
 
+## Task H12 — `The report omits the recorder's own command entries` (`development-report`, added; the recorder-omission follow-up)
+
+- [ ] **Scenario: `The report omits the recorder's own command entries`** (`@wip` until its RED)
+  - Design constraints:
+    - **The rule** (`design.md`, *Hybrid workflow report* → **Recorder
+      self-recording**). The recorder's own command entries are recorded — the
+      store keeps them and `givn history` still reads them — but they are
+      recording infrastructure, not development work. Two invocations qualify:
+      the intake, `givn history ingest` (one flush per turn), and the
+      process-per-hook mapper, `givn history harness-hook --harness <name>`
+      (one process per harness hook event).
+    - **The exact seam: the model's first step.** `build_report_model` drops
+      them **before** `apply_content_budget` and before every derivation
+      (ordering, bands, stage assignment, the phase scaffold, lanes, lane logs,
+      repeated-step groups, aggregates, `Summary::of`, `elapsed`, phase counts,
+      and entry totals). Consequences: neither the 8 MiB budget nor
+      `omitted_content` ever names one; every surface derives from the one
+      filtered vector; `empty` is computed after the filter, so a scope whose
+      record holds only these entries renders the empty state. `run()` keeps
+      calling `build_report_model`. **`entries_in_scope` is not the seam** — it
+      is also the read view's source, and filtering there would make
+      `givn history` lose the rows the design promises it keeps.
+    - **The exact predicate.** Exclude iff `kind == "command"` **and**
+      `name == "history"` **and** the bounded `label` is exactly
+      `history ingest`, or begins with `history ingest `, or begins with
+      `history harness-hook ` — the subcommand is followed by a **word
+      boundary**, never a substring search. `history ingest-extra`, a bare
+      `history`, `history settings --json`, and a `commit`/`tool` entry whose
+      label merely quotes the phrase never match; no other command is hidden.
+      `bound_label` preserves the prefix at 120 characters, so the prefix test
+      survives truncation; a `None` label never matches.
+    - **Scope.** The omission sits inside the one model, so change, topic, and
+      project reports share it; no scope argument changes the predicate.
+    - **Read-view assertion mechanism.** The last Then runs the **non-recorded**
+      read view `givn history --change demo --json` through `common::run_givn`
+      (the bare `history` read view is exempt from recording) and asserts the
+      recorder entries are printed. The step compares the store's entry count
+      after seeding, after the report, and after the read view — all equal — so
+      the report and the read view each appended nothing. Store retention is
+      read from the store itself (`support::record_entries(root)` /
+      `store_bytes`), never from the report.
+    - **Fixture.** A `demo` change record seeding: one `tool` call with a
+      measured duration (so the ranking and the tool count discriminate), one
+      other `command` (e.g. `status`, so "one other command" survives), the
+      unflagged intake (`kind: command`, `name: history`, label
+      `history ingest`), the flagged intake (same kind/name, label
+      `history ingest --with-full-content`), and the Claude-style mapper
+      (`history harness-hook --harness claude`). The harness-hook half is
+      provable **only** on a seeded Claude-style record (review residual 2):
+      this project's live store has no harness-hook row, so the fixture must
+      include it explicitly. Every seeded entry carries the change scope.
+    - **The named unit assertion** (production, `src/cli/timeline.rs`,
+      `#[cfg(test)] mod tests`):
+      `report_model_omits_only_the_recorder_command_entries` — on a direct
+      `build_report_model` call it asserts that both ingest labels and the
+      harness-hook label are absent from `entries`, `summary.entries`, the
+      ranking, and `omitted_content`, while `history ingest-extra`, a bare
+      `history`, `history settings --json`, a `tool` labelled `history ingest`,
+      and a `commit` command survive.
+    - **Scenario assertions mapped:** names the tool call and counts it (its
+      model entry, `summary.tool_calls`, its ranking row); names the other
+      command; names no recorder command entry (model, text view, ranking); the
+      entry total excludes them (`summary.entries` and `model.entries.len()`
+      equal the non-recorder count, and the entries tile prints it); the record
+      still holds them; `givn history` still lists them with the store count
+      unchanged.
+    - Files: `src/cli/timeline.rs` (the first-step filter, its predicate, and
+      the unit test), `tests/steps/development_report_steps.rs` (the Given and
+      the six Thens), `tests/steps/development_timeline_support.rs` (the seeded
+      recorder fixture and the store-count helper).
+    - **No visual evidence:** this is a non-`@e2e` claim asserted through the
+      model, the store, and the read view; no `@e2e` scenario, title, tag, or
+      capture changes. HE7's evidence sweep predates this delta; the archive's
+      review gate re-runs both scopes.
+    - RED expected failure: the Given and all six Then phrases are undefined,
+      and the model still carries every recorder row.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report omits the recorder's own command entries"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — add the first-step filter and its predicate, the fixture,
+        the six Thens, and the unit assertion. Files: `src/cli/timeline.rs`,
+        `tests/steps/development_report_steps.rs`,
+        `tests/steps/development_timeline_support.rs`. Re-run this scenario and
+        the unit test → both exit 0. Paste both.
+        ```
+        PASTE THE GREEN RUN (SCENARIO) HERE
+        ```
+        ```
+        PASTE THE GREEN RUN (UNIT TEST) HERE
+        ```
+  - [ ] **REFACTOR** — one `is_recorder_command` predicate and one filter step
+        at the top of `build_report_model`, read by nothing else; `cargo fmt
+        --all -- --check` and `cargo clippy --locked --all-targets --
+        -D warnings` green; re-run the scenario and the unit test → still exit
+        0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title in the body and the named unit assertion. Record the
+        revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
 ## Task HE1 — `Consumer generates the development report for a change` (`@e2e`, `development-report`)
 
 - [x] **Scenario: `Consumer generates the development report for a change`** (`@wip` until its RED)
@@ -14163,16 +14274,18 @@ Repository checks are secondary only.
          11 files changed, 88 insertions(+), 7 deletions(-)
         ```
 
-**Part-2 done when:** all 16 pending scenarios have completed RED/GREEN/REFACTOR
-loops with pasted evidence and a revision each, H2's unit test and H8's
-later-first-transition unit assertion are green, H11's written file carries the
-workflow text view and no band timeline for a change report while the project
-report keeps its bands, the asset is the hybrid workflow view, the nine `@e2e`
-scenarios each have a committed non-empty pair at both contract viewports (plus
-the empty-scope declared-state pairs), the existing five report slugs are
-unchanged, the expand scenario owns the only new directory,
-`git grep -c "@wip" -- givn/changes/development-timeline/specs` finds none,
-`givn lint --change development-timeline` exits 0, and both `verify.command` and
-`verify.e2e_command` exit 0 on the full delta. The box counts then read **364
-total / 364 done / 0 pending**.
+**Part-2 done when:** all 17 pending scenarios have completed RED/GREEN/REFACTOR
+loops with pasted evidence and a revision each, H2's unit test, H8's
+later-first-transition unit assertion, and H12's
+`report_model_omits_only_the_recorder_command_entries` are green, H11's written
+file carries the workflow text view and no band timeline for a change report
+while the project report keeps its bands, H12's model omits both recorder
+invocations while the store and `givn history` keep them, the asset is the
+hybrid workflow view, the nine `@e2e` scenarios each have a committed non-empty
+pair at both contract viewports (plus the empty-scope declared-state pairs), the
+existing five report slugs are unchanged, the expand scenario owns the only new
+directory, `git grep -c "@wip" -- givn/changes/development-timeline/specs` finds
+none, `givn lint --change development-timeline` exits 0, and both
+`verify.command` and `verify.e2e_command` exit 0 on the full delta. The box
+counts then read **369 total / 369 done / 0 pending**.
 
