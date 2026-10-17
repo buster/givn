@@ -13617,7 +13617,7 @@ Repository checks are secondary only.
 
 ## Task HE6 — `Consumer opens the report of a scope with no recorded activity` (`@e2e`, `development-report`)
 
-- [ ] **Scenario: `Consumer opens the report of a scope with no recorded activity`** (`@wip` until its RED)
+- [x] **Scenario: `Consumer opens the report of a scope with no recorded activity`** (`@wip` until its RED)
   - Design constraints:
     - Matrix row 9: real interface **Web UI**; the scenario generates the report
       for a scope with no recorded activity and reads the rendered **empty-state
@@ -13642,31 +13642,94 @@ Repository checks are secondary only.
       refreshed PNGs.
     - RED expected failure: `the browser draws no workflow phase for it` is
       undefined and the asset still draws the superseded timeline markup.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer opens the report of a scope with no recorded activity"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Report
+          Scenario: Consumer opens the report of a scope with no recorded activity
+           ✔  Given a change "demo" with no recorded activity
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✔  Then the browser shows the empty state for "demo"
+           ✘  And the browser draws no workflow phase for it
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:191:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        5 steps (4 passed, 1 failed)
+        EXIT=101
         ```
-  - [ ] **GREEN** — implement the asset's empty branch and the two Thens. Files:
+  - [x] **GREEN** — implement the asset's empty branch and the two Thens. Files:
         `assets/timeline/report.html`,
         `tests/steps/development_report_e2e_steps.rs`, plus the four refreshed
         PNGs. `node --check`, compile, re-run → exit 0. Paste it.
         ```
-        PASTE THE GREEN RUN HERE
+        Feature: Development Report
+          Scenario: Consumer opens the report of a scope with no recorded activity
+           ✔  Given a change "demo" with no recorded activity
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✔  Then the browser shows the empty state for "demo"
+           ✔  And the browser draws no workflow phase for it
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
+
+        consumer-opens-the-report-of-a-scope-with-no-recorded-activity/desktop.png        29448 bytes
+        consumer-opens-the-report-of-a-scope-with-no-recorded-activity/mobile.png         21674 bytes
+        consumer-opens-the-report-of-a-scope-with-no-recorded-activity/desktop--empty.png 29448 bytes
+        consumer-opens-the-report-of-a-scope-with-no-recorded-activity/mobile--empty.png  21675 bytes
         ```
-  - [ ] **REFACTOR** — the same one `empty` condition gates the stack, the
+  - [x] **REFACTOR** — the same one `empty` condition gates the stack, the
         axis, and the log; `cargo fmt --all -- --check`, `cargo clippy
         --locked --all-targets -- -D warnings`, and `node --check` green;
         re-run → still exit 0. Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+        node --check /tmp/report-inline.js → exit 0
+
+        Feature: Development Report
+          Scenario: Consumer opens the report of a scope with no recorded activity
+           ✔  Given a change "demo" with no recorded activity
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✔  Then the browser shows the empty state for "demo"
+           ✔  And the browser draws no workflow phase for it
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+  - [x] **COMMIT** — `89637f3a` — `test(e2e): <release note>` with the scenario
         title in the body (including the four refreshed captures). Record the
         revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit 89637f3a
+        test(e2e): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        Consumer opens the report of a scope with no recorded activity
+
+        The empty report renders the declared empty state for demo and draws no
+        workflow phase at all: no workflow section, phase card, phase marker, axis,
+        lane, tick, or zoom control reaches the DOM. The final-state pair and the
+        declared-state pair are refreshed in place.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../consumer-opens-the-report-of-a-scope-with-no-recorded-activity/desktop.png        | Bin 29 -> 29448 bytes
+         .../consumer-opens-the-report-of-a-scope-with-no-recorded-activity/desktop--empty.png | Bin 28 -> 29448 bytes
+         .../consumer-opens-the-report-of-a-scope-with-no-recorded-activity/mobile.png         | Bin 21 -> 21674 bytes
+         .../consumer-opens-the-report-of-a-scope-with-no-recorded-activity/mobile--empty.png  | Bin 21 -> 21675 bytes
+         .../development-report.feature                                                       |   2 +-
+         .../development_report_e2e_steps.rs                                                  |  60 +++---
+         6 files changed, 60 insertions(+), 38 deletions(-)
         ```
 
 ## Task HE7 — Evidence refresh, slug preservation, and both declared scope runs (no new scenario)
