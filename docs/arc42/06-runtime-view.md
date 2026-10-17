@@ -582,9 +582,9 @@ query is treated as `on`, warns once, and never blocks the harness.
 
 `givn timeline [--change <id>|--topic <id>] [--out <path>]` reads the record for
 one scope — or, with no scope flag, renders the project report, whose "outside a
-scope" band carries the project's own entries — builds the report model (bands,
-phases, the ranked longest measured entries of any kind, question wait totals, subagent fan-out, token
-totals overall, per model, and per subagent), substitutes that model into the
+scope" band carries the project's own entries — builds the report model (the workflow phase scaffold with the current state,
+phase aggregates, lane groups, the ranked longest measured entries of any kind, question wait totals,
+repeated-step groups, subagent fan-out, token totals overall, per model, and per subagent), substitutes that model into the
 embedded report document twice — as the machine-readable model payload element
 the document's inline script parses, and as the text-only initial view the
 written file itself carries — writes one self-contained HTML file (by
@@ -593,10 +593,10 @@ opens nothing itself and publishes no JSON model: the machine-readable view of
 the record is `givn history --json`. The document contains its own CSS,
 JavaScript, and SVG: it loads nothing, and it renders from the embedded
 timestamps alone, so the same record always produces the same pixels. The
-details panel carries the captured metadata facts and one bounded content
-region; the report embeds full content only up to the **8 MiB total budget** and
-marks the rest `content omitted; see the record`, while the store keeps every
-byte. A scope with no recorded entries renders the empty state rather than an
-empty chart.
+lane log carries the captured metadata facts and one bounded content region;
+the report embeds full content only up to the **8 MiB total budget** and marks
+the rest `content omitted; see the record`, while the store keeps every byte.
+A scope with no recorded entries renders the empty state rather than an empty
+workflow.
 
 *[Architecture documentation index](README.md)*

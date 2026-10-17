@@ -1014,7 +1014,7 @@ record always produces the same pixels and the browser tier can assert rendered 
 deterministically. The details panel renders the captured facts (session and
 title, status, stop reason, model, cost, context size/window, tool call id,
 output bytes, bounded error, parent/agent, retry, permission mode) and one
-bounded, scrollable, escaped content region. The report embeds full content up
+bounded, scrollable, escaped content region, in the selected lane's log. The report embeds full content up
 to a **8 MiB total budget**; beyond it the affected entry says
 `content omitted; see the record`, while the store keeps every byte. The report
 model is not published as JSON: the machine-readable view is
@@ -1029,10 +1029,10 @@ and no embedded database — DuckDB would outweigh the feature inside a
 size-optimized binary, and SQLite would add a schema and migration surface for a
 workload of one append and one scan. No bottleneck has been measured, and the
 plain file is the interface external tools read directly. To stay readable at
-that size, the timeline never draws one shape per entry: at low zoom, dense
-short activities collapse into per-bucket aggregate markers naming their count
-and combined duration, individual spans appear as the zoom narrows, and the
-summary and ranking always cover the full record — the ranking over every entry
+that size, an expanded phase's lanes never draw one shape per entry: at the fit
+zoom, dense short activities collapse into per-bucket aggregate ticks naming
+their count and combined duration, individual ticks appear as the phase zoom
+narrows, and the summary and ranking always cover the full record — the ranking over every entry
 kind that carries a measured duration, never only subprocess steps (D-23 tracks
 pruning and retention).
 

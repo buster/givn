@@ -206,7 +206,7 @@ keeps the bounded title label (R-90). The key is parsed leniently by
 `OverlayDoc` (`src/config/overlay.rs`), `givn history settings` is a non-recorded
 read view with a `config|default` source, the intake is the single enforcement
 site for every bound, the default-metadata list is qualified per harness, and
-the report's details panel/contract now carries the exact fact list and content
+the report's lane log/contract now carries the exact fact list and content
 region. The durable chapters follow all of this; `design-review.md`'s re-review
 round 5 records the evidence and the applied findings.
 
