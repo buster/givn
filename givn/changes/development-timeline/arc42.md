@@ -12,17 +12,17 @@
 | # | Chapter | Affected? | Reason | Summary of change (if Yes) |
 |---|---|---|---|---|
 | 1 | 01 introduction-and-goals | Yes | The change adds a product functional requirement: Givn itself records the development process and renders it as a report, so the requirements overview gains a row. | FR-45 added for the development record and the development report. |
-| 2 | 02 architecture-constraints | Yes | Three new durable technical constraints: the record is local, append-only, best-effort and never a gate, engages only once the Givn scaffold exists, and is kept out of repository history by an ownership split (the recorder only ever writes never-tracked destinations on every write; the versioned Fossil list is written by the owning commands) so recording can never dirty a worktree; the report is one self-contained file with no server, port, remote resource, or third-party JavaScript; and the Maki reporter is a trusted-project Lua plugin whose grants are explicit. | TC-34 (corrected ignore rule and engagement rule), TC-35, and TC-36 (Maki plugin and trust rule) added. |
-| 3 | 03 context-and-scope | Yes | A new external entity (each supported harness's reporter), seven new interfaces (`givn history ingest`, `givn history`, `givn timeline`, plus the reporter boundary for opencode, Claude Code, omp, and Maki), and the record file join the context; the scope gains the record and the report. | External entity, interface rows (the four harness boundaries, Maki's including the folder-trust gate), and in-scope bullets added; `.agents` recorded as a skills mirror with no runtime; the new use case `inspect-development-history` is named. |
+| 2 | 02 architecture-constraints | Yes | Four new durable technical constraints: the record is local, append-only, best-effort and never a gate, engages only once the Givn scaffold exists, and is kept out of repository history by an ownership split (the recorder only ever writes never-tracked destinations on every write; the versioned Fossil list is written by the owning commands) so recording can never dirty a worktree; the report is one self-contained file with no server, port, remote resource, or third-party JavaScript; the Maki reporter is a trusted-project Lua plugin whose grants are explicit; and the capture control is one project-owned mode key enforced by the intake. | TC-34 (corrected ignore rule and engagement rule), TC-35, TC-36 (Maki plugin and trust rule), and TC-37 added. TC-37: `record.mode: on \| off \| full` (default `on`, parsed leniently so an absent/invalid value falls back with one warning) — `off` is absolute (no append/pending/ignore write; `--with-full-content` ignored with a warning and exit 0), `on` records every available metadata field (label 120, text 240, error 1 000) plus full question text (4 000), `full` adds complete content (intake-enforced, 64 KiB per field / 256 KiB per entry, inline under the ignored `givn/history/` root), and lowering the mode retains captured entries. |
+| 3 | 03 context-and-scope | Yes | A new external entity (each supported harness's reporter), eight new interfaces (`givn history ingest`, `givn history settings`, `givn history`, `givn timeline`, plus the reporter boundary for opencode, Claude Code, omp, and Maki), and the record file join the context; the scope gains the record and the report. | External entity, interface rows (the four harness boundaries, Maki's including the folder-trust gate and the transcript-read question text), and in-scope bullets added; `.agents` recorded as a skills mirror with no runtime; the new use case `inspect-development-history` is named. `givn history settings` is the non-recorded mode query (source `config` or `default`); Claude resolves the mode in-process while the other three query by subprocess, and the intake enforces the mode and every bound. |
 | 4 | 04 solution-strategy | Yes | The strategy table gains the development record and report concern, because it spans capture, storage, intake, and rendering. | "Development record" row added to 4.1. |
-| 5 | 05 building-block-view | Yes | New building blocks: `history` (record model and store), `cli::history` (read, the one intake, and the process-per-hook harness mapper), `cli::timeline` (report model and rendering), the embedded timeline asset, and four embedded harness reporter integrations (five assets: omp, opencode, Claude Code, and Maki's module plus its grants file), with Maki additionally a full guidance target. | Diagram node plus five responsibility rows added. |
-| 6 | 06 runtime-view | Yes | Two new flows: best-effort capture while other commands run, and the intake/report flow, including the per-harness capture order for the four reporters and the report's widened ranking of measured entries of any kind. | New section 6.18 with a mermaid capture sequence, a per-harness capture table, and the report paragraph. |
-| 7 | 07 deployment-view | Yes | The project footprint gains `givn/history/` (record, reports, pending state), one generated reporter per executing agent target (`.omp/hooks/pre/`, `.opencode/plugins/`, `.claude/hooks/`), Maki's guidance and reporter (`.maki/skills/`, `.maki/commands/`, `.maki/lua/givn-timeline.lua`, grants merged into `.maki/plugin.toml`, and a managed fence in `.maki/init.lua`), and the repository-only `tests/e2e/` Node project; the acceptance suite gains Node/Chromium and a pinned `maki` v0.6.3 binary, provisioned outside the suite. | 7.3 target environments and 7.4 project footprint updated. |
-| 8 | 08 crosscutting-concepts | Yes | The record's ownership, the engagement rule, the runtime-state status of the store, the four harness reporters and their documented asymmetries (including Maki's folder-trust gate and main-session-only turns), best-effort discipline, scope rule, privacy bound, ignore entry, scale rule, report packaging, and browser tier are cross-cutting concepts every capture point and future reporter must respect. | New section 8.25 added, including the engagement, runtime-state, reporters, scale, and missing-data paragraphs. |
+| 5 | 05 building-block-view | Yes | New building blocks: `history` (record model and store), `cli::history` (read, the settings query, the one intake, the mode/bound enforcement, and the process-per-hook harness mapper), `cli::timeline` (report model, panel facts, and bounded content rendering), the embedded timeline asset, and four embedded harness reporter integrations (five assets: omp, opencode, Claude Code, and Maki's module plus its grants file), with Maki additionally a full guidance target. | Diagram node plus five responsibility rows added. The `history` block owns the capture modes, the two metadata tiers, and every bound; `cli::timeline` owns the 8 MiB report budget and the omission marker. |
+| 6 | 06 runtime-view | Yes | Two new flows: best-effort capture while other commands run, and the intake/report flow, including the per-harness mode discovery and capture order for the four reporters and the report's widened ranking of measured entries of any kind. | New section 6.18 with a mermaid capture sequence, a per-harness capture table, and the report paragraph. The capture flow states the two tiers (bounded metadata in `on`, complete content only in `full`, question text always in full), the two off-enforcement sites (the intake and Claude's in-process hook), and the in-process/subprocess discovery split; the report paragraph adds the panel facts, the 8 MiB content budget, and the omission note. |
+| 7 | 07 deployment-view | Yes | The project footprint gains `givn/history/` (record, reports, pending state), one generated reporter per executing agent target (`.omp/hooks/pre/`, `.opencode/plugins/`, `.claude/hooks/`), Maki's guidance and reporter (`.maki/skills/`, `.maki/commands/`, `.maki/lua/givn-timeline.lua`, grants merged into `.maki/plugin.toml`, and a managed fence in `.maki/init.lua`), and the repository-only `tests/e2e/` Node project; the acceptance suite gains Node/Chromium and a pinned `maki` v0.6.3 binary, provisioned outside the suite. | 7.3 target environments and 7.4 project footprint updated. Full content is not a second store: it lands inline in `givn/history/events.jsonl`, so the whole footprint stays under the one ignored root. |
+| 8 | 08 crosscutting-concepts | Yes | The record's ownership, the engagement rule, the runtime-state status of the store, the four harness reporters and their documented asymmetries (including Maki's folder-trust gate and main-session-only turns), best-effort discipline, scope rule, privacy bound, ignore entry, scale rule, report packaging, and browser tier are cross-cutting concepts every capture point and future reporter must respect. | New section 8.25 added, including the engagement, runtime-state, reporters, scale, report-budget, and missing-data paragraphs. The privacy bound is per tier: bounded metadata in `on`/`full`, complete content only in `full`, question text always in full; `off` is absolute, lowering the mode retains captured entries, and what is never captured as structured values is enumerated (full content can carry a credential that appears inside captured work, per R-92). |
 | 9 | 09 architecture-decisions | Yes | One new qualified decision (ADR-073): record ownership and the single intake interface — now carrying four harness reporters — plus an ADR-013 amendment for the `maki` target (full guidance target plus the reporter, with two merged user-owned files). Two further candidates were evaluated and routed to canonical artifacts instead of ADRs. | ADR-073 created and extended, ADR-013 amended (register row, ADR body, chapter-09 paragraph), chapter-09 paragraph added. |
-| 10 | 10-quality-requirements | Yes | New quality scenarios for intake rejection, record/render reproducibility, the record's privacy bound, rendering a multi-day record at scale, and harness parity. | Q-98 to Q-102 added. |
-| 11 | 11 risks-and-technical-debt | Yes | Unbounded store growth, per-harness contract drift (including the younger opencode V2 API and Maki's new Lua surface plus its folder-trust gate), best-effort loss, the new browser tier in the archive gate, the Claude Code surface gaps, and the never-dirty ignore rule (a versioned ignore write would have broken `givn upgrade`'s clean-checkout precondition — reproduced by this change's own implementation, with a Fossil residual) are risks; pruning and repair paths are deliberate debt. | R-83 to R-86, R-88, R-89 (refined), R-90, D-22, D-23 added; R-87 retired as inaccurate. |
-| 12 | 12-glossary | Yes | New domain terms: development record, record entry, development scope, intake, agent reporter, bounded label, record gap, development report, band, question wait, aggregate marker, subagent span, pending state, reporter gap, folder trust. | Fifteen glossary entries added with anti-terms, and the existing `Ignore block` entry widened to cover the rules block and the record entry. |
+| 10 | 10-quality-requirements | Yes | New quality scenarios for intake rejection, record/render reproducibility, the record's privacy bound, rendering a multi-day record at scale, harness parity, and analysis sufficiency. | Q-98 to Q-102 added. Also Q-103 (analysis sufficiency: the default tier carries the bounded metadata each harness exposes, a harness-unavailable field is absent rather than fabricated, and no tier stores wire payloads, MCP params, harness system prompts, or credentials as dedicated fields; full content can carry a credential inside captured work, per R-92). |
+| 11 | 11 risks-and-technical-debt | Yes | Unbounded store growth, per-harness contract drift (including the younger opencode V2 API and Maki's new Lua surface plus its folder-trust gate), best-effort loss, the new browser tier in the archive gate, the Claude Code surface gaps, the never-dirty ignore rule (a versioned ignore write would have broken `givn upgrade`'s clean-checkout precondition — reproduced by this change's own implementation, with a Fossil residual), and Maki's transcript-read question-text residual are risks; pruning and repair paths are deliberate debt. | R-83 to R-86, R-88, R-89 (refined), R-90 (including the `maki.session.messages` question-text residual), D-22, D-23 added; R-87 retired as inaccurate. Plus R-91 (store growth with `full`) and R-92 (full content is sensitivity-bearing; the default `on` is metadata-only, content requires explicit `full`, the store is local and ignored). |
+| 12 | 12-glossary | Yes | New domain terms: development record, record entry, development scope, intake, agent reporter, bounded label, record gap, development report, band, question wait, aggregate marker, subagent span, pending state, folder trust, metadata bound, full content, record mode. | Seventeen glossary entries added with anti-terms (the three capture-completeness terms — **Metadata bound**, **Full content**, and **Record mode** — are included in that count), and the existing `Ignore block` entry widened to cover the rules block and the record entry. |
 
 ## Notes
 
@@ -158,6 +158,58 @@ turn durations, and no subagent span in that run; subagent spans come from omp,
 opencode, and Claude Code (R-90). Inventory
 is now 47 entries (39 non-`@e2e`, 8 `@e2e`).
 
+**Capture completeness (2026-10-17, operator addendum).** The operator added
+four record-side requirements after the implementation landed, and the durable
+chapters follow them. (1) **Two tiers:** bounded metadata is captured always
+(label 120, text metadata 240, error text 1 000 characters), and complete
+LLM-facing content only in the `full` mode — `record.mode: on | off | full` in
+`givn/config.yaml`, default `on`, where `off` writes nothing at all and an
+absent or invalid value falls back to `on` with one warning; the intake enforces
+the mode (a one-payload `--with-full-content` override exists for tests and
+manual capture), so a stale reporter cannot bloat or leak the store, and
+reporters learn it from `givn history settings --json` (treating a failed query
+as `on`, warning once, never blocking the harness).
+(2) **Question text is the exception:** always captured in full, capped at
+4 000 characters per question entry, alongside the bounded label. (3) **Caps and
+placement:** 64 KiB per content field and 256 KiB per entry, stored inline in
+the same `givn/history/events.jsonl` line — no second store, so the managed
+ignore block covers content and reports by construction (`givn/history/` for
+Git, `givn/history/*` for the managed Fossil file). (4) **Never captured at any
+tier:** provider wire payloads and headers, MCP protocol frames and params,
+harness system prompts, credentials, UI dialog internals, and control-surface
+results. Chapter updates: TC-37 in chapter 02, the settings interface in
+chapter 03, the `history` block row in chapter 05, the capture-tier paragraph in
+chapter 06, the inline footprint in chapter 07, the per-tier privacy bound in
+chapter 08, Q-103 in chapter 10, R-91/R-92 in chapter 11, and **Metadata bound**
+plus **Full content** and **Record mode** in chapter 12; the config scaffold
+(`assets/config.yaml.tmpl`) documents the mode. No new ADR candidate
+qualified: the two tiers extend ADR-073's intake boundary rather than changing
+the ownership or delivery decision. Delta inventory after the addendum is 54
+entries (46 non-`@e2e`, 8 `@e2e`) — six new scenarios are in
+`development-record.feature` (20 entries), one report-surfacing scenario is in
+`development-report.feature` (16 entries), and the two ignore scenarios were
+extended in place, so the `@e2e` accounting is unchanged.
+
+**Capture-completeness hardening (2026-10-17, re-review round 5).** The fresh
+grilling pass resolved four operator-level questions and applied twelve findings
+without changing the record's ownership boundary. (1) `off` is absolute: the
+`--with-full-content` override applies to `on`/`full` only and is ignored with a
+one-line warning and exit 0 under `off`; the intake and Claude's in-process
+`harness_hook` are the two enforcement sites (no append, no pending write, no
+ignore write). (2) Lowering the mode is forward-looking: already-captured
+entries are retained, never purged. (3) The report embeds full content up to an
+**8 MiB total budget** and marks the remainder `content omitted; see the
+record`, while the store stays complete. (4) Maki's question text is read from
+`maki.session.messages` at the wait's close (no new grants); the every-permission
+`tool.question.input` slot is rejected, and a wait with no matching question
+keeps the bounded title label (R-90). The key is parsed leniently by
+`OverlayDoc` (`src/config/overlay.rs`), `givn history settings` is a non-recorded
+read view with a `config|default` source, the intake is the single enforcement
+site for every bound, the default-metadata list is qualified per harness, and
+the report's details panel/contract now carries the exact fact list and content
+region. The durable chapters follow all of this; `design-review.md`'s re-review
+round 5 records the evidence and the applied findings.
+
 The ADR candidates were evaluated in order and only the first qualified:
 
 1. **Development-record ownership and the single intake interface** — the
@@ -262,8 +314,9 @@ Files updated outside the change directory:
 `07-deployment-view.md`, `08-crosscutting-concepts.md`,
 `09-architecture-decisions.md`, `10-quality-requirements.md`,
 `11-risks-and-technical-debt.md`, `12-glossary.md`, `README.md`,
-`adr/README.md`, the new `adr/ADR-073-development-record-ownership.md`, and the
-new design system `docs/design/design-system.md`.
+`adr/README.md`, the new `adr/ADR-073-development-record-ownership.md`, the
+new design system `docs/design/design-system.md`, and the config scaffold
+`assets/config.yaml.tmpl`.
 
 Chapters 1, 2 and 3 keep their specification-layer prose free of implementation
 detail: chapter 02 records constraints only, chapter 03 names interfaces and

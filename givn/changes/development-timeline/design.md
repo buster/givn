@@ -40,8 +40,8 @@ records. The record is a consumer of existing signals, never a new gate.
 | Guarantee: the record is append-only | One JSONL line per entry, opened append-only; no rewrite, no reordering | development-record: "The record is append-only across commands" |
 | Guarantee: every entry belongs to exactly one scope | `resolve_scope` binds change → ideation topic → project, in that order | development-record: "Activity outside a change belongs to the project scope" |
 | Rule: a duration is measured, never inferred | `std::time::Instant` around the step itself; no back-filling from neighbours | development-record: "A recorded step keeps a measured duration and its outcome" |
-| Rule: the record keeps metadata and one bounded label | `bound_label` truncates the subject to ≤ 120 characters; the complete command, tool input, and question text are never stored | development-record: "A recorded label is bounded to 120 characters" |
-| Rule: reading the record never extends it | `givn history` and `givn timeline` run without a recorder | development-record: "Reading the development record does not extend it" |
+| Rule: the record keeps metadata and one bounded label | `bound_label` truncates the subject to ≤ 120 characters; complete command and tool input text are stored only in `full` mode, and the full question text is always stored (capped at 4 000 characters) | development-record: "A recorded label is bounded to 120 characters" |
+| Rule: reading the record never extends it | `givn history`, `givn history settings`, and `givn timeline` run without a recorder | development-record: "Reading the development record does not extend it" |
 | Guarantee: an ideation is reportable before a change exists | A topic window renders the topic's own entries; `resolve_scope` binds them to the one unfinished topic | development-record: "Activity during an ideation belongs to its topic scope" and development-report: "The report of an ideation topic names the work done before the change exists" |
 | Extension: a rejected event leaves the record intact | `givn history ingest` validates each event and keeps the accepted ones | agent-activity-reporting: "A reported event that does not match the intake contract is rejected without corrupting the record" |
 | Extension: the report's empty state | The report model marks a scope with no entries `empty` and the screen renders the empty state | development-report: "The report shows the empty state for a scope with no recorded activity" (report level) and "Consumer opens the report of a scope with no recorded activity" (`@e2e` Web UI) |
@@ -160,15 +160,44 @@ is already required on `PATH` by the existing omp/OpenCode attribution E2E.
   home directory. Realized in `src/history.rs::store_path`,
   `src/history.rs::ensure_ignored`, and the existing
   `src/skills/rules.rs::write_ignores` call sites.
-- **Decides D2: metadata plus a bounded 120-character label.** Approved by the
-  operator on 2026-10-16. An entry keeps kind, timestamps, duration, outcome,
-  model, token counts, subagent identity, and a single label derived from the
-  subject and truncated to 120 characters; complete tool inputs, complete
-  command text, and complete question text are never stored, and only a
-  question's first line is kept as its label. Rejected: complete payloads,
-  because credentials and private code that pass through a command would be
-  written into the record; and counts only, because the developer could not see
-  which task the agent looped around. Realized in `src/history.rs::bound_label`.
+- **Decides D2: bounded metadata by default, behind a three-state project mode
+  (`on`, the default), with complete content only in `full`.** Approved by the
+  operator on 2026-10-16 as "metadata plus a bounded label", and extended by the
+  operator's addendum on 2026-10-17 into a durable, auditable capture control:
+  `record.mode: on | off | full` in `givn/config.yaml`, where `off` writes
+  nothing new, `on` (the default, and the fallback for an absent or invalid
+  value, with one warning) records every available metadata field plus full
+  question text up to 4 000 characters, and `full` adds the complete
+  LLM-facing content under the 64 KiB-per-field / 256 KiB-per-entry caps; the
+  intake is the single enforcement site for every bound and, together with
+  Claude's in-process `harness_hook`, one of the two sites that enforce `off`,
+  and `givn history ingest --with-full-content` overrides the configured mode
+  for one payload. Four settled sub-decisions sharpen the control. **(a) `off` is
+  absolute:** `--with-full-content` overrides `on`/`full` only; when the project
+  mode is `off` the flag is ignored with a one-line warning and exit 0, because
+  a durable privacy decision must not be bypassed by a one-shot flag (rejected:
+  letting the flag override `off`). **(b) Lowering the mode is forward-looking:**
+  switching `full` → `on`/`off` never deletes, rewrites, or hides already
+  captured entries; a purge would be a separate explicit command, never a
+  side effect of a config edit (rejected: an implicit purge on lowering).
+  **(c) The key is parsed leniently:** the project-config parse path is
+  `src/config/overlay.rs::OverlayDoc` (not `src/config/manifest.rs`, whose
+  `deny_unknown_fields` governs the manifest), and `OverlayDoc` gains a raw
+  `record` value so a non-string or unknown `record.mode` is a one-warning
+  fallback to `on`, never a config-parse failure; `givn upgrade` preserves the
+  uncommented project key. **(d) A report content budget:** the self-contained
+  report embeds full content up to **8 MiB** in total and marks the rest
+  `content omitted; see the record`, while the store keeps every byte
+  (*Report Generation*). Rejected: complete payloads by default, because
+  credentials and private code that pass through a command would be written into
+  the record without the project's decision; counts only, because the developer
+  could not see which task the agent looped around; a boolean switch, because
+  "record nothing at all" and "record everything" are different operator
+  intents; and unlimited report embedding, because the details region is
+  visually bounded but the file would not be. Realized in
+  `src/history.rs` (mode resolution and `bound_label`),
+  `src/config/overlay.rs` (lenient `record` field), and `src/cli/history.rs`
+  (the settings query, intake enforcement, and the two off-enforcement sites).
 - **Decides D6: the dense timeline (view 1) is the report's visual direction.**
   Approved by the operator on 2026-10-16 after reviewing the three rendered
   reference views in `docs/design/design-system.md`; views 2 (phase lanes) and 3
@@ -276,10 +305,14 @@ appended, never rewritten. Field set (serde-serialized `HistoryEntry`):
 | `duration_ms` | integer, optional | measured duration; absent for a point entry |
 | `outcome` | string | `ok`, `failed`, `skipped`, `unknown` |
 | `parent` | integer, optional | the `id` of the enclosing entry (a step inside a command, a subagent inside a turn); a parent is only ever an id minted by the same process, so a parent link always names an entry that exists in the store |
+| `session` | string, optional | the harness session id, carried once the intake stops dropping the payload header |
 
 `kind: "usage"` entries carry `data: {input, output, cache_read, cache_write,
-total_tokens, model, subagent}`; everything else carries `data` only where the
-report needs a non-generic value (for example `exit_code` on a step entry).
+total_tokens, model, subagent}`; `question` entries always carry
+`data.question` (`{text, truncated, bytes}`); `full`-mode entries carry
+`data.content` (`{<named field>: {text, truncated, bytes}, truncated}`); every
+other entry carries `data` only where the report needs a non-generic value (for
+example `exit_code` on a step entry).
 
 ### Storage rationale and scale
 
@@ -344,20 +377,252 @@ command can dirty a worktree through an ignore write, `givn upgrade`'s
 clean-checkout precondition is never affected, and a clean clone becomes ignored
 on its first Givn command.
 
+### Capture completeness
+
+Grounding: the four harness inventories (`agent://OmpSpec`, `agent://ClaudeSpec`,
+`agent://OpencodeSpec`, `agent://MakiSpec`) enumerate what each installed harness
+actually exposes, with `supported`/`captured`/evidence per taxonomy id. This
+section turns that list into the record's contract.
+
+**Two tiers.** Every reporter captures, by default, *all available metadata* —
+bounded, never gated. Complete LLM-facing content is captured only when a
+project opts in. Question text is the one content value that is always captured
+in full, because a question is the human-workflow event the operator most needs
+to read.
+
+**Default metadata (always, bounded — where the harness exposes it).** Per
+kind, added to the entry's `data` (and, for the session, to the new top-level
+`session` field). "Always" means the reporter captures every field its harness
+actually exposes, never that every harness exposes every field; the
+per-harness availability table below is the authoritative qualification, and
+no scenario promises a field a harness cannot provide. Seeded records are used
+only to exercise a field a harness cannot expose (and then the assertion is
+about the record's representation of absence), never to substitute for a
+reporter-driven capture:
+
+| Kind | Captured by default |
+|---|---|
+| any entry | the harness `session` id (the intake no longer drops the payload header), the working directory, and — where the harness exposes it — `agent` identity `{kind, id, name, depth, parent}` and the session title |
+| `session` | start/end and the harness's exit/stop reason, status (`working`/`needs_input`/`idle`) where exposed, focus/switch transitions with their reason, transcript path |
+| `turn` | `index`, `stop_reason`/`finish` (raw word), `model`, `usage` (input/output/reasoning/cache-read/cache-write/total), `cost` (real and list price where present), `context_size`/`context_window`, round-trips/`num_turns`, and retry/fallback signals (`attempt`, `max_attempts`, `delay_ms`, model fallback `from`/`to`) |
+| `tool` | `tool_call_id`, the bounded input subject (existing label rule), `error` (bounded), `output_bytes`, a bounded `result_meta` (host details such as exit code, wall time, truncation counts), `duration_source` (`host` or `reporter`), parent/agent attribution |
+| `question` | the **full question text** (below), the question and option counts, the harness's wait measurement, and the answer outcome where exposed |
+| `subagent` | `id`, `name`/`title`, agent type/source, `session_file`, parent link, routing (`agent`, model patterns, spawn key, advisor role), status, duration, and tokens where the harness attributes them |
+| `phase` (compaction/plan/file-index) | compaction trigger, sizes before/after and window, aborted/skipped/will-retry; plan state and path; file-index root, file count, crashed/truncated flags |
+| extras | background-task id/type/status/description; MCP notification `server`/`method` (never its params); user shell/Python `cwd` and a bounded command/code subject; model-switch `from`/`to`/source; provider request status and request id (never payloads or headers) |
+
+**Per-harness availability (the four inventories' verdicts).** The default
+table is a ceiling; this table is what each installed harness can actually
+fill. A blank cell means the surface exposes no such value, and the record
+then omits it rather than inventing a zero:
+
+| Field | omp 18.6.1 | Claude Code 2.1.266 | opencode 2.0.26 | Maki 0.6.3 |
+|---|---|---|---|---|
+| turn index / count | `turnIndex` | **absent** (no turn index or count) | **absent** (no turn count) | `num_turns` (round-trips, not an index) |
+| stop reason | `message.stopReason` | **absent** (no stop reason) | `finish` / `rawFinish` | `TurnEnd.reason` |
+| model | `message.model` | transcript `assistant.message.model` | `step.started.model` | **partial** — `ModelChanged` is TUI-only; a headless turn may carry no model |
+| cost | `message.usage.cost` | transcript `cost-state` rollup | `step.ended.cost` / `session.usage.updated.cost` | `TurnEnd.cost` / `list_cost` |
+| context size / window | `ctx.getContextUsage()` / `usage.contextTokens` / `message.contextSnapshot` | **partial** — `SessionStart` resume/fork `context_tokens` only | **absent** (no event; `Model.Info.limit` is not an observation) | `TurnEnd.context_size` / `context_window` |
+| session title | readable via the session API, no title event | `SessionStart.session_title` | `session.created` / `session.renamed` title | **partial** — TUI-only; `session.read.title` is nil headless |
+| transcript path | session manager / stop hook / subagent lifecycle | `transcript_path`, `agent_transcript_path` | **absent** (SQLite, no path) | **absent** (no path API; `maki.session.messages` reads the live transcript) |
+
+Per-harness sources are the inventory rows: omp (`turn_start.timestamp`,
+`turn_end.message.stopReason/usage/cost`, `toolCallId`, `tool_result` error/bytes,
+`tool_approval_requested/resolved`, `task:subagent:lifecycle` +
+`before_subagent_spawn` + `ctx.agent`, `auto_compaction_*`/`session_compact`,
+`goal_updated`, `mcp_notification`, `auto_retry_*`/`retry_fallback_*`,
+`getSessionName`, `getUsageStatistics`, `user_bash`/`user_python`);
+Claude Code (`SessionStart` source/model/title, `SessionEnd` reason,
+`Stop`/`StopFailure` stop reason, `PostToolUseFailure` error text,
+`PostToolUse.tool_response` bytes/host `duration_ms`, `PermissionRequest` mode and
+suggestions, `SubagentStart/Stop` identity and transcript path, `PreCompact`/
+`PostCompact` trigger and summary, `Notification` type/text, transcript
+`cost-state` rollups and `turn_duration`); opencode
+(`session.created` title/agent/model/parentID, `session.step.ended.finish/
+rawFinish/cost/tokens`, `session.tool.*` ids and content, `permission.asked/
+replied`, `form.created/replied/cancelled` with `form.fields[]`,
+`session.usage.updated`, child sessions for subagents, `session.status`);
+Maki (`ToolDone` `is_error`/`bytes`/`input`, `TurnEnd` `reason`/`usage`/`cost`/
+`list_cost`/`context_size`/`context_window`/`num_turns`, `SessionStatusChanged`
+title/focused, `TaskStatusChanged`, `ModelChanged`, `CompactionDone`
+sizes/summary, `SessionTitleChanged`, `SessionEnd` reason/deadline). The
+inventories' `captured: no/partial` rows for the current reporters are the
+implementation gap this round closes — including the opencode reporter's
+mismatched id keys (`data.id` vs `data.sessionID`, `data.form.id`,
+`permission.replied.requestID`), which currently lose tool names, subagent
+identity, permission waits, and question text.
+
+**Bounds (one documented set).**
+
+| Bound | Value | Applies to |
+|---|---|---|
+| label | 120 characters, first line, `…` | tool/entry labels (unchanged) |
+| text metadata | 240 characters, first 3 lines, `…` | session title, subagent name/description, notification text, and other short descriptive values |
+| error text | 1 000 characters, first line kept, `…` | a failed tool/turn error string |
+| question text | **4 000 characters per question entry**, all questions and option labels joined, `truncated: true` when the cap is hit | the always-captured question text |
+| full-content field | 64 KiB per field, `truncated: true` and the original `bytes` recorded | tool input/output text, assistant/thinking text, user prompts, compaction summaries, plan content, subagent transcript excerpts |
+| full-content entry | 256 KiB per entry across its content fields | one entry's content bundle |
+
+**The intake is the single enforcement site for every bound in that table.**
+A reporter may truncate earlier as an optimization, but the intake re-applies
+the label, text-metadata, error, question, per-field content, and per-entry
+aggregate bounds to every event, so a stale or custom reporter cannot exceed
+them and no per-reporter table exists. Question text is the one content value
+that is always captured, so its bound is enforced even when the mode is `on`.
+
+**Wire schema for the two always-shaped values.** Both are additive members of
+the entry's `data` object under schema 1, so older readers skip them and no
+migration exists:
+
+| Field | Shape | Bound and marker |
+|---|---|---|
+| `data.question` | `{"text": "<all questions and option labels joined>", "truncated": <bool>, "bytes": <original UTF-8 byte length>}` | 4 000 characters per question entry; `truncated: true` and the original `bytes` survive the cut |
+| `data.content` | named fields per kind: `tool_input`, `tool_output`, `assistant_text`, `thinking_text`, `user_prompt`, `compaction_summary`, `plan_content`, `draft_text`, `subagent_transcript`; each field is `{"text": "<content>", "truncated": <bool>, "bytes": <original UTF-8 byte length>}`, and the object carries `"truncated": <bool>` when any field or the aggregate was cut | 64 KiB per field, then 256 KiB per entry across its content fields, applied in the kind's field order; a field cut at either bound keeps `truncated: true` and its original `bytes` |
+
+**The capture mode.** Capture is a three-state project setting,
+`record.mode: on | off | full` in `givn/config.yaml` (a documented project-owned
+key; the default when absent is **`on`**):
+
+| Mode | What is captured |
+|---|---|
+| `off` | Nothing new: no store append, no pending state, and no record-side ignore write. Reporters skip their work entirely after their one mode query. `givn history ingest` and the Claude `harness_hook` are the enforcement sites too: a stale payload is warned about and exits 0 without appending, writing pending state, or calling `ensure_ignored`. `givn history`, `givn history settings`, and `givn timeline` still read whatever the store already holds. |
+| `on` (default) | Every available metadata field: turn cost/context/model/stop reason/retry signals, tool call ids, output bytes, bounded error text, subagent identity/routing/duration, waits, compaction/plan state, session and title; bounded text per the bounds table; question text in full. No LLM-facing content. |
+| `full` | `on` plus the complete content set (tool inputs/outputs, assistant and thinking text, user prompts, compaction summaries, plan content, draft text, subagent transcripts/messages) under the caps above. |
+
+**The switch is forward-looking.** Lowering the mode (`full` → `on` or `off`)
+never deletes, rewrites, or hides entries that were already captured; reports
+keep rendering them and the store keeps every byte. A purge is a separate,
+explicit operator action, never an implicit side effect of a config edit. An
+absent or unparseable value resolves to `on` and prints one warning per process
+naming the key and the fallback (never a refusal — a broken config must not stop
+the work being recorded). The project-config parse path is
+`src/config/overlay.rs::OverlayDoc`, not `src/config/manifest.rs`: `OverlayDoc`
+gains a lenient raw `record` value, so a non-string or unknown `record.mode` is
+the one-warning fallback, never a whole-config parse failure, and `givn upgrade`
+preserves the uncommented project key.
+
+`givn history ingest --with-full-content` is a per-invocation override of
+`on`/`full` for one payload (tests and manual capture), documented in
+`givn history --help` as such: the help text names the `on`/`full` scope and the
+one-line `off` warning. **`off` is absolute:** under `off` the flag is ignored
+with that one-line warning and exit 0, because a durable privacy decision must
+not be bypassed by a one-shot flag. The config mode remains the durable control.
+
+The **intake** enforces the mode and every bound (defence in depth): an event
+that carries a `content` object is recorded metadata-only when the effective
+mode is not `full`, and the content is dropped while the event is still
+appended — a stale reporter cannot bloat or leak the store. Under `off` the
+intake appends nothing at all and the Claude `harness_hook` writes neither a
+store line nor pending state; both warn once and exit 0.
+
+**The settings query.** Reporters learn the mode with one cheap
+`givn history settings` query. Human output is
+`record mode: <on|off|full> (source: <config|default>)`; `--json` prints
+`{"mode": "on|off|full", "source": "config|default"}`. Both exit 0; an unknown
+or unreadable value warns once and reports `on`/`default`; outside a Givn
+project (no `givn/` scaffold) the command exits 1 with
+`error: not a Givn project (givn/ not found)`. `givn history settings` is a
+non-recorded read view — the `records()` exemption in `src/main.rs` alongside
+`givn history` and `givn timeline` — so a reporter's mode query never appends a
+`command` entry. The unreachable `source: flag` value is dropped: `source` is
+`config` when the key supplied the mode and `default` otherwise. Rejected
+alternatives: *always send and strip* (sensitive text would cross argv/stdin,
+process listings, and any wrapper, and the work would be wasted); *a
+per-invocation flag only* (a reporter that flushes automatically cannot be made
+to capture continuously by a flag on one manual call); *an implicit
+"full-if-present"* (the operator wants a durable, auditable switch, and a
+privacy-bearing default must be explicit).
+
+**How each reporter discovers the mode (and what it does when the query
+fails).**
+
+| Harness | Discovery | On failure |
+|---|---|---|
+| omp | One **subprocess** `givn history settings --json` call at session start (plugin setup), cached for the session; the plugin host is not the Givn binary. | Treat as `on`: report metadata, never block the turn. |
+| opencode | One **subprocess** call at plugin `setup(ctx)`, cached for the session. | Treat as `on`. |
+| Claude Code | Resolved **in-process** inside `givn history harness-hook --harness claude`: the generated shim execs that binary, so the hook process calls the mode resolver directly. There is no second query and no pending-file mode cache; the pending file keeps only starts/kind/label. | Treat as `on` (one warning); the pending file is written only after the mode is known, so `off` never creates one. |
+| Maki | One **subprocess** query at its first event callback (the same `maki.fn.jobstart` + `jobwait` mechanism its flush uses), cached in a module-local table; `setup()` runs no blocking job — that path is unverified, so it is not used. | Treat as `on`. |
+
+The failure discipline is uniform: a failed, timed-out, or malformed settings
+query degrades to `on` (metadata only — the least surprising and least invasive
+tier), emits one warning into the harness log, and never blocks or fails the
+harness's own work. When `off`, a reporter does not flush pending state either
+(that would be a record write by another name), and any pending file it finds is
+left for the next `on` mode session's normal prune. Claude's in-process
+resolution is what makes that ordering safe: the mode is known before any
+pending-state or store write. The record-side ignore write is skipped under
+`off` too — the store path is unchanged, so an existing ignore entry stays
+correct.
+
+**Record data contract.** The schema stays **`schema: 1`**: `data` is an open
+object whose additions are ignored by older readers, and the only new envelope
+field is `session` (a string, carried by every entry once the intake stops
+dropping the payload header), so no migration, no rewrite of existing lines, and
+a record written before this change stays readable. The always-captured
+question text lives in `data.question` (`{text, truncated, bytes}`), and
+content, in `full` mode, lives in `data.content`'s named fields
+(`{text, truncated, bytes}` each) with the intake's 64 KiB/256 KiB caps; both
+are additive `data` members, stored inline in the same JSONL line, so the
+placement rule below holds by construction and no second store exists.
+
+**Placement (and why it is ignored by construction).** Everything the record
+needs lives under `givn/history/`: the record at `givn/history/events.jsonl`
+(including inline full content), the generated reports at
+`givn/history/reports/<scope>.html`, and the pending state at
+`givn/history/pending/`. There is no second content file or directory. Because
+the managed ignore block already covers that root — `givn/history/` in
+`.git/info/exclude` for Git, re-asserted on every record write, and
+`givn/history/*` in the Fossil managed entry list — the record, the content, the
+reports, and the pending state are all ignored without a new destination. The
+scaffold-time `.gitignore` block (written before a repository exists) covers the
+same root.
+
+**Never captured as structured values, at any mode.** Provider wire payloads
+(`before_provider_request`/`after_provider_response` bodies and headers), MCP
+protocol frames and their `params`, harness system prompts, credentials and
+environment secrets as dedicated fields, UI-dialog internals, and the
+control-surface results (tool-call rewrites, cancellation decisions, injected
+messages) are excluded: they are either secrets or not workflow evidence, and
+the inventories mark them as control surface rather than observed work. Full
+content is not a secret filter: a credential that appears inside a captured
+command, file, prompt, or tool output is captured with that work. The default
+`on` mode stores no LLM-facing content, so it avoids that class; `full` is the
+project's explicit decision, and R-92 records the residual.
+
+**Report rendering.** The details panel surfaces exactly these facts for a
+selected entry, each escaped and each stated as "not reported" when the record
+does not carry it: session id and title; status; stop reason; model; cost (real
+and list price where present); context size and context window; tool call id;
+output bytes; the bounded error text; parent and agent attribution; retry
+(`attempt`, `max_attempts`, `delay_ms`, fallback `from`/`to`); and permission
+mode. When the entry carries `data.content`, the panel renders **one bounded,
+scrollable content region** beneath the facts: every named field in its own
+labelled block, its cap and `truncated` mark, and its original `bytes`; the
+region is escaped, never part of the accessible summary line, and links to no
+remote resource. The report embeds full content up to a **documented total
+budget of 8 MiB** across the whole document; beyond it, the remaining content is
+not embedded and the affected entry shows the exact note
+`content omitted; see the record`, while the store keeps every byte. The
+budget is applied in record order, so the same record always produces the same
+report.
+
 ### Pending state for process-per-hook harnesses
 
 A harness that runs every hook as its own process (Claude Code) cannot hold a
 start timestamp in memory, so its reporter keeps a small pending-state file per
 session under `givn/history/pending/<harness>-<session-id>.json`:
-`{<tool_use_id>: {started_at, kind, label}}`. Entries are written atomically
-before the tool runs, consumed by the matching end event, and pruned by age
-(older than 24 hours) and at session end. The file holds no payload content —
-only the opaque harness id, the start time, the entry kind, and the same bounded
-label the record would keep — so it obeys the record's privacy bound. Losing it
-costs a duration, never an entry: a start without an end becomes an unmeasured
-entry, and an end without a start keeps the harness's own `duration_ms` when the
-harness provides one. In-process harnesses (omp, opencode) keep the same state
-in memory and need no file.
+`{<tool_use_id>: {started_at, kind, label}}` — starts, kind, and label only.
+Entries are written atomically before the tool runs, consumed by the matching
+end event, and pruned by age (older than 24 hours) and at session end. **The
+file carries no mode cache:** Claude resolves the mode in-process inside the
+binary's `harness_hook`, so the pending file is written only after the mode is
+known, and under `off` no pending file is created or extended. The file holds
+no payload content — only the opaque harness id, the start time, the entry kind,
+and the same bounded label the record would keep — so it obeys the record's
+label bound. Losing it costs a duration, never an entry: a start without an end
+becomes an unmeasured entry, and an end without a start keeps the harness's own
+`duration_ms` when the harness provides one. In-process harnesses (omp,
+opencode, Maki) keep the same state in memory and need no file.
 
 ### Intake payload
 
@@ -376,11 +641,17 @@ in memory and need no file.
      "usage": {"input": 12043, "output": 812, "cache_read": 9000,
                "cache_write": 0, "total_tokens": 21855}},
     {"kind": "tool", "at": "2026-10-16T09:12:44.321Z", "tool": "bash",
-     "label": "cargo test", "duration_ms": 1240, "outcome": "ok"},
+     "label": "cargo test", "duration_ms": 1240, "outcome": "ok",
+     "content": {
+       "tool_input": {"text": "cargo test", "truncated": false, "bytes": 10},
+       "tool_output": {"text": "test result: ok.", "truncated": false, "bytes": 16}
+     }},
     {"kind": "subagent", "at": "2026-10-16T09:12:44.321Z", "agent": "scout",
      "subagent": "Architect.Scout", "status": "completed", "duration_ms": 61300},
     {"kind": "question", "at": "2026-10-16T09:12:44.321Z",
-     "label": "Which store should the record use?", "duration_ms": 480000}
+     "label": "Which store should the record use?", "duration_ms": 480000,
+     "question": {"text": "Which store should the record use?",
+                  "truncated": false, "bytes": 38}}
   ]
 }
 ```
@@ -394,6 +665,13 @@ Rules the intake enforces, and the reason each exists:
 - `scope` is resolved from the optional `change`/`topic` overrides, falling back
   to `resolve_scope` (*Scope resolution and the report window*); a named scope
   that does not exist is a per-event rejection;
+- the effective mode and every bound are applied **here**, not by the reporter:
+  under `off` nothing is appended and the intake warns once; under `on` a
+  `content` object is dropped while the event is kept; every label, text
+  metadata, error, question, per-field content, and per-entry aggregate bound is
+  re-applied to every event. `--with-full-content` raises the effective mode to
+  `full` for this payload only when the configured mode is not `off`; under
+  `off` the flag is ignored with one warning and exit 0;
 - a `subagent` entry whose harness cannot report that subagent's tokens carries
   `data.usage = "unavailable"` — the same marker the `turn` payload uses for
   absent usage (the `Absent token usage is recorded as unavailable` rule) — so
@@ -419,15 +697,17 @@ Rules the intake enforces, and the reason each exists:
 | Commit | `src/cli/commit.rs::commit` | one `revision` entry per created revision (backend, revision id) |
 | Check | `src/cli/check.rs::run` | the mandatory-check boundary as `phase` entries |
 
-**Two commands are deliberately not recorded: `givn history` and
-`givn timeline`.** Reading the record never mutates it, and an inspection that
-appended an entry about itself would put the newest entry into every report it
-produced and make the record's size depend on how often it was read. Both
-commands therefore run without a recorder; every other command, including the
-intake, records normally — **within the engagement rule of the record model
-section**: this section lists what is recorded once the project carries the
-Givn scaffold, and before that scaffold exists the recorder writes nothing and
-creates no directory.
+**Three read views are deliberately not recorded: `givn history`,
+`givn history settings`, and `givn timeline`.** Reading the record never mutates
+it, and an inspection that appended an entry about itself would put the newest
+entry into every report it produced and make the record's size depend on how
+often it was read. All three therefore run without a recorder
+(`src/main.rs::records` excludes the `History` read view and its `settings`
+subcommand alongside `Timeline`); every other command, including the intake,
+records normally — **within the engagement rule of the record model section**:
+this section lists what is recorded once the project carries the Givn scaffold,
+and before that scaffold exists the recorder writes nothing and creates no
+directory.
 
 The recorder is a small `HistoryRecorder` value created once per process
 (`src/history.rs`): it holds the store path and the resolved scope, mints each
@@ -707,17 +987,29 @@ the installed 0.6.3 binary):
 | Maki autocmd | Reported |
 |---|---|
 | `ToolStart` (`data.tool_id`, `data.tool`) | tool start; **no host event carries a timestamp**, so the reporter stamps its own start in its in-memory pending state, keyed by `tool_id` |
-| `ToolDone` (`data.tool_id`, `data.tool`, `data.is_error`, `data.bytes`; `data.duration_ms` and `data.input` only for a call that actually ran) | tool end. **Cancelled-call rule:** a call that never ran is detected by the absence of *both* `data.duration_ms` and `data.input` (the API reference marks both present only for a call that ran), and it is recorded **without** a duration — never as zero; a measured call that lacks a host duration still gets the reporter's own stamp. **Label rule:** the entry is labelled with the bounded subject of `data.input` — the first of its `command`, `file_path`, `path`, `pattern`, or `query` — and with the tool name when the call never ran or carries no usable subject; the subject is cut to its first line and to the record's 120-character bound (the privacy bound), so the full input is never stored |
-| `TurnStart` (`data.text`) | turn start, stamped by the reporter; `data.text` is never stored (it is prompt content). **TUI-only**: a headless (`-p`) or ACP session never fires it, so a headless turn's start is unknown and the turn entry carries no duration — never a zero |
+| `ToolDone` (`data.tool_id`, `data.tool`, `data.is_error`, `data.bytes`; `data.duration_ms` and `data.input` only for a call that actually ran) | tool end. **Cancelled-call rule:** a call that never ran is detected by the absence of *both* `data.duration_ms` and `data.input` (the API reference marks both present only for a call that ran), and it is recorded **without** a duration — never as zero; a measured call that lacks a host duration still gets the reporter's own stamp. **Label rule:** the entry is labelled with the bounded subject of `data.input` — the first of its `command`, `file_path`, `path`, `pattern`, or `query` — and with the tool name when the call never ran or carries no usable subject; the subject is cut to its first line and to the record's 120-character bound, so under `on` the full input is not stored; under `full` the complete post-layer `data.input` is stored as `data.content.tool_input`, and the matching `tool_result` is read from `maki.session.messages` at the flush as `data.content.tool_output` (the live transcript needs no new grants) |
+| `TurnStart` (`data.text`) | turn start, stamped by the reporter; `data.text` is prompt content, so under `on` it is not stored and under `full` it is stored as `data.content.user_prompt` under the content caps. **TUI-only**: a headless (`-p`) or ACP session never fires it, so a headless turn's start is unknown and the turn entry carries no duration — never a zero |
 | `TurnEnd` (`data.reason`, `data.usage` — four token fields, cache included —, `data.cost`, `data.list_cost`, `data.context_size`, `data.context_window`, `data.num_turns`) | turn entry with usage and outcome; the flush boundary. It still fires headlessly, so turn usage is recorded, while the turn's duration is available only when `TurnStart` was seen |
 | `TurnError` | turn entry with `outcome: failed` |
-| `AutoCompacting` / `CompactionDone` (`context_size`, `context_size_before`/`_after`, `data.summary`) | `phase` entries labelled `compacting` and `compacted` (the second with `outcome: ok`), so a compaction shows up as the long step it is; `data.summary` is never stored (content) |
-| `SessionStatusChanged` (`data.status` = `working`/`needs_input`/`idle`) | the question-wait derivation: `needs_input` opens a wait and the next `working` closes it, with the reporter's own measurement. The wait's label is the harness's own bounded `data.title`, falling back to `needs input` when it is absent — Maki exposes no question text, so the record never invents one |
+| `AutoCompacting` / `CompactionDone` (`context_size`, `context_size_before`/`_after`, `data.summary`) | `phase` entries labelled `compacting` and `compacted` (the second with `outcome: ok`), so a compaction shows up as the long step it is; `data.summary` is content, so under `on` it is not stored and under `full` it is stored as `data.content.compaction_summary` under the caps |
+| `SessionStatusChanged` (`data.status` = `working`/`needs_input`/`idle`) | the question-wait derivation: `needs_input` opens a wait and the next `working` closes it, with the reporter's own measurement. The wait's label is the harness's own bounded `data.title`, falling back to `needs input` when it is absent. **At the close the reporter reads `maki.session.messages`** (the live transcript; works in TUI, `-p`, SDK, and ACP, and needs no new grants) to find the blocking `question` tool_use and stores its `input.questions[]` as the always-captured `data.question`; when no matching question is in the transcript, the entry keeps the bounded title label and stores no full text |
 | `TaskStatusChanged` (`data.id`, `data.name`, `data.status` = `working`/`done`/`error`) | subagent spans: `working` opens one, `done`/`error` closes it, and the entry carries `data.usage = "unavailable"` because Maki never reports a subagent's tokens (the intake's usage marker). **Headless coverage not established**: in the headless run reproduced on 2026-10-17 the record carried the `task` tool entry (799 ms) and **no subagent span**, although Maki's own log shows the subagent session opening and closing (`duration_ms 795`, `input_tokens 8512`); `maki.task.list()` returned `nil, "no interactive UI attached"`, so a plugin could not enumerate subagents there either. Whether this event reaches a `task`-tool subagent outside the TUI is **not** established — the 0.6.3 binary's bundled reference names only `TurnStart` and `PlanReady` as `maki-ui`-only |
 | `ModelChanged` (`data.model`, `data.previous_spec`) | the model attributed to subsequent usage entries, because no usage payload names a model |
 | `SessionEnd` (`data.reason`, `data.deadline_ms`) | session end, then the final flush. `deadline_ms` is the shared teardown grace period, and a job started inside a callback dies with the dispatch unless it is awaited, so the flush awaits its `givn history ingest` job with `maki.fn.jobwait` inside the callback |
 | `SessionReset` (TUI `/new`; same path as `SessionEnd` with `reason = "reset"`) | flush, then clear that session's buffer |
 | `SessionTitleChanged`, `SessionFocusChanged`, `TaskFocusChanged`, `PlanReady`, `InputChanged`, `FileIndexReady` | not recorded: session bookkeeping, UI focus, or a plan path with no timeline value |
+
+**Why the transcript and not the tool slot.** Maki's `tool.question.input`
+slot exposes the same questions array, but a slot on an undeclared tool needs
+**every** permission — `fs_read`, `fs_write`, `net`, `env`, `run`, and `agent` —
+including network and agent access the reporter does not otherwise need. The
+live `maki.session.messages` transcript needs none beyond the reporter's
+existing `fs_read`/`fs_write`/`run` grants, so it is the chosen surface.
+Residual, stated rather than hidden: the transcript is read at the wait's
+close, so a wait whose blocking call is not a `question` tool (a permission
+prompt, plan form, or Lua float also produces `needs_input`) or whose session
+has already ended keeps only the bounded title label — the wait duration is
+still recorded, and the record never invents question text.
 
 **Gaps (recorded, not invented).**
 
@@ -925,6 +1217,18 @@ Missing data is rendered as missing, never as zero:
   proven by the regular scenario "A dense record is reported as aggregates
   instead of raw ticks", which is a rendering rule rather than a second
   interaction, so it adds no `@e2e` scenario and no inventory row.
+- **Details facts and content budget**: the report model carries every entry's
+  new `session` and `data` members unchanged — `stop_reason`, `cost`,
+  `context_size`/`context_window`, `tool_call_id`, `output_bytes`, `error`,
+  `parent`/`agent`, retry, and `permission_mode` — and the details panel renders
+  the exact fact list in *Report rendering*. `ReportModel` gains
+  `content_budget_bytes: 8_388_608` and `content_bytes`; `render_report` embeds
+  `data.content` fields in record order until the budget is exhausted, then
+  replaces the remaining fields with the omission marker
+  (`content_omitted: true` on the entry and the text
+  `content omitted; see the record`), never modifying the store. The model
+  payload element carries the same budget and omission facts, so the regular
+  scenario and the e2e panel assertion read them from the written file itself.
 - **Rendering**: the generator substitutes exactly two markers in the asset,
   each once, and nothing else. (1) The **model payload element** —
   `<script id="report-model" type="application/json">` — receives the JSON model
@@ -991,21 +1295,24 @@ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test
 
 | Primitive | Type | Purpose |
 |---|---|---|
-| `HistoryEntry` | `struct` | One record line: id, at, scope, source, kind, name, label, duration_ms, outcome, parent, data |
+| `HistoryEntry` | `struct` | One record line: id, at, scope, source, kind, name, label, duration_ms, outcome, parent, session, data |
 | `Scope` | `enum` | `Change(id)`, `Ideation(id)`, `Project(name)` — the exactly-one-scope rule |
 | `HistoryStore` | `struct` | Append and read `givn/history/events.jsonl`; owns the schema and mints each `id` at append time under the append lock |
 | `HistoryRecorder` | `struct` | Per-process recorder: store handle, resolved scope, `record`, `span` |
 | `resolve_scope` | `fn` | The exactly-one-unfinished-scope rule: one active change → one unfinished ideation topic → project (*Scope resolution and the report window*) |
-| `bound_label` | `fn` | Derives the ≤ 120-character subject label; the only place raw subjects are touched |
-| `IngestedEvent` | `struct` | One reported event from the intake payload, with its per-kind validation |
+| `RecordMode` | `enum` | `On`, `Off`, `Full`; resolved from `givn/config.yaml` through `src/config/overlay.rs::OverlayDoc` with the one-warning fallback, and reported by `givn history settings` |
+| `bound_label` | `fn` | Derives the ≤ 120-character subject label; the label subject's one bound, not the record's content bound |
+| `bound_question` | `fn` | Joins all questions and option labels and caps the always-captured text at 4 000 characters, recording `truncated`/`bytes` |
+| `bound_content` | `fn` | Caps each `data.content` field at 64 KiB and the entry aggregate at 256 KiB, recording `truncated`/`bytes`; called by the intake for every event |
+| `IngestedEvent` | `struct` | One reported event from the intake payload, with its per-kind validation and its `content`/`question` members |
 | `HarnessPayload` | `struct` | One raw hook payload from a process-per-hook harness, with the fields the mapper reads |
 | `map_harness_event` | `fn` | Raw harness payload → record events plus pending-state updates; the Claude mapper's only entry point, also usable by a future shell-based harness |
 | `PendingState` | `struct` | Start timestamps for process-per-hook harnesses, keyed by the harness's own call id; written atomically, pruned by age and at session end |
-| `ReportModel` | `struct` | Everything the report screen renders: scope, bands, entries, summary |
+| `ReportModel` | `struct` | Everything the report screen renders: scope, bands, entries, summary, and the 8 MiB `content_budget_bytes`/`content_bytes` accounting |
 | `RankedStep` | `struct` | One ranked entry: id, visible label, **kind**, and the measured duration the ranking orders by |
 | `ranked_steps` | `fn` | Every entry with a measured `duration_ms`, of any kind, longest first with the existing tie-breaking — never only `step` entries |
-| `build_report_model` | `fn` | Record lines → `ReportModel` (phase derivation, ranking, totals) |
-| `render_report` | `fn` | `ReportModel` → the HTML document: the model payload element (JSON, `<` escaped) and the text-only initial view substituted once each, with every recorded string escaped |
+| `build_report_model` | `fn` | Record lines → `ReportModel` (phase derivation, ranking, totals, content budget/omission accounting) |
+| `render_report` | `fn` | `ReportModel` → the HTML document: the model payload element (JSON, `<` escaped) and the text-only initial view substituted once each, with every recorded string escaped, content fields embedded in record order up to the 8 MiB budget, and the remaining content marked `content omitted; see the record` |
 | `run_givn` (test) | `fn` | Existing harness: runs the compiled binary in a temp project root |
 
 ## Strict Mode (mandatory)
@@ -1154,7 +1461,7 @@ Every row is one normalized inventory entry from
 | agent-activity-reporting: report agent activity | Consumer installs the agent reporter and its reported activity lands in the record | CLI (harness integration) | one `@e2e` Scenario Outline with one Examples row per harness (omp, opencode, Claude Code, Maki): install the project (`givn init --agents <target>`), then drive that harness's generated reporter through its real entry point — `node` with a fake `pi` for omp, `node` with a fake plugin context for opencode, the generated Claude shim with a real hook payload on stdin (mapper in the binary), and for Maki the real binary loading the plugin (`maki --trust prompt`) plus a test-only Lua driver firing synthetic autocmds — emitting a tool call, a subagent start/stop, and a question wait; every reporter calls the real `givn history ingest`, and `givn history --change demo --json` is asserted |
 | development-report: generate the development report for a change | Consumer generates the development report for a change | CLI | `common::run_givn`: `givn timeline --change demo --out report.html`; the assertion reads the written file |
 | development-report: open the report in a browser | Consumer opens the generated development report in a browser | Web UI | Playwright: one `@e2e` Scenario Outline with a change row and a topic row — one normalized action with input variants, so it adds no second inventory row — `page.goto("file://<root>/report.html")`, then read the rendered heading, the timeline SVG, and the longest step's duration from the DOM |
-| development-report: select a timeline element | Consumer selects a timeline element and reads its details | Web UI | Playwright: click the longest step's span (or focus it and press Enter), then read the details panel's rendered text |
+| development-report: select a timeline element | Consumer selects a timeline element and reads its details | Web UI | Playwright: click the longest step's span (or focus it and press Enter), then read the details panel's rendered text — including one new metadata fact and the bounded content region (same action, extended assertions) |
 | development-report: zoom the timeline | Consumer zooms the timeline to a shorter time range | Web UI | Playwright: click the zoom-in control, then read the rendered range label before and after and assert it narrowed |
 | development-report: open the report of a scope with no recorded activity | Consumer opens the report of a scope with no recorded activity | Web UI | Playwright: generate the report for a scope with no recorded activity, `page.goto("file://<root>/report.html")`, then read the rendered empty-state heading and the absence of any axis from the DOM |
 
@@ -1296,6 +1603,7 @@ flowchart LR
     Rec --> Store[("givn/history/events.jsonl")]
     Ingest["src/cli/history.rs<br/>ingest / read"] --> Store
     Mapper["src/cli/history.rs<br/>harness-hook mapper"] --> Ingest
+    Settings["src/cli/history.rs<br/>settings query"] --> Mode["src/config/overlay.rs<br/>record.mode"]
     Timeline["src/cli/timeline.rs<br/>report generator"] --> Store
     Timeline --> Asset["assets/timeline/report.html"]
   end
@@ -1309,21 +1617,26 @@ flowchart LR
   R2 -->|stdin JSON| Ingest
   R3 -->|stdin payload| Mapper
   R4 -->|stdin JSON| Ingest
+  R1 -.->|settings| Settings
+  R2 -.->|settings| Settings
+  R3 -.->|in-process mode| Settings
+  R4 -.->|settings| Settings
   Asset --> Browser["browser (Playwright in e2e)"]
 ```
 
 | Module / asset | Change |
 |---|---|
-| `src/history.rs` | **new** — entry schema, store, scope resolution, bounded labels, pending state, and `ensure_ignored` with its ownership split (the recorder re-asserts `.git/info/exclude` on every write, writes Fossil's repository `ignore-glob` setting only while no managed file overrides it, and uses `.gitignore` only before a repository exists; the Fossil entry `givn/history/*` joins the managed list through `write_ignores`) |
-| `src/cli/history.rs` | **new** — `givn history` (read), `givn history ingest` (the one intake), and `givn history harness-hook --harness claude` (the raw-payload mapper and transcript reader for process-per-hook harnesses) |
-| `src/cli/timeline.rs` | **new** — report model and HTML rendering; `ranked_steps` covers every entry kind with a measured duration (not only `step`), and `RankedStep` carries the entry's kind |
-| `assets/timeline/report.html` | **new** — the self-contained report asset (inline CSS/JS/SVG) with two substituted markers: the model payload element the script parses and the text-only initial view the file carries; the ranking rows carry label, kind, and duration |
+| `src/history.rs` | **new** — entry schema (including `session`), store, scope resolution, bounded labels, pending state, the three-mode resolver, the question/content bounds, and `ensure_ignored` with its ownership split (the recorder re-asserts `.git/info/exclude` on every write, writes Fossil's repository `ignore-glob` setting only while no managed file overrides it, and uses `.gitignore` only before a repository exists; the Fossil entry `givn/history/*` joins the managed list through `write_ignores`) |
+| `src/config/overlay.rs` | the project-config parse path (`OverlayDoc`) gains a lenient raw `record` value so `record.mode` is read by the resolver; an invalid value is a one-warning fallback to `on`, never a config-parse failure, and `givn upgrade` preserves the uncommented key |
+| `src/cli/history.rs` | **new** — `givn history` (read), `givn history settings [--json]` (the non-recorded mode query), `givn history ingest` (the one intake and the single enforcement site for every bound, plus mode enforcement for payloads), and `givn history harness-hook --harness claude` (the raw-payload mapper, in-process mode resolution, the second `off` site, and transcript reader for process-per-hook harnesses) |
+| `src/cli/timeline.rs` | **new** — report model and HTML rendering; `ranked_steps` covers every entry kind with a measured duration (not only `step`), `RankedStep` carries the entry's kind, and the model carries the panel facts plus the 8 MiB content budget and omission markers |
+| `assets/timeline/report.html` | **new** — the self-contained report asset (inline CSS/JS/SVG) with two substituted markers: the model payload element the script parses and the text-only initial view the file carries; the details panel renders the captured facts and the bounded content region, the ranking rows carry label, kind, and duration, and content beyond the report budget reads `content omitted; see the record` |
 | `assets/agent-integrations/omp/givn-timeline.js` | **new** — the omp reporter (`pi.on` handlers plus one event-bus subscription) |
 | `assets/agent-integrations/opencode/givn-timeline.js` | **new** — the opencode reporter (`setup(ctx)`: domain hooks plus one `ctx.event.subscribe` iterable) |
 | `assets/agent-integrations/claude/givn-timeline.sh` | **new** — the Claude Code shim that pipes its payload to the binary-side mapper |
 | `assets/agent-integrations/maki/givn-timeline.lua` + `assets/agent-integrations/maki/plugin.toml` | **new** — the Maki reporter module (its `setup()` registers the autocmds and exports its callbacks for the test driver) and the permission grants it needs (`fs_read`, `fs_write`, `run`) |
 | `docs/design/design-system.md` | **new** — the durable design system and the reference views |
-| `src/main.rs` | two new commands plus the recording wrapper around dispatch |
+| `src/main.rs` | two new commands (`history`, `timeline`) plus the `history settings` subcommand and its read-view exemption, and the recording wrapper around dispatch (`records()` excludes `history`, `history settings`, and `timeline`) |
 | `src/subprocess.rs` | emit a `step` entry (label, duration, outcome) at the shell choke point |
 | `src/hooks.rs` | emit a `hook` entry per hook |
 | `src/cli/archive.rs` | emit `phase` entries at the existing gate boundaries; record the existing scope duration |
@@ -1339,18 +1652,30 @@ flowchart LR
 ## Data Model Changes
 
 No existing schema, struct, or file format changes: the archive receipt
-(`proof::Receipt`), the runner result contract, `givn/specs/.retired.yaml`, and
-the configuration surface are untouched. The change adds one new on-disk format
-(the record, described in **Record Model And Intake Contract**) and one new
-in-memory model (`ReportModel`) that is serialized only inside the generated
-HTML. `src/state.rs` keeps its derived-state contract and gains no file.
+(`proof::Receipt`), the runner result contract, and `givn/specs/.retired.yaml`
+are untouched; the configuration surface gains one documented project key,
+`record.mode`, parsed leniently through `OverlayDoc` with no schema-version
+change. The change adds one new on-disk format (the record, described in
+**Record Model And Intake Contract**) with the additive `session` envelope
+field and the `data.question`/`data.content` members, and one new in-memory
+model (`ReportModel`) that is serialized only inside the generated HTML and
+carries the 8 MiB content budget. `src/state.rs` keeps its derived-state
+contract and gains no file.
 
 ## Open Technical Questions
 
 None. The record schema, the intake contract, the flush and failure discipline,
 the report technology, the capture points, and the browser driver are fixed
-above, and the operator answered the three questions that were carried here on
-2026-10-16: D1 (one local project store kept out of repository history), D2
-(metadata plus a bounded 120-character label), and D6 (the dense timeline). The
-ledger above records each answer with its rejected alternatives, so no proposal
-question remains open and nothing blocks the task list.
+above, and the operator answered the three questions that were carried here:
+D1 (one local project store kept out of repository history, 2026-10-16), D2
+(bounded metadata by default behind the three-state `record.mode`, default
+`on`, with complete content only in `full`, 2026-10-16 and extended 2026-10-17),
+and D6 (the dense timeline, 2026-10-16). The capture-completeness round resolved
+four further questions on 2026-10-17: `--with-full-content` versus `off` (Q1:
+`off` absolute, the flag is ignored with a warning and exit 0), retention when
+the mode is lowered (Q2: forward-looking, no purge), the report content budget
+(Q3: 8 MiB embedded, then `content omitted; see the record`), and Maki question
+text (Q4: read from `maki.session.messages` at the wait's close, no new grants,
+with the unmatched-wait residual). The ledger above records each answer with
+its rejected alternatives, so no proposal question remains open and nothing
+blocks the task list.

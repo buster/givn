@@ -69,6 +69,15 @@ Feature: Development Report
     Then the report ranks the agent tool call first
     And the ranking names the kind of every entry it lists
 
+  @givn.added @wip
+  Scenario: The report details panel carries the captured metadata and content
+    Given a change "demo" whose record holds captured metadata and full-mode content
+    When the developer generates the development report for "demo"
+    Then the report model names the session, its title, the status, the stop reason, the cost, the context size and window, the tool call id, the output size, the error, the parent, the retry, and the permission mode
+    And the report embeds the content within the 8 MiB documented budget
+    And the report notes "content omitted; see the record" beyond the budget
+    And the development record still holds every content byte
+
   @givn.added @e2e
   Scenario: Consumer generates the development report for a change
     Given a project root with givn/ initialised
@@ -98,6 +107,8 @@ Feature: Development Report
     When the consumer selects the longest recorded step
     Then the browser shows a details panel for that step
     And the panel names its start, its duration, and its outcome
+    And the panel names the entry's tool call id
+    And the panel renders the entry's content in its bounded content region
 
   @givn.added @e2e
   Scenario: Consumer zooms the timeline to a shorter time range

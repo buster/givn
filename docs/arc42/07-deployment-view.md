@@ -77,7 +77,11 @@ targets that execute an agent get their own reporter the same way:
 `.maki/lua/givn-timeline.lua`, grants merged into `.maki/plugin.toml`, and a
 managed fail-soft `-- givn:begin:timeline` fence inside `.maki/init.lua` (Maki
 runs only that file, so a module under `lua/` stays inert until it is required
-and the fence is what loads it). The
+and the fence is what loads it). The full-content store is **not** a separate
+directory: with `record.mode: full`, content lands inline in
+`givn/history/events.jsonl` under the 64 KiB-per-field / 256 KiB-per-entry caps,
+so the whole footprint (record, content, `givn/history/reports/`, and
+`givn/history/pending/`) stays under the ignored `givn/history/` root. The
 `agents` target is a skills mirror that no harness runs, so it receives no
 reporter. The browser tier's Node project under `tests/e2e/` is repository
 content and is not installed into a consumer project.

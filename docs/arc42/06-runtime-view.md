@@ -557,6 +557,29 @@ come from the binary-side pending state. None of the three can corrupt the
 record: the intake validates, and a signal a harness cannot deliver is rendered
 as missing rather than as zero.
 
+Capture follows the project's `record.mode`. Under `off` nothing is written — no
+append, no pending state, no record-side ignore write — while reads still serve
+what the store already holds. Two sites enforce that even against a stale
+reporter: `givn history ingest` warns once and exits 0 without appending, and
+the Claude `harness_hook` resolves the mode in-process and writes neither a
+store line nor pending state. `--with-full-content` is ignored under `off` with
+one warning and exit 0. Under `on` (the default, also the fallback for an
+absent or invalid value, parsed leniently by `OverlayDoc`) every metadata field
+the harness actually exposes is recorded: session id, title, working directory,
+agent identity, turn stop reason/model/cost/context/retry signals where
+available, tool call id and bounded error text and output bytes, subagent
+identity/routing/duration, compaction and plan state, the harness extras the
+inventories list, and question text in full (bounded to 4 000 characters per
+question entry). Under `full` the complete LLM-facing content is added inline in
+the same entry under the documented caps. The intake is the single enforcement
+site for the mode and every bound, so content sent under `on` is dropped while
+the event is kept. Lowering the mode retains already-captured entries; it never
+purges them. Reporters ask `givn history settings --json` (source `config` or
+`default`) once per session by subprocess — omp and opencode at setup, Maki at
+its first event callback through the flush's own jobstart/jobwait mechanism —
+while Claude's hook process resolves it in-process inside the binary; a failed
+query is treated as `on`, warns once, and never blocks the harness.
+
 `givn timeline [--change <id>|--topic <id>] [--out <path>]` reads the record for
 one scope — or, with no scope flag, renders the project report, whose "outside a
 scope" band carries the project's own entries — builds the report model (bands,
@@ -569,7 +592,11 @@ default `givn/history/reports/<scope>.html`), and prints its path. The command
 opens nothing itself and publishes no JSON model: the machine-readable view of
 the record is `givn history --json`. The document contains its own CSS,
 JavaScript, and SVG: it loads nothing, and it renders from the embedded
-timestamps alone, so the same record always produces the same pixels. A scope
-with no recorded entries renders the empty state rather than an empty chart.
+timestamps alone, so the same record always produces the same pixels. The
+details panel carries the captured metadata facts and one bounded content
+region; the report embeds full content only up to the **8 MiB total budget** and
+marks the rest `content omitted; see the record`, while the store keeps every
+byte. A scope with no recorded entries renders the empty state rather than an
+empty chart.
 
 *[Architecture documentation index](README.md)*
