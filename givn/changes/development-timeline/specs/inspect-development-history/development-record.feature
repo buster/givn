@@ -166,6 +166,14 @@ Feature: Development Record
     And the record holds the command's bounded metadata
     And `givn history settings --json` reports mode "on" with source "default"
 
+  @givn.added @wip
+  Scenario: An artifact appearance is recorded as one phase transition
+    Given a change "demo" whose proposal.md appears while a recorded command runs
+    When the command finishes
+    Then the record holds one phase entry labelled "proposal.md" for "demo"
+    And a later recorded command that sees the same artifact records no second transition
+    And a gate check for the same artifact keeps its artifact id label and is not a transition
+
   @givn.added @e2e
   Scenario: Consumer runs a lifecycle step and reads its recorded actions
     Given a project root with givn/ initialised
