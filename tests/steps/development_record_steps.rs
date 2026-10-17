@@ -2257,3 +2257,204 @@ fn record_keeps_the_tool_calls_metadata(world: &mut GivnWorld) {
         "the tool call id is gone: {tool}"
     );
 }
+
+/// The complete input the full-mode fixture reports: larger than the per-field
+/// content cap by design, so the intake's cut is observable.
+fn over_cap_input() -> String {
+    "I".repeat(givn::history::CONTENT_FIELD_LIMIT + 4_096)
+}
+
+/// The last agent tool entry the scenario's intake recorded.
+fn last_recorded_tool(world: &GivnWorld) -> Value {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let change = world
+        .last_change_id
+        .clone()
+        .expect("the full-mode fixture ran first");
+    let entries = support::record_entries(&env.root());
+    let tools: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| {
+            entry["kind"] == json!("tool")
+                && entry["source"] == json!("agent")
+                && entry["scope"] == json!({ "kind": "change", "id": change })
+        })
+        .collect();
+    tools
+        .last()
+        .map(|entry| (*entry).clone())
+        .unwrap_or_else(|| panic!("the intake recorded no tool entry: {entries:#?}"))
+}
+
+#[given(regex = r#"^a change "([^"]+)" whose project sets the record mode to "([^"]+)"$"#)]
+fn change_whose_project_sets_the_record_mode(world: &mut GivnWorld, id: String, mode: String) {
+    let env = common::make_init_root();
+    let out = common::run_givn(&env, &["new", &id]);
+    assert!(
+        out.status.success(),
+        "givn new {id} failed: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+    set_record_mode(&env, &mode);
+    let query = common::run_givn(&env, &["history", "settings", "--json"]);
+    assert!(
+        query.status.success(),
+        "the settings query failed: {}",
+        String::from_utf8_lossy(&query.stderr)
+    );
+    let payload: Value = serde_json::from_slice(&query.stdout)
+        .unwrap_or_else(|error| panic!("the settings query did not print JSON: {error}"));
+    assert_eq!(
+        payload,
+        json!({ "mode": mode, "source": "config" }),
+        "the fixture's mode is not the configured one"
+    );
+    world.last_change_id = Some(id);
+    world.env = Some(env);
+}
+
+#[when("the agent reports a tool call whose complete input exceeds the per-field cap")]
+fn agent_reports_a_tool_call_over_the_field_cap(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let change = world
+        .last_change_id
+        .clone()
+        .expect("the full-mode fixture ran first");
+    let input = over_cap_input();
+    let output = "O".repeat(givn::history::CONTENT_FIELD_LIMIT + 4_096);
+    let assistant = "A".repeat(givn::history::CONTENT_FIELD_LIMIT);
+    let thinking = "T".repeat(givn::history::CONTENT_FIELD_LIMIT);
+    let prompt = "U".repeat(givn::history::CONTENT_FIELD_LIMIT);
+    let payload = support::intake_payload(
+        Some(&change),
+        None,
+        vec![json!({
+            "kind": "tool",
+            "at": "2026-10-17T10:30:00.000Z",
+            "tool": "Bash",
+            "label": "large input",
+            "duration_ms": 5,
+            "outcome": "ok",
+            "content": {
+                "tool_input": { "text": input, "truncated": false, "bytes": over_cap_input().len() },
+                "tool_output": { "text": output, "truncated": false, "bytes": output.len() },
+                "assistant_text": { "text": assistant, "truncated": false, "bytes": assistant.len() },
+                "thinking_text": { "text": thinking, "truncated": false, "bytes": thinking.len() },
+                "user_prompt": { "text": prompt, "truncated": false, "bytes": prompt.len() }
+            }
+        })],
+    );
+    let out = support::report_intake(env, &payload);
+    assert!(
+        out.status.success(),
+        "the full-mode intake failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    world.last_output = Some(out);
+}
+
+#[then("the record keeps the input up to the 64 KiB per-field cap")]
+fn record_keeps_the_input_up_to_the_field_cap(world: &mut GivnWorld) {
+    let entry = last_recorded_tool(world);
+    let content = entry
+        .pointer("/data/content")
+        .unwrap_or_else(|| panic!("the full-mode entry carries no content: {entry}"));
+    let field = &content["tool_input"];
+    let text = field["text"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the tool input field carries no text: {entry}"));
+    assert_eq!(
+        text.len(),
+        givn::history::CONTENT_FIELD_LIMIT,
+        "the stored input is not the per-field cap: {entry}"
+    );
+    assert_eq!(
+        text,
+        over_cap_input()
+            .chars()
+            .take(givn::history::CONTENT_FIELD_LIMIT)
+            .collect::<String>(),
+        "the stored input is not the reported text up to the cap: {entry}"
+    );
+    assert_eq!(
+        field["truncated"],
+        json!(true),
+        "the cut input is not marked truncated: {entry}"
+    );
+    world
+        .development_record
+        .get_or_insert_with(DevelopmentRecordState::default)
+        .last_entry = Some(entry);
+}
+
+#[then("the content field marks truncation and records its original size")]
+fn content_field_marks_truncation_and_original_size(world: &mut GivnWorld) {
+    let entry = world
+        .development_record
+        .as_ref()
+        .and_then(|state| state.last_entry.clone())
+        .expect("no full-mode entry was identified by the previous step");
+    let field = &entry["data"]["content"]["tool_input"];
+    assert_eq!(
+        field["truncated"],
+        json!(true),
+        "the content field does not mark its truncation: {entry}"
+    );
+    assert_eq!(
+        field["bytes"],
+        json!(over_cap_input().len()),
+        "the content field does not record its original byte size: {entry}"
+    );
+}
+
+#[then("the entry's content never exceeds the 256 KiB per-entry cap")]
+fn entry_content_never_exceeds_the_entry_cap(world: &mut GivnWorld) {
+    let entry = world
+        .development_record
+        .as_ref()
+        .and_then(|state| state.last_entry.clone())
+        .expect("no full-mode entry was identified by the previous step");
+    let content = entry
+        .pointer("/data/content")
+        .unwrap_or_else(|| panic!("the full-mode entry carries no content: {entry}"));
+    let object = content
+        .as_object()
+        .unwrap_or_else(|| panic!("the content is not an object: {entry}"));
+    let mut total = 0usize;
+    for (name, field) in object {
+        if name == "truncated" {
+            continue;
+        }
+        let text = field["text"]
+            .as_str()
+            .unwrap_or_else(|| panic!("the `{name}` field carries no text: {entry}"));
+        assert!(
+            text.len() <= givn::history::CONTENT_FIELD_LIMIT,
+            "the `{name}` field exceeds the per-field cap ({} bytes): {entry}",
+            text.len()
+        );
+        total += text.len();
+    }
+    assert!(
+        total <= givn::history::CONTENT_ENTRY_LIMIT,
+        "the entry's content exceeds the per-entry cap ({total} bytes): {entry}"
+    );
+    // Not vacuous: the reported bundle exceeded the cap, so the aggregate cut
+    // really happened and the bundle-level marker is present.
+    assert_eq!(
+        total,
+        givn::history::CONTENT_ENTRY_LIMIT,
+        "the entry did not fill its content budget exactly: {entry}"
+    );
+    assert_eq!(
+        content["truncated"],
+        json!(true),
+        "the cut bundle is not marked truncated: {entry}"
+    );
+}

@@ -150,7 +150,7 @@ Feature: Development Record
     And no entry carries a data.content object
     And the record keeps the tool call's metadata
 
-  @givn.added @wip
+  @givn.added
   Scenario: The full mode records complete content
     Given a change "demo" whose project sets the record mode to "full"
     When the agent reports a tool call whose complete input exceeds the per-field cap
