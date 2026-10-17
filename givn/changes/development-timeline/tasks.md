@@ -15337,7 +15337,7 @@ untouched; this part is appended after its completion statement.
 
 ## Task HE8 — `Consumer reads a change's linked ideation group` (`@e2e`, `development-report`)
 
-- [ ] **Scenario: `Consumer reads a change's linked ideation group`** (`@wip` until its RED)
+- [x] **Scenario: `Consumer reads a change's linked ideation group`** (`@wip` until its RED)
   - Design constraints:
     - Matrix row 6: real interface **Web UI**; Playwright opens the change's
       report, reads the **`#hybrid-ideation`** group rendered **above**
@@ -15390,38 +15390,168 @@ untouched; this part is appended after its completion statement.
     - RED expected failure: the Given/When/Then phrases of the new scenario are
       undefined, the asset draws no `#hybrid-ideation`, and the open topic row
       still reads "of 9 phases done".
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer reads a change's linked ideation group"`
-        → must exit non-zero. Paste it.
+        → must exit non-zero. Pasted, with the open outline's own RED first
+        (the header assertion hard-codes "of 9"; the topic row renders "of 6"):
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer opens the generated development report in a browser"
+          Scenario Outline: Consumer opens the generated development report in a browser
+           ✔  Given a change "demo" with a recorded history
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✔  Then the browser shows the report heading and the current workflow state
+           ✔  And the browser shows the workflow phases top to bottom
+           ✔  And the browser shows the longest recorded step with its duration
+           ✔  And the browser lays the page out in one column without page-level horizontal scrolling at the mobile viewport
+          Scenario Outline: Consumer opens the generated development report in a browser
+           ✔  Given a topic "demo" with a recorded history
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✘  Then the browser shows the report heading and the current workflow state
+              Step panicked. Captured output: the header does not count the done phases of nine: "0 of 6 phases done"
+        [Summary]
+        1 feature
+        2 scenarios (1 passed, 1 failed)
+        11 steps (10 passed, 1 failed)
+        EXIT:101
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer reads a change's linked ideation group"
+          Scenario: Consumer reads a change's linked ideation group
+           ✔  Given a change "demo" whose proposal links the ideation topic "ideas"
+           ✘  And the topic's record holds the markers for personas and event storming
+              Step failed:
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+        EXIT:101
         ```
-  - [ ] **GREEN** — build `#hybrid-ideation`, reuse the primitives, branch the
+  - [x] **GREEN** — build `#hybrid-ideation`, reuse the primitives, branch the
         header count, extend the open step, and add the new steps. Files:
         `assets/timeline/report.html`, `tests/steps/development_report_e2e_steps.rs`,
         `tests/steps/development_timeline_support.rs`, plus the new and
         refreshed PNGs. `node --check`, compile, re-run this scenario **and**
-        the open outline → both exit 0. Paste both.
+        the open outline → both exit 0. Pasted:
         ```
-        PASTE THE GREEN RUN (NEW SCENARIO) HERE
+        $ node --check (the asset's inline script) → exit 0
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer reads a change's linked ideation group"
+        Feature: Development Report
+          Scenario: Consumer reads a change's linked ideation group
+           ✔  Given a change "demo" whose proposal links the ideation topic "ideas"
+           ✔  And the topic's record holds the markers for personas and event storming
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✔  Then the browser shows the linked ideation group before the change workflow
+           ✔  And the group names the ideation phases
+           ✔  And the consumer expands the group's personas phase
+           ✔  Then the browser shows that phase's vertical lanes
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        EXIT:0
         ```
         ```
-        PASTE THE GREEN RUN (OPEN OUTLINE) HERE
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer opens the generated development report in a browser"
+        Feature: Development Report
+          Scenario Outline: Consumer opens the generated development report in a browser
+           ✔  Given a change "demo" with a recorded history
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✔  Then the browser shows the report heading and the current workflow state
+           ✔  And the browser shows the workflow phases top to bottom
+           ✔  And the browser shows the longest recorded step with its duration
+           ✔  And the browser lays the page out in one column without page-level horizontal scrolling at the mobile viewport
+          Scenario Outline: Consumer opens the generated development report in a browser
+           ✔  Given a topic "demo" with a recorded history
+           ✔  And the development report for "demo" has been generated
+           ✔  When the consumer opens the development report in a browser
+           ✔  Then the browser shows the report heading and the current workflow state
+           ✔  And the browser shows the workflow phases top to bottom
+           ✔  And the browser shows the longest recorded step with its duration
+           ✔  And the browser lays the page out in one column without page-level horizontal scrolling at the mobile viewport
+        [Summary]
+        1 feature
+        2 scenarios (2 passed)
+        14 steps (14 passed)
+        EXIT:0
         ```
-  - [ ] **REFACTOR** — one stack renderer shared by the change stack and the
+  - [x] **REFACTOR** — one stack renderer shared by the change stack and the
         group (cards, lanes, log, zoom) with the container id the only
         difference; `cargo fmt --all -- --check`, `cargo clippy --locked
         --all-targets -- -D warnings`, and `node --check` green; re-run both →
-        still exit 0. Paste it.
+        still exit 0. Pasted:
         ```
-        PASTE THE REFACTOR RUN HERE
+        stackSection(stack, className, headingText) builds the labelled section
+        and its heading id from the stack's container id; phaseStack(stack,
+        phases) builds the cards. buildWorkflow() and buildIdeationGroup() call
+        both and differ only in the container id, heading text, and the group's
+        totals/no-activity lines. Every card, lane, tick, log, and zoom query is
+        scoped through stateOf(stack, phase) and document.getElementById(
+        stack.id), so the change stack's selectors stay unambiguous. The step
+        file shares group_phase_card/group_phase_expander/group_phase_region.
+
+        $ cargo fmt --all -- --check → exit 0
+        $ node --check (the asset's inline script) → exit 0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.33s
+          → exit 0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer reads a change's linked ideation group"
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        EXIT:0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer opens the generated development report in a browser"
+        [Summary]
+        1 feature
+        2 scenarios (2 passed)
+        14 steps (14 passed)
+        EXIT:0
         ```
-  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
-        title in the body, a line noting the open-outline topic-row assertion
-        (`of 6`) and its refreshed pair, and the new evidence pair. Record the
-        revision identifier.
+  - [x] **COMMIT** — `25d2b20b` — `test(e2e): <release note>` with the
+        scenario title in the body, a line noting the open-outline topic-row
+        assertion (`of 6`) and its refreshed pair, and the new evidence pair.
+        Recorded:
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit 25d2b20b
+        test(e2e): a change's linked ideation group renders above the change workflow
+
+        Scenario: Consumer reads a change's linked ideation group
+
+        The asset renders the linked group as its own #hybrid-ideation stack above
+        #hybrid-workflow, sharing the phase-card, lane, tick, log, zoom, and aggregation
+        renderer with the change stack (the container id is the only difference). The
+        group carries the topic's six marker statuses, its own totals, and the
+        no-activity note; a topic report keeps its six ideation phases in
+        #hybrid-workflow.
+
+        The open outline's header assertion now branches on the report scope: "of 9
+        phases done" for the change row and "of 6 phases done" for the topic row, and
+        its top-to-bottom step reads the scope's own workflow (the change's nine, the
+        topic's six ideation phases).
+
+        Evidence: the new pair under
+        consumer-reads-a-change-s-linked-ideation-group/ (the group and its expanded
+        personas phase) and the refreshed topic-open pair under
+        consumer-opens-the-generated-development-report-in-a-browser/ (the topic row's
+        ideation stack and six-phase header), both viewports.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         assets/timeline/report.html                        | 143 +++++--
+         .../desktop.png                                    | Bin 113107 -> 117444 bytes
+         .../mobile.png                                     | Bin 55909 -> 57568 bytes
+         .../desktop.png                                    | Bin 0 -> 75644 bytes
+         .../mobile.png                                     | Bin 0 -> 42676 bytes
+         .../development-report.feature                     |   2 +-
+         tests/steps/development_report_e2e_steps.rs        | 466 ++++++++++++++++++++-
+         tests/steps/development_timeline_support.rs        |  61 +++
+         8 files changed, 634 insertions(+), 38 deletions(-)
         ```
 
 **Part-3 done when:** all 7 pending scenarios have completed
