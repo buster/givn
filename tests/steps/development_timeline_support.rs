@@ -314,6 +314,15 @@ pub fn seed_linked_ideation_record(
     history.seed(env)
 }
 
+/// Seed a change's own record with no topic entries at all — the linked
+/// topic's directory exists, but its record predates the record. Returns the
+/// written change entries.
+pub fn seed_change_record(env: &common::TestEnv, change: &str) -> Vec<HistoryEntry> {
+    let mut history = SeededHistory::new();
+    push_change_entries(&mut history, change);
+    history.seed(env)
+}
+
 /// The steps the out-of-order fixture's record holds, in the order the store
 /// holds them: the second entry's recorded end is earlier than the first's —
 /// exactly what a late intake flush produces — so the store's line order and the

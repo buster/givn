@@ -8,7 +8,7 @@
 use std::path::PathBuf;
 
 use cucumber::{given, then, when};
-use givn::cli::timeline::{format_count, format_duration};
+use givn::cli::timeline::{NO_IDEATION_ACTIVITY, format_count, format_duration};
 use givn::history::{HistoryEntry, Scope, parse_rfc3339_ms};
 use serde_json::{Value, json};
 
@@ -4236,4 +4236,145 @@ fn change_workflow_still_names_its_own_phases(world: &mut GivnWorld) {
         WORKFLOW_PHASES.to_vec(),
         "the change stack does not name its own phases: {stack}"
     );
+}
+
+#[given("the topic has no recorded activity")]
+fn topic_has_no_recorded_activity(world: &mut GivnWorld) {
+    let change = world
+        .last_change_id
+        .clone()
+        .expect("the change Given ran first");
+    let topic = state(world)
+        .linked_topic
+        .clone()
+        .expect("the proposal-link Given ran first");
+    let seeded = {
+        let env = project_root(world);
+        support::seed_change_record(env, &change)
+    };
+    // The fixture's own claim: the topic's directory exists, but the record
+    // holds no entry of its scope at all.
+    assert!(
+        project_root(world)
+            .path(&format!("givn/ideation/{topic}"))
+            .is_dir(),
+        "the fixture's linked topic has no directory"
+    );
+    assert!(
+        seeded
+            .iter()
+            .all(|entry| entry.scope != Scope::Ideation { id: topic.clone() }),
+        "the fixture seeded topic activity: {seeded:#?}"
+    );
+    state(world).seeded = seeded;
+}
+
+/// The text view's linked ideation group section, from its opening tag to its
+/// close.
+fn ideation_group_region(document: &str) -> String {
+    let start = document
+        .find("<section class=\"ideation-group\"")
+        .unwrap_or_else(|| panic!("the report prints no ideation group: {document}"));
+    let region = &document[start..];
+    let end = region
+        .find("</section>")
+        .expect("the ideation group is never closed")
+        + "</section>".len();
+    region[..end].to_string()
+}
+
+#[then(regex = r#"^the report names the linked topic "([^"]+)" and that no activity is recorded$"#)]
+fn report_names_linked_topic_and_no_activity(world: &mut GivnWorld, topic: String) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let group = &model["ideation"];
+    assert!(
+        group.is_object(),
+        "the report carries no linked ideation group: {model:#?}"
+    );
+    assert_eq!(
+        group["topic"],
+        json!(topic),
+        "the group names another topic: {model:#?}"
+    );
+    assert_eq!(
+        group["activity"],
+        json!(false),
+        "the group claims recorded activity: {model:#?}"
+    );
+    let section = ideation_group_region(&document);
+    assert!(
+        section.contains(&format!("<h2>Ideation: {topic}</h2>")),
+        "the group's heading does not name the topic: {section}"
+    );
+    assert!(
+        section.contains(NO_IDEATION_ACTIVITY),
+        "the group does not state that no activity is recorded: {section}"
+    );
+    // The change still renders: it holds its own entries, so the report is not
+    // the empty state and its stack is the change's.
+    assert!(
+        model["empty"] == json!(false),
+        "the change report rendered the empty state: {model:#?}"
+    );
+    let stages: Vec<&str> = model["workflow"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the change report carries no workflow: {model:#?}"))
+        .iter()
+        .filter_map(|phase| phase["stage"].as_str())
+        .collect();
+    assert_eq!(
+        stages,
+        WORKFLOW_PHASES.to_vec(),
+        "the change workflow is missing its phases: {model:#?}"
+    );
+}
+
+#[then("the report invents no ideation phase duration")]
+fn report_invents_no_ideation_phase_duration(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let group = &model["ideation"];
+    // No phases, no entries, and no duration: the topic predates the record.
+    assert!(
+        group["phases"].as_array().is_some_and(Vec::is_empty),
+        "the group invented ideation phases: {model:#?}"
+    );
+    assert!(
+        group["entries"].as_array().is_some_and(Vec::is_empty),
+        "the group invented topic entries: {model:#?}"
+    );
+    assert!(
+        group.get("duration_ms").is_none(),
+        "the group invented a duration: {model:#?}"
+    );
+    assert_eq!(
+        group["tools"],
+        json!(0),
+        "the group invented tools: {model:#?}"
+    );
+    assert_eq!(
+        group["subagents"],
+        json!(0),
+        "the group invented subagents: {model:#?}"
+    );
+    assert_eq!(
+        group["waits"],
+        json!(0),
+        "the group invented waits: {model:#?}"
+    );
+    // The written group carries no phase line, no status, and no duration
+    // claim: only the no-activity statement.
+    let section = ideation_group_region(&document);
+    for marker in [
+        "class=\"workflow-phase\"",
+        "data-status=",
+        "ideation-totals",
+        "data-phase=",
+    ] {
+        assert!(
+            !section.contains(marker),
+            "the empty group renders {marker}: {section}"
+        );
+    }
 }
