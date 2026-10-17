@@ -78,7 +78,7 @@ Feature: Development Report
     And the report never assigns an entry to a subagent the record does not name
     And the report states when no tool call was attributable to a subagent span
 
-  @givn.added @wip
+  @givn.added
   Scenario: The report marks a skipped workflow phase
     Given a change "demo" whose record holds the workflow phases up to "tasks"
     And the change's artifacts make its derived state "tasks-done" with the next required artifact "review"
