@@ -68,6 +68,20 @@ pub fn transitions_for<'a>(entries: &'a [Value], change: &str, label: &str) -> V
         .collect()
 }
 
+/// The record's ideation start markers for one topic: the `phase` entries whose
+/// label is `label`, scoped to that topic. A change's artifact transition keeps
+/// the change scope and can never match here, so the two observers stay
+/// distinguishable by the record alone.
+pub fn markers_for<'a>(entries: &'a [Value], topic: &str, label: &str) -> Vec<&'a Value> {
+    entries
+        .iter()
+        .filter(|entry| entry["kind"].as_str() == Some("phase"))
+        .filter(|entry| entry["scope"]["kind"].as_str() == Some("ideation"))
+        .filter(|entry| entry["scope"]["id"].as_str() == Some(topic))
+        .filter(|entry| entry["label"].as_str() == Some(label))
+        .collect()
+}
+
 /// Assert the fixture project has no change a recorder could bind to: no
 /// directory under `givn/changes/` (every directory there is a change for
 /// `list_changes`).

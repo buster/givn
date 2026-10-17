@@ -174,7 +174,7 @@ Feature: Development Record
     And a later recorded command that sees the same artifact records no second transition
     And a gate check for the same artifact keeps its artifact id label and is not a transition
 
-  @givn.added @wip
+  @givn.added
   Scenario: An ideation artifact appearance is recorded as one phase start
     Given an ideation topic "ideas" whose personas file appears while a recorded command runs
     When the command finishes
