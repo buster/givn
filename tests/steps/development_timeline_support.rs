@@ -358,15 +358,13 @@ const STAGE_WORK: [(&str, &str, u64); 7] = [
     ),
 ];
 
-/// The record one report scenario renders: the written steps and the artifact
-/// transitions the scenario's own assertions name.
+/// The record one report scenario renders: the written steps the scenario's own
+/// assertions name.
 #[derive(Debug, Clone)]
 pub struct SeededReportHistory {
     /// The step recorded after the record's last transition: the one the
     /// `implement` phase's assertion names.
     pub post_transition_step: HistoryEntry,
-    /// The artifact transitions the record carries, in the order they appeared.
-    pub transitions: Vec<String>,
 }
 
 /// Seed the fixture project's record with a change's recorded history: one
@@ -396,11 +394,9 @@ pub fn seed_report_history(
         id: change.to_string(),
     };
     let mut history = SeededHistory::new();
-    let mut transitions = Vec::new();
     for (index, artifact) in WORKFLOW_ARTIFACTS[..=last].iter().enumerate() {
         let transition = history.point(&scope, "phase", artifact, TRANSITION_AT[index]);
         history.label(transition, artifact);
-        transitions.push(artifact.to_string());
     }
     let work = last + 1;
     assert!(
@@ -415,7 +411,6 @@ pub fn seed_report_history(
     let entries = history.seed(env);
     SeededReportHistory {
         post_transition_step: entries[steps[work]].clone(),
-        transitions,
     }
 }
 

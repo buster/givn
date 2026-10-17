@@ -134,7 +134,7 @@ Feature: Development Report
     And the report notes "content omitted; see the record" beyond the budget
     And the development record still holds every content byte
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer generates the development report for a change
     Given a project root with givn/ initialised
     And a change "demo" with a recorded history whose last recorded artifact transition is "tasks.md"

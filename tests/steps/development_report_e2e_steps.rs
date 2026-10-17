@@ -107,24 +107,32 @@ fn report_path(world: &GivnWorld) -> PathBuf {
         .expect("the development report has not been generated yet")
 }
 
+/// The change workflow's nine phases, in the workflow's own order: what the
+/// report's text view must name, top to bottom.
+const WORKFLOW_PHASES: [&str; 9] = [
+    "propose",
+    "specs",
+    "design",
+    "arc42",
+    "design-review",
+    "tasks",
+    "implement",
+    "review",
+    "archive",
+];
+
 /// The phase names one written report draws, in document order: the visible
-/// text of every band row's phase line, split into the stage names it carries.
+/// text of every workflow phase line in the text view's stack.
 fn rendered_phases(document: &str) -> Vec<String> {
     document
-        .split("<text class=\"band-phases\"")
+        .split("<p class=\"workflow-phase\" data-phase=\"")
         .skip(1)
-        .flat_map(|phase| {
-            let content = phase
-                .split('>')
-                .nth(1)
-                .unwrap_or_else(|| panic!("a phase line carries no text: {phase}"));
-            content
-                .split("</text")
+        .map(|phase| {
+            phase
+                .split('"')
                 .next()
-                .unwrap_or_default()
-                .split(" · ")
-                .map(|name| name.trim().to_string())
-                .collect::<Vec<String>>()
+                .unwrap_or_else(|| panic!("a phase line carries no stage name: {phase}"))
+                .to_string()
         })
         .collect()
 }
@@ -215,34 +223,26 @@ fn command_prints_the_report_path(world: &mut GivnWorld) {
     state(world).report_path = Some(path);
 }
 
-#[then("the report file exists and names the recorded phases")]
-fn report_names_the_recorded_phases(world: &mut GivnWorld) {
-    let document = report_document(world);
-    let phases = rendered_phases(&document);
-    let transitions = &seeded(world).transitions;
-    // The report names one phase per stage the record reached: the opening
-    // stage, plus one stage per artifact transition the record carries.
-    assert_eq!(
-        phases.len(),
-        transitions.len() + 1,
-        "the report names {} phases for the record's {} artifact transitions: {phases:?}",
-        phases.len(),
-        transitions.len(),
+#[then("the report file exists and names the workflow phases")]
+fn report_names_the_workflow_phases(world: &mut GivnWorld) {
+    let path = report_path(world);
+    assert!(
+        path.is_file(),
+        "the report file does not exist: {}",
+        path.display()
     );
-    // The stage names themselves are the workflow's: the record's transitions
-    // are the workflow's own artifacts, so the phase line reads them in order.
+    let document = report_document(world);
+    // The text view names the change workflow's nine phases, in the workflow's
+    // own order — not only the phases the record happened to reach.
+    let phases = rendered_phases(&document);
     assert_eq!(
         phases,
-        vec![
-            "propose",
-            "specs",
-            "design",
-            "arc42",
-            "design-review",
-            "tasks",
-            "implement"
-        ],
-        "the report's phase names do not follow the record's artifact transitions {transitions:?}"
+        WORKFLOW_PHASES.to_vec(),
+        "the report does not name the nine workflow phases in order: {phases:?}"
+    );
+    assert!(
+        !document.contains("data-phases=\"recorded\""),
+        "the report still speaks of recorded phases instead of the workflow's"
     );
 }
 
