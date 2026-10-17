@@ -13376,7 +13376,7 @@ Repository checks are secondary only.
 
 ## Task HE4 — `Consumer selects a timeline element and reads its details` (`@e2e`, `development-report`)
 
-- [ ] **Scenario: `Consumer selects a timeline element and reads its details`** (`@wip` until its RED)
+- [x] **Scenario: `Consumer selects a timeline element and reads its details`** (`@wip` until its RED)
   - Design constraints:
     - Matrix row 7: real interface **Web UI**; Playwright expands the phase,
       then clicks the **`Architect.Scout`** lane header (or focuses it and
@@ -13412,32 +13412,91 @@ Repository checks are secondary only.
     - RED expected failure: the new Given/When/Then phrases are undefined (the
       old `selects the longest recorded step` / `details panel` steps are
       replaced, not aliased).
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer selects a timeline element and reads its details"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Report
+          Scenario: Consumer selects a timeline element and reads its details
+           ✔  Given an open development report with a recorded history holding parallel sessions
+           ✘  When the consumer selects the "Architect.Scout" lane
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:173:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+        EXIT=101
         ```
-  - [ ] **GREEN** — implement lane selection and the lane log. Files:
+  - [x] **GREEN** — implement lane selection and the lane log. Files:
         `assets/timeline/report.html`,
         `tests/steps/development_report_e2e_steps.rs`,
         `tests/steps/development_timeline_support.rs`, plus the refreshed pair.
         `node --check`, compile, re-run → exit 0. Paste it.
         ```
-        PASTE THE GREEN RUN HERE
+        Feature: Development Report
+          Scenario: Consumer selects a timeline element and reads its details
+           ✔  Given an open development report with a recorded history holding parallel sessions
+           ✔  When the consumer selects the "Architect.Scout" lane
+           ✔  Then the browser shows that lane's log
+           ✔  And the log names the lane's start, its duration, and its outcome
+           ✔  And the log names the entry's tool call id
+           ✔  And the log renders the entry's content in its bounded content region
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        EXIT=0
+
+        consumer-selects-a-timeline-element-and-reads-its-details/desktop.png 95895 bytes
+        consumer-selects-a-timeline-element-and-reads-its-details/mobile.png   49534 bytes
         ```
-  - [ ] **REFACTOR** — one `selectLane`/`renderLog` path and one content-region
+  - [x] **REFACTOR** — one `selectLane`/`renderLog` path and one content-region
         renderer shared with the omission marker; `cargo fmt --all -- --check`,
         `cargo clippy --locked --all-targets -- -D warnings`, and `node --check`
         green; re-run → still exit 0. Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+        node --check /tmp/report-inline.js → exit 0
+
+        Feature: Development Report
+          Scenario: Consumer selects a timeline element and reads its details
+           ✔  Given an open development report with a recorded history holding parallel sessions
+           ✔  When the consumer selects the "Architect.Scout" lane
+           ✔  Then the browser shows that lane's log
+           ✔  And the log names the lane's start, its duration, and its outcome
+           ✔  And the log names the entry's tool call id
+           ✔  And the log renders the entry's content in its bounded content region
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+  - [x] **COMMIT** — `2771b25e` — `test(e2e): <release note>` with the scenario
         title in the body (including the refreshed evidence pair). Record the
         revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit 2771b25e
+        test(e2e): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        Consumer selects a timeline element and reads its details
+
+        Selecting the Architect.Scout lane header renders the lane log: the lane's
+        start, duration, and outcome, the entry's tool call id, and the escaped,
+        bounded, scrollable content region inside the log. Failed and repeated entries
+        are marked, and the R-93 limit is stated when no tool call is attributable.
+        The evidence pair is refreshed in place.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../consumer-selects-a-timeline-element-and-reads-its-details/desktop.png | Bin 31 -> 95895 bytes
+         .../consumer-selects-a-timeline-element-and-reads-its-details/mobile.png  | Bin 33 -> 49534 bytes
+         .../development-report.feature                       |   2 +-
+         .../development_report_e2e_steps.rs                  | 382 ++++++++++-----------
+         4 files changed, 150 insertions(+), 234 deletions(-)
         ```
 
 ## Task HE5 — `Consumer zooms the timeline to a shorter time range` (`@e2e`, `development-report`)
