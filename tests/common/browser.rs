@@ -312,11 +312,26 @@ pub fn state_evidence_file(scenario: &str, viewport: &str, state: &str) -> PathB
     evidence_root(scenario).join(format!("{viewport}--{state}.png"))
 }
 
+/// The change's directory: the active change while it exists, otherwise the
+/// archived copy. The archive gate runs the e2e scopes after it has moved the
+/// change, so captures must follow the change instead of recreating the old
+/// `givn/changes/<id>` path (which would dirty the tested tree outside the
+/// declared evidence and block the archive).
+fn change_dir(root: &Path) -> PathBuf {
+    let active = root.join(CHANGE_DIR);
+    if active.is_dir() {
+        return active;
+    }
+    let id = active
+        .file_name()
+        .expect("CHANGE_DIR always names a change directory");
+    root.join("givn").join("archive").join(id)
+}
+
 /// The scenario's evidence directory under the change's visual evidence root.
 #[allow(dead_code)] // Reached through the two evidence-file helpers above.
 fn evidence_root(scenario: &str) -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join(CHANGE_DIR)
+    change_dir(Path::new(env!("CARGO_MANIFEST_DIR")))
         .join("evidence")
         .join("visual")
         .join(givn::integrity_hook::scenario_slug(scenario))
