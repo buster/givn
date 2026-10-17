@@ -614,7 +614,7 @@ fn bands_for(scope: Option<&Scope>, entries: &[HistoryEntry]) -> Vec<Band> {
 
 /// The change workflow's stages, in the order a change works through them: the
 /// phase names a band's row carries.
-const WORKFLOW_STAGES: [&str; 9] = [
+pub(crate) const WORKFLOW_STAGES: [&str; 9] = [
     "propose",
     "specs",
     "design",
@@ -632,7 +632,7 @@ const WORKFLOW_STAGES: [&str; 9] = [
 /// `implement`. A stage that produces no artifact of its own (`implement`,
 /// `archive`) is `None`, and the artifact of the stage before it opens the next
 /// stage that has one.
-const STAGE_ARTIFACTS: [Option<&str>; 9] = [
+pub(crate) const STAGE_ARTIFACTS: [Option<&str>; 9] = [
     Some("proposal.md"),
     Some("specs"),
     Some("design.md"),
@@ -643,6 +643,42 @@ const STAGE_ARTIFACTS: [Option<&str>; 9] = [
     Some("review.md"),
     None,
 ];
+
+/// The change state's artifact ids mapped onto the workflow phase that
+/// produces each one: the design's current-phase table read in the direction
+/// the transition writer needs. The id, never a list position, carries the
+/// mapping; `tasks` is the phase that produces `tasks.md` (a partial tasks
+/// artifact is not `Done`, so it emits no transition at all).
+pub(crate) const ARTIFACT_STAGES: [(&str, &str); 7] = [
+    ("proposal", "propose"),
+    ("specs", "specs"),
+    ("design", "design"),
+    ("arc42-docs", "arc42"),
+    ("design-review", "design-review"),
+    ("tasks", "tasks"),
+    ("review", "review"),
+];
+
+/// The [`STAGE_ARTIFACTS`] filename one change-state artifact's appearance is
+/// recorded with, or `None` for an artifact the workflow does not map. The
+/// filename is read at the mapped stage's own index, so a state artifact id and
+/// the transition a change records can never drift apart.
+pub(crate) fn artifact_transition_label(state_artifact: &str) -> Option<&'static str> {
+    let stage = ARTIFACT_STAGES
+        .iter()
+        .find(|(id, _)| *id == state_artifact)?
+        .1;
+    let index = WORKFLOW_STAGES.iter().position(|known| *known == stage)?;
+    STAGE_ARTIFACTS[index]
+}
+
+/// The workflow position of one transition label, so the writer emits the
+/// artifacts one command first observes in workflow order.
+pub(crate) fn artifact_workflow_rank(label: &str) -> Option<usize> {
+    STAGE_ARTIFACTS
+        .iter()
+        .position(|known| *known == Some(label))
+}
 
 /// The stage one recorded artifact's appearance opens. An artifact the workflow
 /// does not record opens no stage at all: a record's own labels never invent a
