@@ -103,7 +103,7 @@ Feature: Development Report
     And the report states that the record carries no stage transition
     And the report names no phase for that recorded work
 
-  @givn.added @wip
+  @givn.added
   Scenario: The report groups repeated steps
     Given a change "demo" whose record holds the same command six times in one phase
     When the developer generates the development report for "demo"

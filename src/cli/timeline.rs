@@ -901,13 +901,11 @@ fn unattributed_spans<'a>(
         .collect()
 }
 
-/// The normalized label a repeated-step group groups by: the entry's bounded
-/// label (or its name), trimmed with its whitespace collapsed.
+/// The normalized label a repeated-step group groups by and the ranking row
+/// states: the entry's visible label, trimmed with its whitespace collapsed, so
+/// two recordings that differ only in spacing read as the same step.
 fn normalized_label(entry: &HistoryEntry) -> String {
-    entry
-        .label
-        .as_deref()
-        .unwrap_or(&entry.name)
+    visible_label(entry)
         .split_whitespace()
         .collect::<Vec<_>>()
         .join(" ")
@@ -1504,7 +1502,7 @@ fn ranked_steps(entries: &[HistoryEntry]) -> Vec<RankedStep> {
         .map(|entry| RankedStep {
             id: entry.id,
             kind: entry.kind.clone(),
-            label: visible_label(entry),
+            label: normalized_label(entry),
             duration_ms: entry.duration_ms.unwrap_or_default(),
         })
         .collect()
@@ -1651,6 +1649,18 @@ fn render_workflow_phase(phase: &WorkflowPhase, entries: &[HistoryEntry]) -> Str
             "<p class=\"attribution-limit\" data-subagent=\"{}\">no tool call was attributable to subagent span \"{}\"; the record names no per-subagent tool identity for it.</p>\n",
             escape(&span.name),
             escape(&span.name),
+        ));
+    }
+    for group in &phase.repeated {
+        html.push_str(&format!(
+            "<p class=\"repeated-group\" data-kind=\"{}\" data-count=\"{}\" data-duration-ms=\"{}\">repeated {} \"{}\": {} entries, combined {}</p>\n",
+            escape(&group.kind),
+            group.count,
+            group.duration_ms.map_or_else(String::new, |duration| duration.to_string()),
+            escape(&group.kind),
+            escape(&group.label),
+            group.count,
+            duration_or_not_measured(group.duration_ms),
         ));
     }
     html
