@@ -658,7 +658,20 @@ pub fn intake_payload(change: Option<&str>, topic: Option<&str>, events: Vec<Val
 /// output is returned, never asserted here — the scenario's own Then steps
 /// read the record the intake wrote.
 pub fn report_intake(env: &common::TestEnv, payload: &Value) -> std::process::Output {
-    common::run_givn_with_stdin_and_envs(env, &["history", "ingest"], &payload.to_string(), &[])
+    report_intake_with_args(env, payload, &[])
+}
+
+/// Hand one payload to the real intake with extra argv (the per-invocation
+/// `--with-full-content` override). The output is returned, never asserted
+/// here.
+pub fn report_intake_with_args(
+    env: &common::TestEnv,
+    payload: &Value,
+    args: &[&str],
+) -> std::process::Output {
+    let mut argv = vec!["history", "ingest"];
+    argv.extend_from_slice(args);
+    common::run_givn_with_stdin_and_envs(env, &argv, &payload.to_string(), &[])
 }
 
 /// Hand one raw stdin payload to the real intake: the payload-level case,

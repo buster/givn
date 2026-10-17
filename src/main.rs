@@ -253,7 +253,19 @@ enum AttributionCommands {
 enum HistoryCommands {
     /// Read one reported payload from stdin (the agent intake) and append the
     /// events it accepts.
-    Ingest,
+    ///
+    /// `--with-full-content` raises this payload's effective capture mode to
+    /// `full` for one invocation (`on`/`full` scope): the complete tool
+    /// input/output, assistant/thinking text, prompts, and summaries the
+    /// reporter sent, under the intake's content caps. It is ignored under the
+    /// `off` mode with one warning and exit 0 — a durable privacy decision is
+    /// never bypassed by a one-shot flag.
+    Ingest {
+        /// Raise this payload's effective mode to `full` (tests and manual
+        /// capture); ignored under `off`.
+        #[arg(long)]
+        with_full_content: bool,
+    },
     /// Map one raw harness hook payload from stdin (the process-per-hook
     /// entry point: the harness runs every hook as its own process, so the
     /// generated shim pipes its payload here).
@@ -442,11 +454,11 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             topic,
             json,
         } => match command {
-            Some(HistoryCommands::Ingest) => {
+            Some(HistoryCommands::Ingest { with_full_content }) => {
                 // The intake's machine contract: only an unreadable payload is
                 // a non-zero exit, and the process exits before the recording
                 // wrapper runs, so a refused payload records nothing.
-                let code = cli::history::ingest()?.exit_code();
+                let code = cli::history::ingest(with_full_content)?.exit_code();
                 if code != 0 {
                     std::process::exit(code);
                 }

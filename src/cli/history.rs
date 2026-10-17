@@ -15,8 +15,9 @@ use anyhow::{Context, Result};
 use serde_json::Value;
 
 use crate::history::{
-    HistoryEntry, HistoryStore, OUTCOME_UNKNOWN, PendingStart, PendingState, Scope,
-    USAGE_UNAVAILABLE, parse_rfc3339_ms, reported_label, store_path,
+    BoundedText, HistoryEntry, HistoryStore, OUTCOME_UNKNOWN, PendingStart, PendingState,
+    RecordMode, Scope, USAGE_UNAVAILABLE, bound_content, bound_question, parse_rfc3339_ms,
+    reported_label, store_path,
 };
 
 /// The intake's payload-level failure exit code: stdin was not readable JSON
@@ -108,6 +109,14 @@ pub struct IngestedEvent {
     /// (`kind: "turn"`): its absence is a signal the record keeps as absent.
     #[serde(default)]
     pub usage: Option<Usage>,
+    /// The complete question text the reporter captured (`kind: "question"`):
+    /// the one content value stored in every mode, under the question bound.
+    #[serde(default)]
+    pub question: Option<BoundedText>,
+    /// The reporter's LLM-facing content fields: stored only when the effective
+    /// mode is `full`, and always re-capped by the intake.
+    #[serde(default)]
+    pub content: Option<BTreeMap<String, BoundedText>>,
 }
 
 /// The token usage one harness report carries: the counts, the model that
@@ -202,32 +211,33 @@ impl IngestedEvent {
     /// nested in — the store resolves the index to the id minted in the same
     /// append, so a parent link can never dangle. Only an event
     /// [`IngestedEvent::validate`] accepted reaches this point, so a kind the
-    /// table rejects can never disappear silently.
-    fn map(&self, scope: &Scope, batch: &mut IntakeBatch) {
+    /// table rejects can never disappear silently. The effective `mode` gates
+    /// the content set; every bound is applied here regardless of the mode.
+    fn map(&self, scope: &Scope, batch: &mut IntakeBatch, mode: RecordMode) {
         match self.kind.as_str() {
             // A reported span is nested in the turn enclosing the flush, when
             // the payload reported one.
             "tool" => {
                 if let Some(tool) = self.tool.as_deref() {
-                    batch.push(self.tool_entry(scope, tool), batch.turn);
+                    batch.push(self.tool_entry(scope, tool, mode), batch.turn);
                 }
             }
             "subagent" => {
                 if let Some(identity) = self.subagent.as_deref() {
-                    self.map_subagent(scope, identity, batch);
+                    self.map_subagent(scope, identity, batch, mode);
                 }
             }
             "question" => {
                 if let Some(question) = self.label.as_deref() {
-                    batch.push(self.question_entry(scope, question), batch.turn);
+                    batch.push(self.question_entry(scope, question, mode), batch.turn);
                 }
             }
             "phase" => {
                 if let Some(phase) = self.label.as_deref() {
-                    batch.push(self.phase_entry(scope, phase), batch.turn);
+                    batch.push(self.phase_entry(scope, phase, mode), batch.turn);
                 }
             }
-            "turn" => self.map_turn(scope, batch),
+            "turn" => self.map_turn(scope, batch, mode),
             _ => {}
         }
     }
@@ -236,7 +246,7 @@ impl IngestedEvent {
     /// usage entry the harness reported inline, parented to it. The turn is the
     /// reporter's flush boundary, so every later span of the same payload nests
     /// in it.
-    fn map_turn(&self, scope: &Scope, batch: &mut IntakeBatch) {
+    fn map_turn(&self, scope: &Scope, batch: &mut IntakeBatch, mode: RecordMode) {
         let name = match self.turn {
             Some(index) => format!("turn {index}"),
             None => "turn".to_string(),
@@ -250,6 +260,7 @@ impl IngestedEvent {
             // entry and never a fabricated model.
             entry.data = Some(serde_json::json!({ "usage": USAGE_UNAVAILABLE }));
         }
+        self.attach_content(&mut entry, mode);
         let turn = batch.push(entry, batch.turn);
         batch.turn = Some(turn);
         if let Some(usage) = &self.usage {
@@ -272,29 +283,36 @@ impl IngestedEvent {
 
     /// The one `question` entry a reported wait produces: the wait is its own
     /// span, never merged into the turn around it, and its label is the
-    /// question's first line only — the complete question text is never stored.
-    fn question_entry(&self, scope: &Scope, question: &str) -> HistoryEntry {
+    /// question's first line only. The complete question text is captured in
+    /// `data.question` in every mode — the one content value always kept — and
+    /// the intake re-applies its character bound.
+    fn question_entry(&self, scope: &Scope, question: &str, mode: RecordMode) -> HistoryEntry {
         let mut entry = HistoryEntry::reported(scope.clone(), "question", "question", &self.at);
         entry.label = Some(reported_label("question", question));
         entry.duration_ms = self.duration_ms;
         entry.outcome = self.outcome_word();
+        if let Some(question) = &self.question {
+            entry.data = Some(serde_json::json!({ "question": bound_question(question) }));
+        }
+        self.attach_content(&mut entry, mode);
         entry
     }
 
     /// The one `phase` entry a reported phase produces: a harness's own long
     /// step (compaction), named by its label with its measured duration.
-    fn phase_entry(&self, scope: &Scope, phase: &str) -> HistoryEntry {
+    fn phase_entry(&self, scope: &Scope, phase: &str, mode: RecordMode) -> HistoryEntry {
         let mut entry = HistoryEntry::reported(scope.clone(), "phase", "phase", &self.at);
         entry.label = Some(reported_label("phase", phase));
         entry.duration_ms = self.duration_ms;
         entry.outcome = self.outcome_word();
+        self.attach_content(&mut entry, mode);
         entry
     }
 
     /// The one `tool` entry a reported tool call produces: the harness tool
     /// name as the entry's name, the reported subject through the record's one
     /// bounded-label path, and the harness's own measured duration.
-    fn tool_entry(&self, scope: &Scope, tool: &str) -> HistoryEntry {
+    fn tool_entry(&self, scope: &Scope, tool: &str, mode: RecordMode) -> HistoryEntry {
         let mut entry = HistoryEntry::reported(scope.clone(), "tool", tool, &self.at);
         entry.label = self
             .label
@@ -302,14 +320,40 @@ impl IngestedEvent {
             .map(|label| reported_label("tool", label));
         entry.duration_ms = self.duration_ms;
         entry.outcome = self.outcome_word();
+        self.attach_content(&mut entry, mode);
         entry
+    }
+
+    /// Attach the reporter's complete content set to its entry when the
+    /// effective mode is `full`. The intake is the single enforcement site for
+    /// the content caps; under every other mode the content is dropped while
+    /// the event is kept, so a stale reporter cannot bloat or leak the store.
+    fn attach_content(&self, entry: &mut HistoryEntry, mode: RecordMode) {
+        if mode != RecordMode::Full {
+            return;
+        }
+        let Some(content) = self.content.as_ref().and_then(bound_content) else {
+            return;
+        };
+        match entry.data.as_mut().and_then(Value::as_object_mut) {
+            Some(data) => {
+                data.insert("content".to_string(), content);
+            }
+            None => entry.data = Some(serde_json::json!({ "content": content })),
+        }
     }
 
     /// One reported subagent span: a completion closes the start this payload
     /// reported (or stands alone when the harness measured the span itself),
     /// and an unclosed start still becomes one unmeasured entry — losing a
     /// duration never loses an entry.
-    fn map_subagent(&self, scope: &Scope, identity: &str, batch: &mut IntakeBatch) {
+    fn map_subagent(
+        &self,
+        scope: &Scope,
+        identity: &str,
+        batch: &mut IntakeBatch,
+        mode: RecordMode,
+    ) {
         let Some(outcome) = self.reported_outcome() else {
             // A start is remembered until its completion: one reported span
             // yields one entry, never a pair.
@@ -348,6 +392,7 @@ impl IngestedEvent {
                 );
             }
         }
+        self.attach_content(&mut entry, mode);
         // The span is nested in the turn that reported it, when the payload
         // reported one, else in the turn its start was reported inside.
         let parent = start.and_then(|start| start.parent).or(batch.turn);
@@ -516,6 +561,8 @@ fn reported_event(kind: &str, at: &str) -> IngestedEvent {
         turn: None,
         model: None,
         usage: None,
+        question: None,
+        content: None,
     }
 }
 
@@ -926,7 +973,7 @@ pub fn harness_hook(harness: &str) -> Result<()> {
     let scope = crate::history::resolve_scope(&root);
     let mut batch = IntakeBatch::default();
     for event in events {
-        event.map(&scope, &mut batch);
+        event.map(&scope, &mut batch, RecordMode::On);
     }
     batch.finish(&scope);
     crate::history::ensure_ignored(&root);
@@ -999,7 +1046,7 @@ pub fn run(change: Option<&str>, topic: Option<&str>, json: bool) -> Result<()> 
 /// the payload itself is a failure: stdin that is not readable JSON at all
 /// reports [`IntakeOutcome::UnreadablePayload`], so the reporter's caller gets
 /// a code it can act on, and nothing is written.
-pub fn ingest() -> Result<IntakeOutcome> {
+pub fn ingest(with_full_content: bool) -> Result<IntakeOutcome> {
     let root = std::env::current_dir().context("resolve the project root")?;
     let payload = match read_payload() {
         Ok(payload) => payload,
@@ -1011,6 +1058,13 @@ pub fn ingest() -> Result<IntakeOutcome> {
             return Ok(IntakeOutcome::UnreadablePayload);
         }
     };
+    // The per-invocation override (tests and manual capture) raises this one
+    // payload to `full`; the default is the project's resolved mode.
+    let mode = if with_full_content {
+        RecordMode::Full
+    } else {
+        RecordMode::On
+    };
     // The scope every accepted event is recorded under: the payload's named
     // override (a scope this project does not have is a per-event rejection,
     // never a silent fallback) or the project's own resolution.
@@ -1019,7 +1073,7 @@ pub fn ingest() -> Result<IntakeOutcome> {
         mut entries,
         parents,
         ..
-    } = accepted_entries(&scope, payload.events);
+    } = accepted_entries(&scope, payload.events, mode);
     if entries.is_empty() {
         return Ok(IntakeOutcome::Read);
     }
@@ -1072,11 +1126,15 @@ fn payload_scope(root: &Path, payload: &IntakePayload) -> std::result::Result<Sc
 /// event is named on stderr with the reason — the payload's remaining events
 /// are still processed, because a reporter must never be able to block or
 /// corrupt the record.
-fn accepted_entries(scope: &std::result::Result<Scope, String>, events: Vec<Value>) -> IntakeBatch {
+fn accepted_entries(
+    scope: &std::result::Result<Scope, String>,
+    events: Vec<Value>,
+    mode: RecordMode,
+) -> IntakeBatch {
     let mut batch = IntakeBatch::default();
     for (index, raw) in events.into_iter().enumerate() {
         let kind = raw.get("kind").and_then(Value::as_str).map(str::to_owned);
-        if let Err(reason) = accept_event(scope, raw, &mut batch) {
+        if let Err(reason) = accept_event(scope, raw, &mut batch, mode) {
             warn_rejected(index, kind.as_deref(), &reason);
         }
     }
@@ -1092,16 +1150,18 @@ fn accepted_entries(scope: &std::result::Result<Scope, String>, events: Vec<Valu
 /// Both gates an event passes live here — the payload's scope (a named scope
 /// this project does not have rejects every event) and the event's own
 /// validation ([`IngestedEvent::validate`]) — so no kind can reach the append
-/// path without them.
+/// path without them. The effective mode is applied to the event's content at
+/// the same one site.
 fn accept_event(
     scope: &std::result::Result<Scope, String>,
     raw: Value,
     batch: &mut IntakeBatch,
+    mode: RecordMode,
 ) -> std::result::Result<(), String> {
     let scope = scope.as_ref().map_err(Clone::clone)?;
     let event: IngestedEvent = serde_json::from_value(raw).map_err(|error| error.to_string())?;
     event.validate()?;
-    event.map(scope, batch);
+    event.map(scope, batch, mode);
     Ok(())
 }
 
