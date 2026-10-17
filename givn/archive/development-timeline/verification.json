@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "change": "development-timeline",
+  "status": "pending",
+  "candidate_revision": null,
+  "tested_revision": null,
+  "scopes": {},
+  "coverage": null,
+  "started_at_unix": 1792239774,
+  "finished_at_unix": null
+}
