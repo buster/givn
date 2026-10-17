@@ -6,6 +6,61 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.9.2] - 2026-10-17
+
+### Bug Fixes
+
+- **development-report:** Align the no-network assertion with the design's inline script
+
+- **development-timeline:** Reconcile the all-targets pin and document the maki target
+
+- **development-report:** Reconcile the hybrid report's readings and lane-log facts
+
+- **test-evidence:** Follow the change into the archive when capturing evidence
+
+
+### Features
+
+- **development-record:** Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+- **development-record:** Record an artifact's appearance as one phase transition
+
+- **development-report:** Carry the hybrid workflow phase scaffold
+
+- **development-report:** Show the empty state and draw no workflow phase
+
+- **development-report:** Derive the current workflow state from a live change
+
+- **development-report:** Lay parallel sessions side by side
+
+- **development-report:** Mark a skipped workflow phase
+
+- **development-report:** Mark every phase done for an archived change
+
+- **development-report:** State a record with no stage transition
+
+- **development-report:** Group repeated steps within a phase
+
+- **development-report:** Collapse dense entries into phase aggregate ticks
+
+- **development-report:** Present the workflow in the written report's text view
+
+- **development-record:** An ideation artifact appearance is recorded as one phase start
+
+- **development-report:** The report model carries the ideation workflow and a linked ideation group
+
+- **development-report:** Resolve a change's ideation link from its proposal
+
+- **development-report:** An ideation topic report uses the ideation workflow
+
+- **development-report:** A change report shows its linked ideation group
+
+- **development-report:** A linked ideation with no recorded activity is stated
+
+- **development-report:** A change whose proposal names no ideation topic shows no linked group
+
+- **development-report:** An archived change resolves its linked ideation from the archive
+
 ## [0.9.1] - 2026-10-15
 
 ### Bug Fixes
@@ -378,3 +433,5 @@ for the complete 0.2.0 feature set.
 [0.9.0]: https://github.com/buster/givn/compare/v0.8.5...v0.9.0
 
 [0.9.1]: https://github.com/buster/givn/compare/v0.9.0...v0.9.1
+
+[0.9.2]: https://github.com/buster/givn/compare/v0.9.1...v0.9.2
