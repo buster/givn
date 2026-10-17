@@ -2517,6 +2517,99 @@ fn report_does_not_mark_phase_done(world: &mut GivnWorld, stage: String) {
     );
 }
 
+#[given(
+    regex = r#"^an archived change "([^"]+)" whose record holds the workflow phases up to "([^"]+)"$"#
+)]
+fn archived_change_whose_record_holds_workflow_phases(
+    world: &mut GivnWorld,
+    id: String,
+    stage: String,
+) {
+    let seeded = {
+        let env = project_root(world);
+        let seeded = support::seed_archived_change(env, &id, support::stage_transition(&stage));
+        // The fixture's own claim: the change is archived, never live.
+        assert!(
+            env.root().join("givn").join("archive").join(&id).is_dir(),
+            "the fixture's archived change directory does not exist"
+        );
+        assert!(
+            !env.root().join("givn").join("changes").join(&id).exists(),
+            "the fixture still holds a live change directory"
+        );
+        seeded
+    };
+    state(world).seeded = seeded;
+    world.last_change_id = Some(id);
+}
+
+#[then("the report names no live change state")]
+fn report_names_no_live_change_state(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    assert!(
+        model["current_state"].is_null(),
+        "the archived report carries a live current state: {model:#?}"
+    );
+    assert!(
+        document.contains("no live change state"),
+        "the header does not state the absent live state: {document}"
+    );
+    for marker in ["data-stage-label=", "state-phase", "state-next="] {
+        assert!(
+            !document.contains(marker),
+            "the archived header names the live state's {marker}: {document}"
+        );
+    }
+}
+
+#[then("the report marks every workflow phase done")]
+fn report_marks_every_workflow_phase_done(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let workflow = report_workflow(&model);
+    assert_eq!(
+        workflow.len(),
+        WORKFLOW_PHASES.len(),
+        "the archived report does not carry the nine phases: {model:#?}"
+    );
+    for phase in workflow {
+        let stage = phase["stage"].as_str().expect("a phase name");
+        assert_eq!(
+            phase["status"],
+            json!("done"),
+            "the archived report does not mark {stage} done: {model:#?}"
+        );
+        assert!(
+            document.contains(&format!("data-phase=\"{stage}\" data-status=\"done\"")),
+            "the text view does not mark {stage} done: {document}"
+        );
+        // A phase with no recorded entries is still done and records zero
+        // minutes — no status is invented from the record.
+        if phase["lanes"].as_array().is_some_and(Vec::is_empty) {
+            assert_eq!(
+                phase["wall_ms"],
+                json!(0),
+                "the empty archived phase {stage} invents a duration: {model:#?}"
+            );
+        }
+    }
+}
+
+#[then("the report names no next required artifact")]
+fn report_names_no_next_required_artifact(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    assert!(
+        model["current_state"].is_null(),
+        "the archived report carries a next required artifact: {model:#?}"
+    );
+    assert!(
+        !document.contains("state-next=") && !document.contains("next artifact"),
+        "the archived header names a next required artifact: {document}"
+    );
+}
+
 #[given(regex = r#"^a change "([^"]+)" whose record holds hundreds of short agent activities$"#)]
 fn change_with_hundreds_of_short_agent_activities(world: &mut GivnWorld, id: String) {
     let scope = Scope::Change { id: id.clone() };
