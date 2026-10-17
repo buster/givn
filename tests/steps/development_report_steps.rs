@@ -1842,6 +1842,198 @@ fn report_draws_no_workflow_phase_for_it(world: &mut GivnWorld) {
     );
 }
 
+/// The report's nine workflow phases, in workflow order: the names the report
+/// may carry, and the only ones.
+const WORKFLOW_PHASES: [&str; 9] = [
+    "propose",
+    "specs",
+    "design",
+    "arc42",
+    "design-review",
+    "tasks",
+    "implement",
+    "review",
+    "archive",
+];
+
+#[given(regex = r#"^a change "([^"]+)" whose record holds the workflow phases up to "([^"]+)"$"#)]
+fn change_whose_record_holds_workflow_phases_up_to(
+    world: &mut GivnWorld,
+    id: String,
+    stage: String,
+) {
+    {
+        let env = project_root(world);
+        // The fixture's project carries no arc42 artifact: the scaffold's
+        // seven-step workflow is the one its artifacts derive.
+        run_fixture_command(env, &["addons", "disable", "arc42"]);
+        support::seed_report_history(env, &id, support::stage_transition(&stage));
+    }
+    world.last_change_id = Some(id);
+}
+
+#[given(
+    regex = r#"^the change's artifacts make its derived state "([^"]+)" with the next required artifact "([^"]+)"$"#
+)]
+fn change_artifacts_make_its_derived_state(world: &mut GivnWorld, stage: String, next: String) {
+    let id = world
+        .last_change_id
+        .clone()
+        .expect("the change Given names a change");
+    let env = project_root(world);
+    support::write_change_artifacts_through_tasks(env, &id);
+    // The fixture's own claim: the production state derives the scenario's
+    // stage and next artifact from the artifact files, so the report reads a
+    // real change state rather than a label a step supplied.
+    let out = common::run_givn(env, &["status", "--change", &id, "--json"]);
+    assert!(
+        out.status.success(),
+        "givn status failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let status: Value = serde_json::from_slice(&out.stdout)
+        .unwrap_or_else(|error| panic!("the status output is not JSON: {error}"));
+    assert_eq!(
+        status["stage"],
+        json!(stage),
+        "the fixture's artifacts do not derive the claimed stage: {status:#?}"
+    );
+    assert_eq!(
+        status["next_required"]["id"],
+        json!(next),
+        "the fixture's artifacts do not derive the claimed next artifact: {status:#?}"
+    );
+}
+
+/// The written report's model, with its workflow stack.
+fn report_workflow(model: &Value) -> &[Value] {
+    model["workflow"]
+        .as_array()
+        .map(Vec::as_slice)
+        .unwrap_or_else(|| panic!("the report carries no workflow stack: {model:#?}"))
+}
+
+/// The workflow phase named `stage` as the written report's model carries it.
+fn report_phase<'a>(model: &'a Value, stage: &str) -> &'a Value {
+    report_workflow(model)
+        .iter()
+        .find(|phase| phase["stage"] == json!(stage))
+        .unwrap_or_else(|| panic!("the report names no phase {stage}: {model:#?}"))
+}
+
+#[then(regex = r#"^the report names the current stage "([^"]+)"$"#)]
+fn report_names_the_current_stage(world: &mut GivnWorld, stage: String) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let state = &model["current_state"];
+    assert_eq!(
+        state["stage_label"],
+        json!(stage),
+        "the report's current state does not name the stage: {model:#?}"
+    );
+    assert!(
+        document.contains(&format!("data-stage-label=\"{stage}\"")),
+        "the text view does not print the stage label {stage}: {document}"
+    );
+    // The header names the stage and the current phase as separate words: the
+    // stage label is not the active phase's name.
+    let phase = state["phase"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the current state names no phase: {state:#?}"));
+    assert!(
+        document.contains(&format!("<span class=\"state-phase\">{phase}</span>")),
+        "the header does not name the current phase {phase} separately: {document}"
+    );
+}
+
+#[then(regex = r#"^the report marks the phases before "([^"]+)" done$"#)]
+fn report_marks_the_phases_before_done(world: &mut GivnWorld, stage: String) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let workflow = report_workflow(&model);
+    let current = workflow
+        .iter()
+        .position(|phase| phase["stage"] == json!(stage))
+        .unwrap_or_else(|| panic!("the report names no phase {stage}: {model:#?}"));
+    assert!(current > 0, "the phase {stage} has no phase before it");
+    for phase in &workflow[..current] {
+        let name = phase["stage"].as_str().expect("a phase name");
+        assert_eq!(
+            phase["status"],
+            json!("done"),
+            "the report does not mark {name} done: {model:#?}"
+        );
+        assert!(
+            document.contains(&format!("data-phase=\"{name}\" data-status=\"done\"")),
+            "the text view does not mark {name} done: {document}"
+        );
+    }
+}
+
+#[then(regex = r#"^the report marks "([^"]+)" active$"#)]
+fn report_marks_phase_active(world: &mut GivnWorld, stage: String) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    assert_eq!(
+        report_phase(&model, &stage)["status"],
+        json!("active"),
+        "the report does not mark {stage} active: {model:#?}"
+    );
+    assert!(
+        document.contains(&format!("data-phase=\"{stage}\" data-status=\"active\"")),
+        "the text view does not mark {stage} active: {document}"
+    );
+}
+
+#[then(regex = r#"^the report marks "([^"]+)" queued$"#)]
+fn report_marks_phase_queued(world: &mut GivnWorld, stage: String) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    assert_eq!(
+        report_phase(&model, &stage)["status"],
+        json!("queued"),
+        "the report does not mark {stage} queued: {model:#?}"
+    );
+    assert!(
+        document.contains(&format!("data-phase=\"{stage}\" data-status=\"queued\"")),
+        "the text view does not mark {stage} queued: {document}"
+    );
+}
+
+#[then("the report names no phase the workflow does not have")]
+fn report_names_no_phase_the_workflow_does_not_have(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let workflow = report_workflow(&model);
+    let stages: Vec<&str> = workflow
+        .iter()
+        .map(|phase| {
+            phase["stage"]
+                .as_str()
+                .unwrap_or_else(|| panic!("a workflow phase carries no name: {phase:#?}"))
+        })
+        .collect();
+    assert_eq!(
+        stages, WORKFLOW_PHASES,
+        "the report's workflow is not the nine phases in workflow order: {model:#?}"
+    );
+    let printed: Vec<&str> = document
+        .split("data-phase=\"")
+        .skip(1)
+        .filter_map(|rest| rest.split('"').next())
+        .collect();
+    for name in &printed {
+        assert!(
+            WORKFLOW_PHASES.contains(name),
+            "the report invents the phase {name}: {document}"
+        );
+    }
+    assert_eq!(
+        printed, WORKFLOW_PHASES,
+        "the text view does not name exactly the nine phases: {document}"
+    );
+}
+
 #[given(regex = r#"^a change "([^"]+)" whose record holds hundreds of short agent activities$"#)]
 fn change_with_hundreds_of_short_agent_activities(world: &mut GivnWorld, id: String) {
     let scope = Scope::Change { id: id.clone() };

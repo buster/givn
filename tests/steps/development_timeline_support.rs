@@ -217,6 +217,55 @@ pub const WORKFLOW_ARTIFACTS: [&str; 7] = [
     "review.md",
 ];
 
+/// The transition that closes each workflow stage's own work, in workflow
+/// order: the recorded transition a scenario names by its stage instead of its
+/// artifact filename.
+const STAGE_TRANSITIONS: [(&str, &str); 7] = [
+    ("propose", "proposal.md"),
+    ("specs", "specs"),
+    ("design", "design.md"),
+    ("arc42", "arc42.md"),
+    ("design-review", "design-review.md"),
+    ("tasks", "tasks.md"),
+    ("review", "review.md"),
+];
+
+/// The recorded transition label for one workflow stage's completed work. The
+/// workflow opens the stage after that artifact appears, so `"tasks"` names the
+/// `tasks.md` transition the record carries.
+pub fn stage_transition(stage: &str) -> &'static str {
+    STAGE_TRANSITIONS
+        .iter()
+        .find(|(known, _)| *known == stage)
+        .map(|(_, artifact)| *artifact)
+        .unwrap_or_else(|| panic!("the workflow has no stage `{stage}`"))
+}
+
+/// Write the artifact files that complete a live change's workflow up to
+/// `tasks.md`, leaving `review.md` unproduced: the real change directory whose
+/// derived state the report reads. The paths are the artifact graph's own
+/// `generates` paths — a real project at `tasks-done` holds exactly these files.
+pub fn write_change_artifacts_through_tasks(env: &common::TestEnv, change: &str) {
+    let change_dir = env.root().join("givn").join("changes").join(change);
+    let specs = change_dir.join("specs");
+    std::fs::create_dir_all(&specs)
+        .unwrap_or_else(|error| panic!("create the change spec directory: {error}"));
+    std::fs::write(
+        specs.join(format!("{change}.feature")),
+        format!("Feature: {change}\n"),
+    )
+    .unwrap_or_else(|error| panic!("write the change spec: {error}"));
+    std::fs::write(change_dir.join("design.md"), "# Design\n")
+        .unwrap_or_else(|error| panic!("write the change design: {error}"));
+    std::fs::write(change_dir.join("design-review.md"), "DESIGN-REVIEW: PASS\n")
+        .unwrap_or_else(|error| panic!("write the change design review: {error}"));
+    std::fs::write(
+        change_dir.join("tasks.md"),
+        "- [x] write the specification\n- [x] verify the change\n",
+    )
+    .unwrap_or_else(|error| panic!("write the change tasks: {error}"));
+}
+
 /// The recorded end of each transition in [`WORKFLOW_ARTIFACTS`], one hour
 /// apart: a report's phase names stay readable at the initial zoom, and a
 /// scenario's own steps fall between two transitions.

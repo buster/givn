@@ -54,7 +54,7 @@ Feature: Development Report
     Then the report shows the empty state for "demo"
     And the report draws no workflow phase for it
 
-  @givn.added @wip
+  @givn.added
   Scenario: The report derives the current workflow state
     Given a change "demo" whose record holds the workflow phases up to "tasks"
     And the change's artifacts make its derived state "tasks-done" with the next required artifact "review"
