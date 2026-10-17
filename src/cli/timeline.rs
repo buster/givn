@@ -104,6 +104,11 @@ pub struct ReportModel {
     /// stage.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub unstaged: Option<WorkflowPhase>,
+    /// The linked ideation group: `Some` only for a change report whose
+    /// proposal names an existing, recorded topic. Its entries are also in
+    /// `entries`, once, and form their own ideation band.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ideation: Option<IdeationGroup>,
     /// The summary: the numbers the report states about the whole window.
     pub summary: Summary,
     /// The documented total content budget, in bytes.
@@ -173,6 +178,62 @@ impl Band {
     }
 }
 
+/// The ideation workflow's stages, in the order a topic works through them:
+/// `frame` is the opening stage, and each later stage is started by its own
+/// marker. A topic report's stack and an ideation band's phase names read this
+/// order, never the change workflow's.
+pub(crate) const IDEATION_STAGES: [&str; 6] = [
+    "frame",
+    "personas",
+    "event-storming",
+    "use-case-definition",
+    "use-case-elaboration",
+    "handoff",
+];
+
+/// The resolved link snapshot a change report carries: the ideation topic its
+/// proposal names, and that topic's recorded entries. `run()` resolves it once
+/// from the proposal (and validates the topic directory's existence); the model
+/// embeds the topic id, so the written document is deterministic over the
+/// record, the change state, and this snapshot.
+#[derive(Debug, Clone)]
+pub struct LinkedIdeation {
+    /// The normalized topic id the change's proposal names.
+    pub topic: String,
+    /// The topic's own recorded entries.
+    pub entries: Vec<HistoryEntry>,
+}
+
+/// The linked ideation group a change report renders above the change workflow:
+/// the topic's six ideation phases with the topic report's marker statuses, the
+/// group's own entry ids, and its own totals. It is historical — it never
+/// becomes the change's current phase — and it joins the model's `entries` once.
+#[derive(Debug, Serialize)]
+pub struct IdeationGroup {
+    /// The linked topic's id, as the link snapshot carries it.
+    pub topic: String,
+    /// Whether the topic's record holds any entry at all. A topic that
+    /// predates the record states that instead of inventing phases.
+    pub activity: bool,
+    /// The six ideation phases with the topic report's marker statuses; empty
+    /// when the record has no activity.
+    pub phases: Vec<WorkflowPhase>,
+    /// The group's entry ids, in the model's own order.
+    pub entries: Vec<u64>,
+    /// The group's own recorded duration: its first-to-last entry.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub duration_ms: Option<u64>,
+    /// The recorded `tool` entries the group holds.
+    pub tools: usize,
+    /// The recorded subagent spans the group holds.
+    pub subagents: usize,
+    /// The recorded question waits the group holds.
+    pub waits: usize,
+    /// The waits the group's record measured.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wait_ms: Option<u64>,
+}
+
 /// The summary the report states about the whole record, never about the
 /// visible window alone: the entry count, the elapsed time, the durations the
 /// record does not have, and the ranked longest steps.
@@ -234,10 +295,11 @@ pub struct Summary {
 }
 
 impl Summary {
-    /// The summary over the report's window: one pass over the window's entries
-    /// feeds every number it states, so no summary figure is ever a second,
-    /// differently-shaped scan of the record.
-    fn of(entries: &[HistoryEntry]) -> Self {
+    /// The summary over the report scope's own entries: one pass over those
+    /// entries feeds every number it states, so no summary figure is ever a
+    /// second, differently-shaped scan of the record. A linked topic's entries
+    /// are not in that slice: its totals are the group's own.
+    fn of(entries: &[&HistoryEntry]) -> Self {
         let mut summary = Summary {
             entries: entries.len(),
             ..Summary::default()
@@ -289,7 +351,7 @@ impl Summary {
 /// extremes and the elapsed time is never a second scan of the record; an end
 /// the record cannot read leaves the elapsed time unmeasured rather than
 /// guessed.
-fn recorded_span(entries: &[HistoryEntry]) -> Option<u64> {
+fn recorded_span(entries: &[&HistoryEntry]) -> Option<u64> {
     let first = crate::history::parse_rfc3339_ms(&entries.first()?.at)?;
     let last = crate::history::parse_rfc3339_ms(&entries.last()?.at)?;
     u64::try_from(last - first).ok()
@@ -320,9 +382,12 @@ struct TokenRollUp {
 
 impl TokenRollUp {
     /// The window's entries → both views.
-    fn of(entries: &[HistoryEntry]) -> Self {
-        let usage: Vec<&HistoryEntry> =
-            entries.iter().filter(|entry| entry.kind == USAGE).collect();
+    fn of(entries: &[&HistoryEntry]) -> Self {
+        let usage: Vec<&HistoryEntry> = entries
+            .iter()
+            .copied()
+            .filter(|entry| entry.kind == USAGE)
+            .collect();
         let mut rollup = TokenRollUp::default();
         for entry in &usage {
             let Some(tokens) = usage_total(entry) else {
@@ -565,13 +630,14 @@ pub struct TasksProgress {
     pub done: usize,
 }
 
-/// The report's workflow scaffold: the nine phases, the current state, and the
-/// no-stage group.
+/// The report's workflow scaffold: the scope's workflow phases, the current
+/// state, the no-stage group, and the linked ideation group.
 #[derive(Debug, Default)]
 struct PhaseScaffold {
     workflow: Vec<WorkflowPhase>,
     current_state: Option<CurrentState>,
     unstaged: Option<WorkflowPhase>,
+    ideation: Option<IdeationGroup>,
 }
 
 /// The change's state as the report can resolve it.
@@ -676,24 +742,20 @@ fn phase_statuses(resolution: &ChangeResolution) -> Vec<Option<&'static str>> {
     }
 }
 
-/// A topic's statuses: the last stage its record names is the current phase and
-/// every earlier stage is done; a record that names none marks no phase
-/// current.
-fn topic_statuses(stages: &[StageAssignment]) -> Vec<Option<&'static str>> {
-    let current = WORKFLOW_STAGES
+/// One status per ideation phase, in [`IDEATION_STAGES`] order, from the
+/// topic's recorded markers: the furthest marker in ideation order is `active`,
+/// every earlier ideation phase `done`, every later one `queued`; before any
+/// marker `frame` is `active` and the rest `queued`. A marker starts its phase,
+/// so the marker itself is the current phase, not the one before it.
+fn ideation_statuses(entries: &[&HistoryEntry]) -> Vec<Option<&'static str>> {
+    let current = entries
         .iter()
-        .enumerate()
-        .rev()
-        .find(|(_, stage)| {
-            stages
-                .iter()
-                .any(|assignment| assignment.stage.as_deref() == Some(**stage))
-        })
-        .map(|(index, _)| index);
-    let Some(current) = current else {
-        return vec![None; WORKFLOW_STAGES.len()];
-    };
-    (0..WORKFLOW_STAGES.len())
+        .copied()
+        .filter_map(ideation_marker)
+        .filter_map(|(_, phase)| IDEATION_STAGES.iter().position(|stage| *stage == phase))
+        .max()
+        .unwrap_or(0);
+    (0..IDEATION_STAGES.len())
         .map(|index| {
             Some(if index < current {
                 "done"
@@ -977,19 +1039,22 @@ fn phase_aggregates(members: &[&HistoryEntry], scale: &TimeScale) -> Vec<PhaseAg
     aggregates
 }
 
-/// The workflow scaffold of the scope the report was asked for: the nine
-/// phases, the live current state, and the no-stage group. The project report
+/// The workflow scaffold of the scope the report was asked for: the scope's own
+/// workflow phases, the live current state, the group of work the record
+/// assigns to no change stage, and — for a change report whose proposal names an
+/// existing, recorded topic — the linked ideation group. The project report
 /// keeps its band rows and gets no stack.
 fn phase_scaffold(
     scope: Option<&Scope>,
     stages: &[StageAssignment],
     entries: &[HistoryEntry],
     scale: &TimeScale,
+    ideation_topic: Option<&str>,
 ) -> PhaseScaffold {
     let Some(scope) = scope else {
         return PhaseScaffold::default();
     };
-    let (statuses, current_state) = match scope {
+    let (workflow_stages, statuses, current_state) = match scope {
         Scope::Change { .. } => {
             let resolution = change_resolution(scope);
             let statuses = phase_statuses(&resolution);
@@ -997,15 +1062,21 @@ fn phase_scaffold(
                 ChangeResolution::Live(state) => Some(current_state_of(state)),
                 ChangeResolution::Archived | ChangeResolution::Absent => None,
             };
-            (statuses, current_state)
+            (WORKFLOW_STAGES.as_slice(), statuses, current_state)
         }
-        Scope::Ideation { .. } => (topic_statuses(stages), None),
+        Scope::Ideation { .. } => {
+            let own: Vec<&HistoryEntry> = entries
+                .iter()
+                .filter(|entry| &entry.scope == scope)
+                .collect();
+            (IDEATION_STAGES.as_slice(), ideation_statuses(&own), None)
+        }
         // The project report keeps its band rows and builds no phase stack: a
         // nine-phase scaffold of `None` statuses would claim a workflow the
         // project scope never records.
         Scope::Project { .. } => return PhaseScaffold::default(),
     };
-    let workflow = WORKFLOW_STAGES
+    let workflow = workflow_stages
         .iter()
         .enumerate()
         .map(|(index, stage)| {
@@ -1013,13 +1084,66 @@ fn phase_scaffold(
             build_phase(Some(stage), statuses[index], &members, scale)
         })
         .collect();
-    let unstaged_members = phase_members(None, stages, entries);
+    // The ideation derivation always places an entry in an ideation phase, so a
+    // topic report never has a no-stage group.
+    let unstaged_members = match scope {
+        Scope::Ideation { .. } => Vec::new(),
+        Scope::Change { .. } | Scope::Project { .. } => phase_members(None, stages, entries),
+    };
     let unstaged =
         (!unstaged_members.is_empty()).then(|| build_phase(None, None, &unstaged_members, scale));
     PhaseScaffold {
         workflow,
         current_state,
         unstaged,
+        ideation: ideation_topic.map(|topic| ideation_group(topic, entries)),
+    }
+}
+
+/// The linked ideation group of a change report: the topic's own entries, its
+/// six ideation phases with the topic report's marker statuses, and the group's
+/// own totals. A topic whose record holds no entries carries no phases — the
+/// group states that the activity predates the record instead of inventing
+/// them — and a group that holds entries derives its phases and totals from
+/// those entries alone, never from the change's.
+fn ideation_group(topic: &str, entries: &[HistoryEntry]) -> IdeationGroup {
+    let topic_scope = Scope::Ideation {
+        id: topic.to_string(),
+    };
+    let group_entries: Vec<&HistoryEntry> = entries
+        .iter()
+        .filter(|entry| entry.scope == topic_scope)
+        .collect();
+    let ids: Vec<u64> = group_entries.iter().map(|entry| entry.id).collect();
+    let activity = !group_entries.is_empty();
+    let assignments = ideation_stage_assignments(&ids, entries);
+    // The group's own scale, never the change's: its Fit buckets cover the
+    // topic's window.
+    let group_scale = TimeScale::of_refs(&group_entries);
+    let phases = if activity {
+        let statuses = ideation_statuses(&group_entries);
+        IDEATION_STAGES
+            .iter()
+            .enumerate()
+            .map(|(index, stage)| {
+                let members = phase_members(Some(stage), &assignments, entries);
+                build_phase(Some(stage), statuses[index], &members, &group_scale)
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
+    let summary = Summary::of(&group_entries);
+    IdeationGroup {
+        topic: topic.to_string(),
+        activity,
+        phases,
+        entries: ids,
+        duration_ms: summary.elapsed_ms,
+        tools: summary.tool_calls,
+        subagents: summary.subagents,
+        waits: summary.waits,
+        wait_ms: summary.wait_ms,
     }
 }
 
@@ -1050,9 +1174,34 @@ fn is_recorder_command(entry: &HistoryEntry) -> bool {
         || label.starts_with("history harness-hook ")
 }
 
+/// The report scope's own entries, borrowed: all entries for the project
+/// report, the matching scope's entries for a change or topic report. The
+/// summary, ranking, waits, KPI facts, and `empty` read this slice, so a linked
+/// topic's entries never leak into the change's totals.
+fn report_scope_entries<'a>(
+    scope: Option<&Scope>,
+    entries: &'a [HistoryEntry],
+) -> Vec<&'a HistoryEntry> {
+    match scope {
+        None | Some(Scope::Project { .. }) => entries.iter().collect(),
+        Some(scope) => entries
+            .iter()
+            .filter(|entry| &entry.scope == scope)
+            .collect(),
+    }
+}
+
 /// Record lines → `ReportModel` (bands, ordering, ranking, totals, and the
 /// initial zoom's aggregates).
-pub fn build_report_model(scope: Option<Scope>, mut entries: Vec<HistoryEntry>) -> ReportModel {
+///
+/// `link` is the resolved link snapshot the caller read from the change's
+/// proposal and the topic's record; the model stays pure and deterministic over
+/// the record, the state snapshot, and that snapshot.
+pub fn build_report_model(
+    scope: Option<Scope>,
+    mut entries: Vec<HistoryEntry>,
+    link: Option<LinkedIdeation>,
+) -> ReportModel {
     // The model's first step: the recorder's own command entries are dropped
     // before the content budget and before every derivation (ordering, bands,
     // stage assignment, the phase scaffold, lanes, group counts, aggregates,
@@ -1062,6 +1211,20 @@ pub fn build_report_model(scope: Option<Scope>, mut entries: Vec<HistoryEntry>) 
     // whose record holds only these entries therefore renders the empty
     // state.
     entries.retain(|entry| !is_recorder_command(entry));
+    // The resolved link is a change report's alone: a topic or project report
+    // parses no link. Its topic entries join the model's entries once and form
+    // their own ideation band; they never join the change's band.
+    let (ideation_topic, linked) = match link {
+        Some(link) if matches!(scope, Some(Scope::Change { .. })) => {
+            (Some(link.topic), link.entries)
+        }
+        _ => (None, Vec::new()),
+    };
+    entries.extend(
+        linked
+            .into_iter()
+            .filter(|entry| !is_recorder_command(entry)),
+    );
     // The content budget is applied in record order — the store's own line
     // order, before the report's time ordering — so a record over the budget
     // always produces the same document. An entry whose bundle would cross the
@@ -1082,14 +1245,26 @@ pub fn build_report_model(scope: Option<Scope>, mut entries: Vec<HistoryEntry>) 
     for (band, phases) in bands.iter_mut().zip(phases) {
         band.stages = phases;
     }
-    let summary = Summary::of(&entries);
+    // The summary, the ranking, the KPI facts, and `empty` are the report
+    // scope's own: a linked topic's entries are in the model once but never in
+    // these totals. `empty` is true only when the model holds no entries at
+    // all.
+    let own = report_scope_entries(scope.as_ref(), &entries);
+    let summary = Summary::of(&own);
     let empty = entries.is_empty();
     let scale = TimeScale::of(&entries);
-    // The workflow scaffold: the nine phases, the live current state, and the
-    // no-stage group, from the same one derivation the model's `stages`
-    // carries. The scaffold holds ids and totals only; the entries stay in
-    // `entries`, embedded once.
-    let scaffold = phase_scaffold(scope.as_ref(), &stages, &entries, &scale);
+    // The workflow scaffold: the scope's own workflow phases, the live current
+    // state, and the no-stage group, from the same one derivation the model's
+    // `stages` carries, plus the linked ideation group for a change report. The
+    // scaffold holds ids and totals only; the entries stay in `entries`,
+    // embedded once.
+    let scaffold = phase_scaffold(
+        scope.as_ref(),
+        &stages,
+        &entries,
+        &scale,
+        ideation_topic.as_deref(),
+    );
     // The one bucketing: the markers the initial view draws are computed here,
     // from the window the bands were built from, and carried in the model — so
     // the zoom path reads the aggregate that already stands for an entry
@@ -1105,6 +1280,7 @@ pub fn build_report_model(scope: Option<Scope>, mut entries: Vec<HistoryEntry>) 
         workflow: scaffold.workflow,
         current_state: scaffold.current_state,
         unstaged: scaffold.unstaged,
+        ideation: scaffold.ideation,
         summary,
         content_budget_bytes: CONTENT_BUDGET_BYTES,
         content_bytes,
@@ -1266,10 +1442,26 @@ fn bands_for(scope: Option<&Scope>, entries: &[HistoryEntry]) -> Vec<Band> {
         return bands;
     }
     if let Some(scope) = scope {
-        bands.push(Band::of(
-            scope,
-            entries.iter().map(|entry| entry.id).collect(),
-        ));
+        // The named scope's own band first, then one band per other scope the
+        // window carries — a change report's linked ideation topic entries form
+        // their own ideation band and never join the change's.
+        let own: Vec<u64> = entries
+            .iter()
+            .filter(|entry| &entry.scope == scope)
+            .map(|entry| entry.id)
+            .collect();
+        if !own.is_empty() {
+            bands.push(Band::of(scope, own));
+        }
+        for entry in entries {
+            if &entry.scope == scope {
+                continue;
+            }
+            match bands.iter_mut().find(|band| band.scope == entry.scope) {
+                Some(band) => band.entries.push(entry.id),
+                None => bands.push(Band::of(&entry.scope, vec![entry.id])),
+            }
+        }
         return bands;
     }
     for entry in entries {
@@ -1402,8 +1594,27 @@ impl ReportModel {
     }
 }
 
-/// Every band's entries with the stage they worked in: an entry belongs to the
-/// stage the latest artifact transition at or before its own `at` opened.
+/// Every band's entries with the stage they worked in, in the band scope's own
+/// workflow: a change band reads the change workflow's artifact transitions,
+/// an ideation band reads its start markers directly. The one `stages` vector
+/// stays the single assignment source for the whole model.
+fn stage_assignments(bands: &[Band], entries: &[HistoryEntry]) -> Vec<StageAssignment> {
+    let mut assignments = Vec::new();
+    for band in bands {
+        match &band.scope {
+            Scope::Ideation { .. } => {
+                assignments.extend(ideation_stage_assignments(&band.entries, entries));
+            }
+            Scope::Change { .. } | Scope::Project { .. } => {
+                assignments.extend(change_stage_assignments(&band.entries, entries));
+            }
+        }
+    }
+    assignments
+}
+
+/// A change band's entries with the stage they worked in: an entry belongs to
+/// the stage the latest artifact transition at or before its own `at` opened.
 /// Entries recorded before the record's first transition stay in the workflow's
 /// opening stage only when that first transition is `proposal.md` — the record
 /// starts where the workflow starts; when the first transition is later, those
@@ -1412,46 +1623,102 @@ impl ReportModel {
 /// phase name. This is the report's one derivation of a phase: the model
 /// carries its result, so neither the renderer nor the browser script derives
 /// a stage a second time.
-fn stage_assignments(bands: &[Band], entries: &[HistoryEntry]) -> Vec<StageAssignment> {
+fn change_stage_assignments(ids: &[u64], entries: &[HistoryEntry]) -> Vec<StageAssignment> {
     let mut assignments = Vec::new();
-    for band in bands {
-        let mut transitions: Vec<(i64, &str, &'static str)> = band
-            .entries
-            .iter()
-            .filter_map(|id| entries.iter().find(|entry| entry.id == *id))
-            .filter_map(artifact_transition)
-            .collect();
-        transitions.sort_by_key(|(at, _, _)| *at);
-        let starts_at_workflow_start = transitions
-            .first()
-            .is_some_and(|(_, artifact, _)| *artifact == "proposal.md");
-        for id in &band.entries {
-            let Some(entry) = entries.iter().find(|entry| entry.id == *id) else {
-                continue;
-            };
-            let opened = crate::history::parse_rfc3339_ms(&entry.at).and_then(|at| {
-                transitions
-                    .iter()
-                    .rev()
-                    .find(|(transition_at, _, _)| *transition_at <= at)
-                    .map(|(_, _, stage)| (*stage).to_string())
-            });
-            let stage = match opened {
-                Some(stage) => Some(stage),
-                None if starts_at_workflow_start => Some(WORKFLOW_STAGES[0].to_string()),
-                None => None,
-            };
-            assignments.push(StageAssignment { entry: *id, stage });
-        }
+    let mut transitions: Vec<(i64, &str, &'static str)> = ids
+        .iter()
+        .filter_map(|id| entries.iter().find(|entry| entry.id == *id))
+        .filter_map(artifact_transition)
+        .collect();
+    transitions.sort_by_key(|(at, _, _)| *at);
+    let starts_at_workflow_start = transitions
+        .first()
+        .is_some_and(|(_, artifact, _)| *artifact == "proposal.md");
+    for id in ids {
+        let Some(entry) = entries.iter().find(|entry| entry.id == *id) else {
+            continue;
+        };
+        let opened = crate::history::parse_rfc3339_ms(&entry.at).and_then(|at| {
+            transitions
+                .iter()
+                .rev()
+                .find(|(transition_at, _, _)| *transition_at <= at)
+                .map(|(_, _, stage)| (*stage).to_string())
+        });
+        let stage = match opened {
+            Some(stage) => Some(stage),
+            None if starts_at_workflow_start => Some(WORKFLOW_STAGES[0].to_string()),
+            None => None,
+        };
+        assignments.push(StageAssignment { entry: *id, stage });
     }
     assignments
 }
 
-/// One band's phases: the stages its entries worked in, in the workflow's own
-/// order and without repetition — the names the row's phase line shows and the
-/// browser script draws from the same list.
+/// An ideation band's entries with the ideation phase they worked in: a marker
+/// label maps **directly** to the phase it starts (never through
+/// [`STAGE_ARTIFACTS`], whose labels open the following change stage), an
+/// entry belongs to the latest marker at or before its `at`, and entries
+/// before the first marker are `frame`. The derivation never yields an absent
+/// stage, so a topic report has no "no recorded stage transition" group.
+fn ideation_stage_assignments(ids: &[u64], entries: &[HistoryEntry]) -> Vec<StageAssignment> {
+    let mut markers: Vec<(i64, &'static str)> = ids
+        .iter()
+        .filter_map(|id| entries.iter().find(|entry| entry.id == *id))
+        .filter_map(ideation_marker)
+        .collect();
+    markers.sort_by_key(|(at, _)| *at);
+    ids.iter()
+        .filter_map(|id| {
+            let entry = entries.iter().find(|entry| entry.id == *id)?;
+            let stage = crate::history::parse_rfc3339_ms(&entry.at)
+                .and_then(|at| {
+                    markers
+                        .iter()
+                        .rev()
+                        .find(|(marker_at, _)| *marker_at <= at)
+                        .map(|(_, phase)| (*phase).to_string())
+                })
+                .unwrap_or_else(|| IDEATION_STAGES[0].to_string());
+            Some(StageAssignment {
+                entry: *id,
+                stage: Some(stage),
+            })
+        })
+        .collect()
+}
+
+/// One recorded ideation start marker: the instant it was observed and the
+/// phase its label starts. `frame.md` is not a marker, and a label outside the
+/// marker table starts no ideation phase — never an inferred one.
+fn ideation_marker(entry: &HistoryEntry) -> Option<(i64, &'static str)> {
+    if entry.kind != PHASE {
+        return None;
+    }
+    let label = entry.label.as_deref().unwrap_or(&entry.name);
+    let phase = IDEATION_STAGES
+        .iter()
+        .copied()
+        .skip(1)
+        .find(|stage| *stage == label)?;
+    Some((crate::history::parse_rfc3339_ms(&entry.at)?, phase))
+}
+
+/// The workflow stages one band's phases are named in: the band scope's own
+/// workflow order, so an ideation band names ideation phases and a change band
+/// names change phases.
+fn workflow_stages(scope: &Scope) -> &'static [&'static str] {
+    match scope {
+        Scope::Ideation { .. } => &IDEATION_STAGES,
+        Scope::Change { .. } | Scope::Project { .. } => &WORKFLOW_STAGES,
+    }
+}
+
+/// One band's phases: the stages its entries worked in, in the band scope's own
+/// workflow order and without repetition — the names the row's phase line shows
+/// and the browser script draws from the same list.
 fn band_phases(band: &Band, assignments: &[StageAssignment]) -> Vec<String> {
-    WORKFLOW_STAGES
+    workflow_stages(&band.scope)
         .iter()
         .filter(|stage| {
             assignments.iter().any(|assignment| {
@@ -1525,9 +1792,10 @@ fn add_measured(total: &mut Option<u64>, duration: Option<u64>) -> bool {
 /// recorded time and then the entry id, so the ranking is deterministic for
 /// every record. The list is deliberately uncapped: the design bounds the
 /// *drawn shapes* (the aggregation rule), never the summary rows.
-fn ranked_steps(entries: &[HistoryEntry]) -> Vec<RankedStep> {
+fn ranked_steps(entries: &[&HistoryEntry]) -> Vec<RankedStep> {
     let mut measured: Vec<&HistoryEntry> = entries
         .iter()
+        .copied()
         .filter(|entry| entry.duration_ms.is_some())
         .collect();
     measured.sort_by(|a, b| {
@@ -1595,6 +1863,13 @@ fn render_view(model: &ReportModel) -> String {
     if is_project_report(model.scope.as_ref()) {
         view.push_str(&render_timeline(model));
     } else {
+        // The linked ideation group prints above the change workflow: it is
+        // pre-change history, a separate labelled section, never the change's
+        // current phase.
+        view.push_str(&render_ideation_group(
+            model.ideation.as_ref(),
+            &model.entries,
+        ));
         view.push_str(&render_workflow(model));
     }
     view.push('\n');
@@ -1634,6 +1909,45 @@ fn render_current_state(state: Option<&CurrentState>) -> String {
         escape(&tasks),
     )
 }
+
+/// The linked ideation group's text view: its heading, its six ideation phases
+/// with the topic report's marker statuses, and its own totals, printed above
+/// the change stack. A group whose record holds no entries states
+/// [`NO_IDEATION_ACTIVITY`] instead of inventing phases or durations.
+fn render_ideation_group(group: Option<&IdeationGroup>, entries: &[HistoryEntry]) -> String {
+    let Some(group) = group else {
+        return String::new();
+    };
+    let mut html = format!(
+        "<section class=\"ideation-group\" id=\"ideation-group\" data-topic=\"{}\">\n<h2>Ideation: {}</h2>\n",
+        escape(&group.topic),
+        escape(&group.topic),
+    );
+    if group.activity {
+        for phase in &group.phases {
+            html.push_str(&render_workflow_phase(phase, entries));
+        }
+        html.push_str(&format!(
+            "<p class=\"ideation-totals\" id=\"ideation-totals\" data-entries=\"{}\">ideation recorded {}, {} tools, {} subagents, {} waits</p>\n",
+            group.entries.len(),
+            escape(&duration_or_not_measured(group.duration_ms)),
+            group.tools,
+            group.subagents,
+            group.waits,
+        ));
+    } else {
+        html.push_str(&format!(
+            "<p class=\"ideation-no-activity\" id=\"ideation-no-activity\">{NO_IDEATION_ACTIVITY}</p>\n"
+        ));
+    }
+    html.push_str("</section>\n");
+    html
+}
+
+/// The exact words a linked group states when its topic's record holds no
+/// entry at all: the work predates the record, and the group invents no phase
+/// or duration.
+pub const NO_IDEATION_ACTIVITY: &str = "no recorded activity (pre-dates the record)";
 
 /// The workflow stack: one line per workflow phase, and the "no recorded stage
 /// transition" group beneath it when the record assigns work to no stage. The
@@ -2020,9 +2334,25 @@ struct TimeScale {
 impl TimeScale {
     /// The scale over the window's entries.
     fn of(entries: &[HistoryEntry]) -> Self {
-        let mut times = entries
-            .iter()
-            .filter_map(|entry| crate::history::parse_rfc3339_ms(&entry.at));
+        Self::over(
+            entries
+                .iter()
+                .filter_map(|entry| crate::history::parse_rfc3339_ms(&entry.at)),
+        )
+    }
+
+    /// The scale over the given entries, borrowed: the linked ideation group's
+    /// own window, never the change's.
+    fn of_refs(entries: &[&HistoryEntry]) -> Self {
+        Self::over(
+            entries
+                .iter()
+                .filter_map(|entry| crate::history::parse_rfc3339_ms(&entry.at)),
+        )
+    }
+
+    /// The scale over one window's recorded instants.
+    fn over(mut times: impl Iterator<Item = i64>) -> Self {
         let first = times.next().unwrap_or_default();
         let (mut start, mut end) = (first, first);
         for time in times {
@@ -2373,7 +2703,7 @@ pub fn run(change: Option<&str>, topic: Option<&str>, out: Option<&Path>) -> Res
     let root = std::env::current_dir().context("resolve the project root")?;
     let scope = crate::cli::history::scope_for(&root, change, topic);
     let entries = crate::cli::history::entries_in_scope(&root, scope.as_ref())?;
-    let model = build_report_model(scope.clone(), entries);
+    let model = build_report_model(scope.clone(), entries, None);
     let path = match out {
         Some(path) => path.to_path_buf(),
         None => default_report_path(&root, scope.as_ref()),
@@ -2513,6 +2843,7 @@ mod tests {
                 id: "demo".to_string(),
             }),
             entries.clone(),
+            None,
         );
 
         assert_eq!(
@@ -2666,6 +2997,7 @@ mod tests {
                 id: "demo".to_string(),
             }),
             vec![change_entry],
+            None,
         );
         let change_view = render_view(&change);
         for marker in [
@@ -2708,6 +3040,7 @@ mod tests {
                 id: "demo".to_string(),
             }),
             vec![project_entry],
+            None,
         );
         let project_view = render_view(&project);
         for marker in [
@@ -2778,6 +3111,7 @@ mod tests {
                 id: "demo".to_string(),
             }),
             entries,
+            None,
         );
         let early = model
             .stages
@@ -2973,6 +3307,7 @@ mod tests {
                 id: "demo".to_string(),
             }),
             entries,
+            None,
         );
 
         let ids: Vec<u64> = model.entries.iter().map(|entry| entry.id).collect();
@@ -3067,6 +3402,264 @@ mod tests {
         assert_eq!(
             model.content_bytes, 0,
             "the recorder's own content was counted against the budget"
+        );
+    }
+
+    /// The ideation model's proof: the six ideation phases in the topic's own
+    /// order, the direct marker-to-phase mapping (a `personas` marker places its
+    /// own work in `personas`, never in the change stage the marker would open
+    /// there), pre-marker entries in `frame` with no no-stage group, and the
+    /// report scope's totals kept separate from a linked topic's.
+    #[test]
+    fn ideation_model_maps_markers_to_phases_and_keeps_scope_totals() {
+        let topic = Scope::Ideation {
+            id: "ideas".to_string(),
+        };
+        let topic_entries = vec![
+            FixtureEntry {
+                id: 1,
+                at: "2026-10-16T08:00:00.000Z",
+                kind: "step",
+                name: "ideation",
+                duration_ms: Some(10_000),
+                ..FixtureEntry::default()
+            }
+            .record_in(topic.clone()),
+            FixtureEntry {
+                id: 2,
+                at: "2026-10-16T09:00:00.000Z",
+                kind: "phase",
+                name: "personas",
+                label: Some("personas"),
+                ..FixtureEntry::default()
+            }
+            .record_in(topic.clone()),
+            FixtureEntry {
+                id: 3,
+                at: "2026-10-16T10:00:00.000Z",
+                kind: "step",
+                name: "personas-work",
+                duration_ms: Some(5_000),
+                ..FixtureEntry::default()
+            }
+            .record_in(topic.clone()),
+            FixtureEntry {
+                id: 4,
+                at: "2026-10-16T11:00:00.000Z",
+                kind: "phase",
+                name: "event-storming",
+                label: Some("event-storming"),
+                ..FixtureEntry::default()
+            }
+            .record_in(topic.clone()),
+            FixtureEntry {
+                id: 5,
+                at: "2026-10-16T12:00:00.000Z",
+                kind: "tool",
+                name: "tool",
+                duration_ms: Some(7_000),
+                ..FixtureEntry::default()
+            }
+            .record_in(topic.clone()),
+        ];
+
+        // The topic report: the six ideation phases in order, with the furthest
+        // marker active and every earlier phase done.
+        let topic_model = build_report_model(Some(topic.clone()), topic_entries.clone(), None);
+        let stages: Vec<Option<String>> = topic_model
+            .workflow
+            .iter()
+            .map(|phase| phase.stage.clone())
+            .collect();
+        assert_eq!(
+            stages,
+            IDEATION_STAGES
+                .iter()
+                .map(|stage| Some((*stage).to_string()))
+                .collect::<Vec<_>>(),
+            "the topic report's workflow is not the six ideation phases in order"
+        );
+        let statuses: Vec<Option<String>> = topic_model
+            .workflow
+            .iter()
+            .map(|phase| phase.status.clone())
+            .collect();
+        assert_eq!(
+            statuses,
+            vec![
+                Some("done".to_string()),
+                Some("done".to_string()),
+                Some("active".to_string()),
+                Some("queued".to_string()),
+                Some("queued".to_string()),
+                Some("queued".to_string()),
+            ],
+            "the topic report's marker statuses are not the furthest marker active"
+        );
+        assert_eq!(
+            topic_model.stage_of(1).map(str::to_string),
+            Some("frame".to_string()),
+            "a pre-marker entry is not in the opening frame phase"
+        );
+        assert_eq!(
+            topic_model.stage_of(2).map(str::to_string),
+            Some("personas".to_string()),
+            "a `personas` marker did not assign its own work to `personas`"
+        );
+        assert_eq!(
+            topic_model.stage_of(3).map(str::to_string),
+            Some("personas".to_string()),
+            "work after the `personas` marker is not in `personas`"
+        );
+        assert_eq!(
+            topic_model.stage_of(4).map(str::to_string),
+            Some("event-storming".to_string()),
+            "the `event-storming` marker did not start `event-storming`"
+        );
+        assert!(
+            topic_model
+                .stages
+                .iter()
+                .all(|assignment| assignment.stage.is_some()),
+            "the ideation derivation left an entry without a phase: {:?}",
+            topic_model.stages
+        );
+        assert!(
+            topic_model.unstaged.is_none(),
+            "the topic report carries a no-stage group"
+        );
+
+        // A change report linked to the same topic: its own nine-phase stack,
+        // the group's six ideation phases, and two bands in which the change's
+        // band excludes the topic's entries.
+        let change = Scope::Change {
+            id: "demo".to_string(),
+        };
+        let linked = build_report_model(
+            Some(change.clone()),
+            vec![
+                FixtureEntry {
+                    id: 10,
+                    at: "2026-10-17T08:00:00.000Z",
+                    kind: "step",
+                    name: "specs",
+                    duration_ms: Some(20_000),
+                    ..FixtureEntry::default()
+                }
+                .record(),
+            ],
+            Some(LinkedIdeation {
+                topic: "ideas".to_string(),
+                entries: topic_entries.clone(),
+            }),
+        );
+        assert_eq!(
+            linked.workflow.len(),
+            WORKFLOW_STAGES.len(),
+            "the linked change report did not keep its own workflow"
+        );
+        let group = linked
+            .ideation
+            .as_ref()
+            .expect("the linked change report carries no ideation group");
+        assert_eq!(group.topic, "ideas");
+        assert!(group.activity, "the active topic reads as no activity");
+        assert_eq!(
+            group.phases.len(),
+            IDEATION_STAGES.len(),
+            "the group does not carry the six ideation phases"
+        );
+        assert_eq!(
+            group
+                .phases
+                .iter()
+                .map(|phase| phase.stage.clone())
+                .collect::<Vec<_>>(),
+            IDEATION_STAGES
+                .iter()
+                .map(|stage| Some((*stage).to_string()))
+                .collect::<Vec<_>>(),
+            "the group's phases are not the ideation workflow"
+        );
+        assert_eq!(group.entries, vec![1, 2, 3, 4, 5]);
+        assert_eq!(
+            group.duration_ms,
+            Some(14_400_000),
+            "the group's duration is not its own first-to-last entry"
+        );
+        assert_eq!(group.tools, 1, "the group's tool count is not its own");
+        assert_eq!(
+            linked.bands.len(),
+            2,
+            "the linked change report does not carry the topic's own band"
+        );
+        let change_band = linked
+            .bands
+            .iter()
+            .find(|band| band.scope == change)
+            .expect("the change report has no change band");
+        let ideation_band = linked
+            .bands
+            .iter()
+            .find(|band| band.scope == topic)
+            .expect("the change report has no ideation band");
+        assert_eq!(
+            change_band.entries,
+            vec![10],
+            "the change's band took the linked topic's entries: {change_band:?}"
+        );
+        assert_eq!(ideation_band.entries, vec![1, 2, 3, 4, 5]);
+        assert!(
+            change_band
+                .entries
+                .iter()
+                .all(|id| !ideation_band.entries.contains(id)),
+            "a topic id joined the change's band"
+        );
+        assert_eq!(
+            linked.summary.entries, 1,
+            "the change's summary counted the linked topic's entries"
+        );
+        assert_eq!(
+            linked.summary.longest_steps.len(),
+            1,
+            "the change's ranking took the linked topic's measured entries"
+        );
+        assert_eq!(linked.summary.longest_steps[0].id, 10);
+        assert!(
+            !linked.empty,
+            "the change report with its own entry renders the empty state"
+        );
+
+        // A change whose own record is empty but whose linked topic has
+        // activity is not empty; a report with no entries anywhere is.
+        let activity_only = build_report_model(
+            Some(change.clone()),
+            Vec::new(),
+            Some(LinkedIdeation {
+                topic: "ideas".to_string(),
+                entries: topic_entries,
+            }),
+        );
+        assert!(
+            !activity_only.empty,
+            "a linked topic's activity was reported as an empty report"
+        );
+        assert_eq!(
+            activity_only.summary.entries, 0,
+            "the change's summary counted entries it does not own"
+        );
+        assert!(
+            activity_only
+                .ideation
+                .as_ref()
+                .is_some_and(|group| group.activity),
+            "the group does not carry the topic's own activity"
+        );
+        let bare = build_report_model(Some(change), Vec::new(), None);
+        assert!(
+            bare.empty,
+            "a report with no entries anywhere did not render the empty state"
         );
     }
 }
