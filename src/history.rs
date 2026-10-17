@@ -250,6 +250,10 @@ pub struct HistoryRecorder {
     label: String,
     started: Instant,
     pending: Mutex<Vec<HistoryEntry>>,
+    /// The ideation topic the intake's payload named, when it named one: the
+    /// observation override that lets `givn history ingest` record marker
+    /// entries for a topic the process's start-resolved scope does not name.
+    topic_override: Mutex<Option<String>>,
 }
 
 impl HistoryRecorder {
@@ -264,6 +268,18 @@ impl HistoryRecorder {
             label: label.to_string(),
             started: Instant::now(),
             pending: Mutex::new(Vec::new()),
+            topic_override: Mutex::new(None),
+        }
+    }
+
+    /// Name the ideation topic this run's artifact observation covers: the
+    /// intake sets it when its payload names a topic, so the marker observation
+    /// reads a scope the process's start-resolved scope may not carry. Exactly
+    /// one observation topic exists per run, and the command's own entry keeps
+    /// the start-resolved scope.
+    pub fn observe_topic(&self, topic: &str) {
+        if let Ok(mut current) = self.topic_override.lock() {
+            *current = Some(topic.to_string());
         }
     }
 
@@ -377,6 +393,15 @@ impl HistoryRecorder {
         if !should_record(&self.root) || !engages(&self.root) {
             return;
         }
+        self.observe_change_transitions();
+        self.observe_ideation_markers();
+    }
+
+    /// The change half: the artifact transitions the command's post-command
+    /// state observes. `givn new` creates the change (and its `proposal.md`)
+    /// during the command, when the recorder's start-resolved scope was still
+    /// the project, so this half keeps its post-command resolution.
+    fn observe_change_transitions(&self) {
         let scope = resolve_scope(&self.root);
         let Scope::Change { id } = scope.clone() else {
             return;
@@ -415,6 +440,61 @@ impl HistoryRecorder {
             entry.scope = scope.clone();
             entry.outcome = "ok".to_string();
             self.record(entry);
+        }
+    }
+
+    /// The ideation half: one `phase` entry per marker the observed topic first
+    /// shows, labelled with the phase the marker starts. The observed topic is
+    /// the intake's override when it set one, else this process's
+    /// start-resolved ideation scope — never a post-command re-resolution and
+    /// never a directory sweep of every topic. A change- or project-scoped
+    /// command therefore records no marker, so a finished or historical topic
+    /// is never backfilled.
+    ///
+    /// Deduplication is per label in the topic's scope (the store read, never a
+    /// state diff): a marker the topic's record already carries emits nothing,
+    /// and a later marker emits its own entry. The entry is parented by the
+    /// flush exactly as a change transition is.
+    fn observe_ideation_markers(&self) {
+        let Some(topic) = self.observation_topic() else {
+            return;
+        };
+        let topic_dir = self.root.join("givn").join("ideation").join(&topic);
+        if !topic_dir.is_dir() {
+            return;
+        }
+        let Ok(recorded) = self.store.read() else {
+            return;
+        };
+        let scope = Scope::Ideation { id: topic.clone() };
+        for marker in ideation_markers(&self.root, &topic_dir, &topic) {
+            if recorded.iter().any(|entry| {
+                entry.kind == "phase"
+                    && entry.scope == scope
+                    && entry.label.as_deref() == Some(marker)
+            }) {
+                continue;
+            }
+            let mut entry = self.entry("phase", marker, Some(marker.to_string()));
+            // The marker belongs to the observed topic; the command's own entry
+            // keeps the start-resolved scope.
+            entry.scope = scope.clone();
+            entry.outcome = "ok".to_string();
+            self.record(entry);
+        }
+    }
+
+    /// The ideation topic this run observes markers for: the intake's override,
+    /// else the start-resolved ideation scope. Read once, never re-resolved.
+    fn observation_topic(&self) -> Option<String> {
+        if let Ok(override_topic) = self.topic_override.lock()
+            && let Some(topic) = override_topic.as_ref()
+        {
+            return Some(topic.clone());
+        }
+        match &self.scope {
+            Scope::Ideation { id } => Some(id.clone()),
+            Scope::Change { .. } | Scope::Project { .. } => None,
         }
     }
 
@@ -517,6 +597,52 @@ fn topic_is_unfinished(topic_dir: &Path) -> bool {
     !session
         .lines()
         .any(|line| line.trim_start().starts_with("## Completion"))
+}
+
+/// The ideation start markers `topic_dir` shows, in the ideation workflow's own
+/// order: the phase each first appearance starts. A marker names the phase it
+/// **starts** (unlike a change artifact, which concludes a stage), so the
+/// label is the phase name itself. `frame.md` is not a marker — Frame is the
+/// opening stage every entry before the first marker belongs to.
+///
+/// Only presence is observed: one marker per phase however many files the
+/// phase produced, and never a directory sweep beyond the topic the run is
+/// recorded under.
+fn ideation_markers(root: &Path, topic_dir: &Path, topic: &str) -> Vec<&'static str> {
+    let mut markers = Vec::new();
+    if first_markdown(&topic_dir.join("personas")).is_some() {
+        markers.push("personas");
+    }
+    if topic_dir.join("eventstorming.md").is_file() {
+        markers.push("event-storming");
+    }
+    if topic_dir.join("use-case-definitions.md").is_file() {
+        markers.push("use-case-definition");
+    }
+    if first_markdown(&topic_dir.join("use-cases")).is_some() {
+        markers.push("use-case-elaboration");
+    }
+    let published = root
+        .join("docs")
+        .join("ideation")
+        .join(format!("{topic}.md"))
+        .is_file();
+    if first_markdown(&topic_dir.join("changes")).is_some() || published {
+        markers.push("handoff");
+    }
+    markers
+}
+
+/// The first markdown file directly inside `dir`, or `None` when the directory
+/// holds none. Only the first file's existence matters: the marker table names
+/// the phase, not the artifact that started it.
+fn first_markdown(dir: &Path) -> Option<PathBuf> {
+    std::fs::read_dir(dir)
+        .ok()?
+        .flatten()
+        .map(|entry| entry.path())
+        .filter(|path| path.is_file())
+        .find(|path| path.extension().is_some_and(|extension| extension == "md"))
 }
 
 /// The exactly-one rule every scope case applies: exactly one candidate

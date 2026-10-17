@@ -1429,6 +1429,15 @@ pub fn ingest(with_full_content: bool) -> Result<IntakeOutcome> {
     // never a silent fallback) or the project's own resolution.
     let session = payload.session.clone();
     let scope = payload_scope(&root, &payload);
+    // The intake's topic override: a payload that reports topic work names the
+    // topic the marker observation covers, even when this process's
+    // start-resolved scope is the project or a change. The command's own entry
+    // keeps the start-resolved scope; only the marker half reads the override.
+    if let (Some(topic), Ok(Scope::Ideation { .. })) = (payload.topic.as_deref(), &scope)
+        && let Some(recorder) = crate::history::current()
+    {
+        recorder.observe_topic(topic);
+    }
     let IntakeBatch {
         mut entries,
         parents,

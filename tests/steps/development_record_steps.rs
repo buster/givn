@@ -2447,15 +2447,25 @@ fn the_recorded_command_finishes(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    let id = world
-        .last_change_id
-        .clone()
-        .expect("the fixture created no change");
-    let proposal = env.path(&format!("givn/changes/{id}/proposal.md"));
+    if let Some(id) = world.last_change_id.clone() {
+        let proposal = env.path(&format!("givn/changes/{id}/proposal.md"));
+        assert!(
+            proposal.is_file(),
+            "the artifact the command was supposed to create does not exist: {}",
+            proposal.display()
+        );
+        return;
+    }
+    let topic = world
+        .development_record
+        .as_ref()
+        .and_then(|state| state.topic.clone())
+        .expect("the fixture created no change and declared no ideation topic");
+    let session = env.path(&format!("givn/ideation/{topic}/session.md"));
     assert!(
-        proposal.is_file(),
-        "the artifact the command was supposed to create does not exist: {}",
-        proposal.display()
+        session.is_file(),
+        "the topic's session the command was supposed to observe does not exist: {}",
+        session.display()
     );
 }
 
@@ -2577,6 +2587,211 @@ fn gate_check_keeps_its_artifact_id_label(world: &mut GivnWorld) {
         support::transitions_for(&entries, &id, "proposal.md").len(),
         1,
         "the gate check stood in for or deduped away the artifact transition: {entries:#?}"
+    );
+}
+
+#[given(
+    regex = r#"^an ideation topic "([^"]+)" whose personas file appears while a recorded command runs$"#
+)]
+fn ideation_personas_appears_during_a_recorded_command(world: &mut GivnWorld, topic: String) {
+    let env = common::make_init_root();
+    support::declare_unfinished_ideation_topic(&env, &topic);
+    // The personas file is placed before the recorded command, and the
+    // command's end is the first observation: no concurrent writer races the
+    // recorder.
+    let persona = env.path(&format!(
+        "givn/ideation/{topic}/personas/developer--primary-user.md"
+    ));
+    let dir = persona
+        .parent()
+        .expect("the persona path has a directory")
+        .to_path_buf();
+    std::fs::create_dir_all(&dir)
+        .unwrap_or_else(|error| panic!("create the persona directory {}: {error}", dir.display()));
+    std::fs::write(&persona, "# Developer\n\nBuilds the thing.\n")
+        .unwrap_or_else(|error| panic!("write the persona {}: {error}", persona.display()));
+    // The topic is unfinished and no change is active, so the recorded
+    // command's start-resolved scope is the topic itself.
+    let out = common::run_givn(&env, &["status"]);
+    world.env = Some(env);
+    world.last_command = Some("status".to_string());
+    world.last_output = Some(out);
+    world
+        .development_record
+        .get_or_insert_with(DevelopmentRecordState::default)
+        .topic = Some(topic);
+}
+
+#[then(regex = r#"^the record holds one phase entry labelled "([^"]+)" for the topic "([^"]+)"$"#)]
+fn record_holds_one_ideation_marker(world: &mut GivnWorld, label: String, topic: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let entries = support::record_entries(&env.root());
+    let markers = support::markers_for(&entries, &topic, &label);
+    assert_eq!(
+        markers.len(),
+        1,
+        "expected exactly one `{label}` marker for the topic `{topic}`; the record holds: {entries:#?}"
+    );
+    let entry = markers[0];
+    assert_eq!(
+        entry["name"],
+        json!(label),
+        "the marker's name is not the phase it starts: {entry}"
+    );
+    assert_eq!(
+        entry["source"],
+        json!("givn"),
+        "the marker was not recorded by Givn: {entry}"
+    );
+    assert_eq!(
+        entry["outcome"],
+        json!("ok"),
+        "the marker does not record the observation as ok: {entry}"
+    );
+    assert!(
+        entry.get("duration_ms").is_none(),
+        "the marker invents a duration: {entry}"
+    );
+    assert!(
+        entry.get("data").is_none(),
+        "the marker carries data: {entry}"
+    );
+    let parent = entry["parent"]
+        .as_u64()
+        .unwrap_or_else(|| panic!("the marker names no parent entry: {entry}"));
+    let command = entries
+        .iter()
+        .find(|candidate| candidate["id"] == json!(parent))
+        .unwrap_or_else(|| panic!("the marker's parent is not a recorded entry: {entry}"));
+    assert_eq!(
+        command["kind"],
+        json!("command"),
+        "the marker is not parented to the observing command's own entry: {entry}"
+    );
+    world
+        .development_record
+        .get_or_insert_with(DevelopmentRecordState::default)
+        .last_entry = Some(entry.clone());
+}
+
+#[then("a later recorded command that sees the same personas file records no second phase entry")]
+fn later_recorded_command_records_no_second_marker(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let topic = world
+        .development_record
+        .as_ref()
+        .and_then(|state| state.topic.clone())
+        .expect("the fixture declared no ideation topic");
+    let out = common::run_givn(env, &["status"]);
+    assert!(
+        out.status.success(),
+        "the later recorded command failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    world.last_command = Some("status".to_string());
+    world.last_output = Some(out);
+    let entries = support::record_entries(&env.root());
+    let later_commands = entries
+        .iter()
+        .filter(|entry| entry["kind"] == json!("command") && entry["name"] == json!("status"))
+        .count();
+    assert_eq!(
+        later_commands, 2,
+        "the later command was not recorded, so its observation proves nothing: {entries:#?}"
+    );
+    assert_eq!(
+        support::markers_for(&entries, &topic, "personas").len(),
+        1,
+        "the later command recorded a second `personas` marker: {entries:#?}"
+    );
+}
+
+#[then("a later observed marker records its own phase entry")]
+fn later_observed_marker_records_its_own_entry(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let topic = world
+        .development_record
+        .as_ref()
+        .and_then(|state| state.topic.clone())
+        .expect("the fixture declared no ideation topic");
+    let eventstorming = env.path(&format!("givn/ideation/{topic}/eventstorming.md"));
+    std::fs::write(&eventstorming, "# Event storming\n")
+        .unwrap_or_else(|error| panic!("write {}: {error}", eventstorming.display()));
+    let out = common::run_givn(env, &["status"]);
+    assert!(
+        out.status.success(),
+        "the command observing the next marker failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    world.last_output = Some(out);
+    let entries = support::record_entries(&env.root());
+    assert_eq!(
+        support::markers_for(&entries, &topic, "event-storming").len(),
+        1,
+        "the later marker recorded no own phase entry: {entries:#?}"
+    );
+    assert_eq!(
+        support::markers_for(&entries, &topic, "personas").len(),
+        1,
+        "the later marker was recorded at the earlier phase's label: {entries:#?}"
+    );
+}
+
+#[then("a change artifact appearance records no ideation phase entry")]
+fn change_artifact_appearance_records_no_ideation_marker(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let topic = world
+        .development_record
+        .as_ref()
+        .and_then(|state| state.topic.clone())
+        .expect("the fixture declared no ideation topic");
+    let ideation_entries = |root: &std::path::Path| {
+        support::record_entries(root)
+            .into_iter()
+            .filter(|entry| entry["kind"] == json!("phase"))
+            .filter(|entry| entry["scope"]["kind"] == json!("ideation"))
+            .filter(|entry| entry["scope"]["id"] == json!(topic))
+            .count()
+    };
+    let before = ideation_entries(&env.root());
+    // The change artifact's appearance: `givn new` creates the change and its
+    // `proposal.md` during the command.
+    let out = common::run_givn(env, &["new", "demo"]);
+    assert!(
+        out.status.success(),
+        "givn new demo failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    // A change-scoped recorded command: its start-resolved scope is the active
+    // change, so the topic is never scanned.
+    let out = common::run_givn(env, &["status", "--change", "demo"]);
+    assert!(
+        out.status.success(),
+        "the change-scoped recorded command failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let entries = support::record_entries(&env.root());
+    assert_eq!(
+        support::transitions_for(&entries, "demo", "proposal.md").len(),
+        1,
+        "the change artifact's own transition was not recorded: {entries:#?}"
+    );
+    assert_eq!(
+        ideation_entries(&env.root()),
+        before,
+        "a change artifact appearance added an ideation phase entry: {entries:#?}"
     );
 }
 
