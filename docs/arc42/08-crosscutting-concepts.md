@@ -1009,10 +1009,11 @@ a tracked file's modification anyway. The Fossil entry is `givn/history/*`, not
 the embedded report asset: the CSS, JavaScript, and SVG are inline, the record
 model arrives as one machine-readable payload element (which the file's own
 script parses) plus the text-only initial view the file carries, and nothing is
-fetched. The document renders from the embedded timestamps and its embedded
-change-state snapshot alone, so a given record and change state always produce
-the same pixels and the browser tier can assert rendered values
-deterministically; a later state edit requires a re-render (R-96). The lane log
+fetched. The document renders from the embedded timestamps, its embedded
+change-state snapshot, and its embedded linked-ideation link alone, so a given
+record, change state, and link always produce the same pixels and the browser
+tier can assert rendered values
+deterministically; a later state or proposal edit requires a re-render (R-96). The lane log
 renders the captured facts (session and title, status, stop reason, model, cost,
 context size/window, tool call id, output bytes, bounded error, parent/agent,
 retry, permission mode) and one bounded, scrollable, escaped content region. A

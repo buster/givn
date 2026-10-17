@@ -594,15 +594,17 @@ default `givn/history/reports/<scope>.html`), and prints its path. The command
 opens nothing itself and publishes no JSON model: the machine-readable view of
 the record is `givn history --json`. The document contains its own CSS,
 JavaScript, and SVG: it loads nothing, and it renders from the embedded
-timestamps and its embedded change-state snapshot alone, so the same record and
-the same change state always produce the same pixels (R-96). For a change whose proposal or seed names an existing ideation topic, the
+timestamps, its embedded change-state snapshot, and its embedded linked-ideation
+link alone, so the same record, change state, and link always produce the same
+pixels (R-96). For a change whose proposal or seed names an existing ideation topic, the
 report reads the topic's own record and attaches an ideation group with its
 ideation phases above the change workflow; a topic report renders that ideation
-stack instead of the change workflow. The dispatcher also records ideation
-phase-start markers at the first observed topic artifact (the first persona
-file, `eventstorming.md`, `use-case-definitions.md`, the first elaborated use
-case, the first seed or the published topic document), under the ideation scope
-and deduplicated. The
+stack instead of the change workflow. The dispatcher observes ideation
+phase-start markers only for the scope a command was recorded under, at the
+first observed topic artifact (the first persona file, `eventstorming.md`,
+`use-case-definitions.md`, the first elaborated use case, the first seed or the
+published topic document), deduplicated, and never backfills a finished or
+historical topic. The
 lane log carries the captured metadata facts and one bounded content region;
 the report embeds full content only up to the **8 MiB total budget** and marks
 the rest `content omitted; see the record`, while the store keeps every byte.
