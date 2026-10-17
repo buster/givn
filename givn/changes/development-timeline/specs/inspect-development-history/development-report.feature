@@ -87,7 +87,7 @@ Feature: Development Report
     Then the report marks "arc42" skipped
     And the report does not mark "arc42" done
 
-  @givn.added @wip
+  @givn.added
   Scenario: The report of an archived change marks every phase done
     Given an archived change "demo" whose record holds the workflow phases up to "review"
     When the developer generates the development report for "demo"

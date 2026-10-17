@@ -241,6 +241,40 @@ pub fn stage_transition(stage: &str) -> &'static str {
         .unwrap_or_else(|| panic!("the workflow has no stage `{stage}`"))
 }
 
+/// Seed an archived change's record: `givn/archive/<change>/` exists (a real
+/// archived change directory holding the artifacts the change produced),
+/// `givn/changes/<change>` does not, and the record carries one artifact
+/// transition per [`WORKFLOW_ARTIFACTS`] entry up to `last_artifact`. The
+/// archived change is never read as a live state.
+pub fn seed_archived_change(
+    env: &common::TestEnv,
+    change: &str,
+    last_artifact: &str,
+) -> Vec<HistoryEntry> {
+    let archived = env.root().join("givn").join("archive").join(change);
+    std::fs::create_dir_all(&archived)
+        .unwrap_or_else(|error| panic!("create the archived change directory: {error}"));
+    std::fs::write(archived.join("proposal.md"), "# Proposal\n")
+        .unwrap_or_else(|error| panic!("write the archived proposal: {error}"));
+    std::fs::write(archived.join("review.md"), "REVIEW: PASS\n")
+        .unwrap_or_else(|error| panic!("write the archived review: {error}"));
+    let last = WORKFLOW_ARTIFACTS
+        .iter()
+        .position(|artifact| *artifact == last_artifact)
+        .unwrap_or_else(|| {
+            panic!("the workflow records no artifact `{last_artifact}`: {WORKFLOW_ARTIFACTS:?}")
+        });
+    let scope = Scope::Change {
+        id: change.to_string(),
+    };
+    let mut history = SeededHistory::new();
+    for (index, artifact) in WORKFLOW_ARTIFACTS[..=last].iter().enumerate() {
+        let transition = history.point(&scope, "phase", artifact, TRANSITION_AT[index]);
+        history.label(transition, artifact);
+    }
+    history.seed(env)
+}
+
 /// Write the artifact files that complete a live change's workflow up to
 /// `tasks.md`, leaving `review.md` unproduced: the real change directory whose
 /// derived state the report reads. The paths are the artifact graph's own
