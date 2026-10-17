@@ -3972,7 +3972,7 @@ name it.
 
 ## Task 11g — `The full mode records complete content` (`development-record`, added)
 
-- [ ] **Scenario: `The full mode records complete content`**
+- [x] **Scenario: `The full mode records complete content`**
   - Design constraints:
     - With `record.mode: full` (or `givn history ingest --with-full-content` for
       one payload, except under `off`), the entry keeps the complete
@@ -4003,24 +4003,104 @@ name it.
       `tests/steps/development_report_steps.rs`.
     - RED expected failure: the new Then phrases (field cap, truncated, original
       size, per-entry total) are undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The full mode records complete content"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        RED category: the scenario's contract (the content caps) already held
+        from the bundle's 11b core, so the discriminating RED is the pre-step
+        state: the scenario's own bindings are temporarily absent (the steps
+        file was restored to HEAD for the run and restored back immediately —
+        a controlled omission in the isolated fixture, never a production
+        switch).
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The full mode records complete content"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: The full mode records complete content
+           ✘  Given a change "demo" whose project sets the record mode to "full"
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:155:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+
+        thread 'main' (3851928) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        RED_EXIT=101
         ```
-  - [ ] **GREEN** — accept, cap, store, and render the content; compile first,
+  - [x] **GREEN** — accept, cap, store, and render the content; compile first,
         re-run → exit 0. Paste it, together with a `git status --porcelain`
         showing nothing under `givn/history/` (Task 11b's rule).
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.94s
+        BUILD_EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The full mode records complete content"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: The full mode records complete content
+           ✔  Given a change "demo" whose project sets the record mode to "full"
+           ✔  When the agent reports a tool call whose complete input exceeds the per-field cap
+           ✔  Then the record keeps the input up to the 64 KiB per-field cap
+           ✔  And the content field marks truncation and records its original size
+           ✔  And the entry's content never exceeds the 256 KiB per-entry cap
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
+
+        $ git status --porcelain
+         M assets/timeline/report.html
+         M givn/changes/development-timeline/specs/inspect-development-history/development-record.feature
+         M src/cli/timeline.rs
+         M tests/steps/development_record_steps.rs
+        $ git status --porcelain | grep 'givn/history/' || echo "(none)"
+        (none)
+
+        Report budget smoke (throwaway root, real binary): 33 full-mode tool
+        entries × 256 KiB = 8.65 MiB of content; `givn timeline --change demo`
+        embedded exactly 8 MiB (32 entries) and left the 33rd out with
+        `omitted_content: [35]`, its `data.content` removed from the document,
+        and the exact note `content omitted; see the record` present in the
+        rendered panel code.
         ```
-  - [ ] **REFACTOR** — one content-capping helper and one renderer; re-run →
+  - [x] **REFACTOR** — one content-capping helper and one renderer; re-run →
         still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        $ cargo fmt --all -- --check
+        FMT_EXIT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.37s
+        CLIPPY_EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::The full mode records complete content"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: The full mode records complete content
+           ✔  Given a change "demo" whose project sets the record mode to "full"
+           ✔  When the agent reports a tool call whose complete input exceeds the per-field cap
+           ✔  Then the record keeps the input up to the 64 KiB per-field cap
+           ✔  And the content field marks truncation and records its original size
+           ✔  And the entry's content never exceeds the 256 KiB per-entry cap
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
+
+        One capping path (`history::bound_content`) and one report writer
+        (`build_report_model`'s budget + `render_report`/the panel's
+        `fillContent`), shared by every kind and every report; the budget was
+        re-verified on the 8.65 MiB fixture (8 MiB embedded, one omission).
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+  - [x] **COMMIT** — `dff0a8c9238c4405229881b53d82bb3d9dd36110` — `feat(development-record): <release note>` with
         the scenario title in the body. Record the revision identifier.
 
 ## Task 11h — `An invalid record mode falls back to the default` (`development-record`, added)
