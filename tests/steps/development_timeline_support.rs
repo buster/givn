@@ -576,6 +576,95 @@ pub fn seed_report_detail_tool(env: &common::TestEnv, change: &str) -> HistoryEn
     entry
 }
 
+/// The recorder's own invocations, exactly as the recorder labels them: the
+/// unflagged intake, the flagged intake, and the Claude-style process-per-hook
+/// mapper. The project's live store records no harness-hook row, so the
+/// omission fixture seeds one explicitly.
+pub const RECORDER_LABELS: [&str; 3] = [
+    "history ingest",
+    "history ingest --with-full-content",
+    "history harness-hook --harness claude",
+];
+
+/// The recorder-omission fixture (Task H12): the recorded work the report must
+/// name and rank, the recorder's own command entries it must leave out, and the
+/// record as seeded — so the report and the read view are each shown to append
+/// nothing to the store that keeps them.
+pub struct SeededRecorderHistory {
+    /// The one reported tool call: measured, so the ranking and the tool count
+    /// discriminate.
+    pub tool: HistoryEntry,
+    /// The one other recorded command the report keeps.
+    pub other_command: HistoryEntry,
+    /// The recorder's own entries — the unflagged intake, the flagged intake,
+    /// and the Claude-style hook mapper — in store order.
+    pub recorder: Vec<HistoryEntry>,
+    /// The record's entry count as seeded.
+    pub entry_count: usize,
+    /// The store's bytes as seeded.
+    pub store_bytes: Vec<u8>,
+}
+
+/// Seed the recorder-omission fixture: a `demo` change whose record holds one
+/// tool call, one other command, and the recorder's own command entries —
+/// unflagged and flagged. Every seeded entry carries the change scope.
+pub fn seed_recorder_omission_history(
+    env: &common::TestEnv,
+    change: &str,
+) -> SeededRecorderHistory {
+    let out = common::run_givn(env, &["new", change]);
+    assert!(
+        out.status.success(),
+        "givn new {change} failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let scope = Scope::Change {
+        id: change.to_string(),
+    };
+    let mut history = SeededHistory::new();
+    let tool = history.span(
+        &scope,
+        "tool",
+        "Bash",
+        "2026-10-16T09:00:00.000Z",
+        2_400_000,
+    );
+    history.label(tool, "cargo test --locked");
+    history.session(tool, "session-h12");
+    let other = history.span(
+        &scope,
+        "command",
+        "status",
+        "2026-10-16T09:10:00.000Z",
+        90_000,
+    );
+    let other_label = format!("status --change {change}");
+    history.label(other, &other_label);
+    let times = [
+        "2026-10-16T09:20:00.000Z",
+        "2026-10-16T09:21:00.000Z",
+        "2026-10-16T09:22:00.000Z",
+    ];
+    let durations = [40u64, 40, 60];
+    let mut recorder_indices = Vec::new();
+    for ((label, at), duration_ms) in RECORDER_LABELS.into_iter().zip(times).zip(durations) {
+        let entry = history.span(&scope, "command", "history", at, duration_ms);
+        history.label(entry, label);
+        recorder_indices.push(entry);
+    }
+    let entries = history.seed(env);
+    SeededRecorderHistory {
+        tool: entries[tool].clone(),
+        other_command: entries[other].clone(),
+        recorder: recorder_indices
+            .iter()
+            .map(|index| entries[*index].clone())
+            .collect(),
+        entry_count: record_entries(&env.root()).len(),
+        store_bytes: store_bytes(&env.root()),
+    }
+}
+
 /// The spawning session's visible lane name in the parallel-session fixture.
 pub const PARALLEL_SPAWN_LANE: &str = "Opencode main";
 /// The subagent's own session lane name in the parallel-session fixture.

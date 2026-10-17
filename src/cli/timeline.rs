@@ -1023,9 +1023,45 @@ fn phase_scaffold(
     }
 }
 
+/// Whether one record entry is one of the recorder's own invocations rather
+/// than recorded work: the intake (`givn history ingest`, one flush per turn)
+/// and the process-per-hook mapper (`givn history harness-hook --harness
+/// <name>`, one process per hook event) record themselves like any other
+/// command, but they are recording infrastructure. The store keeps them and
+/// the read view still prints them; only the report leaves them out.
+///
+/// The exclusion is exact: a `command` entry named `history` whose bounded
+/// label is exactly `history ingest`, or begins with `history ingest `, or
+/// begins with `history harness-hook ` — the subcommand is followed by a word
+/// boundary, never matched as a substring. `history ingest-extra`, a bare
+/// `history`, and `history settings --json` are other commands and stay, as
+/// does any entry of another kind (a `tool` or a `commit` that merely quotes
+/// the phrase); a `None` label never matches. [`crate::history::bound_label`]
+/// keeps the prefix at 120 characters, so the prefix test survives truncation.
+fn is_recorder_command(entry: &HistoryEntry) -> bool {
+    if entry.kind != "command" || entry.name != "history" {
+        return false;
+    }
+    let Some(label) = entry.label.as_deref() else {
+        return false;
+    };
+    label == "history ingest"
+        || label.starts_with("history ingest ")
+        || label.starts_with("history harness-hook ")
+}
+
 /// Record lines → `ReportModel` (bands, ordering, ranking, totals, and the
 /// initial zoom's aggregates).
 pub fn build_report_model(scope: Option<Scope>, mut entries: Vec<HistoryEntry>) -> ReportModel {
+    // The model's first step: the recorder's own command entries are dropped
+    // before the content budget and before every derivation (ordering, bands,
+    // stage assignment, the phase scaffold, lanes, group counts, aggregates,
+    // the summary, elapsed, and entry totals). Every report surface is derived
+    // from this one filtered vector, so no number and no view can disagree,
+    // and neither the budget nor `omitted_content` ever names one. A scope
+    // whose record holds only these entries therefore renders the empty
+    // state.
+    entries.retain(|entry| !is_recorder_command(entry));
     // The content budget is applied in record order — the store's own line
     // order, before the report's time ordering — so a record over the budget
     // always produces the same document. An entry whose bundle would cross the
@@ -2799,6 +2835,238 @@ mod tests {
         assert!(
             view.contains("no recorded stage transition"),
             "the text view does not state the gap: {view}"
+        );
+    }
+
+    /// The recorder's own invocations are recording infrastructure: the model
+    /// drops exactly them as its first step — before the content budget and
+    /// every derivation — so they appear in no entry list, in no total, in no
+    /// ranking row, and in no omission note, while every boundary case that
+    /// merely spells the phrase survives.
+    #[test]
+    fn report_model_omits_only_the_recorder_command_entries() {
+        // The flagged intake carries content larger than the whole document
+        // budget: dropped before the budget is applied, it is never omitted
+        // from a document it is not part of.
+        let oversized = "x".repeat(CONTENT_BUDGET_BYTES + 1);
+        let entries = vec![
+            FixtureEntry {
+                id: 1,
+                at: "2026-10-16T09:00:00.000Z",
+                kind: "tool",
+                name: "Bash",
+                label: Some("cargo test --locked"),
+                duration_ms: Some(2_400_000),
+                ..FixtureEntry::default()
+            }
+            .record(),
+            FixtureEntry {
+                id: 2,
+                at: "2026-10-16T09:10:00.000Z",
+                kind: "command",
+                name: "status",
+                label: Some("status --change demo"),
+                duration_ms: Some(90_000),
+                ..FixtureEntry::default()
+            }
+            .record(),
+            FixtureEntry {
+                id: 3,
+                at: "2026-10-16T09:20:00.000Z",
+                kind: "command",
+                name: "history",
+                label: Some("history ingest"),
+                duration_ms: Some(40),
+                ..FixtureEntry::default()
+            }
+            .record(),
+            FixtureEntry {
+                id: 4,
+                at: "2026-10-16T09:21:00.000Z",
+                kind: "command",
+                name: "history",
+                label: Some("history ingest --with-full-content"),
+                duration_ms: Some(40),
+                data: Some(serde_json::json!({
+                    "content": { "tool_output": { "text": oversized } }
+                })),
+                ..FixtureEntry::default()
+            }
+            .record(),
+            FixtureEntry {
+                id: 5,
+                at: "2026-10-16T09:22:00.000Z",
+                kind: "command",
+                name: "history",
+                label: Some("history harness-hook --harness claude"),
+                duration_ms: Some(60),
+                ..FixtureEntry::default()
+            }
+            .record(),
+            // The boundary survivors: another command, a substring, and an
+            // entry of another kind or name that quotes the phrase.
+            FixtureEntry {
+                id: 6,
+                at: "2026-10-16T09:23:00.000Z",
+                kind: "command",
+                name: "history",
+                label: Some("history ingest-extra"),
+                duration_ms: Some(10),
+                ..FixtureEntry::default()
+            }
+            .record(),
+            FixtureEntry {
+                id: 7,
+                at: "2026-10-16T09:24:00.000Z",
+                kind: "command",
+                name: "history",
+                label: Some("history"),
+                duration_ms: Some(10),
+                ..FixtureEntry::default()
+            }
+            .record(),
+            FixtureEntry {
+                id: 8,
+                at: "2026-10-16T09:25:00.000Z",
+                kind: "command",
+                name: "history",
+                label: Some("history settings --json"),
+                duration_ms: Some(10),
+                ..FixtureEntry::default()
+            }
+            .record(),
+            FixtureEntry {
+                id: 9,
+                at: "2026-10-16T09:26:00.000Z",
+                kind: "tool",
+                name: "Bash",
+                label: Some("history ingest"),
+                duration_ms: Some(10),
+                ..FixtureEntry::default()
+            }
+            .record(),
+            FixtureEntry {
+                id: 10,
+                at: "2026-10-16T09:27:00.000Z",
+                kind: "command",
+                name: "history",
+                label: None,
+                duration_ms: Some(10),
+                ..FixtureEntry::default()
+            }
+            .record(),
+            FixtureEntry {
+                id: 11,
+                at: "2026-10-16T09:28:00.000Z",
+                kind: "command",
+                name: "commit",
+                label: Some("commit -m \"history ingest\""),
+                duration_ms: Some(10),
+                ..FixtureEntry::default()
+            }
+            .record(),
+        ];
+        let recorder = [3u64, 4, 5];
+        let survivors = [1u64, 2, 6, 7, 8, 9, 10, 11];
+        let model = build_report_model(
+            Some(Scope::Change {
+                id: "demo".to_string(),
+            }),
+            entries,
+        );
+
+        let ids: Vec<u64> = model.entries.iter().map(|entry| entry.id).collect();
+        for id in recorder {
+            assert!(
+                !ids.contains(&id),
+                "the recorder's own entry {id} is in the model's entries: {ids:?}"
+            );
+        }
+        for id in survivors {
+            assert!(
+                ids.contains(&id),
+                "the entry {id} that merely spells the phrase was dropped: {ids:?}"
+            );
+        }
+        let labels: Vec<Option<&str>> = model
+            .entries
+            .iter()
+            .filter(|entry| entry.kind == "command")
+            .map(|entry| entry.label.as_deref())
+            .collect();
+        for label in [
+            "history ingest",
+            "history ingest --with-full-content",
+            "history harness-hook --harness claude",
+        ] {
+            assert!(
+                !labels.contains(&Some(label)),
+                "the model still names the recorder's `{label}` command entry: {labels:?}"
+            );
+        }
+        // The `tool` that merely carries the intake's label is work, not the
+        // intake: it survives with its label intact.
+        assert!(
+            model
+                .entries
+                .iter()
+                .any(|entry| entry.id == 9 && entry.label.as_deref() == Some("history ingest")),
+            "the tool labelled like the intake was dropped: {ids:?}"
+        );
+
+        assert_eq!(
+            model.summary.entries,
+            survivors.len(),
+            "the summary counts the recorder's own entries"
+        );
+        assert!(!model.empty, "the filtered record still holds work");
+        let ranked: Vec<u64> = model
+            .summary
+            .longest_steps
+            .iter()
+            .map(|step| step.id)
+            .collect();
+        for id in recorder {
+            assert!(
+                !ranked.contains(&id),
+                "the ranking lists the recorder's own entry {id}: {ranked:?}"
+            );
+        }
+        for id in survivors {
+            assert!(
+                ranked.contains(&id),
+                "the ranked list lost the surviving entry {id}: {ranked:?}"
+            );
+        }
+        let ranks: Vec<&str> = model
+            .summary
+            .longest_steps
+            .iter()
+            .filter(|step| step.kind == "command")
+            .map(|step| step.label.as_str())
+            .collect();
+        for label in [
+            "history ingest",
+            "history ingest --with-full-content",
+            "history harness-hook --harness claude",
+        ] {
+            assert!(
+                !ranks.contains(&label),
+                "the ranking names the recorder's own `{label}` invocation: {ranks:?}"
+            );
+        }
+
+        // The budget ran after the omission: the oversized recorder content is
+        // gone with its entry, so nothing is named as omitted and no content
+        // byte is accounted for.
+        assert!(
+            model.omitted_content.is_empty(),
+            "the recorder's own content was budgeted: {:?}",
+            model.omitted_content
+        );
+        assert_eq!(
+            model.content_bytes, 0,
+            "the recorder's own content was counted against the budget"
         );
     }
 }

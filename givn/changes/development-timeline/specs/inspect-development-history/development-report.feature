@@ -142,7 +142,7 @@ Feature: Development Report
     Then the written report names the current state and every workflow phase
     And the written report draws no band timeline
 
-  @givn.added @wip
+  @givn.added
   Scenario: The report omits the recorder's own command entries
     Given a change "demo" whose record holds one tool call, one other command, and the recorder's own command entries, flagged and unflagged
     When the developer generates the development report for "demo"
