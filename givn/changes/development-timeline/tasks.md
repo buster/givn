@@ -12968,7 +12968,7 @@ Repository checks are secondary only.
 
 ## Task H11 — `The written report's text view presents the workflow` (`development-report`, added; the text-view removal)
 
-- [ ] **Scenario: `The written report's text view presents the workflow`** (`@wip` until its RED)
+- [x] **Scenario: `The written report's text view presents the workflow`** (`@wip` until its RED)
   - Design constraints:
     - **The rendered view (`design.md` §Report Generation, *Rendering*).** The
       text-view marker receives exactly: the scope line, the current-state
@@ -13030,45 +13030,180 @@ Repository checks are secondary only.
       `phase_scaffold`'s project case, the unit assertion),
       `tests/steps/development_report_steps.rs` (the scenario's two Thens and
       the three rewritten readings, minus the deleted helpers).
+    - **Implementation note (2026-10-17):** the CLI `@e2e` placement assertion
+      (`report_places_the_post_transition_step`, HE1) also read the removed band
+      span's `data-stage`. It now reads the written file's own model payload
+      (`stages`) under the same title and claim, and `span_markup` and the
+      markup `attribute` helper are deleted — otherwise the e2e tier HE7 runs
+      would read markup this task removes.
     - RED expected failure: the two new Then phrases are undefined, and the
       written file still carries `<svg class="timeline">` with band spans
       inside the view marker.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The written report's text view presents the workflow"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Report
+          Scenario: The written report's text view presents the workflow
+           ✔  Given a change "demo" whose record holds the workflow phases up to "tasks"
+           ✔  And the change's artifacts make its derived state "tasks-done" with the next required artifact "review"
+           ✔  When the developer generates the development report for "demo"
+           ✘  Then the written report names the current state and every workflow phase
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:142:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        4 steps (3 passed, 1 failed)
+        EXIT=101
         ```
-  - [ ] **GREEN** — gate the text view on the scope, add the unit assertion,
+  - [x] **GREEN** — gate the text view on the scope, add the unit assertion,
         and rewrite the three readings. Files: `src/cli/timeline.rs`,
         `tests/steps/development_report_steps.rs`. Re-run this scenario and the
         three affected scenarios → all exit 0. Paste them.
         ```
-        PASTE THE GREEN RUN (NEW SCENARIO) HERE
+        Feature: Development Report
+          Scenario: The written report's text view presents the workflow
+           ✔  Given a change "demo" whose record holds the workflow phases up to "tasks"
+           ✔  And the change's artifacts make its derived state "tasks-done" with the next required artifact "review"
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the written report names the current state and every workflow phase
+           ✔  And the written report draws no band timeline
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
         ```
-        PASTE THE GREEN RUN (ORDERING) HERE
+        Feature: Development Report
+          Scenario: The report orders the timeline by recorded time, not by store position
+           ✔  Given a change "demo" whose record holds an entry appended after an entry with a later end time
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report orders the entries by their recorded end time
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        3 steps (3 passed)
+        EXIT=0
         ```
         ```
-        PASTE THE GREEN RUN (TOPIC) HERE
+        Feature: Development Report
+          Scenario: The report of an ideation topic names the work done before the change exists
+           ✔  Given an ideation topic "timeline-ideas" whose record holds the topic's own steps
+           ✔  When the developer generates the development report for the topic "timeline-ideas"
+           ✔  Then the report names the topic's steps under the topic scope
+           ✔  And the report names no change that does not exist yet
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
         ```
         ```
-        PASTE THE GREEN RUN (DENSE) HERE
+        Feature: Development Report
+          Scenario: A dense record is reported as aggregates instead of raw ticks
+           ✔  Given a change "demo" whose record holds hundreds of short agent activities
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report collapses the short agent activities into aggregate ticks on the phase lane
+           ✔  And each aggregate tick names how many entries it covers and their total duration
+           ✔  And the report summary still counts every recorded entry
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — one `is_project_report` predicate read by `render_view`,
+  - [x] **REFACTOR** — one `is_project_report` predicate read by `render_view`,
         `render_workflow`, and `render_timeline`; no dead helper remains
         (`grep -n "timeline_region\|rendered_spans\|rendered_ticks\|rendered_aggregate_count" tests/steps/development_report_steps.rs`
         → no output); `cargo fmt --all -- --check` and `cargo clippy --locked
         --all-targets -- -D warnings` green; re-run the four scenarios → still
         exit 0. Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        grep -n "timeline_region\|rendered_spans\|rendered_ticks\|rendered_aggregate_count" tests/steps/development_report_steps.rs → no output
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+        cargo test --locked --lib cli::timeline::tests::text_view_is_gated_on_the_scope → 1 passed, exit 0
+
+        Feature: Development Report
+          Scenario: The written report's text view presents the workflow
+           ✔  Given a change "demo" whose record holds the workflow phases up to "tasks"
+           ✔  And the change's artifacts make its derived state "tasks-done" with the next required artifact "review"
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the written report names the current state and every workflow phase
+           ✔  And the written report draws no band timeline
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
+
+        Feature: Development Report
+          Scenario: The report orders the timeline by recorded time, not by store position
+           ✔  Given a change "demo" whose record holds an entry appended after an entry with a later end time
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report orders the entries by their recorded end time
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        3 steps (3 passed)
+        EXIT=0
+
+        Feature: Development Report
+          Scenario: The report of an ideation topic names the work done before the change exists
+           ✔  Given an ideation topic "timeline-ideas" whose record holds the topic's own steps
+           ✔  When the developer generates the development report for the topic "timeline-ideas"
+           ✔  Then the report names the topic's steps under the topic scope
+           ✔  And the report names no change that does not exist yet
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        EXIT=0
+
+        Feature: Development Report
+          Scenario: A dense record is reported as aggregates instead of raw ticks
+           ✔  Given a change "demo" whose record holds hundreds of short agent activities
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report collapses the short agent activities into aggregate ticks on the phase lane
+           ✔  And each aggregate tick names how many entries it covers and their total duration
+           ✔  And the report summary still counts every recorded entry
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `a3042187` — `feat(development-report): present the workflow in the written report's text view` with
         the scenario title and the three rewritten readings in the body. Record
         the revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit a3042187
+        feat(development-report): present the workflow in the written report's text view
+
+        The written report's text view presents the workflow
+
+        A change or ideation report's text view is now the nine-phase workflow stack:
+        the current-state line, one line per workflow phase with its status, and no
+        band SVG at all, so the file reads without the inline script. The project
+        report keeps its band rows and draws no stack: one is_project_report predicate
+        gates render_view, render_workflow, and render_timeline, and phase_scaffold
+        builds no project scaffold. The ordering scenario reads the model's
+        recorded-time order and its phases' member lists, the topic scenario reads the
+        model entries plus the scope and current-state lines, and the dense scenario
+        reads the phase's Fit aggregate count; the four band-only helpers are deleted.
+        The CLI e2e placement assertion reads the written file's model payload instead
+        of the removed span.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../development-report.feature                     |   2 +-
+         src/cli/timeline.rs                                | 135 ++++++++-
+         tests/steps/development_report_e2e_steps.rs        |  57 ++--
+         tests/steps/development_report_steps.rs            | 317 ++++++++++++++-------
+         4 files changed, 368 insertions(+), 143 deletions(-)
         ```
 
 ## Task HE1 — `Consumer generates the development report for a change` (`@e2e`, `development-report`)
