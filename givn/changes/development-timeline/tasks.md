@@ -12838,7 +12838,7 @@ Repository checks are secondary only.
 
 ## Task H10 — `A dense record is reported as aggregates instead of raw ticks` (`development-report`, added)
 
-- [ ] **Scenario: `A dense record is reported as aggregates instead of raw ticks`** (`@wip` until its RED)
+- [x] **Scenario: `A dense record is reported as aggregates instead of raw ticks`** (`@wip` until its RED)
   - Design constraints:
     - **Threshold.** Within an expanded phase, a lane never draws one shape per
       entry when that would be unreadable. The threshold is the lane's
@@ -12876,31 +12876,89 @@ Repository checks are secondary only.
       fixture).
     - RED expected failure: the three new Then phrases are undefined; the
       model carries no per-phase aggregates.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::A dense record is reported as aggregates instead of raw ticks"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Report
+          Scenario: A dense record is reported as aggregates instead of raw ticks
+           ✔  Given a change "demo" whose record holds hundreds of short agent activities
+           ✔  When the developer generates the development report for "demo"
+           ✘  Then the report collapses the short agent activities into aggregate ticks on the phase lane
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:117:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+
+        thread 'main' (4033412) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
         ```
-  - [ ] **GREEN** — implement the per-phase Fit buckets and the three
+  - [x] **GREEN** — implement the per-phase Fit buckets and the three
         assertions. Files: `src/cli/timeline.rs`,
         `tests/steps/development_report_steps.rs`,
         `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
         it.
         ```
-        PASTE THE GREEN RUN HERE
+        Feature: Development Report
+          Scenario: A dense record is reported as aggregates instead of raw ticks
+           ✔  Given a change "demo" whose record holds hundreds of short agent activities
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report collapses the short agent activities into aggregate ticks on the phase lane
+           ✔  And each aggregate tick names how many entries it covers and their total duration
+           ✔  And the report summary still counts every recorded entry
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — one bucket criterion (`Scale::time_per_pixel`) feeding
+  - [x] **REFACTOR** — one bucket criterion (`Scale::time_per_pixel`) feeding
         the model's aggregate list and the asset's every-zoom threshold;
         `cargo fmt --all -- --check` and `cargo clippy --locked --all-targets
         -- -D warnings` green; re-run → still exit 0. Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+
+        Feature: Development Report
+          Scenario: A dense record is reported as aggregates instead of raw ticks
+           ✔  Given a change "demo" whose record holds hundreds of short agent activities
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report collapses the short agent activities into aggregate ticks on the phase lane
+           ✔  And each aggregate tick names how many entries it covers and their total duration
+           ✔  And the report summary still counts every recorded entry
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `55078235` — `feat(development-report): collapse dense entries into phase aggregate ticks` with
         the scenario title in the body. Record the revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit 55078235b16ec123b66831517611e38369ae3ee5
+        feat(development-report): collapse dense entries into phase aggregate ticks
+
+        A dense record is reported as aggregates instead of raw ticks
+
+        Each workflow phase carries its Fit-zoom aggregate ticks: the entries shorter
+        than the lane's time-per-pixel bucket into one tick per time bucket, and each
+        tick names how many entries it covers and their combined measured duration (or
+        states that the record measured none). The text view prints every tick and the
+        phase's Fit aggregate count, while the summary still counts every recorded
+        entry. The delta's phase-lane phrases replace the old marker phrases.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../development-report.feature                     |   2 +-
+         src/cli/timeline.rs                                |  14 +
+         tests/steps/development_report_steps.rs            | 296 +++++++++++-----------
+         3 files changed, 159 insertions(+), 153 deletions(-)
         ```
 
 ## Task HE1 — `Consumer generates the development report for a change` (`@e2e`, `development-report`)
