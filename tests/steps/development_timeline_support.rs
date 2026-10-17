@@ -312,6 +312,168 @@ pub fn seed_report_history(
     }
 }
 
+/// The Task 25b fixture: the record a captured-metadata, full-content report
+/// renders — the metadata tool entry, the ids of the content entries that fill
+/// the budget, and the store's bytes as seeded.
+pub struct SeededDetailsHistory {
+    /// The tool entry carrying every captured metadata fact the panel names,
+    /// plus a small content bundle.
+    pub metadata_entry: HistoryEntry,
+    /// The entries whose content bundles fill the 8 MiB report budget.
+    pub content_entry_ids: Vec<u64>,
+    /// The store's bytes as seeded, so the report run is shown not to change a
+    /// single content byte.
+    pub store_bytes: Vec<u8>,
+}
+
+/// The metadata the fixture's tool entry carries: every fact the report model
+/// and the details panel must name.
+fn captured_metadata() -> Value {
+    serde_json::json!({
+        "title": "Development report details",
+        "status": "needs_input",
+        "stop_reason": "end_turn",
+        "model": "deepseek/deepseek-flash",
+        "cost": 0.42,
+        "list_cost": 0.55,
+        "context_size": 48_000,
+        "context_window": 128_000,
+        "tool_call_id": "call-25b",
+        "output_bytes": 4_096,
+        "error": "the command failed: exit status 101",
+        "agent": "omp",
+        "attempt": 2,
+        "max_attempts": 3,
+        "delay_ms": 1_500,
+        "fallback_from": "model-a",
+        "fallback_to": "model-b",
+        "permission_mode": "acceptEdits",
+        "content": {
+            "tool_input": {
+                "text": "cargo test --locked",
+                "truncated": false,
+                "bytes": 19
+            },
+            "tool_output": {
+                "text": "test result: ok.",
+                "truncated": false,
+                "bytes": 16
+            }
+        }
+    })
+}
+
+/// One entry's content bundle at the documented per-entry cap: four fields,
+/// each at the per-field cap, all filled with `marker`.
+fn full_content_bundle(marker: char) -> Value {
+    let text: String = std::iter::repeat_n(marker, givn::history::CONTENT_FIELD_LIMIT).collect();
+    let field = serde_json::json!({
+        "text": text,
+        "truncated": false,
+        "bytes": text.len()
+    });
+    serde_json::json!({
+        "tool_input": field.clone(),
+        "tool_output": field.clone(),
+        "assistant_text": field.clone(),
+        "thinking_text": field
+    })
+}
+
+/// Seed the fixture's record: a metadata-rich tool entry (nested in a turn, so
+/// its parent fact is real) and 34 content entries whose bundles together
+/// exceed the report document's 8 MiB budget.
+pub fn seed_captured_metadata_and_content(
+    env: &common::TestEnv,
+    change: &str,
+) -> SeededDetailsHistory {
+    let out = common::run_givn(env, &["new", change]);
+    assert!(
+        out.status.success(),
+        "givn new {change} failed: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+    let scope = Scope::Change {
+        id: change.to_string(),
+    };
+    let mut history = SeededHistory::new();
+    let turn = history.span(
+        &scope,
+        "turn",
+        "turn 3",
+        "2026-10-16T09:00:00.000Z",
+        600_000,
+    );
+    let metadata = history.span(
+        &scope,
+        "tool",
+        "Bash",
+        "2026-10-16T09:10:00.000Z",
+        2_400_000,
+    );
+    history.label(metadata, "cargo test --locked");
+    history.session(metadata, "session-25b");
+    history.data(metadata, captured_metadata());
+    history.nested_in(metadata, turn);
+    let mut content_indices = Vec::new();
+    for index in 0..34usize {
+        let at = format!("2026-10-16T10:{index:02}:00.000Z");
+        let entry = history.span(&scope, "tool", "Bash", &at, 5_000);
+        history.label(entry, &format!("content call {index}"));
+        let marker = (b'a' + (index % 26) as u8) as char;
+        history.data(
+            entry,
+            serde_json::json!({ "content": full_content_bundle(marker) }),
+        );
+        content_indices.push(entry);
+    }
+    let entries = history.seed(env);
+    let content_entry_ids = content_indices
+        .iter()
+        .map(|index| entries[*index].id)
+        .collect();
+    SeededDetailsHistory {
+        metadata_entry: entries[metadata].clone(),
+        content_entry_ids,
+        store_bytes: std::fs::read(store_file(&env.root()))
+            .unwrap_or_else(|error| panic!("read the seeded store: {error}")),
+    }
+}
+
+/// Append one tool entry to the fixture's record: the longest recorded step,
+/// carrying a tool call id and a small bounded content field. The content text
+/// carries markup, so the panel's escaping is observable.
+pub fn seed_report_detail_tool(env: &common::TestEnv, change: &str) -> HistoryEntry {
+    let mut entry = HistoryEntry::reported(
+        Scope::Change {
+            id: change.to_string(),
+        },
+        "tool",
+        "Bash",
+        "2026-10-16T14:30:00.000Z",
+    );
+    entry.label = Some("cargo test --locked".to_string());
+    entry.duration_ms = Some(2_400_000);
+    entry.outcome = "ok".to_string();
+    entry.session = Some("e7-session".to_string());
+    entry.data = Some(serde_json::json!({
+        "tool_call_id": "call-e7",
+        "output_bytes": 16,
+        "content": {
+            "tool_input": {
+                "text": "<b>cargo test --locked</b>",
+                "truncated": false,
+                "bytes": 25
+            }
+        }
+    }));
+    let store = HistoryStore::at(store_file(&env.root()));
+    store
+        .append(std::slice::from_mut(&mut entry))
+        .unwrap_or_else(|error| panic!("append the E7 detail tool entry: {error}"));
+    entry
+}
+
 /// The names of a directory's entries, empty when the directory does not
 /// exist.
 fn read_dir_names(dir: &Path) -> Vec<String> {
@@ -790,6 +952,12 @@ impl SeededHistory {
     /// The entry's `data`, where the record carries a non-generic value.
     pub fn data(&mut self, index: usize, data: Value) -> usize {
         self.entry(index).data = Some(data);
+        index
+    }
+
+    /// The harness session the entry belongs to (the envelope's `session`).
+    pub fn session(&mut self, index: usize, session: &str) -> usize {
+        self.entry(index).session = Some(session.to_string());
         index
     }
 

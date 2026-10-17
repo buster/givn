@@ -61,6 +61,11 @@ fn records_span(kind: &str) -> bool {
 /// produces the same report.
 pub const CONTENT_BUDGET_BYTES: usize = 8 * 1024 * 1024;
 
+/// The exact note a report states for an entry whose content the document
+/// budget left out: the store keeps every byte, and the report says where to
+/// find it.
+pub const CONTENT_OMITTED_NOTE: &str = "content omitted; see the record";
+
 /// Everything the report screen renders: scope, bands, entries, summary.
 #[derive(Debug, Default, Serialize)]
 pub struct ReportModel {
@@ -96,6 +101,8 @@ pub struct ReportModel {
     /// budget was exhausted; the panel states the omission instead of rendering
     /// a partial bundle. The store keeps every byte.
     pub omitted_content: Vec<u64>,
+    /// The exact note the text view and the model state for an omitted entry.
+    pub content_omitted_note: String,
 }
 
 /// One aggregate marker: the entries of one band and one time bucket that the
@@ -433,6 +440,7 @@ pub fn build_report_model(scope: Option<Scope>, mut entries: Vec<HistoryEntry>) 
         content_budget_bytes: CONTENT_BUDGET_BYTES,
         content_bytes,
         omitted_content,
+        content_omitted_note: CONTENT_OMITTED_NOTE.to_string(),
     }
 }
 
@@ -461,6 +469,7 @@ fn apply_content_budget(entries: &mut [HistoryEntry]) -> (usize, Vec<u64>) {
                 .and_then(serde_json::Value::as_object_mut)
             {
                 data.remove("content");
+                data.insert("content_omitted".to_string(), serde_json::Value::Bool(true));
             }
             omitted.push(entry.id);
             continue;
@@ -867,7 +876,28 @@ fn render_view(model: &ReportModel) -> String {
     view.push_str(&render_summary(&model.summary));
     view.push('\n');
     view.push_str(&render_timeline(model));
+    view.push('\n');
+    view.push_str(&render_content_omissions(&model.omitted_content));
     view
+}
+
+/// The text view's omission notes: one line per entry whose content the
+/// document budget left out. The store keeps every byte, so the exact note
+/// tells the reader where to find it.
+fn render_content_omissions(ids: &[u64]) -> String {
+    if ids.is_empty() {
+        return String::new();
+    }
+    let mut notes =
+        String::from("<section class=\"content-omitted-notes\" id=\"content-omitted-notes\">\n");
+    for id in ids {
+        notes.push_str(&format!(
+            "<p class=\"content-omitted\" data-entry-id=\"{id}\">{}</p>\n",
+            escape(CONTENT_OMITTED_NOTE)
+        ));
+    }
+    notes.push_str("</section>");
+    notes
 }
 
 /// The empty state: a scope with no recorded activity has no timeline to draw,

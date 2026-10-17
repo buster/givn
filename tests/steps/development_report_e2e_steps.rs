@@ -665,20 +665,35 @@ fn longest_span(world: &mut GivnWorld) -> (Value, String) {
 }
 
 /// The details panel the browser rendered: whether it is open, the label it
-/// carries, the close control's own visible label, and the facts it shows —
-/// read from the browser's DOM, never from the report file.
+/// carries, the close control's own visible label, the facts it shows, and the
+/// bounded content region — read from the browser's DOM, never from the report
+/// file.
 fn details_panel(driver: &mut BrowserDriver) -> Value {
     driver.evaluate(
         r#"(() => {
   const panel = document.getElementById("details-panel");
   const close = document.getElementById("details-close");
-  if (!panel) return { open: false, label: null, close: null, text: "" };
+  const content = document.getElementById("details-content");
+  const fields = content
+    ? [...content.querySelectorAll(".content-field")].map((block) => ({
+        field: block.dataset.field,
+        text: block.querySelector(".content-text")?.innerText ?? "",
+        html: block.querySelector(".content-text")?.innerHTML ?? "",
+        meta: block.querySelector(".content-meta")?.innerText ?? "",
+      }))
+    : [];
+  if (!panel) return { open: false, label: null, close: null, text: "", content: { hidden: true, fields: [] } };
   return {
     open: !panel.hidden,
     label: panel.getAttribute("aria-label"),
     role: panel.getAttribute("role"),
     close: close ? close.textContent.trim() : null,
     text: panel.innerText,
+    content: {
+      hidden: content ? content.hidden : true,
+      text: content ? content.innerText : "",
+      fields,
+    },
   };
 })()"#,
     )
@@ -694,7 +709,12 @@ fn open_report_with_a_recorded_history(world: &mut GivnWorld) {
             .env
             .as_ref()
             .expect("a project root is required first");
-        support::seed_report_history(env, "demo", "tasks.md")
+        let seeded = support::seed_report_history(env, "demo", "tasks.md");
+        // The scenario's own claim: the longest recorded step is a tool call
+        // carrying the metadata fact and the bounded content field the panel
+        // assertions read.
+        support::seed_report_detail_tool(env, "demo");
+        seeded
     };
     state(world).seeded = Some(seeded);
     state(world).scope = Some(Scope::Change {
@@ -800,6 +820,75 @@ fn panel_names_start_duration_and_outcome(world: &mut GivnWorld) {
     // contract viewports, with the page brought to the panel the assertion above
     // read (it sits below the fold at the mobile viewport).
     browser(world).capture_evidence_from(SELECT_SCENARIO, "#details-panel");
+}
+
+#[then("the panel names the entry's tool call id")]
+fn panel_names_the_tool_call_id(world: &mut GivnWorld) {
+    let (longest, _) = longest_span(world);
+    let call = longest["data"]["tool_call_id"].as_str().unwrap_or_else(|| {
+        panic!("the fixture's longest step carries no tool call id: {longest:#}")
+    });
+    let panel = details_panel(browser(world));
+    let text = panel["text"].as_str().unwrap_or_default();
+    assert!(
+        text.contains("Tool call id"),
+        "the panel names no tool call id fact: {text:?}"
+    );
+    assert!(
+        text.contains(call),
+        "the panel does not name the entry's tool call id ({call}): {text:?}"
+    );
+}
+
+#[then("the panel renders the entry's content in its bounded content region")]
+fn panel_renders_bounded_content(world: &mut GivnWorld) {
+    let (longest, _) = longest_span(world);
+    let field = &longest["data"]["content"]["tool_input"];
+    let expected = field["text"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the fixture's tool entry carries no content text: {longest:#}"));
+    let original = field["bytes"]
+        .as_u64()
+        .unwrap_or_else(|| panic!("the fixture's content field carries no size: {longest:#}"));
+    let panel = details_panel(browser(world));
+    let region = &panel["content"];
+    assert_eq!(
+        region["hidden"],
+        json!(false),
+        "the panel renders no content region for the entry: {panel:#}"
+    );
+    let fields = region["fields"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the content region carries no fields: {region:#}"));
+    let rendered = fields
+        .iter()
+        .find(|field| field["field"] == json!("tool_input"))
+        .unwrap_or_else(|| panic!("the content region does not render the tool input: {region:#}"));
+    assert_eq!(
+        rendered["text"],
+        json!(expected),
+        "the content region does not render the captured text: {rendered:#}"
+    );
+    let meta = rendered["meta"].as_str().unwrap_or_default();
+    assert!(
+        meta.contains("64 KiB per field"),
+        "the content region names no cap: {meta:?}"
+    );
+    assert!(
+        meta.contains(&format!("original {original} bytes")),
+        "the content region does not name the original size: {meta:?}"
+    );
+    assert!(
+        meta.contains("complete"),
+        "the content region does not state the field's truncation state: {meta:?}"
+    );
+    // Escaped: the captured text carries markup, and the region renders it as
+    // text, never as an element.
+    let html = rendered["html"].as_str().unwrap_or_default();
+    assert!(
+        !html.contains("<b>") && html.contains("&lt;b&gt;"),
+        "the content region rendered the captured markup as HTML: {html}"
+    );
 }
 
 /// One recorded instant as the report's own clock reads it: the time of day of
