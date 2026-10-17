@@ -11847,7 +11847,7 @@ Repository checks are secondary only.
 
 ## Task H2 — Shared report-model scaffold and text view (no new scenario; the delta's model prerequisite)
 
-- [ ] **Shared prerequisite: `cli::timeline::tests::hybrid_model_carries_the_phase_scaffold_and_kpi_totals`**
+- [x] **Shared prerequisite: `cli::timeline::tests::hybrid_model_carries_the_phase_scaffold_and_kpi_totals`**
   - Design constraints:
     - **Why a shared task.** Every report scenario below asserts facts only the
       new model can carry (phases, statuses, lanes, repeated groups, Fit
@@ -11898,34 +11898,70 @@ Repository checks are secondary only.
       `render_view`, and the `#[cfg(test)] mod tests` fixture).
     - RED expected failure: the unit test does not compile (the fields do not
       exist), so `cargo test` exits non-zero.
-  - [ ] **RED** — add the unit test under `#[cfg(test)] mod tests` in
+  - [x] **RED** — add the unit test under `#[cfg(test)] mod tests` in
         `src/cli/timeline.rs` (a small entry vector: one `proposal.md`
         transition, one tool entry in one session, one numeric cost, one cost
         object, one question wait) and run:
         `cargo test --locked --lib cli::timeline::tests::hybrid_model_carries_the_phase_scaffold_and_kpi_totals`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        error[E0609]: no field `current_state` on type `ReportModel`
+        error[E0609]: no field `current_state` on type `ReportModel`
+        error[E0609]: no field `workflow` on type `ReportModel`
+        error[E0609]: no field `workflow` on type `ReportModel`
+        error[E0609]: no field `workflow` on type `ReportModel`
+        error[E0609]: no field `active_ms` on type `timeline::Summary`
+        error[E0609]: no field `tool_calls` on type `timeline::Summary`
+        error[E0609]: no field `cost_total` on type `timeline::Summary`
+        error[E0609]: no field `unstaged` on type `ReportModel`
+        error: could not compile `givn` (lib test) due to 9 previous errors
+        EXIT=101
         ```
-  - [ ] **GREEN** — add the structs, the builders, the three `Summary` totals,
+  - [x] **GREEN** — add the structs, the builders, the three `Summary` totals,
         the `render_view` lines, and the model payload fields. File:
         `src/cli/timeline.rs`. Re-run the unit test → exit 0. Paste it.
         ```
-        PASTE THE GREEN RUN HERE
+        running 1 test
+        test cli::timeline::tests::hybrid_model_carries_the_phase_scaffold_and_kpi_totals ... ok
+
+        test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 272 filtered out; finished in 0.00s
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — one phase builder feeding the stack and the unstaged
+  - [x] **REFACTOR** — one phase builder feeding the stack and the unstaged
         group, one lane builder, one group/aggregate builder; `cargo fmt --all
         -- --check` and `cargo clippy --locked --all-targets -- -D warnings`
         green; re-run the unit test → still exit 0. Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+
+        running 1 test
+        test cli::timeline::tests::hybrid_model_carries_the_phase_scaffold_and_kpi_totals ... ok
+
+        test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 272 filtered out; finished in 0.00s
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `0d363970` — `feat(development-report): <release note>` with
         the body naming the shared scaffold (model fields, the three KPI totals,
         the text-view lines) and the unit test; no scenario changes. Record the
         revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit 0d363970d5e899a053588617380594aaefb37c68
+        feat(development-report): carry the hybrid workflow phase scaffold
+
+        Shared prerequisite: cli::timeline::tests::hybrid_model_carries_the_phase_scaffold_and_kpi_totals
+
+        ReportModel gains the nine WorkflowPhase entries (status, first/last,
+        wall/active/waiting, tools, subagents, lanes, repeated groups, Fit aggregates),
+        the live CurrentState, and the no-stage group; Summary gains active_ms,
+        tool_calls, and cost_total; render_view prints the current-state line, one line
+        per phase, the no-stage line, and the six KPI facts. The scaffold holds ids and
+        totals only: the record stays embedded once.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         src/cli/timeline.rs | 969 +++++++++++++++++++++++++++++++++++++++++++++++++++-
+         1 file changed, 968 insertions(+), 1 deletion(-)
         ```
 
 ## Task H3 — `The report shows the empty state for a scope with no recorded activity` (`development-report`, added)
