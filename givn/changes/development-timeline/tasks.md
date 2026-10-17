@@ -20,7 +20,8 @@ copied verbatim from `proposal.md` §Release note):**
 > report that opens in a browser.
 
 **Delta inventory (verified mechanically against every delta `.feature` under
-`givn/changes/development-timeline/specs/`):** 54 executable scenario entries in
+`givn/changes/development-timeline/specs/` on 2026-10-16, before the hybrid
+delta):** 54 executable scenario entries in
 5 features = 51 `@givn.added`, 3 `@givn.modified` (the S2b corpus-pin
 reconciliation plus the two target-list reconciliations in Task 24a),
 0 `@givn.removed`; 46 non-`@e2e` + 8 `@e2e`. A `Scenario
@@ -29,6 +30,12 @@ additional scenarios). Every still-pending entry carries `@wip` today and stays
 `@wip` until its own RED step removes the tag from that one scenario; the three
 `@givn.modified` entries carry no `@wip` and are reconciled green in S2b and
 Task 24a.
+
+**Superseded by the hybrid delta (2026-10-17):** the current totals are **62
+entries / 53 non-`@e2e` / 9 `@e2e`** with **15 `@wip`**, and the delta's 17 new
+sections are **H1–H10** and **HE1–HE7** under **Delta part 2 — hybrid workflow
+report** at the end of this file. The table below is the 2026-10-16 state and is
+kept as history, not as the current count.
 
 | Feature (path relative to `GIVN_FEATURES`) | Entries | Non-`@e2e` | `@e2e` |
 |---|---|---|---|
@@ -53,6 +60,13 @@ target extends the `all` targets list two permanent `initialize-a-project`
 scenarios pin, so setup item **S2b** carries the first reconciliation and **Task
 24a** carries the target-list reconciliation (both with their permanent patches),
 alongside the scenario work they belong to.
+
+**Delta part 2 (2026-10-17).** The hybrid workflow report supersedes the dense
+timeline. Its 15 pending scenarios, the shared model scaffold, and the
+evidence/scope-run task are appended after Task E9 as **H1–H10** and
+**HE1–HE7**, non-`@e2e` first and `@e2e` last; their inventory, pre-flight, and
+counts are stated in that part. Everything above stays as the recorded history
+of the dense-timeline implementation.
 
 ## Preconditions verified before writing this file (2026-10-16)
 
