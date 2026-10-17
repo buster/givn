@@ -331,112 +331,6 @@ fn visible_name(entry: &Value) -> String {
         .to_string()
 }
 
-/// One recorded duration as the report renders it.
-fn rendered_duration(entry: &Value) -> String {
-    givn::cli::timeline::format_duration(
-        entry["duration_ms"]
-            .as_u64()
-            .unwrap_or_else(|| panic!("the record measures no duration for the entry: {entry:#}")),
-    )
-}
-
-/// The structure the browser rendered: the document's own title, its headings
-/// and landmarks, the timeline's accessible name, and its drawn spans — read
-/// from the browser's DOM, never from the report file.
-fn rendered_structure(driver: &mut BrowserDriver) -> Value {
-    driver.evaluate(
-        r#"(() => {
-  const timeline = document.querySelector("svg.timeline");
-  return {
-    title: document.title,
-    headings: document.querySelectorAll("h1").length,
-    header: document.querySelectorAll("header").length,
-    main: document.querySelectorAll("main").length,
-    aside: document.querySelectorAll("aside").length,
-    timelines: document.querySelectorAll("svg.timeline").length,
-    timelineName: timeline ? timeline.getAttribute("aria-label") : null,
-    controls: [...document.querySelectorAll(".controls button")].map((button) => ({
-      id: button.id,
-      label: button.textContent.trim(),
-      disabled: button.disabled,
-    })),
-    range: document.getElementById("timeline-range")
-      ? {
-          text: document.getElementById("timeline-range").textContent,
-          start: Number(document.getElementById("timeline-range").dataset.rangeStartMs),
-          end: Number(document.getElementById("timeline-range").dataset.rangeEndMs),
-        }
-      : null,
-    spans: [...document.querySelectorAll("svg.timeline .span")].map((span) => ({
-      id: span.dataset.entryId,
-      name: span.getAttribute("aria-label"),
-      tabindex: span.getAttribute("tabindex"),
-    })),
-  };
-})()"#,
-    )
-}
-
-/// What the browser focused for one `Tab` press, and the ring it rendered for
-/// that element: the assertion reads the element the browser really focused and
-/// the style it really applied, never a class name.
-fn focus_probe(driver: &mut BrowserDriver) -> Value {
-    driver.evaluate(
-        r##"(() => {
-  const active = document.activeElement;
-  if (!active || active === document.body) return { marker: "", outline: "none", stroke: "none" };
-  const marker = active.dataset && active.dataset.entryId
-    ? "span:" + active.dataset.entryId
-    : active.tagName.toLowerCase() + "#" + active.id;
-  const target = active.classList && active.classList.contains("span")
-    ? active.querySelector(".span-bar") || active
-    : active;
-  const style = getComputedStyle(target);
-  return {
-    marker: marker,
-    outline: style.outlineStyle + " " + style.outlineWidth,
-    stroke: style.stroke + " " + style.strokeWidth,
-  };
-})()"##,
-    )
-}
-
-/// Every expected control, and every drawn span, is reachable by a real `Tab`
-/// press in the browser's own focus order, and the focused element carries a
-/// visible ring — an outline for a control, the accent stroke for a span. The
-/// markers come from the browser's own `document.activeElement`, so the
-/// assertion never trusts a class name the page wrote.
-fn assert_every_control_is_tabbable(driver: &mut BrowserDriver, expected: &[String]) {
-    let mut seen: Vec<String> = Vec::new();
-    for _ in 0..expected.len() + 2 {
-        driver.press(None, "Tab");
-        let focused = focus_probe(driver);
-        let marker = focused["marker"].as_str().unwrap_or_default().to_string();
-        if marker.is_empty() {
-            continue;
-        }
-        let outline = focused["outline"].as_str().unwrap_or_default().to_string();
-        let stroke = focused["stroke"].as_str().unwrap_or_default().to_string();
-        let outlined = outline.starts_with("solid") && !outline.ends_with("0px");
-        assert!(
-            outlined || stroke.ends_with(" 2px"),
-            "the focused element {marker} draws no visible focus ring: outline={outline:?} stroke={stroke:?}"
-        );
-        if !seen.contains(&marker) {
-            seen.push(marker);
-        }
-        if seen.len() == expected.len() {
-            break;
-        }
-    }
-    for control in expected {
-        assert!(
-            seen.contains(control),
-            "the control {control} is not reachable by Tab: {seen:?}"
-        );
-    }
-}
-
 #[given(regex = r#"^a topic "([^"]+)" with a recorded history$"#)]
 fn topic_with_a_recorded_history(world: &mut GivnWorld, topic: String) {
     if world.env.is_none() {
@@ -499,134 +393,246 @@ fn consumer_opens_the_report(world: &mut GivnWorld) {
     open_report(world);
 }
 
-#[then("the browser shows the report heading and the development timeline")]
-fn browser_shows_the_heading_and_the_timeline(world: &mut GivnWorld) {
-    let structure = rendered_structure(browser(world));
+#[then("the browser shows the report heading and the current workflow state")]
+fn browser_shows_the_heading_and_the_current_workflow_state(world: &mut GivnWorld) {
+    let rendered = browser(world).evaluate(
+        r##"(() => {
+  const model = JSON.parse(document.getElementById("report-model").textContent);
+  const current = document.getElementById("hybrid-current-state");
+  const visible = (node) => node !== null && node.getClientRects().length > 0;
+  return {
+    title: document.title,
+    headings: document.querySelectorAll("h1").length,
+    header: document.querySelectorAll("header").length,
+    main: document.querySelectorAll("main").length,
+    heading: document.getElementById("report-title")
+      ? document.getElementById("report-title").textContent.trim()
+      : null,
+    scope: document.getElementById("hybrid-scope") ? document.getElementById("hybrid-scope").textContent.trim() : null,
+    currentVisible: visible(current),
+    current: current ? current.textContent.trim() : null,
+    currentState: model.current_state,
+    done: document.getElementById("hybrid-phases-done")
+      ? document.getElementById("hybrid-phases-done").textContent.trim()
+      : null,
+  };
+})()"##,
+    );
     assert_eq!(
-        structure["title"],
+        rendered["title"],
         json!("Development report"),
-        "the page's own title is not the report's: {structure:#}"
+        "the page's own title is not the report's: {rendered:#}"
     );
     assert_eq!(
-        structure["headings"],
+        rendered["headings"],
         json!(1),
-        "the report does not carry exactly one h1: {structure:#}"
+        "the report does not carry exactly one h1: {rendered:#}"
     );
     assert_eq!(
-        browser(world).text("#report-title"),
-        "Development report",
-        "the rendered heading is not the report's"
+        rendered["heading"],
+        json!("Development report"),
+        "the rendered heading is not the report's: {rendered:#}"
     );
-    for landmark in ["header", "main", "aside"] {
+    for landmark in ["header", "main"] {
         assert!(
-            structure[landmark].as_u64().unwrap_or_default() >= 1,
-            "the report renders no {landmark} landmark: {structure:#}"
+            rendered[landmark].as_u64().unwrap_or_default() >= 1,
+            "the report renders no {landmark} landmark: {rendered:#}"
         );
     }
     assert_eq!(
-        structure["timelines"],
-        json!(1),
-        "the report renders no single timeline svg: {structure:#}"
+        rendered["currentVisible"],
+        json!(true),
+        "the browser shows no current workflow state: {rendered:#}"
     );
-    assert_eq!(
-        structure["timelineName"],
-        json!("Development timeline"),
-        "the timeline svg carries no accessible name: {structure:#}"
-    );
-
-    // Every span the browser drew is exposed with its own accessible name —
-    // the design's baseline at every assertion — and is reachable by Tab with a
-    // visible focus ring.
-    let scope = report_scope(world);
-    let entries = recorded_entries(world, &scope);
-    let spans = structure["spans"]
-        .as_array()
-        .unwrap_or_else(|| panic!("the browser drew no span list: {structure:#}"));
+    let current = rendered["current"].as_str().unwrap_or_default();
+    if rendered["currentState"].is_object() {
+        let stage = rendered["currentState"]["stage_label"]
+            .as_str()
+            .unwrap_or_else(|| panic!("the change state names no stage: {rendered:#}"));
+        let phase = rendered["currentState"]["phase"]
+            .as_str()
+            .unwrap_or_else(|| panic!("the change state names no phase: {rendered:#}"));
+        assert!(
+            current.contains(stage) && current.contains(phase),
+            "the header does not name the stage {stage} and the phase {phase}: {current:?}"
+        );
+        assert!(
+            current.contains("stage") && current.contains("phase"),
+            "the header does not print the stage label and the phase as separate words: {current:?}"
+        );
+    } else {
+        assert!(
+            current.contains("no live change state"),
+            "the topic report does not say it has no live change state: {current:?}"
+        );
+    }
+    let done = rendered["done"].as_str().unwrap_or_default();
     assert!(
-        !spans.is_empty(),
-        "the browser drew no span at all for the scope's {} recorded entries: {structure:#}",
-        entries.len()
+        done.contains("of 9 phases done"),
+        "the header does not count the done phases of nine: {done:?}"
     );
-    // Every control the browser rendered carries a visible text label, and
-    // every control that is not disabled at its own limit is reachable by Tab.
-    let mut expected: Vec<String> = Vec::new();
-    for control in structure["controls"]
+}
+
+#[then("the browser shows the workflow phases top to bottom")]
+fn browser_shows_the_workflow_phases_top_to_bottom(world: &mut GivnWorld) {
+    let rendered = browser(world).evaluate(
+        r##"(() => {
+  const model = JSON.parse(document.getElementById("report-model").textContent);
+  const cards = [...document.querySelectorAll("#hybrid-workflow .phase-stack > .phase-card")];
+  return {
+    expected: model.workflow.map((phase) => phase.stage),
+    drawn: cards.map((card) => card.dataset.phase),
+    tops: cards.map((card) => card.getBoundingClientRect().top),
+  };
+})()"##,
+    );
+    let expected: Vec<String> = rendered["expected"]
         .as_array()
-        .unwrap_or_else(|| panic!("the browser rendered no control list: {structure:#}"))
-    {
-        let id = control["id"]
-            .as_str()
-            .unwrap_or_else(|| panic!("a rendered control carries no id: {control:#}"));
-        let label = control["label"].as_str().unwrap_or_default();
-        assert!(
-            !label.is_empty(),
-            "the rendered control {id} carries no visible label: {control:#}"
-        );
-        if control["disabled"] != json!(true) {
-            expected.push(format!("button#{id}"));
-        }
-    }
-    for span in spans {
-        let id: u64 = span["id"]
-            .as_str()
-            .and_then(|value| value.parse().ok())
-            .unwrap_or_else(|| panic!("a drawn span names no entry id: {span:#}"));
-        let entry = entries
-            .iter()
-            .find(|entry| entry["id"].as_u64() == Some(id))
-            .unwrap_or_else(|| panic!("a drawn span names no recorded entry: {span:#}"));
-        assert_eq!(
-            span["name"],
-            json!(format!(
-                "{}, {}",
-                visible_name(entry),
-                rendered_duration(entry)
-            )),
-            "a drawn span does not expose its name and duration: {span:#}"
-        );
-        assert_eq!(
-            span["tabindex"],
-            json!("0"),
-            "a drawn span is not reachable by keyboard: {span:#}"
-        );
-        expected.push(format!("span:{id}"));
-    }
-    assert_every_control_is_tabbable(browser(world), &expected);
+        .unwrap_or_else(|| panic!("the model carries no workflow: {rendered:#}"))
+        .iter()
+        .map(|stage| {
+            stage
+                .as_str()
+                .unwrap_or_else(|| panic!("a workflow phase carries no name: {rendered:#}"))
+                .to_string()
+        })
+        .collect();
+    let drawn: Vec<String> = rendered["drawn"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the browser draws no phase card: {rendered:#}"))
+        .iter()
+        .map(|stage| {
+            stage
+                .as_str()
+                .unwrap_or_else(|| panic!("a drawn phase carries no name: {rendered:#}"))
+                .to_string()
+        })
+        .collect();
+    assert_eq!(
+        drawn, expected,
+        "the browser's workflow phases are not the model's, in order: {rendered:#}"
+    );
+    let tops: Vec<f64> = rendered["tops"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the drawn phases carry no positions: {rendered:#}"))
+        .iter()
+        .map(|top| top.as_f64().unwrap_or_default())
+        .collect();
+    assert!(
+        tops.windows(2).all(|pair| pair[0] < pair[1]),
+        "the workflow phases are not drawn top to bottom: {tops:?}"
+    );
 }
 
 #[then("the browser shows the longest recorded step with its duration")]
 fn browser_shows_the_longest_recorded_step(world: &mut GivnWorld) {
-    let scope = report_scope(world);
-    let entries = recorded_entries(world, &scope);
-    let longest = longest_measured(&entries);
-    let id = longest["id"].as_u64().expect("the longest step has an id");
-    let name = visible_name(&longest);
-    let duration = rendered_duration(&longest);
-    let rendered = browser(world).evaluate(&format!(
-        r#"(() => {{
-  const span = [...document.querySelectorAll("svg.timeline .span")]
-    .find((candidate) => candidate.dataset.entryId === "{id}");
-  if (!span) return null;
-  return {{ name: span.getAttribute("aria-label"), text: span.textContent.trim() }};
-}})()"#
-    ));
+    let rendered = browser(world).evaluate(
+        r##"(() => {
+  const model = JSON.parse(document.getElementById("report-model").textContent);
+  const rows = [...document.querySelectorAll("#hybrid-longest .longest-steps li")];
+  const steps = model.summary.longest_steps || [];
+  return {
+    expected: steps.length === 0 ? null : steps[0],
+    text: rows.length === 0 ? null : rows[0].textContent.trim(),
+    id: rows.length === 0 ? null : rows[0].dataset.entryId,
+    durations: rows.map((row) => Number(row.dataset.durationMs)),
+  };
+})()"##,
+    );
+    let longest = &rendered["expected"];
     assert!(
-        !rendered.is_null(),
-        "the browser draws no span for the record's longest step {id} ({name}, {duration})"
+        longest.is_object(),
+        "the record ranks no measured step: {rendered:#}"
+    );
+    let id = longest["id"].as_u64().expect("the longest step has an id");
+    let label = longest["label"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the longest step carries no label: {rendered:#}"));
+    let duration = givn::cli::timeline::format_duration(
+        longest["duration_ms"]
+            .as_u64()
+            .expect("the longest step was measured"),
     );
     assert_eq!(
-        rendered["name"],
-        json!(format!("{name}, {duration}")),
-        "the longest recorded step's accessible name is not its name and duration: {rendered:#}"
+        rendered["id"],
+        json!(id.to_string()),
+        "the first statistics row is not the longest recorded step: {rendered:#}"
     );
     let text = rendered["text"].as_str().unwrap_or_default();
     assert!(
-        text.contains(&duration),
-        "the browser's own text for the longest recorded step names no duration: {text:?}"
+        text.contains(label) && text.contains(&duration),
+        "the browser does not show the longest step {label} with its duration {duration}: {text:?}"
+    );
+    let durations: Vec<u64> = rendered["durations"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the longest-step list carries no durations: {rendered:#}"))
+        .iter()
+        .map(|value| value.as_u64().unwrap_or_default())
+        .collect();
+    assert!(
+        durations.windows(2).all(|pair| pair[0] >= pair[1]),
+        "the longest-step list is not ranked longest first: {durations:?}"
+    );
+}
+
+#[then(
+    "the browser lays the page out in one column without page-level horizontal scrolling at the mobile viewport"
+)]
+fn browser_lays_the_page_out_in_one_column_at_the_mobile_viewport(world: &mut GivnWorld) {
+    browser(world).viewport(360, 780);
+    let layout = browser(world).evaluate(
+        r##"(() => {
+  const main = document.getElementById("report-main");
+  const style = getComputedStyle(main);
+  const contentWidth = main.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+  const cards = [...document.querySelectorAll("#hybrid-workflow .phase-stack > .phase-card")];
+  const kpis = document.querySelector(".kpi-strip");
+  const columns = kpis ? getComputedStyle(kpis).gridTemplateColumns.split(" ").filter(Boolean) : [];
+  return {
+    viewport: window.innerWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+    kpiColumns: columns.length,
+    mainWidth: Math.round(contentWidth),
+    cardWidths: cards.map((card) => Math.round(card.getBoundingClientRect().width)),
+    cardLefts: cards.map((card) => Math.round(card.getBoundingClientRect().left)),
+  };
+})()"##,
+    );
+    assert_eq!(
+        layout["viewport"],
+        json!(360),
+        "the browser is not at the mobile viewport: {layout:#}"
     );
     assert!(
-        text.contains(&name),
-        "the browser's own text for the longest recorded step names no step: {text:?}"
+        layout["scrollWidth"].as_u64().unwrap_or_default()
+            <= layout["viewport"].as_u64().unwrap_or_default(),
+        "the page scrolls horizontally at the mobile viewport: {layout:#}"
+    );
+    assert_eq!(
+        layout["kpiColumns"],
+        json!(2),
+        "the KPI strip is not two columns at the mobile viewport: {layout:#}"
+    );
+    let main_width = layout["mainWidth"].as_u64().unwrap_or_default();
+    let card_widths = layout["cardWidths"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the browser draws no phase card: {layout:#}"));
+    assert!(
+        !card_widths.is_empty()
+            && card_widths
+                .iter()
+                .all(|width| width.as_u64().unwrap_or_default() + 1 >= main_width),
+        "the phase cards are not full width at the mobile viewport: {layout:#}"
+    );
+    let lefts: Vec<u64> = layout["cardLefts"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the phase cards carry no positions: {layout:#}"))
+        .iter()
+        .map(|left| left.as_u64().unwrap_or_default())
+        .collect();
+    assert!(
+        lefts.windows(2).all(|pair| pair[0] == pair[1]),
+        "the phase cards are not in one column at the mobile viewport: {lefts:?}"
     );
     commit_evidence(world, OPEN_SCENARIO);
 }
@@ -642,12 +648,12 @@ fn longest_span(world: &mut GivnWorld) -> (Value, String) {
     let longest = longest_measured(&entries);
     let id = longest["id"].as_u64().expect("the longest step has an id");
     let drawn = browser(world).evaluate(
-        r#"(() => {
+        r##"(() => {
   const spans = [...document.querySelectorAll("svg.timeline .span")];
   const widths = spans.map((span) => Number(span.dataset.durationMs || -1));
   const longest = spans[widths.indexOf(Math.max(...widths))];
   return longest ? { id: longest.dataset.entryId } : null;
-})()"#,
+})()"##,
     );
     assert!(
         !drawn.is_null(),
@@ -670,7 +676,7 @@ fn longest_span(world: &mut GivnWorld) -> (Value, String) {
 /// file.
 fn details_panel(driver: &mut BrowserDriver) -> Value {
     driver.evaluate(
-        r#"(() => {
+        r##"(() => {
   const panel = document.getElementById("details-panel");
   const close = document.getElementById("details-close");
   const content = document.getElementById("details-content");
@@ -695,7 +701,7 @@ fn details_panel(driver: &mut BrowserDriver) -> Value {
       fields,
     },
   };
-})()"#,
+})()"##,
     )
 }
 
@@ -910,7 +916,7 @@ const ZOOM_SCENARIO: &str = "Consumer zooms the timeline to a shorter time range
 /// produced, read from the rendered label and its machine-readable attributes.
 fn rendered_range(driver: &mut BrowserDriver) -> Value {
     driver.evaluate(
-        r#"(() => {
+        r##"(() => {
   const label = document.getElementById("timeline-range");
   if (!label) return null;
   return {
@@ -918,7 +924,7 @@ fn rendered_range(driver: &mut BrowserDriver) -> Value {
     start: Number(label.dataset.rangeStartMs),
     end: Number(label.dataset.rangeEndMs),
   };
-})()"#,
+})()"##,
     )
 }
 
@@ -926,7 +932,7 @@ fn rendered_range(driver: &mut BrowserDriver) -> Value {
 /// browser computed for the timeline's own transition and animation.
 fn rendered_motion(driver: &mut BrowserDriver) -> Value {
     driver.evaluate(
-        r#"(() => {
+        r##"(() => {
   const timeline = document.querySelector("svg.timeline");
   const style = getComputedStyle(timeline);
   return {
@@ -934,7 +940,7 @@ fn rendered_motion(driver: &mut BrowserDriver) -> Value {
     animation: style.animationName + " " + style.animationDuration,
     transition: style.transitionDuration,
   };
-})()"#,
+})()"##,
     )
 }
 
@@ -951,7 +957,7 @@ fn consumer_zooms_the_timeline_in(world: &mut GivnWorld) {
     );
     // The real interaction: a click on the rendered zoom-in control.
     let control = browser(world).evaluate(
-        r#"(() => {
+        r##"(() => {
   const button = document.getElementById("zoom-in");
   const out = document.getElementById("zoom-out");
   return button
@@ -961,7 +967,7 @@ fn consumer_zooms_the_timeline_in(world: &mut GivnWorld) {
         outDisabled: out ? out.disabled : null,
       }
     : null;
-})()"#,
+})()"##,
     );
     assert_eq!(
         control["label"],
@@ -977,10 +983,10 @@ fn consumer_zooms_the_timeline_in(world: &mut GivnWorld) {
     // The control at the limit reveals itself once the range narrows: zooming
     // out is reachable again exactly when there is something to zoom out to.
     let widened = browser(world).evaluate(
-        r#"(() => {
+        r##"(() => {
   const out = document.getElementById("zoom-out");
   return out ? { disabled: out.disabled } : null;
-})()"#,
+})()"##,
     );
     assert_eq!(
         widened["disabled"],
@@ -1067,7 +1073,7 @@ const EMPTY_SCENARIO: &str = "Consumer opens the report of a scope with no recor
 /// render — read from the browser's DOM, never from the report file.
 fn rendered_empty_state(driver: &mut BrowserDriver) -> Value {
     driver.evaluate(
-        r#"(() => {
+        r##"(() => {
   const state = document.getElementById("report-empty-state");
   const link = state ? state.querySelector("a[href]") : null;
   return {
@@ -1092,7 +1098,7 @@ fn rendered_empty_state(driver: &mut BrowserDriver) -> Value {
       controls: document.querySelectorAll(".controls button").length,
     },
   };
-})()"#,
+})()"##,
     )
 }
 
