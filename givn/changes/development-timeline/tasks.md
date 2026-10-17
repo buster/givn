@@ -31,9 +31,9 @@ additional scenarios). Every still-pending entry carries `@wip` today and stays
 `@givn.modified` entries carry no `@wip` and are reconciled green in S2b and
 Task 24a.
 
-**Superseded by the hybrid delta (2026-10-17):** the current totals are **62
-entries / 53 non-`@e2e` / 9 `@e2e`** with **15 `@wip`**, and the delta's 17 new
-sections are **H1–H10** and **HE1–HE7** under **Delta part 2 — hybrid workflow
+**Superseded by the hybrid delta (2026-10-17):** the current totals are **63
+entries / 54 non-`@e2e` / 9 `@e2e`**, and the delta's 18 new
+sections are **H1–H11** and **HE1–HE7** under **Delta part 2 — hybrid workflow
 report** at the end of this file. The table below is the 2026-10-16 state and is
 kept as history, not as the current count.
 
@@ -11591,7 +11591,9 @@ lane's log), then the statistics. This part schedules the delta's **15 pending
 `development-record.feature`), the **shared model scaffold** the design names
 (a shared task with a unit-level proof, because no scenario asserts its three
 KPI totals directly), the **asset rewrite**, and one change-wide evidence and
-scope-run task.
+scope-run task. **Follow-up (2026-10-17):** Task **H11** adds the written
+view's one new scenario and the three readings that must move off the removed
+band SVG; its section sits after H10 and before the `@e2e` tasks.
 
 The earlier sections stay untouched and historical: their pasted evidence
 records the dense-timeline implementation the delta re-tagged. A scenario this
@@ -11640,33 +11642,36 @@ Repository checks are secondary only.
 |---|---|---|---|
 | `inspect-development-history/development-record.feature` | 21 | 19 | 2 |
 | `inspect-development-history/agent-activity-reporting.feature` | 15 | 14 | 1 |
-| `inspect-development-history/development-report.feature` | 23 | 17 | 6 |
+| `inspect-development-history/development-report.feature` | 24 | 18 | 6 |
 | `fragments/adr-qualification-gate.feature` (`@givn.modified`) | 1 | 1 | 0 |
 | `initialize-project/initialize-a-project.feature` (`@givn.modified`, two) | 2 | 2 | 0 |
-| **Total** | **62** | **53** | **9** |
+| **Total** | **63** | **54** | **9** |
 
-- **62** executable scenario entries = **59 `@givn.added`** + **3
-  `@givn.modified`**; **53 non-`@e2e`** + **9 `@e2e`**. The third column counts
+- **63** executable scenario entries = **60 `@givn.added`** + **3
+  `@givn.modified`**; **54 non-`@e2e`** + **9 `@e2e`**. The third column counts
   a `Scenario Outline` as one entry (its Examples rows are input variation).
-- **15 `@wip`** scenarios are pending: 1 in `development-record.feature` and 14
-  in `development-report.feature` (8 non-`@e2e`, 6 `@e2e`). `givn lint --change
-  development-timeline` at the baseline of this part reports exactly those 15
-  `[WIP]` findings plus the pre-existing `[SUBST] advisory` lines, exit 2 — the
-  pending tags, not a parse error.
-- **Scheduled here:** 17 sections = **15 scenario tasks** (H1, H3–H10, HE1–HE6)
+  **Follow-up (2026-10-17):** Task H11 adds the 63rd entry, the written
+  text-view scenario.
+- **Pending `@wip` today:** the 15 delta scenarios H1–HE6 implemented are green
+  and their tags are gone; the **one** pending scenario is H11's
+  `The written report's text view presents the workflow`. `givn lint --change
+  development-timeline` at this follow-up reports exactly that **1 `[WIP]`
+  finding** plus the pre-existing `[SUBST] advisory` lines, exit 2.
+- **Scheduled here:** 18 sections = **16 scenario tasks** (H1, H3–H11, HE1–HE6)
   + **1 shared prerequisite** (H2, report-model scaffold; no new scenario) +
   **1 change-wide evidence/scope-run task** (HE7; no new scenario). The three
   `@givn.modified` entries stay with S2b and Task 24a; this part adds none.
-- **Box accounting:** 17 sections × 5 boxes = **85 new boxes**; `tasks.md`
-  moves from **274/274** boxes to **359 total / 274 done / 85 pending**.
-  `givn status` reports the tasks artifact as partial until every new box is
-  checked with its evidence and revision.
+- **Box accounting:** 18 sections × 5 boxes = **90 new boxes**; `tasks.md`
+  moves from **274/274** boxes to **364 total** — currently **354 done / 10
+  pending** (H11's five and HE7's five). `givn status` reports the tasks
+  artifact as partial until every new box is checked with its evidence and
+  revision.
 - **Work order:** H1 (the dispatcher writer its own scenario needs) → H2 (the
-  shared model scaffold every report scenario asserts through) → H3–H10 (the
-  eight regular report scenarios in `.feature` order) → HE1–HE6 (the six
-  `@e2e` scenarios in `.feature` order, the asset rewrite beginning in HE2) →
-  HE7 (evidence refresh and both scope runs). Non-`@e2e` first, `@e2e` last, as
-  the tasks instruction requires.
+  shared model scaffold every report scenario asserts through) → H3–H11 (the
+  nine regular report scenarios in `.feature` order; H11 is the follow-up
+  text-view removal) → HE1–HE6 (the six `@e2e` scenarios in `.feature` order,
+  the asset rewrite beginning in HE2) → HE7 (evidence refresh and both scope
+  runs). Non-`@e2e` first, `@e2e` last, as the tasks instruction requires.
 
 ### Decision constraints that apply to every task in this part
 
@@ -12961,6 +12966,111 @@ Repository checks are secondary only.
          3 files changed, 159 insertions(+), 153 deletions(-)
         ```
 
+## Task H11 — `The written report's text view presents the workflow` (`development-report`, added; the text-view removal)
+
+- [ ] **Scenario: `The written report's text view presents the workflow`** (`@wip` until its RED)
+  - Design constraints:
+    - **The rendered view (`design.md` §Report Generation, *Rendering*).** The
+      text-view marker receives exactly: the scope line, the current-state
+      line, one line per workflow phase, the "no recorded stage transition"
+      line when present, the summary (six KPI facts), and the empty state. The
+      band axis and its spans are the superseded dense-timeline view (D6) and
+      are **not part of a change or ideation text view**: they must be **absent
+      from the written file**, not merely hidden by the inline script (the
+      current 619 KB file proves the gap: the SVG is in the file and the script
+      only hides it).
+    - **The gate is the scope, never the entries.** A change or ideation report
+      renders the workflow stack and **no** band timeline; the **project
+      report** (no live change scope — `scope: None` or `Scope::Project`)
+      renders the band rows and no workflow stack. `phase_scaffold` currently
+      builds nine `None`-status phases for `Scope::Project`; fix it to build no
+      scaffold there, so the asset's own rule (`model.workflow.length === 0`
+      keeps the project text view and its band rows) stays true.
+    - **The written file must read without script.** The new assertions read
+      the file's own markup: the current-state line (`#report-current-state`,
+      its `data-stage-label` and next-artifact words) and the nine phase lines
+      (`data-phase="<stage>"` in `WORKFLOW_STAGES` order, each carrying
+      `data-status`), plus the **absence** of `<svg`, `class="timeline-section"`,
+      `class="band"`, `class="span"`, and `class="axis"`. No browser is
+      involved.
+    - **Shape and size.** The report stays one complete document (doctype …
+      `</html>`, one model payload element, one view marker), and removing the
+      band SVG must shrink the written file. The model (`bands`, `stages`,
+      `workflow`, `current_state`, `unstaged`, summary) is unchanged, so the
+      asset's inline script and every `@e2e` assertion keep their data.
+    - **Affected non-`@wip` scenarios — keep the titles and their claims, change
+      only the reading** (`tests/steps/development_report_steps.rs`):
+      - `The report orders the timeline by recorded time, not by store position`
+        (`report_orders_the_entries_by_their_recorded_end_time`) reads
+        `rendered_spans`/`rendered_ticks` inside `timeline_region` today.
+        Assert the model's `entries` order (the first half already does) and
+        that every phase's lane/group member ids form a subsequence of that
+        recorded-time order. Delete `rendered_spans`, `rendered_ticks`, and
+        `timeline_region` (no unused helpers).
+      - `The report of an ideation topic names the work done before the change
+        exists` (`report_names_the_topics_steps_under_the_topic_scope`): drop
+        the `timeline_region`/`data-band` reading; assert the model's entries
+        carry the topic scope with each step's label and measured duration, the
+        text view's scope line names the topic, and its current-state line
+        reads `no live change state`.
+      - `A dense record is reported as aggregates instead of raw ticks`
+        (`report_summary_still_counts_every_recorded_entry`): replace
+        `rendered_aggregate_count` (band SVG) with the model's and the phase
+        line's aggregate count (the phase line names its Fit aggregate count;
+        the number of ticks is fewer than the record's entries) and keep the
+        summary/entries assertions. Delete `rendered_aggregate_count`.
+      - `The report shows the empty state for a scope with no recorded activity`
+        keeps its absence markers; they now hold for the stronger reason (a
+        change report carries no band timeline at all).
+    - **Unit boundary (no new scenario):** add a `#[cfg(test)]` assertion in
+      `src/cli/timeline.rs` that `render_view` for a change model contains the
+      workflow stack and no band timeline, and for a project model contains the
+      band timeline and no workflow stack.
+    - Files: `src/cli/timeline.rs` (`render_view`'s scope gate,
+      `phase_scaffold`'s project case, the unit assertion),
+      `tests/steps/development_report_steps.rs` (the scenario's two Thens and
+      the three rewritten readings, minus the deleted helpers).
+    - RED expected failure: the two new Then phrases are undefined, and the
+      written file still carries `<svg class="timeline">` with band spans
+      inside the view marker.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The written report's text view presents the workflow"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — gate the text view on the scope, add the unit assertion,
+        and rewrite the three readings. Files: `src/cli/timeline.rs`,
+        `tests/steps/development_report_steps.rs`. Re-run this scenario and the
+        three affected scenarios → all exit 0. Paste them.
+        ```
+        PASTE THE GREEN RUN (NEW SCENARIO) HERE
+        ```
+        ```
+        PASTE THE GREEN RUN (ORDERING) HERE
+        ```
+        ```
+        PASTE THE GREEN RUN (TOPIC) HERE
+        ```
+        ```
+        PASTE THE GREEN RUN (DENSE) HERE
+        ```
+  - [ ] **REFACTOR** — one `is_project_report` predicate read by `render_view`,
+        `render_workflow`, and `render_timeline`; no dead helper remains
+        (`grep -n "timeline_region\|rendered_spans\|rendered_ticks\|rendered_aggregate_count" tests/steps/development_report_steps.rs`
+        → no output); `cargo fmt --all -- --check` and `cargo clippy --locked
+        --all-targets -- -D warnings` green; re-run the four scenarios → still
+        exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title and the three rewritten readings in the body. Record
+        the revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
 ## Task HE1 — `Consumer generates the development report for a change` (`@e2e`, `development-report`)
 
 - [x] **Scenario: `Consumer generates the development report for a change`** (`@wip` until its RED)
@@ -13760,13 +13870,16 @@ Repository checks are secondary only.
     - `givn lint --change development-timeline` exits **0** with no `[WIP]`
       finding (the only remaining output is the pre-existing `[SUBST]
       advisory` lines).
-    - The inventory stays 62/53/9. If a runner summary disagrees by name,
+    - The inventory stays 63/54/9. If a runner summary disagrees by name,
       reconcile by name against the inventory and report it — never edit the
-      inventory to match a surprise.
+      inventory to match a surprise. H11 removes only the text view's hidden
+      band SVG; the rendered browser surfaces are unchanged, so every pair
+      committed by HE1–HE6 already shows the final hybrid view and this task
+      re-runs the scopes rather than re-capturing.
     - Files: none in production; this task records evidence, the two scope
       summaries, and the evidence listing.
   - [ ] **VERIFY** — run the two scopes and paste both summaries with the
-        per-scenario PASS lines for the 15 new scenarios.
+        per-scenario PASS lines for the 16 new scenarios.
         ```
         PASTE BOTH SCOPE RUNS HERE
         ```
@@ -13788,14 +13901,16 @@ Repository checks are secondary only.
         PASTE THE COMMIT AND `git show --stat` HERE
         ```
 
-**Part-2 done when:** all 15 pending scenarios have completed RED/GREEN/REFACTOR
+**Part-2 done when:** all 16 pending scenarios have completed RED/GREEN/REFACTOR
 loops with pasted evidence and a revision each, H2's unit test and H8's
-later-first-transition unit assertion are green, the asset is the hybrid
-workflow view, the nine `@e2e` scenarios each have a committed non-empty pair
-at both contract viewports (plus the empty-scope declared-state pairs), the
-existing five report slugs are unchanged, the expand scenario owns the only new
-directory, `git grep -c "@wip" -- givn/changes/development-timeline/specs`
-finds none, `givn lint --change development-timeline` exits 0, and both
-`verify.command` and `verify.e2e_command` exit 0 on the full delta. The box
-counts then read **359 total / 359 done / 0 pending**.
+later-first-transition unit assertion are green, H11's written file carries the
+workflow text view and no band timeline for a change report while the project
+report keeps its bands, the asset is the hybrid workflow view, the nine `@e2e`
+scenarios each have a committed non-empty pair at both contract viewports (plus
+the empty-scope declared-state pairs), the existing five report slugs are
+unchanged, the expand scenario owns the only new directory,
+`git grep -c "@wip" -- givn/changes/development-timeline/specs` finds none,
+`givn lint --change development-timeline` exits 0, and both `verify.command` and
+`verify.e2e_command` exit 0 on the full delta. The box counts then read **364
+total / 364 done / 0 pending**.
 
