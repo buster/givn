@@ -110,7 +110,7 @@ Feature: Development Report
     Then the report names one repeated-step group with its count and combined duration
     And the report still ranks every measured entry
 
-  @givn.added @wip
+  @givn.added
   Scenario: A dense record is reported as aggregates instead of raw ticks
     Given a change "demo" whose record holds hundreds of short agent activities
     When the developer generates the development report for "demo"

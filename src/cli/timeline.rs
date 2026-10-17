@@ -1663,6 +1663,20 @@ fn render_workflow_phase(phase: &WorkflowPhase, entries: &[HistoryEntry]) -> Str
             duration_or_not_measured(group.duration_ms),
         ));
     }
+    for tick in &phase.aggregates {
+        let duration_ms = tick
+            .duration_ms
+            .map_or_else(String::new, |duration| duration.to_string());
+        html.push_str(&format!(
+            "<p class=\"phase-aggregate\" data-bucket-start-ms=\"{}\" data-bucket-end-ms=\"{}\" data-count=\"{}\" data-duration-ms=\"{}\">{} entries · {}</p>\n",
+            tick.bucket_start_ms,
+            tick.bucket_end_ms,
+            tick.count,
+            duration_ms,
+            tick.count,
+            duration_or_not_measured(tick.duration_ms),
+        ));
+    }
     html
 }
 

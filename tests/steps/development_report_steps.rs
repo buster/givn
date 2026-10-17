@@ -294,19 +294,6 @@ fn dense_activity_at(index: usize) -> String {
     )
 }
 
-/// One aggregate marker as the written report draws it: the bucket it covers,
-/// the count and combined duration it names in its own machine-readable
-/// attributes, and its accessible name — the three ways the marker names what
-/// it stands for.
-#[derive(Debug)]
-struct DrawnAggregate {
-    bucket_start_ms: i64,
-    bucket_end_ms: i64,
-    count: usize,
-    duration_ms: Option<u64>,
-    name: String,
-}
-
 /// One measured entry the widened-ranking fixture's record holds: the entry
 /// kind, its name and bounded label, its recorded end, and its measured
 /// duration. The agent activity is an ordinary `tool` entry — the kind an agent
@@ -2887,6 +2874,19 @@ fn report_still_ranks_every_measured_entry(world: &mut GivnWorld) {
     assert_eq!(rows.len(), expected.len(), "the ranking rows: {model:#?}");
 }
 
+/// The ordinary entries the dense fixture records beside its hundreds of short
+/// activities: one measured span per row, long enough that the Fit threshold
+/// draws each individually.
+const DENSE_ORDINARY: [(&str, &str, &str, u64); 2] = [
+    ("step", "verify", "2026-10-16T09:17:00.000Z", 120_000),
+    ("step", "extend", "2026-10-16T09:18:00.000Z", 300_000),
+];
+
+/// The `tasks.md` transition the dense fixture records before its activities:
+/// the transition both it and the activities that follow it belong to the
+/// `implement` phase it opens.
+const DENSE_TRANSITION_AT: &str = "2026-10-16T08:59:00.000Z";
+
 #[given(regex = r#"^a change "([^"]+)" whose record holds hundreds of short agent activities$"#)]
 fn change_with_hundreds_of_short_agent_activities(world: &mut GivnWorld, id: String) {
     let scope = Scope::Change { id: id.clone() };
@@ -2894,6 +2894,8 @@ fn change_with_hundreds_of_short_agent_activities(world: &mut GivnWorld, id: Str
         let env = project_root(world);
         run_fixture_command(env, &["new", &id]);
         let mut history = support::SeededHistory::new();
+        let transition = history.point(&scope, "phase", "tasks.md", DENSE_TRANSITION_AT);
+        history.label(transition, "tasks.md");
         for index in 0..DENSE_ACTIVITIES {
             let entry = history.span(
                 &scope,
@@ -2904,81 +2906,71 @@ fn change_with_hundreds_of_short_agent_activities(world: &mut GivnWorld, id: Str
             );
             history.label(entry, &format!("tool call {}", index + 1));
         }
+        for (kind, name, at, duration_ms) in DENSE_ORDINARY {
+            let entry = history.span(&scope, kind, name, at, duration_ms);
+            history.label(entry, name);
+        }
         history.seed(env)
     };
     assert_eq!(
         seeded.len(),
-        DENSE_ACTIVITIES,
-        "the fixture seeds every one of its short activities"
+        DENSE_ACTIVITIES + 1 + DENSE_ORDINARY.len(),
+        "the fixture seeds every activity, the transition, and the ordinary entries"
     );
     state(world).seeded = seeded;
     world.last_change_id = Some(id);
 }
 
-/// The aggregate markers the written report draws, in document order, read from
-/// the timeline region's own markup.
-fn rendered_aggregates(document: &str) -> Vec<DrawnAggregate> {
+/// The number of aggregate shapes the written report draws on its axis, read
+/// from the timeline region's own markup: the drawn aggregates, never the
+/// record's entries.
+fn rendered_aggregate_count(document: &str) -> usize {
     timeline_region(document)
         .split("<g class=\"aggregate\"")
-        .skip(1)
-        .map(|marker| DrawnAggregate {
-            bucket_start_ms: aggregate_attribute(marker, "data-bucket-start-ms"),
-            bucket_end_ms: aggregate_attribute(marker, "data-bucket-end-ms"),
-            count: aggregate_attribute(marker, "data-count") as usize,
-            duration_ms: marker
-                .split("data-duration-ms=\"")
-                .nth(1)
-                .and_then(|value| value.split('"').next())
-                .and_then(|value| value.parse().ok()),
-            name: marker
-                .split("aria-label=\"")
-                .nth(1)
-                .and_then(|value| value.split('"').next())
-                .unwrap_or_else(|| {
-                    panic!("an aggregate marker carries no accessible name: {marker}")
-                })
-                .to_string(),
-        })
-        .collect()
+        .count()
+        .saturating_sub(1)
 }
 
-/// One numeric attribute of an aggregate marker's markup.
-fn aggregate_attribute(marker: &str, attribute: &str) -> i64 {
-    let marker_attribute = format!("{attribute}=\"");
-    marker
-        .split(&marker_attribute)
-        .nth(1)
-        .and_then(|value| value.split('"').next())
-        .and_then(|value| value.parse().ok())
-        .unwrap_or_else(|| panic!("an aggregate marker carries no {attribute}: {marker}"))
+/// One workflow phase's own text line, from its `data-phase` marker to the end
+/// of the line, so a phase assertion reads that phase's words only.
+fn phase_line(document: &str, stage: &str) -> String {
+    let marker = format!("data-phase=\"{stage}\"");
+    let start = document
+        .find(&marker)
+        .unwrap_or_else(|| panic!("the report prints no phase line for {stage}: {document}"));
+    let line = &document[start..];
+    line[..line.find("</p>").expect("the phase line is closed")].to_string()
 }
 
-#[then("the report collapses the short agent activities into aggregate markers")]
-fn report_collapses_the_short_agent_activities_into_aggregate_markers(world: &mut GivnWorld) {
+#[then("the report collapses the short agent activities into aggregate ticks on the phase lane")]
+fn report_collapses_the_short_agent_activities_into_phase_ticks(world: &mut GivnWorld) {
     let document = report_text(world);
     let model = report_model(&document);
-    let activities = seeded(world);
+    let entries = seeded(world);
+    let activities: Vec<&HistoryEntry> = entries
+        .iter()
+        .filter(|entry| entry.kind == "tool")
+        .collect();
     assert!(
         activities.len() >= 200,
         "the fixture holds hundreds of short activities: {}",
         activities.len()
     );
 
-    // The fixture's own claim: every activity is shorter than the time one
+    // The fixture's own claim: every activity is far shorter than the time one
     // pixel of the initial zoom spends on — each is under a hundredth of the
-    // window it is drawn across — so a report that drew one shape per entry
-    // could not be read. The claim is derived from the seeded record, not
-    // assumed.
-    let times: Vec<i64> = activities
+    // window it is drawn across — so a lane that drew one shape per entry
+    // could not be read. The claim is derived from the seeded record.
+    let times: Vec<i64> = entries
         .iter()
         .map(|entry| {
             givn::history::parse_rfc3339_ms(&entry.at)
                 .unwrap_or_else(|| panic!("the fixture's `at` does not parse: {}", entry.at))
         })
         .collect();
-    let window_span = times.iter().max().expect("the fixture records activities")
-        - times.iter().min().expect("the fixture records activities");
-    for entry in activities {
+    let window_span = times.iter().max().expect("the fixture records entries")
+        - times.iter().min().expect("the fixture records entries");
+    for entry in &activities {
         let duration = entry
             .duration_ms
             .expect("the fixture measures every activity") as i64;
@@ -2988,140 +2980,140 @@ fn report_collapses_the_short_agent_activities_into_aggregate_markers(world: &mu
         );
     }
 
-    // The model's markers cover exactly the recorded activities, each of them
-    // once — the entries the markers stand for are the entries the record holds.
-    let markers = model["aggregates"]
+    // The phase's own Fit aggregates cover exactly the short activities, each
+    // of them once, and no ordinary entry is collapsed into them.
+    let phase = report_phase(&model, "implement");
+    let aggregates = phase["aggregates"]
         .as_array()
-        .unwrap_or_else(|| panic!("the model carries no aggregates: {model:#?}"));
+        .unwrap_or_else(|| panic!("the phase carries no aggregates: {model:#?}"));
     assert!(
-        !markers.is_empty(),
-        "a dense record draws no aggregate markers: {model:#?}"
+        !aggregates.is_empty(),
+        "a dense record draws no aggregate tick on the phase lane: {model:#?}"
     );
-    let mut covered: Vec<u64> = markers
+    let mut covered: Vec<u64> = aggregates
         .iter()
-        .flat_map(|marker| {
-            marker["entries"]
+        .flat_map(|tick| {
+            tick["entries"]
                 .as_array()
-                .unwrap_or_else(|| panic!("a marker covers no entries: {marker}"))
+                .unwrap_or_else(|| panic!("an aggregate tick covers no entries: {tick}"))
                 .iter()
                 .map(|entry| entry.as_u64().expect("a covered entry id"))
         })
         .collect();
-    let mut expected: Vec<u64> = activities.iter().map(|entry| entry.id).collect();
+    let expected: Vec<u64> = activities.iter().map(|entry| entry.id).collect();
     covered.sort_unstable();
-    expected.sort_unstable();
-    assert_eq!(
-        covered, expected,
-        "the aggregate markers do not cover exactly the recorded activities: {model:#?}"
-    );
-
-    // No individual span is drawn for a covered entry, and the axis draws far
-    // fewer shapes than the record holds entries — the aggregate replaced the
-    // ticks instead of joining them.
-    let drawn_ids: Vec<u64> = rendered_spans(&document)
-        .iter()
-        .map(|(id, _)| *id)
-        .collect();
-    for entry in activities {
+    for id in &expected {
         assert!(
-            !drawn_ids.contains(&entry.id),
-            "the report draws an individual span for a collapsed entry: {entry:#?}"
+            covered.contains(id),
+            "the phase's aggregate ticks do not cover the short activity {id}: {model:#?}"
         );
     }
-    let drawn = rendered_aggregates(&document);
-    assert_eq!(
-        drawn.len(),
-        markers.len(),
-        "the drawn markers disagree with the model's: {document}"
-    );
+    // An unmeasured instant may collapse with the ticks; an ordinary measured
+    // entry never does.
+    for id in &covered {
+        let entry = entries
+            .iter()
+            .find(|entry| entry.id == *id)
+            .unwrap_or_else(|| {
+                panic!("an aggregate tick covers an entry outside the record: {id}")
+            });
+        assert!(
+            entry.kind == "tool" || entry.duration_ms.is_none(),
+            "the aggregate collapsed an ordinary measured entry: {entry:#?}"
+        );
+    }
+    // The lane draws far fewer shapes than the record holds entries — the ticks
+    // replaced the individual shapes instead of joining them.
     assert!(
-        drawn.len() < activities.len() / 2,
-        "the axis draws one shape per entry rather than markers: {} markers for {} entries",
-        drawn.len(),
+        aggregates.len() < activities.len() / 2,
+        "the lane draws one aggregate tick per entry: {} ticks for {} activities",
+        aggregates.len(),
         activities.len()
+    );
+    // The written file names the phase's Fit aggregate count.
+    let line = phase_line(&document, "implement");
+    assert!(
+        line.contains(&format!("{} fit aggregates", aggregates.len())),
+        "the phase line does not name its Fit aggregate count: {line}"
     );
 }
 
-#[then("each aggregate marker names how many entries it covers and their total duration")]
-fn each_aggregate_marker_names_its_coverage_and_duration(world: &mut GivnWorld) {
+#[then("each aggregate tick names how many entries it covers and their total duration")]
+fn each_aggregate_tick_names_its_coverage_and_duration(world: &mut GivnWorld) {
     let document = report_text(world);
     let model = report_model(&document);
     let entries = seeded(world);
-    let markers = model["aggregates"]
+    let aggregates = report_phase(&model, "implement")["aggregates"]
         .as_array()
-        .unwrap_or_else(|| panic!("the model carries no aggregates: {model:#?}"));
-    let drawn = rendered_aggregates(&document);
-    let mut covered = 0;
-    for marker in markers {
-        let ids: Vec<u64> = marker["entries"]
+        .unwrap_or_else(|| panic!("the phase carries no aggregates: {model:#?}"))
+        .clone();
+    for tick in &aggregates {
+        let ids: Vec<u64> = tick["entries"]
             .as_array()
-            .unwrap_or_else(|| panic!("a marker covers no entries: {marker}"))
+            .unwrap_or_else(|| panic!("an aggregate tick covers no entries: {tick}"))
             .iter()
             .map(|entry| entry.as_u64().expect("a covered entry id"))
             .collect();
-        assert!(!ids.is_empty(), "a marker covers no entry: {marker}");
-        let combined: u64 = ids
+        assert!(!ids.is_empty(), "an aggregate tick covers no entry: {tick}");
+        let measured: Vec<u64> = ids
             .iter()
-            .map(|id| {
+            .filter_map(|id| {
                 entries
                     .iter()
                     .find(|entry| entry.id == *id)
-                    .unwrap_or_else(|| panic!("a marker covers an entry outside the record: {id}"))
+                    .unwrap_or_else(|| {
+                        panic!("an aggregate tick covers an entry outside the record: {id}")
+                    })
                     .duration_ms
-                    .expect("the fixture measures every activity")
             })
-            .sum();
+            .collect();
+        // A tick whose members the record never measured states "not measured",
+        // never a zero; otherwise it carries their combined duration.
+        let combined = (!measured.is_empty()).then(|| measured.iter().sum::<u64>());
         assert_eq!(
-            marker["duration_ms"].as_u64(),
-            Some(combined),
-            "the model's marker does not carry the covered entries' combined duration: {marker}"
+            tick["count"].as_u64(),
+            Some(ids.len() as u64),
+            "the aggregate tick's count disagrees with its member ids: {tick}"
         );
-        covered += ids.len();
-
-        // The marker itself names both: the count and the combined duration in
-        // its machine-readable attributes, and both in its accessible name.
-        let bucket_start_ms = marker["bucket_start_ms"]
-            .as_i64()
-            .unwrap_or_else(|| panic!("a marker carries no bucket start: {marker}"));
-        let bucket_end_ms = marker["bucket_end_ms"]
-            .as_i64()
-            .unwrap_or_else(|| panic!("a marker carries no bucket end: {marker}"));
-        let rendered = drawn
-            .iter()
-            .find(|drawn| drawn.bucket_start_ms == bucket_start_ms)
-            .unwrap_or_else(|| panic!("the model's marker is not drawn: {marker}"));
         assert_eq!(
-            (rendered.bucket_end_ms, rendered.count, rendered.duration_ms),
-            (bucket_end_ms, ids.len(), Some(combined)),
-            "the drawn marker does not name what the model's does: {rendered:#?}"
+            tick["duration_ms"].as_u64(),
+            combined,
+            "the aggregate tick does not carry the covered entries' combined duration: {tick}"
         );
-        let covered_entries = if ids.len() == 1 {
-            "1 entry".to_string()
-        } else {
-            format!("{} entries", ids.len())
-        };
-        assert!(
-            rendered.name.contains(&covered_entries),
-            "the marker's accessible name does not name how many entries it covers: {rendered:#?}"
-        );
-        assert!(
-            rendered.name.contains(&format_duration(combined)),
-            "the marker's accessible name does not name its combined duration: {rendered:#?}"
-        );
+        // The bucket bounds cover each member's own instant.
+        let bucket_start_ms = tick["bucket_start_ms"]
+            .as_i64()
+            .unwrap_or_else(|| panic!("an aggregate tick carries no bucket start: {tick}"));
+        let bucket_end_ms = tick["bucket_end_ms"]
+            .as_i64()
+            .unwrap_or_else(|| panic!("an aggregate tick carries no bucket end: {tick}"));
+        for id in &ids {
+            let at = entries
+                .iter()
+                .find(|entry| entry.id == *id)
+                .and_then(|entry| givn::history::parse_rfc3339_ms(&entry.at))
+                .unwrap_or_else(|| panic!("a covered entry has no readable instant: {id}"));
+            assert!(
+                (bucket_start_ms..bucket_end_ms).contains(&at),
+                "the aggregate tick's bucket {bucket_start_ms}..{bucket_end_ms} does not cover {at}"
+            );
+        }
+        // The written file names the tick's count and combined duration (or
+        // states that the record measured none of its members).
+        let duration_attr = combined.map_or_else(String::new, |duration| duration.to_string());
+        let duration_text = combined.map_or_else(|| "not measured".to_string(), format_duration);
         assert!(
             document.contains(&format!(
-                "{count} · {duration}",
-                count = ids.len(),
-                duration = format_duration(combined)
+                "data-bucket-start-ms=\"{bucket_start_ms}\" data-bucket-end-ms=\"{bucket_end_ms}\" data-count=\"{}\" data-duration-ms=\"{duration_attr}\"",
+                ids.len()
             )),
-            "the marker's visible text does not name its coverage and duration: {rendered:#?}"
+            "the report does not name the aggregate tick's coverage: {tick}"
+        );
+        assert!(
+            document.contains(&format!("{} entries · {}", ids.len(), duration_text)),
+            "the report does not print the aggregate tick's coverage and duration: {tick}"
         );
     }
-    assert_eq!(
-        covered,
-        entries.len(),
-        "the markers do not cover every recorded entry: {model:#?}"
-    );
 }
 
 #[then("the report summary still counts every recorded entry")]
@@ -3150,7 +3142,7 @@ fn report_summary_still_counts_every_recorded_entry(world: &mut GivnWorld) {
         "the entries tile does not name the record's entry count ({recorded}): {entries_tile}"
     );
     assert!(
-        rendered_aggregates(&document).len() < recorded,
+        rendered_aggregate_count(&document) < recorded,
         "the axis draws no fewer shapes than the record holds entries: {document}"
     );
 }
