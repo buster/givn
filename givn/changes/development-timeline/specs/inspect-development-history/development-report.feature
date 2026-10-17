@@ -69,7 +69,7 @@ Feature: Development Report
     Then the report ranks the agent tool call first
     And the ranking names the kind of every entry it lists
 
-  @givn.added @wip
+  @givn.added
   Scenario: The report details panel carries the captured metadata and content
     Given a change "demo" whose record holds captured metadata and full-mode content
     When the developer generates the development report for "demo"

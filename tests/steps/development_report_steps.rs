@@ -359,6 +359,13 @@ pub(crate) struct DevelopmentReportState {
     pub(crate) report_path: Option<PathBuf>,
     /// The entries the scenario's Given seeded, ids included.
     pub(crate) seeded: Vec<HistoryEntry>,
+    /// The metadata-rich tool entry the details-panel fixture seeded.
+    pub(crate) metadata_entry: Option<HistoryEntry>,
+    /// The content entry ids the details-panel fixture seeded.
+    pub(crate) content_entry_ids: Vec<u64>,
+    /// The store's bytes before the report ran, so the store-completeness
+    /// assertion compares against the seeded record.
+    pub(crate) store_before: Option<Vec<u8>>,
 }
 
 /// The capability's state, created on first use.
@@ -669,6 +676,233 @@ fn change_with_an_agent_tool_call_longer_than_any_step(world: &mut GivnWorld, id
     };
     state(world).seeded = seeded;
     world.last_change_id = Some(id);
+}
+
+#[given(
+    regex = r#"^a change "([^"]+)" whose record holds captured metadata and full-mode content$"#
+)]
+fn change_with_captured_metadata_and_full_content(world: &mut GivnWorld, id: String) {
+    let seeded = {
+        let env = project_root(world);
+        support::seed_captured_metadata_and_content(env, &id)
+    };
+    let state = state(world);
+    state.store_before = Some(seeded.store_bytes.clone());
+    state.metadata_entry = Some(seeded.metadata_entry.clone());
+    state.content_entry_ids = seeded.content_entry_ids.clone();
+    world.last_change_id = Some(id);
+}
+
+/// The embedded text bytes of one `data.content` object, summed the way the
+/// report budget counts them.
+fn content_text_bytes(content: &Value) -> u64 {
+    content
+        .as_object()
+        .map(|object| {
+            object
+                .iter()
+                .filter(|(name, _)| name.as_str() != "truncated")
+                .filter_map(|(_, field)| field["text"].as_str())
+                .map(|text| text.len() as u64)
+                .sum()
+        })
+        .unwrap_or_default()
+}
+
+#[then(
+    "the report model names the session, its title, the status, the stop reason, the cost, the context size and window, the tool call id, the output size, the error, the parent, the retry, and the permission mode"
+)]
+fn report_model_names_the_captured_metadata(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let metadata = state(world)
+        .metadata_entry
+        .clone()
+        .expect("the details-panel fixture ran first");
+    let entry = model["entries"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the report model carries no entries: {model:#?}"))
+        .iter()
+        .find(|entry| entry["id"] == json!(metadata.id))
+        .unwrap_or_else(|| {
+            panic!(
+                "the model lost the metadata entry {}: {model:#?}",
+                metadata.id
+            )
+        });
+    let data = &entry["data"];
+    assert_eq!(
+        entry["session"],
+        json!("session-25b"),
+        "the model does not name the harness session: {entry}"
+    );
+    assert_eq!(data["title"], json!("Development report details"));
+    assert_eq!(data["status"], json!("needs_input"));
+    assert_eq!(data["stop_reason"], json!("end_turn"));
+    assert_eq!(data["model"], json!("deepseek/deepseek-flash"));
+    assert_eq!(data["cost"], json!(0.42));
+    assert_eq!(data["list_cost"], json!(0.55));
+    assert_eq!(data["context_size"], json!(48_000));
+    assert_eq!(data["context_window"], json!(128_000));
+    assert_eq!(data["tool_call_id"], json!("call-25b"));
+    assert_eq!(data["output_bytes"], json!(4_096));
+    assert_eq!(data["error"], json!("the command failed: exit status 101"));
+    assert_eq!(
+        entry["parent"],
+        json!(
+            metadata
+                .parent
+                .expect("the fixture nests the metadata entry in a turn")
+        ),
+        "the model does not name the entry's parent: {entry}"
+    );
+    assert_eq!(data["agent"], json!("omp"));
+    assert_eq!(data["attempt"], json!(2));
+    assert_eq!(data["max_attempts"], json!(3));
+    assert_eq!(data["delay_ms"], json!(1_500));
+    assert_eq!(data["fallback_from"], json!("model-a"));
+    assert_eq!(data["fallback_to"], json!("model-b"));
+    assert_eq!(data["permission_mode"], json!("acceptEdits"));
+    // The panel's fact labels for every value are in the rendered document.
+    for label in [
+        "Session",
+        "Session title",
+        "Status",
+        "Stop reason",
+        "Model",
+        "Cost",
+        "List cost",
+        "Context size",
+        "Context window",
+        "Tool call id",
+        "Output bytes",
+        "Error",
+        "Parent",
+        "Agent",
+        "Retry",
+        "Permission mode",
+    ] {
+        assert!(
+            document.contains(label),
+            "the report does not render the `{label}` fact: {document:.0}"
+        );
+    }
+}
+
+#[then("the report embeds the content within the 8 MiB documented budget")]
+fn report_embeds_content_within_the_budget(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let budget = 8_388_608u64;
+    assert_eq!(
+        model["content_budget_bytes"],
+        json!(budget),
+        "the model does not state the documented budget: {model:#?}"
+    );
+    let used = model["content_bytes"]
+        .as_u64()
+        .unwrap_or_else(|| panic!("the model does not state the embedded bytes: {model:#?}"));
+    assert!(
+        used > 0 && used <= budget,
+        "the embedded content is not within the budget ({used} bytes): {model:#?}"
+    );
+    let mut embedded = 0usize;
+    let mut omitted = 0usize;
+    let mut total = 0u64;
+    for entry in model["entries"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the report model carries no entries: {model:#?}"))
+    {
+        let content = entry["data"].get("content");
+        let marker = entry["data"].get("content_omitted");
+        match (content, marker) {
+            (Some(content), None) => {
+                embedded += 1;
+                total += content_text_bytes(content);
+            }
+            (None, Some(marker)) => {
+                assert_eq!(
+                    marker,
+                    &json!(true),
+                    "an omitted entry is not marked content_omitted: {entry}"
+                );
+                omitted += 1;
+            }
+            _ => {}
+        }
+    }
+    assert!(
+        embedded > 0,
+        "the fixture's content was not embedded at all: {model:#?}"
+    );
+    assert!(
+        omitted > 0,
+        "the fixture's content did not exceed the budget: {model:#?}"
+    );
+    assert_eq!(
+        total, used,
+        "the model's content_bytes does not match the embedded content: {model:#?}"
+    );
+}
+
+#[then(regex = r#"^the report notes "([^"]+)" beyond the budget$"#)]
+fn report_notes_content_omitted(world: &mut GivnWorld, note: String) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    assert_eq!(
+        model["content_omitted_note"],
+        json!(note),
+        "the model does not carry the omission note: {model:#?}"
+    );
+    assert!(
+        document.contains(&note),
+        "the report text view does not carry the omission note: {note:?}"
+    );
+    let omitted = model["omitted_content"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the model lists no omitted content: {model:#?}"));
+    assert!(
+        !omitted.is_empty(),
+        "the fixture does not exceed the content budget: {model:#?}"
+    );
+    for id in omitted {
+        let id = id
+            .as_u64()
+            .unwrap_or_else(|| panic!("an omitted id is not a number: {id}"));
+        assert!(
+            document.contains(&format!("data-entry-id=\"{id}\"")),
+            "the text view names no omission for entry {id}"
+        );
+    }
+}
+
+#[then("the development record still holds every content byte")]
+fn record_still_holds_every_content_byte(world: &mut GivnWorld) {
+    let root = project_root(world).root();
+    let (before, seeded_entries) = {
+        let state = state(world);
+        (
+            state
+                .store_before
+                .clone()
+                .expect("the details-panel fixture ran first"),
+            state.content_entry_ids.len(),
+        )
+    };
+    let after = std::fs::read(support::store_file(&root))
+        .unwrap_or_else(|error| panic!("read the development record: {error}"));
+    assert_eq!(
+        String::from_utf8_lossy(&before),
+        String::from_utf8_lossy(&after),
+        "the report run changed the development record"
+    );
+    // Not vacuous: the store still carries every seeded content bundle.
+    let store = String::from_utf8_lossy(&after);
+    let bundles = store.matches("\"content\":").count();
+    assert!(
+        bundles > seeded_entries,
+        "the store lost content bundles: {bundles} <= {seeded_entries}"
+    );
 }
 
 #[when(regex = r#"^the developer generates the development report for "([^"]+)"$"#)]

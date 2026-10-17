@@ -880,12 +880,14 @@
     const data = entry.data === undefined || entry.data === null ? {} : entry.data;
     const content = data.content;
     if (!content || typeof content !== "object") {
-      const omitted = model && Array.isArray(model.omitted_content)
-        && model.omitted_content.includes(entry.id);
+      const omitted = data.content_omitted === true
+        || (model && Array.isArray(model.omitted_content) && model.omitted_content.includes(entry.id));
       if (omitted) {
         const note = document.createElement("p");
         note.className = "content-omitted";
-        note.textContent = "content omitted; see the record";
+        note.textContent = model && typeof model.content_omitted_note === "string"
+          ? model.content_omitted_note
+          : "content omitted; see the record";
         contentRegion.appendChild(note);
         contentRegion.hidden = false;
       }
