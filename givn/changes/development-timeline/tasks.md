@@ -31,11 +31,12 @@ additional scenarios). Every still-pending entry carries `@wip` today and stays
 `@givn.modified` entries carry no `@wip` and are reconciled green in S2b and
 Task 24a.
 
-**Superseded by the hybrid delta (2026-10-17):** the current totals are **64
-entries / 55 non-`@e2e` / 9 `@e2e`**, and the delta's 19 new
-sections are **H1–H12** and **HE1–HE7** under **Delta part 2 — hybrid workflow
-report** at the end of this file. The table below is the 2026-10-16 state and is
-kept as history, not as the current count.
+**Superseded by the hybrid delta (2026-10-17):** the current totals are **71
+entries / 61 non-`@e2e` / 10 `@e2e`**, and the delta's 28 new
+sections are **H1–H20** and **HE1–HE8** under **Delta part 2 — hybrid workflow
+report** and **Delta part 3 — linked ideation** at the end of this file. The
+table below is the 2026-10-16 state and is kept as history, not as the current
+count.
 
 | Feature (path relative to `GIVN_FEATURES`) | Entries | Non-`@e2e` | `@e2e` |
 |---|---|---|---|
@@ -14367,4 +14368,684 @@ directory, `git grep -c "@wip" -- givn/changes/development-timeline/specs` finds
 none, `givn lint --change development-timeline` exits 0, and both
 `verify.command` and `verify.e2e_command` exit 0 on the full delta. The box
 counts then read **369 total / 369 done / 0 pending**.
+
+---
+
+## Delta part 3 — linked ideation and the ideation workflow (2026-10-17)
+
+Design-review round 8 passed at `624adf67` on the design delta `38e38268` (D7):
+a change report may show the pre-change ideation it came from, a topic report
+renders the six-phase ideation workflow, and the dispatcher records
+deduplicated phase-start markers under the command's start-resolved ideation
+scope. This part schedules the delta's **7 pending `@wip` scenarios** (1 in
+`development-record.feature`, 5 regular report scenarios, 1 `@e2e`) plus the
+shared prerequisites the design names — the marker writer (its own scenario),
+the ideation model, and the link parse/validation — and one e2e task for the
+linked-group evidence and the topic-row assertions. Part 2 stays historical and
+untouched; this part is appended after its completion statement.
+
+### Pre-flight (verified 2026-10-17)
+
+- `givn status --change development-timeline`: design-review **done**
+  (`DESIGN-REVIEW: PASS` round 8 at `624adf67`), tasks **369/369** before this
+  part, next required **review**. No `design.md` edit un-gated the tasks step.
+- **Pre-flight result: PASS — 10 inventory entries, 10 matrix rows, 10 existing
+  `@e2e` scenarios, one-to-one.** The use case's
+  `specs/inspect-development-history/usecase.md` §Interactions (10 rows), the
+  design's §Interaction Coverage Matrix (10 rows), and the delta features' ten
+  `@e2e` titles name the same set; the new row is
+  **development-report: read a change's linked ideation** ↔
+  `Consumer reads a change's linked ideation group`. No gap, and no task below
+  is written for a scenario that does not exist.
+
+| # | `usecase.md` §Interactions — capability: consumer action | Matrix row / driving mechanism | `@e2e` title |
+|---|---|---|---|
+| 1 | development-record: run a lifecycle command | CLI / `givn status`, then `givn history --json` | `Consumer runs a lifecycle step and reads its recorded actions` |
+| 2 | development-record: read the development record | CLI / `givn history --json` against a seeded record | `Consumer reads the development record as machine-readable output` |
+| 3 | agent-activity-reporting: report agent activity | CLI (harness integration), one Examples row per harness | `Consumer installs the agent reporter and its reported activity lands in the record` |
+| 4 | development-report: generate the report for a change | CLI / `givn timeline --change demo --out report.html` | `Consumer generates the development report for a change` |
+| 5 | development-report: open the report in a browser | Web UI / Playwright, `change` and `topic` rows | `Consumer opens the generated development report in a browser` |
+| 6 | development-report: read a change's linked ideation | Web UI / Playwright: open the change report, read the `#hybrid-ideation` group, expand its `personas` phase | `Consumer reads a change's linked ideation group` |
+| 7 | development-report: open the report of a scope with no recorded activity | Web UI / Playwright: empty state, no phase | `Consumer opens the report of a scope with no recorded activity` |
+| 8 | development-report: expand a workflow phase | Web UI / Playwright: click `implement`, read lanes and controls | `Consumer expands a workflow phase and sees its lanes` |
+| 9 | development-report: select a timeline element | Web UI / Playwright: select the `Architect.Scout` lane, read the log | `Consumer selects a timeline element and reads its details` |
+| 10 | development-report: zoom the timeline | Web UI / Playwright: click `15 m`, compare the range label | `Consumer zooms the timeline to a shorter time range` |
+
+### Delta inventory (verified mechanically against the five delta features)
+
+| Feature (path relative to `GIVN_FEATURES`) | Entries | Non-`@e2e` | `@e2e` |
+|---|---|---|---|
+| `inspect-development-history/development-record.feature` | 22 | 20 | 2 |
+| `inspect-development-history/agent-activity-reporting.feature` | 15 | 14 | 1 |
+| `inspect-development-history/development-report.feature` | 31 | 24 | 7 |
+| `fragments/adr-qualification-gate.feature` (`@givn.modified`) | 1 | 1 | 0 |
+| `initialize-project/initialize-a-project.feature` (`@givn.modified`, two) | 2 | 2 | 0 |
+| **Total** | **71** | **61** | **10** |
+
+- **71** executable entries = **68 `@givn.added`** + **3 `@givn.modified`**;
+  **61 non-`@e2e`** + **10 `@e2e`**. The review and the task request quote the
+  **delta-only pool 68 / 58 / 10**, which excludes the three `@givn.modified`
+  entries; this table counts them, as the head-of-file pointer does.
+- **7 `@wip`**: 1 marker scenario in `development-record.feature` and 6 in
+  `development-report.feature` (5 non-`@e2e`, 1 `@e2e`). `givn lint --change
+  development-timeline` at this part's baseline reports exactly those 7 `[WIP]`
+  findings plus the pre-existing `[SUBST] advisory` lines, exit 2.
+- **Scheduled here:** 9 sections = **7 scenario tasks** (H13, H16–H20, HE8) +
+  **2 shared prerequisites** (H14 ideation model, H15 link resolution; no new
+  scenarios). The three `@givn.modified` entries stay with S2b and Task 24a.
+- **Box accounting:** 9 sections × 5 boxes = **45 new boxes**; `tasks.md` moves
+  from **369/369** to **414 total / 369 done / 45 pending**. `givn status`
+  reports the tasks artifact as partial until every new box is checked with its
+  evidence and revision.
+- **Work order:** H13 (the marker writer its own scenario needs) → H14 (the
+  ideation model every report scenario reads) → H15 (the link resolution the
+  linked-group scenarios read) → H16 (topic workflow) → H17 (linked group) →
+  H18 (linked but empty) → H19 (no link) → H20 (archived link) → HE8 (the
+  browser group, the refreshed topic row, and the evidence).
+
+### Decision constraints that apply to every task in this part
+
+- **Ideation workflow order** is exactly the six `IDEATION_STAGES`:
+  `frame`, `personas`, `event-storming`, `use-case-definition`,
+  `use-case-elaboration`, `handoff` (domain labels Frame, Personas, Event
+  Storming, Use Case Definition, Use Case Elaboration, Handoff). `frame` is the
+  opening stage; no seventh name is ever rendered or invented.
+- **Markers start their phase.** Unlike a change artifact (which concludes a
+  stage and opens the next), a marker label names the phase it **starts**:
+  `personas` starts `personas`, `event-storming` starts `event-storming`, and
+  so on. The mapping is direct, never through `STAGE_ARTIFACTS` /
+  `stage_opened_by`; an entry belongs to the latest marker at or before its
+  `at`, and entries before the first marker are `frame`. The ideation
+  derivation never produces the no-stage group.
+- **Start-resolved observation, no backfill.** Markers are observed only for
+  the scope the command was recorded under — the recorder's start-resolved
+  `scope`, or the intake's topic override — never a new post-command
+  resolution and never a directory sweep. A change- or project-scoped command
+  records no ideation marker, so a finished or historical topic is never
+  backfilled.
+- **Link truth.** A change's `proposal.md` (archive fallback included) is the
+  only link source: `Ideation topic:` first, `Seed path:` as the fallback;
+  normalized; the link is used only when `givn/ideation/<id>/` exists; `none`
+  (including `none — <reason>`) means no link; no inference from project
+  entries, time proximity, or mutable topic state. The resolved link is
+  embedded in the model as a snapshot, so determinism is over the record, the
+  change state, and that snapshot (Q-99/R-96).
+- **Scope-separated totals.** The report scope's summary, ranking, wait totals,
+  KPI facts, and `empty` flag are computed from **its own** entries; the linked
+  group states **its own** duration, tool, subagent, and wait totals from the
+  topic's entries. The topic's entries join `entries` once and form their own
+  ideation band; they never join the change's band. `empty` is true only when
+  the model holds no entries at all.
+- **No store change and no new interaction beyond the linked-group read.** The
+  record schema is unchanged (markers are `phase` entries with existing label
+  forms); no `@e2e` tag is removed; the ten titles are the ten matrix rows.
+- **Evidence:** the linked-group scenario commits a new pair under
+  `consumer-reads-a-change-s-linked-ideation-group/{mobile.png,desktop.png}`;
+  the open outline's existing pair is refreshed for the topic row's ideation
+  stack and six-phase header. Both viewports (360x780, 1920x1080), animations
+  disabled.
+
+## Task H13 — `An ideation artifact appearance is recorded as one phase start` (`development-record`, added)
+
+- [ ] **Scenario: `An ideation artifact appearance is recorded as one phase start`** (`@wip` until its RED)
+  - Design constraints:
+    - **Marker table** (the design's *Start markers*): the first
+      `personas/*.md` → label `personas`; `eventstorming.md` → `event-storming`;
+      `use-case-definitions.md` → `use-case-definition`; the first
+      `use-cases/*.md` → `use-case-elaboration`; the first `changes/*.md` or
+      the published `docs/ideation/<topic>.md` → `handoff`. `frame.md` is
+      **not** a marker (Frame is the opening stage).
+    - **Observation scope.** Extend `HistoryRecorder::observe_artifacts`
+      (`src/history.rs`) with the ideation half, reading the **start-resolved
+      `self.scope`** or the **intake's topic override** set by
+      `givn history ingest` (a new override carrier on the recorder; the
+      `main.rs` call stays one `observe_artifacts()`). Never re-resolve the
+      scope for ideation; a change- or project-scoped command records no
+      marker. A command recorded in topic T that appends T's `## Completion`
+      in the same run still observes T, because its start scope is T.
+    - **Change half unchanged.** The existing change-transition path keeps its
+      post-command resolution (needed by `givn new`), its label dedupe, its
+      workflow order, and its gate exclusion; this task must not alter it.
+    - **Dedupe and no backfill.** One `phase` entry per first-observed marker,
+      deduplicated by label **in T's scope** (the store read, never a state
+      diff). A later command that sees the same file emits nothing; a later
+      marker emits its own entry. Existing or finished topics are never
+      backfilled by change/project commands.
+    - **Entry shape.** `kind: "phase"`, `name` and `label` the marker's phase
+      name (bounded), `outcome: "ok"`, `duration_ms: None`, scope
+      `Ideation { id: T }`, parent the observing command's own entry (the
+      recorder flush parents pending entries exactly as it does a change
+      transition), `data` absent.
+    - **Fixture.** One unfinished topic (`givn/ideation/ideas/session.md`
+      without `## Completion`, no active change) so the command resolves to
+      the topic; the `personas/` file is placed before the recorded command,
+      whose end is the first observation (no concurrent-writer race). Then:
+      a second recorded command (dedupe), `eventstorming.md` + a third command
+      (the next marker), and a fourth command after creating an active change
+      (`givn new`) that must add **no** ideation entry. `transitions_for` is
+      change-only: add a topic-scoped `markers_for(entries, topic, label)` to
+      `tests/steps/development_timeline_support.rs`.
+    - **Extra assertions allowed by the same claim:** the marker's `parent`
+      names a `command` entry, and a topic that is already `## Completion` is
+      not scanned by a later change-scoped command (the no-backfill rule).
+    - Files: `src/history.rs` (the ideation half and the override carrier),
+      `src/cli/history.rs` (the intake sets the topic override),
+      `tests/steps/development_record_steps.rs`,
+      `tests/steps/development_timeline_support.rs`.
+    - RED expected failure: the Given and four Then phrases are undefined, and
+      no marker is ever emitted.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::An ideation artifact appearance is recorded as one phase start"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — implement the ideation half, the override carrier, the
+        fixture, and the steps. Files: `src/history.rs`,
+        `src/cli/history.rs`, `tests/steps/development_record_steps.rs`,
+        `tests/steps/development_timeline_support.rs`. Compile, re-run → exit
+        0. Paste it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — one marker table and one dedupe path, separate from the
+        change-transition path; `cargo fmt --all -- --check` and `cargo clippy
+        --locked --all-targets -- -D warnings` green; re-run → still exit 0.
+        Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task H14 — Ideation model: stage list, marker derivation, per-band order, linked group, scope-separated totals (shared prerequisite; no new scenario)
+
+- [ ] **Shared prerequisite: `cli::timeline::tests::ideation_model_maps_markers_to_phases_and_keeps_scope_totals`**
+  - Design constraints:
+    - **`IDEATION_STAGES`** (`src/cli/timeline.rs`): the six names in order.
+      The model's `workflow` for a topic report lists these six; a change
+      report keeps `WORKFLOW_STAGES`' nine.
+    - **Direct marker mapping.** A new derivation maps a marker label directly
+      to its ideation phase (never `artifact_transition`/`stage_opened_by`);
+      entries before the first marker are `frame`; it never yields `None`, so a
+      topic report has **no** `unstaged` group.
+    - **Per-band workflow order.** `band_phases` reads each band's stage order
+      from the band scope's own workflow (change → `WORKFLOW_STAGES`, ideation
+      → `IDEATION_STAGES`), so an ideation band names ideation phases. The one
+      `stages` vector remains the single assignment source.
+    - **Linked group.** `ReportModel.ideation: Option<IdeationGroup>` — `Some`
+      only for a change report — carrying the topic id (the link snapshot), the
+      six `WorkflowPhase`s with the topic report's marker statuses, the group's
+      entry ids, its own totals (duration/tools/subagents/waits), and whether
+      the record has activity. The linked topic's entries join `entries` once
+      and form their own ideation band; they never join the change's band, and
+      the scaffold carries ids/names/totals only.
+    - **Scope-separated totals.** `Summary::of`, the ranking, the wait totals,
+      the KPI facts, and `empty` are computed from the **report scope's own**
+      entries (all entries for the project report; the change's for a change
+      report; the topic's for a topic report), never from the merged vector.
+      `empty` is `model.entries.is_empty()` (no entries anywhere) — a change
+      with no own entries but an active linked topic renders its zero-entry
+      workflow plus the group, never the empty state.
+    - **Input seam.** `build_report_model` gains a resolved link input
+      (`Option<LinkedIdeation> { topic, entries }`), so the model stays pure
+      and deterministic over the record, the state snapshot, and the link
+      snapshot; `run()` resolves the link (H15) and loads the topic's entries.
+      The group's Fit aggregates use its own scale, never the change's.
+    - **Text-view hooks:** the group heading, its phases, and its totals print
+      above the change stack; a group with no activity prints
+      `no recorded activity (pre-dates the record)` and no phases or durations.
+      A topic report prints its six phase lines and its header count of six.
+    - **Unit assertion:** `ideation_model_maps_markers_to_phases_and_keeps_scope_totals`
+      on a direct `build_report_model` call — asserts the six phases in order;
+      a `personas` marker assigns `personas` (not the following change stage);
+      pre-marker entries are `frame` with no `unstaged`; a change + linked topic
+      yields two bands (change band excludes topic ids); `summary.entries`,
+      ranking, and `empty` use the change's entries while the group totals use
+      the topic's; a change with no own entries but an active topic is not
+      `empty`; a report with no entries at all is.
+    - Files: `src/cli/timeline.rs` only.
+    - RED expected failure: the unit test does not compile (no ideation stages,
+      no `ideation` field, no link input).
+  - [ ] **RED** — add the unit test under `#[cfg(test)] mod tests` and run:
+        `cargo test --locked --lib cli::timeline::tests::ideation_model_maps_markers_to_phases_and_keeps_scope_totals`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — add the stages, the derivation, the per-band order, the
+        `IdeationGroup`, the scoped totals, and the link input. File:
+        `src/cli/timeline.rs`. Re-run the unit test → exit 0. Paste it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — one derivation and one scoped-summary selection shared
+        by the topic workflow and the group; `cargo fmt --all -- --check` and
+        `cargo clippy --locked --all-targets -- -D warnings` green; re-run →
+        still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the shared model scope in the body and the unit test. Record the
+        revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task H15 — Link resolution: proposal/seed parsing, normalization, archive fallback, snapshot (shared prerequisite; no new scenario)
+
+- [ ] **Shared prerequisite: `cli::timeline::tests::link_resolution_normalizes_real_proposal_forms`**
+  - Design constraints:
+    - **Sources.** For a change report, read `givn/changes/<id>/proposal.md`;
+      when that directory does not exist, `givn/archive/<id>/proposal.md`.
+      `Ideation topic:` is the primary line; `Seed path:` is the fallback when
+      the topic line is absent. No other file, no project entries, no time
+      proximity, and no mutable topic state.
+    - **Normalization** (before existence): trim surrounding whitespace;
+      strip surrounding backticks and quotes; accept a bare `<id>` or a
+      `givn/ideation/<id>` path (with or without trailing slash) by taking the
+      last segment; a value whose **first token** is `none` — including
+      `none — <reason>` — means no link. A `Seed path` value names the topic by
+      its `givn/ideation/<topic>/changes/` path segment; its filename is not
+      validated (both `<uc-id>` and `<change-id>` seed names occur).
+    - **Existence.** A normalized value that names no existing
+      `givn/ideation/<id>/` directory is no link.
+    - **Snapshot.** `run()` resolves the link once and passes
+      `Option<LinkedIdeation> { topic, entries }` (the topic's store entries)
+      into `build_report_model`; the model embeds the topic id, so the written
+      document is deterministic over record + state snapshot + link snapshot.
+      `givn timeline --topic` does not parse a link.
+    - **Unit assertion:** `link_resolution_normalizes_real_proposal_forms`
+      covers `` `multi-scm-support` ``, `givn/ideation/foo`,
+      `givn/ideation/foo/`, `none`, `none — the change originates…`, an empty
+      value, a `Seed path: givn/ideation/<topic>/changes/<seed>.md`, a value
+      naming no directory, the archive proposal path, and a change whose
+      `givn/changes/<id>` and `givn/archive/<id>` both exist (live wins).
+    - Files: `src/cli/timeline.rs` (the resolver and its tests) and
+      `src/cli/timeline.rs`'s `run()` call site.
+    - RED expected failure: the unit test does not compile (no resolver).
+  - [ ] **RED** — add the unit test and run:
+        `cargo test --locked --lib cli::timeline::tests::link_resolution_normalizes_real_proposal_forms`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — implement the resolver and wire `run()`. File:
+        `src/cli/timeline.rs`. Re-run the unit test → exit 0. Paste it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — one `normalize_link_value` used by both the topic and
+        seed paths; `cargo fmt --all -- --check` and `cargo clippy --locked
+        --all-targets -- -D warnings` green; re-run → still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the link-resolution scope and the unit test in the body. Record the
+        revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task H16 — `An ideation topic report uses the ideation workflow` (`development-report`, added)
+
+- [ ] **Scenario: `An ideation topic report uses the ideation workflow`** (`@wip` until its RED)
+  - Design constraints:
+    - **Header and stack.** A topic report renders the **six** `IDEATION_STAGES`
+      in place of the change workflow, with the header's done count over six
+      ("of 6 phases done" — HE8 asserts it in the browser) and no live change
+      state (`current_state` absent, "no live change state").
+    - **Statuses.** From the recorded markers: the furthest marker in ideation
+      order is `active`, every earlier ideation phase `done`, every later one
+      `queued`; before any marker `frame` is `active` and the rest `queued`.
+      Entries before the first marker are `frame`, never a guessed later phase.
+    - **No change phase, no next artifact.** The topic report names no change
+      phase and no next required artifact.
+    - **No unstaged group.** The ideation derivation always places an entry in
+      an ideation phase, so the "no recorded stage transition" group never
+      appears in a topic report.
+    - **Text view.** `render_view` prints the six phase lines with their
+      statuses (the regular scenario reads the written file). A scope with no
+      entries keeps the empty state.
+    - **Fixture.** An `Ideation { id: ideas }` record holding a pre-marker work
+      entry (Frame), a `phase` entry labelled `personas`, and a `phase` entry
+      labelled `event-storming`, plus the topic's work entries; the report is
+      generated with `--topic ideas`.
+    - Files: `src/cli/timeline.rs` (the ideation workflow rendering and statuses
+      on top of H14's derivation), `tests/steps/development_report_steps.rs`,
+      `tests/steps/development_timeline_support.rs` (the marker fixture).
+    - RED expected failure: the Given and three Then phrases are undefined and
+      the model has no ideation workflow.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::An ideation topic report uses the ideation workflow"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — render the six-phase ideation stack and the three Thens.
+        Files: `src/cli/timeline.rs`,
+        `tests/steps/development_report_steps.rs`,
+        `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
+        it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — one `workflow_stages(scope)` selector feeding the
+        statuses and the stack; `cargo fmt --all -- --check` and `cargo clippy
+        --locked --all-targets -- -D warnings` green; re-run → still exit 0.
+        Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task H17 — `A change report shows its linked ideation group` (`development-report`, added)
+
+- [ ] **Scenario: `A change report shows its linked ideation group`** (`@wip` until its RED)
+  - Design constraints:
+    - **Link + group.** With `Ideation topic: ideas` in the change's
+      `proposal.md` and `givn/ideation/ideas/` existing, the change report
+      renders a labelled **ideation group** (`ReportModel.ideation`) **above**
+      the change workflow: the six ideation phases with the topic report's
+      marker statuses, each expandable into the same lanes and lane log, and
+      the group's **own** duration, tools, subagents, and waits.
+    - **Separate totals.** The change's summary, ranking, KPIs, and `empty` stay
+      the change's; the group's totals come from the topic's entries. The
+      topic's entries form their own ideation band and never join the change's
+      band.
+    - **Text view.** The group heading, its phases, and its totals print above
+      the change stack; the change stack still names its nine phases. The group
+      is historical: it never becomes the change's current phase.
+    - **Fixture.** A real change directory with a `proposal.md` carrying
+      `Ideation topic: ideas`; a topic directory and an `Ideation { id: ideas }`
+      record holding the `personas` marker plus work entries with measured
+      durations; the change's own record entries. The group's duration is the
+      first-to-last topic entry, never an invented value.
+    - Files: `src/cli/timeline.rs` (the group's text view and duration),
+      `tests/steps/development_report_steps.rs` (the Givens and three Thens),
+      `tests/steps/development_timeline_support.rs` (the linked fixture).
+    - RED expected failure: the Givens and three Then phrases are undefined and
+      the model carries no ideation group.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::A change report shows its linked ideation group"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — render the group above the change stack and implement the
+        three Thens. Files: `src/cli/timeline.rs`,
+        `tests/steps/development_report_steps.rs`,
+        `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
+        it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — the group reuses the phase-card renderer and the one
+        group-totals derivation (never a second summary); `cargo fmt --all --
+        --check` and `cargo clippy --locked --all-targets -- -D warnings`
+        green; re-run → still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task H18 — `A linked ideation with no recorded activity is stated` (`development-report`, added)
+
+- [ ] **Scenario: `A linked ideation with no recorded activity is stated`** (`@wip` until its RED)
+  - Design constraints:
+    - **The group header only.** When the linked topic's directory exists but
+      its record holds no entries, the group renders its header with
+      `no recorded activity (pre-dates the record)` and **no invented phases or
+      durations** — no phase lines, no zero-minute duration claimed as the
+      group's work.
+    - **The change still renders.** The change's own workflow and totals are
+      unaffected; `empty` stays false when the change (or the linked topic)
+      holds any entries.
+    - **Snapshot.** The link is embedded at generation; no topic state is read
+      at open time. Topics that predate the record stay empty (R-97).
+    - **Fixture.** A real change whose `proposal.md` links `ideas`; the
+      `givn/ideation/ideas/` directory exists; the store holds **no**
+      `Ideation { id: ideas }` entries; the change's record holds its own work.
+    - Files: `src/cli/timeline.rs` (the no-activity text view),
+      `tests/steps/development_report_steps.rs` (the Givens and two Thens),
+      `tests/steps/development_timeline_support.rs` (the empty-topic fixture).
+    - RED expected failure: the Givens and two Then phrases are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::A linked ideation with no recorded activity is stated"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — implement the no-activity group state. Files:
+        `src/cli/timeline.rs`, `tests/steps/development_report_steps.rs`,
+        `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
+        it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — one `has_activity` branch drives both the text view and
+        the group scaffold; `cargo fmt --all -- --check` and `cargo clippy
+        --locked --all-targets -- -D warnings` green; re-run → still exit 0.
+        Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task H19 — `A change whose proposal names no ideation topic shows no linked group` (`development-report`, added)
+
+- [ ] **Scenario: `A change whose proposal names no ideation topic shows no linked group`** (`@wip` until its RED)
+  - Design constraints:
+    - **No inference.** `Ideation topic: none` in the proposal (and no seed
+      path) resolves to no link: the report renders **no** linked ideation
+      group, no `#hybrid-ideation` markup, no group line — never a group inferred
+      from project entries, time proximity, or the mutable topic state.
+    - **Change workflow intact.** The change workflow still names its own nine
+      phases; the change's totals and empty state are its own.
+    - **Normalization is H15's** (including `none — <reason>`); this scenario
+      pins the `none` form end to end.
+    - **Fixture.** A real change `solo` whose `proposal.md` carries
+      `Ideation topic: none`; a topic directory may exist in the project but is
+      not linked; the change's record holds entries.
+    - Files: `src/cli/timeline.rs` (the no-group rendering already gated by
+      `ReportModel.ideation`), `tests/steps/development_report_steps.rs` (the
+      Given and two Thens), `tests/steps/development_timeline_support.rs`.
+    - RED expected failure: the Given and two Then phrases are undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::A change whose proposal names no ideation topic shows no linked group"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — resolve the `none` form to no group and implement the two
+        Thens. Files: `src/cli/timeline.rs`,
+        `tests/steps/development_report_steps.rs`,
+        `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
+        it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — the absence is the one `ReportModel.ideation.is_none()`
+        condition in the text view and the asset; `cargo fmt --all -- --check`
+        and `cargo clippy --locked --all-targets -- -D warnings` green; re-run →
+        still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task H20 — `An archived change resolves its linked ideation from the archive` (`development-report`, added)
+
+- [ ] **Scenario: `An archived change resolves its linked ideation from the archive`** (`@wip` until its RED)
+  - Design constraints:
+    - **Archive link source.** `givn/changes/<id>` does not exist;
+      `givn/archive/<id>/proposal.md` links `ideas`; the link resolves from the
+      archive (H15's fallback) and the linked group renders **above** the change
+      workflow, exactly as for a live change.
+    - **Archived statuses.** Every change phase is `done`, `current_state` is
+      absent, and no next required artifact is named; the group is historical
+      and never becomes the change's current phase.
+    - **Topic facts.** The topic's record holds the `personas` marker, so the
+      group names the ideation phases and the group's own duration from the
+      topic's entries.
+    - **Fixture.** `givn/archive/demo/proposal.md` with `Ideation topic: ideas`
+      and no `givn/changes/demo`; an `Ideation { id: ideas }` record with the
+      `personas` marker and work entries; the archived change's record entries.
+    - Files: `src/cli/timeline.rs` (already H15/H17's paths; this task proves
+      the archive source end to end), `tests/steps/development_report_steps.rs`
+      (the archived Given and two Thens),
+      `tests/steps/development_timeline_support.rs`.
+    - RED expected failure: the archived Given and two Then phrases are
+      undefined.
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::An archived change resolves its linked ideation from the archive"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — wire the archive proposal path into the existing group
+        rendering and implement the steps. Files: `src/cli/timeline.rs`,
+        `tests/steps/development_report_steps.rs`,
+        `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
+        it.
+        ```
+        PASTE THE GREEN RUN HERE
+        ```
+  - [ ] **REFACTOR** — one proposal-path resolver (live, then archive) read by
+        the link resolution; `cargo fmt --all -- --check` and `cargo clippy
+        --locked --all-targets -- -D warnings` green; re-run → still exit 0.
+        Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+        the scenario title in the body. Record the revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+## Task HE8 — `Consumer reads a change's linked ideation group` (`@e2e`, `development-report`)
+
+- [ ] **Scenario: `Consumer reads a change's linked ideation group`** (`@wip` until its RED)
+  - Design constraints:
+    - Matrix row 6: real interface **Web UI**; Playwright opens the change's
+      report, reads the **`#hybrid-ideation`** group rendered **above**
+      `#hybrid-workflow`, the group's ideation phase names, then expands the
+      group's `personas` phase and reads that phase's **vertical lanes** from
+      the DOM. Real browser driving only (navigate/click/read).
+    - **Asset rewrite.** `assets/timeline/report.html` renders two separate
+      labelled stacks when a link exists: `#hybrid-ideation` (the six ideation
+      phases with the topic report's marker statuses) above `#hybrid-workflow`
+      (the change's nine). The group reuses the same phase-card, lane, tick,
+      lane-log, zoom, and aggregation primitives, and states its **own** totals;
+      it never nests inside `#hybrid-workflow`, so the existing change-stack
+      selectors stay unambiguous. A linked topic with no activity renders the
+      group header with `no recorded activity (pre-dates the record)` and no
+      phase cards. The group is historical — it never becomes the change's
+      current phase or the header's stage.
+    - **Topic report stack.** A topic report's six ideation phases render in the
+      report's main stack (`#hybrid-workflow`, the existing `top to bottom`
+      selector) with the ideation names and no change phase; `#hybrid-ideation`
+      is only the change report's linked group.
+    - **Folded e2e step updates** (no title or tag change):
+      - the open outline's header assertion branches on the report scope:
+        **"of 9 phases done"** for the change row and **"of 6 phases done"** for
+        the topic row (the current step hard-codes "of 9" at
+        `tests/steps/development_report_e2e_steps.rs:439`);
+      - the topic row's top-to-bottom assertion reads the ideation workflow
+        (six cards) while the change row keeps the nine;
+      - the new scenario reuses H13's topic-scoped
+        `markers_for(entries, topic, label)`; `transitions_for` stays
+        change-only;
+      - the open outline's existing pair is refreshed for the topic row's
+        ideation stack and six-phase header.
+    - **Fixture.** A change `demo` whose `proposal.md` links `ideas`; an
+      `Ideation { id: ideas }` record with the `personas` and `event-storming`
+      markers plus parallel-session work entries so the expanded `personas`
+      phase has lanes; the change's own record entries; the report generated
+      from that root.
+    - Steps in `tests/steps/development_report_e2e_steps.rs`; capture with the
+      shared helper under the untouched titles.
+    - **Evidence:** the new pair
+      `evidence/visual/consumer-reads-a-change-s-linked-ideation-group/{mobile.png,desktop.png}`
+      (the linked group and the expanded `personas` phase, both viewports,
+      animations disabled) and the refreshed
+      `evidence/visual/consumer-opens-the-generated-development-report-in-a-browser/{mobile.png,desktop.png}`
+      (the topic row's ideation stack, six-phase header).
+    - Files: `assets/timeline/report.html`, `src/cli/timeline.rs` (only if the
+      browser reads a model/text fact the regular tasks did not add),
+      `tests/steps/development_report_e2e_steps.rs`,
+      `tests/steps/development_timeline_support.rs`, the new and refreshed PNGs.
+    - RED expected failure: the Given/When/Then phrases of the new scenario are
+      undefined, the asset draws no `#hybrid-ideation`, and the open topic row
+      still reads "of 9 phases done".
+  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+        `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer reads a change's linked ideation group"`
+        → must exit non-zero. Paste it.
+        ```
+        PASTE THE NON-ZERO RED RUN HERE
+        ```
+  - [ ] **GREEN** — build `#hybrid-ideation`, reuse the primitives, branch the
+        header count, extend the open step, and add the new steps. Files:
+        `assets/timeline/report.html`, `tests/steps/development_report_e2e_steps.rs`,
+        `tests/steps/development_timeline_support.rs`, plus the new and
+        refreshed PNGs. `node --check`, compile, re-run this scenario **and**
+        the open outline → both exit 0. Paste both.
+        ```
+        PASTE THE GREEN RUN (NEW SCENARIO) HERE
+        ```
+        ```
+        PASTE THE GREEN RUN (OPEN OUTLINE) HERE
+        ```
+  - [ ] **REFACTOR** — one stack renderer shared by the change stack and the
+        group (cards, lanes, log, zoom) with the container id the only
+        difference; `cargo fmt --all -- --check`, `cargo clippy --locked
+        --all-targets -- -D warnings`, and `node --check` green; re-run both →
+        still exit 0. Paste it.
+        ```
+        PASTE THE REFACTOR RUN HERE
+        ```
+  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+        title in the body, a line noting the open-outline topic-row assertion
+        (`of 6`) and its refreshed pair, and the new evidence pair. Record the
+        revision identifier.
+        ```
+        PASTE THE COMMIT AND `git show --stat` HERE
+        ```
+
+**Part-3 done when:** all 7 pending scenarios have completed
+RED/GREEN/REFACTOR loops with pasted evidence and a revision each, H14's
+`ideation_model_maps_markers_to_phases_and_keeps_scope_totals` and H15's
+`link_resolution_normalizes_real_proposal_forms` are green, the marker writer
+observes only the start-resolved/override topic scope with label dedupe and no
+backfill, the topic report renders six phases and "of 6 phases done", a linked
+change renders its group above the change stack with its own totals while the
+change's summary/ranking/KPIs/empty stay its own, the no-link and
+linked-but-empty states are stated, archived links resolve from
+`givn/archive/<id>`, the linked-group pair and the refreshed topic-open pair are
+committed at both viewports, `git grep -c "@wip" -- givn/changes/development-timeline/specs`
+finds none, `givn lint --change development-timeline` exits 0, and both
+`verify.command` and `verify.e2e_command` exit 0 on the full delta. The box
+counts then read **414 total / 414 done / 0 pending**.
 
