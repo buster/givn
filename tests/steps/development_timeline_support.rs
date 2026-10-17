@@ -200,10 +200,19 @@ pub fn seed_ideation_topic_markers(
     markers: &[&str],
 ) -> Vec<HistoryEntry> {
     declare_unfinished_ideation_topic(env, topic);
+    let mut history = SeededHistory::new();
+    push_ideation_topic_entries(&mut history, topic, markers);
+    history.seed(env)
+}
+
+/// Add one topic's marker-bearing entries to a builder: the opening frame's
+/// work, then, for every marker, the `phase` entry that starts it and the work
+/// that phase ran. The caller owns the store write, so a fixture that reports
+/// a change and its linked topic seeds both scopes into one record.
+fn push_ideation_topic_entries(history: &mut SeededHistory, topic: &str, markers: &[&str]) {
     let scope = Scope::Ideation {
         id: topic.to_string(),
     };
-    let mut history = SeededHistory::new();
     // The work the opening frame ran, before any marker exists.
     let frame = history.span(
         &scope,
@@ -214,7 +223,7 @@ pub fn seed_ideation_topic_markers(
     );
     history.label(frame, "givn instructions ideation");
     for (index, marker) in markers.iter().enumerate() {
-        let base_minutes = 30 + index as u32 * 30;
+        let base_minutes = 8 * 60 + 30 + index as u32 * 30;
         let started = history.point(
             &scope,
             "phase",
@@ -231,6 +240,77 @@ pub fn seed_ideation_topic_markers(
         );
         history.label(work, &format!("givn instructions {marker}"));
     }
+}
+
+/// Create the fixture change a linked-ideation report reads: a real change
+/// directory (through `givn new`), its `proposal.md` naming `topic` on its
+/// `Ideation topic:` line, and the topic's own directory. The record is seeded
+/// separately, so a scenario can claim the proposal link and the record's
+/// markers in its own two Givens.
+pub fn create_linked_ideation_change(
+    env: &common::TestEnv,
+    change: &str,
+    topic: &str,
+) -> std::path::PathBuf {
+    let out = common::run_givn(env, &["new", change]);
+    assert!(
+        out.status.success(),
+        "givn new {change} failed: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+    let proposal = env
+        .root()
+        .join("givn")
+        .join("changes")
+        .join(change)
+        .join("proposal.md");
+    std::fs::write(
+        &proposal,
+        format!("# Proposal: {change}\n\n- Ideation topic: {topic}\n"),
+    )
+    .unwrap_or_else(|error| panic!("write the proposal {}: {error}", proposal.display()));
+    declare_unfinished_ideation_topic(env, topic);
+    proposal
+}
+
+/// The change's own recorded work in a linked-ideation fixture: one artifact
+/// transition and two measured steps, recorded after the topic's window, so
+/// the change band and the ideation band stay separate.
+fn push_change_entries(history: &mut SeededHistory, change: &str) {
+    let scope = Scope::Change {
+        id: change.to_string(),
+    };
+    let transition = history.point(&scope, "phase", "proposal.md", "2026-10-16T10:00:00.000Z");
+    history.label(transition, "proposal.md");
+    for (label, at, duration_ms) in [
+        (
+            "givn instructions specs",
+            "2026-10-16T10:30:00.000Z",
+            200_000u64,
+        ),
+        (
+            "cargo test --locked --test features_runner",
+            "2026-10-16T11:30:00.000Z",
+            400_000,
+        ),
+    ] {
+        let step = history.span(&scope, "step", label, at, duration_ms);
+        history.label(step, label);
+    }
+}
+
+/// Seed the record a linked-ideation change report reads: the topic's
+/// marker-bearing entries and the change's own entries, in one store. Returns
+/// the written entries, both scopes included.
+pub fn seed_linked_ideation_record(
+    env: &common::TestEnv,
+    change: &str,
+    topic: &str,
+    markers: &[&str],
+) -> Vec<HistoryEntry> {
+    let mut history = SeededHistory::new();
+    push_ideation_topic_entries(&mut history, topic, markers);
+    push_change_entries(&mut history, change);
     history.seed(env)
 }
 
