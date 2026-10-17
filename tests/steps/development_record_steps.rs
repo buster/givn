@@ -1494,3 +1494,125 @@ fn intake_exits_zero_and_warns_once_that_the_record_is_off(world: &mut GivnWorld
         warnings[0]
     );
 }
+
+#[given(regex = r#"^a change "([^"]+)" whose project sets an unknown record mode$"#)]
+fn change_whose_project_sets_an_unknown_record_mode(world: &mut GivnWorld, id: String) {
+    let env = common::make_init_root();
+    let out = common::run_givn(&env, &["new", &id]);
+    assert!(
+        out.status.success(),
+        "givn new {id} failed: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+    // The project-owned key carries a word no mode names: the record's own
+    // resolver must warn and continue as the default, never fail the config.
+    set_record_mode(&env, "sometimes");
+    world.last_change_id = Some(id);
+    world.env = Some(env);
+}
+
+#[then("the command warns once that the record falls back to the default mode")]
+fn command_warns_once_that_the_record_falls_back_to_the_default(world: &mut GivnWorld) {
+    let out = world
+        .last_output
+        .as_ref()
+        .expect("no `givn` command has been run yet");
+    assert!(
+        out.status.success(),
+        "the lifecycle command failed under an unknown mode: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let lines = String::from_utf8_lossy(&out.stderr);
+    let warnings: Vec<&str> = lines
+        .lines()
+        .filter(|line| line.starts_with("warning:"))
+        .collect();
+    assert_eq!(
+        warnings.len(),
+        1,
+        "expected exactly one warning for the unknown mode (never one per resolver): {lines:?}"
+    );
+    let warning = warnings[0];
+    assert!(
+        warning.contains("record.mode"),
+        "the warning does not name the key: {warning}"
+    );
+    assert!(
+        warning.contains("falls back to the default mode") && warning.contains("(on)"),
+        "the warning does not name the fallback: {warning}"
+    );
+}
+
+#[then("the record holds the command's bounded metadata")]
+fn record_holds_the_commands_bounded_metadata(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let entries = support::record_entries(&env.root());
+    let entry = recorded_command_entry(world, &entries).clone();
+    let change = world
+        .last_change_id
+        .clone()
+        .expect("the unknown-mode fixture ran first");
+    assert_eq!(
+        entry["outcome"],
+        json!("ok"),
+        "the fallback command was not recorded as a run: {entry}"
+    );
+    assert_eq!(
+        entry["scope"],
+        json!({ "kind": "change", "id": change }),
+        "the entry is not scoped to the change: {entry}"
+    );
+    let label = entry["label"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the command entry carries no label: {entry}"));
+    assert!(
+        label.chars().count() <= 120,
+        "the label is not bounded to 120 characters ({}): {entry}",
+        label.chars().count()
+    );
+    assert!(
+        entry["duration_ms"].as_u64().is_some(),
+        "the command entry carries no measured duration: {entry}"
+    );
+    assert_eq!(
+        entry["data"]["exit_code"],
+        json!(0),
+        "the command entry does not carry its exit code: {entry}"
+    );
+}
+
+#[then(regex = r#"^`givn history settings --json` reports mode "([^"]+)" with source "([^"]+)"$"#)]
+fn settings_reports_mode_and_source(world: &mut GivnWorld, mode: String, source: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let before = support::store_bytes(&env.root());
+    let out = common::run_givn(env, &["history", "settings", "--json"]);
+    assert!(
+        out.status.success(),
+        "the settings query failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let payload: Value = serde_json::from_slice(&out.stdout)
+        .unwrap_or_else(|error| panic!("the settings query did not print JSON: {error}"));
+    assert_eq!(
+        payload["mode"],
+        json!(mode),
+        "the settings query reported the wrong mode: {payload}"
+    );
+    assert_eq!(
+        payload["source"],
+        json!(source),
+        "the settings query reported the wrong source: {payload}"
+    );
+    // The query is a read view: it appends no `command` entry.
+    assert_eq!(
+        String::from_utf8_lossy(&before),
+        String::from_utf8_lossy(&support::store_bytes(&env.root())),
+        "the settings query changed the record"
+    );
+}

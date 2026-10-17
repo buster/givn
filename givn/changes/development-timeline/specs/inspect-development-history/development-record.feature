@@ -158,7 +158,7 @@ Feature: Development Record
     And the content field marks truncation and records its original size
     And the entry's content never exceeds the 256 KiB per-entry cap
 
-  @givn.added @wip
+  @givn.added
   Scenario: An invalid record mode falls back to the default
     Given a change "demo" whose project sets an unknown record mode
     When a lifecycle command runs for "demo"
