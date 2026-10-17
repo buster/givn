@@ -177,6 +177,63 @@ pub fn seed_ideation_topic(env: &common::TestEnv, topic: &str) -> Vec<HistoryEnt
     history.seed(env)
 }
 
+/// One fixture instant: `2026-10-16` at `base_minutes` plus `seconds`.
+fn ideation_fixture_at(base_minutes: u32, seconds: u32) -> String {
+    format!(
+        "2026-10-16T{:02}:{:02}:{:02}.000Z",
+        base_minutes / 60,
+        base_minutes % 60,
+        seconds
+    )
+}
+
+/// Seed an ideation topic whose record holds the opening frame's work, then,
+/// for every marker the scenario names, the `phase` entry that starts it and
+/// the work that phase ran. The markers are the ideation stage names the
+/// record carries (`personas`, `event-storming`, …); an entry before the first
+/// marker is the frame's work. The topic directory exists (a real topic), and
+/// its entries are scoped to the topic — never to a change. Returns the
+/// written entries.
+pub fn seed_ideation_topic_markers(
+    env: &common::TestEnv,
+    topic: &str,
+    markers: &[&str],
+) -> Vec<HistoryEntry> {
+    declare_unfinished_ideation_topic(env, topic);
+    let scope = Scope::Ideation {
+        id: topic.to_string(),
+    };
+    let mut history = SeededHistory::new();
+    // The work the opening frame ran, before any marker exists.
+    let frame = history.span(
+        &scope,
+        "step",
+        "ideation",
+        "2026-10-16T08:00:00.000Z",
+        20_000,
+    );
+    history.label(frame, "givn instructions ideation");
+    for (index, marker) in markers.iter().enumerate() {
+        let base_minutes = 30 + index as u32 * 30;
+        let started = history.point(
+            &scope,
+            "phase",
+            marker,
+            &ideation_fixture_at(base_minutes, 0),
+        );
+        history.label(started, marker);
+        let work = history.span(
+            &scope,
+            "step",
+            marker,
+            &ideation_fixture_at(base_minutes, 30),
+            600_000,
+        );
+        history.label(work, &format!("givn instructions {marker}"));
+    }
+    history.seed(env)
+}
+
 /// The steps the out-of-order fixture's record holds, in the order the store
 /// holds them: the second entry's recorded end is earlier than the first's —
 /// exactly what a late intake flush produces — so the store's line order and the
