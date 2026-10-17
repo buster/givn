@@ -19,7 +19,10 @@ def _deduplicate_paths(paths: list[str]) -> list[str]:
 
 
 def check_bubblewrap() -> bool:
-    if os.environ.get("GIVN_HARNESS_NO_SANDLOCK") == "1":
+    if (
+        os.environ.get("GIVN_HARNESS_NO_SANDBOX") == "1"
+        or os.environ.get("GIVN_HARNESS_NO_SANDLOCK") == "1"
+    ):
         return False
     if shutil.which("bwrap") is None:
         return False

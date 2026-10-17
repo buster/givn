@@ -1,5 +1,7 @@
 import json
 import os
+import shutil
+from pathlib import Path
 
 import click
 
@@ -152,7 +154,7 @@ def run(task: str | None, output: str, workspace_root: str, workspace: str | Non
         for s in judge_scores:
             click.echo(f"  {s.artifact}: {s.score}/4 - {s.explanation[:80] if s.explanation else ''}")
 
-    write_report(
+    written_report = write_report(
         checks=checks,
         workspace_path=workspace_path,
         judge_scores=judge_scores,
@@ -160,11 +162,20 @@ def run(task: str | None, output: str, workspace_root: str, workspace: str | Non
         termination=termination,
         agent_log=agent_log,
     )
+    # The index names the report under the output directory; keep the workspace
+    # copy for debugging and publish the indexed copy.
+    Path(report_filename).parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(written_report, report_filename)
     update_index(
         output_dir=output,
         run_id=run_id,
         task=task_name,
         report_path=report_filename,
-        overall_pass=not fail,
+        overall_pass=all(c.passed for c in checks) if checks else not fail,
+        check_pass_count=sum(1 for c in checks if c.passed),
+        judge_avg_score=(
+            sum(s.score for s in judge_scores) / len(judge_scores)
+            if judge_scores else 0.0
+        ),
     )
     click.echo(workspace_path)

@@ -402,11 +402,11 @@ def step_harness_evaluates_workspace(context):
         stdout = '{"score": 3, "explanation": "Good work."}'
         mock_proc.communicate.side_effect = lambda input=None, timeout=None: (stdout, "")
 
-        # The judge passes the prompt through a file (`opencode --prompt-file`),
-        # so the artifact type is read from that file, not from stdin.
+        # The judge passes the prompt through an attached file
+        # (`opencode run --file`), so the artifact type is read from it.
         prompt_text = ""
-        if isinstance(command_list, list) and "--prompt-file" in command_list:
-            prompt_path = command_list[command_list.index("--prompt-file") + 1]
+        if isinstance(command_list, list) and "--file" in command_list:
+            prompt_path = command_list[command_list.index("--file") + 1]
             try:
                 with open(prompt_path) as handle:
                     prompt_text = handle.read()
