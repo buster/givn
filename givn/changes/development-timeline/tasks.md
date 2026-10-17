@@ -3761,7 +3761,7 @@ name it.
 
 ## Task 11h — `An invalid record mode falls back to the default` (`development-record`, added)
 
-- [ ] **Scenario: `An invalid record mode falls back to the default`**
+- [x] **Scenario: `An invalid record mode falls back to the default`**
   - Design constraints:
     - The value is parsed through **`src/config/overlay.rs::OverlayDoc`** (the
       project-config path) as a lenient raw `record` value. A non-string or
@@ -3778,23 +3778,89 @@ name it.
       `src/main.rs` (read-view exemption), `tests/steps/development_record_steps.rs`.
     - RED expected failure: the new Then phrase (`givn history settings --json`
       reporting mode `on` and source `default`) is undefined.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::An invalid record mode falls back to the default"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::An invalid record mode falls back to the default"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: An invalid record mode falls back to the default
+           ✘  Given a change "demo" whose project sets an unknown record mode
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-record.feature:163:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+
+        thread 'main' (3819034) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
         ```
-  - [ ] **GREEN** — implement the parse, the warning, and the settings source;
+  - [x] **GREEN** — implement the parse, the warning, and the settings source;
         compile first, re-run → exit 0. Paste it.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+           Compiling givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.12s
+        BUILD_EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::An invalid record mode falls back to the default"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: An invalid record mode falls back to the default
+           ✔  Given a change "demo" whose project sets an unknown record mode
+           ✔  When a lifecycle command runs for "demo"
+           ✔  Then the command warns once that the record falls back to the default mode
+           ✔  And the record holds the command's bounded metadata
+           ✔  And `givn history settings --json` reports mode "on" with source "default"
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — one parser and one warning site; re-run → still exit 0.
+        Production sites (shared with this bundle's mode core, landed in
+        `fb54192b` because Task 11e's own contract names them):
+        `src/config/overlay.rs` (the lenient raw `record` field and
+        `load_record_block`), `src/history.rs` (`RecordMode`,
+        `record_setting`, the once-per-process `warn_invalid_record_mode`,
+        `should_record`) and `src/cli/history.rs` (`settings` payload/source),
+        `src/main.rs` (`records` read-view exemption). This revision carries the
+        scenario's real assertions that bind the parse, the single warning, the
+        bounded command metadata, and the settings resolution; the Task 11e
+        smoke block above shows the same invalid value reporting
+        `{"mode":"on","source":"default"}` with exactly one warning.
+  - [x] **REFACTOR** — one parser and one warning site; re-run → still exit 0.
         Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        $ cargo fmt --all -- --check
+        FMT_EXIT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.98s
+        CLIPPY_EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-record.feature::An invalid record mode falls back to the default"
+             Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Record
+          Scenario: An invalid record mode falls back to the default
+           ✔  Given a change "demo" whose project sets an unknown record mode
+           ✔  When a lifecycle command runs for "demo"
+           ✔  Then the command warns once that the record falls back to the default mode
+           ✔  And the record holds the command's bounded metadata
+           ✔  And `givn history settings --json` reports mode "on" with source "default"
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-record): <release note>` with
+  - [x] **COMMIT** — `b06e17716a70572b4016775018fbbb06b56da271` — `feat(development-record): <release note>` with
         the scenario title in the body. Record the revision identifier.
 
 ## Task 12 — `A reported tool call is recorded for its scope` (`agent-activity-reporting`, added)
