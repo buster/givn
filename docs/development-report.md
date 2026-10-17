@@ -276,8 +276,9 @@ development-timeline  tasks.md          2026-10-17T10:42:33.994Z  2567
 
 DuckDB's strength is reading the file itself: `read_json_auto` infers the
 schema, structs and nested JSON stay queryable, and window/`QUALIFY` analytics
-run without an import step. In the 2.0 alpha, quote `"at"` (reserved) and add
-`-no-agent` in scripts.
+run without an import step. Install the 2.0 alpha with
+`curl https://install.duckdb.org | DUCKDB_VERSION=alpha bash`; quote `"at"`
+(reserved) and add `-no-agent` in scripts.
 
 **Can I answer from the file without importing it?**
 Read the JSONL directly and group by kind.
@@ -344,7 +345,7 @@ session       kind      name                           s
 - **jq** for ad-hoc questions on the whole file with no setup; its output pipes.
 - **SQLite** for a persistent local database, views, joins, and portable SQL.
 - **DuckDB** for direct JSONL analytics without import, nested JSON, window
-  functions, and Parquet export (`COPY ev TO 'ev.parquet'`).
+  functions, and Parquet export (`COPY (SELECT * FROM read_json_auto('givn/history/events.jsonl', format='newline_delimited')) TO 'ev.parquet'`).
 
 Filter by `scope.kind`/`scope.id` for a change or topic, and exclude the
 recorder's own commands for work analytics.
