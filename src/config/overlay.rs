@@ -376,11 +376,30 @@ pub(crate) struct OverlayDoc {
     /// `load_rules_policy`; ignored by the manifest itself.
     pub(crate) rules: Option<String>,
     /// Project-owned instruction extensions (`extensions:`). Consumed by
-    /// `config::extensions::load`; ignored by the manifest itself.
+    /// `config: extensions::load`; ignored by the manifest itself.
     pub(crate) extensions: Option<ExtensionEntries>,
+    /// The development record's project-owned block (`record:`), read as a raw
+    /// value so an invalid `mode` — a non-string, an unknown word, or a block
+    /// that is not a mapping — is the record resolver's one-warning fallback
+    /// rather than a whole-config parse failure. Consumed by
+    /// `history::record_setting`; ignored by the manifest itself.
+    pub(crate) record: Option<serde_yaml_ng::Value>,
     /// Ignored during overlay processing (used for version tracking).
     #[allow(dead_code)]
     pub(crate) givn_config_version: Option<String>,
+}
+
+/// The raw `record:` block of `givn/config.yaml`, when the file exists and
+/// parses. `None` for a missing file, an unreadable file, or a config the
+/// overlay parser refuses: the record then resolves its default mode.
+///
+/// The value's meaning belongs to the record resolver, never to the overlay:
+/// the parse stays lenient so a broken `record.mode` never stops the work it
+/// would record.
+pub fn load_record_block(project_root: &std::path::Path) -> Option<serde_yaml_ng::Value> {
+    let yaml = std::fs::read_to_string(project_root.join("givn/config.yaml")).ok()?;
+    let doc: OverlayDoc = serde_yaml_ng::from_str(&yaml).ok()?;
+    doc.record
 }
 
 /// Lenient `extensions:` entry list from `givn/config.yaml`.

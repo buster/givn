@@ -32,6 +32,9 @@ pub(crate) struct DevelopmentRecordState {
     /// The ideation topic the fixture declared, for the step that asserts on
     /// "the ideation topic".
     pub(crate) topic: Option<String>,
+    /// The ids the record already held when the off-mode fixture started: the
+    /// earlier entries the developer can still read after the mode is lowered.
+    pub(crate) earlier_ids: Vec<u64>,
 }
 
 /// The verification command the bounded-label fixture declares: it really runs
@@ -1208,5 +1211,286 @@ fn repository_ignore_glob_covers_the_generated_reports(world: &mut GivnWorld) {
     assert!(
         !listing.contains("givn/history/reports/demo.html"),
         "the Fossil checkout reports the generated report as an extra file:\n{listing}"
+    );
+}
+
+/// Write the project-owned `record:` block into `givn/config.yaml`, replacing
+/// an existing block rather than duplicating a top-level key.
+fn set_record_mode(env: &common::TestEnv, mode: &str) {
+    let path = env.path("givn/config.yaml");
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+    let mut kept: Vec<String> = Vec::new();
+    let mut skip = false;
+    let mut replaced = false;
+    for line in text.lines() {
+        let top_level_record = !line.starts_with([' ', '\t', '#']) && line.starts_with("record:");
+        if top_level_record {
+            kept.push("record:".to_string());
+            kept.push(format!("  mode: {mode}"));
+            skip = true;
+            replaced = true;
+            continue;
+        }
+        if skip {
+            if line.starts_with("  ") || line.starts_with('\t') || line.trim().is_empty() {
+                continue;
+            }
+            skip = false;
+        }
+        kept.push(line.to_string());
+    }
+    if !replaced {
+        kept.push("record:".to_string());
+        kept.push(format!("  mode: {mode}"));
+    }
+    std::fs::write(&path, kept.join("\n") + "\n")
+        .unwrap_or_else(|error| panic!("write {}: {error}", path.display()));
+}
+
+/// Remove every record-side ignore block the fixture's earlier commands wrote,
+/// so the off-mode assertion observes the lifecycle command's own behaviour
+/// instead of a block that was already there.
+fn clear_record_ignore_blocks(env: &common::TestEnv) {
+    for path in [env.path(".git/info/exclude"), env.path(".gitignore")] {
+        remove_history_block(&path);
+        assert!(
+            history_block(&std::fs::read_to_string(&path).unwrap_or_default()).is_none(),
+            "the fixture could not clear the record block in {}",
+            path.display()
+        );
+    }
+}
+
+#[given(regex = r#"^a change "([^"]+)" whose record already holds entries$"#)]
+fn change_whose_record_already_holds_entries(world: &mut GivnWorld, id: String) {
+    // A real Git worktree, so the record-side ignore write the off mode must
+    // skip has a destination the assertion can observe.
+    let env = common::make_init_root();
+    for args in [
+        vec!["new".to_string(), id.clone()],
+        vec!["status".to_string(), "--change".to_string(), id.clone()],
+    ] {
+        let argv: Vec<&str> = args.iter().map(String::as_str).collect();
+        let out = common::run_givn(&env, &argv);
+        assert!(
+            out.status.success(),
+            "givn {} failed: {}",
+            args.join(" "),
+            String::from_utf8_lossy(&out.stderr),
+        );
+    }
+    let entries = support::record_entries(&env.root());
+    assert!(
+        !entries.is_empty(),
+        "the fixture recorded no entries at all: {entries:#?}"
+    );
+    let state = world
+        .development_record
+        .get_or_insert_with(DevelopmentRecordState::default);
+    let scoped: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| entry["scope"] == json!({ "kind": "change", "id": id }))
+        .collect();
+    assert!(
+        !scoped.is_empty(),
+        "the fixture recorded no entry for the change: {entries:#?}"
+    );
+    state.earlier_ids = scoped
+        .iter()
+        .map(|entry| {
+            entry["id"]
+                .as_u64()
+                .unwrap_or_else(|| panic!("an entry carries no numeric id: {entry}"))
+        })
+        .collect();
+    state.store_before = Some(support::store_bytes(&env.root()));
+    world.last_change_id = Some(id);
+    world.env = Some(env);
+}
+
+#[when(regex = r#"^the project sets the record mode to "([^"]+)"$"#)]
+fn project_sets_the_record_mode(world: &mut GivnWorld, mode: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    set_record_mode(env, &mode);
+    // The fixture clears the blocks earlier commands wrote, so "no ignore
+    // entry is written" is about the command under observation.
+    clear_record_ignore_blocks(env);
+}
+
+#[when(regex = r#"^a lifecycle command runs for "([^"]+)"$"#)]
+fn a_lifecycle_command_runs_for(world: &mut GivnWorld, id: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let out = common::run_givn(env, &["status", "--change", &id]);
+    world.last_command = Some("status".to_string());
+    world.last_output = Some(out);
+}
+
+#[then("the record gains no new entry")]
+fn the_record_gains_no_new_entry(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let before = world
+        .development_record
+        .as_ref()
+        .and_then(|state| state.store_before.clone())
+        .expect("the recorded-entries fixture ran first");
+    let after = support::store_bytes(&env.root());
+    assert_eq!(
+        String::from_utf8_lossy(&before),
+        String::from_utf8_lossy(&after),
+        "the command appended to the record although the mode is off"
+    );
+}
+
+#[then("the record directory gains no pending state")]
+fn the_record_directory_gains_no_pending_state(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let pending = env.path("givn/history/pending");
+    let entries = std::fs::read_dir(&pending)
+        .map(|entries| entries.count())
+        .unwrap_or(0);
+    assert_eq!(
+        entries,
+        0,
+        "the off-mode command created pending state under {}",
+        pending.display()
+    );
+    // Not vacuous: the record's own directory still holds the earlier entries.
+    assert!(
+        support::store_file(&env.root()).is_file(),
+        "the fixture's earlier entries are gone: the assertion above would be vacuous"
+    );
+}
+
+#[then("no record-side ignore entry is written")]
+fn no_record_side_ignore_entry_is_written(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    for path in [env.path(".git/info/exclude"), env.path(".gitignore")] {
+        let text = std::fs::read_to_string(&path).unwrap_or_default();
+        assert!(
+            history_block(&text).is_none(),
+            "the off-mode command wrote the record's ignore block to {}",
+            path.display()
+        );
+    }
+}
+
+#[then(regex = r#"^the developer still reads the earlier entries for "([^"]+)"$"#)]
+fn developer_still_reads_the_earlier_entries(world: &mut GivnWorld, id: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let earlier = world
+        .development_record
+        .as_ref()
+        .map(|state| state.earlier_ids.clone())
+        .expect("the recorded-entries fixture ran first");
+    assert!(
+        !earlier.is_empty(),
+        "the fixture recorded no earlier entries to read back"
+    );
+    let out = common::run_givn(env, &["history", "--change", &id, "--json"]);
+    assert!(
+        out.status.success(),
+        "reading the earlier entries failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let entries: Vec<Value> = serde_json::from_slice(&out.stdout)
+        .unwrap_or_else(|error| panic!("the read view did not print JSON: {error}"));
+    let ids: BTreeSet<u64> = entries
+        .iter()
+        .filter_map(|entry| entry["id"].as_u64())
+        .collect();
+    for id in &earlier {
+        assert!(
+            ids.contains(id),
+            "lowering the mode hid the earlier entry {id}: {entries:#?}"
+        );
+    }
+    // The lowering is forward-looking: the read view appended nothing.
+    let before = world
+        .development_record
+        .as_ref()
+        .and_then(|state| state.store_before.clone())
+        .expect("the recorded-entries fixture ran first");
+    assert_eq!(
+        String::from_utf8_lossy(&before),
+        String::from_utf8_lossy(&support::store_bytes(&env.root())),
+        "the read view changed the record"
+    );
+    world.last_output = Some(out);
+}
+
+#[when("the agent reports a tool call with its complete input through the intake")]
+fn agent_reports_a_tool_call_with_complete_input(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let payload = support::intake_payload(
+        Some("demo"),
+        None,
+        vec![json!({
+            "kind": "tool",
+            "at": "2026-10-17T09:00:00.000Z",
+            "tool": "Bash",
+            "label": "cargo test --locked",
+            "outcome": "ok",
+            "content": {
+                "tool_input": {
+                    "text": "cargo test --locked",
+                    "truncated": false,
+                    "bytes": 19
+                }
+            }
+        })],
+    );
+    // The one-shot override would raise a live project to `full`; under `off`
+    // it must be ignored with the same one warning.
+    let out = support::report_intake_with_args(env, &payload, &["--with-full-content"]);
+    world.last_output = Some(out);
+}
+
+#[then("the intake exits 0 and warns once that the record is off")]
+fn intake_exits_zero_and_warns_once_that_the_record_is_off(world: &mut GivnWorld) {
+    let out = world
+        .last_output
+        .as_ref()
+        .expect("no `givn` command has been run yet");
+    assert!(
+        out.status.success(),
+        "the off-mode intake did not exit 0: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let lines = String::from_utf8_lossy(&out.stderr);
+    let warnings: Vec<&str> = lines
+        .lines()
+        .filter(|line| line.contains("record is off"))
+        .collect();
+    assert_eq!(
+        warnings.len(),
+        1,
+        "expected exactly one warning that the record is off: {lines:?}"
+    );
+    assert!(
+        warnings[0].starts_with("warning:"),
+        "the line is not a warning: {}",
+        warnings[0]
     );
 }

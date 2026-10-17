@@ -54,9 +54,46 @@ const usageOf = (tokens) => {
   return Object.keys(counts).length > 0 ? counts : undefined
 }
 
+/**
+ * The project's capture mode: one `givn history settings --json` subprocess
+ * query at plugin setup, cached for the session. A failed or malformed query
+ * degrades to `on` — metadata only — and never blocks the harness's own work.
+ */
+const queryMode = () =>
+  new Promise((resolve) => {
+    let output = ""
+    let child
+    try {
+      child = spawn("givn", ["history", "settings", "--json"], {
+        stdio: ["ignore", "pipe", "ignore"],
+      })
+    } catch {
+      resolve("on")
+      return
+    }
+    child.stdout?.on("data", (chunk) => {
+      output += chunk
+    })
+    child.on("error", () => resolve("on"))
+    child.on("close", () => {
+      try {
+        const parsed = JSON.parse(output)
+        resolve(["off", "on", "full"].includes(parsed.mode) ? parsed.mode : "on")
+      } catch {
+        resolve("on")
+      }
+    })
+  })
+
 export default {
   id: "givn-timeline",
   async setup(ctx) {
+    // The mode is resolved once per session before any registration: under
+    // `off` the reporter registers nothing, buffers nothing, and writes
+    // nothing (the intake refuses a stale payload too).
+    if ((await queryMode()) === "off") {
+      return () => {}
+    }
     let session
     let buffer = []
     let dropped = 0

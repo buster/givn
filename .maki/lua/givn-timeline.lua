@@ -252,6 +252,53 @@ local function flush(timeout_ms)
   end
 end
 
+-- The project's capture mode: one subprocess query at the first event
+-- callback, cached for the process. A failed or malformed query degrades to
+-- "on" — metadata only — and never blocks the harness's own work.
+local mode = nil
+
+local function record_mode()
+  if mode ~= nil then
+    return mode
+  end
+  local resolved = nil
+  local ok = pcall(function()
+    local path = payload_path() .. ".mode"
+    local job, job_err = maki.fn.jobstart(
+      { "sh", "-c", "givn history settings --json > '" .. path .. "' 2>/dev/null" },
+      { scope = "plugin" }
+    )
+    if not job then
+      error(job_err)
+    end
+    local result, wait_err = maki.fn.jobwait(job, JOB_TIMEOUT_MS)
+    if not result then
+      maki.fs.rm(path)
+      error(wait_err)
+    end
+    local text = maki.fs.read(path)
+    maki.fs.rm(path)
+    if type(text) ~= "string" then
+      error("no settings output")
+    end
+    local decoded, decode_err = maki.json.decode(text)
+    if type(decoded) ~= "table" then
+      error(decode_err)
+    end
+    if decoded.mode == "off" or decoded.mode == "on" or decoded.mode == "full" then
+      resolved = decoded.mode
+    else
+      error("the settings query reported no known mode")
+    end
+  end)
+  if not ok or resolved == nil then
+    logged_once("mode", "the record mode could not be read; treating it as on")
+    resolved = "on"
+  end
+  mode = resolved
+  return mode
+end
+
 -- The callback table, exported so a test driver can drive a handler directly;
 -- the host reaches the same table through `setup()`.
 local handlers = {}
@@ -453,6 +500,9 @@ function M.setup()
     local ok, err = pcall(function()
       maki.api.create_autocmd(event, {
         callback = function(ev)
+          if record_mode() == "off" then
+            return
+          end
           if ev and ev.data and ev.data.session_id then
             last_session = ev.data.session_id
           end

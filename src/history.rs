@@ -317,6 +317,12 @@ impl HistoryRecorder {
     /// Best-effort by construction: a store that cannot be written warns and
     /// continues, and the outcome of the command itself is untouched.
     pub fn finish(&self, outcome: &str, exit_code: i32) {
+        // `off` is absolute: no store append, no pending state, and no
+        // record-side ignore write. The mode is resolved before anything is
+        // created, so a disabled project gains no file from its own commands.
+        if !should_record(&self.root) {
+            return;
+        }
         // The engagement rule, checked before anything is created: a root with
         // no Givn scaffold receives no record, no ignore block, and no
         // directory.
@@ -493,16 +499,132 @@ pub fn reported_label(kind: &str, subject: &str) -> String {
 }
 
 /// The project's capture mode: what the record stores for new activity.
-///
-/// Task 11e extends this enumeration with the project-config `off` state and
-/// its resolver; the intake's content gate uses the `on`/`full` distinction
-/// from the start.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RecordMode {
+    /// Nothing new: no store append, no pending state, no ignore write.
+    Off,
     /// Every available metadata field, bounded; no LLM-facing content.
     On,
     /// `on` plus the complete content set, under the content caps.
     Full,
+}
+
+impl RecordMode {
+    /// The mode's own label, as `givn history settings` reports it.
+    pub fn label(self) -> &'static str {
+        match self {
+            RecordMode::Off => "off",
+            RecordMode::On => "on",
+            RecordMode::Full => "full",
+        }
+    }
+
+    /// The mode a `record.mode` word names, or `None` when it names none.
+    fn parse(value: &str) -> Option<Self> {
+        match value {
+            "off" => Some(RecordMode::Off),
+            "on" => Some(RecordMode::On),
+            "full" => Some(RecordMode::Full),
+            _ => None,
+        }
+    }
+}
+
+/// Where the resolved mode came from: the project's own key, or the default.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RecordModeSource {
+    /// The `record.mode` key supplied the mode.
+    Config,
+    /// No valid key supplied it; the default (`on`) applies.
+    Default,
+}
+
+impl RecordModeSource {
+    /// The source's own label, as `givn history settings` reports it.
+    pub fn label(self) -> &'static str {
+        match self {
+            RecordModeSource::Config => "config",
+            RecordModeSource::Default => "default",
+        }
+    }
+}
+
+/// The resolved capture mode and where it came from — the one value every
+/// capture point and `givn history settings` read.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RecordSetting {
+    /// The resolved mode.
+    pub mode: RecordMode,
+    /// Whether the project's key supplied it.
+    pub source: RecordModeSource,
+}
+
+/// Resolve the project's capture mode from `givn/config.yaml` through the
+/// lenient `record:` block (`src/config/overlay.rs::OverlayDoc`).
+///
+/// An absent key, or no config at all, resolves to `on`/`default` silently.
+/// A `record` block that is not a mapping, a `mode` that is not a string, and
+/// an unknown mode word all resolve to `on`/`default` with one warning per
+/// process naming the key and the fallback — a broken value never fails the
+/// config parse or stops the work being recorded.
+pub fn record_setting(root: &Path) -> RecordSetting {
+    let default = RecordSetting {
+        mode: RecordMode::On,
+        source: RecordModeSource::Default,
+    };
+    let Some(record) = crate::config::overlay::load_record_block(root) else {
+        return default;
+    };
+    match record.get("mode") {
+        Some(value) => match value.as_str().and_then(RecordMode::parse) {
+            Some(mode) => RecordSetting {
+                mode,
+                source: RecordModeSource::Config,
+            },
+            None => {
+                warn_invalid_record_mode(value);
+                default
+            }
+        },
+        None => {
+            // A `record:` scalar or sequence is a value the key cannot mean;
+            // an empty mapping simply carries no `mode` and keeps the default.
+            if record.as_mapping().is_none() {
+                warn_invalid_record_mode(&record);
+            }
+            default
+        }
+    }
+}
+
+/// The one warning an invalid `record.mode` prints per process: it names the
+/// key, the offending value, and the fallback, and never refuses anything.
+fn warn_invalid_record_mode(value: &serde_yaml_ng::Value) {
+    use std::sync::Once;
+    static WARNED: Once = Once::new();
+    let rendered = match value {
+        serde_yaml_ng::Value::String(text) => text.clone(),
+        other => format!("{other:?}"),
+    };
+    WARNED.call_once(|| {
+        eprintln!(
+            "warning: invalid record.mode value `{rendered}` in givn/config.yaml; the record falls back to the default mode (on)"
+        );
+    });
+}
+
+/// Whether this process may append to the record: every capture point — the
+/// command recorder, the agent intake, and the process-per-hook mapper — asks
+/// this before it touches the store, the pending state, or an ignore file.
+pub fn should_record(root: &Path) -> bool {
+    record_setting(root).mode != RecordMode::Off
+}
+
+/// The one line an enforcement site prints when the project's mode is `off`:
+/// the command still exits `0`, because the record never changes the outcome
+/// of the work it observes.
+pub fn warn_record_off() {
+    eprintln!("warning: the development record is off for this project; nothing was recorded");
 }
 
 /// The always-captured question text's cap, in characters: the one content
