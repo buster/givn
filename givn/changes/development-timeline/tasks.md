@@ -12074,7 +12074,7 @@ Repository checks are secondary only.
 
 ## Task H4 — `The report derives the current workflow state` (`development-report`, added)
 
-- [ ] **Scenario: `The report derives the current workflow state`** (`@wip` until its RED)
+- [x] **Scenario: `The report derives the current workflow state`** (`@wip` until its RED)
   - Design constraints:
     - **Source of the state.** For a change scope whose directory exists at
       `givn/changes/<id>`, `givn timeline` reads the change's derived state
@@ -12138,31 +12138,93 @@ Repository checks are secondary only.
       real-change fixture).
     - RED expected failure: the new Given/Then phrases are undefined and the
       model has no current state or statuses.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report derives the current workflow state"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Report
+          Scenario: The report derives the current workflow state
+           ✘  Given a change "demo" whose record holds the workflow phases up to "tasks"
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:59:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+
+        thread 'main' (4019835) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
         ```
-  - [ ] **GREEN** — implement the mapping, the statuses, the header, and the
+  - [x] **GREEN** — implement the mapping, the statuses, the header, and the
         text view. Files: `src/cli/timeline.rs`,
         `tests/steps/development_report_steps.rs`,
         `tests/steps/development_timeline_support.rs`. Re-run → exit 0. Paste
         it.
         ```
-        PASTE THE GREEN RUN HERE
+        Feature: Development Report
+          Scenario: The report derives the current workflow state
+           ✔  Given a change "demo" whose record holds the workflow phases up to "tasks"
+           ✔  And the change's artifacts make its derived state "tasks-done" with the next required artifact "review"
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report names the current stage "tasks-done"
+           ✔  And the report marks the phases before "review" done
+           ✔  And the report marks "review" active
+           ✔  And the report marks "archive" queued
+           ✔  And the report names no phase the workflow does not have
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        EXIT=0
         ```
-  - [ ] **REFACTOR** — one id→phase mapping and one status pass shared by the
+  - [x] **REFACTOR** — one id→phase mapping and one status pass shared by the
         header, the stack, and the text view; `cargo fmt --all -- --check` and
         `cargo clippy --locked --all-targets -- -D warnings` green; re-run →
         still exit 0. Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+
+        Feature: Development Report
+          Scenario: The report derives the current workflow state
+           ✔  Given a change "demo" whose record holds the workflow phases up to "tasks"
+           ✔  And the change's artifacts make its derived state "tasks-done" with the next required artifact "review"
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report names the current stage "tasks-done"
+           ✔  And the report marks the phases before "review" done
+           ✔  And the report marks "review" active
+           ✔  And the report marks "archive" queued
+           ✔  And the report names no phase the workflow does not have
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `130d2066` — `feat(development-report): derive the current workflow state from a live change` with
         the scenario title in the body. Record the revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit 130d20661dbf65e9eaf0c9590ede8a91a89163c1
+        feat(development-report): derive the current workflow state from a live change
+
+        The report derives the current workflow state
+
+        The fixture drives a real change directory whose artifact files make the
+        production state derive tasks-done with review next; the written report states
+        the stage label, the mapped current phase, the next artifact, and the task
+        counts, and marks the phases before review done, review active, and archive
+        queued. The header names the stage and the phase separately, and no phase
+        outside the nine is ever named.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../development-report.feature                     |   2 +-
+         tests/steps/development_report_steps.rs            | 192 +++++++++++++++++++++
+         tests/steps/development_timeline_support.rs        |  49 ++++++
+         3 files changed, 242 insertions(+), 1 deletion(-)
         ```
 
 ## Task H5 — `The report lays parallel sessions side by side` (`development-report`, added)
