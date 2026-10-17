@@ -273,6 +273,37 @@ pub fn create_linked_ideation_change(
     proposal
 }
 
+/// The topic directory a no-link fixture leaves in the project: it exists, but
+/// the change's proposal does not name it, so no group may be inferred from
+/// it, from the project's entries, or from time proximity.
+pub const UNLINKED_TOPIC: &str = "ideas";
+
+/// Create the fixture change whose proposal explicitly names no ideation topic
+/// (`Ideation topic: none`), leave the unlinked topic directory in the
+/// project, and seed only the change's own work. Returns the written change
+/// entries.
+pub fn seed_unlinked_change(env: &common::TestEnv, change: &str) -> Vec<HistoryEntry> {
+    let out = common::run_givn(env, &["new", change]);
+    assert!(
+        out.status.success(),
+        "givn new {change} failed: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+    let proposal = env
+        .root()
+        .join("givn")
+        .join("changes")
+        .join(change)
+        .join("proposal.md");
+    std::fs::write(
+        &proposal,
+        format!("# Proposal: {change}\n\n- Ideation topic: none\n"),
+    )
+    .unwrap_or_else(|error| panic!("write the proposal {}: {error}", proposal.display()));
+    declare_unfinished_ideation_topic(env, UNLINKED_TOPIC);
+    seed_change_record(env, change)
+}
+
 /// The change's own recorded work in a linked-ideation fixture: one artifact
 /// transition and two measured steps, recorded after the topic's window, so
 /// the change band and the ideation band stay separate.

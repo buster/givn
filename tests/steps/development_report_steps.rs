@@ -4378,3 +4378,79 @@ fn report_invents_no_ideation_phase_duration(world: &mut GivnWorld) {
         );
     }
 }
+
+#[given(regex = r#"^a change "([^"]+)" whose proposal records "Ideation topic: none"$"#)]
+fn change_whose_proposal_records_no_topic(world: &mut GivnWorld, change: String) {
+    let seeded = {
+        let env = project_root(world);
+        let seeded = support::seed_unlinked_change(env, &change);
+        // The fixture's own claims: the proposal says none, and an unlinked
+        // topic directory exists that the record does not mention.
+        let proposal =
+            std::fs::read_to_string(env.path(&format!("givn/changes/{change}/proposal.md")))
+                .unwrap_or_else(|error| panic!("read the proposal: {error}"));
+        assert!(
+            proposal
+                .lines()
+                .any(|line| line.trim() == "- Ideation topic: none"),
+            "the fixture's proposal does not record the none form: {proposal}"
+        );
+        assert!(
+            env.path(&format!("givn/ideation/{}", support::UNLINKED_TOPIC))
+                .is_dir(),
+            "the fixture leaves no unlinked topic directory"
+        );
+        assert!(
+            seeded
+                .iter()
+                .all(|entry| matches!(entry.scope, Scope::Change { .. })),
+            "the fixture seeded entries outside the change: {seeded:#?}"
+        );
+        seeded
+    };
+    state(world).seeded = seeded;
+    world.last_change_id = Some(change);
+}
+
+#[then("the report names no linked ideation group")]
+fn report_names_no_linked_ideation_group(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    assert!(
+        model.get("ideation").is_none(),
+        "the report carries a linked ideation group: {model:#?}"
+    );
+    for marker in ["ideation-group", "Ideation:", "ideation-totals"] {
+        assert!(
+            !document.contains(marker),
+            "the report renders {marker}: {document}"
+        );
+    }
+}
+
+#[then("the report names the change workflow phases")]
+fn report_names_the_change_workflow_phases(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let stages: Vec<&str> = model["workflow"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the report carries no workflow: {model:#?}"))
+        .iter()
+        .map(|phase| {
+            phase["stage"]
+                .as_str()
+                .unwrap_or_else(|| panic!("a workflow phase carries no stage: {phase}"))
+        })
+        .collect();
+    assert_eq!(
+        stages,
+        WORKFLOW_PHASES.to_vec(),
+        "the change report does not name its own phases: {model:#?}"
+    );
+    let stack = workflow_stack_region(&document);
+    assert_eq!(
+        text_view_phases(&stack),
+        WORKFLOW_PHASES.to_vec(),
+        "the change stack does not name its own phases: {stack}"
+    );
+}
