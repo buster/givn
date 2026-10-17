@@ -7563,7 +7563,7 @@ name it.
 
 ## Task 25b — `The report details panel carries the captured metadata and content` (`development-report`, added)
 
-- [ ] **Scenario: `The report details panel carries the captured metadata and content`**
+- [x] **Scenario: `The report details panel carries the captured metadata and content`**
   - Design constraints:
     - The fixture is a `demo` record holding the captured metadata and
       `full`-mode `data.content`; the content exceeds the 8 MiB report budget, so
@@ -7601,24 +7601,106 @@ name it.
     - RED expected failure: the new Then phrases (facts list, budget, omission
       note, store completeness) are undefined, and the extended E7 assertions
       match no step function.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report details panel carries the captured metadata and content"`
         → must exit non-zero. Paste it.
         ```
-        <!-- paste RED evidence (command + output, non-zero exit) -->
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report details panel carries the captured metadata and content"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report details panel carries the captured metadata and content
+           ✘  Given a change "demo" whose record holds captured metadata and full-mode content
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:74:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+
+        thread 'main' (3870571) panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+        1 step failed
+        error: test failed, to rerun pass `--test features_runner`
+        EXIT=101
         ```
-  - [ ] **GREEN** — implement the facts/budget/omission rendering, extend the E7
+        The E7 extension's new assertion also matches no step function before
+        its step is added (`the panel names the entry's tool call id`), which is
+        the same undefined-step RED for the `@e2e` half.
+  - [x] **GREEN** — implement the facts/budget/omission rendering, extend the E7
         assertions, re-run both scenarios → exit 0, and refresh the E7 captures.
         Paste both runs and the refreshed capture list.
         ```
-        <!-- paste GREEN evidence (command + output, exit 0) -->
+        $ cargo build --locked
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.94s
+        BUILD_EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report details panel carries the captured metadata and content"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: The report details panel carries the captured metadata and content
+           ✔  Given a change "demo" whose record holds captured metadata and full-mode content
+           ✔  When the developer generates the development report for "demo"
+           ✔  Then the report model names the session, its title, the status, the stop reason, the cost, the context size and window, the tool call id, the output size, the error, the parent, the retry, and the permission mode
+           ✔  And the report embeds the content within the 8 MiB documented budget
+           ✔  And the report notes "content omitted; see the record" beyond the budget
+           ✔  And the development record still holds every content byte
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer selects a timeline element and reads its details"
+             Running tests/features_runner.rs (target/debug/deps/features_runner-df7905ed6a10ceaf)
+        Feature: Development Report
+          Scenario: Consumer selects a timeline element and reads its details
+           ✔  Given an open development report with a recorded history
+           ✔  When the consumer selects the longest recorded step
+           ✔  Then the browser shows a details panel for that step
+           ✔  And the panel names its start, its duration, and its outcome
+           ✔  And the panel names the entry's tool call id
+           ✔  And the panel renders the entry's content in its bounded content region
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        EXIT=0
+
+        Refreshed E7 captures (written by the scenario's own
+        `capture_evidence_from`, committed with this revision):
+          givn/changes/development-timeline/evidence/visual/consumer-selects-a-timeline-element-and-reads-its-details/desktop.png
+          givn/changes/development-timeline/evidence/visual/consumer-selects-a-timeline-element-and-reads-its-details/mobile.png
         ```
-  - [ ] **REFACTOR** — one fact renderer and one content-budget pass; re-run →
+  - [x] **REFACTOR** — one fact renderer and one content-budget pass; re-run →
         still exit 0. Paste it.
         ```
-        <!-- paste REFACTOR evidence (command + output, exit 0) -->
+        $ cargo fmt --all -- --check
+        FMT_EXIT=0
+        $ cargo clippy --locked --all-targets -- -D warnings
+            Checking givn v0.9.0 (/home/buster/projects/givn)
+            Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.55s
+        CLIPPY_EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::The report details panel carries the captured metadata and content"
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        REGULAR_EXIT=0
+
+        $ GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer selects a timeline element and reads its details"
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        E7_EXIT=0
+
+        The facts are rendered by one `panelFacts`/`fillPanel` pair (with the
+        one `retryText` formatter), the content region by one `fillContent`, and
+        the budget by one `apply_content_budget` pass whose omission marker and
+        note are read by the text view, the model payload, and the panel alike.
         ```
-  - [ ] **COMMIT** — `<hash>` — `feat(development-report): <release note>` with
+  - [x] **COMMIT** — `415fdea0c44d3c80d932aa6d843d65d4a83d8c16` — `feat(development-report): <release note>` with
         this scenario's title in the body and a line noting the E7 assertion
         extension (same scenario/action; no new `@e2e`). Record the revision
         identifier.
