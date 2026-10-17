@@ -12963,7 +12963,7 @@ Repository checks are secondary only.
 
 ## Task HE1 — `Consumer generates the development report for a change` (`@e2e`, `development-report`)
 
-- [ ] **Scenario: `Consumer generates the development report for a change`** (`@wip` until its RED)
+- [x] **Scenario: `Consumer generates the development report for a change`** (`@wip` until its RED)
   - Design constraints:
     - Matrix row 4: real interface **CLI**; driving mechanism `common::run_givn`:
       `givn timeline --change demo --out report.html`; the assertion reads the
@@ -13000,32 +13000,96 @@ Repository checks are secondary only.
       `tests/steps/development_timeline_support.rs`, the two refreshed PNGs.
     - RED expected failure: `names the workflow phases` is undefined (the old
       phrase binds) and the text view cannot yet name a phase stack.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer generates the development report for a change"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Report
+          Scenario: Consumer generates the development report for a change
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" with a recorded history whose last recorded artifact transition is "tasks.md"
+           ✔  When the user runs `givn timeline --change demo --out report.html`
+           ✔  Then the command exits 0
+           ✔  And the command prints the path of the written report
+           ✘  And the report file exists and names the workflow phases
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:144:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        6 steps (5 passed, 1 failed)
+        EXIT=101
         ```
-  - [ ] **GREEN** — implement the workflow-phase text view and the step. Files:
+  - [x] **GREEN** — implement the workflow-phase text view and the step. Files:
         `src/cli/timeline.rs`, `tests/steps/development_report_e2e_steps.rs`,
         `tests/steps/development_timeline_support.rs`, plus the refreshed pair.
         Compile first, re-run → exit 0. Paste it and the refreshed capture
         list.
         ```
-        PASTE THE GREEN RUN HERE
+        Feature: Development Report
+          Scenario: Consumer generates the development report for a change
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" with a recorded history whose last recorded artifact transition is "tasks.md"
+           ✔  When the user runs `givn timeline --change demo --out report.html`
+           ✔  Then the command exits 0
+           ✔  And the command prints the path of the written report
+           ✔  And the report file exists and names the workflow phases
+           ✔  And the report file places the step recorded after that transition in the "implement" phase
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
+        EXIT=0
+
+        consumer-generates-the-development-report-for-a-change/desktop.png 187683 bytes
+        consumer-generates-the-development-report-for-a-change/mobile.png   54146 bytes
         ```
-  - [ ] **REFACTOR** — one phase-line renderer shared by the text view's stack
+  - [x] **REFACTOR** — one phase-line renderer shared by the text view's stack
         and the no-stage group; `cargo fmt --all -- --check` and `cargo clippy
         --locked --all-targets -- -D warnings` green; re-run → still exit 0.
         Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+
+        Feature: Development Report
+          Scenario: Consumer generates the development report for a change
+           ✔  Given a project root with givn/ initialised
+           ✔  And a change "demo" with a recorded history whose last recorded artifact transition is "tasks.md"
+           ✔  When the user runs `givn timeline --change demo --out report.html`
+           ✔  Then the command exits 0
+           ✔  And the command prints the path of the written report
+           ✔  And the report file exists and names the workflow phases
+           ✔  And the report file places the step recorded after that transition in the "implement" phase
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+  - [x] **COMMIT** — `70a0750e` — `test(e2e): <release note>` with the scenario
         title in the body (including the refreshed evidence pair). Record the
         revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit 70a0750e
+        test(e2e): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        Consumer generates the development report for a change
+
+        The written report's assertions read the hybrid workflow text view: the report
+        names the change workflow's nine phases in order, and the step recorded after
+        the tasks.md transition is placed in the implement phase. The evidence pair is
+        refreshed in place.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../consumer-generates-the-development-report-for-a-change/desktop.png | Bin 96476 -> 187683 bytes
+         .../consumer-generates-the-development-report-for-a-change/mobile.png  | Bin 54073 -> 54146 bytes
+         .../development-report.feature                |   2 +-
+         tests/steps/development_report_e2e_steps.rs   |  74 ++++++++++++-----------
+         tests/steps/development_timeline_support.rs   |   9 +--
+         5 files changed, 40 insertions(+), 45 deletions(-)
         ```
 
 ## Task HE2 — `Consumer opens the generated development report in a browser` (`@e2e`, `development-report`, Scenario Outline, `change` and `topic` rows) — the asset rewrite
