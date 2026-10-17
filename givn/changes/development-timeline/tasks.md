@@ -13501,7 +13501,7 @@ Repository checks are secondary only.
 
 ## Task HE5 — `Consumer zooms the timeline to a shorter time range` (`@e2e`, `development-report`)
 
-- [ ] **Scenario: `Consumer zooms the timeline to a shorter time range`** (`@wip` until its RED)
+- [x] **Scenario: `Consumer zooms the timeline to a shorter time range`** (`@wip` until its RED)
   - Design constraints:
     - Matrix row 8: real interface **Web UI**; Playwright expands the phase and
       clicks the **`15 m`** control (the next narrower level), then reads the
@@ -13535,31 +13535,84 @@ Repository checks are secondary only.
     - RED expected failure: `zooms the expanded phase's timeline in` is
       undefined (the old `zooms the timeline in` step is replaced) and the
       asset has no per-phase control.
-  - [ ] **RED** — remove `@wip` from this scenario only, then run:
+  - [x] **RED** — remove `@wip` from this scenario only, then run:
         `GIVN_FEATURES=givn/changes/development-timeline/specs cargo test --locked --test features_runner -- --exact "inspect-development-history/development-report.feature::Consumer zooms the timeline to a shorter time range"`
         → must exit non-zero. Paste it.
         ```
-        PASTE THE NON-ZERO RED RUN HERE
+        Feature: Development Report
+          Scenario: Consumer zooms the timeline to a shorter time range
+           ✔  Given an open development report with a recorded history
+           ✘  When the consumer zooms the expanded phase's timeline in
+              Step failed:
+              Defined: givn/changes/development-timeline/specs/inspect-development-history/development-report.feature:182:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+        EXIT=101
         ```
-  - [ ] **GREEN** — implement the per-phase zoom, the rendered range, and the
+  - [x] **GREEN** — implement the per-phase zoom, the rendered range, and the
         before/after assertion. Files: `assets/timeline/report.html`,
         `tests/steps/development_report_e2e_steps.rs`, plus the refreshed pair.
         `node --check`, compile, re-run → exit 0. Paste it.
         ```
-        PASTE THE GREEN RUN HERE
+        Feature: Development Report
+          Scenario: Consumer zooms the timeline to a shorter time range
+           ✔  Given an open development report with a recorded history
+           ✔  When the consumer zooms the expanded phase's timeline in
+           ✔  Then the browser shows a narrower time range than before
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        3 steps (3 passed)
+        EXIT=0
+
+        consumer-zooms-the-timeline-to-a-shorter-time-range/desktop.png 65394 bytes
+        consumer-zooms-the-timeline-to-a-shorter-time-range/mobile.png   28737 bytes
         ```
-  - [ ] **REFACTOR** — one range derivation every zoom path goes through, one
+  - [x] **REFACTOR** — one range derivation every zoom path goes through, one
         threshold function used at every level; `cargo fmt --all -- --check`,
         `cargo clippy --locked --all-targets -- -D warnings`, and `node --check`
         green; re-run → still exit 0. Paste it.
         ```
-        PASTE THE REFACTOR RUN HERE
+        cargo fmt --all -- --check → exit 0
+        cargo clippy --locked --all-targets -- -D warnings → Finished, exit 0
+        node --check /tmp/report-inline.js → exit 0
+
+        Feature: Development Report
+          Scenario: Consumer zooms the timeline to a shorter time range
+           ✔  Given an open development report with a recorded history
+           ✔  When the consumer zooms the expanded phase's timeline in
+           ✔  Then the browser shows a narrower time range than before
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        3 steps (3 passed)
+        EXIT=0
         ```
-  - [ ] **COMMIT** — `<hash>` — `test(e2e): <release note>` with the scenario
+  - [x] **COMMIT** — `dbcb3a7c` — `test(e2e): <release note>` with the scenario
         title in the body (including the refreshed evidence pair). Record the
         revision identifier.
         ```
-        PASTE THE COMMIT AND `git show --stat` HERE
+        commit dbcb3a7c
+        test(e2e): Givn records the development process of every change and ideation — each step it runs, the activity reported by every supported coding-agent harness, question waits, and token usage — and renders it as an interactive timeline report that opens in a browser.
+
+        Consumer zooms the timeline to a shorter time range
+
+        The per-phase 15 m control narrows the expanded implement phase's rendered
+        range; the assertion compares the text the page's own script produced before
+        and after. The reduced-motion preference removes the transition, the one
+        aggregation threshold bounds each lane at every zoom, and the narrowed range
+        survives the mobile layout. The evidence pair is refreshed in place.
+
+        Co-Authored-By: deepseek/deepseek-flash/max@omp with Givn 0.9.0
+
+         .../consumer-zooms-the-timeline-to-a-shorter-time-range/desktop.png | Bin 32 -> 65394 bytes
+         .../consumer-zooms-the-timeline-to-a-shorter-time-range/mobile.png  | Bin 33 -> 28737 bytes
+         .../development-report.feature                       |   2 +-
+         .../development_report_e2e_steps.rs                  | 175 +++++++++++-----------
+         4 files changed, 92 insertions(+), 116 deletions(-)
         ```
 
 ## Task HE6 — `Consumer opens the report of a scope with no recorded activity` (`@e2e`, `development-report`)
