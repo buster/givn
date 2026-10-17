@@ -1075,104 +1075,74 @@ fn time_of_day(at_ms: i64) -> String {
 /// The `@e2e` browser scenario that zooms the timeline.
 const ZOOM_SCENARIO: &str = "Consumer zooms the timeline to a shorter time range";
 
-/// The range the browser rendered: the visible window the page's own script
-/// produced, read from the rendered label and its machine-readable attributes.
-fn rendered_range(driver: &mut BrowserDriver) -> Value {
-    driver.evaluate(
-        r##"(() => {
-  const label = document.getElementById("timeline-range");
+/// The visible range the page's own script rendered for one expanded phase,
+/// read from the rendered label and its machine-readable attributes.
+fn rendered_phase_range(driver: &mut BrowserDriver, phase: &str) -> Value {
+    driver.evaluate(&format!(
+        r##"(() => {{
+  const label = document.getElementById({id});
   if (!label) return null;
-  return {
+  return {{
     text: label.textContent.trim(),
     start: Number(label.dataset.rangeStartMs),
     end: Number(label.dataset.rangeEndMs),
-  };
-})()"##,
-    )
+  }};
+}})()"##,
+        id = json!(format!("phase-range-{phase}"))
+    ))
 }
 
-/// The rendered motion state: the emulated preference and the durations the
-/// browser computed for the timeline's own transition and animation.
+/// The emulated motion preference and the transition the browser computed for
+/// the per-phase zoom control.
 fn rendered_motion(driver: &mut BrowserDriver) -> Value {
     driver.evaluate(
         r##"(() => {
-  const timeline = document.querySelector("svg.timeline");
-  const style = getComputedStyle(timeline);
+  const control = document.querySelector('.phase-card[data-phase="implement"] .zoom-control');
+  const region = document.querySelector('.phase-card[data-phase="implement"] .phase-region');
   return {
     reduce: matchMedia("(prefers-reduced-motion: reduce)").matches,
-    animation: style.animationName + " " + style.animationDuration,
-    transition: style.transitionDuration,
+    controlTransition: control ? getComputedStyle(control).transitionDuration : null,
+    regionAnimation: region ? getComputedStyle(region).animationName : null,
   };
 })()"##,
     )
 }
 
-#[when("the consumer zooms the timeline in")]
-fn consumer_zooms_the_timeline_in(world: &mut GivnWorld) {
-    let before = rendered_range(browser(world));
+#[when("the consumer zooms the expanded phase's timeline in")]
+fn consumer_zooms_the_expanded_phase_timeline_in(world: &mut GivnWorld) {
+    browser(world).click(&phase_expander("implement"));
+    let before = rendered_phase_range(browser(world), "implement");
     assert!(
-        !before.is_null(),
-        "the report renders no visible time range to zoom"
+        before.is_object(),
+        "the expanded phase renders no visible time range to zoom"
     );
     assert!(
         before["start"].as_i64().is_some() && before["end"].as_i64().is_some(),
-        "the rendered range carries no machine-readable window: {before:#}"
+        "the rendered phase range carries no machine-readable window: {before:#}"
     );
-    // The real interaction: a click on the rendered zoom-in control.
-    let control = browser(world).evaluate(
-        r##"(() => {
-  const button = document.getElementById("zoom-in");
-  const out = document.getElementById("zoom-out");
-  return button
-    ? {
-        label: button.textContent.trim(),
-        disabled: button.disabled,
-        outDisabled: out ? out.disabled : null,
-      }
-    : null;
-})()"##,
-    );
-    assert_eq!(
-        control["label"],
-        json!("Zoom in"),
-        "the zoom-in control carries no visible text label: {control:#}"
-    );
-    assert_eq!(
-        control["outDisabled"],
-        json!(true),
-        "the zoom-out control is not disabled while the record's whole range is shown: {control:#}"
-    );
-    browser(world).click("#zoom-in");
-    // The control at the limit reveals itself once the range narrows: zooming
-    // out is reachable again exactly when there is something to zoom out to.
-    let widened = browser(world).evaluate(
-        r##"(() => {
-  const out = document.getElementById("zoom-out");
-  return out ? { disabled: out.disabled } : null;
-})()"##,
-    );
-    assert_eq!(
-        widened["disabled"],
-        json!(false),
-        "the zoom-out control stays disabled after the range narrowed: {widened:#}"
-    );
-    let after = rendered_range(browser(world));
+    // The real interaction: the per-phase `15 m` control, the next narrower
+    // level. The hybrid has no global zoom.
+    let control = ".phase-card[data-phase=\"implement\"] .zoom-control[data-zoom=\"15\"]";
     assert!(
-        !after.is_null(),
-        "the report renders no visible time range after the zoom"
+        browser(world).text(control).contains("15 m"),
+        "the 15 m zoom control carries no visible text label"
     );
-    // The rendered state changed between the two observations: the page's own
-    // script produced a narrower window, and the label it rendered says so.
+    browser(world).click(control);
+    let after = rendered_phase_range(browser(world), "implement");
+    assert!(
+        after.is_object(),
+        "the expanded phase renders no visible time range after the zoom"
+    );
     let width = |range: &Value| {
         range["end"].as_i64().unwrap_or_default() - range["start"].as_i64().unwrap_or_default()
     };
     assert!(
         width(&after) < width(&before),
-        "the zoom did not narrow the rendered time range: before={before:#} after={after:#}"
+        "the zoom did not narrow the rendered phase range: before={before:#} after={after:#}"
     );
     assert_ne!(
         after["text"], before["text"],
-        "the rendered range label did not change between the two observations"
+        "the rendered phase range label did not change between the two observations"
     );
     state(world)
         .zoomed_range
@@ -1180,16 +1150,16 @@ fn consumer_zooms_the_timeline_in(world: &mut GivnWorld) {
 }
 
 #[then("the browser shows a narrower time range than before")]
-fn browser_shows_a_narrower_time_range(world: &mut GivnWorld) {
+fn browser_shows_a_narrower_time_range_than_before(world: &mut GivnWorld) {
     let (before, after) = world
         .development_report_e2e
         .as_ref()
         .and_then(|state| state.zoomed_range.clone())
-        .expect("the timeline has not been zoomed yet");
-    let observed = rendered_range(browser(world));
+        .expect("the expanded phase's timeline has not been zoomed yet");
+    let observed = rendered_phase_range(browser(world), "implement");
     assert_eq!(
         observed, after,
-        "the rendered range the zoom produced is not the range the browser shows now"
+        "the rendered phase range is not the range the zoom produced"
     );
     let width = |range: &Value| {
         range["end"].as_i64().unwrap_or_default() - range["start"].as_i64().unwrap_or_default()
@@ -1198,18 +1168,15 @@ fn browser_shows_a_narrower_time_range(world: &mut GivnWorld) {
         width(&after) < width(&before),
         "the browser shows no narrower range than before the zoom: before={before:#} after={after:#}"
     );
-    // The window's own bounds: the narrowed range stays inside the record's
-    // range, so the axis never leaves the timestamps the report embeds.
     assert!(
         after["start"].as_i64() >= before["start"].as_i64()
             && after["end"].as_i64() <= before["end"].as_i64(),
-        "the zoomed range left the record's own range: before={before:#} after={after:#}"
+        "the zoomed range left the phase's own recorded range: before={before:#} after={after:#}"
     );
 
     // The motion contract: the driver emulates `prefers-reduced-motion: reduce`
     // for the context, so the zoom's transition is removed entirely and the
-    // range above — already the narrowed one — is what the change applied
-    // instantly.
+    // narrowed range above is what the change applied instantly.
     let motion = rendered_motion(browser(world));
     assert_eq!(
         motion["reduce"],
@@ -1217,15 +1184,48 @@ fn browser_shows_a_narrower_time_range(world: &mut GivnWorld) {
         "the browser does not emulate the reduced-motion preference the tier captures with: {motion:#}"
     );
     assert!(
-        motion["animation"]
+        motion["controlTransition"]
             .as_str()
             .unwrap_or_default()
-            .starts_with("none"),
-        "the zoom's animation still runs under the reduced-motion preference: {motion:#}"
+            .split(',')
+            .all(|duration| duration.trim() == "0s"),
+        "the zoom control still transitions under the reduced-motion preference: {motion:#}"
     );
-    // The visual gate's evidence for this scenario: the narrowed range at both
-    // contract viewports, captured after the assertions above.
-    browser(world).capture_evidence(ZOOM_SCENARIO);
+    assert!(
+        motion["regionAnimation"].as_str().unwrap_or_default() == "none",
+        "the zoomed region still animates under the reduced-motion preference: {motion:#}"
+    );
+
+    // Every zoom level re-applies the one aggregation threshold: each lane's
+    // DOM stays bounded instead of drawing one tick per recorded entry.
+    let bounded = browser(world).evaluate(
+        r##"(() => {
+  const lanes = [...document.querySelectorAll('.phase-card[data-phase="implement"] .lane')];
+  return lanes.map((lane) => lane.querySelectorAll(".tick").length);
+})()"##,
+    );
+    for count in bounded
+        .as_array()
+        .unwrap_or_else(|| panic!("the lanes draw no ticks: {bounded:#}"))
+    {
+        assert!(
+            count.as_u64().unwrap_or_default() <= 140,
+            "a lane draws more ticks than the bounded threshold permits: {bounded:#}"
+        );
+    }
+
+    // The zoom state survives the mobile layout change: the narrowed range is
+    // still the rendered range.
+    browser(world).viewport(360, 780);
+    let mobile = rendered_phase_range(browser(world), "implement");
+    assert_eq!(
+        mobile, after,
+        "the zoom state did not survive the mobile layout change"
+    );
+    browser(world).capture_evidence_from(
+        ZOOM_SCENARIO,
+        ".phase-card[data-phase=\"implement\"] .phase-region",
+    );
 }
 
 /// The `@e2e` browser scenario that opens the report of a scope with no
