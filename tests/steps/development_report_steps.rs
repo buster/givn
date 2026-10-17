@@ -9,7 +9,7 @@ use std::path::PathBuf;
 
 use cucumber::{given, then, when};
 use givn::cli::timeline::{format_count, format_duration};
-use givn::history::{HistoryEntry, Scope};
+use givn::history::{HistoryEntry, Scope, parse_rfc3339_ms};
 use serde_json::{Value, json};
 
 use crate::common;
@@ -359,6 +359,9 @@ pub(crate) struct DevelopmentReportState {
     /// The record's entry count as seeded: the report run and the read view
     /// must each leave it unchanged.
     pub(crate) record_entry_count: Option<usize>,
+    /// The ideation topic a linked change report's proposal names, so the
+    /// second Given can seed its record.
+    pub(crate) linked_topic: Option<String>,
 }
 
 /// The capability's state, created on first use.
@@ -4027,4 +4030,210 @@ fn report_names_no_change_phase_and_no_next_required_artifact(world: &mut GivnWo
             "the topic report names the change phase {stage}: {named:?}"
         );
     }
+}
+
+/// The text view's one section for the change workflow, from its opening tag
+/// to its close: the group's phases print above it, so an assertion on the
+/// change's own phases reads this region only.
+fn workflow_stack_region(document: &str) -> String {
+    let start = document
+        .find("<section class=\"workflow-stack\" id=\"workflow-stack\"")
+        .unwrap_or_else(|| panic!("the report prints no workflow stack: {document}"));
+    let region = &document[start..];
+    let end = region
+        .find("</section>")
+        .expect("the workflow stack is never closed")
+        + "</section>".len();
+    region[..end].to_string()
+}
+
+/// The linked ideation group's totals line as the report renders it.
+fn ideation_totals_line(document: &str) -> String {
+    let start = document
+        .find("id=\"ideation-totals\"")
+        .unwrap_or_else(|| panic!("the report prints no ideation totals: {document}"));
+    let line = &document[start..];
+    let end = line.find("</p>").expect("the ideation totals are closed") + "</p>".len();
+    line[..end].to_string()
+}
+
+#[given(regex = r#"^a change "([^"]+)" whose proposal links the ideation topic "([^"]+)"$"#)]
+fn change_whose_proposal_links_the_topic(world: &mut GivnWorld, change: String, topic: String) {
+    {
+        let env = project_root(world);
+        support::create_linked_ideation_change(env, &change, &topic);
+    }
+    let state = state(world);
+    state.linked_topic = Some(topic);
+    world.last_change_id = Some(change);
+}
+
+#[given(regex = r#"^the topic's record holds the marker for (personas|event storming)$"#)]
+fn topic_record_holds_the_marker(world: &mut GivnWorld, marker: String) {
+    let marker = match marker.as_str() {
+        "personas" => "personas",
+        "event storming" => "event-storming",
+        other => panic!("the ideation workflow has no marker {other}"),
+    };
+    let change = world
+        .last_change_id
+        .clone()
+        .expect("the change Given ran first");
+    let topic = state(world)
+        .linked_topic
+        .clone()
+        .expect("the proposal-link Given ran first");
+    let seeded = {
+        let env = project_root(world);
+        support::seed_linked_ideation_record(env, &change, &topic, &[marker])
+    };
+    // The fixture's own claim: the topic's record carries exactly this marker.
+    let markers: Vec<&str> = seeded
+        .iter()
+        .filter(|entry| {
+            entry.kind == "phase" && entry.scope == Scope::Ideation { id: topic.clone() }
+        })
+        .filter_map(|entry| entry.label.as_deref())
+        .collect();
+    assert_eq!(
+        markers,
+        vec![marker],
+        "the fixture seeded the wrong marker: {seeded:#?}"
+    );
+    state(world).seeded = seeded;
+}
+
+#[then(
+    regex = r#"^the report names the linked ideation group "([^"]+)" before the change workflow$"#
+)]
+fn report_names_the_linked_ideation_group_before_the_workflow(
+    world: &mut GivnWorld,
+    topic: String,
+) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let group = &model["ideation"];
+    assert!(
+        group.is_object(),
+        "the report carries no linked ideation group: {model:#?}"
+    );
+    assert_eq!(
+        group["topic"],
+        json!(topic),
+        "the group names another topic: {model:#?}"
+    );
+    assert_eq!(
+        group["activity"],
+        json!(true),
+        "the group does not name its recorded activity: {model:#?}"
+    );
+    // The group renders before the change workflow in the written file.
+    let group_at = document
+        .find("id=\"ideation-group\"")
+        .unwrap_or_else(|| panic!("the report prints no ideation group: {document}"));
+    let workflow_at = document
+        .find("id=\"workflow-stack\"")
+        .expect("the report prints no workflow stack");
+    assert!(
+        group_at < workflow_at,
+        "the ideation group does not print before the change workflow: {document}"
+    );
+    assert!(
+        document.contains(&format!("<h2>Ideation: {topic}</h2>")),
+        "the group's heading does not name the topic: {document}"
+    );
+    // The group is historical: it never becomes the change's current phase.
+    let state = current_state_line(&document);
+    assert!(
+        !state.contains("<span class=\"state-phase\">frame</span>"),
+        "the group became the change's current phase: {state}"
+    );
+}
+
+#[then("the group names the ideation phases and the group's own duration")]
+fn group_names_ideation_phases_and_own_duration(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let group = &model["ideation"];
+    let phases = group["phases"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the group carries no phases: {model:#?}"));
+    let stages: Vec<&str> = phases
+        .iter()
+        .map(|phase| {
+            phase["stage"]
+                .as_str()
+                .unwrap_or_else(|| panic!("a group phase carries no stage: {phase}"))
+        })
+        .collect();
+    assert_eq!(
+        stages,
+        IDEATION_PHASES.to_vec(),
+        "the group does not name the ideation phases: {model:#?}"
+    );
+    // The topic's own entries: the group's ids and the duration its record
+    // measured, never the change's.
+    let topic_entries: Vec<&HistoryEntry> = seeded(world)
+        .iter()
+        .filter(|entry| matches!(entry.scope, Scope::Ideation { .. }))
+        .collect();
+    let topic_ids: Vec<u64> = topic_entries.iter().map(|entry| entry.id).collect();
+    let group_ids: Vec<u64> = group["entries"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the group carries no entries: {model:#?}"))
+        .iter()
+        .filter_map(Value::as_u64)
+        .collect();
+    assert_eq!(
+        group_ids, topic_ids,
+        "the group does not carry exactly the topic's entries: {model:#?}"
+    );
+    let first = topic_entries
+        .iter()
+        .filter_map(|entry| parse_rfc3339_ms(&entry.at))
+        .min()
+        .expect("the topic's record is measured");
+    let last = topic_entries
+        .iter()
+        .filter_map(|entry| parse_rfc3339_ms(&entry.at))
+        .max()
+        .expect("the topic's record is measured");
+    let expected = u64::try_from(last - first).expect("the topic's window is positive");
+    assert_eq!(
+        group["duration_ms"],
+        json!(expected),
+        "the group's duration is not the topic's first-to-last entry: {model:#?}"
+    );
+    let totals = ideation_totals_line(&document);
+    assert!(
+        totals.contains(&format_duration(expected)),
+        "the group's totals line does not name its duration: {totals}"
+    );
+}
+
+#[then("the change workflow still names its own phases")]
+fn change_workflow_still_names_its_own_phases(world: &mut GivnWorld) {
+    let document = report_text(world);
+    let model = report_model(&document);
+    let stages: Vec<&str> = model["workflow"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the report carries no change workflow: {model:#?}"))
+        .iter()
+        .map(|phase| {
+            phase["stage"]
+                .as_str()
+                .unwrap_or_else(|| panic!("a workflow phase carries no stage: {phase}"))
+        })
+        .collect();
+    assert_eq!(
+        stages,
+        WORKFLOW_PHASES.to_vec(),
+        "the change workflow is not the change's nine phases: {model:#?}"
+    );
+    let stack = workflow_stack_region(&document);
+    assert_eq!(
+        text_view_phases(&stack),
+        WORKFLOW_PHASES.to_vec(),
+        "the change stack does not name its own phases: {stack}"
+    );
 }

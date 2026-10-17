@@ -161,7 +161,7 @@ Feature: Development Report
     And the report marks persona work done and event storming active
     And the report names no change phase and no next required artifact
 
-  @givn.added @wip
+  @givn.added
   Scenario: A change report shows its linked ideation group
     Given a change "demo" whose proposal links the ideation topic "ideas"
     And the topic's record holds the marker for personas
