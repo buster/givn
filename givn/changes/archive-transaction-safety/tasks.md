@@ -39,7 +39,7 @@ is the subject of the follow-up `change-verification-receipt` change.
     `GIVN_FEATURES=givn/changes/archive-transaction-safety/specs/archive-change cargo nextest run --test features_runner -E 'test(A change present as both active and archived without a receipt is refused as corrupt)'`
     → `1 passed`.
   - REFACTOR: same command after the full change → `1 passed`.
-- [x] COMMIT: a696477a5674f5f6eb0210d527f942ce17a032e2 -- feat(archive-proof): make archive transitions atomic and recoverable
+- [x] COMMIT: bad84fcc14309fd3fe5e3b8de343dd6ac2f42a69 -- feat(archive-proof): make archive transitions atomic and recoverable
 
 ## Task 2 — Conflicting pending candidate refusal
 
@@ -55,7 +55,7 @@ is the subject of the follow-up `change-verification-receipt` change.
     `GIVN_FEATURES=givn/changes/archive-transaction-safety/specs/archive-change cargo nextest run --test features_runner -E 'test(A change present as both active and archived is refused as corrupt)'`
     → `1 passed`.
   - REFACTOR: same command → `1 passed`.
-- [x] COMMIT: a696477a5674f5f6eb0210d527f942ce17a032e2 -- feat(archive-proof): make archive transitions atomic and recoverable
+- [x] COMMIT: f96980c744f7a49d86d4b0285259737b00c78bb9 -- feat(archive-proof): make archive transitions atomic and recoverable
 
 ## Task 3 — Interrupted move with an identical pending candidate
 
@@ -69,7 +69,7 @@ is the subject of the follow-up `change-verification-receipt` change.
     `GIVN_FEATURES=givn/changes/archive-transaction-safety/specs/archive-change cargo nextest run --test features_runner -E 'test(An interrupted archive move resumes from an identical pending candidate)'`
     → `1 passed`.
   - REFACTOR: same command → `1 passed`.
-- [x] COMMIT: a696477a5674f5f6eb0210d527f942ce17a032e2 -- feat(archive-proof): make archive transitions atomic and recoverable
+- [x] COMMIT: 00bd2ffe205bf87b3875ca8fc0a12fffa3457157 -- feat(archive-proof): make archive transitions atomic and recoverable
 
 ## Task 4 — Interrupted merge
 
@@ -84,7 +84,7 @@ is the subject of the follow-up `change-verification-receipt` change.
     `GIVN_FEATURES=givn/changes/archive-transaction-safety/specs/archive-change cargo nextest run --test features_runner -E 'test(An interrupted merge resumes from its pending candidate)'`
     → `1 passed`.
   - REFACTOR: same command → `1 passed`.
-- [x] COMMIT: a696477a5674f5f6eb0210d527f942ce17a032e2 -- feat(archive-proof): make archive transitions atomic and recoverable
+- [x] COMMIT: 3b69873007dfcec4bf778451ed58df2961f646a8 -- feat(archive-proof): make archive transitions atomic and recoverable
 
 ## Task 5 — In-flight delta retry
 
@@ -99,7 +99,7 @@ is the subject of the follow-up `change-verification-receipt` change.
     `GIVN_FEATURES=givn/changes/archive-transaction-safety/specs/archive-change cargo nextest run --test features_runner -E 'test(An in-flight delta file is retried without duplicating its scenarios)'`
     → `1 passed`; `cargo test --lib` → `285 passed`.
   - REFACTOR: same commands → passing.
-- [x] COMMIT: a696477a5674f5f6eb0210d527f942ce17a032e2 -- feat(archive-proof): make archive transitions atomic and recoverable
+- [x] COMMIT: 19d394e92492863d0921f2c928059e8f51c40143 -- feat(archive-proof): make archive transitions atomic and recoverable
 
 ## Task 6 — Blocked move retry
 
@@ -113,7 +113,7 @@ is the subject of the follow-up `change-verification-receipt` change.
     `GIVN_FEATURES=givn/changes/archive-transaction-safety/specs/archive-change cargo nextest run --test features_runner -E 'test(A failed archive move keeps the change retryable)'`
     → `1 passed`.
   - REFACTOR: same command → `1 passed`.
-- [x] COMMIT: a696477a5674f5f6eb0210d527f942ce17a032e2 -- feat(archive-proof): make archive transitions atomic and recoverable
+- [x] COMMIT: bd9ab7a4499dac6ab7f78c627dd7ca8bd7fad375 -- feat(archive-proof): make archive transitions atomic and recoverable
 
 ## Task 7 — Active-change evidence
 
@@ -126,7 +126,7 @@ is the subject of the follow-up `change-verification-receipt` change.
     `GIVN_FEATURES=givn/changes/archive-transaction-safety/specs/archive-change cargo nextest run --test features_runner -E 'test(Change evidence does not block the archive)'`
     → `1 passed`.
   - REFACTOR: same command → `1 passed`.
-- [x] COMMIT: a696477a5674f5f6eb0210d527f942ce17a032e2 -- feat(archive-proof): make archive transitions atomic and recoverable
+- [x] COMMIT: 09cf7fd3b6eaff8eaa2dbeda3587214168c77693 -- feat(archive-proof): make archive transitions atomic and recoverable
 
 ## Task 8 — Finalization rejection
 
@@ -141,7 +141,7 @@ is the subject of the follow-up `change-verification-receipt` change.
     `GIVN_FEATURES=givn/changes/archive-transaction-safety/specs/archive-change cargo nextest run --test features_runner -E 'test(A rejected finalization publication leaves the archive unproven)'`
     → `1 passed`.
   - REFACTOR: same command → `1 passed`.
-- [x] COMMIT: a696477a5674f5f6eb0210d527f942ce17a032e2 -- feat(archive-proof): make archive transitions atomic and recoverable
+- [x] COMMIT: f3f7c0ed3f3e995ee5992b0547432c511704fe97 -- feat(archive-proof): make archive transitions atomic and recoverable
 
 ## Task 9 — Status surfaces a recoverable pending pair
 
@@ -154,7 +154,7 @@ is the subject of the follow-up `change-verification-receipt` change.
     `GIVN_FEATURES=givn/changes/archive-transaction-safety/specs/archive-change cargo nextest run --test features_runner -E 'test(An interrupted archive move is surfaced by project status)'`
     → `1 passed`.
   - REFACTOR: same command → `1 passed`.
-- [x] COMMIT: a696477a5674f5f6eb0210d527f942ce17a032e2 -- feat(archive-proof): make archive transitions atomic and recoverable
+- [x] COMMIT: db52a092ab3d0b4e62457cf3559011d33b848457 -- feat(archive-proof): make archive transitions atomic and recoverable
 
 ## Task 10 — Full-suite and archive readiness
 
@@ -168,4 +168,4 @@ is the subject of the follow-up `change-verification-receipt` change.
   - Clippy: `cargo clippy --workspace --all-targets -- -D warnings` → clean.
   - Base hash: `sha256sum givn/specs/archive-change/usecase.md` matches the
     delta's `givn:base-sha256` line.
-- [x] COMMIT: a696477a5674f5f6eb0210d527f942ce17a032e2 -- feat(archive-proof): make archive transitions atomic and recoverable
+- [x] COMMIT: a6985639255f60213975d0c21c6744805ebc6f85 -- feat(archive-proof): make archive transitions atomic and recoverable
