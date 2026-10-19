@@ -65,6 +65,17 @@ def init_givn(workspace: Path, binary: str | Path, agent: str = "opencode") -> d
     }
 
 
+def _ensure_harness_ignore(workspace: Path) -> None:
+    path = workspace / ".gitignore"
+    existing = path.read_text(encoding="utf-8", errors="replace") if path.is_file() else ""
+    if ".harness/" in existing.splitlines():
+        return
+    with path.open("a", encoding="utf-8") as handle:
+        if existing and not existing.endswith("\n"):
+            handle.write("\n")
+        handle.write(".harness/\n")
+
+
 def initialize_workspace(
     benchmark: Benchmark,
     root: str | Path,
@@ -79,6 +90,7 @@ def initialize_workspace(
     givn_info = None
     if givn_binary is not None:
         givn_info = init_givn(workspace, givn_binary, agent=agent)
+    _ensure_harness_ignore(workspace)
     return workspace, {
         "workspace": str(workspace),
         "copied_inputs": [str(path.relative_to(workspace)) for path in copied],

@@ -158,8 +158,11 @@ def tree_checksums(root: Path) -> list[dict[str, Any]]:
     files: list[dict[str, Any]] = []
     if not root.is_dir():
         return files
+    volatile = {".git/index", ".git/index.lock"}
     for path in sorted(root.rglob("*")):
         relative = path.relative_to(root)
+        if str(relative) in volatile:
+            continue
         if any(part in IGNORED_DIRECTORIES for part in relative.parts):
             continue
         if path.is_symlink():
@@ -188,11 +191,14 @@ def tree_checksums(root: Path) -> list[dict[str, Any]]:
 
 def _git(workspace: Path, *args: str) -> str:
     try:
+        env = dict(os.environ)
+        env["GIT_OPTIONAL_LOCKS"] = "0"
         completed = subprocess.run(
             ["git", "-C", str(workspace), *args],
             capture_output=True,
             text=True,
             timeout=30,
+            env=env,
         )
     except (OSError, subprocess.TimeoutExpired):
         return ""
@@ -272,6 +278,10 @@ def freeze_snapshot(
         raise FileExistsError(f"stage snapshot already exists: {snapshot_dir}")
     stage_dir.mkdir(parents=True, exist_ok=True)
     ignored = _copy_workspace(workspace, snapshot_dir)
+    # Read git state before checksums. GIT_OPTIONAL_LOCKS=0 prevents the
+    # index-refresh side effect from mutating the snapshot after it is frozen.
+    git_info = git_metadata(snapshot_dir)
+    givn_info = givn_metadata(snapshot_dir)
     files = tree_checksums(snapshot_dir)
     document = {
         "schema": "givn-harness/snapshot/v1",
@@ -282,8 +292,8 @@ def freeze_snapshot(
         "bytes": sum(item.get("bytes", 0) for item in files),
         "files": files,
         "ignored": ignored,
-        "git": git_metadata(snapshot_dir),
-        "givn": givn_metadata(snapshot_dir),
+        "git": git_info,
+        "givn": givn_info,
         "note": (
             "This directory is the authoritative frozen output for the stage. "
             "Grading must not modify it; regrading reads a fresh copy."

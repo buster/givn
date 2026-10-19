@@ -1,0 +1,13 @@
+schema = 1
+currency = "USD"
+# Source: OpenCode model catalog entry for deepseek/deepseek-flash, read
+# 2026-10-19. Re-check before a new campaign; do not reuse stale rates.
+source = "OpenCode model catalog: deepseek/deepseek-flash"
+date = "2026-10-19"
+safety_factor = 1.25
+
+[per_million_tokens]
+input = 0.15
+output = 0.60
+cache_read = 0.003
+cache_write = 0.0
