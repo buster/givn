@@ -584,6 +584,21 @@ mod tests {
     }
 
     #[test]
+    fn candidate_comparison_ignores_receipts_on_both_sides() {
+        let root = tempfile::TempDir::new().unwrap();
+        let id = "demo";
+        let active = root.path().join("givn/changes/demo");
+        let archive = root.path().join("givn/archive/demo");
+        std::fs::create_dir_all(&active).unwrap();
+        std::fs::create_dir_all(&archive).unwrap();
+        std::fs::write(active.join("proposal.md"), "same\n").unwrap();
+        std::fs::write(archive.join("proposal.md"), "same\n").unwrap();
+        std::fs::write(active.join("verification.json"), "active receipt\n").unwrap();
+        std::fs::write(archive.join("verification.json"), "archive receipt\n").unwrap();
+        assert!(candidate_matches_active(root.path(), id));
+    }
+
+    #[test]
     fn evidence_paths_include_active_change_evidence_only_with_separator() {
         let manifest = Manifest::load_embedded().unwrap();
         let root = Path::new("/project");
