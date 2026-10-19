@@ -902,24 +902,55 @@ fn subagent_session(entry: &HistoryEntry) -> Option<&str> {
     entry.data.as_ref()?.get("subagent")?.as_str()
 }
 
-/// The visible name of one lane: the recorded subagent span's `data.agent` when
-/// a span in the phase names this lane's session id as its own child session,
-/// else the recorded `session` entry's title, else the session's short id (the
-/// first eight characters, the whole id when shorter), and `unattributed` for
-/// the entries the record names no session for.
+/// A launcher role, not a subagent's own name.
+fn generic_launcher_role(agent: &str) -> bool {
+    matches!(agent.trim(), "task" | "subagent" | "agent")
+}
+
+/// The visible name of one lane, from the record's semantic relationships:
+///
+/// 1. the subagent span that names this lane's own child session
+///    (`data.subagent == session`) and carries a non-launcher `data.agent`
+///    (the fixture's `Architect.Scout`);
+/// 2. a subagent span recorded inside this lane with a reporter-declared
+///    `data.title` (maki/opencode, and omp once its reporter sends the title);
+/// 3. the reporter-declared `session` title;
+/// 4. `subagent` for an unnamed subagent lane, `main` for the spawning lane,
+///    `unattributed` for the sessionless lane.
+///
+/// The identity (`data.subagent`) is never displayed: the record does not mark
+/// whether a harness writes a name or an opaque id there, and no prefix
+/// heuristic is applied.
 fn lane_name(session: Option<&str>, members: &[&HistoryEntry]) -> String {
     let Some(session) = session else {
         return "unattributed".to_string();
     };
-    let subagent_agent = members
+    let child_agent = members
         .iter()
         .filter(|entry| entry.kind == SUBAGENT)
         .filter(|entry| subagent_session(entry) == Some(session))
-        .find_map(|entry| entry.data.as_ref()?.get("agent")?.as_str());
-    if let Some(agent) = subagent_agent {
+        .find_map(|entry| entry.data.as_ref()?.get("agent")?.as_str())
+        .filter(|agent| !generic_launcher_role(agent));
+    if let Some(agent) = child_agent {
         return agent.to_string();
     }
-    let title = members
+    let subagent_title = members
+        .iter()
+        .filter(|entry| entry.kind == SUBAGENT)
+        .filter(|entry| entry.session.as_deref() == Some(session))
+        .find_map(|entry| {
+            entry
+                .data
+                .as_ref()?
+                .get("title")?
+                .as_str()
+                .filter(|title| !title.trim().is_empty())
+                .map(str::to_string)
+        });
+    if let Some(title) = subagent_title {
+        return title;
+    }
+    let session_title = members
         .iter()
         .filter(|entry| entry.kind == "session")
         .filter(|entry| entry.session.as_deref() == Some(session))
@@ -929,9 +960,20 @@ fn lane_name(session: Option<&str>, members: &[&HistoryEntry]) -> String {
                 .as_ref()?
                 .get("title")?
                 .as_str()
+                .filter(|title| !title.trim().is_empty())
                 .map(str::to_string)
         });
-    title.unwrap_or_else(|| session.chars().take(8).collect())
+    if let Some(title) = session_title {
+        return title;
+    }
+    if members
+        .iter()
+        .any(|entry| entry.kind == SUBAGENT && entry.session.as_deref() == Some(session))
+    {
+        "subagent".to_string()
+    } else {
+        "main".to_string()
+    }
 }
 
 /// The subagent spans a phase holds with no attributable tool calls: no `tool`
@@ -3021,7 +3063,7 @@ mod tests {
             .iter()
             .find(|lane| lane.session.as_deref() == Some("s1"))
             .expect("the tool entry's session has no lane");
-        assert_eq!(session_lane.name, "s1", "the lane's short-id name");
+        assert_eq!(session_lane.name, "main", "the unspecialized session is the main lane");
         assert!(
             session_lane.entries.contains(&3),
             "the tool entry is not in its session's lane"
