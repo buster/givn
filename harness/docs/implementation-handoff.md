@@ -98,7 +98,10 @@ rotation; the argv/log exposure fix remains in place.
 
 ## Test evidence
 
-- `./run-tests.sh`: 67 deterministic tests, all passing.
+- `./run-tests.sh`: 68 deterministic tests, all passing.
+- Archive/review friction report:
+  `docs/findings/2026-10-19-run4-archive-friction.md`; the bundle keeps the
+  evidence-linked original.
 - `givn-harness benchmark verify benchmarks/lending`: reference passes all 13
   requirements; scaffold fails substantive requirements; all five seeded
   defects are caught.

@@ -170,6 +170,33 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(request["timeout_seconds"], 7)
         self.assertEqual(request["benchmark_timeout_seconds"], 2400)
 
+    def test_resume_completes_a_previously_not_reached_stage(self) -> None:
+        config = self.config()
+        config.stop_after = "initial"
+        bundle = execute(config)[0]
+        manifest = load_manifest(bundle)
+        self.assertTrue(manifest["stages"][1]["not_reached"])
+        resumed = execute(
+            RunConfig(
+                benchmark=self.benchmark,
+                output=self.root / "runs",
+                driver=self.config().driver,
+                givn_binary=None,
+                sandbox_mode="none",
+                network="none",
+                workspace_root=self.root / "workspaces",
+                resume=bundle,
+            )
+        )[0]
+        after = load_manifest(resumed)
+        self.assertEqual(after["status"], "completed")
+        self.assertEqual([stage["id"] for stage in after["stages"]], ["initial", "followup"])
+        self.assertTrue(all(stage["completed"] for stage in after["stages"]))
+        self.assertTrue(
+            (bundle / "stages" / "followup" / "not-reached-before-resume.json").is_file()
+        )
+        self.assertTrue((bundle / "stages" / "followup" / "snapshot").is_dir())
+
     def test_resume_of_completed_bundle_returns_without_rework(self) -> None:
         bundle = execute(self.config())[0]
         before = load_manifest(bundle)
