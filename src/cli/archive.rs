@@ -508,6 +508,9 @@ fn plan_from_receipt(
     Ok(plan)
 }
 
+/// Apply the archived delta to the permanent corpus. The change-scoped suite
+/// already ran under `givn check tasks`; only the merged regular/e2e scopes
+/// run after the candidate is published.
 fn apply_merge_plan(
     project_root: &Path,
     archive_target: &Path,
