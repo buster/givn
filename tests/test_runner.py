@@ -10,7 +10,12 @@ from givn_harness.benchmark import load_benchmark
 from givn_harness.bundle import load_manifest, read_journal, verify_snapshot
 from givn_harness.driver import DriverSpec
 from givn_harness.grader import grade_bundle
-from givn_harness.runner import RunConfig, execute
+from givn_harness.runner import (
+    RunConfig,
+    _analyze_stage,
+    execute,
+)
+from tests.support import event, write_events
 
 
 class RunnerTests(unittest.TestCase):
@@ -47,6 +52,44 @@ class RunnerTests(unittest.TestCase):
             workspace_root=self.root / "workspaces",
             max_output_tokens=1024,
         )
+
+    def test_stage_analysis_uses_a_byte_offset(self) -> None:
+        workspace = self.root / "workspace"
+        events_path = workspace / "givn" / "history" / "events.jsonl"
+        write_events(
+            events_path,
+            [
+                event(
+                    1,
+                    at="2026-01-01T00:00:01Z",
+                    kind="turn",
+                    name="turn 0",
+                    data={"usage": {"input": 10, "output": 1}, "cost": {"total": 0.1}},
+                )
+            ],
+        )
+        offset = events_path.stat().st_size
+        with events_path.open("a", encoding="utf-8") as handle:
+            handle.write(
+                json.dumps(
+                    event(
+                        2,
+                        at="2026-01-01T00:00:02Z",
+                        kind="turn",
+                        name="turn 1",
+                        data={"usage": {"input": 20, "output": 2}, "cost": {"total": 0.2}},
+                    )
+                )
+                + "\n"
+            )
+        stage_dir = self.root / "stage"
+        stage_dir.mkdir()
+        summary = _analyze_stage(workspace, stage_dir, offset)
+        self.assertIsNotNone(summary)
+        self.assertEqual(summary["events"], 1)
+        self.assertEqual(summary["events_offset_bytes"], offset)
+        self.assertAlmostEqual(summary["cost"]["observed_total_usd"], 0.2)
+        self.assertTrue((stage_dir / "events.stage.jsonl").is_file())
 
     def test_complete_two_stage_run_is_bundled_and_grades_green(self) -> None:
         config = self.config()

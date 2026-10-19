@@ -362,14 +362,35 @@ def _archive_check(before: set[str], workspace: Path, required: bool) -> dict[st
     }
 
 
-def _analyze_stage(workspace: Path, stage_dir: Path) -> dict[str, Any] | None:
+def _events_size(workspace: Path) -> int | None:
+    path = workspace / "givn" / "history" / "events.jsonl"
+    return path.stat().st_size if path.is_file() else None
+
+
+def _analyze_stage(
+    workspace: Path, stage_dir: Path, events_offset: int | None = None
+) -> dict[str, Any] | None:
     source = workspace / "givn" / "history" / "events.jsonl"
     if not source.is_file():
         return None
     copied = stage_dir / "events.jsonl"
     shutil.copy2(source, copied)
+    full_bytes = source.read_bytes()
+    offset = 0 if events_offset is None else max(0, min(events_offset, len(full_bytes)))
+    if offset > 0:
+        segment = full_bytes[offset:]
+        # A byte boundary should fall on a JSONL line. If not, advance to the
+        # next newline so a damaged final line before the boundary is not
+        # interpreted as part of this stage.
+        if segment and not segment.startswith(b"{"):
+            newline = segment.find(b"\n")
+            segment = segment[newline + 1 :] if newline >= 0 else b""
+        analysis_source = stage_dir / "events.stage.jsonl"
+        analysis_source.write_bytes(segment)
+    else:
+        analysis_source = copied
     try:
-        analysis = analyze_paths([str(copied)])
+        analysis = analyze_paths([str(analysis_source)])
     except Exception as error:  # noqa: BLE001 - analysis must not erase the trial
         dump_json(
             stage_dir / "analysis-error.json",
@@ -378,10 +399,14 @@ def _analyze_stage(workspace: Path, stage_dir: Path) -> dict[str, Any] | None:
         return None
     document = analysis.to_dict()
     document["created_at"] = _stamp()
+    document["events_offset_bytes"] = offset
+    document["events_total_bytes"] = len(full_bytes)
     dump_json(stage_dir / "analysis.json", document)
     (stage_dir / "analysis.md").write_text(render_analysis(analysis), encoding="utf-8")
     return {
         "events": analysis.data["corpus"]["events"],
+        "events_offset_bytes": offset,
+        "events_total_bytes": len(full_bytes),
         "diagnostics": len(analysis.diagnostics),
         "findings": len(analysis.findings),
         "cost": analysis.data["cost"],
@@ -628,6 +653,7 @@ def run_bundle(
 
         stage_dir.mkdir(parents=True, exist_ok=True)
         archive_before = _archive_entries(workspace)
+        events_offset = _events_size(workspace)
         task_path = write_stage_task(config.benchmark, stage, workspace)
         shutil.copy2(task_path, stage_dir / "request.md")
         stage_timeout = config.stage_timeout_override or stage.timeout_seconds
@@ -638,6 +664,7 @@ def run_bundle(
             "timeout_seconds": stage_timeout,
             "benchmark_timeout_seconds": stage.timeout_seconds,
             "timeout_override": config.stage_timeout_override,
+            "events_offset_bytes": events_offset,
             "require_archive": stage.require_archive,
             "require_probe": stage.require_probe,
             "started_at": _stamp(),
@@ -732,7 +759,7 @@ def run_bundle(
             update_manifest(bundle, {"status": "failed", "blocker": f"snapshot failed: {error}"})
             raise
         if config.analyze_stages:
-            analysis_summary = _analyze_stage(workspace, stage_dir)
+            analysis_summary = _analyze_stage(workspace, stage_dir, events_offset)
 
         if ledger is not None:
             actual = driver_result.cost_usd
