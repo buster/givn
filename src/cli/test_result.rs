@@ -37,10 +37,11 @@ fn write_result(path: &Path, total: u64, passed: u64, failed: u64, skipped: u64)
             .with_context(|| format!("create result directory {}", parent.display()))?;
     }
     let temporary = path.with_file_name(format!(
-        ".{}.givn-tmp",
+        ".{}.{}.givn-tmp",
         path.file_name()
             .map(|name| name.to_string_lossy().into_owned())
-            .unwrap_or_else(|| "result.json".to_string())
+            .unwrap_or_else(|| "result.json".to_string()),
+        std::process::id()
     ));
     std::fs::write(&temporary, format!("{payload}\n"))
         .with_context(|| format!("write result {}", temporary.display()))?;

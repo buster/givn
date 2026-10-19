@@ -499,6 +499,12 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
         world.scm_fixture.snapshot = Some(scm_backend_selection_steps::snapshot_tree(&root));
         world.snapshot_on_run = false;
     }
+    if args.first().is_some_and(|arg| arg == "check")
+        && args.get(1).is_some_and(|arg| arg == "tasks")
+        && !world.skip_auto_commit
+    {
+        common::commit_fixture(env);
+    }
     if args.first().is_some_and(|arg| arg == "archive") && !world.skip_auto_commit {
         common::commit_fixture(env);
         if let Some(id) = world.last_change_id.clone() {

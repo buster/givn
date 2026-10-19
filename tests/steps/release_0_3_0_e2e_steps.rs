@@ -762,6 +762,7 @@ fn archive_maintenance_migration(world: &mut GivnWorld) {
     crate::steps::archive_proof_support::write_result_runner(env, "pass");
     common::commit_fixture(env);
     let id = find_migration_change_id(env);
+    crate::steps::archive_proof_support::refresh_change_receipt(world, &id);
     world.last_output = Some(crate::common::run_givn(env, &["archive", "--change", &id]));
 }
 

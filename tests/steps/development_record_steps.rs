@@ -47,7 +47,7 @@ pub(crate) struct DevelopmentRecordState {
 /// The verification command the bounded-label fixture declares: it really runs
 /// (so its step entry is measured) and its complete text is longer than the
 /// record's label limit, so the complete text must not survive into the store.
-pub(crate) const LONG_VERIFY_COMMAND: &str = "sleep 1 # 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789";
+pub(crate) const LONG_VERIFY_COMMAND: &str = "sleep 1; printf '\\173\\42total\\42:1,\\42passed\\42:1,\\42failed\\42:0,\\42skipped\\42:0\\175' > $GIVN_RESULT_FILE; # 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789";
 
 /// The byte-level form of "nothing earlier was rewritten": the store still
 /// begins with the bytes it held before the scenario's next command. Both
@@ -750,7 +750,14 @@ fn user_runs_that_command(world: &mut GivnWorld) {
         .last_change_id
         .clone()
         .expect("the long-command fixture ran first");
+    common::commit_fixture(env);
     let out = common::run_givn(env, &["check", "tasks", "--change", &change]);
+    assert!(
+        out.status.success(),
+        "check tasks failed: stderr={} stdout={}",
+        String::from_utf8_lossy(&out.stderr),
+        String::from_utf8_lossy(&out.stdout)
+    );
     world.last_command = Some("check".to_string());
     world.last_output = Some(out);
 }
@@ -828,8 +835,13 @@ fn record_holds_no_complete_command_text(world: &mut GivnWorld) {
         .as_str()
         .unwrap_or_else(|| panic!("the step entry carries no label: {step}"));
     assert!(
-        text.lines().any(|line| line.contains(label)),
-        "the record does not carry the step's bounded label: {text}"
+        text.lines().any(|line| {
+            serde_json::from_str::<Value>(line)
+                .ok()
+                .and_then(|value| value["label"].as_str().map(str::to_string))
+                .is_some_and(|recorded| recorded == label)
+        }),
+        "the record does not carry the step's bounded label {label:?}: {text}"
     );
 }
 

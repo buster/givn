@@ -196,7 +196,9 @@ fn e2e_given_completed_change(world: &mut GivnWorld, id: String) {
     )
     .unwrap();
     std::fs::write(change_dir.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
-    world.last_change_id = Some(id);
+    world.last_change_id = Some(id.clone());
+    crate::common::commit_fixture(env);
+    crate::steps::archive_proof_support::refresh_change_receipt(world, &id);
 }
 
 #[given("a givn project with the coverage addon enabled and valid coverage commands")]
