@@ -684,6 +684,17 @@ mod tests {
     }
 
     #[test]
+    fn proven_receipt_names_the_tested_revision() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let archive = dir.path().join("archive");
+        Receipt::write_proven(&archive, "demo", "abc123", BTreeMap::new(), None, 1, 2).unwrap();
+        let receipt = read_receipt(&archive).unwrap();
+        assert_eq!(receipt.status, STATUS_PROVEN);
+        assert_eq!(receipt.tested_revision.as_deref(), Some("abc123"));
+        assert!(receipt.merge_completed);
+    }
+
+    #[test]
     fn runner_result_rejects_every_untrusted_shape() {
         let dir = temp_receipt_dir();
         let path = dir.path().join("regular.json");
