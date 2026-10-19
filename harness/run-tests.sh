@@ -1,8 +1,6 @@
 #!/bin/sh
 set -eu
 
-if [ "${1:-}" = "--e2e" ]; then
-    uv run behave tests/features/ --no-capture --tags=@e2e --tags=-wip
-else
-    uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock
-fi
+# Deterministic harness tests. The default suite must never spend money and
+# must not require a provider, a model, or a live sandbox.
+uv run python -m unittest discover -s tests -p 'test_*.py' "$@"

@@ -1,42 +1,37 @@
-"""The models the harness runs.
+"""Pinned model identity and a small guard record.
 
-Every agent runs direct DeepSeek V4 Flash. opencode gets the model's `max`
-reasoning variant (`#max`); omp gets `--thinking max`; maki uses the same
-provider/model. The judge is always opencode with `#max`, independent of the
-agent under test. The harness refuses any other model so a run cannot switch to
-another provider, a stronger variant, or a fallback.
+The harness allows exactly the direct DeepSeek Flash model with the maximum
+reasoning variant. It refuses another provider, model or fallback. This module
+validates the harness command; it is not a provider-side hard ceiling.
 """
+
+from __future__ import annotations
+
+from typing import Any
 
 DEEPSEEK_FLASH_MAX = "deepseek/deepseek-flash#max"
 DEEPSEEK_FLASH = "deepseek/deepseek-flash"
-
-AGENTS = ("opencode", "omp", "maki")
-AGENT_MODELS = {
-    "opencode": DEEPSEEK_FLASH_MAX,
-    "omp": DEEPSEEK_FLASH,
-    "maki": DEEPSEEK_FLASH,
-}
+ALLOWED_MODELS = {DEEPSEEK_FLASH_MAX}
 
 
-def require_model(model: str | None = None) -> str:
-    """Return the judge model, or refuse a different selection."""
+def require_model(model: str | None) -> str:
     selected = model or DEEPSEEK_FLASH_MAX
-    if selected != DEEPSEEK_FLASH_MAX:
+    if selected not in ALLOWED_MODELS:
         raise ValueError(
-            f"only the direct DeepSeek model {DEEPSEEK_FLASH_MAX!r} is allowed; "
-            f"got {selected!r}"
+            f"only {DEEPSEEK_FLASH_MAX!r} is allowed; got {selected!r}. "
+            "No fallback, other provider or weaker variant is permitted."
         )
     return selected
 
 
-def require_agent_model(agent: str, model: str | None = None) -> str:
-    """Return the pinned model for one agent, or refuse a different selection."""
-    if agent not in AGENT_MODELS:
-        raise ValueError(f"unknown agent {agent!r}; choose one of {', '.join(AGENTS)}")
-    selected = model or AGENT_MODELS[agent]
-    if selected != AGENT_MODELS[agent]:
-        raise ValueError(
-            f"agent {agent!r} is pinned to the direct DeepSeek model "
-            f"{AGENT_MODELS[agent]!r}; got {selected!r}"
-        )
-    return selected
+def guard_record(model: str, driver: str) -> dict[str, Any]:
+    return {
+        "allowed": sorted(ALLOWED_MODELS),
+        "selected": model,
+        "driver": driver,
+        "variant": "max" if model.endswith("#max") else "default",
+        "enforcement": (
+            "CLI validation and pinned execution command. Provider-side inventory "
+            "and native outgoing-request validation are not claimed by this record."
+        ),
+    }

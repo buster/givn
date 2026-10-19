@@ -1,282 +1,295 @@
-# givn-test-harness
+# givn-harness
 
-Automated end-to-end test harness for the [givn](..) spec-driven workflow tool.
-Treats givn's agent-facing assets — skill templates, artifact instructions, CLI
-behaviour — as the system under test. Runs complete autoresearch loops:
-an AI agent (opencode, driven by ralph) receives a task and must carry it from
-proposal through archive using givn's workflow, after which automated checks and
-an LLM judge score the result.
+Evaluation harness for improving givn's workflow, guardrails and rules using
+evidence rather than artifact checkboxes.
 
-The harness lives in the `harness/` directory of the givn repository. It is a
-**separate Python project** with its own dependency lifecycle. The givn binary
-source resides in the parent directory; each run creates a fresh workspace and
-initializes it with the current binary.
+It has two deliberately separate modes:
 
-## Directory layout
+| Mode | Input | Output | What it establishes |
+|---|---|---|---|
+| **Retrospective analysis** | Existing `events.jsonl` files, optionally a metadata sidecar | `analysis.md` and `analysis.json` | Observed counts, available durations, usage, cost, errors and evidence-linked hypotheses. It never executes repository code or calls a model. |
+| **Controlled evaluation** | A pinned benchmark, givn binary, driver, model, environment and policy | A durable trial bundle with frozen stage snapshots, independent grades and a comparison | Whether a delivered product still satisfies independent behavioral checks, and where a trial stopped. |
 
-```
-givn/                             # givn Rust binary (parent project)
-  src/
-  tests/
-  assets/
+Neither mode produces a single "quality score". Outcome, workflow completion
+and measurement validity stay separate.
 
-harness/                          # test harness (this project)
-  src/givn_harness/               # Python package
-  tests/features/harness/         # behave specs and step definitions
-  tasks/                          # task prompt files
-  givn/                           # this project's own givn workflow state
-  docs/arc42/                     # architecture documentation
-```
+## Quick start: offline analysis
 
-## Prerequisites
-
-- **Python 3.12+** — `uv` manages the virtualenv and dependencies.
-- **givn** — resolved as `GIVN_BINARY` or `givn` on `PATH`. Each workspace runs
-  `givn init --agents <selected-agent>`, so the selected agent gets its own
-  generated integration (opencode V2 plugin, omp hooks and skills, or maki
-  plugin and skills).
-- **ralph 1.2.2+** — the opencode task-loop wrapper. Default
-  `/usr/local/bin/ralph`; override with `--ralph-bin`. ralph only supports
-  opencode/claude-code/codex/copilot, so omp and maki use their native print
-  modes through the harness's own one-step loop.
-- **opencode 2.0+** — the judge always uses opencode, and the default agent is
-  opencode; they need a provider login in opencode's auth store
-  (`opencode auth login`). omp and maki use their own auth stores. The harness
-  holds no API key of its own.
-- **bubblewrap** — `bwrap` is auto-detected and used when available. Setting
-  `GIVN_HARNESS_NO_SANDBOX=1` (or a missing `bwrap`) runs without the sandbox;
-  the legacy `GIVN_HARNESS_NO_SANDLOCK` name still works. There is no sandlock
-  dependency and no `--no-sandbox` flag.
-
-## Tasks
-
-- `tasks/trivial.md` — write one file; proves the agent/ralph transport without
-  a givn change.
-- `tasks/shopping-list.md` — a full product task: build a mobile-friendly
-  shopping-list website through the givn workflow until archive. The design
-  inputs are `tasks/shopping-list-design.png` and `tasks/shoppinglist_design.zip`.
-- `tasks/smoke.md` — a minimal givn change that produces proposal, specs,
-  design, design-review, tasks, and review artifacts without implementing or
-  archiving. Use it to exercise the automated checks, the LLM judge, and
-  full-record capture.
-
-Every run creates a fresh workspace and initializes it with
-`record.mode: full`, so the workspace's development record stores complete
-tool input/output, assistant text, prompts, and other captured content. The
-harness project's own `givn/config.yaml` also sets full capture.
-
-## Quick start
-
+<!-- givn:begin:run -->
 ```sh
-cd harness
 uv sync
-
-GIVN_BINARY=/home/buster/projects/givn/target/release/givn \
-  uv run givn-harness run \
-    --task tasks/shopping-list.md \
-    --output reports/ \
-    --max-iterations 40
+uv run givn-harness analyze /path/to/givn/history/events.jsonl \
+  --output analysis/current
 ```
+<!-- givn:end:run -->
 
-Every agent runs direct DeepSeek V4 Flash. opencode (agent or judge) is pinned
-to **`deepseek/deepseek-flash#max`** (reasoning effort `max`); omp is pinned to
-`deepseek/deepseek-flash` with `--thinking max`; maki is pinned to
-`deepseek/deepseek-flash`. There is no rotation and no fallback, and `--model`
-accepts only the selected agent's exact value. A real run uses a real model:
-tokens and time, and the result is nondeterministic.
+Read `analysis/current/analysis.md` first. It reports data-quality gaps before
+interpretations, then time, usage, cost, failures, archive friction, questions,
+context pressure and evidence-linked findings.
 
-## Usage
+Exported reports are redacted by default: question text, command labels, error
+text and agent identities are replaced with length markers while event ids and
+structural counts remain. Use `--no-redact` for a local detailed report, and
+review it before sharing.
 
-```
-uv run givn-harness run [OPTIONS]
-
-Options:
-  --agent [opencode|omp|maki]
-                          Agent under test; default opencode
-  --driver [ralph|native]
-                          ralph (opencode only) or the harness's native one-step
-                          loop; use native for comparisons
-  --profile [full|smoke]
-                          Task acceptance profile; smoke checks the planning
-                          artifacts, full keeps the archive gates
-  --task PATH             Task prompt file (required for a new run)
-  --output DIR            Report output directory (default: reports/)
-  --workspace-root DIR    Temp workspace root (default: /tmp/givn-harness-workspaces)
-  --workspace PATH        Resume an existing workspace
-  --continue              Resume the last run from .givn-harness-run.json
-  --ralph-bin PATH        Path to ralph (default: /usr/local/bin/ralph)
-  --fail                  Simulate an agent failure (check wiring)
-  --timeout INTEGER       Agent execution timeout in seconds
-  --max-iterations INTEGER  Maximum one-step iterations (native default 10)
-  --no-agent-output       Suppress streaming agent output
-  --model MODEL           Pinned model for the selected agent; other values are refused
-  --prompt-template PATH  Custom one-step prompt template
-  --help                  Show this message and exit.
-```
-
-If the agent writes `BLOCKED.md` with a question, answer it (add
-`## ANSWERED` at the top) and rerun with `--continue`.
-
-## Provider and model
-
-The harness has **no API-key setting**. The judge and the opencode agent use
-opencode's credential store:
+Useful filters:
 
 ```sh
-opencode auth list      # e.g. DeepSeek and OpenRouter stored
-opencode models         # models the configured providers expose
+uv run givn-harness analyze events.jsonl --output analysis/session \
+  --session 01a148a7-1dd7-7000-8b9a-651b2cabbdd0 \
+  --since 2026-10-17T09:00:00Z
 ```
 
-omp and maki use their own credential stores and their own model commands. The
-only allowed model is direct DeepSeek V4 Flash: `deepseek/deepseek-flash#max`
-for opencode, `deepseek/deepseek-flash` with `--thinking max` for omp, and
-`deepseek/deepseek-flash` for maki. The harness refuses
-`deepseek/deepseek-v4-pro`, the `openrouter/*` variants, `litellm/*`, and every
-other model. To switch the DeepSeek key, run `opencode auth login` for DeepSeek
-and re-check `opencode models`; for omp/maki use their own auth command. Do not
-put a key into the harness or into a task file.
+The source record is never modified. A byte boundary and SHA-256 are captured
+on read; bytes appended after that boundary are reported separately. Malformed
+lines, unsupported schemas, duplicate ids and ambiguous usage are counted, not
+silently dropped.
 
-## Sandbox
+## What the analyzer refuses to claim
 
-When `bwrap` is available, the selected agent runs inside bubblewrap: the
-workspace is read-write, `/usr`, `/etc`, the opencode install and config,
-`~/.cargo`, `~/.local` (including the opencode and maki stores), `~/.omp`,
-`~/.config/maki` and the package caches are mounted. `/tmp` is a private
-tmpfs containing only this run's workspace; previous harness runs and unrelated
-`/tmp` fixtures are not visible. The network is shared. If the sandbox is unavailable, the harness
-prints a warning and runs the agent directly. `GIVN_HARNESS_NO_SANDBOX=1`
-forces the direct mode; `GIVN_HARNESS_NO_SANDLOCK=1` remains accepted for
-compatibility.
+- `at` is an **end** timestamp. An interval is `[at - duration_ms, at]`.
+- Nested commands, tools, turns and subagents overlap. The analyzer reports
+  the union of intervals and per-kind sums separately. Per-kind sums are never
+  added into wall time.
+- Inline turn usage and a linked usage event are one request. Inline usage wins;
+  the duplicate is reported and not counted.
+- Cumulative cost rollups are not summed. Missing cost is not zero. Observed
+  cost is producer-reported, not an invoice.
+- Recorder intake (`history ingest`, attribution) is excluded from command
+  friction totals.
+- Phase markers mean an artifact was observed Done, not when work started.
+- A question may have wait time but no recorded answer. Silence is not approval.
+- A record alone cannot prove product correctness, an independent false-green
+  rate, or whether a review prevented a defect. Those stay unmeasured.
 
-## Output
+## Controlled evaluation
 
-Each run creates a directory under `--output`:
-
-```
-reports/
-├── <run-id>/
-│   └── report.md          # checks, judge scores, agent log, workspace path
-└── index.json             # cross-run summary: one entry per run
-```
-
-The report and `index.json` now carry the comparable manifest: profile, driver,
-model/thinking, judge, agent/Givn versions, harness commit, task and prompt
-hashes, iterations, wall time, termination, capture coverage, process counts,
-and the generated development report. The judge uses the same
-`deepseek/deepseek-flash#max` for every agent.
-
-The smoke profile reports these task-specific checks:
-
-- artifact existence
-- `DESIGN-REVIEW: PASS`
-- `REVIEW: PASS`
-- addons enabled
-- exactly one unchecked task and no implementation (the smoke task's contract)
-- no production code outside the Givn artifacts
-- full capture: at least 90% of tool+turn events carry content and at least 50%
-  of turns carry assistant or thinking text (the report records recorded and
-  tool-level subagent starts separately)
-
-It deliberately excludes archive success, tasks-all-done, commit checks, and
-`verify.command`, because the smoke task forbids implementation and archiving.
-The task contract in the agent prompt is authoritative: for the smoke it
-forbids production code and archive, requires exactly one unchecked task, and
-allows at most one design-review grilling subagent.
-
-## Comparing agents: opencode, omp, maki
-
-Use the campaign command. It runs every agent through the **same native
-one-step loop**, the same prompt template, the same task/profile checks, the same
-judge, the same DeepSeek Flash settings, and the same budget:
+### 1. Verify the benchmark
 
 ```sh
-cd harness
-uv sync
-GIVN_BINARY=/home/buster/projects/givn/target/release/givn \
-  uv run givn-harness compare \
-    --task tasks/smoke.md \
-    --output /tmp/givn-harness-campaign \
-    --agents opencode,omp,maki \
-    --repeats 3 \
-    --driver native \
-    --profile smoke \
-    --max-iterations 10 \
-    --timeout 1200 \
-    --no-agent-output
+uv run givn-harness benchmark verify benchmarks/lending \
+  --output /tmp/lending-verification
 ```
 
-`/tmp/givn-harness-campaign/campaign.md` holds the per-run and aggregate table;
-`campaign.json` holds the same rows. Each run directory has `report.md`, the
-Givn development report, and `index.json`. The report's termination is the
-task oracle: `completed` when the profile's artifacts are present,
-`max_iterations` or `timeout` otherwise; the agent's own promise is not the
-stop signal.
+This runs the trusted reference, the public scaffold, and every seeded defect.
+The gate passes only when:
 
-The reporter fix is in the Givn workspace integration: opencode uses a private
-server (`--standalone`) and the event subscription starts before the mode query.
-Turn text, thinking, tool names, and tool output reach the record, and opencode
-and maki `subagent`/`task` tool calls now produce real subagent spans. The
-canonical `kind=subagent` query is still only half the story for older records;
-count both forms:
+- the reference passes **all** required checks;
+- the empty scaffold fails substantive checks;
+- each seeded defect trips its named checks.
+
+### 2. Run without spending money
+
+A deterministic script driver exercises the whole runner, snapshot and grading
+pipeline:
 
 ```sh
-jq -s 'map(select((.kind=="subagent") or
-                 (.kind=="tool" and (.name=="subagent" or .name=="task"))))
-       | group_by(.session)
-       | map({session:.[0].session, starts:length, forms:(map(.kind)|unique)})' \
-  givn/history/events.jsonl
+uv run givn-harness run \
+  --benchmark benchmarks/lending \
+  --output runs/ \
+  --condition fake \
+  --driver script \
+  --driver-command "python3 tests/agents/copy_app.py" \
+  --driver-env HARNESS_APP_SOURCE=$PWD/benchmarks/lending/private/reference/app.py \
+  --sandbox required \
+  --network none \
+  --no-analyze
+
+uv run givn-harness grade runs/<bundle> --benchmark benchmarks/lending
 ```
 
-Maki's first-party assistant/thinking text is captured through
-`maki.session.messages`; its tool output remains best-effort because the maki
-`ToolDone` event does not carry it. Maki exposes no reasoning-effort flag; the
-manifest records `provider default (no max flag exposed)`. opencode and omp run
-at max.
+The script driver copies the reference application into the frozen workspace.
+No model is contacted. The same command with `--sandbox none` is useful for
+debugging but not labelled a graded execution.
 
-## Smoke run: report + judge, full capture
+### 3. Paid runs
+
+Paid execution is **blocked by default** and no run has spent money. The
+opencode driver refuses to start unless all of these are supplied:
+
+- `--givn-binary` — the exact binary under test, hashed into the manifest;
+- `--budget-usd` — a hard campaign cap;
+- `--price-table` — a dated price source with explicit per-million rates;
+- a verified egress policy.
+
+The last item is not implemented as a hard boundary. Host networking is
+recorded as `network_allowlist: unavailable`, not described as verified. Until a
+request-level provider guard and a verified outbound allowlist exist, the
+opencode driver stops with a reported blocker. That is intentional: no paid
+trial is started on an unenforced policy.
+
+When that gate is satisfied, the intended operation is:
 
 ```sh
-cd harness
-uv sync
-GIVN_BINARY=/home/buster/projects/givn/target/release/givn \
-  uv run givn-harness run \
-    --agent opencode \
-    --driver native \
-    --profile smoke \
-    --task tasks/smoke.md \
-    --output /tmp/givn-harness-smoke \
-    --max-iterations 10 \
-    --timeout 1200
+uv run givn-harness run \
+  --benchmark benchmarks/lending \
+  --givn-binary /path/to/pinned/givn \
+  --output runs/current \
+  --condition current \
+  --repeats 1 \
+  --budget-usd 5 \
+  --price-table config/prices.toml
 ```
 
-The run writes `<output>/<run-id>/report.md` with the automated checks, the five
-LLM-judge scores, and the run manifest. It also writes the workspace's
-`development-report.html` next to it. The workspace path is printed.
+`config/prices.example.toml` is a template. Zero or placeholder rates are
+rejected; do not ship invented prices.
+
+### 4. Grade and compare
+
+```sh
+uv run givn-harness grade runs/current/<bundle> --benchmark benchmarks/lending
+uv run givn-harness compare \
+  --baseline runs/current \
+  --candidate runs/candidate \
+  --output comparison/
+```
+
+`grade` reads frozen snapshots. It copies each snapshot to a temporary
+directory, starts the submission through its documented black-box entry point,
+and never imports submission code. The authoritative snapshot is checksummed
+and remains unchanged. Regrading appends a new grade instead of overwriting an
+old one.
+
+`compare` reports individual trials, stage completion, per-requirement pass /
+fail / ungraded counts, cost completeness and driver time. Fewer than two
+trials per condition, differing execution conditions, missing grades or
+ungraded requirements make the result **inconclusive**. No single score is
+computed.
+
+## Trial bundle
+
+```text
+runs/<bundle>/
+  manifest.json              # versions, hashes, policy, stage list, status
+  journal.jsonl              # append-only execution and budget events
+  spend.json                 # reservations and committed charges (if budgeted)
+  stages/initial/
+    request.md               # exact stage request
+    request.json             # task hash, timeout, required gates
+    prompt.md                # exact driver prompt
+    agent.stdout.log
+    agent.stderr.log
+    driver.json
+    probe.json
+    stage.json               # completion, probe, archive, analysis summary
+    snapshot/                # authoritative frozen working tree
+    snapshot.json            # per-file checksums, git state, givn artifacts
+    events.jsonl             # raw record copy, when present
+    analysis.md / .json      # offline analysis of that record
+    probe...                 # stage-specific public check output
+  stages/followup/           # fresh session, same repository
+  grades/<grade-id>/
+    result.json              # independent requirement-level evidence
+    grader.log
+    grade.md
+```
+
+Manifest identity includes the harness revision/dirty state, givn binary
+checksum and version, benchmark and grader hashes, model/variant, driver,
+sandbox and network policy, budget, repeats and stage boundaries. Git history
+alone is not enough: uncommitted and untracked files are checksummed in the
+snapshot too.
+
+## Benchmark package
+
+```text
+benchmarks/lending/
+  benchmark.toml             # public stages, gate checks, verification
+  public/                    # copied into the agent workspace
+    contract.md              # every graded obligation
+    task-initial.md
+    task-followup.md
+    probe.py                 # public narrow smoke check
+    probe_followup.py
+    scaffold/                # empty starting point
+  private/                   # never copied into the agent workspace
+    grader/                  # black-box behavioral tests
+    reference/app.py         # trusted reference implementation
+    defects/*.patch          # seeded defects for the verification gate
+```
+
+The first benchmark is a small lending register delivered in two stages:
+
+1. members, books, borrowing, five-loan limit, exclusivity, returns,
+   persistence and rejection consistency;
+2. reference-only books, existing-loan returns, flag persistence, and
+   cross-version state preservation.
+
+The follow-up starts in a **fresh agent session** with the repository produced
+by the first stage. It is delivered only after the initial stage's workflow and
+public entry point complete. Hidden test success is never the continuation
+signal.
+
+## Isolation
+
+The default sandbox uses bubblewrap with:
+
+- all namespaces unshared (including network) unless host networking is
+  explicitly requested and recorded as unverified;
+- a private HOME and private `/tmp`;
+- a minimal `/etc` allowlist;
+- the trial workspace as the only writable project mount;
+- credentials only through explicit read-only opt-in paths.
+
+`sandbox-probe` proves workspace writability, host sentinel denial and network
+denial. If the probe fails, a graded run stops. There is no unsandboxed graded
+fallback.
+
+Grading keeps the trusted grader and private benchmark material outside the
+submission's readable namespace. The grader launches only the frozen snapshot
+and a fresh data directory in bubblewrap, with no network and no host home or
+benchmark mount. The authoritative snapshot is copied first, then checksummed
+before grading; it is never modified by submission code.
+
+## Improving givn with the harness
+
+Use the same loop for a rule, guardrail or workflow change:
+
+1. **Observe.** Run `analyze` on real records and read the cited evidence, not
+   just a finding title.
+2. **Form one narrow hypothesis.** Example: repeated archive rejection is
+   associated with generated files dirtying the tree.
+3. **Change one thing.** Build a candidate givn binary; keep the benchmark,
+   model, driver, sandbox and resource policy fixed.
+4. **Run both conditions.** Use `--repeats` for each condition; start
+   sequentially so accounting and resource contention stay simple.
+5. **Grade frozen snapshots.** A faster candidate that breaks a requirement is
+   not an unqualified improvement.
+6. **Compare.** Retain the change only when independent behavioral evidence and
+   resource measurements both support it. Report inconclusive when they do not.
+
+Compliance without a prompt is not evidence that deleting the prompt improves
+outcomes. Artifact presence, PASS markers and self-reported green tests are not
+primary quality evidence.
 
 ## Development
 
-This project uses givn for its own workflow; its `givn/` state is the harness's
-development workflow and is **not** used for the generated test workspaces (each
-run initializes a fresh one with the current binary).
-
+<!-- givn:begin:development -->
 ```sh
-uv sync
-
-# Project-owned test scripts
-./run-tests.sh
-./run-tests.sh --e2e        # requires a real LLM, ralph, opencode, network
-
-# Coverage
-./measure-coverage.sh
-./merge-coverages.sh
-
-# Single scenario
-uv run behave tests/features/ --no-capture -n "<scenario title>"
-
-# Step-body audit
-bash scripts/check-step-bodies.sh
+./run-tests.sh                      # deterministic, no provider, no spend
+uv run python -m unittest tests.test_runner -v
+uv run givn-harness benchmark verify benchmarks/lending
 ```
+<!-- givn:end:development -->
 
-## License
+The default suite never contacts a provider. Sandbox integration tests are
+skipped when bubblewrap cannot establish its namespaces.
 
-TBD
+## Repository relationship
+
+The standalone repository is authoritative. `givn/harness/` in the parent Rust
+repository is a synchronized downstream copy, not a second editing surface.
+See `docs/subtree-sync.md` for the exact local remote commands and the base
+commit used for synchronization.
+
+## Known limits
+
+- The opencode driver is implemented but blocked pending a verified egress
+  allowlist and request-level provider guard. No paid call was made.
+- Budget admission is proven at the ledger level. The runner reserves one
+  conservative envelope per stage; a multi-request agent needs request-level
+  interception before a hard invoice ceiling can be claimed.
+- The lending benchmark is intentionally small. Saturation is not evidence that
+  givn cannot improve; add harder tasks without changing the existing one.
+- The grader measures documented behavior, not architecture, maintainability or
+  end-user visual quality.
