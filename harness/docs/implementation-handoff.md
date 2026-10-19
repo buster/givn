@@ -1,8 +1,44 @@
 # Implementation handoff
 
-Date: 2026-10-19. Status: deterministic core implemented; no paid call made.
-Authorized budget: USD 5 total; spent: USD 0.00. Remaining: USD 0.00 allocated
-for this session (no request was dispatched).
+Date: 2026-10-19. Status: deterministic core implemented; one real
+initial-stage run executed. Authorized budget: USD 5 total; observed spend:
+USD 0.2141 across three attempts. Remaining: USD 4.7859.
+
+## Real run result
+
+The first real opencode trial ran the lending benchmark initial stage with
+DeepSeek Flash maximum thinking, bubblewrap, host networking explicitly marked
+exploratory, and a USD 4.90 cap.
+
+- Stage outcome: **timed out at 2400 seconds**.
+- Public probe: **passed**; `app.py` existed and the basic lending sequence
+  worked.
+- Independent grade: **7/7 graded initial requirements passed**, no critical
+  failures.
+- Follow-up: not reached; all follow-up and cross-version requirements
+  ungraded.
+- givn archive: **not completed**. The agent spent the stage on proposal,
+  specs, design, design review, implementation and tests but did not reach
+  archive inside the 40-minute bound.
+- Observed cost: **USD 0.1333** for this attempt.
+- Attempt 1 was interrupted at **USD 0.0349**; attempt 2 at **USD 0.0459**.
+
+The delivered initial product passed every independent initial check. Workflow
+completion failed on time, not on behavior. A longer timeout or a smaller task
+is required before drawing a conclusion about givn's workflow cost.
+
+The trial exposed and fixed two harness defects:
+
+- OpenCode snapshots were enabled and indexed the growing `.harness` state,
+  driving git to high CPU and filling the disk. Snapshots are now disabled in
+  the harness config and `.harness/` is git-ignored.
+- `git status` during snapshot freezing refreshed `.git/index` after checksums
+  were recorded. Snapshots now read git metadata before checksums with
+  `GIT_OPTIONAL_LOCKS=0` and exclude volatile `.git/index`.
+
+The DeepSeek key was briefly present in `bwrap` argv during attempt 1. It now
+moves through a mode-600 secrets file sourced inside the sandbox and is removed
+after the driver exits. Rotate the key used for these attempts.
 
 ## Delivered
 
@@ -27,13 +63,16 @@ for this session (no request was dispatched).
   network boundaries. Graded execution has no unsandboxed fallback.
 - Conservative spend ledger with reservations, dispatch marking, uncertain
   charges, crash-resume behavior and admission refusal.
-- Pinned model guard, price-table template and explicit paid-run blockers.
+- OpenCode driver with `--standalone`, a private XDG config/data/cache/state
+  tree, provider policy limited to `deepseek`, `snapshots: false`, absolute
+  binary path, and credential injection through a mode-600 file.
+- Pinned model guard, dated price table and explicit exploratory-network flag.
 - Descriptive `compare` that reports per-requirement counts and marks
   comparisons inconclusive when evidence or comparability is insufficient.
 
 ## Test evidence
 
-- `./run-tests.sh`: 57 deterministic tests, all passing.
+- `./run-tests.sh`: 66 deterministic tests, all passing.
 - `givn-harness benchmark verify benchmarks/lending`: reference passes all 13
   requirements; scaffold fails substantive requirements; all five seeded
   defects are caught.
@@ -48,17 +87,17 @@ for this session (no request was dispatched).
 
 ## Known blockers and limits
 
-1. **Paid opencode execution is blocked by design.** Host networking is not a
-   verified egress allowlist, and the runner cannot intercept every native
-   request. No paid request may start until a verified outbound route and
-   request-level model/cost guard exist. The USD 5 authorization remains
-   unspent.
+1. **Host networking is not a verified egress allowlist.** Opencode runs only
+   with `--allow-unverified-network` and is labelled exploratory. A controlled
+   run needs an external VM/container firewall or equivalent.
 2. **Budget granularity is per stage.** The ledger admits one conservative
-   envelope per stage. A multi-request agent needs request-level reservation
-   before a hard invoice ceiling can be claimed.
-3. **The opencode invocation path is not exercised end to end.** It is
-   implemented with a fresh session, private server, JSON format and pinned
-   model, but blocked before dispatch by the policy above.
+   envelope per stage. The real run's actual cost exceeded its reservation
+   (`admission_exceeded: true`); a multi-request agent needs request-level
+   reservation before a hard invoice ceiling can be claimed.
+3. **The opencode invocation path is exercised, but the first trial timed out
+   before archive.** The driver, private config, credential injection and
+   grading worked; the 40-minute stage bound was too short for the observed
+   givn workflow.
 4. **Complex-task support is manifest-level.** The runner and grader support
    any number of ordered stages; only the lending task is packaged and
    verified. A brownfield task needs its own public contract, reference,
@@ -73,9 +112,13 @@ for this session (no request was dispatched).
 
 ## Next increments
 
-1. Implement and verify a request-level provider guard plus an outbound
-   allowlist, then run the small workflow once under the USD 5 cap.
-2. Add one harder, brownfield multi-stage benchmark using the same bundle and
+1. Re-run the initial stage with a longer timeout, or reduce the task's workflow
+   overhead, and compare the delivered behavior against the observed 7/7
+   initial grade.
+2. Implement and verify a request-level provider guard plus an outbound
+   allowlist, then run the full two-stage workflow once under the remaining
+   budget.
+3. Add one harder, brownfield multi-stage benchmark using the same bundle and
    grader machinery.
-3. Compare current versus candidate givn only after the execution foundation is
+4. Compare current versus candidate givn only after the execution foundation is
    proven; keep tasks frozen so saturation does not silently change the ruler.

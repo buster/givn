@@ -136,6 +136,9 @@ def analyze(
 @click.option("--price-table", type=click.Path(exists=True), default=None, help="Dated price table (TOML)")
 @click.option("--max-output-tokens", type=int, default=8192)
 @click.option("--answer-policy", type=click.Choice(["recommended", "none"]), default="recommended")
+@click.option("--deepseek-api-key-file", type=click.Path(exists=True), default=None, help="Read DEEPSEEK_API_KEY from this file without logging it")
+@click.option("--allow-unverified-network", is_flag=True, default=False, help="Permit explicitly exploratory host networking for opencode")
+@click.option("--stop-after", default=None, help="Stop after this stage and record later stages as not reached")
 @click.option("--resume", type=click.Path(exists=True), default=None, help="Resume a bundle's completed prefix")
 @click.option("--no-analyze", is_flag=True, default=False, help="Do not run the offline analyzer on stage records")
 @click.option("--show-agent-output", is_flag=True, default=False)
@@ -156,6 +159,9 @@ def run(
     price_table: str | None,
     max_output_tokens: int,
     answer_policy: str,
+    deepseek_api_key_file: str | None,
+    allow_unverified_network: bool,
+    stop_after: str | None,
     resume: str | None,
     no_analyze: bool,
     show_agent_output: bool,
@@ -181,6 +187,19 @@ def run(
         if not key:
             raise click.ClickException("--driver-env key cannot be empty")
         extra_env[key] = value
+    secret_env: dict[str, str] = {}
+    if deepseek_api_key_file:
+        key = Path(deepseek_api_key_file).read_text(encoding="utf-8").strip()
+        if not key:
+            raise click.ClickException("--deepseek-api-key-file is empty")
+        secret_env["DEEPSEEK_API_KEY"] = key
+    elif extra_env.get("DEEPSEEK_API_KEY"):
+        secret_env["DEEPSEEK_API_KEY"] = extra_env.pop("DEEPSEEK_API_KEY")
+    if driver_kind == "opencode" and not secret_env.get("DEEPSEEK_API_KEY"):
+        raise click.ClickException(
+            "the opencode driver needs --deepseek-api-key-file or "
+            "--driver-env DEEPSEEK_API_KEY=..."
+        )
     try:
         loaded = load_benchmark(benchmark)
     except BenchmarkError as error:
@@ -208,6 +227,9 @@ def run(
         analyze_stages=not no_analyze,
         answer_policy=answer_policy,
         resume=Path(resume) if resume else None,
+        allow_unverified_network=allow_unverified_network,
+        stop_after=stop_after,
+        secret_env=secret_env,
     )
     click.echo(f"Model guard: {json.dumps(guard_record(selected_model, driver_kind))}")
     try:

@@ -220,11 +220,24 @@ def build_command(policy: SandboxPolicy, command: list[str]) -> list[str]:
             or key.startswith("HARNESS_")
         ):
             args.extend(["--setenv", key, value])
-        elif key in {"OPENCODE_CONFIG", "OPENCODE_CONFIG_DIR", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME", "DEEPSEEK_API_KEY"}:
+        elif key in {"OPENCODE_CONFIG", "OPENCODE_CONFIG_DIR", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME", "XDG_STATE_HOME", "DEEPSEEK_API_KEY"}:
             # Credential-bearing values are injected only when explicitly
             # supplied by the caller; they are not copied from the host env.
             args.extend(["--setenv", key, value])
     args.append("--")
+    secret_file = env.get("HARNESS_SECRETS_FILE")
+    if secret_file:
+        # Keep credential values out of argv and /proc/<pid>/cmdline. The
+        # wrapper sources a mode-600 file inside the workspace and exports it
+        # before exec.
+        args.extend(
+            [
+                "/bin/sh",
+                "-c",
+                'set -a; . "$HARNESS_SECRETS_FILE"; set +a; exec "$@"',
+                "sh",
+            ]
+        )
     args.extend(command)
     return args
 

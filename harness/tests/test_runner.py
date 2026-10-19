@@ -57,6 +57,8 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(manifest["status"], "completed")
         self.assertEqual([stage["id"] for stage in manifest["stages"]], ["initial", "followup"])
         self.assertTrue(all(stage["completed"] for stage in manifest["stages"]))
+        workspace = Path(manifest["workspace"])
+        self.assertIn(".harness/", (workspace / ".gitignore").read_text())
         for stage in ("initial", "followup"):
             stage_dir = bundle / "stages" / stage
             self.assertTrue((stage_dir / "snapshot" / "app.py").is_file())
@@ -141,6 +143,16 @@ class RunnerTests(unittest.TestCase):
         bundle = execute(self.config())[0]
         grade = grade_bundle(bundle, self.benchmark, sandbox_mode="required")
         self.assertTrue(grade["summary"]["all_required_passed"])
+
+    def test_stop_after_completes_prefix_and_records_remaining_not_reached(self) -> None:
+        config = self.config()
+        config.stop_after = "initial"
+        bundle = execute(config)[0]
+        manifest = load_manifest(bundle)
+        self.assertEqual(manifest["status"], "incomplete")
+        self.assertTrue(manifest["stages"][0]["completed"])
+        self.assertTrue(manifest["stages"][1]["not_reached"])
+        self.assertIn("stop-after", (bundle / "stages" / "followup" / "not-reached.json").read_text())
 
     def test_resume_of_completed_bundle_returns_without_rework(self) -> None:
         bundle = execute(self.config())[0]

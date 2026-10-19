@@ -102,23 +102,13 @@ The script driver copies the reference application into the frozen workspace.
 No model is contacted. The same command with `--sandbox none` is useful for
 debugging but not labelled a graded execution.
 
-### 3. Paid runs
+### 3. Real model runs
 
-Paid execution is **blocked by default** and no run has spent money. The
-opencode driver refuses to start unless all of these are supplied:
+Paid execution is blocked unless the run states its evidence class explicitly.
 
-- `--givn-binary` — the exact binary under test, hashed into the manifest;
-- `--budget-usd` — a hard campaign cap;
-- `--price-table` — a dated price source with explicit per-million rates;
-- a verified egress policy.
-
-The last item is not implemented as a hard boundary. Host networking is
-recorded as `network_allowlist: unavailable`, not described as verified. Until a
-request-level provider guard and a verified outbound allowlist exist, the
-opencode driver stops with a reported blocker. That is intentional: no paid
-trial is started on an unenforced policy.
-
-When that gate is satisfied, the intended operation is:
+**Controlled run.** Use a verified egress boundary outside the harness, for
+example a VM or container firewall that permits only `api.deepseek.com:443`.
+Supply the pinned binary, budget, dated price table and key file:
 
 ```sh
 uv run givn-harness run \
@@ -127,12 +117,47 @@ uv run givn-harness run \
   --output runs/current \
   --condition current \
   --repeats 1 \
+  --driver opencode \
+  --network host \
+  --allow-unverified-network \
+  --sandbox required \
   --budget-usd 5 \
-  --price-table config/prices.toml
+  --price-table config/prices.toml \
+  --deepseek-api-key-file /path/to/key
 ```
 
-`config/prices.example.toml` is a template. Zero or placeholder rates are
-rejected; do not ship invented prices.
+`--allow-unverified-network` is required because the harness cannot prove the
+egress boundary. Inside a VM with an enforced firewall, the same flag records
+the host-network mechanism while the VM supplies the actual boundary.
+
+**Exploratory run.** On a normal workstation, the same command with
+`--allow-unverified-network` is explicitly exploratory. The manifest records
+`execution_class: exploratory` and `network_allowlist: unverified`. Exclude it
+from controlled comparisons.
+
+The opencode driver creates a private XDG tree per trial: private config, data,
+cache and state. It mounts only the OpenCode runtime under `~/.opencode`; the
+host config, plugins, cache and credentials database are not mounted. A
+generated project config allows only the `deepseek` provider and pins
+`deepseek/deepseek-flash#max`. The DeepSeek credential is injected through
+`DEEPSEEK_API_KEY` from `--deepseek-api-key-file`; the key is not written to the
+manifest or logs.
+
+For a first real check, stop after the initial stage:
+
+```sh
+  --stop-after initial
+```
+
+The follow-up is then recorded as `not_reached`, and the initial snapshot can
+still be graded.
+
+`config/prices.toml` contains dated rates from the OpenCode model catalog.
+`config/prices.example.toml` is a placeholder template; zero or placeholder
+rates are rejected. Re-check prices before a new campaign.
+
+See `docs/real-run.md` for the preflight checklist, controlled-versus-
+exploratory setup, key handling and post-run inspection.
 
 ### 4. Grade and compare
 
@@ -285,8 +310,9 @@ commands and validation.
 
 ## Known limits
 
-- The opencode driver is implemented but blocked pending a verified egress
-  allowlist and request-level provider guard. No paid call was made.
+- Host networking is not a verified egress allowlist. The harness requires
+  `--allow-unverified-network` and labels those trials exploratory. Controlled
+  evidence needs an external VM/container firewall or equivalent boundary.
 - Budget admission is proven at the ledger level. The runner reserves one
   conservative envelope per stage; a multi-request agent needs request-level
   interception before a hard invoice ceiling can be claimed.
