@@ -24,6 +24,9 @@ fn project_reports_counts(world: &mut GivnWorld) {
     let env = support::env(world);
     support::write_result_runner(env, "pass");
     common::commit_fixture(env);
+    if let Some(id) = world.last_change_id.clone() {
+        support::refresh_change_receipt(world, &id);
+    }
 }
 
 #[given(regex = r#"^a committed givn project with an unproven archive candidate "([^"]+)"$"#)]

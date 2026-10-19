@@ -1,4 +1,4 @@
-use cucumber::{given, then};
+use cucumber::{given, then, when};
 use std::process::Output;
 
 use super::GivnWorld;
@@ -280,6 +280,43 @@ fn explicitly_retired_migration_snapshot(world: &mut GivnWorld) {
 
 // ---- Given steps ----
 
+fn write_fixture_change_receipt(world: &GivnWorld, id: &str) {
+    let root = project_root(world);
+    let change = change_dir_for(world, id);
+    let env = world.env.as_ref().expect("a fixture project");
+    let head = match env.backend() {
+        common::BackendKind::Git => String::from_utf8_lossy(
+            &common::git(env, &["rev-parse", "HEAD"]).stdout,
+        )
+        .trim()
+        .to_string(),
+        common::BackendKind::Fossil => String::from_utf8_lossy(
+            &common::fossil(env, &["info"]).stdout,
+        )
+        .lines()
+        .find_map(|line| line.strip_prefix("checkout:"))
+        .and_then(|rest| rest.split_whitespace().next())
+        .unwrap_or_default()
+        .to_string(),
+    };
+    givn::proof::write_change_receipt(
+        &root,
+        &change,
+        id,
+        &head,
+        "./emit-result.sh regular",
+        givn::proof::RunnerResult {
+            scope: None,
+            total: 2,
+            passed: 2,
+            failed: 0,
+            skipped: 0,
+        },
+        1,
+    )
+    .expect("write fixture change receipt");
+}
+
 #[given("a givn project with a change that has passed design-review")]
 fn change_passed_design_review(world: &mut GivnWorld) {
     scaffold_init_root_change(world, "test-change");
@@ -293,6 +330,7 @@ fn change_passed_design_review(world: &mut GivnWorld) {
     let personas = project_root(world).join("givn/personas");
     std::fs::create_dir_all(&personas).unwrap();
     std::fs::write(personas.join("fixture-persona.md"), "# Persona: fixture\n").unwrap();
+    write_fixture_change_receipt(world, "test-change");
 }
 
 #[given(regex = r"^the change's tasks\.md contains `(.+)`$")]
@@ -378,6 +416,7 @@ fn project_arc42_enabled(world: &mut GivnWorld) {
         String::from_utf8_lossy(&out.stderr)
     );
     world.last_change_id = Some("test-change".to_string());
+    write_fixture_change_receipt(world, "test-change");
 }
 
 #[given("a change that has passed design-review")]
@@ -393,6 +432,7 @@ fn standalone_change_design_review(world: &mut GivnWorld) {
     set_coverage_true(world);
     let dr_path = project_root(world).join("givn/changes/test-change/design-review.md");
     std::fs::write(&dr_path, "DESIGN-REVIEW: PASS\n").unwrap();
+    write_fixture_change_receipt(world, "test-change");
 }
 
 #[given(expr = "the change's arc42.md marks chapter {string} as Affected: Yes")]
@@ -708,6 +748,9 @@ fn project_records_verify(world: &mut GivnWorld) {
     std::fs::write(&script, "#!/bin/sh\ntouch verify-ran.marker\nexit 0\n").unwrap();
     std::fs::set_permissions(&script, std::os::unix::fs::PermissionsExt::from_mode(0o755)).unwrap();
     set_verify_command_in_config(world, "./record-verify.sh");
+    if let Some(id) = world.last_change_id.clone() {
+        write_fixture_change_receipt(world, &id);
+    }
 }
 
 #[then("the verify command did not run")]
@@ -816,4 +859,158 @@ fn migration_comparison_passed(world: &mut GivnWorld) {
         content.contains("\"passed\": true"),
         "comparison was not passed: {content}"
     );
+}
+
+// --- change verification receipt scenarios --------------------------------
+
+#[given("a clean committed givn project with a change whose delta specs pass")]
+fn clean_project_with_passing_change(world: &mut GivnWorld) {
+    crate::steps::archive_proof_support::ready_change(world, "verify-demo", false, "pass");
+    // The review routing check resolves the declared NEW-in use case. Give the
+    // fixture a permanent use case that owns the capability.
+    let root = project_root(world);
+    let usecase = root.join("givn/specs/demo-cap");
+    std::fs::create_dir_all(&usecase).expect("create fixture usecase");
+    let document = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", "demo-cap")
+        .replace("<capability-id>", "demo-cap")
+        .replace("<scenario title>", "Existing scenario");
+    std::fs::write(usecase.join("usecase.md"), document).expect("write fixture usecase");
+    std::fs::write(
+        usecase.join("demo-cap.feature"),
+        "Feature: Demo Capability\n\n  Scenario: Existing scenario\n    Given an existing thing\n    Then it already works\n",
+    )
+    .expect("write fixture permanent feature");
+    let proposal = root.join("givn/changes/verify-demo/proposal.md");
+    std::fs::write(
+        &proposal,
+        "# Proposal: fixture\n\n## Capability Routing\n\n\
+         | Proposed capability | Route's recommendation | Decision | Rationale |\n\
+         |---|---|---|---|\n\
+         | demo-cap | EXTEND demo-cap | `EXTEND demo-cap` | fixture |\n",
+    )
+    .expect("write fixture proposal");
+    common::commit_fixture(world.env.as_ref().expect("a fixture project"));
+    crate::steps::archive_proof_support::refresh_change_receipt(world, "verify-demo");
+}
+
+#[given("the change has no verification receipt")]
+fn change_has_no_receipt(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let path = change_dir_for(world, &id).join("verification/tasks-verification.json");
+    if path.exists() {
+        std::fs::remove_file(&path).expect("remove verification receipt");
+    }
+    world.skip_receipt_autowrite = true;
+}
+
+#[given("the change has a current verification receipt")]
+fn change_has_current_receipt(world: &mut GivnWorld) {
+    if let Some(id) = world.last_change_id.clone() {
+        crate::steps::archive_proof_support::refresh_change_receipt(world, &id);
+    }
+    world.skip_receipt_autowrite = true;
+}
+
+#[given("the delta specs changed after the receipt")]
+fn delta_specs_changed_after_receipt(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let specs = change_dir_for(world, &id).join("specs");
+    let file = givn::gherkin::parse::collect_feature_files(&specs)
+        .into_iter()
+        .next()
+        .expect("a delta feature file");
+    let mut content = std::fs::read_to_string(&file).expect("read delta feature");
+    content.push_str("\n  @givn.added\n  Scenario: Late scenario\n    Given x\n    Then y\n");
+    std::fs::write(&file, content).expect("write changed delta feature");
+    if let Some(env) = world.env.as_ref() {
+        common::commit_fixture(env);
+    }
+    world.skip_receipt_autowrite = true;
+}
+
+#[then("the change directory contains a passed verification receipt naming the tested revision")]
+fn change_directory_has_passed_receipt(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let change = change_dir_for(world, &id);
+    let receipt = givn::proof::ChangeReceipt::read(&change).expect("read change receipt");
+    assert_eq!(receipt.status, "passed");
+    let env = world.env.as_ref().expect("a fixture project");
+    let head = match env.backend() {
+        common::BackendKind::Git => String::from_utf8_lossy(
+            &common::git(env, &["rev-parse", "HEAD"]).stdout,
+        )
+        .trim()
+        .to_string(),
+        common::BackendKind::Fossil => String::from_utf8_lossy(
+            &common::fossil(env, &["info"]).stdout,
+        )
+        .lines()
+        .find_map(|line| line.strip_prefix("checkout:"))
+        .and_then(|rest| rest.split_whitespace().next())
+        .unwrap_or_default()
+        .to_string(),
+    };
+    assert_eq!(receipt.head, head);
+}
+
+#[then(regex = r"^stderr routes to `givn check tasks --change ([^`]+)`$")]
+fn stderr_routes_to_check_tasks(world: &mut GivnWorld, id: String) {
+    let stderr = crate::steps::stderr(world);
+    assert!(
+        stderr.contains(&format!("givn check tasks --change {id}")),
+        "stderr does not route to check tasks: {stderr}"
+    );
+}
+
+#[then("stderr says the verification receipt is stale")]
+fn stderr_says_receipt_stale(world: &mut GivnWorld) {
+    let stderr = crate::steps::stderr(world);
+    assert!(
+        stderr.contains("verification receipt is stale"),
+        "stderr missing stale receipt: {stderr}"
+    );
+}
+
+
+#[given("a givn project with a result file path")]
+fn project_with_result_path(world: &mut GivnWorld) {
+    world.env = Some(common::make_init_root());
+    world.skip_auto_commit = true;
+}
+
+#[when("the user runs the result helper for 3 total and 3 passed")]
+fn run_result_helper(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("a project root");
+    let result = env.path("result.json");
+    let path = result.to_string_lossy().into_owned();
+    let out = common::run_givn_with_envs(
+        env,
+        &[
+            "test-result",
+            "--total",
+            "3",
+            "--passed",
+            "3",
+            "--failed",
+            "0",
+            "--skipped",
+            "0",
+        ],
+        &[("GIVN_RESULT_FILE", &path)],
+    );
+    world.last_output = Some(out);
+}
+
+#[then("the result file contains total 3, passed 3, failed 0 and skipped 0 without a scope")]
+fn result_file_has_counts(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("a project root");
+    let value: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(env.path("result.json")).expect("result file"))
+            .expect("valid result JSON");
+    assert_eq!(value["total"], 3);
+    assert_eq!(value["passed"], 3);
+    assert_eq!(value["failed"], 0);
+    assert_eq!(value["skipped"], 0);
+    assert!(value.get("scope").is_none());
 }

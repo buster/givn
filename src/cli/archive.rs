@@ -121,6 +121,7 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
 
     if fresh {
         ensure_clean(&backend, &project_root, change, &manifest, Witness::Project)?;
+        ensure_change_receipt(&backend, &manifest, &change_dir, change)?;
         println!(
             "[{}] Archiving change '{change}'...",
             crate::subprocess::local_timestamp()
@@ -875,6 +876,39 @@ fn rejection_state(backend: &crate::scm::Backend) -> &'static str {
         crate::scm::Backend::Git(_) => "The candidate state is staged but not committed",
         crate::scm::Backend::Fossil(_) => "The candidate state stays in the checkout uncommitted",
     }
+}
+
+/// Refuse a fresh archive unless the change-scoped receipt is current.
+fn ensure_change_receipt(
+    backend: &crate::scm::Backend,
+    manifest: &crate::config::manifest::Manifest,
+    change_dir: &Path,
+    change: &str,
+) -> Result<()> {
+    let receipt = crate::proof::ChangeReceipt::read(change_dir).map_err(|error| {
+        anyhow::anyhow!(
+            "archive blocked: {error}. Run `givn check tasks --change {change}` before archiving."
+        )
+    })?;
+    let head = backend.revision()?;
+    if !receipt.is_current(change_dir, &head, &manifest.verify.command)? {
+        let features = crate::proof::digest_features(&change_dir.join("specs"))?;
+        bail!(
+            "archive blocked: the change verification receipt is stale for '{change}'. \
+             receipt head {}, current head {head}; receipt features {}, current features {features}; \
+             receipt command {}, current command {}. Run `givn check tasks --change {change}` again.",
+            receipt.head,
+            receipt.features_digest,
+            receipt.command_digest,
+            crate::proof::digest_text(&manifest.verify.command)
+        );
+    }
+    println!(
+        "[{}] ✓ change verification receipt passed ({} scenario(s))",
+        crate::subprocess::local_timestamp(),
+        receipt.result.total
+    );
+    Ok(())
 }
 
 /// Block unless the dirty worktree contains only evidence paths.

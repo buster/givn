@@ -202,15 +202,30 @@ pub(crate) fn write_change_artifacts_at(base: &Path, id: &str, with_e2e: bool) {
         ),
     )
     .expect("write delta feature");
-    fs::write(change.join("design.md"), "# Design\n").expect("write design");
+    fs::write(
+        change.join("design.md"),
+        "# Design\n\n## Step Definitions\n\n| Step | File |\n|---|---|\n| archive scenarios | tests/steps/archive_proof_steps.rs |\n",
+    )
+    .expect("write design");
     fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n")
         .expect("write design-review");
-    fs::write(change.join("tasks.md"), "- [x] done\n").expect("write tasks");
+    fs::write(
+        change.join("tasks.md"),
+        "- [x] COMMIT: a1b2c3d4 -- done\n",
+    )
+    .expect("write tasks");
     fs::write(
         change.join("review.md"),
         "REVIEW: PASS\nREADME-IMPACT: none\n",
     )
     .expect("write review");
+    let steps = base.join("tests/steps");
+    fs::create_dir_all(&steps).expect("create fixture step dir");
+    fs::write(
+        steps.join("archive_proof_steps.rs"),
+        "// fixture step definitions\n",
+    )
+    .expect("write fixture step file");
     fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").expect("write arc42");
 }
 
@@ -341,6 +356,58 @@ pub(crate) fn committed_receipt_status(world: &GivnWorld, id: &str) -> String {
         .unwrap_or_else(|| "unreadable".to_string())
 }
 
+/// Write a current change-scoped verification receipt for the fixture.
+pub(crate) fn configured_verify_command(world: &GivnWorld) -> String {
+    let path = root(world).join("givn/commands.yaml");
+    let Ok(content) = fs::read_to_string(path) else {
+        return String::new();
+    };
+    let mut in_verify = false;
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed == "verify:" {
+            in_verify = true;
+            continue;
+        }
+        if in_verify {
+            if trimmed.starts_with("e2e_command:") {
+                continue;
+            }
+            if let Some(value) = trimmed.strip_prefix("command:") {
+                let value = value.split('#').next().unwrap_or("").trim();
+                return value.trim_matches('"').to_string();
+            }
+        }
+    }
+    "givn missing-testrunner".to_string()
+}
+
+pub(crate) fn refresh_change_receipt(world: &GivnWorld, id: &str) {
+    let root = root(world);
+    let change = root.join(format!("givn/changes/{id}"));
+    if !change.exists() {
+        return;
+    }
+    let head = current_revision(world);
+    let command = configured_verify_command(world);
+    givn::proof::write_change_receipt(
+        &root,
+        &change,
+        id,
+        &head,
+        &command,
+        givn::proof::RunnerResult {
+            scope: None,
+            total: 2,
+            passed: 2,
+            failed: 0,
+            skipped: 0,
+        },
+        1,
+    )
+    .expect("write change verification receipt");
+}
+
 pub(crate) fn ready_change(world: &mut GivnWorld, id: &str, with_e2e: bool, kind: &str) {
     ready_change_on(world, common::BackendKind::Git, id, with_e2e, kind);
 }
@@ -361,6 +428,7 @@ pub(crate) fn ready_change_on(
     write_change_artifacts(env, id, with_e2e);
     common::commit_fixture(env);
     world.last_change_id = Some(id.to_string());
+    refresh_change_receipt(world, id);
 }
 
 /// Parse the backend step value used by the backend-parameterized Givens.
