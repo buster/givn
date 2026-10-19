@@ -71,7 +71,9 @@ reset that restores the active change recreates the same state.
   absent and the tombstone already names the change; otherwise it removes the
   remaining capability file, repeats the last-capability directory cleanup, and
   records the tombstone once. The tombstone write is atomic and its entry list
-  is de-duplicated by capability and change. Realized in
+  is de-duplicated by capability and change. A pending receipt written before
+  merge progress existed cannot name applied files, so its rerun retries every
+  delta under this rule instead of failing on an already-merged title. Realized in
   `src/gherkin/merge.rs` (`apply_deltas`, `apply_deltas_retry`) and
   `src/cli/archive.rs` (`process_delta_file`, `record_retirement`).
 - **D6: active-change evidence is an evidence path.** The clean-state witness
