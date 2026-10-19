@@ -567,8 +567,18 @@ mod tests {
 
         std::fs::write(active.join("proposal.md"), "changed\n").unwrap();
         assert!(!candidate_matches_active(root.path(), id));
+    }
 
+    #[test]
+    fn candidate_comparison_rejects_an_active_only_artifact() {
+        let root = tempfile::TempDir::new().unwrap();
+        let id = "demo";
+        let active = root.path().join("givn/changes/demo");
+        let archive = root.path().join("givn/archive/demo");
+        std::fs::create_dir_all(&active).unwrap();
+        std::fs::create_dir_all(&archive).unwrap();
         std::fs::write(active.join("proposal.md"), "same\n").unwrap();
+        std::fs::write(archive.join("proposal.md"), "same\n").unwrap();
         std::fs::write(active.join("extra.md"), "active-only artifact\n").unwrap();
         assert!(!candidate_matches_active(root.path(), id));
     }
