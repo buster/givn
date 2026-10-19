@@ -67,6 +67,17 @@ mod tests {
     }
 
     #[test]
+    fn writes_failed_and_skipped_counts_for_a_red_run() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let result = dir.path().join("result.json");
+        write_result(&result, 3, 1, 1, 1).unwrap();
+        let value: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&result).unwrap()).unwrap();
+        assert_eq!(value["failed"], 1);
+        assert_eq!(value["skipped"], 1);
+    }
+
+    #[test]
     fn rejects_non_reconciling_counts() {
         let dir = tempfile::TempDir::new().unwrap();
         let result = dir.path().join("result.json");
