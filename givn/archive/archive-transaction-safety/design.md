@@ -78,9 +78,11 @@ reset that restores the active change recreates the same state.
   and the tested-tree guard exempt exactly `givn/changes/<id>/verification.json`
   and the prefixes `givn/changes/<id>/evidence/` and
   `givn/changes/<id>/verification/`, in addition to the archive directory,
-  README, and coverage outputs. Prefixes carry a trailing separator so
-  `evidence-other/` is not exempt. Realized in `src/proof.rs`
-  (`is_evidence_path`).
+  README, and coverage outputs. Evidence under any archive's `evidence/`,
+  `verification/`, or `results/` tree and its receipt is also exempt: a
+  verification replay can rewrite another archive's visual evidence. Prefixes
+  carry a trailing separator so `evidence-other/` is not exempt. Realized in
+  `src/proof.rs` (`is_evidence_path`).
 - **D7: a proven working-tree receipt is final only when the committed receipt
   is proven.** `write_proven` precedes the evidence-only publication, so a
   crash or a rejected hook can leave a proven receipt on disk while the

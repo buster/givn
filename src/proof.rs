@@ -460,6 +460,18 @@ pub fn is_evidence_path(
     {
         return true;
     }
+    // Evidence produced by another archive's verification is an output, not
+    // an input to this change's tested tree. Browser screenshot replays can
+    // rewrite it while the current archive runs.
+    if let Some(rest) = normalized.strip_prefix("givn/archive/")
+        && let Some((_other, tail)) = rest.split_once('/')
+        && (tail == RECEIPT_FILE
+            || tail.starts_with("results/")
+            || tail.starts_with("evidence/")
+            || tail.starts_with("verification/"))
+    {
+        return true;
+    }
     let change_root = format!("givn/changes/{id}");
     if normalized == format!("{change_root}/verification.json")
         || normalized.starts_with(&format!("{change_root}/evidence/"))
@@ -666,11 +678,23 @@ mod tests {
             &manifest,
             Path::new("givn/changes/demo/proposal.md")
         ));
-        assert!(!is_evidence_path(
+        assert!(is_evidence_path(
             root,
             "demo",
             &manifest,
             Path::new("givn/archive/demo-other/verification.json")
+        ));
+        assert!(is_evidence_path(
+            root,
+            "demo",
+            &manifest,
+            Path::new("givn/archive/demo-other/evidence/visual/run.png")
+        ));
+        assert!(!is_evidence_path(
+            root,
+            "demo",
+            &manifest,
+            Path::new("givn/archive/demo-other/design.md")
         ));
     }
 
