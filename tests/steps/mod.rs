@@ -180,6 +180,9 @@ pub struct GivnWorld {
     /// the reporter run the scenario drove through its real entry point.
     pub(crate) agent_activity_reporting_e2e:
         Option<agent_activity_reporting_e2e_steps::AgentActivityReportingE2eState>,
+    /// Snapshot of a pending receipt taken by a fixture, for the
+    /// "receipt is unchanged" assertion.
+    pub(crate) archive_receipt_snapshot: Option<String>,
     /// State for the `@e2e` `development-report` scenarios: the generated
     /// report and the browser the browser scenarios drive.
     #[allow(dead_code)] // Tasks E5–E9 read it.

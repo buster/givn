@@ -158,6 +158,17 @@ impl FossilCheckout {
         Ok(!self.dirty_entries()?.is_empty())
     }
 
+    /// Read a file from the current checkout revision. Returns `None` when the
+    /// path is absent.
+    pub fn revision_file(&self, path: &str) -> Result<Option<String>> {
+        let output = self.run(&["cat", path, "-r", "current"])?;
+        if output.status.success() {
+            Ok(Some(String::from_utf8_lossy(&output.stdout).into_owned()))
+        } else {
+            Ok(None)
+        }
+    }
+
     /// Commit exactly `paths` (already recorded), leaving other pending
     /// changes untouched. Returns an error when none of them changed.
     pub fn commit_paths(&self, message: &str, paths: &[PathBuf]) -> Result<()> {

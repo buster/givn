@@ -3063,7 +3063,10 @@ mod tests {
             .iter()
             .find(|lane| lane.session.as_deref() == Some("s1"))
             .expect("the tool entry's session has no lane");
-        assert_eq!(session_lane.name, "main", "the unspecialized session is the main lane");
+        assert_eq!(
+            session_lane.name, "main",
+            "the unspecialized session is the main lane"
+        );
         assert!(
             session_lane.entries.contains(&3),
             "the tool entry is not in its session's lane"

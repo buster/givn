@@ -27,6 +27,38 @@ pub fn apply_deltas(
     deltas: &[DeltaScenario<'_>],
     delta_feature_name: &str,
 ) -> Result<String> {
+    apply_deltas_mode(
+        permanent_text,
+        deltas,
+        delta_feature_name,
+        MergeMode::Strict,
+    )
+}
+
+/// Apply deltas for a retried in-progress file. An added scenario whose
+/// parsed body already matches is a no-op, and an already-absent removed
+/// scenario is a no-op; a different body under the same title still fails.
+#[cfg(test)]
+pub fn apply_deltas_retry(
+    permanent_text: Option<&str>,
+    deltas: &[DeltaScenario<'_>],
+    delta_feature_name: &str,
+) -> Result<String> {
+    apply_deltas_mode(permanent_text, deltas, delta_feature_name, MergeMode::Retry)
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum MergeMode {
+    Strict,
+    Retry,
+}
+
+fn apply_deltas_mode(
+    permanent_text: Option<&str>,
+    deltas: &[DeltaScenario<'_>],
+    delta_feature_name: &str,
+    mode: MergeMode,
+) -> Result<String> {
     // Parse the permanent feature (or start from an empty scenario list).
     let mut perm_scenarios: Vec<ScenarioText> = match permanent_text {
         Some(text) if !text.trim().is_empty() => parse_scenarios_from_text(text)?,
@@ -48,6 +80,14 @@ pub fn apply_deltas(
         match delta.op {
             DeltaOp::Added => {
                 if exists {
+                    if mode == MergeMode::Retry
+                        && perm_scenarios
+                            .iter()
+                            .find(|s| s.title == *title)
+                            .is_some_and(|s| scenario_matches(&s.text, delta.scenario))
+                    {
+                        continue;
+                    }
                     return Err(GivnError::MergeError(format!(
                         "cannot add scenario '{}': title already exists in the permanent spec",
                         title
@@ -73,6 +113,9 @@ pub fn apply_deltas(
             }
             DeltaOp::Removed => {
                 if !exists {
+                    if mode == MergeMode::Retry {
+                        continue;
+                    }
                     return Err(GivnError::MergeError(format!(
                         "cannot {:?} scenario '{}': title not found in the permanent spec",
                         delta.op, title
@@ -97,9 +140,38 @@ pub fn apply_deltas(
     Ok(output)
 }
 
+/// Compare the parsed permanent scenario with the delta scenario by rendering
+/// both through the same tag-stripping renderer. This normalizes tag lines,
+/// blank lines, step formatting, tables, and docstrings without comparing raw
+/// source text.
+fn scenario_matches(existing_text: &str, delta: &Scenario) -> bool {
+    let wrapped = format!("Feature: retry\n{existing_text}\n");
+    let Ok(feature) = gherkin::Feature::parse(&wrapped, gherkin::GherkinEnv::default()) else {
+        return false;
+    };
+    let Some(existing) = feature.scenarios.first() else {
+        return false;
+    };
+    render_scenario_stripped(existing).trim_end() == render_scenario_stripped(delta).trim_end()
+}
+
 /// Merge a delta feature file into a permanent spec file on disk.
-/// All-or-nothing: validates before writing.
+/// All-or-nothing: validates before writing. The write is atomic (temp file
+/// in the same directory, then rename).
 pub fn merge_file(permanent_path: &std::path::Path, delta_feature: &Feature) -> Result<()> {
+    merge_file_mode(permanent_path, delta_feature, MergeMode::Strict)
+}
+
+/// Merge a delta file that was already in progress on a previous attempt.
+pub fn merge_file_retry(permanent_path: &std::path::Path, delta_feature: &Feature) -> Result<()> {
+    merge_file_mode(permanent_path, delta_feature, MergeMode::Retry)
+}
+
+fn merge_file_mode(
+    permanent_path: &std::path::Path,
+    delta_feature: &Feature,
+    mode: MergeMode,
+) -> Result<()> {
     use crate::gherkin::delta::{delta_scenarios, is_delta_feature};
 
     if !is_delta_feature(delta_feature) {
@@ -117,14 +189,25 @@ pub fn merge_file(permanent_path: &std::path::Path, delta_feature: &Feature) -> 
         None
     };
 
-    let new_text = apply_deltas(permanent_text.as_deref(), &deltas, &delta_feature.name)?;
+    let new_text = apply_deltas_mode(
+        permanent_text.as_deref(),
+        &deltas,
+        &delta_feature.name,
+        mode,
+    )?;
 
     // Ensure parent directory exists.
     if let Some(parent) = permanent_path.parent() {
         std::fs::create_dir_all(parent)?;
     }
 
-    std::fs::write(permanent_path, new_text)?;
+    let file_name = permanent_path
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "permanent.feature".to_string());
+    let temporary = permanent_path.with_file_name(format!("{file_name}.givn-tmp"));
+    std::fs::write(&temporary, new_text)?;
+    std::fs::rename(&temporary, permanent_path)?;
     Ok(())
 }
 
@@ -433,6 +516,71 @@ Feature: Delta
         };
         let err = apply_deltas(Some(PERMANENT), &[delta], "Delta").unwrap_err();
         assert!(err.to_string().contains("already exists"));
+    }
+
+    #[test]
+    fn retry_added_identical_is_noop() {
+        let retry_feature_text = r#"
+@givn.delta @user-auth
+Feature: Delta
+
+  @givn.added
+  Scenario: User logs in
+    Given a registered user
+    When they provide valid credentials
+    Then they are authenticated
+"#;
+        let feature = parse_str(retry_feature_text).unwrap();
+        let delta = DeltaScenario {
+            scenario: &feature.scenarios[0],
+            op: DeltaOp::Added,
+        };
+        let result = apply_deltas_retry(Some(PERMANENT), &[delta], "Delta").unwrap();
+        assert_eq!(
+            result.matches("Scenario: User logs in").count(),
+            1,
+            "{result}"
+        );
+    }
+
+    #[test]
+    fn retry_added_different_body_fails() {
+        let retry_feature_text = r#"
+@givn.delta @user-auth
+Feature: Delta
+
+  @givn.added
+  Scenario: User logs in
+    Given a different user
+    When they provide a different credential
+    Then a different thing happens
+"#;
+        let feature = parse_str(retry_feature_text).unwrap();
+        let delta = DeltaScenario {
+            scenario: &feature.scenarios[0],
+            op: DeltaOp::Added,
+        };
+        let err = apply_deltas_retry(Some(PERMANENT), &[delta], "Delta").unwrap_err();
+        assert!(err.to_string().contains("already exists"), "{err}");
+    }
+
+    #[test]
+    fn retry_removed_absent_is_noop() {
+        let retry_feature_text = r#"
+@givn.delta @user-auth
+Feature: Delta
+
+  @givn.removed
+  Scenario: User was already removed
+    Given placeholder
+"#;
+        let feature = parse_str(retry_feature_text).unwrap();
+        let delta = DeltaScenario {
+            scenario: &feature.scenarios[0],
+            op: DeltaOp::Removed,
+        };
+        let result = apply_deltas_retry(Some(PERMANENT), &[delta], "Delta").unwrap();
+        assert!(result.contains("User logs in"), "{result}");
     }
 
     #[test]

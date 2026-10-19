@@ -27,6 +27,14 @@ impl Backend {
         }
     }
 
+    /// Read a file from the current revision, or `None` when it is absent.
+    pub fn revision_file(&self, path: &str) -> Result<Option<String>> {
+        match self {
+            Self::Git(worktree) => worktree.revision_file(path),
+            Self::Fossil(checkout) => checkout.revision_file(path),
+        }
+    }
+
     /// Modified tracked files plus untracked non-ignored files, as paths
     /// relative to the project root.
     pub fn dirty_entries(&self) -> Result<Vec<PathBuf>> {

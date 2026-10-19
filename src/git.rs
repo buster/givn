@@ -38,6 +38,17 @@ impl Worktree {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     }
 
+    /// Read a file from the current revision. Returns `None` when the path is
+    /// absent from `HEAD`.
+    pub fn revision_file(&self, path: &str) -> Result<Option<String>> {
+        let output = run_git(&self.root, &["show", &format!("HEAD:{path}")])?;
+        if output.status.success() {
+            Ok(Some(String::from_utf8_lossy(&output.stdout).into_owned()))
+        } else {
+            Ok(None)
+        }
+    }
+
     /// Whether `path` is present in the current `HEAD` revision.
     pub fn revision_contains(&self, path: &str) -> Result<bool> {
         let output = run_git(&self.root, &["cat-file", "-e", &format!("HEAD:{path}")])?;

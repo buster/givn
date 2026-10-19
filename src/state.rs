@@ -448,7 +448,10 @@ pub fn list_unproven_archives(project_root: &Path) -> Vec<String> {
     list_archived(project_root)
         .into_iter()
         .filter(|id| {
-            crate::proof::read_status(project_root, id) == crate::proof::ArchiveProof::Pending
+            matches!(
+                crate::proof::read_status(project_root, id),
+                crate::proof::ArchiveProof::Pending | crate::proof::ArchiveProof::PendingWithActive
+            )
         })
         .collect()
 }
