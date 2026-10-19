@@ -448,8 +448,8 @@ def _validate_config(config: RunConfig) -> None:
         raise RunError(f"unknown --stop-after stage: {config.stop_after!r}")
     if config.stage_timeout_override is not None and config.stage_timeout_override <= 0:
         raise RunError("--stage-timeout must be positive")
-        if config.givn_binary is not None and not Path(config.givn_binary).is_file():
-            raise RunError(f"givn binary not found: {config.givn_binary}")
+    if config.givn_binary is not None and not Path(config.givn_binary).is_file():
+        raise RunError(f"givn binary not found: {config.givn_binary}")
 
 
 def execute(config: RunConfig) -> list[Path]:
@@ -481,6 +481,20 @@ def execute(config: RunConfig) -> list[Path]:
         run_bundle(bundle, config, sandbox_result)
         bundles.append(bundle)
     return bundles
+
+
+def _stage_workflow_complete(stage: dict[str, Any]) -> bool:
+    """A stage is workflow-complete when its public gate and archive passed.
+
+    The driver exit code is recorded separately. A nonzero exit after a
+    completed delivery must not erase the archive and probe evidence.
+    """
+    if stage.get("completed"):
+        return True
+    probe_ok = bool((stage.get("probe") or {}).get("ok"))
+    archive_ok = bool((stage.get("archive") or {}).get("ok"))
+    protocol_ok = not (stage.get("driver") or {}).get("protocol_failures")
+    return probe_ok and archive_ok and protocol_ok
 
 
 def run_bundle(
@@ -523,9 +537,39 @@ def run_bundle(
         append_journal(bundle, "workspace_initialized", **init_info)
 
     stages_done = {entry["id"] for entry in manifest.get("stages", []) if entry.get("completed")}
-    if config.resume is not None and manifest.get("stages"):
-        last = manifest["stages"][-1]
-        if not last.get("completed"):
+    if config.resume is not None:
+        normalized: list[str] = []
+        normalized_stages = list(manifest.get("stages", []))
+        for entry in normalized_stages:
+            if (
+                not entry.get("completed")
+                and not entry.get("not_reached")
+                and _stage_workflow_complete(entry)
+            ):
+                entry["completed"] = True
+                entry["completion_basis"] = (
+                    "normalized on resume: public probe and workflow archive passed; "
+                    "driver exit is reported separately"
+                )
+                entry["normalized_after_run"] = True
+                normalized.append(str(entry.get("id")))
+        if normalized:
+            manifest = update_manifest(bundle, {"stages": normalized_stages})
+            append_journal(
+                bundle,
+                "stage_completion_normalized",
+                stages=normalized,
+                basis="probe+archive",
+            )
+            stages_done = {
+                entry["id"] for entry in normalized_stages if entry.get("completed")
+            }
+        blocking = [
+            entry
+            for entry in normalized_stages
+            if not entry.get("not_reached") and not entry.get("completed")
+        ]
+        if blocking:
             raise RunError(
                 "cannot resume an incomplete stage; inspect the preserved snapshot and "
                 "start a new trial instead"
@@ -536,7 +580,9 @@ def run_bundle(
     if budget.get("max_usd") and _paid_driver(config):
         ledger = SpendLedger(bundle / "spend.json", float(budget["max_usd"]))
 
-    completed_stages: list[dict[str, Any]] = list(manifest.get("stages", []))
+    completed_stages: list[dict[str, Any]] = [
+        entry for entry in manifest.get("stages", []) if not entry.get("not_reached")
+    ]
     all_completed = True
     previous_completed = True
     for stage in config.benchmark.stages:
@@ -545,10 +591,24 @@ def run_bundle(
             continue
         stage_dir = bundle / "stages" / stage.id
         if stage_dir.exists():
-            raise RunError(
-                f"stage directory exists without a completed record: {stage_dir}; "
-                "refusing to overwrite evidence"
-            )
+            not_reached_path = stage_dir / "not-reached.json"
+            if (
+                config.resume is not None
+                and not_reached_path.is_file()
+                and not (stage_dir / "snapshot").exists()
+            ):
+                not_reached_path.rename(stage_dir / "not-reached-before-resume.json")
+                append_journal(
+                    bundle,
+                    "stage_resumed",
+                    stage=stage.id,
+                    note="replaced a previous not-reached marker",
+                )
+            else:
+                raise RunError(
+                    f"stage directory exists without a completed record: {stage_dir}; "
+                    "refusing to overwrite evidence"
+                )
         if stage.requires and not previous_completed:
             stage_dir.mkdir(parents=True, exist_ok=True)
             dump_json(
@@ -566,7 +626,7 @@ def run_bundle(
             all_completed = False
             continue
 
-        stage_dir.mkdir(parents=True)
+        stage_dir.mkdir(parents=True, exist_ok=True)
         archive_before = _archive_entries(workspace)
         task_path = write_stage_task(config.benchmark, stage, workspace)
         shutil.copy2(task_path, stage_dir / "request.md")
