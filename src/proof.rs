@@ -7,6 +7,7 @@
 
 use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -378,7 +379,10 @@ impl CoverageOutcome {
 /// The machine-readable result a verification scope's runner writes.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RunnerResult {
-    pub scope: String,
+    /// Optional: a runner that writes only counts is compatible. When
+    /// present, archive validates it against the expected scope.
+    #[serde(default)]
+    pub scope: Option<String>,
     pub total: u64,
     pub passed: u64,
     pub failed: u64,
@@ -389,9 +393,25 @@ impl RunnerResult {
     /// Read and validate a scope result. Every failure is fail-closed and
     /// names the offending file.
     pub fn read(path: &Path, expected_scope: &str) -> Result<Self> {
+        let result = Self::read_counts(path, &format!("the {expected_scope} scope"))?;
+        if let Some(scope) = result.scope.as_deref()
+            && scope != expected_scope
+        {
+            bail!(
+                "archive blocked: the runner result at {} declares scope '{}' but '{}' was expected",
+                path.display(),
+                scope,
+                expected_scope
+            );
+        }
+        Ok(result)
+    }
+
+    /// Read a runner result without a required scope field.
+    pub fn read_counts(path: &Path, label: &str) -> Result<Self> {
         if !path.exists() {
             bail!(
-                "archive blocked: the {expected_scope} scope produced no runner result at {}",
+                "archive blocked: {label} produced no runner result at {}",
                 path.display()
             );
         }
@@ -399,38 +419,28 @@ impl RunnerResult {
             .with_context(|| format!("read runner result {}", path.display()))?;
         let result: Self = serde_json::from_str(&text).map_err(|error| {
             anyhow::anyhow!(
-                "archive blocked: the {expected_scope} scope runner result at {} is malformed: {error}",
+                "archive blocked: {label} runner result at {} is malformed: {error}",
                 path.display()
             )
         })?;
-        if result.scope != expected_scope {
-            bail!(
-                "archive blocked: the runner result at {} declares scope '{}' but '{}' was expected",
-                path.display(),
-                result.scope,
-                expected_scope
-            );
-        }
         if result.total == 0 {
-            bail!(
-                "archive blocked: the {expected_scope} scope runner result declares zero scenarios"
-            );
+            bail!("archive blocked: {label} runner result declares zero scenarios");
         }
         if result.failed != 0 {
             bail!(
-                "archive blocked: the {expected_scope} scope runner result declares {} failed scenario(s)",
+                "archive blocked: {label} runner result declares {} failed scenario(s)",
                 result.failed
             );
         }
         if result.skipped != 0 {
             bail!(
-                "archive blocked: the {expected_scope} scope runner result declares {} skipped scenario(s)",
+                "archive blocked: {label} runner result declares {} skipped scenario(s)",
                 result.skipped
             );
         }
         if result.passed + result.failed + result.skipped != result.total {
             bail!(
-                "archive blocked: the {expected_scope} scope runner result counts do not reconcile \
+                "archive blocked: {label} runner result counts do not reconcile \
                  (passed {} + failed {} + skipped {} != total {})",
                 result.passed,
                 result.failed,
@@ -440,6 +450,132 @@ impl RunnerResult {
         }
         Ok(result)
     }
+}
+
+/// The receipt `givn check tasks` writes after a green change-scoped run.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChangeReceipt {
+    pub schema: u32,
+    pub change: String,
+    pub status: String,
+    pub head: String,
+    pub features_path: String,
+    pub features_digest: String,
+    pub command_digest: String,
+    #[serde(default)]
+    pub command: Option<String>,
+    pub runner_exit: i32,
+    pub result: RunnerResult,
+    pub finished_at_unix: u64,
+}
+
+/// Path of the change-scoped verification receipt.
+pub const CHANGE_RECEIPT_FILE: &str = "verification/tasks-verification.json";
+/// Path of the raw change-scoped runner result.
+pub const CHANGE_RESULT_FILE: &str = "verification/tasks-result.json";
+
+pub fn digest_text(text: &str) -> String {
+    Sha256::digest(text.as_bytes())
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
+/// Digest the selected feature files by sorted relative path and content.
+pub fn digest_features(dir: &Path) -> Result<String> {
+    let mut files = Vec::new();
+    crate::gherkin::parse::collect_feature_files(dir)
+        .into_iter()
+        .for_each(|path| files.push(path));
+    files.sort();
+    let mut hasher = Sha256::new();
+    for path in files {
+        let relative = path.strip_prefix(dir).unwrap_or(&path);
+        hasher.update(relative.to_string_lossy().as_bytes());
+        hasher.update(b"\0");
+        hasher.update(std::fs::read(&path)?);
+        hasher.update(b"\0");
+    }
+    Ok(hasher
+        .finalize()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect())
+}
+
+impl ChangeReceipt {
+    pub fn read(change_dir: &Path) -> Result<Self> {
+        let path = change_dir.join(CHANGE_RECEIPT_FILE);
+        let text = std::fs::read_to_string(&path).with_context(|| {
+            format!(
+                "change verification receipt missing at {}; run `givn check tasks --change <id>`",
+                path.display()
+            )
+        })?;
+        serde_json::from_str(&text).with_context(|| {
+            format!(
+                "change verification receipt at {} is malformed; run `givn check tasks --change <id>`",
+                path.display()
+            )
+        })
+    }
+
+    /// Whether this receipt still proves the same revision, delta features,
+    /// and verify command.
+    pub fn is_current(
+        &self,
+        change_dir: &Path,
+        head: &str,
+        command: &str,
+    ) -> Result<bool> {
+        let features = change_dir.join("specs");
+        Ok(self.status == "passed"
+            && self.head == head
+            && self.features_digest == digest_features(&features)?
+            && self.command_digest == digest_text(command)
+            && self.result.failed == 0
+            && self.result.skipped == 0
+            && self.result.total > 0)
+    }
+}
+
+/// Write a change-scoped receipt atomically.
+pub fn write_change_receipt(
+    project_root: &Path,
+    change_dir: &Path,
+    change: &str,
+    head: &str,
+    command: &str,
+    result: RunnerResult,
+    finished_at_unix: u64,
+) -> Result<()> {
+    let features = change_dir.join("specs");
+    let features_path = features
+        .strip_prefix(project_root)
+        .unwrap_or(&features)
+        .to_string_lossy()
+        .replace('\\', "/");
+    let receipt = ChangeReceipt {
+        schema: 1,
+        change: change.to_string(),
+        status: "passed".to_string(),
+        head: head.to_string(),
+        features_path,
+        features_digest: digest_features(&features)?,
+        command_digest: digest_text(command),
+        command: Some(command.to_string()),
+        runner_exit: 0,
+        result,
+        finished_at_unix,
+    };
+    let dir = change_dir.join("verification");
+    std::fs::create_dir_all(&dir)?;
+    let path = dir.join("tasks-verification.json");
+    let temporary = dir.join(".tasks-verification.json.givn-tmp");
+    let json = format!("{}\n", serde_json::to_string_pretty(&receipt)?);
+    std::fs::write(&temporary, json)?;
+    std::fs::rename(&temporary, &path)?;
+    Ok(())
 }
 
 /// The single allowed-path predicate shared by the clean-state witness and

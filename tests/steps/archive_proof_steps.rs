@@ -227,6 +227,9 @@ fn archive_location_unblocked(world: &mut GivnWorld) {
             String::from_utf8_lossy(&commit.stderr)
         );
     }
+    if let Some(id) = world.last_change_id.clone() {
+        support::refresh_change_receipt(world, &id);
+    }
 }
 
 #[when("the commit hook accepts the finalization revision")]
@@ -689,6 +692,9 @@ fn archive_location_blocked(world: &mut GivnWorld) {
     }
     fs::write(&archive, "blocked\n").expect("write blocking file");
     common::commit_fixture(support::env(world));
+    if let Some(id) = world.last_change_id.clone() {
+        support::refresh_change_receipt(world, &id);
+    }
     world.skip_auto_commit = true;
 }
 
@@ -1109,6 +1115,9 @@ fn set_runner_kind(world: &mut GivnWorld, kind: &str) {
     } else {
         common::commit_fixture(env);
     }
+    if let Some(id) = world.last_change_id.clone() {
+        support::refresh_change_receipt(world, &id);
+    }
 }
 
 fn read_permanent_specs(world: &GivnWorld) -> String {
@@ -1148,5 +1157,24 @@ fn assert_invocations(world: &GivnWorld, scope: &str, features: &str, expected: 
     assert_eq!(
         count, expected,
         "scope {scope} invocation count was {count}: {content}"
+    );
+}
+
+#[when(regex = r"^the user runs `givn archive --change ([^`]+)` without committing the fixture$")]
+fn archive_without_commit(world: &mut GivnWorld, id: String) {
+    let out = support::run_archive(world, &id);
+    world.last_change_id = Some(id);
+    world.last_output = Some(out);
+}
+
+#[then("the runner was never invoked with a change features path")]
+fn runner_never_used_change_features(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let log = support::archive_dir(world, &id).join("results/invocations.log");
+    let content = fs::read_to_string(&log)
+        .unwrap_or_else(|e| panic!("read invocation log {}: {e}", log.display()));
+    assert!(
+        !content.contains("givn/changes/"),
+        "the change suite was invoked during archive: {content}"
     );
 }

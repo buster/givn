@@ -364,6 +364,23 @@ repairing the committed state). Archive's checks are hard-coded in
 `src/cli/archive.rs`; they are not configurable artifact `post` hooks, and
 archive does not call the explicit `check review` mandatory branch.
 
+## 6.7.1 Change-scoped verification receipt
+
+`givn check tasks --change <id>` is the only change-scoped test execution. It
+requires a clean committed tree except evidence/verification paths, sets
+`GIVN_FEATURES` to the delta specs and `GIVN_RESULT_FILE` to
+`givn/changes/<id>/verification/tasks-result.json`, runs `verify.command`, and
+validates four green counts. It then writes
+`givn/changes/<id>/verification/tasks-verification.json` with the tested
+revision, features digest, verify-command digest, and counts.
+
+`givn check review` runs no tests: it reads that receipt and refuses a missing
+or stale one with `givn check tasks --change <id>`. `givn archive` performs the
+same validation before the move and merge; after the candidate is published it
+runs only the merged regular and e2e scopes. A receipt is stale when the
+revision, delta-feature digest, or verify-command digest differs, or when the
+counts are not green.
+
 ## 6.12 Addons, Upgrade, and Completion Commands
 
 `givn addons list` reads enabled flags from `givn/config.yaml`. `enable arc42`

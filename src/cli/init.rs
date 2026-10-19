@@ -86,6 +86,25 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
         println!("  wrote    givn/commands.yaml");
     }
 
+    // Scaffold the fail-closed runner only when the project has no script.
+    // The commands template points verify.command at ./run-tests.sh, so a
+    // fresh project must never silently skip the suite.
+    let runner = project_root.join("run-tests.sh");
+    if !runner.exists() {
+        std::fs::write(
+            &runner,
+            "#!/bin/sh\n             echo 'run-tests.sh is not configured yet.' >&2\n             echo 'Run the project suite, then write the counts with:' >&2\n             echo '  givn test-result --total N --passed N --failed N --skipped N' >&2\n             exit 1\n",
+        )?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut permissions = std::fs::metadata(&runner)?.permissions();
+            permissions.set_mode(0o755);
+            std::fs::set_permissions(&runner, permissions)?;
+        }
+        println!("  wrote    run-tests.sh (fails until configured)");
+    }
+
     // Enable every known addon (default) unless --no-addons. Each addon's
     // own scaffolding (arc42 docs, absolute_mode's AGENTS.md block) runs as
     // part of `addons::enable_scaffold`, so the effect is identical to running

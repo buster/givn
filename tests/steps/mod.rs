@@ -183,6 +183,8 @@ pub struct GivnWorld {
     /// Snapshot of a pending receipt taken by a fixture, for the
     /// "receipt is unchanged" assertion.
     pub(crate) archive_receipt_snapshot: Option<String>,
+    /// Keep a deliberately missing or stale change-scoped review receipt.
+    pub(crate) skip_receipt_autowrite: bool,
     /// State for the `@e2e` `development-report` scenarios: the generated
     /// report and the browser the browser scenarios drive.
     #[allow(dead_code)] // Tasks E5–E9 read it.
@@ -499,6 +501,16 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
     }
     if args.first().is_some_and(|arg| arg == "archive") && !world.skip_auto_commit {
         common::commit_fixture(env);
+        if let Some(id) = world.last_change_id.clone() {
+            archive_proof_support::refresh_change_receipt(world, &id);
+        }
+    }
+    if args.first().is_some_and(|arg| arg == "check")
+        && args.get(1).is_some_and(|arg| arg == "review")
+        && !world.skip_receipt_autowrite
+        && let Some(id) = world.last_change_id.clone()
+    {
+        archive_proof_support::refresh_change_receipt(world, &id);
     }
     let argv: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
     let environments = world_envs(world);

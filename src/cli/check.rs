@@ -136,7 +136,11 @@ fn run_mandatory_checks(
                     }
                 }
             }
-            crate::hooks::run_verify_hook(manifest, features_path)?;
+            if let Some(id) = change {
+                run_change_verification(manifest, project_root, id)?;
+            } else {
+                crate::hooks::run_verify_hook(manifest, features_path)?;
+            }
             println!("  ✓ verify passed");
         }
         "review" => {
@@ -162,15 +166,116 @@ fn run_mandatory_checks(
                 crate::overlap::analysis::run_review_overlap_gate(project_root, id)?;
                 check_retirement_disclosed(project_root, id)?;
                 crate::spec::routing_table::check_routing_consistency(project_root, id)?;
+                check_change_receipt(manifest, project_root, id)?;
             } else {
                 println!(
-                    "  ⚠ no --change given — overlap, retirement, and routing checks were skipped \
+                    "  ⚠ no --change given — overlap, retirement, routing, and receipt checks were skipped \
                      (they require a specific change to scope to)"
                 );
             }
         }
         _ => {}
     }
+    Ok(())
+}
+
+/// Run the change-scoped verification and persist its receipt.
+fn run_change_verification(
+    manifest: &crate::config::manifest::Manifest,
+    project_root: &std::path::Path,
+    change_id: &str,
+) -> anyhow::Result<()> {
+    let change_dir = crate::state::resolve_change_dir(project_root, change_id)?;
+    let backend = crate::scm::select(project_root)?;
+    let offending: Vec<String> = backend
+        .dirty_entries()?
+        .iter()
+        .filter(|path| !crate::proof::is_evidence_path(project_root, change_id, manifest, path))
+        .map(|path| path.display().to_string())
+        .collect();
+    if !offending.is_empty() {
+        anyhow::bail!(
+            "change verification requires a clean committed tree: {}",
+            offending.join(", ")
+        );
+    }
+    let rules = project_root.join("givn/changes").join(change_id).join("specs");
+    let features = rules.to_string_lossy().into_owned();
+    let result_path = change_dir
+        .join(crate::proof::CHANGE_RESULT_FILE)
+        .to_string_lossy()
+        .into_owned();
+    let status = crate::subprocess::sh_streamed(
+        &manifest.verify.command,
+        &[
+            ("GIVN_FEATURES", &features),
+            ("GIVN_RESULT_FILE", &result_path),
+            ("GIVN_RESULT_SCOPE", "change"),
+        ],
+        Some(project_root),
+        "change verification",
+    )?;
+    if !status.success() {
+        anyhow::bail!(
+            "change verification failed (exit code {}); repair the change and rerun \
+             `givn check tasks --change {change_id}`",
+            status.code().unwrap_or(-1)
+        );
+    }
+    let result = crate::proof::RunnerResult::read_counts(
+        std::path::Path::new(&result_path),
+        "the change verification",
+    )?;
+    let head = backend.revision()?;
+    crate::proof::write_change_receipt(
+        project_root,
+        &change_dir,
+        change_id,
+        &head,
+        &manifest.verify.command,
+        result.clone(),
+        crate::proof::unix_now(),
+    )?;
+    println!(
+        "  ✓ change verification receipt: {} scenario(s), 0 failed, 0 skipped at {}",
+        result.total, head
+    );
+    Ok(())
+}
+
+/// Refuse review unless a current, green change-scoped receipt exists.
+fn check_change_receipt(
+    manifest: &crate::config::manifest::Manifest,
+    project_root: &std::path::Path,
+    change_id: &str,
+) -> anyhow::Result<()> {
+    let change_dir = crate::state::resolve_change_dir(project_root, change_id)?;
+    let receipt = crate::proof::ChangeReceipt::read(&change_dir).map_err(|error| {
+        anyhow::anyhow!(
+            "{error}. Run `givn check tasks --change {change_id}` before review."
+        )
+    })?;
+    let backend = crate::scm::select(project_root)?;
+    let head = backend.revision()?;
+    if !receipt.is_current(&change_dir, &head, &manifest.verify.command)? {
+        let features = crate::proof::digest_features(&change_dir.join("specs"))?;
+        anyhow::bail!(
+            "change verification receipt is stale for '{}': receipt head {}, current head {head}; \
+             receipt features {}, current features {features}; receipt command {} ({:?}), current command {} ({:?}). \
+             Run `givn check tasks --change {change_id}` again.",
+            change_id,
+            receipt.head,
+            receipt.features_digest,
+            receipt.command_digest,
+            receipt.command,
+            crate::proof::digest_text(&manifest.verify.command),
+            manifest.verify.command
+        );
+    }
+    println!(
+        "  ✓ change verification receipt passed ({} scenario(s) at {})",
+        receipt.result.total, receipt.head
+    );
     Ok(())
 }
 
