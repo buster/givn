@@ -661,4 +661,22 @@ mod tests {
             "all required should be done or skipped"
         );
     }
+
+    #[test]
+    fn pending_with_active_is_listed_as_unproven() {
+        let root = tempfile::TempDir::new().unwrap();
+        let id = "demo";
+        let active = root.path().join("givn/changes/demo");
+        let archive = root.path().join("givn/archive/demo");
+        std::fs::create_dir_all(&active).unwrap();
+        std::fs::create_dir_all(&archive).unwrap();
+        std::fs::write(active.join("proposal.md"), "# proposal\n").unwrap();
+        std::fs::write(archive.join("proposal.md"), "# proposal\n").unwrap();
+        std::fs::write(
+            archive.join("verification.json"),
+            r#"{"schema":1,"change":"demo","status":"pending"}"#,
+        )
+        .unwrap();
+        assert_eq!(list_unproven_archives(root.path()), vec![id.to_string()]);
+    }
 }
