@@ -24,18 +24,21 @@ The developer requests verification of a change.
 ## Main flow
 
 1. The developer requests verification; the system reads the active specifications and workflow artifacts.
-2. The system detects duplicate behavior, structural overlap, and invalid references.
-3. The system compares migration evidence when a migration is checked.
-4. The system reports blocking and advisory findings.
+2. The system confirms the change-scoped verification receipt is current, green, and bound to the tested revision, selected features, and verify command.
+3. The system detects duplicate behavior, structural overlap, and invalid references.
+4. The system compares migration evidence when a migration is checked.
+5. The system reports blocking and advisory findings.
 
 ## Extensions
 
-- 4: a review disposition is missing → completion is blocked; protects the success guarantee.
-- 3: a migration shows missing behavior, lost E2E evidence, lower interaction coverage, or lower source coverage → completion is blocked; protects the success guarantee.
+- 5: a review disposition is missing → completion is blocked; protects the success guarantee.
+- 4: a migration shows missing behavior, lost E2E evidence, lower interaction coverage, or lower source coverage → completion is blocked; protects the success guarantee.
 
 ## Rules
 
 - Structural failures outrank other findings.
+- A review PASS requires a current green change-scoped verification receipt.
+- The receipt binds the tested revision, the selected delta features, and the verify command.
 - Every blocking overlap has an explicit disposition.
 - Migration coverage cannot regress without an explicit retirement record.
 
@@ -79,6 +82,8 @@ The developer receives a complete verification result.
 | resolve-change-directories | run integrity in a change | Consumer runs the integrity check on a change inside givn/changes and the correct directory is detected |
 | resolve-change-directories | reject placeholder commit evidence | Integrity check detects a placeholder COMMIT hash in tasks.md and fails |
 | givn-workflow-enforcement | run migration coverage check | Consumer runs migration coverage check and sees passed evidence |
+| givn-workflow-enforcement | run the change-scoped checks | Consumer runs check tasks and receives a change verification receipt |
+| givn-workflow-enforcement | write a runner result | The result helper writes four counts without a scope |
 
 ## Includes
 
@@ -101,4 +106,4 @@ flowchart LR
   Check --> Findings[[Resolve findings]]
 ```
 
-<!-- givn:base-sha256:69907d77630f1030796ab71af08ae9ad7ba68365201fa442e20488f7c8909876 -->
+<!-- givn:base-sha256:6a6ca309ef7315950b88ff30f81cb17eb3d25ca208ee2594f53e20c6e6abff4d -->

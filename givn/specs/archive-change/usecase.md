@@ -25,7 +25,7 @@ The developer archives a reviewed change.
 
 ## Main flow
 
-1. Run the archive gates and confirm the project state is clean in the active version-control system; only resolved evidence paths may be dirty.
+1. Run the archive gates, confirm the project state is clean in the active version-control system (only resolved evidence paths may be dirty), and validate the current green change-scoped verification receipt before any mutation.
 2. Write the pending receipt and move the active change into the archive location as one state transition; the receipt marks the archive unproven.
 3. Merge the accepted behavior and use-case documents (delta merge with base-revision match, retirement and grouping rules).
 4. Resolve the evidence scope: the archive directory, the README when the readme addon is on, and the configured coverage outputs.
@@ -38,6 +38,7 @@ The developer archives a reviewed change.
 ## Extensions
 
 - 1: uncommitted work outside the resolved evidence → the archive is blocked and names the offending files; protects the minimal guarantee.
+- 1: the change-scoped verification receipt is missing or stale → the archive is refused before mutation; protects the success guarantee.
 - 2: the archive move is interrupted → either the active change with its pending receipt or the pending candidate remains, and a rerun re-runs the gates and retries the move; protects the minimal guarantee.
 - 3: the delta merge is interrupted → the pending candidate records the merge as incomplete and a rerun completes the merge idempotently; protects the minimal guarantee.
 - 6: a verification scope fails → the candidate stays published and repairable; protects the minimal guarantee.
@@ -56,6 +57,7 @@ The developer archives a reviewed change.
 - Feature behavior is never silently dropped.
 - Only a proven archive is complete; an unproven candidate is never reported as proven.
 - A rerun resumes an unproven candidate and refuses a proven archive.
+- Archive validates the current green change-scoped receipt before merging and does not rerun the change suite.
 - The candidate revision contains exactly the merged corpus paths.
 - The finalization revision contains only resolved evidence paths.
 - The tested revision equals the published candidate revision.
@@ -138,4 +140,4 @@ flowchart LR
   Proof --> Archive[[Finalize archive]]
 ```
 
-<!-- givn:base-sha256:335c7437f9f8b9092109e0eba08ec23ce11478db5be768bbd67fba11dcadec80 -->
+<!-- givn:base-sha256:be6bc746ea32520f4f13598d53e38471d482498a5514290a88594d6fd74212cd -->
