@@ -33,7 +33,7 @@ for this session (no request was dispatched).
 
 ## Test evidence
 
-- `./run-tests.sh`: 55 deterministic tests, all passing.
+- `./run-tests.sh`: 57 deterministic tests, all passing.
 - `givn-harness benchmark verify benchmarks/lending`: reference passes all 13
   requirements; scaffold fails substantive requirements; all five seeded
   defects are caught.

@@ -19,6 +19,11 @@ def main() -> int:
     mode = os.environ.get("HARNESS_AGENT_MODE", "copy")
     if mode == "noop":
         return 0
+    if mode == "sleep":
+        import time
+
+        time.sleep(float(os.environ.get("HARNESS_SLEEP_SECONDS", "5")))
+        return 0
     if mode == "fail":
         print("fake agent: deliberate failure", file=sys.stderr)
         return 7

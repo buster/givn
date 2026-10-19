@@ -97,6 +97,25 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(stage["driver"]["exit_code"], 7)
         self.assertTrue((bundle / "stages" / "initial" / "agent.stderr.log").is_file())
 
+    def test_timeout_is_recorded_and_evidence_preserved(self) -> None:
+        import dataclasses
+
+        stages = [
+            dataclasses.replace(self.benchmark.stages[0], timeout_seconds=1),
+            self.benchmark.stages[1],
+        ]
+        benchmark = dataclasses.replace(self.benchmark, stages=stages)
+        config = self.config(mode="sleep")
+        config.benchmark = benchmark
+        config.driver.extra_env["HARNESS_SLEEP_SECONDS"] = "5"
+        bundle = execute(config)[0]
+        manifest = load_manifest(bundle)
+        self.assertEqual(manifest["status"], "incomplete")
+        stage = manifest["stages"][0]
+        self.assertEqual(stage["driver"]["termination"], "timeout")
+        self.assertTrue((bundle / "stages" / "initial" / "snapshot").is_dir())
+        self.assertTrue(manifest["stages"][1]["not_reached"])
+
     def test_snapshot_tamper_is_detected(self) -> None:
         bundle = execute(self.config())[0]
         stage_dir = bundle / "stages" / "initial"

@@ -58,6 +58,40 @@ class CompareTests(unittest.TestCase):
         self.assertIn("INCONCLUSIVE", markdown)
         self.assertIn("does not combine quality", markdown)
 
+    def test_known_behavioral_difference_is_reported_requirement_by_requirement(self) -> None:
+        broken_source = self.root / "broken_app.py"
+        reference = (self.benchmark.reference / "app.py").read_text()
+        broken_source.write_text(
+            reference.replace(
+                '        if book.get("loaned_to") is not None:\n'
+                '            raise RequestError("book_already_loaned")\n',
+                "",
+            )
+        )
+        baseline = self.make_bundle("baseline")
+        candidate_config = RunConfig(
+            benchmark=self.benchmark,
+            output=self.root / "candidate",
+            condition="candidate",
+            repeats=1,
+            driver=DriverSpec(
+                kind="script",
+                model="deepseek/deepseek-flash#max",
+                command=["/usr/bin/python3", str(self.agent)],
+                extra_env={"HARNESS_APP_SOURCE": str(broken_source)},
+            ),
+            givn_binary=None,
+            sandbox_mode="none",
+            workspace_root=self.root / "workspaces",
+        )
+        candidate = execute(candidate_config)[0]
+        grade_bundle(candidate, self.benchmark, sandbox_mode="none")
+        document = build_comparison([str(baseline)], [str(candidate)])
+        rows = {row["id"]: row for row in document["requirements"]}
+        self.assertEqual(rows["I2"]["baseline"]["pass"], 1)
+        self.assertEqual(rows["I2"]["candidate"]["fail"], 1)
+        self.assertIn("I2", document["candidate"]["trials"][0]["grade"]["critical_failures"])
+
 
 if __name__ == "__main__":
     unittest.main()
