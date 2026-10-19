@@ -1,0 +1,74 @@
+schema = 1
+id = "lending-register"
+version = "1.0.0"
+title = "Small lending register"
+description = """
+A small library lending register delivered in two stages: the initial product,
+then a follow-up reference-only change on the same repository and data. It is
+deliberately small; saturation is not evidence that givn cannot improve.
+"""
+
+[workspace]
+scaffold = "public/scaffold"
+public_files = [
+  "public/contract.md",
+  "public/probe.py",
+  "public/probe_followup.py",
+]
+
+[workspace.probe]
+command = ["{python}", "probe.py", "--workspace", "."]
+timeout_seconds = 60
+
+[agent]
+# The runner pins the model; these values are the allowed execution identity.
+model = "deepseek/deepseek-flash#max"
+max_output_tokens = 8192
+
+[[stages]]
+id = "initial"
+task = "public/task-initial.md"
+timeout_seconds = 2400
+require_archive = true
+require_probe = true
+
+[[stages]]
+id = "followup"
+task = "public/task-followup.md"
+requires = "initial"
+timeout_seconds = 2400
+require_archive = true
+require_probe = true
+probe = "public/probe_followup.py"
+
+[grader]
+manifest = "private/grader/grader.toml"
+
+[verification]
+reference = "private/reference"
+scaffold_must_fail = true
+
+[[verification.defects]]
+id = "loan-limit-off-by-one"
+patch = "private/defects/loan-limit.patch"
+expected_failures = ["I3", "F5"]
+
+[[verification.defects]]
+id = "book-exclusivity-removed"
+patch = "private/defects/exclusivity.patch"
+expected_failures = ["I2", "I6", "F5"]
+
+[[verification.defects]]
+id = "state-not-persisted"
+patch = "private/defects/persistence.patch"
+expected_failures = ["I5", "F4", "X1"]
+
+[[verification.defects]]
+id = "reference-only-blocks-return"
+patch = "private/defects/reference-only-return.patch"
+expected_failures = ["F2"]
+
+[[verification.defects]]
+id = "rejection-corrupts-state"
+patch = "private/defects/rejection-state.patch"
+expected_failures = ["I2", "I3", "I5", "I6", "F5"]

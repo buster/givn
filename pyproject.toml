@@ -1,0 +1,21 @@
+[project]
+name = "givn-harness"
+version = "0.2.0"
+description = "Evaluation harness for givn: workflow benchmarks and events.jsonl analysis"
+requires-python = ">=3.12"
+dependencies = [
+    "click>=8.1",
+]
+
+[project.scripts]
+givn-harness = "givn_harness.cli:main"
+
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+givn_harness = ["py.typed"]

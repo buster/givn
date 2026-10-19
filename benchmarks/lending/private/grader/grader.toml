@@ -1,0 +1,9 @@
+schema = 1
+id = "lending-register-grader"
+version = "1.0.0"
+description = """
+Independent black-box behavioral grader. It runs each frozen stage snapshot
+through the public JSON-lines contract and never imports submission code.
+"""
+command = ["{python}", "private/grader/run_grader.py"]
+timeout_seconds = 900
