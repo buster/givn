@@ -571,7 +571,10 @@ pub fn write_change_receipt(
     let dir = change_dir.join("verification");
     std::fs::create_dir_all(&dir)?;
     let path = dir.join("tasks-verification.json");
-    let temporary = dir.join(".tasks-verification.json.givn-tmp");
+    let temporary = dir.join(format!(
+        ".tasks-verification.json.{}.givn-tmp",
+        std::process::id()
+    ));
     let json = format!("{}\n", serde_json::to_string_pretty(&receipt)?);
     std::fs::write(&temporary, json)?;
     std::fs::rename(&temporary, &path)?;
