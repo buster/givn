@@ -99,6 +99,13 @@ class ReaderTests(unittest.TestCase):
         self.assertNotEqual(events[0].id, events[1].id)
         self.assertIn("duplicate_event_id", {item.code for item in diagnostics})
 
+    def test_directory_input_collects_nested_records(self) -> None:
+        write_events(self.root / "a" / "events.jsonl", [event(1, at="2026-01-01T00:00:00Z")])
+        write_events(self.root / "b" / "events.jsonl", [event(1, at="2026-01-01T00:00:01Z")])
+        sources = read_sources([self.root])
+        self.assertEqual(len(sources), 2)
+        self.assertEqual([source.index for source in sources], [0, 1])
+
 
 if __name__ == "__main__":
     unittest.main()

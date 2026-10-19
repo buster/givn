@@ -326,6 +326,11 @@ def _validate_config(config: RunConfig) -> None:
                 "paid runs cannot start on unverified host networking. Provide a "
                 "verified egress policy or run a deterministic/fake driver."
             )
+        if config.sandbox_mode != "required":
+            raise RunError(
+                "the opencode driver requires sandbox mode 'required'; "
+                "an unconfined paid run is not a graded fallback"
+            )
         if config.givn_binary is not None and not Path(config.givn_binary).is_file():
             raise RunError(f"givn binary not found: {config.givn_binary}")
 

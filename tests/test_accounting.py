@@ -243,6 +243,25 @@ class AccountingTests(unittest.TestCase):
         self.assertEqual(question["answer_status"], "not_recorded")
         self.assertEqual(analysis.data["questions"]["total_wait_ms"], 9_000)
 
+    def test_metadata_answers_are_declared_not_inferred(self) -> None:
+        analysis = self.analyze(
+            [
+                event(
+                    1,
+                    at="2026-01-01T00:00:10Z",
+                    kind="question",
+                    name="question",
+                    label="Which option?",
+                    duration_ms=9_000,
+                    data={"question": {"text": "Which option?\nA\nB", "truncated": False}},
+                )
+            ],
+            metadata={"answers": {"0:1": "A"}},
+        )
+        question = analysis.data["questions"]["rows"][0]
+        self.assertEqual(question["answer"], "A")
+        self.assertEqual(question["answer_status"], "declared")
+
     def test_phase_markers_are_not_intervals(self) -> None:
         analysis = self.analyze(
             [
@@ -265,6 +284,22 @@ class AccountingTests(unittest.TestCase):
         self.assertEqual(analysis.data["corpus"]["analyzed_events"], 1)
         self.assertEqual(analysis.data["corpus"]["filtered_out"], 1)
         self.assertEqual(analysis.data["corpus"]["kinds"], {"tool": 1})
+
+    def test_duplicate_export_is_reported_not_merged(self) -> None:
+        first = write_events(
+            self.root / "first.jsonl",
+            [event(1, at="2026-01-01T00:00:01Z", kind="tool", name="read")],
+        )
+        second = write_events(
+            self.root / "second.jsonl",
+            [event(1, at="2026-01-01T00:00:01Z", kind="tool", name="read")],
+        )
+        analysis = analyze_paths([str(first), str(second)])
+        self.assertEqual(analysis.data["corpus"]["events"], 2)
+        self.assertIn(
+            "possible_duplicate_export",
+            {item.code for item in analysis.diagnostics},
+        )
 
 
 if __name__ == "__main__":

@@ -105,6 +105,34 @@ class RunnerTests(unittest.TestCase):
         problems = verify_snapshot(stage_dir)
         self.assertTrue(any("changed: app.py" in item for item in problems))
 
+    def test_grading_refuses_a_tampered_snapshot(self) -> None:
+        from givn_harness.grader import GraderError
+
+        bundle = execute(self.config())[0]
+        target = bundle / "stages" / "initial" / "snapshot" / "app.py"
+        target.write_text(target.read_text() + "\n# tampered\n")
+        with self.assertRaises(GraderError):
+            grade_bundle(bundle, self.benchmark)
+
+    def test_resume_of_completed_bundle_returns_without_rework(self) -> None:
+        bundle = execute(self.config())[0]
+        before = load_manifest(bundle)
+        resumed = execute(
+            RunConfig(
+                benchmark=self.benchmark,
+                output=self.root / "runs",
+                driver=self.config().driver,
+                givn_binary=None,
+                sandbox_mode="none",
+                network="none",
+                workspace_root=self.root / "workspaces",
+                resume=bundle,
+            )
+        )[0]
+        after = load_manifest(resumed)
+        self.assertEqual(before["status"], after["status"])
+        self.assertEqual(len(after["stages"]), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

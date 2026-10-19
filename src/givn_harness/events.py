@@ -325,10 +325,21 @@ def iter_events(
 
 def read_sources(paths: list[str | os.PathLike[str]]) -> list[SourceFile]:
     sources: list[SourceFile] = []
-    for index, raw_path in enumerate(paths):
+    expanded: list[Path] = []
+    for raw_path in paths:
         path = Path(raw_path)
-        if not path.is_file():
+        if path.is_dir():
+            candidates = sorted(path.rglob("events.jsonl"))
+            if not candidates:
+                candidates = sorted(path.rglob("*.jsonl"))
+            if not candidates:
+                raise FileNotFoundError(f"no .jsonl records found under: {path}")
+            expanded.extend(candidates)
+        elif path.is_file():
+            expanded.append(path)
+        else:
             raise FileNotFoundError(f"events file not found: {path}")
+    for index, path in enumerate(expanded):
         sources.append(freeze_source(path, index))
     return sources
 

@@ -307,6 +307,7 @@ def analyze_sources(
     question_events: list[Event] = []
     subagent_events: dict[str, list[Event]] = defaultdict(list)
     context_ratios: list[tuple[float, int | None, str]] = []
+    fingerprints: dict[tuple[Any, ...], list[Event]] = defaultdict(list)
 
     for event in iter_all(sources, result.diagnostics):
         events_seen += 1
@@ -317,6 +318,14 @@ def analyze_sources(
         ids.add(event.id)
         if event.parent:
             parents.add(event.parent)
+        fingerprint = (
+            event.at.timestamp() if event.at is not None else None,
+            event.kind,
+            event.name,
+            event.label,
+            event.duration_ms,
+        )
+        fingerprints[fingerprint].append(event)
         kind_counts[event.kind] += 1
         producer_counts[event.producer] += 1
         outcome_counts[event.outcome or "missing"] += 1
@@ -428,6 +437,27 @@ def analyze_sources(
             )
         )
         missing_parents.add(parent)
+
+    # Repeated exports are never merged by guess. Identical event shapes from
+    # different sources are reported so the reader can decide provenance.
+    duplicate_exports: list[list[Event]] = []
+    for events in fingerprints.values():
+        sources_seen = {event.source_index for event in events}
+        if len(sources_seen) > 1:
+            duplicate_exports.append(events)
+    if duplicate_exports:
+        samples = [
+            f"{events[0].id}~{events[-1].id}" for events in duplicate_exports[:5]
+        ]
+        result.diagnostics.append(
+            Diagnostic(
+                "possible_duplicate_export",
+                f"{len(duplicate_exports)} event shape(s) appear in more than one source "
+                f"file; they are preserved with namespaced ids, not merged. Examples: "
+                f"{', '.join(samples)}",
+                event_id=duplicate_exports[0][0].id,
+            )
+        )
 
     # --- Usage authority -------------------------------------------------
     authoritative: list[_UsageRequest] = []

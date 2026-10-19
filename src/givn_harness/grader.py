@@ -295,6 +295,9 @@ def grade_bundle(
                     stage=entry.name,
                     problems=problems[:50],
                 )
+                import shutil
+
+                shutil.rmtree(grade_dir, ignore_errors=True)
                 raise GraderError(
                     f"snapshot {entry.name!r} does not match its recorded checksums: "
                     f"{problems[:3]}"
