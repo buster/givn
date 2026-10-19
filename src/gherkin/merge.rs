@@ -565,6 +565,28 @@ Feature: Delta
     }
 
     #[test]
+    fn retry_modified_is_idempotent() {
+        let mod_feature_text = r#"
+@givn.delta @user-auth
+Feature: Delta
+
+  @givn.modified
+  Scenario: User logs in
+    Given a registered user
+    When they provide valid credentials and MFA
+    Then they are authenticated with MFA
+"#;
+        let feature = parse_str(mod_feature_text).unwrap();
+        let delta = DeltaScenario {
+            scenario: &feature.scenarios[0],
+            op: DeltaOp::Modified,
+        };
+        let first = apply_deltas_retry(Some(PERMANENT), &[delta.clone()], "Delta").unwrap();
+        let second = apply_deltas_retry(Some(&first), &[delta], "Delta").unwrap();
+        assert_eq!(first, second);
+    }
+
+    #[test]
     fn retry_removed_absent_is_noop() {
         let retry_feature_text = r#"
 @givn.delta @user-auth
