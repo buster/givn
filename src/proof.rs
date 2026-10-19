@@ -919,6 +919,16 @@ mod tests {
     }
 
     #[test]
+    fn runner_result_reads_counts_without_a_scope() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let path = dir.path().join("change.json");
+        std::fs::write(&path, r#"{"total":2,"passed":2,"failed":0,"skipped":0}"#).unwrap();
+        let result = RunnerResult::read_counts(&path, "the change verification").unwrap();
+        assert_eq!(result.total, 2);
+        assert!(result.scope.is_none());
+    }
+
+    #[test]
     fn runner_result_rejects_every_untrusted_shape() {
         let dir = temp_receipt_dir();
         let path = dir.path().join("regular.json");
