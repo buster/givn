@@ -879,6 +879,8 @@ fn rejection_state(backend: &crate::scm::Backend) -> &'static str {
 }
 
 /// Refuse a fresh archive unless the change-scoped receipt is current.
+/// The receipt is evidence; it must name the same revision, delta-feature
+/// digest, and verify command as the tree the merge is about to consume.
 fn ensure_change_receipt(
     backend: &crate::scm::Backend,
     manifest: &crate::config::manifest::Manifest,
