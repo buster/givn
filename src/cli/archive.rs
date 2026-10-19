@@ -515,6 +515,12 @@ fn apply_merge_plan(
     receipt: &crate::proof::Receipt,
 ) -> Result<bool> {
     merge_usecase_documents(project_root, &archive_target.join("specs"))?;
+    // A pending receipt written before merge progress existed cannot say
+    // which files were applied. Treat every file as a retry so an already
+    // merged delta is a no-op instead of a duplicate-title error.
+    let legacy_unrecorded_merge = receipt.merge_plan.is_empty()
+        && receipt.merged_deltas.is_empty()
+        && receipt.merge_in_progress.is_none();
     let mut applied = false;
     for entry in plan {
         if receipt
@@ -524,7 +530,8 @@ fn apply_merge_plan(
         {
             continue;
         }
-        let retry = receipt.merge_in_progress.as_deref() == Some(entry.relative.as_str());
+        let retry = legacy_unrecorded_merge
+            || receipt.merge_in_progress.as_deref() == Some(entry.relative.as_str());
         crate::proof::Receipt::mark_merge_started(archive_target, &entry.relative)?;
         if entry.retire {
             retire_capability(project_root, change, &entry.cap, &entry.target)?;
