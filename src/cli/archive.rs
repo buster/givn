@@ -35,6 +35,11 @@ enum Witness {
 ///
 /// A failure after the candidate commit leaves the candidate unproven; the
 /// developer repairs the committed state and reruns the command.
+///
+/// State invariant: at every successful step the project has either the
+/// active change (with a pending receipt when the move was interrupted), a
+/// pending archive candidate, or a proven archive. A conflicting
+/// active/pending pair is refused before any mutation.
 pub fn run(change: &str, verbose: bool) -> Result<()> {
     crate::subprocess::set_verbose(verbose);
     let project_root = std::env::current_dir()?;
