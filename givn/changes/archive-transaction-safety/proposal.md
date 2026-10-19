@@ -39,9 +39,9 @@ Failed verification must roll forward: the candidate stays pending, the operator
 
 ## Capability Routing
 
-| Proposed capability | Decision | Rationale |
-|---|---|---|
-| Archive state transition | `EXTEND archive-proof` | The archive receipt and pending/proven state are owned by the existing archive-proof capability. Route reported no signal, so the decision is recorded directly. |
+| Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
+|---|---|---|---|
+| archive-proof | no signal — the top candidates tie at 13.00 | `EXTEND archive-proof` | The existing capability owns the archive receipt and the pending/proven state; this change adds the atomic transition, recoverable duplicate, evidence paths, and roll-forward repair to it. |
 
 ## Out of Scope
 
