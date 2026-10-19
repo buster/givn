@@ -599,6 +599,48 @@ mod tests {
     }
 
     #[test]
+    fn receipt_progress_roundtrip_preserves_plan_targets_and_in_progress() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let archive = dir.path().join("archive");
+        let mut targets = BTreeMap::new();
+        targets.insert(
+            "cap/file.feature".to_string(),
+            "givn/specs/group/cap.feature".to_string(),
+        );
+        Receipt::write_pending_progress(
+            &archive,
+            "demo",
+            7,
+            false,
+            Vec::new(),
+            None,
+            vec!["cap/file.feature".to_string()],
+            targets,
+        )
+        .unwrap();
+        let receipt = read_receipt(&archive).unwrap();
+        assert_eq!(receipt.started_at_unix, Some(7));
+        assert!(!receipt.merge_completed);
+        assert_eq!(receipt.merge_plan, vec!["cap/file.feature"]);
+        assert_eq!(
+            receipt.merge_targets.get("cap/file.feature").map(String::as_str),
+            Some("givn/specs/group/cap.feature")
+        );
+
+        Receipt::mark_merge_started(&archive, "cap/file.feature").unwrap();
+        assert_eq!(
+            read_receipt(&archive).unwrap().merge_in_progress.as_deref(),
+            Some("cap/file.feature")
+        );
+        Receipt::mark_merge_file_done(&archive, "cap/file.feature").unwrap();
+        let receipt = read_receipt(&archive).unwrap();
+        assert_eq!(receipt.merged_deltas, vec!["cap/file.feature"]);
+        assert!(receipt.merge_in_progress.is_none());
+        Receipt::mark_merge_completed(&archive).unwrap();
+        assert!(read_receipt(&archive).unwrap().merge_completed);
+    }
+
+    #[test]
     fn evidence_paths_include_active_change_evidence_only_with_separator() {
         let manifest = Manifest::load_embedded().unwrap();
         let root = Path::new("/project");
