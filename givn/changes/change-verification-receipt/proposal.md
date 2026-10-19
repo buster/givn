@@ -33,8 +33,8 @@ Every project-specific runner must be able to satisfy one small contract: run th
 
 | Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
 |---|---|---|---|
-| Change-scoped verification receipt | `EXTEND givn-workflow-enforcement` (verify-change, 23.50) | `EXTEND givn-workflow-enforcement` | The existing workflow-enforcement capability owns `check tasks` and `check review`; the receipt is a stronger proof inside that capability. |
-| Archive receipt validation | not ranked | `EXTEND archive-proof` | Archive-proof owns the pending/proven receipt and validates it before merge. |
+| givn-workflow-enforcement | `EXTEND givn-workflow-enforcement` (verify-change, 23.50) | `EXTEND givn-workflow-enforcement` | The existing workflow-enforcement capability owns `check tasks` and `check review`; the receipt is a stronger proof inside that capability. |
+| archive-proof | not ranked | `EXTEND archive-proof` | Archive-proof owns the pending/proven receipt and validates it before merge. |
 
 ## Out of Scope
 
