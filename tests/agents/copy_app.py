@@ -37,7 +37,7 @@ def main() -> int:
         encoding="utf-8",
     )
     print("fake agent: copied application")
-    return 0
+    return 7 if mode == "copy_fail" else 0
 
 
 if __name__ == "__main__":

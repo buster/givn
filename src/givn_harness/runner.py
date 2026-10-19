@@ -676,7 +676,7 @@ def run_bundle(
 
         if ledger is not None:
             actual = driver_result.cost_usd
-            if actual is None and analysis_summary:
+            if analysis_summary:
                 cost = analysis_summary.get("cost") or {}
                 observed = cost.get("observed_total_usd")
                 if (
@@ -684,17 +684,20 @@ def run_bundle(
                     and isinstance(observed, (int, float))
                     and not cost.get("missing_cost_requests")
                 ):
-                    actual = float(observed)
-                    append_journal(
-                        bundle,
-                        "budget_reconciled_from_events",
-                        stage=stage.id,
-                        amount_usd=actual,
-                    )
+                    if actual is None or float(observed) > float(actual):
+                        actual = float(observed)
+                        append_journal(
+                            bundle,
+                            "budget_reconciled_from_events",
+                            stage=stage.id,
+                            amount_usd=actual,
+                            driver_reported_usd=driver_result.cost_usd,
+                            reason="event record is complete and exceeds driver-reported cost",
+                        )
             ledger.commit(
                 reservation_id,
                 actual,
-                note="committed from driver usage" if actual is not None else "usage missing; remains uncertain",
+                note="committed from the larger of driver usage and complete event-record cost" if actual is not None else "usage missing; remains uncertain",
             )
             append_journal(
                 bundle,
@@ -706,16 +709,24 @@ def run_bundle(
             update_manifest(bundle, {"budget": {**budget, **ledger.totals()}})
 
         protocol_ok = not driver_result.protocol_failures
-        completed = (
-            driver_result.termination == "completed"
-            and driver_result.exit_code == 0
-            and probe_result.get("ok", False)
+        driver_clean_exit = (
+            driver_result.termination == "completed" and driver_result.exit_code == 0
+        )
+        workflow_ok = (
+            probe_result.get("ok", False)
             and archive_result.get("ok", False)
             and protocol_ok
         )
+        completed = workflow_ok
         stage_record = {
             "id": stage.id,
             "completed": completed,
+            "completion_basis": (
+                "public probe and workflow archive; driver exit code is reported separately"
+                if workflow_ok
+                else "workflow gate failed"
+            ),
+            "driver_clean_exit": driver_clean_exit,
             "driver": driver_result.to_dict(),
             "probe": probe_result,
             "archive": archive_result,
@@ -737,6 +748,7 @@ def run_bundle(
             stage=stage.id,
             completed=completed,
             driver_termination=driver_result.termination,
+            driver_clean_exit=driver_clean_exit,
             protocol_ok=protocol_ok,
             probe_ok=probe_result.get("ok"),
             archive_ok=archive_result.get("ok"),

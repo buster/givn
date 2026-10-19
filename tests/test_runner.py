@@ -99,6 +99,16 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(stage["driver"]["exit_code"], 7)
         self.assertTrue((bundle / "stages" / "initial" / "agent.stderr.log").is_file())
 
+    def test_workflow_success_is_not_erased_by_nonzero_driver_exit(self) -> None:
+        config = self.config(mode="copy_fail")
+        bundle = execute(config)[0]
+        manifest = load_manifest(bundle)
+        stage = manifest["stages"][0]
+        self.assertTrue(stage["completed"])
+        self.assertFalse(stage["driver_clean_exit"])
+        self.assertEqual(stage["driver"]["termination"], "driver_error")
+        self.assertEqual(manifest["status"], "completed")
+
     def test_timeout_is_recorded_and_evidence_preserved(self) -> None:
         import dataclasses
 
