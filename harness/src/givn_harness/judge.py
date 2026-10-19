@@ -7,6 +7,7 @@ import tempfile
 from pathlib import Path
 
 from givn_harness._utils import find_change_dir
+from givn_harness.model import require_model
 from givn_harness.types import JudgeScore
 
 ARTIFACT_TYPES = ["proposal", "specs", "design", "tasks", "review"]
@@ -69,6 +70,7 @@ def _get_artifact_content(change_dir: Path, artifact_type: str) -> str:
 
 
 def run_judge(workspace_path: str, model: str | None = None) -> list[JudgeScore]:
+    model = require_model(model)
     ws = Path(workspace_path).resolve()
     change_dir = find_change_dir(ws)
 
@@ -104,9 +106,7 @@ def run_judge(workspace_path: str, model: str | None = None) -> list[JudgeScore]
 
         proc: subprocess.Popen | None = None
         try:
-            cmd = ["opencode", "run"]
-            if model:
-                cmd.extend(["--model", model])
+            cmd = ["opencode", "run", "--standalone", "--model", model]
             cmd.extend([
                 "--file", prompt_file,
                 "Read the attached file and follow its instructions exactly. "

@@ -132,7 +132,7 @@ def step_then_agent_can_write_workspace(context):
     assert os.path.exists(test_file), f"{test_file} should exist after write"
 
 
-@then('the agent can write files to "/tmp"')
+@then('the agent can write files inside its private "/tmp"')
 def step_then_agent_can_write_tmp(context):
     test_file = "/tmp/harness_bwrap_test_write.txt"
     try:
@@ -140,10 +140,29 @@ def step_then_agent_can_write_tmp(context):
     except OSError:
         pass
     bwrap_cmd = build_bwrap_cmd(context.workspace_path)
-    cmd = bwrap_cmd + ["--", "touch", test_file]
+    cmd = bwrap_cmd + ["--", "sh", "-c", f"printf ok > {test_file} && test -s {test_file}"]
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-    assert result.returncode == 0, f"write to /tmp failed: {result.stderr}"
-    assert os.path.exists(test_file), f"{test_file} should exist after write"
+    assert result.returncode == 0, f"write to the private /tmp failed: {result.stderr}"
+    assert not os.path.exists(test_file), (
+        f"{test_file} leaked to the host /tmp; the sandbox /tmp must be private"
+    )
+
+
+@then('the host "/tmp" is not visible inside the sandbox')
+def step_then_host_tmp_not_visible(context):
+    marker = "/tmp/harness_bwrap_host_marker"
+    with open(marker, "w") as f:
+        f.write("host-only")
+    try:
+        bwrap_cmd = build_bwrap_cmd(context.workspace_path)
+        cmd = bwrap_cmd + ["--", "test", "!", "-e", marker]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        assert result.returncode == 0, "the host /tmp marker leaked into the sandbox"
+    finally:
+        try:
+            os.unlink(marker)
+        except OSError:
+            pass
 
 
 @then('the agent cannot write files to "/home" or "/var" or "/opt"')

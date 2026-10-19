@@ -26,7 +26,8 @@ Feature: sandbox
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     When the user runs `givn-harness run --task task.md --output reports/`
     Then the agent can write files inside the workspace directory
-    And the agent can write files to "/tmp"
+    And the agent can write files inside its private "/tmp"
+    And the host "/tmp" is not visible inside the sandbox
     And the agent cannot write files to "/home" or "/var" or "/opt"
 
   @givn.added

@@ -188,3 +188,7 @@ addons:
   coverage: true
 extras: true
 # ---
+
+# Full capture for the harness's own development record.
+record:
+  mode: full

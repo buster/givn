@@ -211,9 +211,17 @@ def _check_specs_clean(ws: Path) -> Check:
             passed=False,
             detail="givn/specs/ directory not found",
         )
+    if not any(specs_dir.rglob("*.feature")):
+        return Check(
+            name="permanent specs are clean Gherkin",
+            passed=False,
+            detail="no permanent .feature files found in givn/specs/",
+        )
     try:
+        # `givn lint` lints the project's spec set when no path is given; a
+        # directory path is not a readable spec file and always fails.
         result = subprocess.run(
-            [GIVN_BINARY, "lint", str(specs_dir)],
+            [GIVN_BINARY, "lint"],
             cwd=str(ws),
             capture_output=True,
             text=True,
