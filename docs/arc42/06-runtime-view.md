@@ -317,7 +317,8 @@ Stages:
    archive by name (Git untracked files and Fossil `EXTRA` entries included),
    except the declared evidence paths (the target archive directory,
    `givn/changes/<id>/verification.json`, `givn/changes/<id>/evidence/**`,
-   `givn/changes/<id>/verification/**`, `README.md`, and the configured
+   `givn/changes/<id>/verification/**`, any archive's receipt, `results/**`,
+   `evidence/**`, and `verification/**`, `README.md`, and the configured
    coverage paths), which keep a failed attempt resumable.
 3. Fresh or interrupted-move only — structural gates before any mutation:
    `apply.requires` completeness, configured archive hooks, the run-declaration
