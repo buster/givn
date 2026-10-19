@@ -405,7 +405,14 @@ export default function givnTimeline(pi) {
     const agent = typeof event?.agent === "string" ? event.agent : undefined
     if (event?.status === "started" || event?.status === "running") {
       subagents.set(identity, Date.now())
-      push({ kind: "subagent", at: at(Date.now()), agent, subagent: identity, status: "started" })
+      push({
+        kind: "subagent",
+        at: at(Date.now()),
+        agent,
+        subagent: identity,
+        title: bounded(identity),
+        status: "started",
+      })
       return
     }
     const started = subagents.get(identity)
