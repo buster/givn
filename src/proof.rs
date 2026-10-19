@@ -525,6 +525,15 @@ mod tests {
         let active = root.path().join("givn/changes/demo");
         std::fs::create_dir_all(&active).unwrap();
         std::fs::write(active.join("proposal.md"), "# proposal\n").unwrap();
+        std::fs::remove_file(archive.join(RECEIPT_FILE)).unwrap();
+        assert_eq!(
+            read_status(root.path(), id),
+            ArchiveProof::Corrupt {
+                both_dirs: true,
+                pending_conflict: false,
+            }
+        );
+
         Receipt::write_pending(&archive, id, 1).unwrap();
         assert_eq!(
             read_status(root.path(), id),
