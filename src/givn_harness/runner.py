@@ -64,6 +64,7 @@ class RunConfig:
     resume: Path | None = None
     allow_unverified_network: bool = False
     stop_after: str | None = None
+    stage_timeout_override: int | None = None
     secret_env: dict[str, str] = field(default_factory=dict)
 
     def driver_extra_sandbox(self) -> dict[str, Any]:
@@ -274,6 +275,7 @@ def _manifest_details(config: RunConfig, sandbox_result: dict[str, Any]) -> dict
         "answer_policy": config.answer_policy,
         "network": config.network,
         "stop_after": config.stop_after,
+        "stage_timeout_override": config.stage_timeout_override,
     }
 
 
@@ -444,6 +446,8 @@ def _validate_config(config: RunConfig) -> None:
         stage.id for stage in config.benchmark.stages
     }:
         raise RunError(f"unknown --stop-after stage: {config.stop_after!r}")
+    if config.stage_timeout_override is not None and config.stage_timeout_override <= 0:
+        raise RunError("--stage-timeout must be positive")
         if config.givn_binary is not None and not Path(config.givn_binary).is_file():
             raise RunError(f"givn binary not found: {config.givn_binary}")
 
@@ -566,11 +570,14 @@ def run_bundle(
         archive_before = _archive_entries(workspace)
         task_path = write_stage_task(config.benchmark, stage, workspace)
         shutil.copy2(task_path, stage_dir / "request.md")
+        stage_timeout = config.stage_timeout_override or stage.timeout_seconds
         request = {
             "stage": stage.id,
             "task": str(stage.task),
             "task_sha256": sha256_file(stage.task),
-            "timeout_seconds": stage.timeout_seconds,
+            "timeout_seconds": stage_timeout,
+            "benchmark_timeout_seconds": stage.timeout_seconds,
+            "timeout_override": config.stage_timeout_override,
             "require_archive": stage.require_archive,
             "require_probe": stage.require_probe,
             "started_at": _stamp(),
@@ -637,7 +644,7 @@ def run_bundle(
             stage_id=stage.id,
             condition=config.condition,
             stage_dir=stage_dir,
-            timeout_seconds=stage.timeout_seconds,
+            timeout_seconds=stage_timeout,
             sandbox=policy,
             journal=lambda event, **payload: append_journal(bundle, event, **payload),
         )

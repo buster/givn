@@ -147,12 +147,18 @@ class RunnerTests(unittest.TestCase):
     def test_stop_after_completes_prefix_and_records_remaining_not_reached(self) -> None:
         config = self.config()
         config.stop_after = "initial"
+        config.stage_timeout_override = 7
         bundle = execute(config)[0]
         manifest = load_manifest(bundle)
         self.assertEqual(manifest["status"], "incomplete")
         self.assertTrue(manifest["stages"][0]["completed"])
         self.assertTrue(manifest["stages"][1]["not_reached"])
         self.assertIn("stop-after", (bundle / "stages" / "followup" / "not-reached.json").read_text())
+        request = json.loads(
+            (bundle / "stages" / "initial" / "request.json").read_text()
+        )
+        self.assertEqual(request["timeout_seconds"], 7)
+        self.assertEqual(request["benchmark_timeout_seconds"], 2400)
 
     def test_resume_of_completed_bundle_returns_without_rework(self) -> None:
         bundle = execute(self.config())[0]
