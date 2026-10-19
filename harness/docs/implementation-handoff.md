@@ -10,22 +10,47 @@ The first real opencode trial ran the lending benchmark initial stage with
 DeepSeek Flash maximum thinking, bubblewrap, host networking explicitly marked
 exploratory, and a USD 4.90 cap.
 
+Attempt 3 (40-minute bound):
+
 - Stage outcome: **timed out at 2400 seconds**.
-- Public probe: **passed**; `app.py` existed and the basic lending sequence
-  worked.
+- Public probe: **passed**.
 - Independent grade: **7/7 graded initial requirements passed**, no critical
   failures.
-- Follow-up: not reached; all follow-up and cross-version requirements
-  ungraded.
-- givn archive: **not completed**. The agent spent the stage on proposal,
-  specs, design, design review, implementation and tests but did not reach
-  archive inside the 40-minute bound.
-- Observed cost: **USD 0.1333** for this attempt.
-- Attempt 1 was interrupted at **USD 0.0349**; attempt 2 at **USD 0.0459**.
+- givn archive: **not completed**.
+- Cost: **USD 0.1333**.
 
-The delivered initial product passed every independent initial check. Workflow
-completion failed on time, not on behavior. A longer timeout or a smaller task
-is required before drawing a conclusion about givn's workflow cost.
+Attempt 4 (80-minute bound):
+
+- Stage: **initial completed**.
+- Public probe: **passed**.
+- givn archive receipt: **`lending-register` created**.
+- Independent grade: **7/7 graded initial requirements passed**, no critical
+  failures.
+- OpenCode exited with code 1 after printing a completed delivery summary. The
+  original stage record marked the trial incomplete because it required a zero
+  driver exit; a correction file records the observed workflow completion. The
+  completion policy now uses archive + probe + protocol and reports driver exit
+  separately.
+- Delivered code included `app.py`, persistence, tests, coverage, README and
+  archived givn artifacts.
+- Event-record cost: **USD 0.6302** (460 requests, all costed). OpenCode stdout
+  reported only USD 0.1922; the ledger was corrected to the larger complete
+  event-record cost.
+
+Attempt costs:
+
+```text
+attempt 1: 0.0349
+attempt 2: 0.0459
+attempt 3: 0.1333
+attempt 4: 0.6302
+total:     0.8443
+remaining from 5 USD: 4.1557
+```
+
+The delivered initial product passed every independent initial check. The
+follow-up and cross-version checks remain ungraded because the follow-up was
+not run.
 
 The trial exposed and fixed two harness defects:
 
@@ -72,7 +97,7 @@ after the driver exits. Rotate the key used for these attempts.
 
 ## Test evidence
 
-- `./run-tests.sh`: 66 deterministic tests, all passing.
+- `./run-tests.sh`: 67 deterministic tests, all passing.
 - `givn-harness benchmark verify benchmarks/lending`: reference passes all 13
   requirements; scaffold fails substantive requirements; all five seeded
   defects are caught.
@@ -94,10 +119,10 @@ after the driver exits. Rotate the key used for these attempts.
    envelope per stage. The real run's actual cost exceeded its reservation
    (`admission_exceeded: true`); a multi-request agent needs request-level
    reservation before a hard invoice ceiling can be claimed.
-3. **The opencode invocation path is exercised, but the first trial timed out
-   before archive.** The driver, private config, credential injection and
-   grading worked; the 40-minute stage bound was too short for the observed
-   givn workflow.
+3. **The opencode invocation path is exercised.** Attempt 4 completed the
+   initial workflow and archived the change, but OpenCode exited with code 1
+   after its final summary. The harness now records that exit separately from
+   workflow completion.
 4. **Complex-task support is manifest-level.** The runner and grader support
    any number of ordered stages; only the lending task is packaged and
    verified. A brownfield task needs its own public contract, reference,
