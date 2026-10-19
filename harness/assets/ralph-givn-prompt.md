@@ -4,6 +4,10 @@
 
 {{prompt}}
 
+## Task contract (authoritative; overrides the next Givn step)
+
+{{task_contract}}
+
 ## Your ONE job this iteration
 
 You have EXACTLY ONE action this iteration. Read everything below
