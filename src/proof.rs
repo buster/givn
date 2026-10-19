@@ -855,6 +855,13 @@ mod tests {
     }
 
     #[test]
+    fn change_receipt_read_names_the_missing_receipt() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let err = ChangeReceipt::read(dir.path()).unwrap_err();
+        assert!(err.to_string().contains("verification receipt missing"), "{err}");
+    }
+
+    #[test]
     fn change_receipt_is_current_and_roundtrips() {
         let dir = tempfile::TempDir::new().unwrap();
         let root = dir.path();
