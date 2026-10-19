@@ -180,6 +180,8 @@ fn run_mandatory_checks(
 }
 
 /// Run the change-scoped verification and persist its receipt.
+/// The clean-tree requirement keeps the receipt bound to one revision; the
+/// agent commits implementation and evidence before this command runs.
 fn run_change_verification(
     manifest: &crate::config::manifest::Manifest,
     project_root: &std::path::Path,
