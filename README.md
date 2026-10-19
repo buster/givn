@@ -241,6 +241,27 @@ and a fresh data directory in bubblewrap, with no network and no host home or
 benchmark mount. The authoritative snapshot is copied first, then checksummed
 before grading; it is never modified by submission code.
 
+## Improving givn with the harness
+
+Use the same loop for a rule, guardrail or workflow change:
+
+1. **Observe.** Run `analyze` on real records and read the cited evidence, not
+   just a finding title.
+2. **Form one narrow hypothesis.** Example: repeated archive rejection is
+   associated with generated files dirtying the tree.
+3. **Change one thing.** Build a candidate givn binary; keep the benchmark,
+   model, driver, sandbox and resource policy fixed.
+4. **Run both conditions.** Use `--repeats` for each condition; start
+   sequentially so accounting and resource contention stay simple.
+5. **Grade frozen snapshots.** A faster candidate that breaks a requirement is
+   not an unqualified improvement.
+6. **Compare.** Retain the change only when independent behavioral evidence and
+   resource measurements both support it. Report inconclusive when they do not.
+
+Compliance without a prompt is not evidence that deleting the prompt improves
+outcomes. Artifact presence, PASS markers and self-reported green tests are not
+primary quality evidence.
+
 ## Development
 
 <!-- givn:begin:development -->
