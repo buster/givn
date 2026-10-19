@@ -1573,6 +1573,27 @@ Feature: Dead capability
     }
 
     #[test]
+    fn stale_temporaries_are_removed_before_the_witness() {
+        let (_root, project, _backup) = temp_project();
+        let change = project.join("givn/changes/demo");
+        let archive = project.join("givn/archive/demo");
+        std::fs::create_dir_all(&change).unwrap();
+        std::fs::create_dir_all(&archive).unwrap();
+        let specs_temp = project.join("givn/specs/dead-cap/dead-cap.feature.givn-tmp");
+        std::fs::write(&specs_temp, "torn").unwrap();
+        let change_temp = change.join(".verification.json.givn-tmp");
+        std::fs::write(&change_temp, "torn").unwrap();
+        let archive_temp = archive.join(".verification.json.givn-tmp");
+        std::fs::write(&archive_temp, "torn").unwrap();
+
+        cleanup_stale_temporaries(&project, &change, &archive).unwrap();
+
+        assert!(!specs_temp.exists());
+        assert!(!change_temp.exists());
+        assert!(!archive_temp.exists());
+    }
+
+    #[test]
     fn retirement_retry_is_idempotent_and_cleans_up() {
         let (_root, project, _backup) = temp_project();
         let usecase_dir = project.join("givn/specs/dead-cap");
