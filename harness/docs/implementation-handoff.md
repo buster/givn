@@ -1,41 +1,28 @@
 # Implementation handoff
 
-Date: 2026-10-19. Status: deterministic core implemented; one real
-initial-stage run executed. Authorized budget: USD 5 total; observed spend:
-USD 0.2141 across three attempts. Remaining: USD 4.7859.
+Date: 2026-10-19. Status: deterministic core implemented; one complete real
+two-stage trial executed. Authorized budget: USD 5 total; observed spend:
+USD 1.2421 across four attempts. Remaining: USD 3.7579.
 
 ## Real run result
 
-The first real opencode trial ran the lending benchmark initial stage with
-DeepSeek Flash maximum thinking, bubblewrap, host networking explicitly marked
-exploratory, and a USD 4.90 cap.
+The real trial used the lending benchmark, DeepSeek Flash maximum thinking,
+bubblewrap, exploratory host networking, and a fresh session for the follow-up.
 
-Attempt 3 (40-minute bound):
-
-- Stage outcome: **timed out at 2400 seconds**.
-- Public probe: **passed**.
-- Independent grade: **7/7 graded initial requirements passed**, no critical
-  failures.
-- givn archive: **not completed**.
-- Cost: **USD 0.1333**.
-
-Attempt 4 (80-minute bound):
-
-- Stage: **initial completed**.
-- Public probe: **passed**.
-- givn archive receipt: **`lending-register` created**.
-- Independent grade: **7/7 graded initial requirements passed**, no critical
-  failures.
-- OpenCode exited with code 1 after printing a completed delivery summary. The
-  original stage record marked the trial incomplete because it required a zero
-  driver exit; a correction file records the observed workflow completion. The
-  completion policy now uses archive + probe + protocol and reports driver exit
-  separately.
-- Delivered code included `app.py`, persistence, tests, coverage, README and
-  archived givn artifacts.
-- Event-record cost: **USD 0.6302** (460 requests, all costed). OpenCode stdout
-  reported only USD 0.1922; the ledger was corrected to the larger complete
-  event-record cost.
+- Initial stage: **completed**, archive receipt `lending-register`.
+- Follow-up stage: **completed**, archive receipt `reference-only-books`.
+- Public probes: **passed**.
+- Independent grade: **13 passed, 0 failed, 0 ungraded**.
+  All seven initial, five follow-up and the cross-version requirement passed.
+- Initial duration: 2801 s; 460 requests; USD 0.6302.
+- Follow-up duration: 1724 s; 295 requests; USD 0.3978.
+- Trial cost: **USD 1.0280**.
+- Initial archive attempts: 12, failures 10. Follow-up archive attempts: 2,
+  failure 1.
+- Initial `check review` failures: 25. Follow-up `check review` failures: 6.
+- OpenCode exited 1 after the initial delivery summary but had archived the
+  change. The harness now records driver exit separately from workflow
+  completion (probe + archive + protocol).
 
 Attempt costs:
 
@@ -43,16 +30,18 @@ Attempt costs:
 attempt 1: 0.0349
 attempt 2: 0.0459
 attempt 3: 0.1333
-attempt 4: 0.6302
-total:     0.8443
-remaining from 5 USD: 4.1557
+attempt 4: 1.0280
+total:     1.2421
+remaining from 5 USD: 3.7579
 ```
 
-The delivered initial product passed every independent initial check. The
-follow-up and cross-version checks remain ungraded because the follow-up was
-not run.
+Archive and review friction is documented in
+`docs/findings/2026-10-19-run4-archive-friction.md`. The dominant issues are a
+non-transactional archive, an incrementally discovered runner-result schema,
+late task-integrity failures, visual review applied to a CLI product, and archive
+gates mutating the tested tree.
 
-The trial exposed and fixed two harness defects:
+The trial exposed and fixed three harness defects:
 
 - OpenCode snapshots were enabled and indexed the growing `.harness` state,
   driving git to high CPU and filling the disk. Snapshots are now disabled in
@@ -60,6 +49,9 @@ The trial exposed and fixed two harness defects:
 - `git status` during snapshot freezing refreshed `.git/index` after checksums
   were recorded. Snapshots now read git metadata before checksums with
   `GIT_OPTIONAL_LOCKS=0` and exclude volatile `.git/index`.
+- Stage analysis treated the cumulative givn history as stage-local. Each stage
+  now records a byte offset before the driver and analyzes only bytes appended
+  during that stage.
 
 The DeepSeek key was briefly present in `bwrap` argv during attempt 1. It now
 moves through a mode-600 secrets file sourced inside the sandbox and is removed
@@ -98,7 +90,7 @@ rotation; the argv/log exposure fix remains in place.
 
 ## Test evidence
 
-- `./run-tests.sh`: 68 deterministic tests, all passing.
+- `./run-tests.sh`: 69 deterministic tests, all passing.
 - Archive/review friction report:
   `docs/findings/2026-10-19-run4-archive-friction.md`; the bundle keeps the
   evidence-linked original.
@@ -141,13 +133,10 @@ rotation; the argv/log exposure fix remains in place.
 
 ## Next increments
 
-1. Re-run the initial stage with a longer timeout, or reduce the task's workflow
-   overhead, and compare the delivered behavior against the observed 7/7
-   initial grade.
-2. Implement and verify a request-level provider guard plus an outbound
-   allowlist, then run the full two-stage workflow once under the remaining
-   budget.
+1. Implement one archive-friction candidate, starting with transactional
+   archive, and compare current-versus-candidate givn on the same benchmark.
+2. Add a request-level provider guard and verified egress boundary; current
+   host-network trials remain exploratory.
 3. Add one harder, brownfield multi-stage benchmark using the same bundle and
    grader machinery.
-4. Compare current versus candidate givn only after the execution foundation is
-   proven; keep tasks frozen so saturation does not silently change the ruler.
+4. Keep tasks frozen so saturation does not silently change the ruler.
