@@ -112,12 +112,28 @@ def _sandbox_policy(config: RunConfig, workspace: Path) -> SandboxPolicy:
         "PYTHONUNBUFFERED": "1",
         **config.driver.extra_env,
     }
+    extra_ro_binds = list(config.sandbox_extra_ro_binds)
+    credential_binds = list(config.sandbox_credentials)
+    if config.driver.kind == "opencode":
+        home = Path.home()
+        # Mount only the runtime and the credential file, never the host
+        # session database or the rest of the agent state.
+        for candidate in (
+            home / ".opencode",
+            home / ".config" / "opencode",
+            home / ".cache" / "opencode",
+        ):
+            if candidate.exists():
+                extra_ro_binds.append(candidate)
+        auth = home / ".local" / "share" / "opencode" / "auth.json"
+        if auth.is_file():
+            credential_binds.append(auth)
     return SandboxPolicy(
         mode=config.sandbox_mode,
         network=config.network,
         workspace=workspace,
-        extra_ro_binds=config.sandbox_extra_ro_binds,
-        credential_binds=config.sandbox_credentials,
+        extra_ro_binds=extra_ro_binds,
+        credential_binds=credential_binds,
         env=env,
     )
 

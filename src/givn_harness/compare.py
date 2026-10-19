@@ -261,11 +261,22 @@ def build_comparison(baseline_paths: list[str], candidate_paths: list[str]) -> d
     candidate_summary = _condition_summary(candidate)
     requirements = _requirement_table(baseline, candidate)
     insufficient = baseline_summary["trials"] < 2 or candidate_summary["trials"] < 2
+    incomplete_evidence = [
+        trial
+        for trial in baseline + candidate
+        if (
+            not trial.grade
+            or trial.grade.get("summary", {}).get("ungraded", 0) > 0
+            or trial.grade.get("summary", {}).get("graded", 0)
+            < trial.grade.get("summary", {}).get("required", 0)
+        )
+    ]
     inconclusive = (
         insufficient
         or not comparability_result["comparable"]
         or baseline_summary["graded_trials"] == 0
         or candidate_summary["graded_trials"] == 0
+        or bool(incomplete_evidence)
     )
     return {
         "schema": "givn-harness/comparison/v1",
@@ -282,6 +293,7 @@ def build_comparison(baseline_paths: list[str], candidate_paths: list[str]) -> d
         "requirements": requirements,
         "comparability": comparability_result,
         "inconclusive": inconclusive,
+        "incomplete_evidence_trials": [str(trial.bundle) for trial in incomplete_evidence],
         "note": (
             "This report is descriptive. It does not collapse quality and resource "
             "use into one score. Fewer than two trials per condition, differing "
@@ -353,6 +365,7 @@ def render_comparison(document: dict[str, Any]) -> str:
         f"| Trials | {base['trials']} | {cand['trials']} |",
         f"| Statuses | {base['statuses']} | {cand['statuses']} |",
         f"| Trials passing all required | {base['fully_graded_trials']} | {cand['fully_graded_trials']} |",
+        f"| Graded trials | {base['graded_trials']} | {cand['graded_trials']} |",
         f"| Observed cost, median USD | {base['observed_cost_usd']['median']} | {cand['observed_cost_usd']['median']} |",
         f"| Cost complete trials | {base['cost_complete_trials']} | {cand['cost_complete_trials']} |",
         f"| Driver seconds, median | {base['driver_seconds']['median']} | {cand['driver_seconds']['median']} |",
@@ -401,6 +414,16 @@ def render_comparison(document: dict[str, Any]) -> str:
         "## Interpretation",
         "",
         "- Fewer than two trials per condition is not a significance test.",
+    ]
+    if document.get("incomplete_evidence_trials"):
+        lines.append(
+            "- Incomplete evidence trials: "
+            + ", ".join(
+                f"`{Path(item).name}`"
+                for item in document["incomplete_evidence_trials"]
+            )
+        )
+    lines += [
         "- Ungraded requirements mean the trial stopped; they are not passes and not failures.",
         "- External outages, agent failures, budget exhaustion and capture failures stay "
         "visible rather than being collapsed into one exclusion.",

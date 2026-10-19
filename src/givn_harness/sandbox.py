@@ -87,17 +87,31 @@ def bubblewrap_available() -> bool:
     return completed.returncode == 0
 
 
+def _parent_dir_args(path: Path) -> list[str]:
+    """Create missing parent directories inside the sandbox for a bind target."""
+    args: list[str] = []
+    parents = [parent for parent in path.parents if parent != Path("/")]
+    for parent in reversed(parents):
+        text = str(parent)
+        if text.startswith(("/home/", "/tmp/", "/run/")):
+            args.extend(["--dir", text])
+    return args
+
+
 def _binds(policy: SandboxPolicy, home: Path) -> list[str]:
     args: list[str] = []
     for path in policy.extra_ro_binds:
         candidate = Path(path)
         if candidate.exists():
-            args.extend(["--ro-bind-try", str(candidate), str(candidate)])
+            source = candidate.resolve() if candidate.is_symlink() else candidate
+            args.extend(_parent_dir_args(candidate))
+            args.extend(["--ro-bind-try", str(source), str(candidate)])
     # Credentials are opt-in and mounted read-only. The entire agent state
     # directory must never be mounted implicitly.
     for path in policy.credential_binds:
         candidate = Path(path)
         if candidate.is_file():
+            args.extend(_parent_dir_args(candidate))
             args.extend(["--ro-bind", str(candidate), str(candidate)])
     return args
 

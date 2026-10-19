@@ -288,6 +288,28 @@ def benchmark_group() -> None:
     """Benchmark package operations."""
 
 
+@benchmark_group.command("list")
+@click.option("--root", default="benchmarks", type=click.Path(exists=True), help="Directory containing benchmark packages")
+def benchmark_list(root: str) -> None:
+    """List packaged benchmarks and their stages."""
+    root_path = Path(root)
+    found = 0
+    for manifest in sorted(root_path.glob("*/benchmark.toml")):
+        try:
+            loaded = load_benchmark(manifest)
+        except BenchmarkError as error:
+            click.echo(f"{manifest.parent.name}: INVALID ({error})")
+            continue
+        found += 1
+        stages = ", ".join(stage.id for stage in loaded.stages)
+        click.echo(
+            f"{loaded.id} {loaded.version} — {loaded.title} "
+            f"[stages: {stages}] ({manifest.parent})"
+        )
+    if not found:
+        raise click.ClickException(f"no benchmarks found under {root_path}")
+
+
 @benchmark_group.command("verify")
 @click.argument("benchmark", type=click.Path(exists=True))
 @click.option("--output", default="benchmark-verification", type=click.Path())
