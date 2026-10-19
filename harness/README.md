@@ -278,9 +278,10 @@ skipped when bubblewrap cannot establish its namespaces.
 ## Repository relationship
 
 The standalone repository is authoritative. `givn/harness/` in the parent Rust
-repository is a synchronized downstream copy, not a second editing surface.
-See `docs/subtree-sync.md` for the exact local remote commands and the base
-commit used for synchronization.
+repository is a synchronized downstream copy at parent join commit `937494bf`,
+not a second editing surface. The pre-join tree remains at tag
+`harness-pre-subtree`. See `docs/subtree-sync.md` for the exact local remote
+commands and validation.
 
 ## Known limits
 

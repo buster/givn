@@ -65,10 +65,11 @@ for this session (no request was dispatched).
    hidden grader and defects.
 5. **No LLM judge.** Artifact quality is not scored. Independent behavioral
    tests are the primary quality evidence.
-6. **Subtree synchronization was validated in a disposable clone, not applied
-   to the real parent.** The join commit reproduced the standalone tracked tree
-   under `harness/` with no changes outside the prefix; the real parent remains
-   untouched with its local work preserved. See `docs/subtree-sync.md`.
+6. **Subtree synchronization is now applied to the real parent.** The standalone
+   repository is authoritative; parent join commit `937494bf` mirrors its
+   tracked tree under `harness/`. The pre-join tree is tagged
+   `harness-pre-subtree` and backed up locally. Subsequent changes must be
+   committed here first and synchronized down. See `docs/subtree-sync.md`.
 
 ## Next increments
 
