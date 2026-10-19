@@ -666,6 +666,12 @@ mod tests {
             &manifest,
             Path::new("givn/changes/demo/proposal.md")
         ));
+        assert!(!is_evidence_path(
+            root,
+            "demo",
+            &manifest,
+            Path::new("givn/archive/demo-other/verification.json")
+        ));
     }
 
     #[test]
