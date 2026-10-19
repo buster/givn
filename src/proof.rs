@@ -855,6 +855,37 @@ mod tests {
     }
 
     #[test]
+    fn change_receipt_is_current_and_roundtrips() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let root = dir.path();
+        let change = root.join("givn/changes/demo");
+        let specs = change.join("specs");
+        std::fs::create_dir_all(&specs).unwrap();
+        std::fs::write(specs.join("demo.feature"), "Feature: Demo\n").unwrap();
+        write_change_receipt(
+            root,
+            &change,
+            "demo",
+            "abc",
+            "runner",
+            RunnerResult {
+                scope: None,
+                total: 2,
+                passed: 2,
+                failed: 0,
+                skipped: 0,
+            },
+            1,
+        )
+        .unwrap();
+        let receipt = ChangeReceipt::read(&change).unwrap();
+        assert!(receipt.is_current(&change, "abc", "runner").unwrap());
+        assert!(!receipt.is_current(&change, "def", "runner").unwrap());
+        std::fs::write(specs.join("demo.feature"), "Feature: Changed\n").unwrap();
+        assert!(!receipt.is_current(&change, "abc", "runner").unwrap());
+    }
+
+    #[test]
     fn runner_result_rejects_every_untrusted_shape() {
         let dir = temp_receipt_dir();
         let path = dir.path().join("regular.json");
