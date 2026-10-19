@@ -124,7 +124,7 @@ def invoke_grader(
     benchmark: Benchmark,
     output: Path,
     *,
-    sandbox: "SandboxPolicy | None" = None,
+    sandbox_mode: str = "required",
     timeout: int | None = None,
 ) -> tuple[dict[str, Any], str]:
     manifest = load_grader_manifest(benchmark)
@@ -137,12 +137,10 @@ def invoke_grader(
             str(benchmark.root),
             "--output",
             str(output),
+            "--sandbox",
+            sandbox_mode,
         ]
     )
-    if sandbox is not None:
-        from givn_harness.sandbox import build_command
-
-        command = build_command(sandbox, command)
     if timeout is None:
         timeout = int(manifest.get("timeout_seconds") or 900)
     started = time.monotonic()
@@ -177,35 +175,6 @@ def invoke_grader(
     except ValueError as error:
         raise GraderError(f"grader output is not JSON: {error}") from error
     return validate_grade(document), log
-
-
-def grading_sandbox(bundle: Path, benchmark: Benchmark) -> "SandboxPolicy":
-    """Build a verified grading sandbox for one bundle.
-
-    The bundle is the only writable mount; the benchmark package is read-only.
-    A path-only or unverified fallback is never returned.
-    """
-    import tempfile
-
-    from givn_harness.sandbox import SandboxPolicy, SandboxUnavailable, probe
-
-    with tempfile.TemporaryDirectory(prefix="givn-grade-capability-") as temporary:
-        workspace = Path(temporary) / "workspace"
-        workspace.mkdir()
-        capability = probe(
-            SandboxPolicy(mode="required", network="none", workspace=workspace)
-        )
-    if not capability.get("ok"):
-        failed = ", ".join(
-            check["name"] for check in capability.get("checks", []) if not check.get("ok")
-        )
-        raise SandboxUnavailable(f"grading isolation probe failed: {failed}")
-    return SandboxPolicy(
-        mode="required",
-        network="none",
-        workspace=bundle,
-        extra_ro_binds=[benchmark.root],
-    )
 
 
 def render_grade_markdown(document: dict[str, Any], benchmark: Benchmark, grade_id: str) -> str:
@@ -264,7 +233,7 @@ def grade_bundle(
     bundle: Path,
     benchmark: Benchmark | str | Path,
     *,
-    sandbox: "SandboxPolicy | None" = None,
+    sandbox_mode: str = "required",
 ) -> dict[str, Any]:
     if not isinstance(benchmark, Benchmark):
         benchmark = load_benchmark(benchmark)
@@ -303,7 +272,9 @@ def grade_bundle(
                     f"{problems[:3]}"
                 )
     try:
-        document, log = invoke_grader(bundle, benchmark, result_path, sandbox=sandbox)
+        document, log = invoke_grader(
+            bundle, benchmark, result_path, sandbox_mode=sandbox_mode
+        )
     except GraderError:
         if result_path.exists():
             result_path.unlink()
@@ -361,7 +332,7 @@ def _grade_case(
 ) -> dict[str, Any]:
     bundle = _synthetic_bundle(work_dir, sources)
     output = work_dir / "grade.json"
-    document, log = invoke_grader(bundle, benchmark, output)
+    document, log = invoke_grader(bundle, benchmark, output, sandbox_mode="none")
     (work_dir / "grader.log").write_text(log, encoding="utf-8")
     return document
 

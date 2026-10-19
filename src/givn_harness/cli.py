@@ -12,6 +12,7 @@ import click
 
 from givn_harness.accounting import analyze_paths
 from givn_harness.analysis_report import render_analysis
+from givn_harness.redact import redact_analysis
 from givn_harness.benchmark import BenchmarkError, load_benchmark
 from givn_harness.compare import CompareError, build_comparison, render_comparison
 from givn_harness.driver import DriverSpec, parse_script_command
@@ -52,6 +53,7 @@ def main() -> None:
 @click.option("--kind", "kinds", multiple=True, help="Only these event kinds (repeatable)")
 @click.option("--metadata", type=click.Path(exists=True), default=None, help="Declared metadata sidecar (JSON object)")
 @click.option("--repo", "repository", type=click.Path(exists=True), default=None, help="Optional repository context (read-only)")
+@click.option("--redact/--no-redact", default=True, show_default=True, help="Redact free text in exported reports")
 @click.option("--quiet", is_flag=True, default=False, help="Do not print the summary")
 def analyze(
     events: tuple[str, ...],
@@ -63,6 +65,7 @@ def analyze(
     kinds: tuple[str, ...],
     metadata: str | None,
     repository: str | None,
+    redact: bool,
     quiet: bool,
 ) -> None:
     """Analyze existing events.jsonl records without running anything.
@@ -87,8 +90,11 @@ def analyze(
 
     output_dir = Path(output).resolve()
     created_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    if redact:
+        analysis = redact_analysis(analysis)
     document = analysis.to_dict()
     document["created_at"] = created_at
+    document["redacted"] = redact
     _atomic_write(output_dir / "analysis.json", json.dumps(document, indent=2) + "\n")
     _atomic_write(output_dir / "analysis.md", render_analysis(analysis))
 
@@ -232,22 +238,12 @@ def grade(bundles: tuple[str, ...], benchmark: str, sandbox_mode: str, quiet: bo
         loaded = load_benchmark(benchmark)
     except BenchmarkError as error:
         raise click.ClickException(str(error))
-    sandbox = None
-    if sandbox_mode == "required":
-        try:
-            from givn_harness.grader import grading_sandbox
-
-            sandbox = grading_sandbox(Path(bundles[0]).resolve(), loaded)
-        except (GraderError, SandboxUnavailable) as error:
-            raise click.ClickException(str(error))
     for raw in bundles:
         bundle = Path(raw).resolve()
-        if sandbox_mode == "required" and sandbox is not None and sandbox.workspace != bundle:
-            from givn_harness.grader import grading_sandbox
-
-            sandbox = grading_sandbox(bundle, loaded)
         try:
-            document = grade_bundle(bundle, loaded, sandbox=sandbox)
+            document = grade_bundle(
+                bundle, loaded, sandbox_mode=sandbox_mode
+            )
         except GraderError as error:
             raise click.ClickException(f"{bundle}: {error}")
         if not quiet:

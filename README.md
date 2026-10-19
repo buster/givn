@@ -27,6 +27,11 @@ Read `analysis/current/analysis.md` first. It reports data-quality gaps before
 interpretations, then time, usage, cost, failures, archive friction, questions,
 context pressure and evidence-linked findings.
 
+Exported reports are redacted by default: question text, command labels, error
+text and agent identities are replaced with length markers while event ids and
+structural counts remain. Use `--no-redact` for a local detailed report, and
+review it before sharing.
+
 Useful filters:
 
 ```sh
@@ -230,8 +235,11 @@ The default sandbox uses bubblewrap with:
 denial. If the probe fails, a graded run stops. There is no unsandboxed graded
 fallback.
 
-Grading uses the same isolation primitives with the bundle as the only writable
-mount and the benchmark package read-only.
+Grading keeps the trusted grader and private benchmark material outside the
+submission's readable namespace. The grader launches only the frozen snapshot
+and a fresh data directory in bubblewrap, with no network and no host home or
+benchmark mount. The authoritative snapshot is copied first, then checksummed
+before grading; it is never modified by submission code.
 
 ## Development
 

@@ -15,13 +15,14 @@ import argparse
 import json
 import os
 import selectors
+import shutil
 import subprocess
 import sys
 import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 GRADER_ID = "lending-register-grader"
 GRADER_VERSION = "1.0.0"
@@ -40,10 +41,111 @@ class ProtocolError(GraderError):
     pass
 
 
+def _app_sandbox_prefix(snapshot: Path, data_dir: Path) -> list[str]:
+    """Network-free sandbox exposing only this snapshot and data directory.
+
+    The trusted grader reads private material outside the sandbox. The
+    submission process can read neither the benchmark package nor host state.
+    """
+    bwrap = shutil.which("bwrap")
+    if bwrap is None:
+        raise StartupError("bubblewrap is required for graded execution but is unavailable")
+    home = str(Path.home())
+    command = [
+        bwrap,
+        "--unshare-all",
+        "--new-session",
+        "--die-with-parent",
+        "--as-pid-1",
+        "--chdir",
+        str(snapshot),
+        "--ro-bind",
+        "/usr",
+        "/usr",
+        "--ro-bind-try",
+        "/bin",
+        "/bin",
+        "--ro-bind-try",
+        "/sbin",
+        "/sbin",
+        "--ro-bind-try",
+        "/lib",
+        "/lib",
+        "--ro-bind-try",
+        "/lib64",
+        "/lib64",
+        "--tmpfs",
+        "/etc",
+    ]
+    for relative in (
+        "ssl",
+        "ca-certificates",
+        "resolv.conf",
+        "hosts",
+        "passwd",
+        "group",
+        "nsswitch.conf",
+        "localtime",
+        "ld.so.cache",
+        "alternatives",
+    ):
+        source = Path("/etc") / relative
+        if source.exists():
+            command.extend(["--ro-bind-try", str(source), str(source)])
+    command.extend(
+        [
+            "--proc",
+            "/proc",
+            "--dev",
+            "/dev",
+            "--tmpfs",
+            "/run",
+            "--tmpfs",
+            "/tmp",
+            "--dir",
+            home,
+            "--tmpfs",
+            home,
+            "--ro-bind",
+            str(snapshot),
+            str(snapshot),
+            "--bind",
+            str(data_dir),
+            str(data_dir),
+            "--clearenv",
+            "--setenv",
+            "PATH",
+            "/usr/local/bin:/usr/bin:/bin",
+            "--setenv",
+            "HOME",
+            home,
+            "--setenv",
+            "LANG",
+            "C.UTF-8",
+            "--setenv",
+            "LC_ALL",
+            "C.UTF-8",
+            "--setenv",
+            "PYTHONDONTWRITEBYTECODE",
+            "1",
+            "--setenv",
+            "TMPDIR",
+            "/tmp",
+            "--",
+            "/usr/bin/python3",
+            "app.py",
+            "--data-dir",
+            str(data_dir),
+        ]
+    )
+    return command
+
+
 @dataclass
 class AppClient:
     snapshot: Path
     data_dir: Path
+    sandbox_mode: str = "required"
     proc: subprocess.Popen[str] | None = None
     transcript: list[str] = field(default_factory=list)
     started: bool = False
@@ -52,9 +154,16 @@ class AppClient:
         app = self.snapshot / "app.py"
         if not app.is_file():
             raise StartupError(f"missing entry point: {app}")
+        if self.sandbox_mode == "required":
+            command = _app_sandbox_prefix(self.snapshot, self.data_dir)
+            env = {"PATH": "/usr/local/bin:/usr/bin:/bin"}
+        else:
+            command = [sys.executable, "app.py", "--data-dir", str(self.data_dir)]
+            env = os.environ.copy()
         self.proc = subprocess.Popen(
-            [sys.executable, "app.py", "--data-dir", str(self.data_dir)],
+            command,
             cwd=self.snapshot,
+            env=env,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -427,6 +536,7 @@ def run_case(
     snapshot: Path,
     *,
     data_dir: Path | None = None,
+    sandbox_mode: str = "required",
 ) -> dict[str, Any]:
     result = {
         "id": requirement["id"],
@@ -450,7 +560,7 @@ def run_case(
     import shutil
 
     shutil.copytree(snapshot, working_snapshot, symlinks=True)
-    client = AppClient(working_snapshot, data_dir)
+    client = AppClient(working_snapshot, data_dir, sandbox_mode=sandbox_mode)
     try:
         client.start()
         requirement["test"](client)
@@ -476,7 +586,7 @@ def run_case(
 
 
 def run_cross_version(
-    initial_snapshot: Path, followup_snapshot: Path
+    initial_snapshot: Path, followup_snapshot: Path, *, sandbox_mode: str = "required"
 ) -> dict[str, Any]:
     identifier = "X1"
     description = (
@@ -496,14 +606,15 @@ def run_cross_version(
         return result
     with tempfile.TemporaryDirectory(prefix="grade-x1-") as root:
         data_dir = Path(root) / "data"
+        data_dir.mkdir(parents=True, exist_ok=True)
         initial_copy = Path(root) / "initial"
         followup_copy = Path(root) / "followup"
         import shutil
 
         shutil.copytree(initial_snapshot, initial_copy, symlinks=True)
         shutil.copytree(followup_snapshot, followup_copy, symlinks=True)
-        first = AppClient(initial_copy, data_dir)
-        second = AppClient(followup_copy, data_dir)
+        first = AppClient(initial_copy, data_dir, sandbox_mode=sandbox_mode)
+        second = AppClient(followup_copy, data_dir, sandbox_mode=sandbox_mode)
         try:
             first.start()
             seed(first)
@@ -573,6 +684,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--bundle", required=True)
     parser.add_argument("--benchmark", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument(
+        "--sandbox", choices=["required", "none"], default="required"
+    )
     args = parser.parse_args(argv)
 
     bundle = Path(args.bundle).resolve()
@@ -592,12 +706,16 @@ def main(argv: list[str] | None = None) -> int:
                 "evidence": f"stage snapshot {requirement['stage']!r} was not reached",
             }
         else:
-            result = run_case(requirement, snapshot)
+            result = run_case(
+                requirement, snapshot, sandbox_mode=args.sandbox
+            )
         results_by_stage.setdefault(requirement["stage"], []).append(result)
         all_results.append(result)
 
     if "initial" in snapshots and "followup" in snapshots:
-        cross = run_cross_version(snapshots["initial"], snapshots["followup"])
+        cross = run_cross_version(
+            snapshots["initial"], snapshots["followup"], sandbox_mode=args.sandbox
+        )
     else:
         cross = {
             "id": "X1",

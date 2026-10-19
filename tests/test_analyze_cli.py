@@ -47,6 +47,50 @@ class AnalyzeCliTests(unittest.TestCase):
         self.assertNotEqual(result.exit_code, 0)
         self.assertIn("ISO-8601", result.output)
 
+    def test_export_is_redacted_by_default(self) -> None:
+        events = write_events(
+            self.root / "events.jsonl",
+            [
+                event(
+                    1,
+                    at="2026-01-01T00:00:10Z",
+                    kind="question",
+                    name="question",
+                    label="Secret question",
+                    duration_ms=1000,
+                    data={"question": {"text": "Secret question text", "truncated": False}},
+                )
+            ],
+        )
+        output = self.root / "out"
+        result = CliRunner().invoke(main, ["analyze", str(events), "--output", str(output)])
+        self.assertEqual(result.exit_code, 0, result.output)
+        report = (output / "analysis.md").read_text()
+        self.assertNotIn("Secret question text", report)
+        self.assertIn("redacted", report)
+
+    def test_no_redact_keeps_local_detail(self) -> None:
+        events = write_events(
+            self.root / "events.jsonl",
+            [
+                event(
+                    1,
+                    at="2026-01-01T00:00:10Z",
+                    kind="question",
+                    name="question",
+                    label="Visible question",
+                    duration_ms=1000,
+                    data={"question": {"text": "Visible question text", "truncated": False}},
+                )
+            ],
+        )
+        output = self.root / "out"
+        result = CliRunner().invoke(
+            main, ["analyze", str(events), "--output", str(output), "--no-redact"]
+        )
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertIn("Visible question text", (output / "analysis.md").read_text())
+
 
 if __name__ == "__main__":
     unittest.main()

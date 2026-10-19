@@ -42,7 +42,7 @@ class CompareTests(unittest.TestCase):
             workspace_root=self.root / "workspaces",
         )
         bundle = execute(config)[0]
-        grade_bundle(bundle, self.benchmark)
+        grade_bundle(bundle, self.benchmark, sandbox_mode="none")
         return bundle
 
     def test_single_trial_comparison_is_descriptive_and_inconclusive(self) -> None:

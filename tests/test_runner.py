@@ -66,7 +66,7 @@ class RunnerTests(unittest.TestCase):
         events = [record["event"] for record in read_journal(bundle)]
         for expected in ("bundle_created", "stage_started", "driver_finished", "snapshot_frozen", "run_finished"):
             self.assertIn(expected, events)
-        grade = grade_bundle(bundle, self.benchmark)
+        grade = grade_bundle(bundle, self.benchmark, sandbox_mode="none")
         self.assertTrue(grade["summary"]["all_required_passed"])
         self.assertEqual(grade["summary"]["failed"], 0)
         self.assertTrue((bundle / "grades" / grade["grade_id"] / "grade.md").is_file())
@@ -82,7 +82,7 @@ class RunnerTests(unittest.TestCase):
         self.assertTrue(manifest["stages"][1]["not_reached"])
         self.assertTrue((bundle / "stages" / "initial" / "snapshot").is_dir())
         self.assertTrue((bundle / "stages" / "followup" / "not-reached.json").is_file())
-        grade = grade_bundle(bundle, self.benchmark)
+        grade = grade_bundle(bundle, self.benchmark, sandbox_mode="none")
         statuses = {item["id"]: item["status"] for item in grade["requirements"]}
         self.assertEqual(statuses["I1"], "fail")
         self.assertEqual(statuses["F1"], "ungraded")
@@ -112,7 +112,16 @@ class RunnerTests(unittest.TestCase):
         target = bundle / "stages" / "initial" / "snapshot" / "app.py"
         target.write_text(target.read_text() + "\n# tampered\n")
         with self.assertRaises(GraderError):
-            grade_bundle(bundle, self.benchmark)
+            grade_bundle(bundle, self.benchmark, sandbox_mode="none")
+
+    def test_grading_sandbox_hides_private_benchmark_material(self) -> None:
+        from givn_harness.sandbox import bubblewrap_available
+
+        if not bubblewrap_available():
+            self.skipTest("bubblewrap is unavailable")
+        bundle = execute(self.config())[0]
+        grade = grade_bundle(bundle, self.benchmark, sandbox_mode="required")
+        self.assertTrue(grade["summary"]["all_required_passed"])
 
     def test_resume_of_completed_bundle_returns_without_rework(self) -> None:
         bundle = execute(self.config())[0]

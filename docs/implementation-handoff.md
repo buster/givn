@@ -33,7 +33,7 @@ for this session (no request was dispatched).
 
 ## Test evidence
 
-- `./run-tests.sh`: 47 deterministic tests, all passing.
+- `./run-tests.sh`: 55 deterministic tests, all passing.
 - `givn-harness benchmark verify benchmarks/lending`: reference passes all 13
   requirements; scaffold fails substantive requirements; all five seeded
   defects are caught.
@@ -65,9 +65,10 @@ for this session (no request was dispatched).
    hidden grader and defects.
 5. **No LLM judge.** Artifact quality is not scored. Independent behavioral
    tests are the primary quality evidence.
-6. **Subtree synchronization is documented but not yet demonstrated** on the
-   real parent. The standalone repository is authoritative; see
-   `docs/subtree-sync.md`.
+6. **Subtree synchronization was validated in a disposable clone, not applied
+   to the real parent.** The join commit reproduced the standalone tracked tree
+   under `harness/` with no changes outside the prefix; the real parent remains
+   untouched with its local work preserved. See `docs/subtree-sync.md`.
 
 ## Next increments
 
