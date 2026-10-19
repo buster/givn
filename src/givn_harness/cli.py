@@ -139,6 +139,7 @@ def analyze(
 @click.option("--deepseek-api-key-file", type=click.Path(exists=True), default=None, help="Read DEEPSEEK_API_KEY from this file without logging it")
 @click.option("--allow-unverified-network", is_flag=True, default=False, help="Permit explicitly exploratory host networking for opencode")
 @click.option("--stop-after", default=None, help="Stop after this stage and record later stages as not reached")
+@click.option("--stage-timeout", type=int, default=None, help="Override the benchmark stage timeout for this trial")
 @click.option("--resume", type=click.Path(exists=True), default=None, help="Resume a bundle's completed prefix")
 @click.option("--no-analyze", is_flag=True, default=False, help="Do not run the offline analyzer on stage records")
 @click.option("--show-agent-output", is_flag=True, default=False)
@@ -162,6 +163,7 @@ def run(
     deepseek_api_key_file: str | None,
     allow_unverified_network: bool,
     stop_after: str | None,
+    stage_timeout: int | None,
     resume: str | None,
     no_analyze: bool,
     show_agent_output: bool,
@@ -229,6 +231,7 @@ def run(
         resume=Path(resume) if resume else None,
         allow_unverified_network=allow_unverified_network,
         stop_after=stop_after,
+        stage_timeout_override=stage_timeout,
         secret_env=secret_env,
     )
     click.echo(f"Model guard: {json.dumps(guard_record(selected_model, driver_kind))}")
