@@ -1,0 +1,11 @@
+--- a/app.py
++++ b/app.py
+@@ -111,8 +111,6 @@
+         book = self.books[book_id]
+         if book.get("reference_only"):
+             raise RequestError("reference_only")
+-        if book.get("loaned_to") is not None:
+-            raise RequestError("book_already_loaned")
+         if self.active_loan_count(member_id) >= MAX_ACTIVE_LOANS:
+             raise RequestError("loan_limit_reached")
+         book["loaned_to"] = member_id

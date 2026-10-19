@@ -1,0 +1,15 @@
+schema = 1
+currency = "USD"
+# Replace source and date with the provider's current published pricing page
+# and the date those rates were read. Do not invent or guess rates.
+source = "REPLACE: provider pricing page URL"
+date = "YYYY-MM-DD"
+placeholder = true
+safety_factor = 1.25
+
+# Per-million-token rates.
+[per_million_tokens]
+input = 0.0
+output = 0.0
+cache_read = 0.0
+cache_write = 0.0

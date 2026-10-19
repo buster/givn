@@ -1,11 +1,10 @@
 [project]
 name = "givn-harness"
-version = "0.1.0"
-description = "Automated end-to-end test harness for givn's AI-agent-facing assets"
+version = "0.2.0"
+description = "Evaluation harness for givn: workflow benchmarks and events.jsonl analysis"
 requires-python = ">=3.12"
 dependencies = [
-    "click>=8.4",
-    "behave>=1.3",
+    "click>=8.1",
 ]
 
 [project.scripts]
@@ -15,14 +14,8 @@ givn-harness = "givn_harness.cli:main"
 requires = ["setuptools>=75", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.behave]
-use_nested_step_modules = true
-
 [tool.setuptools.packages.find]
 where = ["src"]
 
-
-[dependency-groups]
-dev = [
-    "coverage>=7.15.2",
-]
+[tool.setuptools.package-data]
+givn_harness = ["py.typed"]

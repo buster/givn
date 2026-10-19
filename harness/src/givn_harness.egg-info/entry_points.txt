@@ -1,2 +1,0 @@
-[console_scripts]
-givn-harness = givn_harness.cli:main

@@ -1,2 +1,0 @@
-click>=8.4
-behave>=1.3

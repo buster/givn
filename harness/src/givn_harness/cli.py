@@ -1,441 +1,348 @@
+"""Command-line interface for the givn evaluation harness."""
+
+from __future__ import annotations
+
 import json
 import os
-import shutil
-import statistics
-import time
+import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import click
 
-from givn_harness.index import update_index
-from givn_harness.judge import run_judge
-from givn_harness.model import AGENTS, DEEPSEEK_FLASH_MAX, require_agent_model
-from givn_harness.profile import PROFILES, evaluate
-from givn_harness.report import write_report
-from givn_harness.runmeta import collect as collect_metadata
-from givn_harness.runner import (
-    DEFAULT_PROMPT_TEMPLATE,
-    _read_blocked,
-    check_agent_binary,
-    run_agent,
-)
-from givn_harness.sandbox import check_bubblewrap
-from givn_harness.types import Check
-from givn_harness.workspace import copy_task, create_workspace, init_workspace
-
-RUN_STATE_FILE = ".givn-harness-run.json"
+from givn_harness.accounting import analyze_paths
+from givn_harness.analysis_report import render_analysis
+from givn_harness.redact import redact_analysis
+from givn_harness.benchmark import BenchmarkError, load_benchmark
+from givn_harness.compare import CompareError, build_comparison, render_comparison
+from givn_harness.driver import DriverSpec, parse_script_command
+from givn_harness.grader import GraderError, grade_bundle, verify_benchmark
+from givn_harness.model import DEEPSEEK_FLASH_MAX, guard_record, require_model
+from givn_harness.runner import RunConfig, RunError, execute, summarize_bundle
+from givn_harness.sandbox import SandboxPolicy, SandboxUnavailable, build_command, probe
 
 
-def _save_run_state(state: dict) -> None:
-    with open(RUN_STATE_FILE, "w") as f:
-        json.dump(state, f, indent=2)
+def _atomic_write(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(text, encoding="utf-8")
+    os.replace(temporary, path)
 
 
-def _load_run_state() -> dict | None:
-    if not os.path.isfile(RUN_STATE_FILE):
-        return None
-    with open(RUN_STATE_FILE) as f:
-        return json.load(f)
-
-
-def _check_blocked(workspace_path: str) -> bool:
-    blocked_path = os.path.join(workspace_path, "BLOCKED.md")
-    if not os.path.isfile(blocked_path):
-        return False
-    content = open(blocked_path).read()
-    if "## ANSWERED" in content:
-        return False
-    click.echo("")
-    click.echo("=== BLOCKED — agent needs human input ===")
-    click.echo("")
-    click.echo(content)
-    click.echo("")
-    click.echo("Edit BLOCKED.md with your answers, add '## ANSWERED' at the top,")
-    click.echo("then re-run with:")
-    click.echo("")
-    click.echo("  uv run givn-harness run --continue")
-    return True
+def _load_metadata(path: str | None) -> dict:
+    if path is None:
+        return {}
+    loaded = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(loaded, dict):
+        raise click.ClickException("--metadata must contain a JSON object")
+    return loaded
 
 
 @click.group()
 def main() -> None:
-    pass
+    """Evaluate givn workflows and analyze recorded sessions."""
 
 
 @main.command()
-@click.option("--agent", type=click.Choice(AGENTS, case_sensitive=False), default=None, help="Agent under test; default opencode")
-@click.option("--driver", type=click.Choice(["ralph", "native"]), default="ralph", help="Driver: ralph (opencode only) or the harness's native one-step loop; use native for comparisons")
-@click.option("--profile", type=click.Choice(PROFILES), default="full", help="Task acceptance profile: full (archive gates) or smoke (planning artifacts)")
-@click.option("--task", default=None, type=click.Path(exists=True), help="Task prompt file")
-@click.option("--output", default="reports/", type=click.Path(), help="Report output directory")
-@click.option("--workspace-root", default="/tmp/givn-harness-workspaces", type=click.Path())
-@click.option("--workspace", default=None, type=click.Path(exists=True), help="Resume an existing workspace")
-@click.option("--continue", "continue_", is_flag=True, default=False, help="Resume the last run from .givn-harness-run.json")
-@click.option("--ralph-bin", default="/usr/local/bin/ralph", type=click.Path())
-@click.option("--fail", is_flag=True, default=False, help="Simulate agent failure")
-@click.option("--timeout", type=int, default=None, help="Agent execution timeout in seconds")
-@click.option("--max-iterations", type=int, default=None, help="Maximum one-step iterations")
-@click.option("--no-agent-output", is_flag=True, default=False, help="Suppress streaming agent output")
-@click.option("--model", type=str, default=None, help="Pinned model for the selected agent; other values are refused")
-@click.option("--prompt-template", type=click.Path(exists=True), default=None, help="One-step prompt template")
-def run(
-    task: str | None,
+@click.argument("events", nargs=-1, required=True, type=click.Path(exists=True))
+@click.option("--output", required=True, type=click.Path(), help="Output directory")
+@click.option("--session", "sessions", multiple=True, help="Only these session IDs (repeatable)")
+@click.option("--scope", "scopes", multiple=True, help="Only these scope IDs (repeatable)")
+@click.option("--since", default=None, help="ISO-8601 inclusive lower bound on event time")
+@click.option("--until", default=None, help="ISO-8601 inclusive upper bound on event time")
+@click.option("--kind", "kinds", multiple=True, help="Only these event kinds (repeatable)")
+@click.option("--metadata", type=click.Path(exists=True), default=None, help="Declared metadata sidecar (JSON object)")
+@click.option("--repo", "repository", type=click.Path(exists=True), default=None, help="Optional repository context (read-only)")
+@click.option("--redact/--no-redact", default=True, show_default=True, help="Redact free text in exported reports")
+@click.option("--quiet", is_flag=True, default=False, help="Do not print the summary")
+def analyze(
+    events: tuple[str, ...],
     output: str,
-    workspace_root: str,
-    workspace: str | None,
-    continue_: bool,
-    ralph_bin: str,
-    fail: bool,
-    timeout: int | None,
-    max_iterations: int | None,
-    no_agent_output: bool,
-    agent: str | None,
-    driver: str,
-    profile: str,
-    model: str | None,
-    prompt_template: str | None,
+    sessions: tuple[str, ...],
+    scopes: tuple[str, ...],
+    since: str | None,
+    until: str | None,
+    kinds: tuple[str, ...],
+    metadata: str | None,
+    repository: str | None,
+    redact: bool,
+    quiet: bool,
 ) -> None:
-    started = time.monotonic()
-    if continue_:
-        state = _load_run_state()
-        if state is None:
-            click.echo("Error: no .givn-harness-run.json found. Run without --continue first.", err=True)
-            raise SystemExit(1)
-        workspace = state.get("workspace")
-        if not workspace or not os.path.isdir(workspace):
-            click.echo(f"Error: saved workspace {workspace} no longer exists.", err=True)
-            raise SystemExit(1)
-        task = task or state.get("task")
-        output = state.get("output", output)
-        if max_iterations is None:
-            max_iterations = state.get("max_iterations")
-        if agent is None:
-            agent = state.get("agent", "opencode")
-        if model is None:
-            model = state.get("model")
-        if prompt_template is None:
-            prompt_template = state.get("prompt_template")
-        driver = state.get("driver", driver)
-        profile = state.get("profile", profile)
-        click.echo(f"Resuming run from state file ({RUN_STATE_FILE})")
+    """Analyze existing events.jsonl records without running anything.
 
-    agent = (agent or "opencode").lower()
+    The source files are read-only. No repository code, hook, plugin or test is
+    executed, and no model request is made.
+    """
     try:
-        model = require_agent_model(agent, model)
-    except ValueError as error:
+        sidecar = _load_metadata(metadata)
+        analysis = analyze_paths(
+            list(events),
+            sessions=sessions or None,
+            scopes=scopes or None,
+            since=since,
+            until=until,
+            kinds=kinds or None,
+            metadata=sidecar,
+            repository=repository,
+        )
+    except (ValueError, FileNotFoundError) as error:
         raise click.ClickException(str(error))
 
-    if not check_agent_binary(agent, ralph_bin, driver):
-        if agent == "opencode" and driver == "ralph":
-            click.echo(f"Error: ralph binary not found at {ralph_bin}", err=True)
-        else:
-            click.echo(f"Error: {agent} binary not found", err=True)
-        raise SystemExit(1)
+    output_dir = Path(output).resolve()
+    created_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    if redact:
+        analysis = redact_analysis(analysis)
+    document = analysis.to_dict()
+    document["created_at"] = created_at
+    document["redacted"] = redact
+    _atomic_write(output_dir / "analysis.json", json.dumps(document, indent=2) + "\n")
+    _atomic_write(output_dir / "analysis.md", render_analysis(analysis))
 
-    if task is None:
-        click.echo("Error: --task is required for new runs.", err=True)
-        raise SystemExit(1)
-
-    if workspace:
-        workspace_path = workspace
-        click.echo(f"Resuming workspace at {workspace_path}")
-    else:
-        click.echo(f"Creating workspace at {workspace_root} ...")
-        workspace_path = create_workspace(workspace_root)
-
-        click.echo("Running git init ...")
-        click.echo("Running givn init ...")
-        init_workspace(workspace_path, agent)
-        copy_task(workspace_path, task)
-
-    _save_run_state({
-        "workspace": workspace_path,
-        "task": task,
-        "output": output,
-        "agent": agent,
-        "driver": driver,
-        "profile": profile,
-        "model": model,
-        "max_iterations": max_iterations,
-        "prompt_template": prompt_template,
-    })
-
-    run_id = os.path.basename(workspace_path)
-    task_name = os.path.basename(task)
-    report_filename = os.path.join(output, run_id, "report.md")
-
-    sandboxed = check_bubblewrap()
-    if not sandboxed:
-        click.echo("WARNING: bubblewrap is not available, running without sandbox", err=True)
-
-    checks: list[Check] = []
-    judge_scores = None
-    agent_log = ""
-
-    if fail:
-        checks = [
-            Check(name="archive succeeded", passed=False, detail="agent failed to archive"),
-        ]
-        termination = "agent failure"
-    else:
-        click.echo("Starting agent execution ...")
-        show_output = not no_agent_output
-        agent_log, termination = run_agent(
-            workspace_path, ralph_bin=ralph_bin, timeout=timeout,
-            max_iterations=max_iterations, show_output=show_output, model=model,
-            prompt_template=prompt_template, agent=agent, driver=driver,
-            profile=profile,
+    if not quiet:
+        corpus = analysis.data["corpus"]
+        quality = analysis.data["data_quality"]
+        click.echo(
+            f"Analyzed {corpus['analyzed_events']:,} of {corpus['events']:,} events "
+            f"from {len(analysis.sources)} file(s); "
+            f"{len(analysis.diagnostics)} diagnostic(s), "
+            f"{len(analysis.findings)} finding(s)."
         )
-
-        if _check_blocked(workspace_path):
-            raise SystemExit(0)
-
-        click.echo("Running automated checks ...")
-        checks = evaluate(workspace_path, profile)
-        for c in checks:
-            result = "PASS" if c.passed else "FAIL"
-            click.echo(f"  {c.name}: {result}")
-
-        click.echo("Running LLM judge ...")
-        judge_scores = run_judge(workspace_path, model=DEEPSEEK_FLASH_MAX)
-        for s in judge_scores:
-            click.echo(f"  {s.artifact}: {s.score}/4 - {s.explanation[:80] if s.explanation else ''}")
-
-    prompt_hash_path = prompt_template
-    if prompt_hash_path is None and driver == "native":
-        prompt_hash_path = str(DEFAULT_PROMPT_TEMPLATE)
-    metadata = collect_metadata(
-        agent=agent,
-        driver=driver,
-        profile=profile,
-        model=model,
-        workspace_path=workspace_path,
-        task_path=task,
-        prompt_template=prompt_hash_path,
-        termination=termination,
-        wall_seconds=time.monotonic() - started,
-        output_dir=output,
-        run_id=run_id,
-    )
-
-    written_report = write_report(
-        checks=checks,
-        workspace_path=workspace_path,
-        judge_scores=judge_scores,
-        task=task_name,
-        agent=agent,
-        sandbox="bwrap" if sandboxed else "none",
-        termination=termination,
-        agent_log=agent_log,
-        metadata=metadata,
-    )
-    # The index names the report under the output directory; keep the workspace
-    # copy for debugging and publish the indexed copy.
-    Path(report_filename).parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(written_report, report_filename)
-    update_index(
-        output_dir=output,
-        run_id=run_id,
-        task=task_name,
-        report_path=report_filename,
-        overall_pass=all(c.passed for c in checks) if checks else not fail,
-        check_pass_count=sum(1 for c in checks if c.passed),
-        judge_avg_score=(
-            sum(s.score for s in judge_scores) / len(judge_scores)
-            if judge_scores else 0.0
-        ),
-        agent=agent,
-        metadata=metadata,
-    )
-    click.echo(workspace_path)
-
-
-def _campaign_rows(output: str, agents: list[str], repeats: int) -> list[dict]:
-    rows: list[dict] = []
-    for agent in agents:
-        for repeat in range(1, repeats + 1):
-            run_output = Path(output) / f"{agent}-r{repeat}"
-            index_path = run_output / "index.json"
-            if not index_path.is_file():
-                rows.append({"agent": agent, "repeat": repeat, "error": "missing index"})
-                continue
-            entries = json.loads(index_path.read_text())
-            if not entries:
-                rows.append({"agent": agent, "repeat": repeat, "error": "empty index"})
-                continue
-            entry = entries[-1]
-            meta = entry.get("metadata", {})
-            rows.append({
-                "agent": agent,
-                "repeat": repeat,
-                "run_id": entry.get("run_id"),
-                "judge": entry.get("judge_avg_score"),
-                "checks": entry.get("check_pass_count"),
-                "overall_pass": entry.get("overall_pass"),
-                "report": entry.get("report_path"),
-                "development_report": meta.get("development_report"),
-                "termination": meta.get("termination"),
-                "iterations": meta.get("iterations"),
-                "wall_seconds": meta.get("wall_seconds"),
-                "capture": (meta.get("capture") or {}).get("coverage"),
-                "content_events": (meta.get("capture") or {}).get("content_events"),
-                "tool_turn_events": (meta.get("capture") or {}).get("tool_turn_events"),
-                "turn_content_events": (meta.get("capture") or {}).get("turn_content_events"),
-                "turn_events": (meta.get("capture") or {}).get("turn_events"),
-                "turn_content": (meta.get("capture") or {}).get("turn_content_coverage"),
-                "subagent_starts": (meta.get("capture") or {}).get("subagent_starts"),
-                "subagent_tool_events": (meta.get("capture") or {}).get("subagent_tool_events"),
-                "subagent_names": (meta.get("capture") or {}).get("subagent_names") or [],
-                "model": meta.get("model"),
-                "thinking": meta.get("thinking"),
-                "profile": meta.get("profile"),
-                "driver": meta.get("driver"),
-                "task_sha256": meta.get("task_sha256"),
-                "prompt_template_sha256": meta.get("prompt_template_sha256"),
-                "agent_version": meta.get("agent_version"),
-                "givn_version": meta.get("givn_version"),
-                "harness_commit": meta.get("harness_commit"),
-            })
-    return rows
-
-
-def _campaign_markdown(task: str, profile: str, driver: str, repeats: int, max_iterations: int, timeout: int, rows: list[dict]) -> str:
-    lines = [
-        f"# Campaign: {Path(task).name} — {profile} profile",
-        "",
-        f"- Task: `{Path(task).name}`",
-        f"- Profile: `{profile}`",
-        f"- Driver: `{driver}`",
-        f"- Judge: `{DEEPSEEK_FLASH_MAX}`",
-        f"- Repeats per agent: {repeats}",
-        f"- Budget: {max_iterations} iterations / {timeout}s",
-        "",
-        "## Runs",
-        "",
-        "| Agent | Repeat | Judge avg | Checks | Capture | Turn content | Subagents | Iterations | Wall s | Termination | Report | Development |",
-        "|---|---|---|---|---|---|---|---|---|---|---|---|",
-    ]
-    for row in rows:
-        if row.get("error"):
-            lines.append(f"| {row['agent']} | {row['repeat']} | — | — | — | — | — | — | — | {row['error']} | — | — |")
-            continue
-        report = Path(row["report"]).name if row.get("report") else ""
-        report_link = f"[{report}]({row['agent']}-r{row['repeat']}/{row.get('run_id')}/report.md)"
-        dev = row.get("development_report")
-        dev_link = f"[timeline]({row['agent']}-r{row['repeat']}/{row.get('run_id')}/development-report.html)" if dev else ""
-        capture = row.get("capture")
-        capture_text = f"{row.get('content_events', 0)}/{row.get('tool_turn_events', 0)} ({capture:.0%})" if isinstance(capture, (int, float)) else ""
-        turn = row.get("turn_content")
-        turn_text = f"{row.get('turn_content_events', 0)}/{row.get('turn_events', 0)} ({turn:.0%})" if isinstance(turn, (int, float)) else ""
-        sub_names = [item.get("name") for item in (row.get("subagent_names") or []) if item.get("name")]
-        subs = f"{row.get('subagent_starts', 0)} rec/{row.get('subagent_tool_events', 0)} tool"
-        if sub_names:
-            subs += ": " + ", ".join(sub_names[:4])
-        judge = row.get('judge') or 0
-        lines.append(
-            f"| {row['agent']} | {row['repeat']} | {judge:.2f} | "
-            f"{row.get('checks', 0)} | {capture_text} | {turn_text} | {subs} | {row.get('iterations') or ''} | "
-            f"{row.get('wall_seconds') or ''} | {row.get('termination') or ''} | {report_link} | {dev_link} |"
-        )
-    lines += ["", "## Aggregate", "", "| Agent | Runs | Judge mean | Judge median | Checks mean | Capture mean |", "|---|---|---|---|---|---|"]
-    for agent in sorted({row["agent"] for row in rows}):
-        agent_rows = [row for row in rows if row["agent"] == agent and not row.get("error")]
-        if not agent_rows:
-            lines.append(f"| {agent} | 0 | — | — | — | — |")
-            continue
-        judges = [row["judge"] for row in agent_rows if isinstance(row.get("judge"), (int, float))]
-        checks = [row["checks"] for row in agent_rows if isinstance(row.get("checks"), (int, float))]
-        captures = [row["capture"] for row in agent_rows if isinstance(row.get("capture"), (int, float))]
-        mean = lambda values: statistics.mean(values) if values else 0.0
-        median = lambda values: statistics.median(values) if values else 0.0
-        capture_mean = mean(captures)
-        lines.append(
-            f"| {agent} | {len(agent_rows)} | {mean(judges):.2f} | {median(judges):.2f} | "
-            f"{mean(checks):.1f} | {capture_mean:.0%} |"
-        )
-    lines += [
-        "",
-        "## Read this carefully",
-        "",
-        "- The same task, prompt template, profile, judge, budget, and DeepSeek Flash model are used for every agent.",
-        "- `opencode` uses the native one-step loop and a private server (`--standalone`); `omp` and `maki` use their native print modes.",
-        "- `capture` is the share of tool+turn events with full content. The full-capture check also requires at least 50% of turns to carry assistant or thinking text; below either threshold fails.",
-        "- `Subagents` is `recorded subagent spans / subagent-tool calls`; the canonical record query only sees the first number, so both reporters now map `subagent`/`task` tools and the query must count both.",
-        "- The private `/tmp` mount exposes only the current workspace; the first campaign's opencode read prior runs and omp read a stray `/tmp` pass marker, so its results were contaminated.",
-        "- The task contract in the prompt forbids implementation/archive for the smoke and allows at most one design-review grilling subagent.",
-        "- The `thinking` metadata records the reasoning setting: opencode and omp are max; maki exposes no max flag and runs the provider default.",
-    ]
-    return "\n".join(lines) + "\n"
+        click.echo(f"Report: {output_dir / 'analysis.md'}")
+        click.echo(f"Data:   {output_dir / 'analysis.json'}")
+        if quality["diagnostic_codes"]:
+            click.echo(
+                "Data quality: "
+                + ", ".join(
+                    f"{code}={count}"
+                    for code, count in list(quality["diagnostic_codes"].items())[:8]
+                )
+            )
 
 
 @main.command()
-@click.option("--task", required=True, type=click.Path(exists=True), help="Task prompt file")
-@click.option("--output", default="campaigns/", type=click.Path(), help="Campaign output directory")
-@click.option("--agents", default="opencode,omp,maki", help="Comma-separated agents")
-@click.option("--repeats", type=int, default=1, help="Runs per agent (use 3 for a stable comparison)")
-@click.option("--driver", type=click.Choice(["native", "ralph"]), default="native")
-@click.option("--profile", type=click.Choice(PROFILES), default="smoke")
-@click.option("--max-iterations", type=int, default=10)
-@click.option("--timeout", type=int, default=1200)
-@click.option("--no-agent-output", is_flag=True, default=False)
+@click.option("--benchmark", required=True, type=click.Path(exists=True), help="benchmark.toml or directory")
+@click.option("--output", default="runs/", type=click.Path(), help="Bundle output directory")
+@click.option("--condition", default="current", help="Condition label, for example current or candidate")
+@click.option("--repeats", default=1, type=int, help="Independent trials in this condition")
+@click.option("--driver", "driver_kind", type=click.Choice(["opencode", "script", "none"]), default="opencode")
+@click.option("--driver-command", default=None, help="Script driver command; may use {workspace}, {prompt_file}, {stage}")
+@click.option("--driver-env", multiple=True, help="Script driver environment KEY=VALUE (repeatable)")
+@click.option("--model", default=DEEPSEEK_FLASH_MAX, show_default=True, help="Pinned model; other values are refused")
+@click.option("--givn-binary", default=None, type=click.Path(exists=True), help="Pinned givn binary under test")
+@click.option("--sandbox", "sandbox_mode", type=click.Choice(["required", "none"]), default="required")
+@click.option("--network", type=click.Choice(["none", "host"]), default="none")
 @click.option("--workspace-root", default="/tmp/givn-harness-workspaces", type=click.Path())
-@click.option("--ralph-bin", default="/usr/local/bin/ralph", type=click.Path())
-@click.option("--model", default=None, help="Pinned model for the selected agent; other values are refused")
-@click.option("--prompt-template", default=None, type=click.Path(exists=True))
-@click.pass_context
-def compare(
-    ctx: click.Context,
-    task: str,
+@click.option("--budget-usd", type=float, default=None, help="Hard campaign cap; required for paid drivers")
+@click.option("--price-table", type=click.Path(exists=True), default=None, help="Dated price table (TOML)")
+@click.option("--max-output-tokens", type=int, default=8192)
+@click.option("--answer-policy", type=click.Choice(["recommended", "none"]), default="recommended")
+@click.option("--resume", type=click.Path(exists=True), default=None, help="Resume a bundle's completed prefix")
+@click.option("--no-analyze", is_flag=True, default=False, help="Do not run the offline analyzer on stage records")
+@click.option("--show-agent-output", is_flag=True, default=False)
+def run(
+    benchmark: str,
     output: str,
-    agents: str,
+    condition: str,
     repeats: int,
-    driver: str,
-    profile: str,
-    max_iterations: int,
-    timeout: int,
-    no_agent_output: bool,
+    driver_kind: str,
+    driver_command: str | None,
+    driver_env: tuple[str, ...],
+    model: str,
+    givn_binary: str | None,
+    sandbox_mode: str,
+    network: str,
     workspace_root: str,
-    ralph_bin: str,
-    model: str | None,
-    prompt_template: str | None,
+    budget_usd: float | None,
+    price_table: str | None,
+    max_output_tokens: int,
+    answer_policy: str,
+    resume: str | None,
+    no_analyze: bool,
+    show_agent_output: bool,
 ) -> None:
-    os.makedirs(output, exist_ok=True)
-    agent_list = [agent.strip().lower() for agent in agents.split(",") if agent.strip()]
-    if not agent_list or any(agent not in AGENTS for agent in agent_list):
-        raise click.ClickException(f"agents must be drawn from {', '.join(AGENTS)}")
-    for agent in agent_list:
-        for repeat in range(1, repeats + 1):
-            run_output = os.path.join(output, f"{agent}-r{repeat}")
-            click.echo(f"\n=== {agent} / repeat {repeat} / {profile} ===")
-            try:
-                ctx.invoke(
-                    run,
-                    task=task,
-                    output=run_output,
-                    workspace_root=workspace_root,
-                    workspace=None,
-                    continue_=False,
-                    ralph_bin=ralph_bin,
-                    fail=False,
-                    timeout=timeout,
-                    max_iterations=max_iterations,
-                    no_agent_output=no_agent_output,
-                    agent=agent,
-                    driver=driver,
-                    profile=profile,
-                    model=model,
-                    prompt_template=prompt_template,
-                )
-            except SystemExit:
-                pass
-    rows = _campaign_rows(output, agent_list, repeats)
-    markdown = _campaign_markdown(task, profile, driver, repeats, max_iterations, timeout, rows)
-    (Path(output) / "campaign.md").write_text(markdown)
-    (Path(output) / "campaign.json").write_text(json.dumps({
-        "task": task,
-        "profile": profile,
-        "driver": driver,
-        "repeats": repeats,
-        "rows": rows,
-    }, indent=2) + "\n")
-    click.echo(f"\nCampaign report: {Path(output) / 'campaign.md'}")
+    """Execute a staged benchmark and preserve a durable trial bundle."""
+    try:
+        selected_model = require_model(model)
+    except ValueError as error:
+        raise click.ClickException(str(error))
+    if driver_kind == "script" and not driver_command:
+        raise click.ClickException("--driver script requires --driver-command")
+    command = parse_script_command(driver_command) if driver_command else None
+    if command:
+        command = [
+            os.path.abspath(item) if not os.path.isabs(item) and os.path.exists(item) else item
+            for item in command
+        ]
+    extra_env: dict[str, str] = {}
+    for entry in driver_env:
+        if "=" not in entry:
+            raise click.ClickException(f"--driver-env expects KEY=VALUE, got {entry!r}")
+        key, value = entry.split("=", 1)
+        if not key:
+            raise click.ClickException("--driver-env key cannot be empty")
+        extra_env[key] = value
+    try:
+        loaded = load_benchmark(benchmark)
+    except BenchmarkError as error:
+        raise click.ClickException(str(error))
+    config = RunConfig(
+        benchmark=loaded,
+        output=Path(output),
+        condition=condition,
+        repeats=repeats,
+        driver=DriverSpec(
+            kind=driver_kind,
+            model=selected_model,
+            command=command,
+            show_output=show_agent_output,
+            answer_policy=answer_policy,
+            extra_env=extra_env,
+        ),
+        givn_binary=Path(givn_binary) if givn_binary else None,
+        sandbox_mode=sandbox_mode,
+        network=network,
+        workspace_root=Path(workspace_root),
+        budget_usd=budget_usd,
+        price_table=Path(price_table) if price_table else None,
+        max_output_tokens=max_output_tokens,
+        analyze_stages=not no_analyze,
+        answer_policy=answer_policy,
+        resume=Path(resume) if resume else None,
+    )
+    click.echo(f"Model guard: {json.dumps(guard_record(selected_model, driver_kind))}")
+    try:
+        bundles = execute(config)
+    except (RunError, SandboxUnavailable, BenchmarkError, OSError) as error:
+        raise click.ClickException(str(error))
+    for bundle in bundles:
+        summary = summarize_bundle(bundle)
+        click.echo(
+            f"Bundle: {bundle}\n"
+            f"  status: {summary['status']}; "
+            f"stages: "
+            + ", ".join(
+                f"{stage['id']}={'completed' if stage['completed'] else ('not_reached' if stage['not_reached'] else 'incomplete')}"
+                for stage in summary["stages"]
+            )
+        )
+
+
+@main.command()
+@click.argument("bundles", nargs=-1, required=True, type=click.Path(exists=True))
+@click.option("--benchmark", required=True, type=click.Path(exists=True), help="benchmark.toml or directory")
+@click.option("--sandbox", "sandbox_mode", type=click.Choice(["required", "none"]), default="required")
+@click.option("--quiet", is_flag=True, default=False)
+def grade(bundles: tuple[str, ...], benchmark: str, sandbox_mode: str, quiet: bool) -> None:
+    """Grade frozen stage snapshots independently; never repairs submissions."""
+    try:
+        loaded = load_benchmark(benchmark)
+    except BenchmarkError as error:
+        raise click.ClickException(str(error))
+    for raw in bundles:
+        bundle = Path(raw).resolve()
+        try:
+            document = grade_bundle(
+                bundle, loaded, sandbox_mode=sandbox_mode
+            )
+        except GraderError as error:
+            raise click.ClickException(f"{bundle}: {error}")
+        if not quiet:
+            summary = document["summary"]
+            click.echo(
+                f"{bundle.name}: {summary['passed']} passed, {summary['failed']} failed, "
+                f"{summary['ungraded']} ungraded; all required passed="
+                f"{summary['all_required_passed']}"
+            )
+            if summary.get("critical_failures"):
+                click.echo("  critical: " + ", ".join(summary["critical_failures"]))
+
+
+@main.command()
+@click.option("--baseline", "baseline_paths", multiple=True, required=True, type=click.Path(exists=True))
+@click.option("--candidate", "candidate_paths", multiple=True, required=True, type=click.Path(exists=True))
+@click.option("--output", default="comparison", type=click.Path())
+def compare(
+    baseline_paths: tuple[str, ...],
+    candidate_paths: tuple[str, ...],
+    output: str,
+) -> None:
+    """Compare saved baseline and candidate bundles descriptively."""
+    try:
+        document = build_comparison(list(baseline_paths), list(candidate_paths))
+    except (CompareError, OSError, ValueError) as error:
+        raise click.ClickException(str(error))
+    output_dir = Path(output).resolve()
+    _atomic_write(output_dir / "compare.json", json.dumps(document, indent=2) + "\n")
+    _atomic_write(output_dir / "compare.md", render_comparison(document))
+    click.echo(
+        f"Comparison: {'INCONCLUSIVE' if document['inconclusive'] else 'DESCRIPTIVE'}\n"
+        f"Report: {output_dir / 'compare.md'}\n"
+        f"Data:   {output_dir / 'compare.json'}"
+    )
+    if not document["comparability"]["comparable"]:
+        click.echo("Warning: execution conditions differ; see the comparability section.")
+
+
+@main.group("benchmark")
+def benchmark_group() -> None:
+    """Benchmark package operations."""
+
+
+@benchmark_group.command("list")
+@click.option("--root", default="benchmarks", type=click.Path(exists=True), help="Directory containing benchmark packages")
+def benchmark_list(root: str) -> None:
+    """List packaged benchmarks and their stages."""
+    root_path = Path(root)
+    found = 0
+    for manifest in sorted(root_path.glob("*/benchmark.toml")):
+        try:
+            loaded = load_benchmark(manifest)
+        except BenchmarkError as error:
+            click.echo(f"{manifest.parent.name}: INVALID ({error})")
+            continue
+        found += 1
+        stages = ", ".join(stage.id for stage in loaded.stages)
+        click.echo(
+            f"{loaded.id} {loaded.version} — {loaded.title} "
+            f"[stages: {stages}] ({manifest.parent})"
+        )
+    if not found:
+        raise click.ClickException(f"no benchmarks found under {root_path}")
+
+
+@benchmark_group.command("verify")
+@click.argument("benchmark", type=click.Path(exists=True))
+@click.option("--output", default="benchmark-verification", type=click.Path())
+def benchmark_verify(benchmark: str, output: str) -> None:
+    """Prove the reference passes, the scaffold fails, and seeded defects are caught."""
+    try:
+        loaded = load_benchmark(benchmark)
+    except BenchmarkError as error:
+        raise click.ClickException(str(error))
+    try:
+        document = verify_benchmark(loaded, Path(output))
+    except GraderError as error:
+        raise click.ClickException(str(error))
+    click.echo(f"Benchmark verification: {'PASS' if document['passed'] else 'FAIL'}")
+    for case in document["cases"]:
+        click.echo(
+            f"  {case['id']}: {'PASS' if case['passed'] else 'FAIL'}"
+            + (f" missing={case['missing_expected_failures']}" if case.get("missing_expected_failures") else "")
+        )
+    if not document["passed"]:
+        raise click.ClickException("benchmark verification failed")
+
+
+@main.command("sandbox-probe")
+@click.option("--network", type=click.Choice(["none", "host"]), default="none")
+def sandbox_probe(network: str) -> None:
+    """Prove bubblewrap workspace visibility, host-state denial and network denial."""
+    import tempfile
+
+    with tempfile.TemporaryDirectory(prefix="givn-sandbox-probe-") as temporary:
+        workspace = Path(temporary) / "workspace"
+        workspace.mkdir()
+        result = probe(SandboxPolicy(mode="required", network=network, workspace=workspace))
+    click.echo(json.dumps(result, indent=2))
+    if not result["ok"]:
+        raise click.ClickException("sandbox probe failed")
