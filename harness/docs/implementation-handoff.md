@@ -63,7 +63,8 @@ The trial exposed and fixed two harness defects:
 
 The DeepSeek key was briefly present in `bwrap` argv during attempt 1. It now
 moves through a mode-600 secrets file sourced inside the sandbox and is removed
-after the driver exits. Rotate the key used for these attempts.
+after the driver exits. The machine is private and the owner does not require
+rotation; the argv/log exposure fix remains in place.
 
 ## Delivered
 
