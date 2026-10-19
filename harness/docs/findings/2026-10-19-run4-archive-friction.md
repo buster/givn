@@ -38,6 +38,30 @@ bundle itself remains the authoritative evidence:
 | 16:35:11 | `0:827` | `VISUAL-REVIEW: UNVERIFIED` required human sign-off. |
 | 16:35–16:40 | `0:829`–`0:1229` | Repeated integrity, revision and evidence failures. |
 
+## Follow-up stage
+
+The follow-up ran in a fresh session against the repository produced by the
+initial stage and completed successfully:
+
+- `reference-only-books` archive receipt created;
+- public follow-up probe passed;
+- independent grade: all six follow-up and cross-version requirements passed;
+- full trial grade: **13/13**;
+- follow-up duration: 1724 s (28.7 min);
+- follow-up requests: 295;
+- follow-up incremental cost: **USD 0.3978** (stage-scoped event segment);
+- archive failures: 1 (uncommitted `task.md`);
+- review failures: 6.
+
+The follow-up review failures repeated the same structural friction:
+
+- duplicate revision identifier across two tasks;
+- missing `README-IMPACT:` decision line.
+
+The revision-identifier rule is still brittle even after the initial stage
+disclosed the one-pass implementation. The archive failure was caused by the
+task file being uncommitted, not by a transactional partial archive.
+
 ## Candidate fixes
 
 1. Make archive transactional: validate into a temporary location and move only
