@@ -855,6 +855,32 @@ mod tests {
     }
 
     #[test]
+    fn change_receipt_rejects_a_changed_command() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let root = dir.path();
+        let change = root.join("givn/changes/demo");
+        std::fs::create_dir_all(change.join("specs")).unwrap();
+        write_change_receipt(
+            root,
+            &change,
+            "demo",
+            "abc",
+            "runner",
+            RunnerResult {
+                scope: None,
+                total: 1,
+                passed: 1,
+                failed: 0,
+                skipped: 0,
+            },
+            1,
+        )
+        .unwrap();
+        let receipt = ChangeReceipt::read(&change).unwrap();
+        assert!(!receipt.is_current(&change, "abc", "other-runner").unwrap());
+    }
+
+    #[test]
     fn change_receipt_read_names_the_missing_receipt() {
         let dir = tempfile::TempDir::new().unwrap();
         let err = ChangeReceipt::read(dir.path()).unwrap_err();
