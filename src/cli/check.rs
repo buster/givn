@@ -203,10 +203,11 @@ fn run_change_verification(
     }
     let rules = project_root.join("givn/changes").join(change_id).join("specs");
     let features = rules.to_string_lossy().into_owned();
-    let result_path = change_dir
-        .join(crate::proof::CHANGE_RESULT_FILE)
-        .to_string_lossy()
-        .into_owned();
+    let result_file = change_dir.join(crate::proof::CHANGE_RESULT_FILE);
+    if let Some(parent) = result_file.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let result_path = result_file.to_string_lossy().into_owned();
     let status = crate::subprocess::sh_streamed(
         &manifest.verify.command,
         &[
