@@ -32,31 +32,108 @@ pub enum ArchiveProof {
     Legacy,
     /// A committed candidate that has not passed verification.
     Pending,
+    /// An interrupted transition left an identical active change beside the
+    /// pending candidate. The active duplicate is safe to remove.
+    PendingWithActive,
     /// A verified and finalized archive.
     Proven,
-    /// Both active and archived directories exist, or the receipt is
-    /// unreadable/unrecognized.
-    Corrupt,
+    /// The archive state cannot be trusted. `both_dirs` tells the caller
+    /// whether the active and archive directories both exist;
+    /// `pending_conflict` tells it whether both exist with a pending receipt
+    /// whose active artifacts do not match the candidate.
+    Corrupt {
+        both_dirs: bool,
+        pending_conflict: bool,
+    },
 }
 
-/// Classify an archive by its receipt.
+/// Read the archive receipt, if it exists and parses.
+pub fn read_receipt(archive_dir: &Path) -> Option<Receipt> {
+    let text = std::fs::read_to_string(archive_dir.join(RECEIPT_FILE)).ok()?;
+    serde_json::from_str(&text).ok()
+}
+
+/// Classify an archive by its receipt and, for a both-directory state, by
+/// whether the active change's artifacts match the pending candidate.
 pub fn read_status(project_root: &Path, id: &str) -> ArchiveProof {
-    let active = project_root.join("givn/changes").join(id).exists();
+    let active = project_root.join("givn/changes").join(id);
     let archive = project_root.join("givn/archive").join(id);
-    if active && archive.exists() {
-        return ArchiveProof::Corrupt;
+    if active.exists() && archive.exists() {
+        return match read_receipt(&archive) {
+            Some(receipt) if receipt.status == STATUS_PENDING => {
+                if candidate_matches_active(project_root, id) {
+                    ArchiveProof::PendingWithActive
+                } else {
+                    ArchiveProof::Corrupt {
+                        both_dirs: true,
+                        pending_conflict: true,
+                    }
+                }
+            }
+            _ => ArchiveProof::Corrupt {
+                both_dirs: true,
+                pending_conflict: false,
+            },
+        };
     }
     if !archive.exists() {
         return ArchiveProof::None;
     }
-    let Ok(text) = std::fs::read_to_string(archive.join(RECEIPT_FILE)) else {
-        return ArchiveProof::Legacy;
-    };
-    match serde_json::from_str::<Receipt>(&text) {
-        Ok(receipt) if receipt.status == STATUS_PENDING => ArchiveProof::Pending,
-        Ok(receipt) if receipt.status == STATUS_PROVEN => ArchiveProof::Proven,
-        _ => ArchiveProof::Corrupt,
+    match read_receipt(&archive) {
+        Some(receipt) if receipt.status == STATUS_PENDING => ArchiveProof::Pending,
+        Some(receipt) if receipt.status == STATUS_PROVEN => ArchiveProof::Proven,
+        None if !archive.join(RECEIPT_FILE).exists() => ArchiveProof::Legacy,
+        _ => ArchiveProof::Corrupt {
+            both_dirs: false,
+            pending_conflict: false,
+        },
     }
+}
+
+/// Whether every active artifact exists byte-identically in the pending
+/// archive candidate. Evidence paths are outputs and are ignored on both
+/// sides; archive-only artifacts are allowed because the candidate is
+/// authoritative and may carry evidence the active copy lost.
+pub fn candidate_matches_active(project_root: &Path, id: &str) -> bool {
+    let active = project_root.join("givn/changes").join(id);
+    let archive = project_root.join("givn/archive").join(id);
+    let mut stack = vec![(active.clone(), String::new())];
+    while let Some((dir, prefix)) = stack.pop() {
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            return false;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let relative = if prefix.is_empty() {
+                name
+            } else {
+                format!("{prefix}/{name}")
+            };
+            if path.is_dir() {
+                stack.push((path, relative));
+                continue;
+            }
+            if is_candidate_evidence(&relative) {
+                continue;
+            }
+            let counterpart = archive.join(&relative);
+            let (Ok(left), Ok(right)) = (std::fs::read(&path), std::fs::read(&counterpart)) else {
+                return false;
+            };
+            if left != right {
+                return false;
+            }
+        }
+    }
+    true
+}
+
+fn is_candidate_evidence(relative: &str) -> bool {
+    relative == RECEIPT_FILE
+        || relative.starts_with("results/")
+        || relative.starts_with("evidence/")
+        || relative.starts_with("verification/")
 }
 
 /// A verification receipt (`verification.json`).
@@ -74,6 +151,16 @@ pub struct Receipt {
     #[serde(default)]
     pub coverage: Option<CoverageOutcome>,
     #[serde(default)]
+    pub merge_completed: bool,
+    #[serde(default)]
+    pub merged_deltas: Vec<String>,
+    #[serde(default)]
+    pub merge_in_progress: Option<String>,
+    #[serde(default)]
+    pub merge_plan: Vec<String>,
+    #[serde(default)]
+    pub merge_targets: BTreeMap<String, String>,
+    #[serde(default)]
     pub started_at_unix: Option<u64>,
     #[serde(default)]
     pub finished_at_unix: Option<u64>,
@@ -82,11 +169,41 @@ pub struct Receipt {
 impl Receipt {
     /// Write the pending receipt committed with the candidate. It cannot name
     /// the candidate revision's own identifier, so both revision fields stay unset.
+    #[cfg(test)]
     pub fn write_pending(archive_dir: &Path, change: &str, started_at_unix: u64) -> Result<()> {
+        Self::write_pending_progress(
+            archive_dir,
+            change,
+            started_at_unix,
+            false,
+            Vec::new(),
+            None,
+            Vec::new(),
+            BTreeMap::new(),
+        )
+    }
+
+    /// Write a pending receipt that carries the merge-progress state.
+    #[allow(clippy::too_many_arguments)]
+    pub fn write_pending_progress(
+        archive_dir: &Path,
+        change: &str,
+        started_at_unix: u64,
+        merge_completed: bool,
+        merged_deltas: Vec<String>,
+        merge_in_progress: Option<String>,
+        merge_plan: Vec<String>,
+        merge_targets: BTreeMap<String, String>,
+    ) -> Result<()> {
         let receipt = Self {
             schema: 1,
             change: change.to_string(),
             status: STATUS_PENDING.to_string(),
+            merge_completed,
+            merged_deltas,
+            merge_in_progress,
+            merge_plan,
+            merge_targets,
             candidate_revision: None,
             tested_revision: None,
             scopes: BTreeMap::new(),
@@ -113,6 +230,11 @@ impl Receipt {
             schema: 1,
             change: change.to_string(),
             status: STATUS_PROVEN.to_string(),
+            merge_completed: true,
+            merged_deltas: Vec::new(),
+            merge_in_progress: None,
+            merge_plan: Vec::new(),
+            merge_targets: BTreeMap::new(),
             candidate_revision: Some(tested_revision.to_string()),
             tested_revision: Some(tested_revision.to_string()),
             scopes,
@@ -122,15 +244,62 @@ impl Receipt {
         };
         write_receipt(archive_dir, &receipt)
     }
+
+    /// Mark the delta file currently being applied. The receipt update is
+    /// written before the permanent spec so a crash leaves a retry marker.
+    pub fn mark_merge_started(archive_dir: &Path, relative: &str) -> Result<()> {
+        let mut receipt = read_receipt(archive_dir).ok_or_else(|| {
+            anyhow::anyhow!(
+                "archive blocked: pending receipt missing at {}",
+                archive_dir.join(RECEIPT_FILE).display()
+            )
+        })?;
+        if receipt.status != STATUS_PENDING {
+            bail!("archive blocked: the archive receipt is not pending");
+        }
+        receipt.merge_in_progress = Some(relative.to_string());
+        write_receipt(archive_dir, &receipt)
+    }
+
+    /// Record a completed delta file and clear the in-progress marker.
+    pub fn mark_merge_file_done(archive_dir: &Path, relative: &str) -> Result<()> {
+        let mut receipt = read_receipt(archive_dir).ok_or_else(|| {
+            anyhow::anyhow!(
+                "archive blocked: pending receipt missing at {}",
+                archive_dir.join(RECEIPT_FILE).display()
+            )
+        })?;
+        if !receipt.merged_deltas.iter().any(|entry| entry == relative) {
+            receipt.merged_deltas.push(relative.to_string());
+        }
+        receipt.merge_in_progress = None;
+        write_receipt(archive_dir, &receipt)
+    }
+
+    /// Mark the delta merge complete.
+    pub fn mark_merge_completed(archive_dir: &Path) -> Result<()> {
+        let mut receipt = read_receipt(archive_dir).ok_or_else(|| {
+            anyhow::anyhow!(
+                "archive blocked: pending receipt missing at {}",
+                archive_dir.join(RECEIPT_FILE).display()
+            )
+        })?;
+        receipt.merge_completed = true;
+        receipt.merge_in_progress = None;
+        write_receipt(archive_dir, &receipt)
+    }
 }
 
 fn write_receipt(archive_dir: &Path, receipt: &Receipt) -> Result<()> {
     std::fs::create_dir_all(archive_dir)
         .with_context(|| format!("create archive directory {}", archive_dir.display()))?;
     let path = archive_dir.join(RECEIPT_FILE);
+    let temporary = archive_dir.join(format!(".{RECEIPT_FILE}.givn-tmp"));
     let json = serde_json::to_string_pretty(receipt)?;
-    std::fs::write(&path, format!("{json}\n"))
-        .with_context(|| format!("write verification receipt {}", path.display()))
+    std::fs::write(&temporary, format!("{json}\n"))
+        .with_context(|| format!("write verification receipt {}", temporary.display()))?;
+    std::fs::rename(&temporary, &path)
+        .with_context(|| format!("publish verification receipt {}", path.display()))
 }
 
 /// The outcome of one verification scope.
@@ -286,7 +455,16 @@ pub fn is_evidence_path(
     let normalized = relative.to_string_lossy().replace('\\', "/");
     let normalized = normalized.trim_start_matches("./");
 
-    if normalized.starts_with(&format!("givn/archive/{id}/")) {
+    if normalized == format!("givn/archive/{id}")
+        || normalized.starts_with(&format!("givn/archive/{id}/"))
+    {
+        return true;
+    }
+    let change_root = format!("givn/changes/{id}");
+    if normalized == format!("{change_root}/verification.json")
+        || normalized.starts_with(&format!("{change_root}/evidence/"))
+        || normalized.starts_with(&format!("{change_root}/verification/"))
+    {
         return true;
     }
     if manifest.addons.readme && normalized == "README.md" {
@@ -344,8 +522,83 @@ mod tests {
         Receipt::write_proven(&archive, id, "abc", BTreeMap::new(), None, 1, 2).unwrap();
         assert_eq!(read_status(root.path(), id), ArchiveProof::Proven);
 
-        std::fs::create_dir_all(root.path().join("givn/changes/demo")).unwrap();
-        assert_eq!(read_status(root.path(), id), ArchiveProof::Corrupt);
+        let active = root.path().join("givn/changes/demo");
+        std::fs::create_dir_all(&active).unwrap();
+        std::fs::write(active.join("proposal.md"), "# proposal\n").unwrap();
+        Receipt::write_pending(&archive, id, 1).unwrap();
+        assert_eq!(
+            read_status(root.path(), id),
+            ArchiveProof::Corrupt {
+                both_dirs: true,
+                pending_conflict: true,
+            }
+        );
+
+        std::fs::write(archive.join("proposal.md"), "# proposal\n").unwrap();
+        assert_eq!(
+            read_status(root.path(), id),
+            ArchiveProof::PendingWithActive
+        );
+    }
+
+    #[test]
+    fn candidate_comparison_is_an_active_subset_with_evidence_ignored() {
+        let root = tempfile::TempDir::new().unwrap();
+        let id = "demo";
+        let active = root.path().join("givn/changes/demo");
+        let archive = root.path().join("givn/archive/demo");
+        std::fs::create_dir_all(active.join("evidence")).unwrap();
+        std::fs::create_dir_all(archive.join("results")).unwrap();
+        std::fs::write(active.join("proposal.md"), "same\n").unwrap();
+        std::fs::write(archive.join("proposal.md"), "same\n").unwrap();
+        std::fs::write(active.join("evidence/run.log"), "active-only\n").unwrap();
+        std::fs::write(archive.join("verification.json"), "{}\n").unwrap();
+        std::fs::write(archive.join("results/regular.json"), "{}\n").unwrap();
+        assert!(candidate_matches_active(root.path(), id));
+
+        std::fs::write(active.join("proposal.md"), "changed\n").unwrap();
+        assert!(!candidate_matches_active(root.path(), id));
+
+        std::fs::write(active.join("proposal.md"), "same\n").unwrap();
+        std::fs::write(active.join("extra.md"), "active-only artifact\n").unwrap();
+        assert!(!candidate_matches_active(root.path(), id));
+    }
+
+    #[test]
+    fn evidence_paths_include_active_change_evidence_only_with_separator() {
+        let manifest = Manifest::load_embedded().unwrap();
+        let root = Path::new("/project");
+        for path in [
+            "/project/givn/changes/demo/verification.json",
+            "givn/changes/demo/evidence/run.log",
+            "givn/changes/demo/verification/notes.txt",
+        ] {
+            assert!(
+                is_evidence_path(root, "demo", &manifest, Path::new(path)),
+                "{path} should be evidence"
+            );
+        }
+        assert!(!is_evidence_path(
+            root,
+            "demo",
+            &manifest,
+            Path::new("givn/changes/demo/evidence-other/run.log")
+        ));
+        assert!(!is_evidence_path(
+            root,
+            "demo",
+            &manifest,
+            Path::new("givn/changes/demo/proposal.md")
+        ));
+    }
+
+    #[test]
+    fn write_receipt_is_atomic_and_readable() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let archive = dir.path().join("archive");
+        Receipt::write_pending(&archive, "demo", 1).unwrap();
+        assert!(read_receipt(&archive).is_some());
+        assert!(!archive.join(format!(".{RECEIPT_FILE}.givn-tmp")).exists());
     }
 
     #[test]

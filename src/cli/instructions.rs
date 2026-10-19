@@ -335,7 +335,10 @@ fn report_multiple_changes(changes: &[ChangeState], json: bool) -> Result<()> {
 
 fn report_archived_change(id: &str, json: bool) -> Result<()> {
     let pending = std::env::current_dir().ok().is_some_and(|root| {
-        crate::proof::read_status(&root, id) == crate::proof::ArchiveProof::Pending
+        matches!(
+            crate::proof::read_status(&root, id),
+            crate::proof::ArchiveProof::Pending | crate::proof::ArchiveProof::PendingWithActive
+        )
     });
     if pending {
         let summary = format!("Change '{id}' has an unproven archive candidate.");
