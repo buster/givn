@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -61,11 +62,21 @@ class RunConfig:
     sandbox_extra_ro_binds: list[Path] = field(default_factory=list)
     sandbox_credentials: list[Path] = field(default_factory=list)
     resume: Path | None = None
+    allow_unverified_network: bool = False
+    stop_after: str | None = None
+    secret_env: dict[str, str] = field(default_factory=dict)
 
     def driver_extra_sandbox(self) -> dict[str, Any]:
         return {
-            "network_allowlist": "unavailable" if self.network == "host" else "none",
+            "network_allowlist": (
+                "unverified" if self.network == "host" else "none"
+            ),
             "paid_execution_requires_reconciled_usage": True,
+            "execution_class": (
+                "exploratory"
+                if self.network == "host" and self.allow_unverified_network
+                else "controlled"
+            ),
         }
 
 
@@ -107,27 +118,35 @@ def _git_revision() -> dict[str, Any]:
     }
 
 
-def _sandbox_policy(config: RunConfig, workspace: Path) -> SandboxPolicy:
+def _sandbox_policy(
+    config: RunConfig,
+    workspace: Path,
+    *,
+    env_override: dict[str, str] | None = None,
+) -> SandboxPolicy:
     env = {
         "PYTHONUNBUFFERED": "1",
-        **config.driver.extra_env,
+        **(env_override if env_override is not None else config.driver.extra_env),
     }
     extra_ro_binds = list(config.sandbox_extra_ro_binds)
     credential_binds = list(config.sandbox_credentials)
+    if config.givn_binary is not None:
+        binary = Path(config.givn_binary).resolve()
+        extra_ro_binds.append(binary)
+        env["PATH"] = f"{binary.parent}:" + env.get(
+            "PATH", "/usr/local/bin:/usr/bin:/bin"
+        )
     if config.driver.kind == "opencode":
         home = Path.home()
-        # Mount only the runtime and the credential file, never the host
-        # session database or the rest of the agent state.
-        for candidate in (
-            home / ".opencode",
-            home / ".config" / "opencode",
-            home / ".cache" / "opencode",
-        ):
-            if candidate.exists():
-                extra_ro_binds.append(candidate)
-        auth = home / ".local" / "share" / "opencode" / "auth.json"
-        if auth.is_file():
-            credential_binds.append(auth)
+        # Only the runtime. Config, cache, data and state are private per trial,
+        # so host plugins, sessions and the credentials database are not read.
+        runtime = home / ".opencode"
+        if runtime.exists():
+            extra_ro_binds.append(runtime)
+        env["PATH"] = (
+            f"{home / '.opencode' / 'bin'}:"
+            + env.get("PATH", "/usr/local/bin:/usr/bin:/bin")
+        )
     return SandboxPolicy(
         mode=config.sandbox_mode,
         network=config.network,
@@ -136,6 +155,68 @@ def _sandbox_policy(config: RunConfig, workspace: Path) -> SandboxPolicy:
         credential_binds=credential_binds,
         env=env,
     )
+
+
+def prepare_opencode_workspace(
+    workspace: Path,
+    stage_dir: Path,
+    model: str,
+) -> dict[str, str]:
+    """Create a private XDG tree and a provider/model guard for opencode.
+
+    The host OpenCode config, plugins, cache and credential database are not
+    mounted. The sandbox receives only this config and the API key from its
+    environment.
+    """
+    base = workspace / ".harness" / "opencode"
+    config_dir = base / "config" / "opencode"
+    data_dir = base / "data"
+    cache_dir = base / "cache"
+    state_dir = base / "state"
+    for path in (config_dir, data_dir, cache_dir, state_dir):
+        path.mkdir(parents=True, exist_ok=True)
+    config = {
+        "$schema": "https://opencode.ai/config.json",
+        "model": model,
+        "snapshots": False,
+        "policies": [
+            {"action": "provider.use", "resource": "*", "effect": "deny"},
+            {"action": "provider.use", "resource": "deepseek", "effect": "allow"},
+        ],
+    }
+    config_path = config_dir / "opencode.json"
+    config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    shutil.copy2(config_path, stage_dir / "opencode.json")
+    return {
+        "XDG_CONFIG_HOME": str(config_dir.parent),
+        "XDG_DATA_HOME": str(data_dir),
+        "XDG_CACHE_HOME": str(cache_dir),
+        "XDG_STATE_HOME": str(state_dir),
+    }
+
+
+def prepare_secret_env(workspace: Path, env: dict[str, str]) -> dict[str, str]:
+    """Move credential values out of argv into a mode-600 workspace file."""
+    secret_keys = {"DEEPSEEK_API_KEY"}
+    secrets = {key: value for key, value in env.items() if key in secret_keys}
+    if not secrets:
+        return dict(env)
+    secret_path = workspace / ".harness" / "secrets.env"
+    secret_path.parent.mkdir(parents=True, exist_ok=True)
+    lines = [f"export {key}={shlex.quote(value)}" for key, value in secrets.items()]
+    secret_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    secret_path.chmod(0o600)
+    cleaned = {key: value for key, value in env.items() if key not in secret_keys}
+    cleaned["HARNESS_SECRETS_FILE"] = str(secret_path)
+    return cleaned
+
+
+def remove_secret_env(workspace: Path) -> None:
+    path = workspace / ".harness" / "secrets.env"
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        pass
 
 
 def _initial_probe(config: RunConfig) -> dict[str, Any]:
@@ -192,6 +273,7 @@ def _manifest_details(config: RunConfig, sandbox_result: dict[str, Any]) -> dict
         "workspace_root": str(config.workspace_root),
         "answer_policy": config.answer_policy,
         "network": config.network,
+        "stop_after": config.stop_after,
     }
 
 
@@ -337,16 +419,31 @@ def _validate_config(config: RunConfig) -> None:
                 "paid runs require --price-table with a dated price source; "
                 "no price is invented"
             )
-        if config.network == "host":
+        if config.network == "none":
             raise RunError(
-                "paid runs cannot start on unverified host networking. Provide a "
-                "verified egress policy or run a deterministic/fake driver."
+                "the opencode driver needs provider network access; use "
+                "--network host with --allow-unverified-network for an "
+                "exploratory run"
+            )
+        if config.network == "host" and not config.allow_unverified_network:
+            raise RunError(
+                "host networking is not a verified egress allowlist; pass "
+                "--allow-unverified-network to run an explicitly exploratory trial"
+            )
+        if not config.secret_env.get("DEEPSEEK_API_KEY"):
+            raise RunError(
+                "the opencode driver requires DEEPSEEK_API_KEY in the sandbox "
+                "environment; use --deepseek-api-key-file"
             )
         if config.sandbox_mode != "required":
             raise RunError(
                 "the opencode driver requires sandbox mode 'required'; "
                 "an unconfined paid run is not a graded fallback"
             )
+    if config.stop_after is not None and config.stop_after not in {
+        stage.id for stage in config.benchmark.stages
+    }:
+        raise RunError(f"unknown --stop-after stage: {config.stop_after!r}")
         if config.givn_binary is not None and not Path(config.givn_binary).is_file():
             raise RunError(f"givn binary not found: {config.givn_binary}")
 
@@ -481,6 +578,27 @@ def run_bundle(
         dump_json(stage_dir / "request.json", request)
         append_journal(bundle, "stage_started", stage=stage.id, request=request)
 
+        if config.driver.kind == "opencode":
+            xdg_env = prepare_opencode_workspace(
+                workspace, stage_dir, config.driver.model
+            )
+            stage_env = {
+                **config.driver.extra_env,
+                **xdg_env,
+                **config.secret_env,
+            }
+            stage_env = prepare_secret_env(workspace, stage_env)
+            config.driver.extra_env.update(xdg_env)
+            append_journal(
+                bundle,
+                "opencode_config_prepared",
+                stage=stage.id,
+                config=str(stage_dir / "opencode.json"),
+                xdg_roots=xdg_env,
+            )
+        else:
+            stage_env = dict(config.driver.extra_env)
+
         reservation_id = f"stage:{stage.id}"
         if ledger is not None:
             try:
@@ -512,7 +630,7 @@ def run_bundle(
                 update_manifest(bundle, {"status": "blocked", "blocker": str(error)})
                 raise RunError(f"budget stopped before dispatch: {error}") from error
 
-        policy = _sandbox_policy(config, workspace)
+        policy = _sandbox_policy(config, workspace, env_override=stage_env)
         driver_result = run_driver(
             config.driver,
             workspace=workspace,
@@ -523,6 +641,7 @@ def run_bundle(
             sandbox=policy,
             journal=lambda event, **payload: append_journal(bundle, event, **payload),
         )
+        remove_secret_env(workspace)
 
         probe_result = (
             _probe_stage(config.benchmark, stage, workspace, stage_dir)
@@ -629,6 +748,14 @@ def run_bundle(
             )
             break
         previous_completed = True
+        if config.stop_after == stage.id:
+            append_journal(
+                bundle,
+                "stop_after_reached",
+                stage=stage.id,
+                reason="explicit --stop-after",
+            )
+            break
 
     recorded_ids = {entry.get("id") for entry in completed_stages}
     for stage in config.benchmark.stages:
@@ -637,9 +764,13 @@ def run_bundle(
         stage_dir = bundle / "stages" / stage.id
         stage_dir.mkdir(parents=True, exist_ok=True)
         reason = (
-            f"required stage {stage.requires!r} did not complete"
-            if stage.requires
-            else "an earlier stage did not complete"
+            f"stopped after {config.stop_after!r} by explicit --stop-after"
+            if config.stop_after and stage.requires == config.stop_after
+            else (
+                f"required stage {stage.requires!r} did not complete"
+                if stage.requires
+                else "an earlier stage did not complete"
+            )
         )
         dump_json(
             stage_dir / "not-reached.json",

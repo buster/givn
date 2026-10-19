@@ -11,6 +11,7 @@ the first stage produced.
 
 from __future__ import annotations
 
+import shutil
 import json
 import os
 import shlex
@@ -273,8 +274,9 @@ def _command_for(
     condition: str,
 ) -> list[str]:
     if spec.kind == "opencode":
+        executable = shutil.which("opencode") or "opencode"
         return [
-            "opencode",
+            executable,
             "run",
             "--standalone",
             "--auto",
