@@ -2,7 +2,7 @@
 
 Feature: Archive proof reuse across documentation-only revisions
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer archives a change after documentation-only review edits and the proof is reused
     Given a clean committed change with a green change verification receipt recorded at an earlier revision
     And the developer commits only proposal, design, design-review, tasks, review, arc42, use-case narrative, README, and evidence edits after that revision
@@ -13,6 +13,7 @@ Feature: Archive proof reuse across documentation-only revisions
     And the change suite was not invoked again
     And the merged regular scope ran once with features path "givn/specs"
     And stdout says the change verification receipt was reused
+    And the archive terminal transcript is captured for this scenario
 
   @givn.added
   Scenario: Archive reuses a proof committed with its receipt

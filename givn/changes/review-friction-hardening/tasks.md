@@ -229,14 +229,14 @@ Evidence:
 - GREEN output: `1 feature, 3 scenarios (3 passed), 24 steps (24 passed)`; all three examples name delta features, verify command, or tested content and leave no candidate.
 - REFACTOR output: `cargo fmt`; all three examples still pass.
 - Production files: `tests/steps/archive_proof_steps.rs`, the feature file, and the already-committed freshness result.
-- COMMIT: `<hash>`
+- COMMIT: 4126995e4bb4677e0737893ad2194eeddfddfe1a
 
 ## Scenario 9 — Consumer runs review and receives every use-case schema problem in one pass (e2e)
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
-- [ ] COMMIT
+- [x] RED
+- [x] GREEN
+- [x] REFACTOR
+- [x] COMMIT
 
 Design constraints:
 
@@ -248,10 +248,10 @@ Design constraints:
 
 Evidence:
 
-- RED output: `<paste>`
-- GREEN output: `<paste>`
-- REFACTOR output: `<paste>`
-- Production files: `<list>`
+- RED output: the same scenario without the parser/routing fix failed at `stderr reports the title, the unknown heading, ...` with only `line 1: expected '# Use case: ...'` (exit 1); captured on 2026-10-21.
+- GREEN output: `1 feature, 1 scenario (1 passed), 7 steps (7 passed)` under the real CLI; transcript `evidence/visual/consumer-runs-review-and-receives-every-use-case-schema-problem-in-one-pass/transcript.txt` records argv, cwd, exit code 1, and the complete stdout/stderr.
+- REFACTOR output: `cargo fmt`; scenario still passes.
+- Production files: `tests/steps/workflow_enforcement_e2e_steps.rs` (transcript capture), the feature file, committed transcript.
 - COMMIT: `<hash>`
 
 ## Scenario 10 — Consumer archives a change after documentation-only review edits and the proof is reused (e2e)
