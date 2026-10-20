@@ -47,6 +47,26 @@ fn large_trait(world: &mut GivnWorld) {
     crate::steps::readability_report_support::write_large_trait(env, "BigTrait", 520);
 }
 
+#[then(regex = r#"^the report is written to "([^"]+)"$"#)]
+fn report_written_to_file(world: &mut GivnWorld, relative: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let content = std::fs::read_to_string(env.path(&relative))
+        .unwrap_or_else(|error| panic!("read {relative}: {error}"));
+    assert!(
+        content.contains("readability report"),
+        "written report missing header: {content}"
+    );
+}
+
+#[then("stdout is empty")]
+fn stdout_is_empty(world: &mut GivnWorld) {
+    let stdout = crate::steps::stdout(world);
+    assert!(stdout.is_empty(), "expected empty stdout, got: {stdout}");
+}
+
 #[given("a production source unit that is over the readable size")]
 fn over_readable_size(world: &mut GivnWorld) {
     let env = world

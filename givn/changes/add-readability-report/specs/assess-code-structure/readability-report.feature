@@ -72,7 +72,7 @@ Feature: Readability report
     Then stdout is valid JSON
     And the JSON report classifies the unit
 
-  @givn.added @wip
+  @givn.added
   Scenario: A report is written to a file
     Given a Givn project with the readability experiment enabled
     And a production source unit that is over the readable size
