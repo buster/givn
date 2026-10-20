@@ -100,6 +100,17 @@ pub fn assessment_counts(env: &TestEnv) -> (usize, usize, usize) {
     )
 }
 
+pub fn write_long_method(env: &TestEnv) {
+    let mut source = String::from(
+        "pub struct Long {\n    value: u64,\n}\n\nimpl Long {\n    pub fn long(&self) -> u64 {\n",
+    );
+    for _ in 0..110 {
+        source.push_str("        let _ = self.value;\n");
+    }
+    source.push_str("        self.value\n    }\n}\n");
+    write_source(env, "src/long_method.rs", &source);
+}
+
 pub fn write_large_module(env: &TestEnv) {
     let mut source = String::new();
     for index in 0..21 {
