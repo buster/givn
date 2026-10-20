@@ -602,4 +602,14 @@ mod tests {
         assert!(!message.contains(&normalize_commit_text("Different scenario")));
     }
 
+    #[test]
+    fn parses_a_scenario_with_its_own_revision() {
+        let content = "- [x] Scenario: One scenario\n  - [x] COMMIT: abc -- One scenario\n";
+        let scenarios = parse_scenario_commits(content);
+        assert_eq!(scenarios.len(), 1);
+        assert_eq!(scenarios[0].title, "One scenario");
+        assert!(scenarios[0].checked);
+        assert_eq!(scenarios[0].hash.as_deref(), Some("abc"));
+    }
+
 }
