@@ -369,6 +369,97 @@ local function transcript_question()
   return table.concat(joined, "\n")
 end
 
+-- The last assistant message's text and thinking from the live transcript.
+-- The maki event stream does not carry the assistant message itself; the
+-- transcript is the only source for turn content.
+local function transcript_turn()
+  local ok, messages = pcall(function()
+    return maki.session.messages({ last = 50 })
+  end)
+  if not ok or type(messages) ~= "table" then
+    return nil, nil
+  end
+  for i = #messages, 1, -1 do
+    local message = messages[i]
+    if type(message) == "table" and (message.role == "assistant" or message.role == "model") then
+      local parts = {}
+      local content = message.content
+      if type(content) == "string" then
+        parts[#parts + 1] = { type = "text", text = content }
+      elseif type(content) == "table" then
+        if content.type ~= nil then
+          parts[#parts + 1] = content
+        else
+          for _, part in ipairs(content) do
+            parts[#parts + 1] = part
+          end
+        end
+      end
+      local assistant, thinking = {}, {}
+      for _, part in ipairs(parts) do
+        if type(part) == "table" then
+          if part.type == "text" and type(part.text) == "string" then
+            assistant[#assistant + 1] = part.text
+          elseif part.type == "thinking" or part.type == "reasoning" then
+            local text = part.thinking or part.reasoning or part.text
+            if type(text) == "string" then
+              thinking[#thinking + 1] = text
+            end
+          end
+        end
+      end
+      return
+        #assistant > 0 and table.concat(assistant, "\n") or nil,
+        #thinking > 0 and table.concat(thinking, "\n") or nil
+    end
+  end
+  return nil, nil
+end
+
+-- The last tool message's text from the live transcript. The ToolDone event
+-- carries no output on the maki event stream; the transcript does.
+local function transcript_tool_output(tool_id)
+  local ok, messages = pcall(function()
+    return maki.session.messages({ last = 50 })
+  end)
+  if not ok or type(messages) ~= "table" then
+    return nil
+  end
+  for i = #messages, 1, -1 do
+    local message = messages[i]
+    if type(message) == "table" and message.role == "tool" then
+      if tool_id ~= nil and message.tool_call_id ~= nil and message.tool_call_id ~= tool_id then
+        -- another call's result; keep looking
+      else
+        local content = message.content
+        if type(content) == "string" then
+          return content
+        end
+        if type(content) == "table" then
+          local parts = content.type ~= nil and { content } or content
+          local text = {}
+          for _, part in ipairs(parts) do
+            if type(part) == "string" then
+              text[#text + 1] = part
+            elseif type(part) == "table" then
+              if type(part.text) == "string" then
+                text[#text + 1] = part.text
+              elseif type(part.content) == "string" then
+                text[#text + 1] = part.content
+              end
+            end
+          end
+          if #text > 0 then
+            return table.concat(text, "\n")
+          end
+        end
+        return nil
+      end
+    end
+  end
+  return nil
+end
+
 -- One content field on the wire; the intake re-applies the content caps.
 local function content_field(text)
   if type(text) ~= "string" or text == "" then
@@ -439,12 +530,45 @@ handlers.ToolDone = function(ev)
   event.tool_call_id = data.tool_id
   event.output_bytes = data.bytes
   if captures_content() then
+    local content = {}
     local input = content_field(content_text(data.input))
     if input then
-      event.content = { tool_input = input }
+      content.tool_input = input
+    end
+    local output = content_field(content_text(data.output or data.result or data.content))
+    if output == nil then
+      output = content_field(transcript_tool_output(data.tool_id))
+    end
+    if output then
+      content.tool_output = output
+    end
+    if next(content) ~= nil then
+      event.content = content
     end
   end
   push(event)
+  local tool_name = data.tool or (start and start.tool) or "tool"
+  if tool_name == "task" or tool_name == "subagent" then
+    local input = data.input
+    local title = nil
+    if type(input) == "table" then
+      if type(input.description) == "string" then
+        title = input.description
+      elseif type(input.prompt) == "string" then
+        title = input.prompt
+      end
+    end
+    push({
+      kind = "subagent",
+      at = at_now(),
+      agent = "task",
+      subagent = tostring(data.tool_id or tool_name),
+      title = title,
+      status = data.is_error and "failed" or "completed",
+      duration_ms = duration,
+      outcome = data.is_error and "failed" or "ok",
+    })
+  end
 end
 
 handlers.TurnStart = function(ev)
@@ -483,9 +607,22 @@ handlers.TurnEnd = function(ev)
   -- unmeasured rather than invented.
   event.duration_ms = measured(state.turn_started)
   if captures_content() then
+    local content = {}
     local prompt = content_field(state.prompt)
     if prompt then
-      event.content = { user_prompt = prompt }
+      content.user_prompt = prompt
+    end
+    local assistant, thinking = transcript_turn()
+    local assistant_field = content_field(assistant)
+    if assistant_field then
+      content.assistant_text = assistant_field
+    end
+    local thinking_field = content_field(thinking)
+    if thinking_field then
+      content.thinking_text = thinking_field
+    end
+    if next(content) ~= nil then
+      event.content = content
     end
   end
   state.turn_started = nil

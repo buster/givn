@@ -152,20 +152,36 @@ const queryMode = () =>
 export default {
   id: "givn-timeline",
   async setup(ctx) {
-    // The mode is resolved once per session before any registration: under
-    // `off` the reporter registers nothing, buffers nothing, and writes
-    // nothing (the intake refuses a stale payload too).
-    const mode = await queryMode()
-    if (mode === "off") {
-      return () => {}
+    // Subscribe before anything else: the harness can start its first tool
+    // while setup is still resolving settings. Events are queued until the
+    // handler is ready, so no start, success, or text is lost.
+    const pendingEvents = []
+    let onEvent = null
+    const subscription = ctx.event?.subscribe?.({ signal: ctx.signal })
+    if (subscription) {
+      ;(async () => {
+        try {
+          for await (const event of subscription) {
+            if (onEvent) await onEvent(event)
+            else pendingEvents.push(event)
+          }
+        } catch {}
+      })()
     }
-    const captureContent = mode === "full"
+    const modeState = { off: false, full: false }
+    const modePromise = queryMode().then((resolved) => {
+      modeState.off = resolved === "off"
+      modeState.full = resolved === "full"
+      return resolved
+    })
     let session
     let buffer = []
     let dropped = 0
     let warned = false
     const tools = new Map()
     const steps = new Map()
+    const texts = new Map()
+    const thoughts = new Map()
     const waits = new Map()
     const children = new Map()
     const completed = new Set()
@@ -185,6 +201,20 @@ export default {
     /** One measured span from two of the harness's own timestamps. */
     const between = (start, end) =>
       typeof start === "number" && typeof end === "number" && end >= start ? end - start : undefined
+
+    /** The step's assistant and thinking text; absent fields are omitted. */
+    const turnContentFor = (key) => {
+      const content = {
+        assistant_text: contentField(texts.get(key)),
+        thinking_text: contentField(thoughts.get(key)),
+      }
+      texts.delete(key)
+      thoughts.delete(key)
+      for (const name of Object.keys(content)) {
+        if (content[name] === undefined) delete content[name]
+      }
+      return Object.keys(content).length > 0 ? content : undefined
+    }
 
     /** One payload per boundary, piped to the real intake; the record is never a work item. */
     const flush = () =>
@@ -221,8 +251,8 @@ export default {
         push({
           kind: "tool",
           at: at(start.created),
-          tool: start.name,
-          label: start.label,
+          tool: start.name ?? "unknown",
+          label: start.label ?? "unknown",
           outcome: "unknown",
         })
       }
@@ -239,11 +269,35 @@ export default {
     }
 
     const handle = (event) => {
+      if (modeState.off) return undefined
       const type = event?.type
       const data = event?.data ?? {}
       const created = typeof event?.created === "number" ? event.created : Date.now()
       if (typeof data.sessionID === "string") session = data.sessionID
       switch (type) {
+        case "session.text.ended": {
+          if (typeof data.assistantMessageID === "string" && typeof data.text === "string") {
+            texts.set(data.assistantMessageID, data.text)
+          }
+          break
+        }
+        case "session.reasoning.ended": {
+          if (typeof data.assistantMessageID === "string" && typeof data.text === "string") {
+            thoughts.set(data.assistantMessageID, data.text)
+          }
+          break
+        }
+        case "session.tool.input.ended": {
+          const previous = tools.get(data.id)
+          if (previous && previous.input === undefined && typeof data.text === "string") {
+            let input = data.text
+            try {
+              input = JSON.parse(data.text)
+            } catch {}
+            tools.set(data.id, { ...previous, input })
+          }
+          break
+        }
         case "session.step.started":
           steps.set(data.assistantMessageID ?? data.id, created)
           break
@@ -263,16 +317,20 @@ export default {
                 : undefined,
             cost: data.cost,
             usage: usageOf(data.tokens),
-            content: captureContent
-              ? { assistant_text: contentField(contentText(data.content)) }
-              : undefined,
+            content: modeState.full ? turnContentFor(key) : undefined,
             status: type === "session.step.ended" ? "completed" : "failed",
           })
           break
         }
         case "session.tool.called":
         case "session.tool.input.started": {
-          const name = typeof data.name === "string" ? data.name : data.tool
+          const previous = tools.get(data.id) ?? {}
+          const name =
+            typeof data.name === "string"
+              ? data.name
+              : typeof data.tool === "string"
+                ? data.tool
+                : previous.name
           if (name === QUESTION_TOOL) {
             const text = questionsText(data.input?.questions)
             waits.set(data.id, {
@@ -282,12 +340,27 @@ export default {
             })
             break
           }
+          const input = data.input ?? previous.input
           tools.set(data.id, {
-            created,
+            created: previous.created ?? created,
             name,
-            label: toolSubject(name, data.input),
-            input: data.input,
+            label: toolSubject(name, input),
+            input,
           })
+          if (
+            type === "session.tool.called" &&
+            (name === "subagent" || name === "task" || name === "agent")
+          ) {
+            const title = bounded(input?.description ?? input?.prompt ?? name)
+            push({
+              kind: "subagent",
+              at: at(created),
+              agent: name,
+              subagent: typeof data.id === "string" ? data.id : undefined,
+              title,
+              status: "started",
+            })
+          }
           break
         }
         case "session.tool.success":
@@ -296,11 +369,17 @@ export default {
           tools.delete(data.id)
           completed.add(data.id)
           const duration = between(start?.created, created)
+          const toolOutput = Array.isArray(data.content)
+            ? data.content
+                .filter((block) => block && block.type === "text" && typeof block.text === "string")
+                .map((block) => block.text)
+                .join("\n")
+            : (data.content ?? data.output)
           push({
             kind: "tool",
             at: at(created),
-            tool: start?.name ?? data.name,
-            label: start?.label ?? toolSubject(data.name, data.input),
+            tool: start?.name ?? data.name ?? data.tool ?? "unknown",
+            label: start?.label ?? toolSubject(data.name ?? data.tool, data.input),
             tool_call_id: typeof data.id === "string" ? data.id : undefined,
             duration_ms: duration,
             duration_source: duration === undefined ? undefined : "host",
@@ -312,14 +391,26 @@ export default {
             output_bytes:
               typeof data.bytes === "number"
                 ? data.bytes
-                : typeof data.content === "string"
-                  ? Buffer.byteLength(data.content)
+                : typeof toolOutput === "string"
+                  ? Buffer.byteLength(toolOutput)
                   : undefined,
             result_meta: data.result_meta,
-            content: captureContent
-              ? toolContent(start?.input ?? data.input, data.content ?? data.output)
+            content: modeState.full
+              ? toolContent(start?.input ?? data.input, toolOutput)
               : undefined,
           })
+          if (start?.name === "subagent" || start?.name === "task" || start?.name === "agent") {
+            push({
+              kind: "subagent",
+              at: at(created),
+              agent: start.name,
+              subagent: typeof data.id === "string" ? data.id : undefined,
+              title: start.label,
+              status: type === "session.tool.success" ? "completed" : "failed",
+              duration_ms: duration,
+              outcome: type === "session.tool.success" ? "ok" : "failed",
+            })
+          }
           break
         }
         case "session.created":
@@ -336,6 +427,30 @@ export default {
             })
           }
           break
+        case "session.renamed": {
+          if (typeof data.sessionID === "string" && typeof data.title === "string" && data.title) {
+            push({
+              kind: "session",
+              at: at(created),
+              name: bounded(data.title),
+              session: data.sessionID,
+              title: bounded(data.title),
+            })
+          }
+          if (typeof data.sessionID === "string" && children.has(data.sessionID)) {
+            const title = typeof data.title === "string" ? bounded(data.title) : undefined
+            if (title) {
+              push({
+                kind: "subagent",
+                at: at(created),
+                subagent: data.sessionID,
+                title,
+                status: "started",
+              })
+            }
+          }
+          break
+        }
         case "session.execution.succeeded":
         case "session.execution.failed":
         case "session.execution.interrupted": {
@@ -422,28 +537,13 @@ export default {
           if (!tools.has(event.id)) {
             // The hook is the pairing backstop: a call whose input event was
             // missed still gets its start stamped here.
-            tools.set(event.id, { created: Date.now(), name: event.tool, label: toolSubject(event.tool, event.input) })
+            tools.set(event.id, {
+              created: Date.now(),
+              name: event.tool,
+              label: toolSubject(event.tool, event.input),
+              input: event.input,
+            })
           }
-        }),
-      ),
-    )
-
-    await attempt("tool.execute.after", () =>
-      ctx.tool?.hook?.(
-        "execute.after",
-        guarded((event) => {
-          if (typeof event?.id !== "string" || completed.has(event.id)) return
-          if (event?.tool === QUESTION_TOOL) return
-          const start = tools.get(event.id)
-          tools.delete(event.id)
-          push({
-            kind: "tool",
-            at: at(Date.now()),
-            tool: start?.name ?? event.tool,
-            label: start?.label ?? toolSubject(event.tool, event.input),
-            duration_ms: typeof start?.created === "number" ? Date.now() - start.created : undefined,
-            outcome: event.error ? "failed" : "ok",
-          })
         }),
       ),
     )
@@ -458,20 +558,11 @@ export default {
       ),
     )
 
-    // The event stream: one subscription for the whole session, consumed until
-    // the harness closes it or the signal aborts.
-    const subscription = ctx.event?.subscribe?.({ signal: ctx.signal })
-    if (subscription) {
-      ;(async () => {
-        try {
-          for await (const event of subscription) {
-            await handle(event)
-          }
-        } catch {
-          // The stream ends when the session does; nothing to flush beyond the
-          // last boundary.
-        }
-      })()
+    // Resolve the capture mode, then replay the events that raced setup.
+    await modePromise
+    onEvent = handle
+    for (const event of pendingEvents.splice(0)) {
+      await handle(event)
     }
 
     return () => {
