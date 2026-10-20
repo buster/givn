@@ -49,6 +49,13 @@ Feature: Readability report
     Then the report classifies the unit as a cohesive-large-type
     And the report recommends an advisory action
 
+  @givn.added @wip
+  Scenario: A type with many public methods is an interface
+    Given a production source unit with more than 50 public methods
+    When the readability report assesses the unit
+    Then the report classifies the unit as an interface
+    And the report recommends a trait-composition plan
+
   @givn.added
   Scenario: A type at the readable size limit is within limits
     Given a production source unit with exactly 500 code lines and cohesive methods

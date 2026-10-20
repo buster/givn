@@ -262,6 +262,13 @@ fn report_names_file(world: &mut GivnWorld, relative: String) {
     );
 }
 
+#[given("a production source unit with more than 50 public methods")]
+fn many_public_methods(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    crate::steps::readability_report_support::write_many_public_methods(&env);
+    world.env = Some(env);
+}
+
 #[given("a production source unit with platform-conditional methods")]
 fn platform_conditional(world: &mut GivnWorld) {
     let env = common::make_bare_root();

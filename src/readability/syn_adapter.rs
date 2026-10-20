@@ -191,6 +191,7 @@ impl FileBuilder {
                         &self.path,
                         &self.module_path,
                         false,
+                        visibility(&item.vis),
                         &self.content,
                     );
                     self.free_functions.push(method.clone());
@@ -221,6 +222,7 @@ impl FileBuilder {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn push_type(
         &mut self,
         name: String,
@@ -384,6 +386,7 @@ impl FileBuilder {
                         &self.path,
                         &self.module_path,
                         true,
+                        Visibility::Public,
                         &self.content,
                     )
                 } else {
@@ -392,10 +395,11 @@ impl FileBuilder {
                         &self.path,
                         &self.module_path,
                         true,
+                        Visibility::Public,
                         &self.content,
                     )
                 };
-                outline.push(outline_method(&method, matches!(function.default, Some(_))));
+                outline.push(outline_method(&method, function.default.is_some()));
                 methods.push(method);
             }
         }
@@ -447,6 +451,7 @@ impl FileBuilder {
                     &self.path,
                     &self.module_path,
                     false,
+                    visibility(&function.vis),
                     &self.content,
                 );
                 outline.push(outline_method(&method, false));
@@ -475,6 +480,7 @@ fn method_from_fn(
     file: &RepoPath,
     module_path: &str,
     trait_method: bool,
+    visibility: Visibility,
     content: &str,
 ) -> Method {
     let name = sig.ident.to_string();
@@ -484,11 +490,7 @@ fn method_from_fn(
     Method {
         id,
         name,
-        visibility: if trait_method {
-            Visibility::Public
-        } else {
-            Visibility::Private
-        },
+        visibility,
         signature: signature(sig),
         span: span_for_ident(&sig.ident, content, file),
         flow: Flow::Block(visitor.flow),
@@ -514,17 +516,14 @@ fn method_without_body(
     file: &RepoPath,
     module_path: &str,
     trait_method: bool,
+    visibility: Visibility,
     content: &str,
 ) -> Method {
     let name = sig.ident.to_string();
     Method {
         id: format!("{module_path}::{name}"),
         name,
-        visibility: if trait_method {
-            Visibility::Public
-        } else {
-            Visibility::Private
-        },
+        visibility,
         signature: signature(sig),
         span: span_for_ident(&sig.ident, content, file),
         flow: Flow::Block(Vec::new()),
@@ -578,10 +577,10 @@ impl<'ast> Visit<'ast> for FactsVisitor {
     }
 
     fn visit_expr_call(&mut self, node: &'ast ExprCall) {
-        if let Expr::Path(path) = &*node.func {
-            if let Some(segment) = path.path.segments.last() {
-                self.calls.push(segment.ident.to_string());
-            }
+        if let Expr::Path(path) = &*node.func
+            && let Some(segment) = path.path.segments.last()
+        {
+            self.calls.push(segment.ident.to_string());
         }
         syn::visit::visit_expr_call(self, node);
     }
