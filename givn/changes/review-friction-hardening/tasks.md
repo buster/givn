@@ -119,10 +119,10 @@ Evidence:
 
 ## Scenario 4 — One use-case parse failure is reported once across several delta capabilities
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
-- [ ] COMMIT
+- [x] RED
+- [x] GREEN
+- [x] REFACTOR
+- [x] COMMIT
 
 Design constraints:
 
@@ -134,11 +134,11 @@ Design constraints:
 
 Evidence:
 
-- RED output: `<paste>`
-- GREEN output: `<paste>`
-- REFACTOR output: `<paste>`
-- Production files: `<list>`
-- COMMIT: `<hash>`
+- RED output: the same title diagnostic appeared 3 times, once per delta capability (`left: 3`, `right: 1`), after overlap dispositions let review reach routing (exit 1).
+- GREEN output: `1 feature, 1 scenario (1 passed), 6 steps (6 passed)`
+- REFACTOR output: `cargo fmt`; scenario still passes.
+- Production files: `tests/steps/workflow_enforcement_steps.rs` (overlap dispositions in the fixture), the feature file, and the already-committed routing cache.
+- COMMIT: 0af5cb2ca0c799b77b7802ff3c0b2b66cf090400
 
 ## Scenario 5 — Review validates an active delta use-case narrative even for an extension
 
