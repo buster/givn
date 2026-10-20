@@ -1165,11 +1165,17 @@ fn write_review_fixture(
     }
     std::fs::write(change.join("design.md"), "# Design\n").unwrap();
     std::fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n").unwrap();
-    std::fs::write(
-        change.join("review.md"),
-        "REVIEW: PASS\nREADME-IMPACT: none\n",
-    )
-    .unwrap();
+    let mut review = String::from(
+        "REVIEW: PASS\nREADME-IMPACT: none\n\n## Overlap dispositions\n\n         | Scenario A | Scenario B | Disposition |\n|---|---|---|\n",
+    );
+    for (index, left) in capabilities.iter().enumerate() {
+        for right in capabilities.iter().skip(index + 1) {
+            review.push_str(&format!(
+                "| Fixture {left} | Fixture {right} | boundary |\n"
+            ));
+        }
+    }
+    std::fs::write(change.join("review.md"), review).unwrap();
 
     set_verify_true(world);
     common::commit_fixture(world.env.as_ref().unwrap());

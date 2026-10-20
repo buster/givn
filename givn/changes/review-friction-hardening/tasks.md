@@ -96,10 +96,10 @@ Evidence:
 
 ## Scenario 3 — Missing required sections and a malformed interaction table are reported together
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
-- [ ] COMMIT
+- [x] RED
+- [x] GREEN
+- [x] REFACTOR
+- [x] COMMIT
 
 Design constraints:
 
@@ -111,11 +111,11 @@ Design constraints:
 
 Evidence:
 
-- RED output: `<paste>`
-- GREEN output: `<paste>`
-- REFACTOR output: `<paste>`
-- Production files: `<list>`
-- COMMIT: `<hash>`
+- RED output: `stderr missing "document schema does not recognise '## Success guarantee'": ... document schema does not recognise '## Minimal guarantee'` (exit 1)
+- GREEN output: `1 feature, 1 scenario (1 passed), 5 steps (5 passed)`
+- REFACTOR output: `cargo fmt`; scenario still passes.
+- Production files: `tests/steps/workflow_enforcement_steps.rs`, the feature file, and the already-committed parser.
+- COMMIT: a71cfd2a8b773681d25f6c824d923844219c26d3
 
 ## Scenario 4 — One use-case parse failure is reported once across several delta capabilities
 
