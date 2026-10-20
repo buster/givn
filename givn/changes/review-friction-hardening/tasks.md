@@ -142,10 +142,10 @@ Evidence:
 
 ## Scenario 5 — Review validates an active delta use-case narrative even for an extension
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
-- [ ] COMMIT
+- [x] RED
+- [x] GREEN
+- [x] REFACTOR
+- [x] COMMIT
 
 Design constraints:
 
@@ -157,11 +157,11 @@ Design constraints:
 
 Evidence:
 
-- RED output: `<paste>`
-- GREEN output: `<paste>`
-- REFACTOR output: `<paste>`
-- Production files: `<list>`
-- COMMIT: `<hash>`
+- RED output: the old binary exited 0 (`change verification receipt passed`) and never parsed the replacement narrative, so `Then the command exits non-zero` failed.
+- GREEN output: `1 feature, 1 scenario (1 passed), 5 steps (5 passed)`
+- REFACTOR output: `cargo fmt`; scenario still passes.
+- Production files: `tests/steps/workflow_enforcement_steps.rs` (EXTEND fixture and disposition), the feature file, and the already-committed narrative cache.
+- COMMIT: dcbd4541ccd52e2cacad52b15d1b746d19796848
 
 ## Scenario 6 — Review accepts a green proof after documentation-only review edits
 

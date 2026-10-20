@@ -299,12 +299,17 @@ fn write_fixture_change_receipt(world: &GivnWorld, id: &str) {
                 .to_string()
         }
     };
+    let backend = givn::scm::select(&root).expect("select backend for receipt");
+    let manifest = givn::config::manifest::Manifest::load_embedded().expect("embedded manifest");
+    let tested_content_digest = givn::proof::digest_tested_content(&root, &backend, id, &manifest)
+        .expect("digest tested content");
     givn::proof::write_change_receipt(
         &root,
         &change,
         id,
         &head,
         "./emit-result.sh regular",
+        &tested_content_digest,
         givn::proof::RunnerResult {
             scope: None,
             total: 2,
@@ -1140,6 +1145,26 @@ fn write_review_fixture(
     capabilities: &[&str],
     routing: &[(&str, &str)],
 ) {
+    write_review_fixture_with_options(
+        world,
+        id,
+        usecase_dir,
+        contract,
+        capabilities,
+        routing,
+        false,
+    );
+}
+
+fn write_review_fixture_with_options(
+    world: &mut GivnWorld,
+    id: &str,
+    usecase_dir: &str,
+    contract: &str,
+    capabilities: &[&str],
+    routing: &[(&str, &str)],
+    archive_ready: bool,
+) {
     scaffold_init_root_change(world, id);
     let change = change_dir_for(world, id);
     let specs = change.join("specs").join(usecase_dir);
@@ -1163,10 +1188,25 @@ fn write_review_fixture(
         );
         std::fs::write(specs.join(format!("{capability}.feature")), feature).unwrap();
     }
+    if archive_ready {
+        disable_coverage_addon(world);
+        std::fs::write(
+            change.join("tasks.md"),
+            "- [x] COMMIT: a1b2c3d4 -- Fixture scenario\n",
+        )
+        .unwrap();
+        std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
+        std::fs::create_dir_all(project_root(world).join("src")).unwrap();
+        std::fs::write(
+            project_root(world).join("src/lib.rs"),
+            "pub fn fixture() -> u32 { 1 }\n",
+        )
+        .unwrap();
+    }
     std::fs::write(change.join("design.md"), "# Design\n").unwrap();
     std::fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n").unwrap();
     let mut review = String::from(
-        "REVIEW: PASS\nREADME-IMPACT: none\n\n## Overlap dispositions\n\n         | Scenario A | Scenario B | Disposition |\n|---|---|---|\n",
+        "REVIEW: PASS\nREADME-IMPACT: none\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n",
     );
     for (index, left) in capabilities.iter().enumerate() {
         for right in capabilities.iter().skip(index + 1) {
@@ -1551,5 +1591,98 @@ fn stderr_names_replacement_narrative(world: &mut GivnWorld) {
     assert!(
         text.contains("unknown heading '## Guarantees'"),
         "stderr missing replacement heading: {text}"
+    );
+}
+
+#[given(
+    "a clean committed change with a green change verification receipt recorded at one revision"
+)]
+fn review_proof_fixture(world: &mut GivnWorld) {
+    let contract = review_contract(
+        "review-proof-demo",
+        None,
+        "- alpha-capability",
+        &valid_interactions(&["alpha-capability"]),
+        "- A valid example.",
+        "",
+    );
+    write_review_fixture_with_options(
+        world,
+        "review-proof-demo",
+        "review-proof-demo",
+        &contract,
+        &["alpha-capability"],
+        &[("alpha-capability", "NEW in review-proof-demo")],
+        false,
+    );
+    world.verification_invocations_before = Some(invocation_count(world));
+    world.skip_receipt_autowrite = true;
+}
+
+fn invocation_count(world: &GivnWorld) -> usize {
+    let id = world
+        .last_change_id
+        .clone()
+        .expect("a change id is required");
+    let path = project_root(world).join(format!("givn/changes/{id}/verification/invocations.log"));
+    std::fs::read_to_string(path)
+        .map(|text| text.lines().count())
+        .unwrap_or(0)
+}
+
+#[given(
+    "the developer commits only proposal, design, tasks, review, arc42, and use-case narrative edits after that revision"
+)]
+fn commit_documentation_only_review_edits(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let change = change_dir_for(world, &id);
+    for name in ["proposal.md", "design.md", "review.md"] {
+        let path = change.join(name);
+        let mut content = std::fs::read_to_string(&path).unwrap_or_default();
+        content.push_str("\nDocumentation-only review edit.\n");
+        std::fs::write(path, content).unwrap();
+    }
+    let head = crate::steps::archive_proof_support::current_revision(world);
+    std::fs::write(
+        change.join("tasks.md"),
+        format!("- [x] COMMIT: {head} -- Documentation-only review edit\n"),
+    )
+    .unwrap();
+    std::fs::write(
+        change.join("arc42.md"),
+        "## Status\n\nSTATUS: DONE\n\nDocumentation-only review edit.\n",
+    )
+    .unwrap();
+    let usecase = change.join("specs").join(&id).join("usecase.md");
+    let content = std::fs::read_to_string(&usecase).unwrap();
+    std::fs::write(
+        usecase,
+        content.replace(
+            "- Structural failures outrank other findings.",
+            "- Structural failures outrank other findings.\n- Documentation-only review edit.",
+        ),
+    )
+    .unwrap();
+    common::commit_fixture(world.env.as_ref().unwrap());
+}
+
+#[then("the change suite did not run again")]
+fn change_suite_did_not_run_again(world: &mut GivnWorld) {
+    let before = world
+        .verification_invocations_before
+        .expect("the fixture must record the invocation count");
+    let after = invocation_count(world);
+    assert_eq!(
+        after, before,
+        "the change suite ran again: {before} -> {after} invocations"
+    );
+}
+
+#[then("stdout says the change verification receipt was reused")]
+fn stdout_says_receipt_reused(world: &mut GivnWorld) {
+    let text = stdout(world);
+    assert!(
+        text.contains("reused across documentation-only revision"),
+        "stdout missing reuse message: {text}"
     );
 }

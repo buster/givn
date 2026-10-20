@@ -52,7 +52,7 @@ Feature: Review diagnostics and proof reuse
     Then the command exits non-zero
     And stderr names the replacement narrative's title and unknown heading
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review accepts a green proof after documentation-only review edits
     Given a clean committed change with a green change verification receipt recorded at one revision
     And the developer commits only proposal, design, tasks, review, arc42, and use-case narrative edits after that revision

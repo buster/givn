@@ -56,6 +56,43 @@ impl FossilCheckout {
         Ok(id.to_string())
     }
 
+    /// Tracked paths plus untracked (`EXTRA`) paths, relative to the root.
+    pub fn content_paths(&self) -> Result<Vec<crate::scm::ContentEntry>> {
+        let mut paths = Vec::new();
+        let listed = self.run(&["ls"])?;
+        if !listed.status.success() {
+            bail!(
+                "`fossil ls` failed in '{}': {}",
+                self.root.display(),
+                stderr(&listed)
+            );
+        }
+        for line in String::from_utf8_lossy(&listed.stdout).lines() {
+            let path = line.trim();
+            if !path.is_empty() {
+                paths.push(PathBuf::from(path));
+            }
+        }
+        let extras = self.run(&["extras"])?;
+        if extras.status.success() {
+            for line in String::from_utf8_lossy(&extras.stdout).lines() {
+                let path = line.trim().trim_start_matches("EXTRA ").trim();
+                if !path.is_empty() {
+                    paths.push(PathBuf::from(path));
+                }
+            }
+        }
+        paths.sort();
+        paths.dedup();
+        Ok(paths
+            .into_iter()
+            .map(|path| crate::scm::ContentEntry {
+                path,
+                gitlink: None,
+            })
+            .collect())
+    }
+
     /// Changed paths relative to the root, including `EXTRA` entries.
     pub fn dirty_entries(&self) -> Result<Vec<PathBuf>> {
         let output = self.run(&["changes", "--differ"])?;

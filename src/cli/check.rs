@@ -416,12 +416,15 @@ fn run_change_verification(
         "the change verification",
     )?;
     let head = backend.revision()?;
+    let tested_content_digest =
+        crate::proof::digest_tested_content(project_root, &backend, change_id, manifest)?;
     crate::proof::write_change_receipt(
         project_root,
         &change_dir,
         change_id,
         &head,
         &manifest.verify.command,
+        &tested_content_digest,
         result.clone(),
         crate::proof::unix_now(),
     )?;
@@ -444,26 +447,35 @@ fn check_change_receipt(
     })?;
     let backend = crate::scm::select(project_root)?;
     check_scenario_commits(&backend, &change_dir)?;
-    let head = backend.revision()?;
-    if !receipt.is_current(&change_dir, &head, &manifest.verify.command)? {
-        let features = crate::proof::digest_features(&change_dir.join("specs"))?;
-        anyhow::bail!(
-            "change verification receipt is stale for '{}': receipt head {}, current head {head}; \
-             receipt features {}, current features {features}; receipt command {} ({:?}), current command {} ({:?}). \
-             Run `givn check tasks --change {change_id}` again.",
-            change_id,
-            receipt.head,
-            receipt.features_digest,
-            receipt.command_digest,
-            receipt.command,
-            crate::proof::digest_text(&manifest.verify.command),
-            manifest.verify.command
-        );
+    match receipt.freshness(manifest, &change_dir, &backend, project_root)? {
+        crate::proof::ProofStatus::Current => {
+            println!(
+                "  ✓ change verification receipt passed ({} scenario(s) at {})",
+                receipt.result.total, receipt.head
+            );
+        }
+        crate::proof::ProofStatus::DocumentationOnly {
+            tested_revision,
+            current_revision,
+        } => {
+            println!(
+                "  ✓ change verification receipt reused across documentation-only revision \
+                 {current_revision} (tested at {tested_revision}, {} scenario(s))",
+                receipt.result.total
+            );
+        }
+        crate::proof::ProofStatus::Stale(reasons) => {
+            let details = reasons
+                .iter()
+                .map(|reason| format!("  - {}", reason.render()))
+                .collect::<Vec<_>>()
+                .join("\n");
+            anyhow::bail!(
+                "change verification receipt is stale for '{change_id}':\n{details}\n\
+                 Run `givn check tasks --change {change_id}` again."
+            );
+        }
     }
-    println!(
-        "  ✓ change verification receipt passed ({} scenario(s) at {})",
-        receipt.result.total, receipt.head
-    );
     Ok(())
 }
 
