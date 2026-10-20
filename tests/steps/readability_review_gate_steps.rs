@@ -881,6 +881,33 @@ fn rationale_complete(world: &mut GivnWorld, unit: String) {
     gate(env(world)).write_rationale(&unit, &spec);
 }
 
+#[given(regex = r#"^a rationale for "([^"]+)" has an independent reviewer$"#)]
+fn rationale_independent(world: &mut GivnWorld, unit: String) {
+    let spec = spec_for(&world.readability_gate, &unit);
+    gate(env(world)).write_rationale(&unit, &spec);
+}
+
+#[given(regex = r#"^a rationale for "([^"]+)" omits "Reviewed-by:"$"#)]
+fn rationale_omits_reviewer(world: &mut GivnWorld, unit: String) {
+    let mut spec = spec_for(&world.readability_gate, &unit);
+    spec.reviewed_by = None;
+    gate(env(world)).write_rationale(&unit, &spec);
+}
+
+#[given(regex = r#"^a rationale for "([^"]+)" records "Reviewed-by: agent"$"#)]
+fn rationale_self_review(world: &mut GivnWorld, unit: String) {
+    let mut spec = spec_for(&world.readability_gate, &unit);
+    spec.reviewed_by = Some("agent".to_string());
+    gate(env(world)).write_rationale(&unit, &spec);
+}
+
+#[given(regex = r#"^a rationale for "([^"]+)" records "Review verdict: reject"$"#)]
+fn rationale_reject(world: &mut GivnWorld, unit: String) {
+    let mut spec = spec_for(&world.readability_gate, &unit);
+    spec.review_verdict = Some("reject".to_string());
+    gate(env(world)).write_rationale(&unit, &spec);
+}
+
 #[given(regex = r#"^a rationale for "([^"]+)" carries "Follow-up:" and "Expiry:"$"#)]
 fn rationale_temporary(world: &mut GivnWorld, unit: String) {
     let mut spec = spec_for(&world.readability_gate, &unit);

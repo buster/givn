@@ -413,7 +413,7 @@ Finding: existing-grown\n\
 Evidence: 620 -> 700 code lines, 8 public methods; every call site is in src/engine.rs.\n\
 Why this shape is right: Engine owns the engine state machine and its phase order, so splitting it would move the transition rules into two modules.\n\
 Alternatives considered: Extract the renderer into a separate module. Rejected: rendering already delegates to the report module and the extraction adds indirection.\n\
-Owner: givn-maintainer--owner\n";
+Owner: givn-maintainer--owner\nAuthor: agent\nReviewed-by: fresh-context-reviewer\nReview verdict: accept\n";
 
 #[test]
 fn a_justified_finding_with_a_complete_rationale_passes() {
@@ -602,7 +602,7 @@ fn two_units_with_the_same_rationale_slug_fail() {
          Evidence: 620 code lines, 8 public methods.\n\
          Why this shape is right: C owns the C state machine and its phase order, so splitting it would move the transition rules into two modules.\n\
          Alternatives considered: Extract the renderer. Rejected: rendering delegates already and the extraction adds indirection.\n\
-         Owner: givn-maintainer--owner\n",
+         Owner: givn-maintainer--owner\nAuthor: agent\nReviewed-by: fresh-context-reviewer\nReview verdict: accept\n",
     );
 
     let (passed, text) =
@@ -639,7 +639,7 @@ fn a_file_move_closes_the_old_unit_and_needs_a_decision_for_the_new_unit() {
          Evidence: 620 code lines, 8 public methods; every call site is in src/core.rs.\n\
          Why this shape is right: Engine owns the engine state machine and its phase order, so splitting it would move the transition rules into two modules.\n\
          Alternatives considered: Extract the renderer. Rejected: rendering delegates already and the extraction adds indirection.\n\
-         Owner: givn-maintainer--owner\n",
+         Owner: givn-maintainer--owner\nAuthor: agent\nReviewed-by: fresh-context-reviewer\nReview verdict: accept\n",
     );
     repo.write(
         "givn/changes/test-change/review.md",
@@ -691,7 +691,7 @@ fn a_data_only_type_is_exempt_and_its_module_can_be_justified() {
          Evidence: 620 code lines in one file; the enum carries no behavior.\n\
          Why this shape is right: The status module owns the exhaustive status vocabulary and its ordering, so splitting the variants would create a second source of truth.\n\
          Alternatives considered: Split the enum into per-domain enums. Rejected: every caller matches the full vocabulary and the split would add conversion glue.\n\
-         Owner: givn-maintainer--owner\n",
+         Owner: givn-maintainer--owner\nAuthor: agent\nReviewed-by: fresh-context-reviewer\nReview verdict: accept\n",
     );
     repo.write(
         "givn/changes/test-change/review.md",

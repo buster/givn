@@ -245,6 +245,9 @@ pub(crate) struct RationaleSpec {
     pub(crate) why: String,
     pub(crate) alternatives: String,
     pub(crate) owner: Option<String>,
+    pub(crate) author: Option<String>,
+    pub(crate) reviewed_by: Option<String>,
+    pub(crate) review_verdict: Option<String>,
     pub(crate) follow_up: Option<String>,
     pub(crate) expiry: Option<String>,
 }
@@ -273,6 +276,9 @@ impl RationaleSpec {
                 "Extract the renderer into a separate module. Rejected: rendering already delegates to the report module, and the extraction would add indirection without removing a responsibility."
                     .to_string(),
             owner: Some("givn-maintainer--owner".to_string()),
+            author: Some("agent".to_string()),
+            reviewed_by: Some("fresh-context-reviewer".to_string()),
+            review_verdict: Some("accept".to_string()),
             follow_up: None,
             expiry: None,
         }
@@ -288,6 +294,15 @@ impl RationaleSpec {
         text.push_str(&format!("Alternatives considered: {}\n", self.alternatives));
         if let Some(owner) = &self.owner {
             text.push_str(&format!("Owner: {owner}\n"));
+        }
+        if let Some(author) = &self.author {
+            text.push_str(&format!("Author: {author}\n"));
+        }
+        if let Some(reviewed_by) = &self.reviewed_by {
+            text.push_str(&format!("Reviewed-by: {reviewed_by}\n"));
+        }
+        if let Some(verdict) = &self.review_verdict {
+            text.push_str(&format!("Review verdict: {verdict}\n"));
         }
         if let Some(follow_up) = &self.follow_up {
             text.push_str(&format!("Follow-up: {follow_up}\n"));
