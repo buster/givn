@@ -56,7 +56,7 @@ Feature: Readability report
     Then the report classifies the unit as within-limits
     And the report recommends no action
 
-  @givn.added @wip
+  @givn.added
   Scenario: A type one line over the readable size limit is a finding
     Given a production source unit with 501 code lines and cohesive methods
     When the readability report assesses the unit
