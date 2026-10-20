@@ -231,14 +231,13 @@ fn parse_scenario_commits(content: &str) -> Vec<ScenarioCommit> {
                 checked,
                 hash: None,
             });
-        } else if let Some((checked, hash)) = commit_line(line) {
-            if let Some(current) = scenarios.last_mut() {
-                if current.hash.is_none() {
-                    current.hash = hash;
-                    if checked {
-                        current.checked = true;
-                    }
-                }
+        } else if let Some((checked, hash)) = commit_line(line)
+            && let Some(current) = scenarios.last_mut()
+            && current.hash.is_none()
+        {
+            current.hash = hash;
+            if checked {
+                current.checked = true;
             }
         }
     }
