@@ -395,7 +395,6 @@ impl FileBuilder {
                         &function.sig,
                         &self.path,
                         &self.module_path,
-                        true,
                         Visibility::Public,
                         &self.content,
                     )
@@ -516,7 +515,6 @@ fn method_without_body(
     sig: &syn::Signature,
     file: &RepoPath,
     module_path: &str,
-    trait_method: bool,
     visibility: Visibility,
     content: &str,
 ) -> Method {
