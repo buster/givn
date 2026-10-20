@@ -713,7 +713,7 @@ CLI scenarios.
 |---|---|
 | `verify.command` | `./run-tests.sh --non-e2e` (already configured in `givn/commands.yaml`) |
 | `verify.e2e_command` | `./run-tests.sh --e2e` (already configured) |
-| Runner | `cargo nextest run --locked --test features_runner`, with `GIVN_CUCUMBER_TAGS='not @e2e'` or `'@e2e'`; `GIVN_TEST_RUNNER=cargo` falls back to `cargo test --locked --test features_runner -- --tags …` |
+| Runner | `cargo nextest run --locked --test features_runner`, with `GIVN_CUCUMBER_TAGS='not @e2e and not @givn.removed'` or `'@e2e and not @givn.removed'`; `GIVN_TEST_RUNNER=cargo` falls back to `cargo test --locked --test features_runner -- --tags …` |
 | Feature scope | `GIVN_FEATURES` selects the change delta in the gate; `./run-tests.sh` defaults to `givn/specs` |
 | Delta run | `GIVN_FEATURES=givn/changes/add-readability-report/specs ./run-tests.sh --non-e2e` |
 | Strict mode | `GivnWorld::cucumber().fail_on_skipped()` in `tests/features_runner.rs`; the binary exits non-zero when `stats.failed > 0 || stats.skipped > 0`. An undefined or pending step is skipped and therefore fails the run. |
