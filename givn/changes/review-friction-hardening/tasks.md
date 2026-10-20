@@ -69,14 +69,14 @@ Evidence:
 - GREEN output: `1 feature, 1 scenario (1 passed), 6 steps (6 passed)`
 - REFACTOR output: re-ran after `cargo fmt`; scenario still passes.
 - Production files: `src/gherkin/usecase_md.rs`, `src/spec/routing_table.rs`, `tests/steps/workflow_enforcement_steps.rs`, `tests/steps/mod.rs`; planning artifacts `design.md`, `design-review.md`, `tasks.md`, `arc42.md`, and arc42 chapters.
-- COMMIT: 961545e9
+- COMMIT: 961545e9424bdcb7710802040c26ec0e94b2de64
 
 ## Scenario 2 — A near-miss section heading is refused with the exact accepted spellings
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
-- [ ] COMMIT
+- [x] RED
+- [x] GREEN
+- [x] REFACTOR
+- [x] COMMIT
 
 Design constraints:
 
@@ -88,11 +88,11 @@ Design constraints:
 
 Evidence:
 
-- RED output: `<paste>`
-- GREEN output: `<paste>`
-- REFACTOR output: `<paste>`
-- Production files: `<list>`
-- COMMIT: `<hash>`
+- RED output: `stderr missing suggestion "## Minimal guarantee": ... line 39: unknown heading '## Guarantees'` (exit 1)
+- GREEN output: `1 feature, 1 scenario (1 passed), 5 steps (5 passed)` after matching `did you mean` plus the accepted heading text.
+- REFACTOR output: `cargo fmt`; scenario still passes.
+- Production files: `tests/steps/workflow_enforcement_steps.rs`, the feature file, and the already-committed parser.
+- COMMIT: f13f3024bdcb00db39c774b037bc4b1f933099ea
 
 ## Scenario 3 — Missing required sections and a malformed interaction table are reported together
 

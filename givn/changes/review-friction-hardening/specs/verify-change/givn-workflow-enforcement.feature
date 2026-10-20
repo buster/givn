@@ -27,7 +27,7 @@ Feature: Review diagnostics and proof reuse
     And stderr suggests "## Minimal guarantee"
     And stderr suggests "## Success guarantee"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Missing required sections and a malformed interaction table are reported together
     Given a clean committed change whose use-case contract omits "## Minimal guarantee" and "## Success guarantee"
     And the interaction table separator row has the wrong column count
