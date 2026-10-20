@@ -489,8 +489,17 @@ fn review(request: &GateRequest) -> Result<GateOutcome> {
     ));
 
     let touched = touched::select(&head_analysis, &base_assessment, &changed);
-    let mut gate_findings = findings::collect(&touched.units, &base_assessment, &head_assessment);
+    let gate_findings = findings::collect(&touched.units, &base_assessment, &head_assessment);
+    decide_outcome(request, base, touched.units.len(), gate_findings, failures)
+}
 
+fn decide_outcome(
+    request: &GateRequest,
+    base: ChangeBase,
+    touched: usize,
+    mut gate_findings: Vec<GateFinding>,
+    mut failures: Vec<GateFailure>,
+) -> Result<GateOutcome> {
     let markers = markers::parse(&request.change_dir);
     let record_missing = !markers.present && !gate_findings.is_empty();
     failures.extend(findings::decide(
@@ -502,34 +511,30 @@ fn review(request: &GateRequest) -> Result<GateOutcome> {
     if record_missing {
         failures.push(GateFailure::MissingRecord(request.change_id.clone()));
     }
-    for line in &markers.unknown {
-        failures.push(GateFailure::UnknownMarker(line.clone()));
-    }
-    for reason in &markers.fail {
-        failures.push(GateFailure::FailMarker(reason.clone()));
-    }
+    let unknown = markers.unknown.clone();
+    failures.extend(unknown.into_iter().map(GateFailure::UnknownMarker));
+    failures.extend(markers.fail.iter().cloned().map(GateFailure::FailMarker));
     // A missing verdict is the actionable failure only when every finding was
     // otherwise decided. The complete MISSING block in the design ends with
     // the missing-decision count, not a second "missing PASS" failure.
-    let decision_failure = failures.iter().any(|failure| {
-        matches!(
-            failure,
-            GateFailure::Unaccounted { .. }
-                | GateFailure::InvalidFixed { .. }
-                | GateFailure::ConflictingDecisions { .. }
-                | GateFailure::MissingRationale { .. }
-                | GateFailure::InvalidRationale { .. }
-                | GateFailure::JustifiedWithoutFinding { .. }
-                | GateFailure::SlugCollision { .. }
-        )
-    });
-    if !gate_findings.is_empty()
+    let missing_verdict = !gate_findings.is_empty()
         && !matches!(markers.verdict, Some(Verdict::Pass))
         && markers.fail.is_empty()
         && !record_missing
         && markers.unknown.is_empty()
-        && !decision_failure
-    {
+        && !failures.iter().any(|failure| {
+            matches!(
+                failure,
+                GateFailure::Unaccounted { .. }
+                    | GateFailure::InvalidFixed { .. }
+                    | GateFailure::ConflictingDecisions { .. }
+                    | GateFailure::MissingRationale { .. }
+                    | GateFailure::InvalidRationale { .. }
+                    | GateFailure::JustifiedWithoutFinding { .. }
+                    | GateFailure::SlugCollision { .. }
+            )
+        });
+    if missing_verdict {
         failures.push(GateFailure::MissingVerdict);
     }
 
@@ -537,7 +542,7 @@ fn review(request: &GateRequest) -> Result<GateOutcome> {
     Ok(GateOutcome {
         base: Some(base),
         analyzed: true,
-        touched: touched.units.len(),
+        touched,
         findings: gate_findings,
         markers,
         failures,

@@ -543,7 +543,22 @@ struct ImplRecord {
 /// A name declared more than once is ambiguous: the impl is never merged and
 /// an `AmbiguousType` diagnostic is recorded. Same-file impls already attached
 /// by `FileBuilder` are left untouched.
-fn attach_impls(analysis: &mut Analysis, mut collector: ImplCollector) {
+fn attach_impls(analysis: &mut Analysis, collector: ImplCollector) {
+    let ImplCollector {
+        pending,
+        mut records,
+    } = collector;
+    attach_pending_impls(analysis, pending, &mut records);
+    resolve_trait_relations(analysis, records);
+}
+
+/// Merge every pending cross-file impl into its unique declaration and collect
+/// the trait relation facts for the second phase.
+fn attach_pending_impls(
+    analysis: &mut Analysis,
+    pending: Vec<PendingImpl>,
+    records: &mut Vec<ImplRecord>,
+) {
     let mut by_name: BTreeMap<String, Vec<usize>> = BTreeMap::new();
     for (index, unit) in analysis.units.iter().enumerate() {
         if matches!(unit.kind, UnitKind::Type(_)) {
@@ -551,7 +566,7 @@ fn attach_impls(analysis: &mut Analysis, mut collector: ImplCollector) {
         }
     }
 
-    for pending in collector.pending {
+    for pending in pending {
         let named = by_name.get(&pending.target).map(Vec::as_slice);
         let candidates: Vec<usize> = match named {
             Some([index]) => vec![*index],
@@ -578,7 +593,7 @@ fn attach_impls(analysis: &mut Analysis, mut collector: ImplCollector) {
                 unit.outline.extend(pending.outline);
                 unit.outline.sort_by_key(|item| item.order);
                 if let Some(trait_name) = pending.trait_name {
-                    collector.records.push(ImplRecord {
+                    records.push(ImplRecord {
                         implementor_id: unit.id.clone(),
                         trait_name,
                         file: pending.file,
@@ -604,7 +619,11 @@ fn attach_impls(analysis: &mut Analysis, mut collector: ImplCollector) {
             _ => {}
         }
     }
+}
 
+/// Resolve each recorded trait name to its unique trait and add the
+/// implementor relation on both sides.
+fn resolve_trait_relations(analysis: &mut Analysis, records: Vec<ImplRecord>) {
     let mut traits_by_name: BTreeMap<String, Vec<usize>> = BTreeMap::new();
     for (index, unit) in analysis.units.iter().enumerate() {
         if matches!(unit.kind, UnitKind::Type(TypeKind::Trait)) {
@@ -615,7 +634,7 @@ fn attach_impls(analysis: &mut Analysis, mut collector: ImplCollector) {
         }
     }
 
-    for record in collector.records {
+    for record in records {
         let matches = traits_by_name.get(&record.trait_name).map(Vec::as_slice);
         let Some([trait_index]) = matches else {
             if let Some(ambiguous) = matches.filter(|matches| matches.len() > 1) {

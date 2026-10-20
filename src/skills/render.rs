@@ -27,6 +27,11 @@ pub const KNOWN_ADDON_KEYS: &[&str] = &[
     "coverage",
 ];
 
+const OPEN_CONDITION: &str = "{{#if ";
+const CLOSE_CONDITION: &str = "{{/if}}";
+const ELSE_CONDITION: &str = "{{else}}";
+const CLOSE_BRACES: &str = "}}";
+
 /// Context variables injected into skill templates.
 pub struct SkillContext<'a> {
     pub change_id: &'a str,
@@ -116,7 +121,7 @@ fn render_lines(lines: &[&str], addons: &[(&str, bool)]) -> Result<String> {
             let inner = render_lines(&lines[branch_start..branch_end], addons)?;
             out.push_str(&inner);
             i = close_idx + 1;
-        } else if trimmed == "{{else}}" || trimmed == "{{/if}}" {
+        } else if is_else_condition(trimmed) || is_close_condition(trimmed) {
             bail!("stray '{}' outside a conditional block", trimmed);
         } else {
             out.push_str(line);
@@ -135,10 +140,22 @@ fn addon_enabled(addons: &[(&str, bool)], key: &str) -> bool {
         .unwrap_or(false)
 }
 
+fn is_open_condition(trimmed: &str) -> bool {
+    trimmed.starts_with(OPEN_CONDITION)
+}
+
+fn is_close_condition(trimmed: &str) -> bool {
+    trimmed == CLOSE_CONDITION
+}
+
+fn is_else_condition(trimmed: &str) -> bool {
+    trimmed == ELSE_CONDITION
+}
+
 /// Parse `{{#if addons.<name>}}` (trimmed) into the addon key.
 fn parse_open_condition(trimmed: &str) -> Option<&str> {
-    let inner = trimmed.strip_prefix("{{#if ")?;
-    let inner = inner.strip_suffix("}}")?;
+    let inner = trimmed.strip_prefix(OPEN_CONDITION)?;
+    let inner = inner.strip_suffix(CLOSE_BRACES)?;
     let key = inner.trim();
     key.strip_prefix("addons.")
 }
@@ -151,14 +168,14 @@ fn find_block_end(lines: &[&str], open_idx: usize) -> Result<(usize, Option<usiz
     let mut else_idx: Option<usize> = None;
     for (offset, raw) in lines.iter().enumerate().skip(open_idx + 1) {
         let trimmed = raw.trim();
-        if trimmed.starts_with("{{#if ") {
+        if is_open_condition(trimmed) {
             depth += 1;
-        } else if trimmed == "{{/if}}" {
+        } else if is_close_condition(trimmed) {
             depth -= 1;
             if depth == 0 {
                 return Ok((offset, else_idx));
             }
-        } else if depth == 1 && trimmed == "{{else}}" && else_idx.is_none() {
+        } else if depth == 1 && is_else_condition(trimmed) && else_idx.is_none() {
             else_idx = Some(offset);
         }
     }

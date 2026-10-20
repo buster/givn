@@ -542,23 +542,27 @@ fn target_merges(target: AgentTarget) -> &'static [fn(&Path) -> Result<()>] {
 
 fn sync_agent_integrations(project_root: &Path, targets: &[AgentTarget]) -> Result<()> {
     for target in targets {
-        for integration in integrations_of(*target) {
-            write_embedded_file(
-                project_root,
-                integration.relative,
-                integration.asset,
-                integration.executable,
-            )?;
-            println!("  integration: {}", integration.relative);
-        }
-        if let Some(file) = managed_registration_file(*target) {
-            println!("  integration: {file}");
-        }
-        for merge in target_merges(*target) {
-            merge(project_root)?;
-        }
+        sync_target_integrations(project_root, *target)?;
     }
+    Ok(())
+}
 
+fn sync_target_integrations(project_root: &Path, target: AgentTarget) -> Result<()> {
+    for integration in integrations_of(target) {
+        write_embedded_file(
+            project_root,
+            integration.relative,
+            integration.asset,
+            integration.executable,
+        )?;
+        println!("  integration: {}", integration.relative);
+    }
+    if let Some(file) = managed_registration_file(target) {
+        println!("  integration: {file}");
+    }
+    for merge in target_merges(target) {
+        merge(project_root)?;
+    }
     Ok(())
 }
 

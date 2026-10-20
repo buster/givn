@@ -172,129 +172,20 @@ fn classify_unit(unit: &SourceUnit, metrics: &UnitMetrics, analysis: &Analysis) 
 fn decide(unit: &SourceUnit, metrics: &UnitMetrics) -> (Classification, Vec<Evidence>) {
     let code_lines = MetricValue::Count(metrics.code_lines as u64);
     let over_type_limit = metrics.code_lines > 500;
-    let over_method_limit = metrics.max_method_code_lines > 100
-        || metrics.max_method_complexity > 50
-        || !metrics.method_findings().is_empty();
 
-    if let UnitKind::Type(type_kind) = unit.kind {
-        if (type_kind == TypeKind::Trait && over_type_limit) || metrics.public_methods > 50 {
-            return (
-                Classification::Interface,
-                vec![evidence(
-                    "type-kind-trait",
-                    MetricValue::Count(1),
-                    MetricValue::Count(1),
-                    Comparison::Equal,
-                )],
-            );
-        }
-        if matches!(type_kind, TypeKind::Struct | TypeKind::Enum)
-            && metrics.methods <= 1
-            && over_type_limit
-        {
-            return (
-                Classification::DataOnly,
-                vec![
-                    evidence(
-                        "type-code-lines",
-                        code_lines,
-                        MetricValue::Count(500),
-                        Comparison::GreaterThan,
-                    ),
-                    evidence(
-                        "type-method-count",
-                        MetricValue::Count(metrics.methods as u64),
-                        MetricValue::Count(1),
-                        Comparison::AtMost,
-                    ),
-                ],
-            );
-        }
-        if over_type_limit
-            && (metrics.lcom4 > 2 || metrics.tcc_permille.is_some_and(|tcc| tcc < 500))
-        {
-            return (
-                Classification::GodType,
-                vec![
-                    evidence(
-                        "type-code-lines",
-                        code_lines,
-                        MetricValue::Count(500),
-                        Comparison::GreaterThan,
-                    ),
-                    evidence(
-                        "type-lcom4",
-                        MetricValue::Count(metrics.lcom4 as u64),
-                        MetricValue::Count(2),
-                        Comparison::GreaterThan,
-                    ),
-                ],
-            );
-        }
-        if over_type_limit
-            && metrics.lcom4 <= 2
-            && metrics.tcc_permille.is_some_and(|tcc| tcc >= 800)
-        {
-            return (
-                Classification::CohesiveLargeType,
-                vec![evidence(
-                    "type-code-lines",
-                    code_lines,
-                    MetricValue::Count(500),
-                    Comparison::GreaterThan,
-                )],
-            );
-        }
-        if over_type_limit {
-            return (
-                Classification::CohesiveLargeType,
-                vec![evidence(
-                    "type-code-lines",
-                    code_lines,
-                    MetricValue::Count(500),
-                    Comparison::GreaterThan,
-                )],
-            );
-        }
+    if let UnitKind::Type(type_kind) = unit.kind
+        && let Some(decision) = classify_type(type_kind, metrics, code_lines, over_type_limit)
+    {
+        return decision;
     }
 
-    if unit.kind == UnitKind::Module {
-        if metrics.code_lines > 1000 {
-            return (
-                Classification::Module,
-                vec![evidence(
-                    "module-code-lines",
-                    code_lines,
-                    MetricValue::Count(1000),
-                    Comparison::GreaterThan,
-                )],
-            );
-        }
-        if (500..=1000).contains(&metrics.code_lines) && metrics.declared_types >= 2 {
-            return (
-                Classification::MultiTypeModule,
-                vec![evidence(
-                    "module-declared-types",
-                    MetricValue::Count(metrics.declared_types as u64),
-                    MetricValue::Count(2),
-                    Comparison::AtLeast,
-                )],
-            );
-        }
-        if (500..=1000).contains(&metrics.code_lines) {
-            return (
-                Classification::Module,
-                vec![evidence(
-                    "module-code-lines",
-                    code_lines,
-                    MetricValue::Count(500),
-                    Comparison::AtLeast,
-                )],
-            );
-        }
+    if unit.kind == UnitKind::Module
+        && let Some(decision) = classify_module(metrics, code_lines)
+    {
+        return decision;
     }
 
-    if over_method_limit {
+    if over_method_limit(metrics) {
         return (
             Classification::MethodLength,
             vec![evidence(
@@ -307,6 +198,124 @@ fn decide(unit: &SourceUnit, metrics: &UnitMetrics) -> (Classification, Vec<Evid
     }
 
     (Classification::WithinLimits, Vec::new())
+}
+
+fn classify_type(
+    type_kind: TypeKind,
+    metrics: &UnitMetrics,
+    code_lines: MetricValue,
+    over_type_limit: bool,
+) -> Option<(Classification, Vec<Evidence>)> {
+    if (type_kind == TypeKind::Trait && over_type_limit) || metrics.public_methods > 50 {
+        return Some((
+            Classification::Interface,
+            vec![evidence(
+                "type-kind-trait",
+                MetricValue::Count(1),
+                MetricValue::Count(1),
+                Comparison::Equal,
+            )],
+        ));
+    }
+    if matches!(type_kind, TypeKind::Struct | TypeKind::Enum)
+        && metrics.methods <= 1
+        && over_type_limit
+    {
+        return Some((
+            Classification::DataOnly,
+            vec![
+                evidence(
+                    "type-code-lines",
+                    code_lines,
+                    MetricValue::Count(500),
+                    Comparison::GreaterThan,
+                ),
+                evidence(
+                    "type-method-count",
+                    MetricValue::Count(metrics.methods as u64),
+                    MetricValue::Count(1),
+                    Comparison::AtMost,
+                ),
+            ],
+        ));
+    }
+    if over_type_limit && (metrics.lcom4 > 2 || metrics.tcc_permille.is_some_and(|tcc| tcc < 500)) {
+        return Some((
+            Classification::GodType,
+            vec![
+                evidence(
+                    "type-code-lines",
+                    code_lines,
+                    MetricValue::Count(500),
+                    Comparison::GreaterThan,
+                ),
+                evidence(
+                    "type-lcom4",
+                    MetricValue::Count(metrics.lcom4 as u64),
+                    MetricValue::Count(2),
+                    Comparison::GreaterThan,
+                ),
+            ],
+        ));
+    }
+    if over_type_limit {
+        return Some((
+            Classification::CohesiveLargeType,
+            vec![evidence(
+                "type-code-lines",
+                code_lines,
+                MetricValue::Count(500),
+                Comparison::GreaterThan,
+            )],
+        ));
+    }
+    None
+}
+
+fn classify_module(
+    metrics: &UnitMetrics,
+    code_lines: MetricValue,
+) -> Option<(Classification, Vec<Evidence>)> {
+    if metrics.code_lines > 1000 {
+        return Some((
+            Classification::Module,
+            vec![evidence(
+                "module-code-lines",
+                code_lines,
+                MetricValue::Count(1000),
+                Comparison::GreaterThan,
+            )],
+        ));
+    }
+    if (500..=1000).contains(&metrics.code_lines) && metrics.declared_types >= 2 {
+        return Some((
+            Classification::MultiTypeModule,
+            vec![evidence(
+                "module-declared-types",
+                MetricValue::Count(metrics.declared_types as u64),
+                MetricValue::Count(2),
+                Comparison::AtLeast,
+            )],
+        ));
+    }
+    if (500..=1000).contains(&metrics.code_lines) {
+        return Some((
+            Classification::Module,
+            vec![evidence(
+                "module-code-lines",
+                code_lines,
+                MetricValue::Count(500),
+                Comparison::AtLeast,
+            )],
+        ));
+    }
+    None
+}
+
+fn over_method_limit(metrics: &UnitMetrics) -> bool {
+    metrics.max_method_code_lines > 100
+        || metrics.max_method_complexity > 50
+        || !metrics.method_findings().is_empty()
 }
 
 impl UnitMetrics {
