@@ -25,3 +25,11 @@ Feature: givn Workflow Enforcement
     When  the user runs `givn check tasks --change verify-demo`
     Then  the command exits non-zero
     And  stderr says the commit does not name the scenario
+
+  @givn.added
+  Scenario: One real revision per scenario passes the task check
+    Given  a clean committed givn project with a change whose delta specs pass
+    And  the change's tasks.md checks one scenario with its own commit
+    When  the user runs `givn check tasks --change verify-demo`
+    Then  the command exits 0
+    And  stdout says scenario commits passed
