@@ -337,7 +337,7 @@ impl HistoryRecorder {
     ///
     /// Best-effort by construction: a store that cannot be written warns and
     /// continues, and the outcome of the command itself is untouched.
-    pub fn finish(&self, outcome: &str, exit_code: i32) {
+    pub fn finish(&self, outcome: &str, exit_code: i32, error: Option<&str>) {
         // `off` is absolute: no store append, no pending state, and no
         // record-side ignore write. The mode is resolved before anything is
         // created, so a disabled project gains no file from its own commands.
@@ -357,7 +357,15 @@ impl HistoryRecorder {
         let mut command = self.entry("command", &self.command, Some(self.label.clone()));
         command.duration_ms = Some(self.started.elapsed().as_millis() as u64);
         command.outcome = outcome.to_string();
-        command.data = Some(serde_json::json!({ "exit_code": exit_code }));
+        let mut data = serde_json::Map::new();
+        data.insert("exit_code".to_string(), serde_json::Value::from(exit_code));
+        if let Some(error) = error {
+            data.insert(
+                "error".to_string(),
+                serde_json::Value::String(bound_error(error)),
+            );
+        }
+        command.data = Some(serde_json::Value::Object(data));
         let command_id = match self.store.append(std::slice::from_mut(&mut command)) {
             Ok(first_id) => first_id,
             Err(error) => return warn_unwritten(&self.store, &error),

@@ -47,7 +47,7 @@ pub(crate) struct DevelopmentRecordState {
 /// The verification command the bounded-label fixture declares: it really runs
 /// (so its step entry is measured) and its complete text is longer than the
 /// record's label limit, so the complete text must not survive into the store.
-pub(crate) const LONG_VERIFY_COMMAND: &str = "sleep 1 # 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789";
+pub(crate) const LONG_VERIFY_COMMAND: &str = "sleep 1; printf '\\173\\42total\\42:1,\\42passed\\42:1,\\42failed\\42:0,\\42skipped\\42:0\\175' > $GIVN_RESULT_FILE; # 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789";
 
 /// The byte-level form of "nothing earlier was rewritten": the store still
 /// begins with the bytes it held before the scenario's next command. Both
@@ -750,7 +750,14 @@ fn user_runs_that_command(world: &mut GivnWorld) {
         .last_change_id
         .clone()
         .expect("the long-command fixture ran first");
+    common::commit_fixture(env);
     let out = common::run_givn(env, &["check", "tasks", "--change", &change]);
+    assert!(
+        out.status.success(),
+        "check tasks failed: stderr={} stdout={}",
+        String::from_utf8_lossy(&out.stderr),
+        String::from_utf8_lossy(&out.stdout)
+    );
     world.last_command = Some("check".to_string());
     world.last_output = Some(out);
 }
@@ -828,8 +835,13 @@ fn record_holds_no_complete_command_text(world: &mut GivnWorld) {
         .as_str()
         .unwrap_or_else(|| panic!("the step entry carries no label: {step}"));
     assert!(
-        text.lines().any(|line| line.contains(label)),
-        "the record does not carry the step's bounded label: {text}"
+        text.lines().any(|line| {
+            serde_json::from_str::<Value>(line)
+                .ok()
+                .and_then(|value| value["label"].as_str().map(str::to_string))
+                .is_some_and(|recorded| recorded == label)
+        }),
+        "the record does not carry the step's bounded label {label:?}: {text}"
     );
 }
 
@@ -2839,4 +2851,110 @@ fn entry_content_never_exceeds_the_entry_cap(world: &mut GivnWorld) {
         json!(true),
         "the cut bundle is not marked truncated: {entry}"
     );
+}
+// --- event record quality ------------------------------------------------
+
+#[when("the agent reports a turn with inline usage, an answered question, and a failed tool")]
+fn report_quality_payload(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("a project root");
+    let payload = crate::steps::development_timeline_support::intake_payload(
+        None,
+        None,
+        vec![
+            serde_json::json!({
+                "kind": "turn",
+                "at": "2026-10-19T10:00:00.000Z",
+                "turn": 1,
+                "model": "fixture-model",
+                "provider": "fixture-provider",
+                "variant": "fixture-variant",
+                "usage": {
+                    "input": 10,
+                    "output": 5,
+                    "total_tokens": 15,
+                    "model": "fixture-model"
+                }
+            }),
+            serde_json::json!({
+                "kind": "question",
+                "at": "2026-10-19T10:00:01.000Z",
+                "label": "Approve the change?",
+                "question": {"text": "Approve the change?", "truncated": false},
+                "selected": "yes",
+                "answered_by": "human",
+                "answered_at": "2026-10-19T10:00:02.000Z",
+                "answer": {"text": "yes", "truncated": false}
+            }),
+            serde_json::json!({
+                "kind": "tool",
+                "at": "2026-10-19T10:00:03.000Z",
+                "tool": "Bash",
+                "outcome": "failed",
+                "error": "error: first line\nsecond line",
+                "duration_ms": 12
+            }),
+        ],
+    );
+    let out = crate::steps::development_timeline_support::report_intake(env, &payload);
+    assert!(
+        out.status.success(),
+        "intake failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    world.last_output = Some(out);
+}
+
+fn quality_entries(world: &GivnWorld) -> Vec<serde_json::Value> {
+    let env = world.env.as_ref().expect("a project root");
+    crate::steps::development_timeline_support::record_entries(&env.root())
+}
+
+#[then("the turn carries one inline usage representation")]
+fn turn_has_inline_usage(world: &mut GivnWorld) {
+    let entries = quality_entries(world);
+    let turn = entries.iter().find(|e| e["kind"] == "turn").expect("turn");
+    assert_eq!(turn["data"]["usage"]["input"], 10);
+}
+
+#[then("the linked usage entry is marked derived")]
+fn linked_usage_derived(world: &mut GivnWorld) {
+    let entries = quality_entries(world);
+    let usage = entries
+        .iter()
+        .find(|e| e["kind"] == "usage")
+        .expect("usage");
+    assert_eq!(usage["data"]["derived"], true);
+    let turn = entries.iter().find(|e| e["kind"] == "turn").expect("turn");
+    assert_eq!(usage["parent"], turn["id"]);
+}
+
+#[then("the question records its selected option, source, and answer time")]
+fn question_answer_attributable(world: &mut GivnWorld) {
+    let entries = quality_entries(world);
+    let question = entries
+        .iter()
+        .find(|e| e["kind"] == "question")
+        .unwrap_or_else(|| panic!("entries: {entries:#?}"));
+    assert_eq!(question["data"]["selected"], "yes");
+    assert_eq!(question["data"]["source"], "human");
+    assert_eq!(question["data"]["answered_at"], "2026-10-19T10:00:02.000Z");
+}
+
+#[then("the failed tool records a bounded first error line")]
+fn failed_tool_bounded_error(world: &mut GivnWorld) {
+    let entries = quality_entries(world);
+    let tool = entries.iter().find(|e| e["kind"] == "tool").expect("tool");
+    assert_eq!(tool["data"]["error"], "error: first line");
+}
+
+#[then("the usage entry names the provider, model, and variant")]
+fn usage_names_identity(world: &mut GivnWorld) {
+    let entries = quality_entries(world);
+    let usage = entries
+        .iter()
+        .find(|e| e["kind"] == "usage")
+        .expect("usage");
+    assert_eq!(usage["data"]["model"], "fixture-model");
+    assert_eq!(usage["data"]["provider"], "fixture-provider");
+    assert_eq!(usage["data"]["variant"], "fixture-variant");
 }

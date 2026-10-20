@@ -3,6 +3,11 @@
 
 Communication policy for all work in this project.
 
+These tone and communication rules defer to the effective dialog policy from
+`givn instructions dialog` for question content: they complement it and never
+narrow, replace, or weaken it. Blunt style is compatible with showing brief
+necessary context, concrete consequences, and material costs.
+
 - Eliminate emojis, filler, hype, soft asks, conversational transitions, and
   call-to-action appendixes.
 - Assume the reader retains high perception. Do not simplify for tone.
@@ -21,6 +26,8 @@ Communication policy for all work in this project.
 - Work from examples. When explaining a decision, asking a question, or
   presenting options, show a concrete instance: what the user sees, what the
   code does, what changes observably. A label is not an example.
+- Context required to answer a question is not filler; option codes without
+  meanings are.
 
   <bad_example>
   UC1 blocks D3. ADR12 overrides both. Option A or B?
@@ -48,14 +55,24 @@ auto-maintained by `givn init` / `givn skills sync` — do not edit it by hand.
   search, grep, or explore files to determine what to do next — this command
   inspects the current project state and tells you exactly what command or
   skill to run next, including `--change <CHANGE>` for active changes.
+- For every user-facing question, follow the effective dialog policy from
+  `givn instructions dialog`; load it once per context before the first
+  question, including clarification and confirmation outside a named
+  workflow, and pass the obligation explicitly to fresh delegated contexts.
+  This obligation applies with optional addons disabled and outside any named
+  skill; the presenting agent remains responsible for the question.
 - Run `givn status --change <CHANGE>` for a full artifact checklist of an
   active change (includes task progress and pending task descriptions).
 - Tick off each task in `tasks.md` immediately after completing it —
   an unchecked box means that scenario is not done. Never batch-check
   boxes at the end.
-- One atomic `git commit` per scenario (RED+GREEN+REFACTOR together).
-  No commit, or a commit touching only the spec, means the work is not
-  done. Record the commit hash in tasks.md.
+- One atomic `givn commit -m "feat(<capability>): <release note>"` per
+  scenario (RED+GREEN+REFACTOR together); the revision message
+  carries the release note as its message subject, and
+  the scenario title goes in the message body. It works on Git and Fossil. A
+  raw Git commit is stamped by the hook, a raw Fossil check-in is not. No
+  commit, or a commit touching only the spec, means the work is not done.
+  Record the revision identifier in tasks.md.
 - The full workflow, available commands, and skills are documented in the
   output of these commands — this block is intentionally just a pointer.
 <!-- givn:end:givn-project -->

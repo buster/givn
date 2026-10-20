@@ -1,6 +1,14 @@
 #!/bin/sh
 set -eu
 
+# Formatting and lints are part of the suite: a green verification run must
+# also be a formatted, warning-free tree. The e2e replay skips clippy because
+# the regular scope already ran it; fmt is cheap and runs everywhere.
+cargo fmt --all -- --check
+if [ "${1:-}" != "--e2e" ]; then
+    cargo clippy --locked --all-targets -- -D warnings
+fi
+
 # Feature scope: the caller either scopes the suite to a change delta via
 # GIVN_FEATURES (as the check review/tasks gate does) or the permanent specs
 # run. There is deliberately no path sniffing here.

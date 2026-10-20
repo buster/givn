@@ -1,0 +1,11 @@
+--- a/app.py
++++ b/app.py
+@@ -124,6 +124,8 @@
+         if book_id not in self.books:
+             raise RequestError("unknown_book")
+         book = self.books[book_id]
++        if book.get("reference_only"):
++            raise RequestError("reference_only")
+         if book.get("loaned_to") != member_id:
+             raise RequestError("loan_not_found")
+         book["loaned_to"] = None

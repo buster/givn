@@ -1,51 +1,110 @@
+"""Trial workspace creation and initialization."""
+
+from __future__ import annotations
+
 import os
 import shutil
 import subprocess
 import tempfile
+from pathlib import Path
+
+from givn_harness.benchmark import Benchmark, copy_workspace_inputs
 
 
-def create_workspace(workspace_root: str) -> str:
-    os.makedirs(workspace_root, exist_ok=True)
-    workspace_path = tempfile.mkdtemp(dir=workspace_root)
-    return workspace_path
+class WorkspaceError(RuntimeError):
+    """A trial workspace could not be initialized safely."""
 
 
-def init_workspace(workspace_path: str, agent: str = "opencode") -> None:
-    subprocess.run(
-        ["git", "init"],
-        cwd=workspace_path,
-        capture_output=True,
-        check=True,
+def create_workspace(root: str | Path, label: str) -> Path:
+    root_path = Path(root).resolve()
+    root_path.mkdir(parents=True, exist_ok=True)
+    prefix = "".join(char if char.isalnum() or char in "-_" else "-" for char in label)[:40]
+    return Path(tempfile.mkdtemp(prefix=prefix + "-", dir=str(root_path)))
+
+
+def init_git(workspace: Path, *, user_name: str = "givn harness", user_email: str = "harness@localhost") -> dict:
+    completed = subprocess.run(
+        ["git", "init"], cwd=workspace, capture_output=True, text=True
     )
-    givn_binary = os.environ.get("GIVN_BINARY", "givn")
-    # `givn init` requires an explicit agent-target selection without a
-    # terminal; the harness scaffolds for the opencode-based agent runs.
-    subprocess.run(
-        [givn_binary, "init", "--agents", agent],
-        cwd=workspace_path,
+    if completed.returncode != 0:
+        raise WorkspaceError(f"git init failed: {completed.stderr.strip()}")
+    for key, value in (("user.name", user_name), ("user.email", user_email)):
+        subprocess.run(
+            ["git", "config", key, value],
+            cwd=workspace,
+            capture_output=True,
+            text=True,
+        )
+    return {"command": "git init", "exit_code": completed.returncode}
+
+
+def init_givn(workspace: Path, binary: str | Path, agent: str = "opencode") -> dict:
+    binary = str(binary)
+    completed = subprocess.run(
+        [binary, "init", "--agents", agent],
+        cwd=workspace,
         capture_output=True,
-        check=True,
+        text=True,
+        timeout=120,
     )
-    # Capture complete LLM-facing content for every harness run: the smoke's
-    # development report must show the actual prompts, tool input, and output.
-    config_path = os.path.join(workspace_path, "givn", "config.yaml")
-    with open(config_path, "a") as config:
-        config.write("\nrecord:\n  mode: full\n")
+    if completed.returncode != 0:
+        raise WorkspaceError(
+            f"givn init failed ({completed.returncode}): "
+            f"{(completed.stderr or completed.stdout).strip()[:1000]}"
+        )
+    config = workspace / "givn" / "config.yaml"
+    if not config.is_file():
+        raise WorkspaceError("givn init did not create givn/config.yaml")
+    with config.open("a", encoding="utf-8") as handle:
+        handle.write("\nrecord:\n  mode: full\n")
+    return {
+        "command": f"{binary} init --agents {agent}",
+        "exit_code": completed.returncode,
+        "stdout": completed.stdout.strip()[:2000],
+        "stderr": completed.stderr.strip()[:2000],
+    }
 
 
-def copy_task(workspace_path: str, task_path: str) -> str:
-    dest = os.path.join(workspace_path, "task.md")
-    shutil.copy(task_path, dest)
-    # A task may reference sibling inputs by bare filename (for example the
-    # shopping-list design zip and screenshot). Those files must be in the
-    # workspace: the sandbox has a private /tmp and cannot see the task source
-    # directory.
-    task_dir = os.path.dirname(os.path.abspath(task_path))
-    task_text = open(task_path, encoding="utf-8", errors="replace").read()
-    for entry in os.listdir(task_dir):
-        source = os.path.join(task_dir, entry)
-        if entry == "task.md" or not os.path.isfile(source):
-            continue
-        if entry in task_text:
-            shutil.copy2(source, os.path.join(workspace_path, entry))
-    return dest
+def _ensure_harness_ignore(workspace: Path) -> None:
+    path = workspace / ".gitignore"
+    existing = path.read_text(encoding="utf-8", errors="replace") if path.is_file() else ""
+    if ".harness/" in existing.splitlines():
+        return
+    with path.open("a", encoding="utf-8") as handle:
+        if existing and not existing.endswith("\n"):
+            handle.write("\n")
+        handle.write(".harness/\n")
+
+
+def initialize_workspace(
+    benchmark: Benchmark,
+    root: str | Path,
+    *,
+    label: str,
+    givn_binary: str | Path | None,
+    agent: str,
+) -> tuple[Path, dict]:
+    workspace = create_workspace(root, label)
+    copied = copy_workspace_inputs(benchmark, workspace)
+    git_info = init_git(workspace)
+    givn_info = None
+    if givn_binary is not None:
+        givn_info = init_givn(workspace, givn_binary, agent=agent)
+    _ensure_harness_ignore(workspace)
+    return workspace, {
+        "workspace": str(workspace),
+        "copied_inputs": [str(path.relative_to(workspace)) for path in copied],
+        "git": git_info,
+        "givn": givn_info,
+    }
+
+
+def remove_workspace(workspace: Path) -> None:
+    shutil.rmtree(workspace, ignore_errors=True)
+
+
+def tail(path: Path, lines: int = 40) -> str:
+    if not path.is_file():
+        return ""
+    content = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    return "\n".join(content[-lines:])

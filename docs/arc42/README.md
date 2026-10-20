@@ -89,8 +89,8 @@ a neutral `SourceAnalyzer` port, `SynAnalyzer` is the first adapter, metrics and
 classification run above the port, and a later tree-sitter adapter must pass the
 same contract without changing the report. The report is an opt-in, default-off,
 advisory experiment with no stored baseline. Durable facts live in chapters 1
-(FR-46), 2 (TC-38, 2.3), 3, 4, 5, 6.1/6.12/6.19, 8.11/8.26, 10 (Q-104 to Q-107),
-11 (R-99 to R-102, D-24, D-25), and 12.
+(FR-46), 2 (TC-42, 2.3), 3, 4, 5, 6.1/6.12/6.19, 8.11/8.26, 10 (Q-108 to Q-111),
+11 (R-104 to R-107, D-24, D-25), and 12.
 
 Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
 register](adr/README.md) for status, relationships, evidence, reserved IDs, and

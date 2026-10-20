@@ -205,6 +205,123 @@ fn stderr_names_missing_fossil(world: &mut GivnWorld) {
     );
 }
 
+#[when("the archive location is unblocked")]
+fn archive_location_unblocked(world: &mut GivnWorld) {
+    let archive = support::project_base(world).join("givn/archive");
+    if archive.is_file() {
+        fs::remove_file(&archive).expect("remove blocking file");
+    }
+    fs::create_dir_all(&archive).expect("create archive dir");
+    let env = support::env(world);
+    if matches!(env.backend(), common::BackendKind::Git) {
+        let add = common::git(env, &["add", "-A", "--", "givn/archive"]);
+        assert!(
+            add.status.success(),
+            "git add unblocked path failed: {}",
+            String::from_utf8_lossy(&add.stderr)
+        );
+        let commit = common::git(env, &["commit", "-q", "-m", "fixture: unblock archive"]);
+        assert!(
+            commit.status.success(),
+            "git commit unblock failed: {}",
+            String::from_utf8_lossy(&commit.stderr)
+        );
+    }
+    if let Some(id) = world.last_change_id.clone() {
+        support::refresh_change_receipt(world, &id);
+    }
+}
+
+#[when("the commit hook accepts the finalization revision")]
+fn accepting_finalization_hook(world: &mut GivnWorld) {
+    let hook = support::root(world).join(".git/hooks/commit-msg");
+    fs::write(&hook, "#!/bin/sh\nexit 0\n").expect("write accepting hook");
+    let mut permissions = fs::metadata(&hook).expect("hook metadata").permissions();
+    permissions.set_mode(0o755);
+    fs::set_permissions(&hook, permissions).expect("make hook executable");
+}
+
+#[then("the pending receipt is unchanged")]
+fn pending_receipt_unchanged(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let expected = world
+        .archive_receipt_snapshot
+        .clone()
+        .expect("the fixture captured a pending receipt");
+    let actual = fs::read_to_string(support::archive_dir(world, &id).join("verification.json"))
+        .expect("read pending receipt");
+    assert_eq!(actual, expected, "the pending receipt was rewritten");
+}
+
+#[then("stderr says the project state is corrupt and both directories exist")]
+fn stderr_says_both_directories(world: &mut GivnWorld) {
+    let stderr = crate::steps::stderr(world);
+    assert!(
+        stderr.contains("project state is corrupt") && stderr.contains("both exist"),
+        "stderr missing the both-directory corruption message: {stderr}"
+    );
+}
+
+#[then("stderr says the pending archive candidate conflicts with the active change")]
+fn stderr_says_pending_conflict(world: &mut GivnWorld) {
+    let stderr = crate::steps::stderr(world);
+    assert!(
+        stderr.contains("pending archive candidate")
+            && stderr.contains("conflicts with the active change"),
+        "stderr missing the pending-candidate conflict message: {stderr}"
+    );
+}
+
+#[then("the change directory no longer exists under givn/changes/")]
+fn change_dir_no_longer_exists(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let dir = support::project_base(world).join(format!("givn/changes/{id}"));
+    assert!(
+        !dir.exists(),
+        "active change directory still exists: {}",
+        dir.display()
+    );
+}
+
+#[then("stderr names the archive location")]
+fn stderr_names_archive_location(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let stderr = crate::steps::stderr(world);
+    assert!(
+        stderr.contains("givn/archive") || stderr.contains(&format!("givn/archive/{id}")),
+        "stderr does not name the archive location: {stderr}"
+    );
+}
+
+#[then(regex = r#"^the archived change contains the evidence file "([^"]+)"$"#)]
+fn archived_change_contains_evidence(world: &mut GivnWorld, evidence: String) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let path = support::archive_dir(world, &id).join(&evidence);
+    assert!(
+        path.exists(),
+        "archived evidence missing: {}",
+        path.display()
+    );
+}
+
+#[then("the tested history records the archive as unproven")]
+fn tested_history_unproven(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    assert_eq!(
+        support::committed_receipt_status(world, &id),
+        "pending",
+        "the tested revision does not carry a pending receipt"
+    );
+}
+
+#[then("stderr names the finalization rejection")]
+fn stderr_names_finalization_rejection(world: &mut GivnWorld) {
+    let stderr = crate::steps::stderr(world);
+    assert!(
+        stderr.contains("rejected finalization") && stderr.contains("prove archive"),
+        "stderr missing the finalization rejection: {stderr}"
+    );
+}
 #[given("a commit hook rejects the archive candidate commit")]
 fn rejecting_commit_hook(world: &mut GivnWorld) {
     let hooks = support::root(world).join(".git/hooks");
@@ -456,7 +573,158 @@ fn both_active_and_archived(world: &mut GivnWorld, id: String) {
     let dir = env.path(&format!("givn/archive/{id}"));
     fs::create_dir_all(&dir).expect("create archive dir");
     fs::write(dir.join("proposal.md"), "# archived\n").expect("write archived file");
-    common::git_commit_all(env, "fixture: corrupt state");
+    let receipt = support::write_pending_receipt(&dir, &id, true, &[], None, &[], &[]);
+    common::commit_fixture(env);
+    world.archive_receipt_snapshot = Some(receipt);
+    world.last_change_id = Some(id);
+}
+
+#[given("the pending archive candidate conflicts with the active change")]
+fn pending_candidate_conflicts(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let active = support::project_base(world).join(format!("givn/changes/{id}/proposal.md"));
+    let archived = support::archive_dir(world, &id).join("proposal.md");
+    let active = fs::read_to_string(&active).expect("read active proposal");
+    let archived = fs::read_to_string(&archived).expect("read archived proposal");
+    assert_ne!(active, archived, "fixture candidates must differ");
+}
+
+#[given("the archive candidate has no verification receipt")]
+fn archive_candidate_without_receipt(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let path = support::archive_dir(world, &id).join("verification.json");
+    if path.exists() {
+        fs::remove_file(&path).expect("remove pending receipt");
+    }
+}
+
+#[given(
+    regex = r#"^an interrupted archive move for change "([^"]+)" with an identical pending candidate$"#
+)]
+fn interrupted_move_identical(world: &mut GivnWorld, id: String) {
+    support::ready_change(world, &id, false, "fail");
+    let out = support::run_archive(world, &id);
+    assert!(
+        !out.status.success(),
+        "fixture archive unexpectedly succeeded: {}",
+        String::from_utf8_lossy(&out.stdout)
+    );
+    let archive = support::archive_dir(world, &id);
+    let active = support::project_base(world).join(format!("givn/changes/{id}"));
+    support::copy_candidate_content(&archive, &active);
+    let env = support::env(world);
+    if matches!(env.backend(), common::BackendKind::Git) {
+        let add = common::git(env, &["add", "-A", "--", &format!("givn/changes/{id}")]);
+        assert!(
+            add.status.success(),
+            "git add duplicate failed: {}",
+            String::from_utf8_lossy(&add.stderr)
+        );
+    }
+    // The follow-up scenario step rewrites the passing runner; commit only
+    // that path so the duplicate stays staged.
+    support::write_result_runner(env, "pass");
+    support::commit_path(env, "emit-result.sh", "fixture: passing runner");
+    world.skip_auto_commit = true;
+    world.last_change_id = Some(id);
+}
+
+#[given(regex = r#"^a pending archive candidate "([^"]+)" whose delta merge did not complete$"#)]
+fn pending_candidate_merge_incomplete(world: &mut GivnWorld, id: String) {
+    support::ready_change(world, &id, false, "pass");
+    let env = support::env(world);
+    let active = support::project_base(world).join(format!("givn/changes/{id}"));
+    let archive = support::archive_dir(world, &id);
+    support::copy_dir_all(&active, &archive);
+    support::write_pending_receipt(
+        &archive,
+        &id,
+        false,
+        &[],
+        None,
+        &["demo-cap/demo-cap.feature"],
+        &[(
+            "demo-cap/demo-cap.feature",
+            "givn/specs/demo-cap/demo-cap.feature",
+        )],
+    );
+    fs::remove_dir_all(&active).expect("remove active change");
+    common::commit_fixture(env);
+    world.last_change_id = Some(id);
+}
+
+#[given(
+    regex = r#"^a pending archive candidate "([^"]+)" whose delta file was applied but not recorded$"#
+)]
+fn pending_candidate_in_flight(world: &mut GivnWorld, id: String) {
+    support::ready_change(world, &id, false, "fail");
+    let out = support::run_archive(world, &id);
+    assert!(
+        !out.status.success(),
+        "fixture archive unexpectedly succeeded: {}",
+        String::from_utf8_lossy(&out.stdout)
+    );
+    let env = support::env(world);
+    let receipt_path = support::archive_dir(world, &id).join("verification.json");
+    let mut receipt: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&receipt_path).expect("read receipt"))
+            .expect("parse receipt");
+    receipt["merge_completed"] = serde_json::json!(false);
+    receipt["merged_deltas"] = serde_json::json!([]);
+    receipt["merge_in_progress"] = serde_json::json!("demo-cap/demo-cap.feature");
+    fs::write(
+        &receipt_path,
+        format!("{}\n", serde_json::to_string_pretty(&receipt).unwrap()),
+    )
+    .expect("write modified receipt");
+    support::write_result_runner(env, "pass");
+    support::commit_path(env, "emit-result.sh", "fixture: passing runner");
+    world.skip_auto_commit = true;
+    world.last_change_id = Some(id);
+}
+
+#[given("the archive location is blocked")]
+fn archive_location_blocked(world: &mut GivnWorld) {
+    let base = support::project_base(world);
+    let archive = base.join("givn/archive");
+    if archive.is_dir() {
+        fs::remove_dir_all(&archive).expect("remove archive dir");
+    }
+    fs::write(&archive, "blocked\n").expect("write blocking file");
+    common::commit_fixture(support::env(world));
+    if let Some(id) = world.last_change_id.clone() {
+        support::refresh_change_receipt(world, &id);
+    }
+    world.skip_auto_commit = true;
+}
+
+#[given(regex = r#"^the change has an uncommitted evidence file "([^"]+)"$"#)]
+fn uncommitted_evidence(world: &mut GivnWorld, evidence: String) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let target = support::project_base(world)
+        .join(format!("givn/changes/{id}"))
+        .join(&evidence);
+    if let Some(parent) = target.parent() {
+        fs::create_dir_all(parent).expect("create evidence dir");
+    }
+    fs::write(&target, "evidence\n").expect("write evidence file");
+    world.skip_auto_commit = true;
+}
+
+#[given("a commit hook rejects the finalization revision")]
+fn rejecting_finalization_hook(world: &mut GivnWorld) {
+    let hooks = support::root(world).join(".git/hooks");
+    fs::create_dir_all(&hooks).expect("create hooks dir");
+    let hook = hooks.join("commit-msg");
+    fs::write(
+        &hook,
+        "#!/bin/sh\nif grep -q 'prove archive' \"$1\"; then\n  echo 'rejected finalization: prove archive' >&2\n  exit 1\nfi\nexit 0\n",
+    )
+    .expect("write finalization hook");
+    let mut permissions = fs::metadata(&hook).expect("hook metadata").permissions();
+    permissions.set_mode(0o755);
+    fs::set_permissions(&hook, permissions).expect("make hook executable");
+    world.skip_auto_commit = true;
 }
 
 #[given("the coverage command writes an undeclared source file")]
@@ -842,7 +1110,14 @@ fn set_runner_kind(world: &mut GivnWorld, kind: &str) {
     support::ensure_env(world);
     let env = support::env(world);
     support::write_result_runner(env, kind);
-    common::commit_fixture(env);
+    if world.skip_auto_commit {
+        support::commit_path(env, "emit-result.sh", "fixture: runner");
+    } else {
+        common::commit_fixture(env);
+    }
+    if let Some(id) = world.last_change_id.clone() {
+        support::refresh_change_receipt(world, &id);
+    }
 }
 
 fn read_permanent_specs(world: &GivnWorld) -> String {
@@ -882,5 +1157,24 @@ fn assert_invocations(world: &GivnWorld, scope: &str, features: &str, expected: 
     assert_eq!(
         count, expected,
         "scope {scope} invocation count was {count}: {content}"
+    );
+}
+
+#[when(regex = r"^the user runs `givn archive --change ([^`]+)` without committing the fixture$")]
+fn archive_without_commit(world: &mut GivnWorld, id: String) {
+    let out = support::run_archive(world, &id);
+    world.last_change_id = Some(id);
+    world.last_output = Some(out);
+}
+
+#[then("the runner was never invoked with a change features path")]
+fn runner_never_used_change_features(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let log = support::archive_dir(world, &id).join("results/invocations.log");
+    let content = fs::read_to_string(&log)
+        .unwrap_or_else(|e| panic!("read invocation log {}: {e}", log.display()));
+    assert!(
+        !content.contains("givn/changes/"),
+        "the change suite was invoked during archive: {content}"
     );
 }

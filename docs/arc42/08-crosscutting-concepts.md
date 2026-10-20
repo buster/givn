@@ -147,7 +147,7 @@ givn/
     review.md
     arc42.md                     # when the Arc42 addon is enabled
     .givn-skip                   # optional artifact skip list
-  archive/<id>/                  # copied active change after archive
+  archive/<id>/                  # active change moved here by archive
   artifacts/<id>/                # ejected facet overrides
 
 docs/arc42/                      # fixed durable Arc42 output path
@@ -209,8 +209,14 @@ gate. State inference does not edit or repair artifacts.
 Archive provenance is a separate, receipt-backed state layer:
 `givn/archive/<id>/verification.json` records `pending` or `proven`, and
 `status`, `instructions`, and the archive itself derive "unproven candidate"
-from it. A legacy archive directory without a receipt is historical and is
-never re-published; it is not an unproven candidate.
+from it. An active change and a pending candidate may coexist only when a
+previous transition was interrupted; the archive classifies the pair as
+recoverable when every active artifact exists byte-identically in the
+candidate, and as corrupt when it conflicts. Evidence paths (the receipt,
+`results/**`, `evidence/**`, and `verification/**`) are ignored on both sides
+because they are outputs, not artifacts. A legacy archive directory without a
+receipt is historical and is never re-published; it is not an unproven
+candidate.
 
 ## 8.7 Skill and Rule Generation
 
