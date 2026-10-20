@@ -100,6 +100,27 @@ pub fn assessment_counts(env: &TestEnv) -> (usize, usize, usize) {
     )
 }
 
+pub fn write_inspect_band_type(env: &TestEnv) {
+    let mut source =
+        String::from("pub struct Boundary {\n    a: u64,\n    b: u64,\n}\n\nimpl Boundary {\n");
+    for (method, fields) in [
+        ("first", &["a", "b"][..]),
+        ("second", &["a"][..]),
+        ("third", &["b"][..]),
+    ] {
+        source.push_str(&format!("    pub fn {method}(&self) -> u64 {{\n"));
+        for _ in 0..170 {
+            source.push_str(&format!("        let _ = self.{};\n", fields[0]));
+        }
+        for field in fields.iter().skip(1) {
+            source.push_str(&format!("        let _ = self.{field};\n"));
+        }
+        source.push_str(&format!("        self.{}\n    }}\n", fields[0]));
+    }
+    source.push_str("}\n");
+    write_source(env, "src/inspect_band.rs", &source);
+}
+
 pub fn write_many_public_methods(env: &TestEnv) {
     let mut source = String::from("pub struct ManyPublic;\nimpl ManyPublic {\n");
     for index in 0..51 {

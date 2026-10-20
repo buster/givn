@@ -262,6 +262,22 @@ fn report_names_file(world: &mut GivnWorld, relative: String) {
     );
 }
 
+#[given("a production source unit with a large type in the inspect band")]
+fn inspect_band_type(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    crate::steps::readability_report_support::write_inspect_band_type(&env);
+    world.env = Some(env);
+}
+
+#[then("the report recommends an exception action")]
+fn report_recommends_exception(world: &mut GivnWorld) {
+    let report = report_text(world);
+    assert!(
+        report.contains("EXCEPTION"),
+        "expected an exception action, got: {report}"
+    );
+}
+
 #[given("a production source unit with more than 50 public methods")]
 fn many_public_methods(world: &mut GivnWorld) {
     let env = common::make_bare_root();
