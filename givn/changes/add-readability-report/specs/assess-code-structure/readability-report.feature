@@ -96,7 +96,7 @@ Feature: Readability report
     Then the report names the unsupported construct
     And the report does not classify the unsupported unit
 
-  @givn.added @wip
+  @givn.added
   Scenario: The JSON report carries the schema and rules versions
     Given a Givn project with the readability experiment enabled
     And a production source unit

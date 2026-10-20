@@ -189,6 +189,32 @@ fn report_classifies_cohesive(world: &mut GivnWorld) {
     );
 }
 
+#[given("a production source unit")]
+fn production_source_unit(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::readability_report_support::write_small_unit(env);
+}
+
+#[then("the JSON report has schema version 1")]
+fn json_schema_version(world: &mut GivnWorld) {
+    let value = json_output(world);
+    assert_eq!(value["schema_version"], 1, "unexpected schema version");
+}
+
+#[then("the JSON report has rules version 1")]
+fn json_rules_version(world: &mut GivnWorld) {
+    let value = json_output(world);
+    assert_eq!(value["rules_version"], 1, "unexpected rules version");
+}
+
+fn json_output(world: &GivnWorld) -> serde_json::Value {
+    let stdout = crate::steps::stdout(world);
+    serde_json::from_str(&stdout).expect("valid JSON")
+}
+
 #[given("a production source file with an item-position macro")]
 fn item_position_macro(world: &mut GivnWorld) {
     let env = world

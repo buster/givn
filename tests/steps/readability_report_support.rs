@@ -51,6 +51,10 @@ pub fn write_cohesive_type(env: &TestEnv, name: &str, lines_per_method: usize) {
     write_source(env, "src/cohesive.rs", &source);
 }
 
+pub fn write_small_unit(env: &TestEnv) {
+    write_source(env, "src/small.rs", "pub struct Small;\n");
+}
+
 pub fn write_item_macro(env: &TestEnv) {
     write_source(
         env,
