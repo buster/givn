@@ -252,14 +252,14 @@ Evidence:
 - GREEN output: `1 feature, 1 scenario (1 passed), 7 steps (7 passed)` under the real CLI; transcript `evidence/visual/consumer-runs-review-and-receives-every-use-case-schema-problem-in-one-pass/transcript.txt` records argv, cwd, exit code 1, and the complete stdout/stderr.
 - REFACTOR output: `cargo fmt`; scenario still passes.
 - Production files: `tests/steps/workflow_enforcement_e2e_steps.rs` (transcript capture), the feature file, committed transcript.
-- COMMIT: `<hash>`
+- COMMIT: c9e342ebe7508ae632658297a80c216ee6b00247
 
 ## Scenario 10 — Consumer archives a change after documentation-only review edits and the proof is reused (e2e)
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
-- [ ] COMMIT
+- [x] RED
+- [x] GREEN
+- [x] REFACTOR
+- [x] COMMIT
 
 Design constraints:
 
@@ -271,10 +271,10 @@ Design constraints:
 
 Evidence:
 
-- RED output: `<paste>`
-- GREEN output: `<paste>`
-- REFACTOR output: `<paste>`
-- Production files: `<list>`
+- RED output: strict head equality refused the documentation-only revision: `archive blocked: the change verification receipt is stale ... legacy receipt without tested-content binding` (exit 1).
+- GREEN output: `1 feature, 1 scenario (1 passed), 10 steps (10 passed)`; transcript `evidence/visual/consumer-archives-a-change-after-documentation-only-review-edits-and-the-proof-is-reused/transcript.txt` records the reused-proof line, one `regular givn/specs` invocation, no change-features invocation, exit 0, and the proven archive.
+- REFACTOR output: `cargo fmt`; scenario still passes.
+- Production files: `tests/steps/archive_proof_e2e_steps.rs`, the feature file, committed transcript.
 - COMMIT: `<hash>`
 
 ## Final gates
