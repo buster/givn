@@ -19,6 +19,9 @@ For every user-facing question, follow the effective policy from
   re-exports, or commented-out scaffolding.
 - **You are not alone.** Treat unexpected changes as someone else's work and
   adapt; coordinate before editing a file a peer may own.
+- **Code is owned by everyone.** Seeing technical debt and leaving it because
+  "it was not me" is not acceptable. Leave existing code better than you found
+  it whenever you touch it.
 
 ## Anti-patterns
 
@@ -26,3 +29,5 @@ For every user-facing question, follow the effective policy from
 - Suppressing a warning or special-casing an input instead of fixing the cause.
 - Expanding scope "while you're at it" — retries, telemetry, or validation the
   change does not require.
+- "Not my code" — leaving a defect or debt in a file because someone else wrote
+  it.

@@ -11,8 +11,7 @@
 
 ## Goal
 
-See the structure of an existing codebase and the units that need a plan or
-exception.
+See the structure of an existing codebase and the units that are findings.
 
 ## Trigger
 
@@ -31,53 +30,49 @@ The developer asks for a readability report.
    named `--path` roots).
 2. The system analyzes each source unit and reports its size, public surface,
    cohesion and coupling indicators, and method complexity.
-3. The system classifies each unit and recommends watch, plan, exception,
-   advisory, or no action.
-4. The developer receives the report and can plan the next action.
+3. The system classifies each unit and reports a finding for every unit above
+   its threshold or carrying a long method; a within-limits unit is listed
+   without a finding.
+4. The developer receives the report. It states findings only: no action, no
+   recommendation, and no advice.
 
 ## Extensions
 
-- 1: the readability experiment is disabled → the command reports that the
-  experiment is disabled and exits non-zero; protects the preconditions.
-- 1: no production sources exist in the requested scope → the report says
-  there are no production sources; protects the success guarantee.
-- 1: the requested scope does not exist → the command names the path and exits
-  non-zero; protects the success guarantee.
-- 2: a source file cannot be analyzed → the report names the file and continues
-  with the remaining units; protects the minimal guarantee.
-- 2: the analysis engine does not support a construct → the report marks the
-  unit as unsupported and does not invent data; protects the minimal guarantee.
+- 1: the readability experiment is disabled → the command reports that the experiment is disabled and exits non-zero; protects the preconditions.
+- 1: no production sources exist in the requested scope → the report says there are no production sources; protects the success guarantee.
+- 1: the requested scope does not exist → the command names the path and exits non-zero; protects the success guarantee.
+- 2: a source file cannot be analyzed → the report names the file and continues with the remaining units; protects the minimal guarantee.
+- 2: the analysis engine does not support a construct → the report marks the unit as unsupported and does not invent data; protects the minimal guarantee.
 
 ## Rules
 
 - The report is advisory; it does not block review or archive.
 - The report stores no baseline or historical classification.
 - The report is deterministic and offline.
-- The report uses production sources only, from the project-root `src/` or
-  explicit `--path` roots, in the first release.
-- Conditional code is counted as written: non-test `#[cfg(...)]` branches are
-  not evaluated, and a parent-module `#[cfg(test)]` is not propagated.
+- The report uses production sources only, from the project-root `src/` or explicit `--path` roots, in the first release.
+- Conditional code is counted as written: non-test `#[cfg(...)]` branches are not evaluated, and a parent-module `#[cfg(test)]` is not propagated.
 - The report format is independent of the analysis engine.
-- Every analyzed unit has exactly one classification and one action.
+- Every analyzed unit has exactly one classification.
+- The report attaches no action or recommendation to a unit; a finding states the classification, the measured metrics, and the evidence.
 
 ## Examples
 
-- A 1,560-line wizard is a god type; the action is a plan.
-- A 521-line enum with one method is data-only; the action is advisory.
-- A 507-line module with a cohesive test double is a watch.
-- A 2,882-line module with no god type is a module finding; the action is a
-  plan or a recorded exception.
+- A 1,560-line wizard is a `god-type` finding.
+- A 521-line enum with one method is a `data-only` finding.
+- A 507-line module is a `module` finding.
+- A 2,882-line module with no god type is a `module` finding.
 
 ## Minimal guarantee
 
 The developer receives a report that names every unit it could not analyze and
-every analyzed unit's classification and action; existing review, archive, and
+every analyzed unit's classification; existing review, archive, and
 verification behaviour is unchanged.
 
 ## Success guarantee
 
 The developer receives a complete readability report for the production
-sources, with a classification and action for every analyzed unit.
+sources, with one classification and no recommendation for every analyzed
+unit.
 
 ## Personas
 
@@ -105,7 +100,7 @@ sources, with a classification and action for every analyzed unit.
 
 ## Out of scope
 
-- Review enforcement; that is the second change, `add-readability-review-gate`.
+- Review enforcement; that is the `readability-review-gate` capability under `verify-change`.
 - A stored baseline or watchlist.
 - Languages other than Rust.
 - Automatic refactoring.
@@ -121,6 +116,6 @@ sources, with a classification and action for every analyzed unit.
 flowchart LR
   Developer((Developer)) --> Report[[Request readability report]]
   Report --> Analyze[[Analyze production sources]]
-  Analyze --> Classify[[Classify units and recommend actions]]
+  Analyze --> Classify[[Classify units and report findings]]
   Classify --> View[[Read the report]]
 ```
