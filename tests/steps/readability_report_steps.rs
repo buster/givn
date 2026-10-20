@@ -22,6 +22,33 @@ fn readability_addon_is_listed_as_disabled(world: &mut GivnWorld) {
     readability_addon_is_disabled(world);
 }
 
+#[given("no production source files")]
+fn no_production_sources(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    assert!(
+        !env.path("src").exists(),
+        "the fixture unexpectedly has a src/ tree"
+    );
+}
+
+#[then("the report says there are no production sources")]
+fn report_says_no_sources(world: &mut GivnWorld) {
+    let stdout = report_text(world).to_lowercase();
+    assert!(
+        stdout.contains("no production sources"),
+        "expected the empty-scope message, got: {stdout}"
+    );
+}
+
+#[then("the command exits with code 0")]
+fn command_exits_with_code_0(world: &mut GivnWorld) {
+    let status = crate::steps::output(world).status.code();
+    assert_eq!(status, Some(0), "stderr: {}", crate::steps::stderr(world));
+}
+
 #[given("the readability fixture corpus")]
 fn fixture_corpus(world: &mut GivnWorld) {
     let env = common::make_bare_root();
