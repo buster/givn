@@ -47,6 +47,24 @@ fn large_trait(world: &mut GivnWorld) {
     crate::steps::readability_report_support::write_large_trait(env, "BigTrait", 520);
 }
 
+#[given("a production source unit with a cohesive type over the readable size")]
+fn cohesive_type(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::readability_report_support::write_cohesive_type(env, "Cohesive", 260);
+}
+
+#[then("the report classifies the unit as a cohesive-large-type")]
+fn report_classifies_cohesive(world: &mut GivnWorld) {
+    let stdout = crate::steps::stdout(world);
+    assert!(
+        stdout.contains("cohesive-large-type"),
+        "expected a cohesive-large-type classification, got: {stdout}"
+    );
+}
+
 #[then("the report classifies the unit as an interface")]
 fn report_classifies_interface(world: &mut GivnWorld) {
     let stdout = crate::steps::stdout(world);
