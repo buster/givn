@@ -38,6 +38,52 @@ impl Worktree {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     }
 
+    /// Read a file from the current revision. Returns `None` when the path is
+    /// absent from `HEAD`.
+    pub fn revision_file(&self, path: &str) -> Result<Option<String>> {
+        let output = run_git(&self.root, &["show", &format!("HEAD:{path}")])?;
+        if output.status.success() {
+            Ok(Some(String::from_utf8_lossy(&output.stdout).into_owned()))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Whether `revision` names a commit in this repository.
+    pub fn commit_exists(&self, revision: &str) -> Result<bool> {
+        let output = run_git(
+            &self.root,
+            &["cat-file", "-e", &format!("{revision}^{{commit}}")],
+        )?;
+        Ok(output.status.success())
+    }
+
+    /// The full message of `revision`, or `None` when it does not exist.
+    pub fn commit_message(&self, revision: &str) -> Result<Option<String>> {
+        let output = run_git(&self.root, &["log", "-1", "--format=%B", revision])?;
+        if output.status.success() {
+            Ok(Some(String::from_utf8_lossy(&output.stdout).into_owned()))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Whether `revision` is reachable from `HEAD`.
+    pub fn is_ancestor(&self, revision: &str) -> Result<bool> {
+        let output = run_git(
+            &self.root,
+            &["merge-base", "--is-ancestor", revision, "HEAD"],
+        )?;
+        match output.status.code() {
+            Some(0) => Ok(true),
+            Some(1) => Ok(false),
+            _ => bail!(
+                "could not inspect ancestry of '{revision}': {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            ),
+        }
+    }
+
     /// Whether `path` is present in the current `HEAD` revision.
     pub fn revision_contains(&self, path: &str) -> Result<bool> {
         let output = run_git(&self.root, &["cat-file", "-e", &format!("HEAD:{path}")])?;

@@ -27,10 +27,14 @@
 | **Question record** | The full entry retained for an actual decision: title, status, what it blocks, context, the standalone question, each genuine option's meaning, concrete example, gain and cost, and a resolution naming the chosen and rejected alternatives with reasons. A short information request explains its use and immediate effect without inventing alternatives or tradeoffs. |
 | **Conditional section** | A marked region of a template retained only when its declared addon condition matches the current effective addon set; it is dropped from the generated file otherwise. |
 | **Change** | A unit of work under `givn/changes/<id>/` that, once archived, moves to `givn/archive/<id>/`. |
-| **Archive candidate** | A change whose accepted material has been merged into the permanent corpus at its archive location and published as a revision, but which has not yet passed archive verification. Anti-terms: pending change, merged change. |
+| **Archive candidate** | A change that has moved to its archive location and is being made ready for proof: its accepted material is merged from that location into the permanent corpus and published as a revision, but it has not yet passed archive verification. The moved directory is an archive candidate from the transition onward, including the interval before its delta merge completes (`merge_completed: false`). Anti-terms: pending change, merged change. |
+| **Interrupted archive transition** | An archive attempt that stopped after the change left its active location but before the archive was proven. It leaves either the active change or a pending archive candidate whose receipt records whether the delta merge completed; both copies exist only while a legacy or externally restored state is being reconciled, and only a candidate whose active artifacts match byte-identically is recoverable. Anti-terms: partial archive, half-archive. |
+| **Merge progress** | The pending receipt's record of merge recovery: `merge_completed` says whether every delta file finished, `merged_deltas` lists the completed relative delta paths, and `merge_in_progress` names the one file that may have been written before its completion was recorded. A resume skips completed files and retries only the in-progress file with the idempotent rule. Anti-terms: merge marker, merge flag. |
 | **Proven archive** | An archive candidate whose full suite and coverage passed for its tested revision, recorded by a verification receipt. Only a proven archive is complete and safe to publish. Anti-term: finished archive. |
 | **Legacy archive** | An archive directory produced before the receipt contract and therefore without a verification receipt. It is historical and is never re-published. Anti-term: unproven archive. |
 | **Verification receipt** | The durable machine-readable record binding a proven archive to the revision that was tested, the per-scope scenario counts, the coverage outputs, and the timing. Anti-terms: verification manifest, evidence cache. |
+| **Change verification receipt** | The durable record `givn check tasks` writes for one change: the tested revision, the selected delta-feature path and digest, the verify-command digest, the green runner counts, and the finish time. It is current only while the revision, features, and command all match. Anti-terms: review proof, test cache. |
+| **Runner result** | The four integer counts a project runner writes to `GIVN_RESULT_FILE`: total, passed, failed, skipped. `scope` is optional; Givn labels the invocation. Anti-term: test summary. |
 | **Verification scope** | One runner execution's declared boundary: the regular scenarios or the end-to-end scenarios. Each scope reports its own scenario counts. |
 | **Runner result** | The machine-readable scenario counts a verification scope's runner writes for Givn; a missing or non-reconciling result blocks proof. Anti-term: test summary. |
 | **Forward repair** | Repairing a failed archive in place and rerunning the archive against the new published state; the failed candidate is kept, never silently discarded. Anti-terms: rollback, restore. |
@@ -253,7 +257,8 @@ commit path all run on Git and Fossil.
   failures or skips (enforcement site: `proof::RunnerResult::read`).
 - Finalization changes only the tested revision's declared evidence paths
   (enforcement site: `proof::is_evidence_path`).
-- A resumed candidate does not repeat the merge (enforcement site: pending
-  receipt mode in `cli::archive`).
+- A resumed candidate repeats the delta merge only when the receipt records that
+  the merge did not complete (enforcement site: `merge_completed` in
+  `cli::archive`).
 
 *[Architecture documentation index](README.md)*

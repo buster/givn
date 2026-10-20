@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "change": "change-verification-receipt",
+  "status": "passed",
+  "head": "4362c346cb802815afe923afe1b86634333951d1",
+  "features_path": "givn/changes/change-verification-receipt/specs",
+  "features_digest": "cff04e809c629956480c93e629e26c2dc4268514e73a116de76ae26120b5f119",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1792449110
+}

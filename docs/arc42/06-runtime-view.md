@@ -267,9 +267,14 @@ below:
 | Archive directory state | Meaning | Command behavior |
 |---|---|---|
 | absent | no publication yet | fresh archive |
+| active change with pending receipt, no archive directory | interrupted transition before the move | rerun the gates and retry the rename |
 | present, no receipt | pre-receipt legacy archive | refuse: already archived |
-| receipt `status: pending` | unproven candidate | resume verification |
+| receipt `status: pending` | unproven candidate | resume merge and verification |
 | receipt `status: proven` | proven archive | refuse: already proven |
+| active and archived, pending receipt, active artifacts match | interrupted transition | remove the duplicate active directory, stage the path, merge when needed, and publish once if the revision changed |
+| active and archived, pending receipt, content differs | corrupted transition | refuse and name the candidate conflict |
+| active and archived, no receipt or proven | corrupted transition | refuse: both directories exist |
+| archive only, unreadable receipt | corrupted archive | refuse: the receipt is unreadable |
 
 ```mermaid
 sequenceDiagram
@@ -281,10 +286,15 @@ sequenceDiagram
     A->>S: select backend + clean-state witness
     alt fresh archive
         A->>A: structural gates (artifacts, hooks, run declaration, README, merge preconditions)
-        A->>A: merge use-case docs and deltas, move change to givn/archive/id
-        A->>A: write pending verification.json
+        A->>A: write pending verification.json (merge_completed: false)
+        A->>A: move givn/changes/id to givn/archive/id with one rename
+        A->>A: merge use-case docs and deltas from the archived candidate
+        A->>A: mark merge_completed: true
         A->>S: publish candidate revision (givn/specs, givn/archive/id, givn/changes/id)
-    else resume, pending receipt not in the current revision (a rejected hook)
+    else interrupted transition or merge
+        A->>A: finish the rename, or merge only when merge_completed is false
+        A->>S: republish when the pending receipt is not in the current revision
+    else resume, pending receipt not in the current revision (a rejected publication)
         A->>S: publish the on-disk candidate revision again
     end
     A->>R: verify.command with GIVN_RESULT_FILE=results/regular.json
@@ -306,19 +316,27 @@ Stages:
 2. Clean-state witness: files the selected backend would not publish block the
    archive by name (Git untracked files and Fossil `EXTRA` entries included),
    except the declared evidence paths (the target archive directory,
-   `README.md`, and the configured coverage paths), which keep a failed attempt
-   resumable.
-3. Fresh only — structural gates before any mutation: `apply.requires`
-   completeness, configured archive hooks, the run-declaration gate, the
-   README completeness gate, use-case and delta prevalidation, and the
-   e2e-runner configuration check. An `@e2e` merge with an unconfigured
-   `verify.e2e_command` blocks here, leaving the change active.
-4. Fresh only — merge and publish the candidate: parse and merge every delta,
-   merge use-case narratives, copy the change directory to `givn/archive/<id>/`,
-   remove the active directory, write the pending receipt, and publish exactly
-   those paths as the candidate revision. A rejected publication is reported as
-   an unproven, repairable state; on resume the merged on-disk state is
-   published again instead of assuming the merge is committed.
+   `givn/changes/<id>/verification.json`, `givn/changes/<id>/evidence/**`,
+   `givn/changes/<id>/verification/**`, any archive's receipt, `results/**`,
+   `evidence/**`, and `verification/**`, `README.md`, and the configured
+   coverage paths), which keep a failed attempt resumable.
+3. Fresh or interrupted-move only — structural gates before any mutation:
+   `apply.requires` completeness, configured archive hooks, the run-declaration
+   gate, the README completeness gate, use-case and delta prevalidation, and the
+   e2e-runner configuration check. A resumed-move run repeats these gates before
+   retrying the rename; a pending candidate re-checks the e2e configuration. An
+   `@e2e` merge with an unconfigured `verify.e2e_command` blocks here, leaving
+   the change active.
+4. Fresh only — move and publish the candidate: write the pending receipt into
+   the active change, then move the directory to `givn/archive/<id>/` with one
+   rename. Both paths are under the project root; a failed rename leaves the
+   active change in place with its pending receipt (an exempt evidence path),
+   and the next run re-runs the gates before retrying the rename. Merge every
+   delta and narrative from the archived candidate, then mark
+   `merge_completed: true` and publish exactly the merged corpus paths as the
+   candidate revision. A rejected publication is reported as an unproven,
+   repairable state; on resume the merged on-disk state is published again
+   instead of assuming the merge is committed.
 5. Verification against the published candidate revision: the regular scope
    (`verify.command`) and the E2E scope (`verify.e2e_command`, only when merged
    permanent specs contain `@e2e`; otherwise `not_applicable`) each run once
@@ -329,13 +347,61 @@ Stages:
 7. Finalization: refresh managed README blocks, verify that the current
    revision still equals the tested revision and that every dirty path is a
    declared evidence path, write the proven receipt, then publish the
-   evidence-only finalization revision.
+   evidence-only finalization revision. If that publication is rejected, the
+   working-tree receipt is restored to pending, so the archive remains
+   unproven and a rerun repeats finalization instead of reporting a proven
+   archive that is absent from the tested history.
 
-Any failure after the candidate publication leaves the candidate unproven in
-place and prints the forward-repair instruction (`givn archive --change <id>`
-after repairing the committed state). Archive's checks are hard-coded in
+A failure before the rename leaves the active change; a failure after it
+leaves the pending candidate. The pending receipt's `merge_completed` flag
+distinguishes an interrupted merge from a candidate that only needs
+verification; the delta merge is idempotent, so a partially applied multi-file
+merge can be retried. Both-directory states produced by an older binary or a
+manual restore are reconciled only when the copies are identical. Any failure
+after the candidate publication leaves the candidate unproven in place and
+prints the forward-repair instruction (`givn archive --change <id>` after
+repairing the committed state). Archive's checks are hard-coded in
 `src/cli/archive.rs`; they are not configurable artifact `post` hooks, and
 archive does not call the explicit `check review` mandatory branch.
+
+## 6.7.1 Change-scoped verification receipt
+
+`givn check tasks --change <id>` is the only change-scoped test execution. It
+requires a clean committed tree except evidence/verification paths, sets
+`GIVN_FEATURES` to the delta specs and `GIVN_RESULT_FILE` to
+`givn/changes/<id>/verification/tasks-result.json`, runs `verify.command`, and
+validates four green counts. It then writes
+`givn/changes/<id>/verification/tasks-verification.json` with the tested
+revision, features digest, verify-command digest, and counts.
+
+`givn check review` runs no tests: it reads that receipt and refuses a missing
+or stale one with `givn check tasks --change <id>`. `givn archive` performs the
+same validation before the move and merge; after the candidate is published it
+runs only the merged regular and e2e scopes. A receipt is stale when the
+revision, delta-feature digest, or verify-command digest differs, or when the
+counts are not green.
+
+### 6.7.1 Scenario commit evidence
+
+`givn check tasks` parses each checked scenario in `tasks.md` and requires one
+unique revision. The revision must exist, be reachable from `HEAD`, and carry
+the scenario title in its commit message. Missing, duplicate, placeholder,
+unreachable, and untitled revisions are reported together and block. `givn
+check review` repeats the gate. Every scenario needs its own commit: the work
+must be split into scenario commits before the check, not asserted after it.
+
+A change whose design declares no visual contract may record
+`VISUAL-REVIEW: NOT APPLICABLE`; a rendered interface still requires
+`VISUAL-REVIEW: PASS`. Plain-text CLI transcripts remain evidence under the
+change's `evidence/` tree.
+
+### 6.7.4 Development-record quality
+
+A reported turn stores its inline usage once and marks a linked usage entry
+`derived: true` with the turn as its parent. An answered question stores
+`selected`, `source`, and `answered_at`; an unanswered question stores none. A
+failed command stores the bounded first line of its dispatch error. Provider,
+model, and variant are recorded where known; unavailable usage stays explicit.
 
 ## 6.12 Addons, Upgrade, and Completion Commands
 

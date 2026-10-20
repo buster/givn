@@ -178,3 +178,23 @@ Feature: Development Record
     When  the user runs `givn history --change demo --json`
     Then  the command exits 0
     And  the output names every recorded entry with its kind, its scope, and its duration
+  Scenario: A linked usage entry is marked derived
+    Given  a project root with givn/ initialised
+    When  the agent reports a turn with inline usage, an answered question, and a failed tool
+    Then  the turn carries one inline usage representation
+    And  the linked usage entry is marked derived
+
+  Scenario: An answered question records selection, source, and time
+    Given  a project root with givn/ initialised
+    When  the agent reports a turn with inline usage, an answered question, and a failed tool
+    Then  the question records its selected option, source, and answer time
+
+  Scenario: A failed command records a bounded error line
+    Given  a project root with givn/ initialised
+    When  the agent reports a turn with inline usage, an answered question, and a failed tool
+    Then  the failed tool records a bounded first error line
+
+  Scenario: Usage identity names provider, model, and variant
+    Given  a project root with givn/ initialised
+    When  the agent reports a turn with inline usage, an answered question, and a failed tool
+    Then  the usage entry names the provider, model, and variant

@@ -180,6 +180,11 @@ pub struct GivnWorld {
     /// the reporter run the scenario drove through its real entry point.
     pub(crate) agent_activity_reporting_e2e:
         Option<agent_activity_reporting_e2e_steps::AgentActivityReportingE2eState>,
+    /// Snapshot of a pending receipt taken by a fixture, for the
+    /// "receipt is unchanged" assertion.
+    pub(crate) archive_receipt_snapshot: Option<String>,
+    /// Keep a deliberately missing or stale change-scoped review receipt.
+    pub(crate) skip_receipt_autowrite: bool,
     /// State for the `@e2e` `development-report` scenarios: the generated
     /// report and the browser the browser scenarios drive.
     #[allow(dead_code)] // Tasks E5–E9 read it.
@@ -494,8 +499,24 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
         world.scm_fixture.snapshot = Some(scm_backend_selection_steps::snapshot_tree(&root));
         world.snapshot_on_run = false;
     }
+    if args.first().is_some_and(|arg| arg == "check")
+        && args.get(1).is_some_and(|arg| arg == "tasks")
+        && !world.skip_auto_commit
+    {
+        common::commit_fixture(env);
+    }
     if args.first().is_some_and(|arg| arg == "archive") && !world.skip_auto_commit {
         common::commit_fixture(env);
+        if let Some(id) = world.last_change_id.clone() {
+            archive_proof_support::refresh_change_receipt(world, &id);
+        }
+    }
+    if args.first().is_some_and(|arg| arg == "check")
+        && args.get(1).is_some_and(|arg| arg == "review")
+        && !world.skip_receipt_autowrite
+        && let Some(id) = world.last_change_id.clone()
+    {
+        archive_proof_support::refresh_change_receipt(world, &id);
     }
     let argv: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
     let environments = world_envs(world);

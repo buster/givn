@@ -202,20 +202,208 @@ pub(crate) fn write_change_artifacts_at(base: &Path, id: &str, with_e2e: bool) {
         ),
     )
     .expect("write delta feature");
-    fs::write(change.join("design.md"), "# Design\n").expect("write design");
+    fs::write(
+        change.join("design.md"),
+        "# Design\n\n## Step Definitions\n\n| Step | File |\n|---|---|\n| archive scenarios | tests/steps/archive_proof_steps.rs |\n",
+    )
+    .expect("write design");
     fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n")
         .expect("write design-review");
-    fs::write(change.join("tasks.md"), "- [x] done\n").expect("write tasks");
+    fs::write(change.join("tasks.md"), "- [x] COMMIT: a1b2c3d4 -- done\n").expect("write tasks");
     fs::write(
         change.join("review.md"),
         "REVIEW: PASS\nREADME-IMPACT: none\n",
     )
     .expect("write review");
+    let steps = base.join("tests/steps");
+    fs::create_dir_all(&steps).expect("create fixture step dir");
+    fs::write(
+        steps.join("archive_proof_steps.rs"),
+        "// fixture step definitions\n",
+    )
+    .expect("write fixture step file");
     fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").expect("write arc42");
 }
 
-/// Full archive-ready fixture: initialized committed project, result runner,
-/// commands, and a completed change.
+/// Write a pending verification receipt with merge-progress fields. Returns
+/// the exact text written so a scenario can assert it was not rewritten.
+pub(crate) fn write_pending_receipt(
+    dir: &Path,
+    id: &str,
+    merge_completed: bool,
+    merged_deltas: &[&str],
+    merge_in_progress: Option<&str>,
+    merge_plan: &[&str],
+    merge_targets: &[(&str, &str)],
+) -> String {
+    let targets: serde_json::Map<String, serde_json::Value> = merge_targets
+        .iter()
+        .map(|(key, value)| (key.to_string(), serde_json::json!(value)))
+        .collect();
+    let receipt = serde_json::json!({
+        "schema": 1,
+        "change": id,
+        "status": "pending",
+        "merge_completed": merge_completed,
+        "merged_deltas": merged_deltas,
+        "merge_in_progress": merge_in_progress,
+        "merge_plan": merge_plan,
+        "merge_targets": targets,
+        "candidate_revision": null,
+        "tested_revision": null,
+        "scopes": {},
+        "coverage": null,
+        "started_at_unix": 1,
+        "finished_at_unix": null,
+    });
+    let text = format!("{}\n", serde_json::to_string_pretty(&receipt).unwrap());
+    fs::create_dir_all(dir).expect("create archive dir");
+    fs::write(dir.join("verification.json"), &text).expect("write pending receipt");
+    text
+}
+
+/// Copy a candidate's artifacts (and evidence) into a destination, excluding
+/// the archive-only receipt and result files.
+pub(crate) fn copy_candidate_content(src: &Path, dst: &Path) {
+    fs::create_dir_all(dst).expect("create duplicate change dir");
+    for entry in fs::read_dir(src).expect("read candidate dir") {
+        let entry = entry.expect("candidate entry");
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if name == "verification.json" || name == "results" {
+            continue;
+        }
+        let path = entry.path();
+        let target = dst.join(entry.file_name());
+        if path.is_dir() {
+            copy_candidate_content(&path, &target);
+        } else {
+            fs::copy(&path, &target).expect("copy candidate file");
+        }
+    }
+}
+
+/// Copy a whole directory tree (fixtures only; does not skip evidence).
+pub(crate) fn copy_dir_all(src: &Path, dst: &Path) {
+    fs::create_dir_all(dst).expect("create copy destination");
+    for entry in fs::read_dir(src).expect("read source dir") {
+        let entry = entry.expect("source entry");
+        let path = entry.path();
+        let target = dst.join(entry.file_name());
+        if path.is_dir() {
+            copy_dir_all(&path, &target);
+        } else {
+            fs::copy(&path, &target).expect("copy file");
+        }
+    }
+}
+
+/// Commit only `path` (fixtures that must keep other work staged). A path
+/// with no pending change is a no-op.
+pub(crate) fn commit_path(env: &common::TestEnv, path: &str, message: &str) {
+    match env.backend() {
+        common::BackendKind::Git => {
+            let status = common::git(env, &["status", "--porcelain", "--", path]);
+            if status.stdout.is_empty() {
+                return;
+            }
+            let add = common::git(env, &["add", "--", path]);
+            assert!(
+                add.status.success(),
+                "git add {path} failed: {}",
+                String::from_utf8_lossy(&add.stderr)
+            );
+            let commit = common::git(env, &["commit", "-m", message, "--", path]);
+            if !commit.status.success() {
+                let stderr = String::from_utf8_lossy(&commit.stderr);
+                if stderr.contains("nothing to commit") || stderr.contains("no changes added") {
+                    return;
+                }
+                panic!("git commit {path} failed: {stderr}");
+            }
+        }
+        common::BackendKind::Fossil => {
+            let commit = common::fossil(env, &["commit", path, "-m", message]);
+            if !commit.status.success() {
+                let stderr = String::from_utf8_lossy(&commit.stderr);
+                if stderr.contains("nothing has changed") {
+                    return;
+                }
+                panic!("fossil commit {path} failed: {stderr}");
+            }
+        }
+    }
+}
+
+/// The receipt status recorded in the current revision, or `"missing"`.
+pub(crate) fn committed_receipt_status(world: &GivnWorld, id: &str) -> String {
+    let env = env(world);
+    let path = format!("givn/archive/{id}/verification.json");
+    let output = match env.backend() {
+        common::BackendKind::Git => common::git(env, &["show", &format!("HEAD:{path}")]),
+        common::BackendKind::Fossil => common::fossil(env, &["cat", &path, "-r", "current"]),
+    };
+    if !output.status.success() {
+        return "missing".to_string();
+    }
+    serde_json::from_slice::<serde_json::Value>(&output.stdout)
+        .ok()
+        .and_then(|value| value["status"].as_str().map(str::to_string))
+        .unwrap_or_else(|| "unreadable".to_string())
+}
+
+/// Write a current change-scoped verification receipt for the fixture.
+pub(crate) fn configured_verify_command(world: &GivnWorld) -> String {
+    let path = root(world).join("givn/commands.yaml");
+    let Ok(content) = fs::read_to_string(path) else {
+        return String::new();
+    };
+    let mut in_verify = false;
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed == "verify:" {
+            in_verify = true;
+            continue;
+        }
+        if in_verify {
+            if trimmed.starts_with("e2e_command:") {
+                continue;
+            }
+            if let Some(value) = trimmed.strip_prefix("command:") {
+                let value = value.split('#').next().unwrap_or("").trim();
+                return value.trim_matches('"').to_string();
+            }
+        }
+    }
+    "givn missing-testrunner".to_string()
+}
+
+pub(crate) fn refresh_change_receipt(world: &GivnWorld, id: &str) {
+    let root = root(world);
+    let change = root.join(format!("givn/changes/{id}"));
+    if !change.exists() {
+        return;
+    }
+    let head = current_revision(world);
+    let command = configured_verify_command(world);
+    givn::proof::write_change_receipt(
+        &root,
+        &change,
+        id,
+        &head,
+        &command,
+        givn::proof::RunnerResult {
+            scope: None,
+            total: 2,
+            passed: 2,
+            failed: 0,
+            skipped: 0,
+        },
+        1,
+    )
+    .expect("write change verification receipt");
+}
+
 pub(crate) fn ready_change(world: &mut GivnWorld, id: &str, with_e2e: bool, kind: &str) {
     ready_change_on(world, common::BackendKind::Git, id, with_e2e, kind);
 }
@@ -236,6 +424,7 @@ pub(crate) fn ready_change_on(
     write_change_artifacts(env, id, with_e2e);
     common::commit_fixture(env);
     world.last_change_id = Some(id.to_string());
+    refresh_change_receipt(world, id);
 }
 
 /// Parse the backend step value used by the backend-parameterized Givens.
