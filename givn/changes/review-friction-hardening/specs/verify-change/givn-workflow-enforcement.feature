@@ -12,7 +12,7 @@ Feature: Review diagnostics and proof reuse
     And stderr reports each distinct document problem once
     And the terminal transcript is captured for this scenario
 
-  @givn.added @wip
+  @givn.added
   Scenario: A case-mismatched document title is refused with the exact correction
     Given a clean committed change whose use-case contract starts with "# Use Case: review-diagnostics-demo"
     When the developer runs `givn check review --change review-diagnostics-demo`

@@ -275,7 +275,7 @@ Evidence:
 - GREEN output: `1 feature, 1 scenario (1 passed), 10 steps (10 passed)`; transcript `evidence/visual/consumer-archives-a-change-after-documentation-only-review-edits-and-the-proof-is-reused/transcript.txt` records the reused-proof line, one `regular givn/specs` invocation, no change-features invocation, exit 0, and the proven archive.
 - REFACTOR output: `cargo fmt`; scenario still passes.
 - Production files: `tests/steps/archive_proof_e2e_steps.rs`, the feature file, committed transcript.
-- COMMIT: `<hash>`
+- COMMIT: 7d10f21bf9a8b782125b056bf4d636d1daab3bc7
 
 ## Final gates
 
