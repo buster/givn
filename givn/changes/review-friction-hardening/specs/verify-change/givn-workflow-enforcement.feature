@@ -10,6 +10,7 @@ Feature: Review diagnostics and proof reuse
     Then the command exits non-zero
     And stderr reports the title, the unknown heading, the capability line, the undeclared interaction, and the example line together in one review run
     And stderr reports each distinct document problem once
+    And the terminal transcript is captured for this scenario
 
   @givn.added @wip
   Scenario: A case-mismatched document title is refused with the exact correction

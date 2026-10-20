@@ -1,0 +1,22 @@
+Scenario: Consumer archives a change after documentation-only review edits and the proof is reused
+argv: givn archive --change review-proof-demo
+cwd (fixture project root): /tmp/.tmpbgwEwr
+exit code: 0
+--- stdout ---
+[00:35:22] ✓ change verification receipt reused across documentation-only revision b57e88239e927e14527595f3286de027b78a646e (tested at 11a527d55c2e98f7f68a473f0297d797fe2704eb, 2 scenario(s))
+[00:35:22] Archiving change 'review-proof-demo'...
+[00:35:22] Running archive gate hooks...
+[00:35:22] ✓ Gate hooks passed
+[00:35:22] ✓ run declaration passed
+[00:35:22] ✓ README completeness gate passed
+[00:35:22] ✓ Candidate committed
+[00:35:22] Running regular verification: ./emit-result.sh regular
+[00:35:22] ✓ development managed block refreshed
+[00:35:22] ✓ Archived 'review-proof-demo' to /tmp/.tmpbgwEwr/givn/archive/review-proof-demo
+Verification receipt: /tmp/.tmpbgwEwr/givn/archive/review-proof-demo/verification.json
+
+Change archived successfully.
+The delta specs have been merged into givn/specs/.
+
+--- stderr ---
+
