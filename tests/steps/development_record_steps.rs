@@ -2852,3 +2852,100 @@ fn entry_content_never_exceeds_the_entry_cap(world: &mut GivnWorld) {
         "the cut bundle is not marked truncated: {entry}"
     );
 }
+// --- event record quality ------------------------------------------------
+
+#[when("the agent reports a turn with inline usage, an answered question, and a failed tool")]
+fn report_quality_payload(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("a project root");
+    let payload = crate::steps::development_timeline_support::intake_payload(
+        None,
+        None,
+        vec![
+            serde_json::json!({
+                "kind": "turn",
+                "at": "2026-10-19T10:00:00.000Z",
+                "turn": 1,
+                "model": "fixture-model",
+                "provider": "fixture-provider",
+                "variant": "fixture-variant",
+                "usage": {
+                    "input": 10,
+                    "output": 5,
+                    "total_tokens": 15,
+                    "model": "fixture-model"
+                }
+            }),
+            serde_json::json!({
+                "kind": "question",
+                "at": "2026-10-19T10:00:01.000Z",
+                "label": "Approve the change?",
+                "question": {"text": "Approve the change?", "truncated": false},
+                "selected": "yes",
+                "answered_by": "human",
+                "answered_at": "2026-10-19T10:00:02.000Z",
+                "answer": {"text": "yes", "truncated": false}
+            }),
+            serde_json::json!({
+                "kind": "tool",
+                "at": "2026-10-19T10:00:03.000Z",
+                "tool": "Bash",
+                "outcome": "failed",
+                "error": "error: first line\nsecond line",
+                "duration_ms": 12
+            }),
+        ],
+    );
+    let out = crate::steps::development_timeline_support::report_intake(env, &payload);
+    assert!(
+        out.status.success(),
+        "intake failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    world.last_output = Some(out);
+}
+
+fn quality_entries(world: &GivnWorld) -> Vec<serde_json::Value> {
+    let env = world.env.as_ref().expect("a project root");
+    crate::steps::development_timeline_support::record_entries(&env.root())
+}
+
+#[then("the turn carries one inline usage representation")]
+fn turn_has_inline_usage(world: &mut GivnWorld) {
+    let entries = quality_entries(world);
+    let turn = entries.iter().find(|e| e["kind"] == "turn").expect("turn");
+    assert_eq!(turn["data"]["usage"]["input"], 10);
+}
+
+#[then("the linked usage entry is marked derived")]
+fn linked_usage_derived(world: &mut GivnWorld) {
+    let entries = quality_entries(world);
+    let usage = entries.iter().find(|e| e["kind"] == "usage").expect("usage");
+    assert_eq!(usage["data"]["derived"], true);
+    let turn = entries.iter().find(|e| e["kind"] == "turn").expect("turn");
+    assert_eq!(usage["parent"], turn["id"]);
+}
+
+#[then("the question records its selected option, source, and answer time")]
+fn question_answer_attributable(world: &mut GivnWorld) {
+    let entries = quality_entries(world);
+    let question = entries.iter().find(|e| e["kind"] == "question").unwrap_or_else(|| panic!("entries: {entries:#?}"));
+    assert_eq!(question["data"]["selected"], "yes");
+    assert_eq!(question["data"]["source"], "human");
+    assert_eq!(question["data"]["answered_at"], "2026-10-19T10:00:02.000Z");
+}
+
+#[then("the failed tool records a bounded first error line")]
+fn failed_tool_bounded_error(world: &mut GivnWorld) {
+    let entries = quality_entries(world);
+    let tool = entries.iter().find(|e| e["kind"] == "tool").expect("tool");
+    assert_eq!(tool["data"]["error"], "error: first line");
+}
+
+#[then("the usage entry names the provider, model, and variant")]
+fn usage_names_identity(world: &mut GivnWorld) {
+    let entries = quality_entries(world);
+    let usage = entries.iter().find(|e| e["kind"] == "usage").expect("usage");
+    assert_eq!(usage["data"]["model"], "fixture-model");
+    assert_eq!(usage["data"]["provider"], "fixture-provider");
+    assert_eq!(usage["data"]["variant"], "fixture-variant");
+}
