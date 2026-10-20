@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "change": "apply-readability-independent-review",
+  "status": "proven",
+  "candidate_revision": "1b288f4bf8fd41f118bdadb2322ed90e0d8efcf7",
+  "tested_revision": "1b288f4bf8fd41f118bdadb2322ed90e0d8efcf7",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 116,
+      "passed": 116,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 37.504649473
+    },
+    "regular": {
+      "status": "passed",
+      "total": 720,
+      "passed": 720,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 96.925475359
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 14934,
+    "line_valid": 20066,
+    "line_percent": 74
+  },
+  "merge_completed": true,
+  "merged_deltas": [],
+  "merge_in_progress": null,
+  "merge_plan": [],
+  "merge_targets": {},
+  "started_at_unix": 1792531057,
+  "finished_at_unix": 1792531316
+}

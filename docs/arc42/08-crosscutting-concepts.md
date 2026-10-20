@@ -154,8 +154,10 @@ docs/arc42/                      # fixed durable Arc42 output path
 ```
 
 `givn init` creates the core `givn/` directories and command/config files. The
-current init path also enables all known addons unless `--no-addons` is passed;
-Arc42 scaffolding therefore normally appears during initialization. There is
+current init path also enables every default-on registered addon unless
+`--no-addons` is passed; Arc42 scaffolding therefore normally appears during
+initialization, while a default-off addon such as `readability` stays absent
+until it is explicitly enabled. There is
 no effective `arc42.output_dir` or chapter-list setting, and no lifecycle
 cascade for selecting individual durable chapter files.
 
@@ -455,7 +457,10 @@ exception into a general bypass for product changes.
 
 An addon is embedded behavior toggled through `addons.<name>` in the project
 config. The embedded default flags are false, but the current `givn init` path
-enables every registered addon unless `--no-addons` is supplied.
+enables every default-on registered addon unless `--no-addons` is supplied. A
+registry entry records whether it is default-on; `readability` is the first
+default-off entry, so initialization lists it as available instead of enabling
+it, and `givn addons enable readability` is the only opt-in step.
 
 For Arc42 specifically, `givn addons enable arc42`:
 
@@ -501,8 +506,10 @@ When an explicit artifact is passed to `givn check`, `src/cli/check.rs` first
 runs mandatory checks:
 
 - `tasks`: change-delta WIP protection and `verify.command`;
-- `review`: `integrity`, the run-declaration check, and the named-change
-  overlap gate. Review does not execute the test suite; scenario execution is
+- `review`: `integrity`, the run-declaration check, the named-change
+  overlap gate, the change-scoped verification receipt, and — for a named
+  change with `addons.readability` enabled — the readability review gate.
+  Review does not execute the test suite; scenario execution is
   proven by the archive verification receipt.
 
 These checks are not controlled by `post` and cannot be disabled by merely
@@ -1059,5 +1066,117 @@ Chromium through `./setup-e2e-browser.sh`, and a JSON-line driver holds one
 browser context per scenario so page state, zoom level, and open panels persist
 across steps. The artifacts under test are the real generated report and the
 real `givn` binary; the driver never substitutes an API call for a click.
+
+## 8.26 The Readability Report and the Source Analysis Boundary
+
+The readability experiment is a default-off addon. Its report is a read view
+that appends no development-record entry; its review gate (8.26a) is scoped to
+`givn check review` for a named change and adds no archive gate. The report's
+contract is:
+
+- **Opt-in only.** `addons.readability` is absent or false in an ordinary
+  project. The command is still registered so the disabled path can name the
+  experiment and the enabling command; that path exits 1.
+- **Findings-only output.** A produced report exits 0 regardless of how many
+  findings it contains. Each unit carries one classification and its evidence;
+  there is no `action`, no `recommendation`, and no advice line. The JSON schema
+  is version 2. The only failure exits are a disabled experiment, an unwritable
+  `--out` target, and invalid CLI usage. A report finding never enters a gate;
+  the review gate re-derives its own change-relative findings instead.
+- **No stored state.** The report writes only stdout/stderr or the explicit
+  `--out` path. There is no baseline, watchlist, cache, classification history,
+  or feedback ledger; the review gate evaluates the units a change touches
+  at its base and head instead.
+- **Production scope.** The first release scans the project-root `src/` tree and
+  excludes `tests/`, `benches/`, `examples/`, `target/`, and `#[cfg(test)]`
+  items. `src/bin/**` is included. A multi-crate workspace whose members live
+  outside that tree is not scanned in this release.
+- **Deterministic and offline.** Traversal is sorted, paths are project-relative
+  with `/`, output carries no timestamps or analyzer identity, line counts and
+  ratio metrics are integers, and no model or network call exists.
+- **Neutral analysis boundary.** `SourceAnalyzer` is the port; `SynAnalyzer` is
+  the first adapter; parser types stay inside the `syn_adapter/` directory. Production
+  discovery, metrics, classification, and both renderers run above the port.
+  A hand-written fake adapter proves the port's sufficiency, a source scan keeps
+  `syn` out of every non-adapter module, and a later tree-sitter adapter is
+  accepted only by passing the same contract suite unchanged. ADR-074 records
+  this cross-change boundary.
+- **Diagnostics are data.** A file that cannot be read or parsed, an
+  item-position macro, or another unsupported construct is reported by path and
+  kind; the report continues. A wholly unsupported unit is never classified and
+  no data is invented for it.
+- **Format versions are explicit.** `schema_version` changes only for a breaking
+  document-shape change; `rules_version` changes when thresholds or
+  classification rules change. Schema 2 removes `action` and `recommendation`;
+  rules stay version 1 because no threshold or classification changed. The
+  human and JSON forms render from the same classified model, so a rule change
+  does not silently alter the schema.
+
+### 8.26a The Readability Review Gate: Fix or Justify
+
+The gate turns the same classified model into a review obligation without
+becoming a second classification authority. Five concepts carry it.
+
+**The change-relative comparison.** There is no project-wide baseline and no
+watchlist. The base is the parent of the first reachable commit that touched the
+change directory; the head is the committed `HEAD`, and a dirty production path
+fails before analysis. Only the units the change touched are evaluated, and
+each is classified by the current rules at both sides. A unit that already
+existed over its threshold is existing debt, not new debt; keeping it requires a
+rationale, not silence.
+
+**The decision vocabulary.** `review.md` is the durable record. The marker names
+and unit ids are case-sensitive; a marker names the report's exact unit id
+(`type:<path>::<Name>` or `module:<path>`), never a file alias:
+
+| Marker | Meaning |
+|---|---|
+| `READABILITY: FIXED <unit>` | The unit is under its threshold at head, or the finding no longer fires (removed or split). |
+| `READABILITY: JUSTIFIED <unit>` | The unit remains a finding at head and a change-scoped rationale exists. |
+| `READABILITY: PASS` | The semantic review ran and found the touched units explainable. Required when at least one finding exists. |
+| `FAIL <reason>` | The semantic review failed; review must not pass. |
+
+Every gate finding needs exactly one `FIXED` or `JUSTIFIED` decision. A
+`FIXED` marker for a still-over unit, a `JUSTIFIED` marker without a rationale,
+a `JUSTIFIED` marker on a unit that is not a finding at head, two decisions for
+one unit, and an unknown `READABILITY:` line all block. Duplicate identical
+decisions are harmless; fenced examples and `FAILED`/`FAILURE` are not markers. A
+marker for an untouched unit is advisory, because a finding may have been
+closed after the marker was written. A missing verdict, an undecided finding,
+an invalid rationale, and a `FAIL` marker all block.
+
+**The rationale is change-scoped and unit-level.** A rationale lives at
+`givn/changes/<id>/readability/rationales/<unit-slug>.md` and carries `Unit:`,
+`Classification:`, `Finding:`, `Evidence:`, `Why this shape is right:`,
+`Alternatives considered:`, and `Owner:`; a temporary shape also carries
+`Follow-up:` and `Expiry:`. Givn checks the fields, the unit and classification
+match, concrete evidence (a metric or a finding path), a named responsibility, a
+named alternative with why it was rejected (empty, `none`, and `n/a` fail), a
+confirmed owner from the durable `givn/personas/` collection (no owner persona
+fails closed), and the banned whole-word phrases ("not my code", "not this
+change", "predates my work", "no capacity", "legacy", "too risky", "no time",
+"will do later", "later", "out of scope"). It does not grade truth or
+plausibility; the owner approves the content by writing the marker. A type
+rationale does not cover the file's module finding, and two types in one file
+need two rationales. The artifacts move with the change into the archive and
+are never read across changes, so they cannot become a baseline.
+
+**The semantic verdict is an attestation.** The outline-only comprehension
+review (fresh context, outline alone, responsibility and call order) is
+procedural. `READABILITY: PASS` records that it happened; the gate cannot prove
+the reviewer stayed out of the source, and it does not claim to. The mechanical
+rules cover size, structure, the decision, and the rationale fields only.
+
+**Ownership.** Code is owned by everyone working on the project. Seeing
+technical debt and leaving it because "it was not me" is not acceptable, and a
+justification cannot use ownership or scope as a reason. The served review
+guidance and `assets/instructions/dev-principles.md` state the same rule.
+
+The serving path is conditional: `assets/instructions/review.md` renders the
+block behind `{{#if addons.readability}}`, and the addon key is known to the
+renderer, the sync flag map (`src/skills/targets.rs`), and the instruction CLI
+map (`src/cli/instructions.rs`); the two maps are kept identical or share one
+helper. A project that has not enabled the experiment
+receives the unchanged review instruction.
 
 *[Architecture documentation index](README.md)*

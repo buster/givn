@@ -1,5 +1,5 @@
 <!-- givn:begin:coverage-badge -->
-[![Line Coverage: 68%](https://img.shields.io/badge/line%20coverage-68%25-brightgreen)](coverage/cobertura-coverage.xml)
+[![Line Coverage: 74%](https://img.shields.io/badge/line%20coverage-74%25-brightgreen)](coverage/cobertura-coverage.xml)
 [![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
 <!-- givn:end:coverage-badge -->
 
@@ -42,6 +42,14 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   and `givn timeline` renders one change or ideation topic as a self-contained
   interactive report: the workflow top to bottom, each phase's vertical
   session lanes and lane log, the longest steps, and where the time went.
+- **An opt-in readability report and review gate.** The default-off
+  `readability` addon adds `givn readability report`: an advisory,
+  deterministic findings-only snapshot of production Rust units — size, public
+  surface, cohesion/coupling, and method complexity — with one classification
+  and its evidence per unit at schema version 2, and no recommendation. When
+  the addon is enabled, `givn check review` also refuses any touched unit that
+  is still a finding at the committed `HEAD` unless it is fixed or carries a
+  change-scoped, owner-approved rationale. No baseline is stored.
 - **Scenario-by-scenario TDD with proof.** Each scenario runs RED (targeted,
   genuinely failing) → GREEN (minimum code) → REFACTOR → one atomic commit.
   The runner's strict mode is proven up front so an empty step definition can
@@ -168,7 +176,7 @@ to the conditions of this license.
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 68% (11868/17499)
+Line coverage: 74% (14934/20066)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:

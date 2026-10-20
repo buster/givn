@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "change": "add-independent-rationale-review",
+  "status": "passed",
+  "head": "e5bdc7b9add23f19b2c03ebcc0c92d1a352c4d60",
+  "features_path": "givn/changes/add-independent-rationale-review/specs",
+  "features_digest": "0333724f170902b730f98682870c2cf12d9ca3b6bbda6c7f53a77c8da45f2726",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1792528804
+}
