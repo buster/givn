@@ -2,7 +2,7 @@
 
 Feature: Readability report
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: A developer runs a readability report and sees the classified units
     Given a Givn project with the readability experiment enabled
     And a production source unit that is over the readable size
