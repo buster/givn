@@ -22,6 +22,46 @@ fn readability_addon_is_listed_as_disabled(world: &mut GivnWorld) {
     readability_addon_is_disabled(world);
 }
 
+#[given("a well-formed production source unit")]
+fn well_formed_unit(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::readability_report_support::write_small_unit(env);
+}
+
+#[given("a malformed production source file")]
+fn malformed_source(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::readability_report_support::write_source(
+        env,
+        "src/malformed.rs",
+        "pub struct Broken {\n",
+    );
+}
+
+#[then("the report names the malformed file")]
+fn report_names_malformed(world: &mut GivnWorld) {
+    let stdout = report_text(world);
+    assert!(
+        stdout.contains("malformed.rs") && stdout.contains("parse-failed"),
+        "expected the malformed file and parse failure, got: {stdout}"
+    );
+}
+
+#[then("the report still classifies the well-formed unit")]
+fn report_still_classifies(world: &mut GivnWorld) {
+    let block = unit_block(world, "Small");
+    assert!(
+        block.contains("within-limits"),
+        "expected the well-formed unit to be classified, got: {block}"
+    );
+}
+
 #[given("no production source files")]
 fn no_production_sources(world: &mut GivnWorld) {
     let env = world
@@ -273,14 +313,11 @@ fn report_recommends_no_action(world: &mut GivnWorld) {
 }
 
 fn unit_block(world: &GivnWorld, name: &str) -> String {
-    let report = world
-        .additional_output
-        .as_deref()
-        .expect("an in-process report was produced");
+    let report = report_text(world);
     report
         .split("\n\n")
         .find(|block| block.contains(name))
-        .unwrap_or(report)
+        .unwrap_or(&report)
         .to_string()
 }
 
