@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "change": "add-readability-report",
+  "status": "pending",
+  "candidate_revision": null,
+  "tested_revision": null,
+  "scopes": {},
+  "coverage": null,
+  "merge_completed": true,
+  "merged_deltas": [
+    "assess-code-structure/readability-report.feature",
+    "initialize-project/enable-optional-addons.feature"
+  ],
+  "merge_in_progress": null,
+  "merge_plan": [
+    "assess-code-structure/readability-report.feature",
+    "initialize-project/enable-optional-addons.feature"
+  ],
+  "merge_targets": {
+    "assess-code-structure/readability-report.feature": "givn/specs/assess-code-structure/readability-report.feature",
+    "initialize-project/enable-optional-addons.feature": "givn/specs/initialize-project/enable-optional-addons.feature"
+  },
+  "started_at_unix": 1792502417,
+  "finished_at_unix": null
+}

@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "change": "add-readability-report",
+  "status": "passed",
+  "head": "128ad5a00f130b19c440bcdeba64876581733a20",
+  "features_path": "givn/changes/add-readability-report/specs",
+  "features_digest": "9f87d07c616bf614f2505365037cd9d45454555733df78d1ab3f3a82427dee71",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 28,
+    "passed": 28,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1792502414
+}
