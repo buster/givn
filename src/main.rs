@@ -418,9 +418,13 @@ fn main() {
     } else {
         ("failed", 1)
     };
+    let error_text = result
+        .as_ref()
+        .err()
+        .map(|error| format!("{error:#}"));
     if let Some(recorder) = &recorder {
         recorder.observe_artifacts();
-        recorder.finish(outcome, exit_code);
+        recorder.finish(outcome, exit_code, error_text.as_deref());
     }
 
     if let Err(e) = result {
