@@ -3,12 +3,16 @@
 //! Routing decisions identify a capability's use-case owner. The decision is
 //! recorded by the author; review never silently reruns advisory routing.
 
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use anyhow::{Result, bail};
 use gherkin::GherkinEnv;
 
-use crate::gherkin::usecase_md::parse_usecase_md;
+use crate::gherkin::usecase_md::{
+    FragmentDoc, UsecaseDiagnostic, UsecaseDiagnostics, UsecaseDoc, parse_fragment_md_diagnostics,
+    parse_usecase_md_diagnostics,
+};
 
 pub const HEADING_CAPABILITY_ROUTING: &str = "## Capability Routing";
 
@@ -137,17 +141,131 @@ fn content_words(text: &str) -> Vec<String> {
         .collect()
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum DocumentKind {
+    Usecase,
+    Fragment,
+}
+
+impl DocumentKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::Usecase => "usecase",
+            Self::Fragment => "fragment",
+        }
+    }
+}
+
+#[derive(Default)]
+struct CachedDocument {
+    kind: Option<DocumentKind>,
+    usecase: Option<UsecaseDoc>,
+    fragment: Option<FragmentDoc>,
+    diagnostics: UsecaseDiagnostics,
+}
+
+fn collect_narrative_paths(dir: &Path, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_narrative_paths(&path, out);
+        } else if path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| name == "usecase.md" || name == "fragment.md")
+        {
+            out.push(path);
+        }
+    }
+}
+
+fn relative_path(project_root: &Path, path: &Path) -> String {
+    path.strip_prefix(project_root)
+        .unwrap_or(path)
+        .to_string_lossy()
+        .replace('\\', "/")
+}
+
+fn cache_document(cache: &mut BTreeMap<PathBuf, CachedDocument>, path: &Path, project_root: &Path) {
+    if cache.contains_key(path) {
+        return;
+    }
+    let kind = if path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name == "fragment.md")
+    {
+        DocumentKind::Fragment
+    } else {
+        DocumentKind::Usecase
+    };
+    let Ok(content) = std::fs::read_to_string(path) else {
+        cache.insert(
+            path.to_path_buf(),
+            CachedDocument {
+                kind: Some(kind),
+                usecase: None,
+                fragment: None,
+                diagnostics: UsecaseDiagnostics(vec![UsecaseDiagnostic {
+                    line: None,
+                    message: format!("cannot read '{}'", relative_path(project_root, path)),
+                    suggestion: None,
+                }]),
+            },
+        );
+        return;
+    };
+    let (usecase, fragment, diagnostics) = match kind {
+        DocumentKind::Usecase => {
+            let (doc, diagnostics) = parse_usecase_md_diagnostics(&content);
+            (doc, None, diagnostics)
+        }
+        DocumentKind::Fragment => {
+            let (doc, diagnostics) = parse_fragment_md_diagnostics(&content);
+            (None, doc, diagnostics)
+        }
+    };
+    cache.insert(
+        path.to_path_buf(),
+        CachedDocument {
+            kind: Some(kind),
+            usecase,
+            fragment,
+            diagnostics,
+        },
+    );
+}
+
 pub fn check_routing_consistency(project_root: &Path, change_id: &str) -> Result<()> {
     let change_dir = crate::state::resolve_change_dir(project_root, change_id)?;
     let specs_dir = change_dir.join("specs");
     let deltas = collect_delta_capabilities(&specs_dir)?;
-    if deltas.is_empty() {
+
+    let mut narrative_paths = Vec::new();
+    collect_narrative_paths(&specs_dir, &mut narrative_paths);
+    narrative_paths.sort();
+
+    if deltas.is_empty() && narrative_paths.is_empty() {
         return Ok(());
+    }
+
+    let mut cache = BTreeMap::new();
+    for path in &narrative_paths {
+        cache_document(&mut cache, path, project_root);
     }
 
     let proposal_path = change_dir.join("proposal.md");
     let proposal_text = std::fs::read_to_string(&proposal_path).unwrap_or_default();
     let rows = parse_routing_table(&proposal_text);
+
+    if deltas.is_empty() {
+        emit_or_return(project_root, &cache, BTreeSet::new())?;
+        return Ok(());
+    }
+
     if rows.is_empty() {
         println!(
             "  ⚠ proposal.md has no filled '{HEADING_CAPABILITY_ROUTING}' table — \
@@ -159,14 +277,15 @@ pub fn check_routing_consistency(project_root: &Path, change_id: &str) -> Result
                 .collect::<Vec<_>>()
                 .join(", ")
         );
+        emit_or_return(project_root, &cache, BTreeSet::new())?;
         return Ok(());
     }
 
     let permanent_root = project_root.join("givn/specs");
-    let mut errors = Vec::new();
+    let mut errors = BTreeSet::new();
     for delta in &deltas {
         let Some(row) = rows.iter().find(|row| row.capability == delta.capability) else {
-            errors.push(format!(
+            errors.insert(format!(
                 "delta capability '{}' is not declared in the Capability Routing table",
                 delta.capability
             ));
@@ -178,13 +297,13 @@ pub fn check_routing_consistency(project_root: &Path, change_id: &str) -> Result
                 let Some(permanent_usecase) =
                     resolve_permanent_usecase(&permanent_root, capability)
                 else {
-                    errors.push(format!(
+                    errors.insert(format!(
                         "decision EXTEND {capability}: capability does not exist in the permanent corpus; record 'NEW in <usecase-id>' instead"
                     ));
                     continue;
                 };
                 if delta.capability != *capability {
-                    errors.push(format!(
+                    errors.insert(format!(
                         "decision EXTEND {capability}: the delta capability is '{}'",
                         delta.capability
                     ));
@@ -194,40 +313,29 @@ pub fn check_routing_consistency(project_root: &Path, change_id: &str) -> Result
                     .and_then(|name| name.to_str())
                     .unwrap_or("?");
                 if delta.usecase.as_deref() != Some(permanent_usecase_name) {
-                    errors.push(format!(
+                    errors.insert(format!(
                         "decision EXTEND {capability}: the delta must live under specs/{permanent_usecase_name}/"
                     ));
                 }
             }
             Decision::NewIn(usecase) if usecase == "fragments" => {
-                // Fragment capabilities live under givn/specs/fragments/ with
-                // fragment.md as their narrative; they carry no interactions.
                 let fragment_path = permanent_root.join("fragments").join("fragment.md");
-                let fragment = std::fs::read_to_string(&fragment_path)
-                    .map_err(|error| {
-                        anyhow::anyhow!(
-                            "decision NEW in fragments: cannot read {fragment_path:?}: {error}"
-                        )
-                    })
-                    .and_then(|text| {
-                        crate::gherkin::usecase_md::parse_fragment_md(&text).map_err(|error| {
-                            anyhow::anyhow!(
-                                "decision NEW in fragments: invalid fragment.md: {error}"
-                            )
-                        })
-                    });
+                cache_document(&mut cache, &fragment_path, project_root);
+                let fragment = cache
+                    .get(&fragment_path)
+                    .and_then(|doc| doc.fragment.as_ref());
                 match fragment {
-                    Ok(doc) if doc.capabilities.contains(&delta.capability) => {}
-                    Ok(_) => {
-                        errors.push(format!(
+                    Some(doc) if doc.capabilities.contains(&delta.capability) => {}
+                    Some(_) => {
+                        errors.insert(format!(
                             "decision NEW in fragments: fragment.md does not declare capability '{}'",
                             delta.capability
                         ));
                     }
-                    Err(error) => errors.push(error.to_string()),
+                    None => {}
                 }
                 if delta.usecase.as_deref() != Some("fragments") {
-                    errors.push(
+                    errors.insert(
                         "decision NEW in fragments: the delta must live under specs/fragments/"
                             .to_string(),
                     );
@@ -235,13 +343,13 @@ pub fn check_routing_consistency(project_root: &Path, change_id: &str) -> Result
             }
             Decision::NewIn(usecase) => {
                 if resolve_permanent_usecase(&permanent_root, &delta.capability).is_some() {
-                    errors.push(format!(
+                    errors.insert(format!(
                         "decision NEW in {usecase}: capability '{}' already exists in the permanent corpus; record 'EXTEND {}' instead",
                         delta.capability, delta.capability
                     ));
                 }
                 if delta.usecase.as_deref() != Some(usecase.as_str()) {
-                    errors.push(format!(
+                    errors.insert(format!(
                         "decision NEW in {usecase}: the delta must live under specs/{usecase}/"
                     ));
                     continue;
@@ -253,52 +361,86 @@ pub fn check_routing_consistency(project_root: &Path, change_id: &str) -> Result
                 } else if permanent_path.exists() {
                     permanent_path
                 } else {
-                    errors.push(format!(
+                    errors.insert(format!(
                         "decision NEW in {usecase}: no usecase.md exists; create one with '{}' in Capabilities",
                         delta.capability
                     ));
                     continue;
                 };
-                match parse_usecase_md(&std::fs::read_to_string(&document_path)?) {
-                    Ok(doc) => {
-                        if !doc
-                            .capabilities
-                            .iter()
-                            .any(|capability| capability == &delta.capability)
-                        {
-                            errors.push(format!(
-                                "decision NEW in {usecase}: usecase.md does not declare capability '{}'",
-                                delta.capability
-                            ));
-                        }
-                        let capability_words = content_words(&delta.capability);
-                        let has_interaction = doc.interactions.iter().any(|interaction| {
-                            interaction.capability == delta.capability
-                                || capability_words.iter().any(|word| {
-                                    content_words(&interaction.consumer_action)
-                                        .iter()
-                                        .any(|interaction_word| interaction_word == word)
-                                })
-                        });
-                        if !has_interaction {
-                            errors.push(format!(
-                                "decision NEW in {usecase}: usecase.md has no interaction for capability '{}'",
-                                delta.capability
-                            ));
-                        }
-                    }
-                    Err(error) => errors.push(format!(
-                        "decision NEW in {usecase}: usecase.md failed to parse: {error}"
-                    )),
+                cache_document(&mut cache, &document_path, project_root);
+                let doc = cache
+                    .get(&document_path)
+                    .and_then(|document| document.usecase.as_ref());
+                let Some(doc) = doc else {
+                    continue;
+                };
+                if !doc
+                    .capabilities
+                    .iter()
+                    .any(|capability| capability == &delta.capability)
+                {
+                    errors.insert(format!(
+                        "decision NEW in {usecase}: usecase.md does not declare capability '{}'",
+                        delta.capability
+                    ));
+                }
+                let capability_words = content_words(&delta.capability);
+                let has_interaction = doc.interactions.iter().any(|interaction| {
+                    interaction.capability == delta.capability
+                        || capability_words.iter().any(|word| {
+                            content_words(&interaction.consumer_action)
+                                .iter()
+                                .any(|interaction_word| interaction_word == word)
+                        })
+                });
+                if !has_interaction {
+                    errors.insert(format!(
+                        "decision NEW in {usecase}: usecase.md has no interaction for capability '{}'",
+                        delta.capability
+                    ));
                 }
             }
         }
     }
 
-    if !errors.is_empty() {
+    emit_or_return(project_root, &cache, errors)
+}
+
+fn emit_or_return(
+    project_root: &Path,
+    cache: &BTreeMap<PathBuf, CachedDocument>,
+    errors: BTreeSet<String>,
+) -> Result<()> {
+    let mut lines = Vec::new();
+    let mut seen = BTreeSet::new();
+    for (path, document) in cache {
+        if document.diagnostics.is_empty() {
+            continue;
+        }
+        let kind = document
+            .kind
+            .map(DocumentKind::label)
+            .unwrap_or("narrative");
+        lines.push(format!(
+            "  {kind} document '{}':",
+            relative_path(project_root, path)
+        ));
+        for diagnostic in &document.diagnostics.0 {
+            let rendered = diagnostic.rendered();
+            if seen.insert(rendered.clone()) {
+                lines.push(format!("    {rendered}"));
+            }
+        }
+    }
+    for error in errors {
+        if seen.insert(error.clone()) {
+            lines.push(format!("  {error}"));
+        }
+    }
+    if !lines.is_empty() {
         bail!(
-            "capability routing decisions do not match the built delta:\n  {}",
-            errors.join("\n  ")
+            "capability routing decisions do not match the built delta:\n{}",
+            lines.join("\n")
         );
     }
     Ok(())

@@ -84,6 +84,14 @@ ADR-013's generated-integration ownership, and ADR-028's gate boundary. The
 browser report and its visual contract are documented in
 `docs/design/design-system.md`.
 
+The `review-friction-hardening` change amends ADR-070: the change
+verification receipt binds the tested content through a SHA-256 digest and the
+`change-proof/v1` scope, so review and archive reuse a green proof across a
+documentation-only revision while any tested-content change still stales it.
+The review routing gate also reports every use-case schema and
+capability-routing diagnostic in one pass. Durable facts live in chapters 2
+(TC-39), 4, 5, 6.7.1, 10 (Q-105, Q-108), 11 (R-104, R-105), and the glossary.
+
 Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
 register](adr/README.md) for status, relationships, evidence, reserved IDs, and
 historical records.

@@ -235,7 +235,7 @@ pub(crate) fn stderr(world: &GivnWorld) -> String {
 /// dropping the leading program name (`givn`). Double quotes delimit a single
 /// argument (which may be empty or contain spaces); unquoted whitespace
 /// separates arguments.
-fn parse_command(raw: &str) -> Vec<String> {
+pub(crate) fn parse_command(raw: &str) -> Vec<String> {
     let mut args: Vec<String> = Vec::new();
     let mut current = String::new();
     let mut in_quotes = false;

@@ -148,4 +148,14 @@ the permanent ADR register scenario asserts that no register record is left
 `proposed` record could never satisfy the merged corpus. The recovery and
 review-evidence consequences are carried by R-53 through R-55 in chapter 11.
 
+ADR-070 is amended by the `review-friction-hardening` change. The receipt now
+also binds the tested content through a SHA-256 digest and the versioned
+`change-proof/v1` scope, so review and archive reuse a green proof when only
+documentation or evidence changed after it was recorded. Any tested-content
+change still makes the receipt stale, schema 1 receipts keep strict revision
+equality, and unknown schemas are refused. The archive publication boundary,
+candidate exactness, and fail-closed scope results are unchanged; the
+boundary risk is carried by R-104 and the compatibility cost by R-105 in
+chapter 11.
+
 *[Architecture documentation index](README.md)*

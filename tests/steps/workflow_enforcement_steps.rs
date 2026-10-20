@@ -1129,3 +1129,421 @@ fn review_records_not_applicable(world: &mut GivnWorld) {
     )
     .expect("write review marker");
 }
+
+// ─── review diagnostics and proof reuse fixtures ─────────────────────────
+
+fn write_review_fixture(
+    world: &mut GivnWorld,
+    id: &str,
+    usecase_dir: &str,
+    contract: &str,
+    capabilities: &[&str],
+    routing: &[(&str, &str)],
+) {
+    scaffold_init_root_change(world, id);
+    let change = change_dir_for(world, id);
+    let specs = change.join("specs").join(usecase_dir);
+    std::fs::create_dir_all(&specs).unwrap();
+
+    let mut proposal = format!(
+        "# Proposal: {id}\n\n## Capability Routing\n\n\
+         | Proposed capability | Route's recommendation | Decision | Rationale |\n\
+         |---|---|---|---|\n"
+    );
+    for (capability, decision) in routing {
+        proposal.push_str(&format!(
+            "| {capability} | (fixture) | {decision} | fixture |\n"
+        ));
+    }
+    std::fs::write(change.join("proposal.md"), proposal).unwrap();
+    std::fs::write(specs.join("usecase.md"), contract).unwrap();
+    for capability in capabilities {
+        let feature = format!(
+            "@givn.delta @{capability}\nFeature: {capability}\n\n  @givn.added\n  Scenario: Fixture {capability}\n    Given x\n    Then y\n"
+        );
+        std::fs::write(specs.join(format!("{capability}.feature")), feature).unwrap();
+    }
+    std::fs::write(change.join("design.md"), "# Design\n").unwrap();
+    std::fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n").unwrap();
+    std::fs::write(
+        change.join("review.md"),
+        "REVIEW: PASS\nREADME-IMPACT: none\n",
+    )
+    .unwrap();
+
+    set_verify_true(world);
+    common::commit_fixture(world.env.as_ref().unwrap());
+    write_fixture_change_receipt(world, id);
+}
+
+fn review_contract(
+    id: &str,
+    title: Option<&str>,
+    capabilities: &str,
+    interactions: &str,
+    examples: &str,
+    extra: &str,
+) -> String {
+    let default_title = format!("# Use case: {id}");
+    let title = title.unwrap_or(&default_title);
+    format!(
+        "{title}\n\n\
+         ## Level\n\n!\n\n\
+         ## Actors\n\n- Developer\n\n\
+         ## Goal\n\nCheck a change.\n\n\
+         ## Trigger\n\nThe developer requests verification.\n\n\
+         ## Preconditions\n\n- The change exists.\n\n\
+         ## Main flow\n\n1. The developer requests verification.\n\n\
+         ## Extensions\n\n- none\n\n\
+         ## Rules\n\n- Structural failures outrank other findings.\n\n\
+         ## Examples\n\n{examples}\n\n\
+         {extra}\
+         ## Minimal guarantee\n\nAn invalid change cannot pass.\n\n\
+         ## Success guarantee\n\nThe developer receives a complete result.\n\n\
+         ## Personas\n\n- developer--primary-user\n\n\
+         ## Capabilities\n\n{capabilities}\n\n\
+         ## Interactions\n\n{interactions}\n\n\
+         ## Includes\n\n- fragment: support\n\n\
+         ## Extends\n\n- none\n\n\
+         ## Out of scope\n\nRunning the product suite.\n\n\
+         ## Diagram\n\n```mermaid\nflowchart LR\n  A --> B\n```\n"
+    )
+}
+
+#[when(regex = r"^the developer runs `([^`]+)`$")]
+fn developer_runs(world: &mut GivnWorld, cmd: String) {
+    let args = crate::steps::parse_command(&cmd);
+    let argv: Vec<&str> = args.iter().map(String::as_str).collect();
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let out = common::run_givn(env, &argv);
+    if let Some(id) = args
+        .iter()
+        .position(|arg| arg == "--change")
+        .and_then(|index| args.get(index + 1))
+    {
+        world.last_change_id = Some(id.clone());
+    }
+    world.last_output = Some(out);
+}
+
+fn valid_interactions(capabilities: &[&str]) -> String {
+    let mut table =
+        String::from("| Capability | Consumer action | E2E scenario |\n|---|---|---|\n");
+    for capability in capabilities {
+        table.push_str(&format!(
+            "| {capability} | run {capability} | Consumer runs {capability} |\n"
+        ));
+    }
+    table
+}
+
+#[given(
+    "the use-case contract has a case-mismatched title, an unknown \"## Guarantees\" heading, a capability line that is not a bullet, an interaction that names an undeclared capability, and an example line that is not a bullet"
+)]
+fn review_fixture_all_schema_problems(world: &mut GivnWorld) {
+    let contract = review_contract(
+        "review-diagnostics-demo",
+        Some("# Use Case: review-diagnostics-demo"),
+        "- alpha-capability\nthis line is not a bullet",
+        "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| register-readiness | do it | Consumer does it |",
+        "This line is prose, not a bullet.",
+        "## Guarantees\n\nThis heading is not part of the schema.\n\n",
+    );
+    write_review_fixture(
+        world,
+        "review-diagnostics-demo",
+        "review-diagnostics-demo",
+        &contract,
+        &["alpha-capability"],
+        &[("alpha-capability", "NEW in review-diagnostics-demo")],
+    );
+}
+
+#[given(
+    "a clean committed change whose delta capability is routed \"NEW in review-diagnostics-demo\""
+)]
+fn review_fixture_routed_new(world: &mut GivnWorld) {
+    // The following Given writes the contract and the fixture.
+    world.last_change_id = Some("review-diagnostics-demo".to_string());
+}
+
+#[given(
+    "a clean committed change whose use-case contract starts with \"# Use Case: review-diagnostics-demo\""
+)]
+fn review_fixture_case_mismatch_title(world: &mut GivnWorld) {
+    let contract = review_contract(
+        "review-diagnostics-demo",
+        Some("# Use Case: review-diagnostics-demo"),
+        "- alpha-capability",
+        &valid_interactions(&["alpha-capability"]),
+        "- A valid example.",
+        "",
+    );
+    write_review_fixture(
+        world,
+        "review-diagnostics-demo",
+        "review-diagnostics-demo",
+        &contract,
+        &["alpha-capability"],
+        &[("alpha-capability", "NEW in review-diagnostics-demo")],
+    );
+}
+
+#[given(
+    "a clean committed change whose use-case contract has an unknown \"## Guarantees\" heading"
+)]
+fn review_fixture_unknown_heading(world: &mut GivnWorld) {
+    let contract = review_contract(
+        "review-diagnostics-demo",
+        None,
+        "- alpha-capability",
+        &valid_interactions(&["alpha-capability"]),
+        "- A valid example.",
+        "## Guarantees\n\nThis heading is not part of the schema.\n\n",
+    );
+    write_review_fixture(
+        world,
+        "review-diagnostics-demo",
+        "review-diagnostics-demo",
+        &contract,
+        &["alpha-capability"],
+        &[("alpha-capability", "NEW in review-diagnostics-demo")],
+    );
+}
+
+#[given(
+    "a clean committed change whose use-case contract omits \"## Minimal guarantee\" and \"## Success guarantee\""
+)]
+fn review_fixture_missing_sections(world: &mut GivnWorld) {
+    let contract = review_contract(
+        "review-diagnostics-demo",
+        None,
+        "- alpha-capability",
+        "| Capability | Consumer action | E2E scenario |\n| --- |\n| alpha-capability | do it | Consumer does it |",
+        "- A valid example.",
+        "",
+    )
+    .replace("## Minimal guarantee\n\nAn invalid change cannot pass.\n\n", "")
+    .replace(
+        "## Success guarantee\n\nThe developer receives a complete result.\n\n",
+        "",
+    );
+    write_review_fixture(
+        world,
+        "review-diagnostics-demo",
+        "review-diagnostics-demo",
+        &contract,
+        &["alpha-capability"],
+        &[("alpha-capability", "NEW in review-diagnostics-demo")],
+    );
+}
+
+#[given("the interaction table separator row has the wrong column count")]
+fn interaction_separator_wrong_columns(_world: &mut GivnWorld) {
+    // The contract written by the preceding Given already carries the malformed
+    // separator row.
+}
+
+#[given(
+    "a clean committed change with three delta capabilities routed \"NEW in review-diagnostics-demo\""
+)]
+fn review_fixture_three_capabilities(world: &mut GivnWorld) {
+    let contract = review_contract(
+        "review-diagnostics-demo",
+        Some("# Use Case: review-diagnostics-demo"),
+        "- alpha-capability\n- beta-capability\n- gamma-capability",
+        &valid_interactions(&["alpha-capability", "beta-capability", "gamma-capability"]),
+        "- A valid example.",
+        "## Guarantees\n\nThis heading is not part of the schema.\n\n",
+    );
+    write_review_fixture(
+        world,
+        "review-diagnostics-demo",
+        "review-diagnostics-demo",
+        &contract,
+        &["alpha-capability", "beta-capability", "gamma-capability"],
+        &[
+            ("alpha-capability", "NEW in review-diagnostics-demo"),
+            ("beta-capability", "NEW in review-diagnostics-demo"),
+            ("gamma-capability", "NEW in review-diagnostics-demo"),
+        ],
+    );
+}
+
+#[given(
+    "the use-case contract has a case-mismatched title and an unknown \"## Guarantees\" heading"
+)]
+fn review_fixture_title_and_heading(_world: &mut GivnWorld) {
+    // The contract written by the preceding Given already carries both.
+}
+
+#[given(
+    "a clean committed change that replaces an existing use-case narrative and whose routing decision extends that use case's capability"
+)]
+fn review_fixture_extend_narrative(world: &mut GivnWorld) {
+    world.env = Some(common::make_init_root());
+    let env = world.env.as_ref().unwrap();
+    let id = "review-diagnostics-demo";
+    let out = common::run_givn(env, &["new", id]);
+    assert!(out.status.success(), "givn new failed");
+    world.last_change_id = Some(id.to_string());
+
+    let change = env.path(&format!("givn/changes/{id}"));
+    let specs = change.join("specs/existing-use");
+    std::fs::create_dir_all(&specs).unwrap();
+    std::fs::write(
+        change.join("proposal.md"),
+        "# Proposal: fixture\n\n## Capability Routing\n\n| Proposed capability | Route's recommendation | Decision | Rationale |\n|---|---|---|---|\n| existing-cap | (fixture) | EXTEND existing-cap | fixture |\n",
+    )
+    .unwrap();
+    let permanent = env.path("givn/specs/existing-use");
+    std::fs::create_dir_all(&permanent).unwrap();
+    std::fs::write(
+        permanent.join("existing-cap.feature"),
+        "@existing-cap\nFeature: Existing\n\n  Scenario: Existing\n    Given x\n    Then y\n",
+    )
+    .unwrap();
+    std::fs::write(
+        permanent.join("usecase.md"),
+        &review_contract(
+            "existing-use",
+            None,
+            "- existing-cap",
+            &valid_interactions(&["existing-cap"]),
+            "- A valid example.",
+            "",
+        ),
+    )
+    .unwrap();
+    let replacement = review_contract(
+        "existing-use",
+        Some("# Use Case: existing-use"),
+        "- existing-cap",
+        &valid_interactions(&["existing-cap"]),
+        "- A valid example.",
+        "## Guarantees\n\nThis heading is not part of the schema.\n\n",
+    );
+    std::fs::write(specs.join("usecase.md"), replacement).unwrap();
+    std::fs::write(
+        specs.join("existing-cap.feature"),
+        "@givn.delta @existing-cap\nFeature: Existing\n\n  @givn.added\n  Scenario: Fixture\n    Given x\n    Then y\n",
+    )
+    .unwrap();
+    std::fs::write(change.join("design.md"), "# Design\n").unwrap();
+    std::fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n").unwrap();
+    std::fs::write(
+        change.join("review.md"),
+        "REVIEW: PASS\nREADME-IMPACT: none\n",
+    )
+    .unwrap();
+
+    set_verify_true(world);
+    common::commit_fixture(env);
+    write_fixture_change_receipt(world, id);
+}
+
+#[given(
+    "the replacement narrative has a case-mismatched title and an unknown \"## Guarantees\" heading"
+)]
+fn replacement_narrative_has_problems(_world: &mut GivnWorld) {
+    // The replacement written by the preceding Given already carries both.
+}
+
+#[then(
+    "stderr reports the title, the unknown heading, the capability line, the undeclared interaction, and the example line together in one review run"
+)]
+fn stderr_reports_all_schema_problems(world: &mut GivnWorld) {
+    let text = stderr(world);
+    for needle in [
+        "expected '# Use case: <kebab-case-id>', got '# Use Case: review-diagnostics-demo'",
+        "unknown heading '## Guarantees'",
+        "section '## Capabilities' must contain one capability per bullet",
+        "interaction references undeclared capability 'register-readiness'",
+        "section '## Examples' must contain one example per bullet",
+    ] {
+        assert!(text.contains(needle), "stderr missing {needle:?}: {text}");
+    }
+}
+
+#[then("stderr reports each distinct document problem once")]
+fn stderr_reports_each_problem_once(world: &mut GivnWorld) {
+    let text = stderr(world);
+    for needle in [
+        "got '# Use Case: review-diagnostics-demo'",
+        "unknown heading '## Guarantees'",
+        "interaction references undeclared capability 'register-readiness'",
+    ] {
+        assert_eq!(
+            text.matches(needle).count(),
+            1,
+            "stderr repeated {needle:?}: {text}"
+        );
+    }
+}
+
+#[then("stderr says headings are case-sensitive")]
+fn stderr_says_headings_case_sensitive(world: &mut GivnWorld) {
+    let text = stderr(world);
+    assert!(
+        text.contains("headings are case-sensitive"),
+        "stderr missing case-sensitivity note: {text}"
+    );
+}
+
+#[then(regex = r#"^stderr suggests "([^"]+)"$"#)]
+fn stderr_suggests(world: &mut GivnWorld, suggestion: String) {
+    let text = stderr(world);
+    assert!(
+        text.contains(&format!("did you mean '{suggestion}'?")),
+        "stderr missing suggestion {suggestion:?}: {text}"
+    );
+}
+
+#[then("stderr names both missing sections and the malformed interaction table together")]
+fn stderr_names_missing_sections_and_table(world: &mut GivnWorld) {
+    let text = stderr(world);
+    for needle in [
+        "document schema does not recognise '## Minimal guarantee'",
+        "document schema does not recognise '## Success guarantee'",
+        "malformed separator row",
+    ] {
+        assert!(text.contains(needle), "stderr missing {needle:?}: {text}");
+    }
+}
+
+#[then("stderr names the case-mismatched title once")]
+fn stderr_names_title_once(world: &mut GivnWorld) {
+    let text = stderr(world);
+    assert_eq!(
+        text.matches("got '# Use Case: review-diagnostics-demo'")
+            .count(),
+        1,
+        "stderr repeated the title diagnostic: {text}"
+    );
+}
+
+#[then("stderr names the unknown heading once")]
+fn stderr_names_heading_once(world: &mut GivnWorld) {
+    let text = stderr(world);
+    assert_eq!(
+        text.matches("unknown heading '## Guarantees'").count(),
+        1,
+        "stderr repeated the heading diagnostic: {text}"
+    );
+}
+
+#[then("stderr names the replacement narrative's title and unknown heading")]
+fn stderr_names_replacement_narrative(world: &mut GivnWorld) {
+    let text = stderr(world);
+    assert!(
+        text.contains("got '# Use Case: existing-use'"),
+        "stderr missing replacement title: {text}"
+    );
+    assert!(
+        text.contains("unknown heading '## Guarantees'"),
+        "stderr missing replacement heading: {text}"
+    );
+}

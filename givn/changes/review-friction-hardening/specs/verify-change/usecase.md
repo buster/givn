@@ -24,15 +24,16 @@ The developer requests verification of a change.
 ## Main flow
 
 1. The developer requests verification; the system reads the active specifications and workflow artifacts.
-2. The system confirms the change-scoped verification receipt is current (or reusable across a documentation-only revision), green, and bound to the tested revision, selected features, verify command, and tested content.
-3. The system detects duplicate behavior, structural overlap, and invalid references.
-4. The system compares migration evidence when a migration is checked.
+2. The system detects structural failures, duplicate behavior, structural overlap, and invalid references.
+3. The system compares migration evidence when a migration is checked.
+4. The system confirms the change-scoped verification receipt is current (or reusable across a documentation-only revision), green, and bound to the tested revision, selected features, verify command, and tested content.
 5. The system reports blocking and advisory findings.
 
 ## Extensions
 
 - 5: a review disposition is missing → completion is blocked; protects the success guarantee.
-- 4: a migration shows missing behavior, lost E2E evidence, lower interaction coverage, or lower source coverage → completion is blocked; protects the success guarantee.
+- 3: a migration shows missing behavior, lost E2E evidence, lower interaction coverage, or lower source coverage → completion is blocked; protects the success guarantee.
+- 4: the receipt is missing or stale → completion is blocked; protects the success guarantee.
 
 ## Rules
 
