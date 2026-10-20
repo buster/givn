@@ -84,7 +84,7 @@ auto-maintained by `givn init` / `givn skills sync` — do not edit it by hand.
   an unchecked box means that scenario is not done. Never batch-check
   boxes at the end.
 - One atomic `givn commit` per scenario (RED+GREEN+REFACTOR together).
-  The revision message carries the release note as its subject, and the
+  The revision message carries the release note as its message subject, and the
   scenario title goes in the message body. It works on Git and Fossil. A
   raw Git commit is stamped by the hook, a raw Fossil check-in is not.
 - A checked scenario records exactly one `COMMIT:` revision in `tasks.md`.
