@@ -2,7 +2,7 @@
 
 Feature: Readability review gate
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: A developer runs the review with accounted readability findings and it passes
     Given a Givn project with the readability experiment enabled
     And a committed base with a god type of 620 code lines split across files in "src/engine.rs"
@@ -18,7 +18,7 @@ Feature: Readability review gate
     Then the command exits 0
     And stdout contains "readability review: PASS"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The readability review does not run when the experiment is disabled
     Given a Givn project with the readability experiment disabled
     And a committed change that adds a type over the readable size
@@ -26,11 +26,12 @@ Feature: Readability review gate
     Then the command exits 0
     And stdout does not contain "readability review:"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A new type over the readable size with no decision fails
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has no type over the readable size
     And the change adds a god type of 620 code lines split across files in "src/engine.rs" at head
+    And the change's review record exists
     When the readability review assesses the change
     Then the review fails
     And the review reports "MISSING type:src/engine.rs::Engine"
@@ -38,7 +39,7 @@ Feature: Readability review gate
     And the review says "add 'READABILITY: FIXED type:src/engine.rs::Engine' or 'READABILITY: JUSTIFIED type:src/engine.rs::Engine'"
     And the review says "givn/changes/test-change/readability/rationales/type-src-engine-rs-engine.md"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A new module over the readable size with no decision fails
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has no module over the readable size
@@ -48,7 +49,7 @@ Feature: Readability review gate
     And the review reports "MISSING module:src/history.rs"
     And the review says "new module: 1200 code lines; classification module"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A fixed marker for a unit still over its threshold fails
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -59,7 +60,7 @@ Feature: Readability review gate
     Then the review fails
     And the review says "FIXED marker for type:src/engine.rs::Engine, but type:src/engine.rs::Engine is still a finding: god-type 620 code lines (base 620)"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A fixed marker for a unit under its threshold passes
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -70,7 +71,7 @@ Feature: Readability review gate
     Then the review passes
     And the review reports "FIXED type:src/engine.rs::Engine"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A justified marker with a complete rationale passes
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -83,7 +84,7 @@ Feature: Readability review gate
     And the review reports "JUSTIFIED type:src/engine.rs::Engine"
 
 
-  @givn.added @wip
+  @givn.added
   Scenario: A concrete rationale with a named alternative passes
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has no type over the readable size
@@ -94,7 +95,7 @@ Feature: Readability review gate
     When the readability review assesses the change
     Then the review passes
     And the review reports "JUSTIFIED type:src/engine.rs::Engine"
-  @givn.added @wip
+  @givn.added
   Scenario: A justified marker without a rationale fails
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -106,7 +107,7 @@ Feature: Readability review gate
     And the review says "JUSTIFIED marker for type:src/engine.rs::Engine has no rationale at givn/changes/test-change/readability/rationales/type-src-engine-rs-engine.md"
 
 
-  @givn.added @wip
+  @givn.added
   Scenario: A justified marker for a unit under its threshold fails
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -117,7 +118,7 @@ Feature: Readability review gate
     When the readability review assesses the change
     Then the review fails
     And the review says "JUSTIFIED marker for type:src/engine.rs::Engine, but type:src/engine.rs::Engine is not a finding at head; use READABILITY: FIXED type:src/engine.rs::Engine"
-  @givn.added @wip
+  @givn.added
   Scenario: A rationale whose unit does not match the finding fails
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -129,7 +130,7 @@ Feature: Readability review gate
     And the review says "Unit: type:src/other.rs::Other does not match the finding type:src/engine.rs::Engine"
 
 
-  @givn.added @wip
+  @givn.added
   Scenario: Two units with the same rationale slug fail
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has no type over the readable size
@@ -142,7 +143,7 @@ Feature: Readability review gate
     When the readability review assesses the change
     Then the review fails
     And the review says "rationale slug collision for type:src/a-b.rs::C and type:src/a_b.rs::C"
-  @givn.added @wip
+  @givn.added
   Scenario: A rationale whose classification does not match the finding fails
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -153,7 +154,7 @@ Feature: Readability review gate
     Then the review fails
     And the review says "Classification: cohesive-large-type does not match god-type"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A rationale without an owner fails
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -165,7 +166,7 @@ Feature: Readability review gate
     And the review says "missing Owner:"
 
 
-  @givn.added @wip
+  @givn.added
   Scenario: A rationale from an unconfirmed owner fails
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -175,7 +176,7 @@ Feature: Readability review gate
     When the readability review assesses the change
     Then the review fails
     And the review says "Owner: 'someone-else' is not a confirmed owner; use givn-maintainer--owner"
-  @givn.added @wip
+  @givn.added
   Scenario: A justification for "not my code" is rejected
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -186,7 +187,7 @@ Feature: Readability review gate
     Then the review fails
     And the review says "banned reason 'not my code'"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A justification for "out of scope" is rejected
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -198,7 +199,7 @@ Feature: Readability review gate
     And the review says "banned reason 'out of scope'"
 
 
-  @givn.added @wip
+  @givn.added
   Scenario: A boilerplate rationale is rejected
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -208,7 +209,7 @@ Feature: Readability review gate
     When the readability review assesses the change
     Then the review fails
     And the review says "Alternatives considered: must name at least one alternative and why it was rejected"
-  @givn.added @wip
+  @givn.added
   Scenario: A type rationale does not account for the module finding
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has no module over the readable size
@@ -220,7 +221,7 @@ Feature: Readability review gate
     Then the review fails
     And the review reports "MISSING module:src/engine.rs"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Two types in one file need two rationales
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has no type over the readable size
@@ -233,7 +234,7 @@ Feature: Readability review gate
     Then the review fails
     And the review reports "MISSING type:src/engine.rs::Second"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A fixed finding without a fixed marker fails
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -243,7 +244,7 @@ Feature: Readability review gate
     Then the review fails
     And the review reports "MISSING type:src/engine.rs::Engine"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An existing non-growing finding without a decision fails
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -254,7 +255,7 @@ Feature: Readability review gate
     And the review reports "MISSING type:src/engine.rs::Engine"
     And the review says "existing finding did not grow: 620 -> 620 code lines; classification god-type"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An existing growing finding passes with a justified marker
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -266,7 +267,7 @@ Feature: Readability review gate
     Then the review passes
     And the review says "existing finding grew: 620 -> 700 code lines; classification god-type"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A new cohesive large type passes with a justified marker
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has no type over the readable size
@@ -278,7 +279,7 @@ Feature: Readability review gate
     Then the review passes
     And the review says "classification cohesive-large-type"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An existing data-only type is exempt from the size gate
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a data-only enum of 620 code lines in one file "src/status.rs"
@@ -290,7 +291,7 @@ Feature: Readability review gate
     Then the review passes
     And the review reports no finding for "type:src/status.rs::Status"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A data-only type with a long method is a finding
     Given a Givn project with the readability experiment enabled
     And a committed change that adds a data-only enum of 300 code lines in one file "src/status.rs"
@@ -301,7 +302,7 @@ Feature: Readability review gate
     And the review reports "MISSING type:src/status.rs::Status"
     And the review says "long method: 120 code lines"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A new interface under the readable size with more than 50 public methods is a finding
     Given a Givn project with the readability experiment enabled
     And a committed change that adds a type of 420 code lines with 51 public methods in "src/api.rs"
@@ -311,7 +312,7 @@ Feature: Readability review gate
     And the review reports "MISSING type:src/api.rs::Api"
     And the review says "classification interface"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A module of exactly 1000 code lines is a finding
     Given a Givn project with the readability experiment enabled
     And a committed change that adds a module of exactly 1000 code lines in "src/history.rs"
@@ -322,7 +323,7 @@ Feature: Readability review gate
     And the review says "new module: 1000 code lines; classification module"
 
 
-  @givn.added @wip
+  @givn.added
   Scenario: A type at exactly 500 code lines is not a gate finding
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has no type over the readable size
@@ -331,7 +332,7 @@ Feature: Readability review gate
     When the readability review assesses the change
     Then the review passes
     And the review reports no finding for "type:src/engine.rs::Engine"
-  @givn.added @wip
+  @givn.added
   Scenario: A long method on a type within the size limit is a finding
     Given a Givn project with the readability experiment enabled
     And a committed change that adds a type of 300 code lines in "src/engine.rs"
@@ -342,7 +343,7 @@ Feature: Readability review gate
     And the review reports "MISSING type:src/engine.rs::Engine"
     And the review says "long method: 120 code lines"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The review requires a readability verdict when a finding exists
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -353,7 +354,7 @@ Feature: Readability review gate
     Then the review fails
     And the review says "readability review: FAIL (missing 'READABILITY: PASS')"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A fail marker fails the review even when every finding is justified
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -366,7 +367,7 @@ Feature: Readability review gate
     Then the review fails
     And the review says "the type has no single responsibility"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A missing review record with a finding fails
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has no type over the readable size
@@ -375,7 +376,7 @@ Feature: Readability review gate
     Then the review fails
     And the review says "readability record is missing; create givn/changes/test-change/review.md and record 'READABILITY: PASS'"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A touched production file that cannot be parsed fails closed
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has no type over the readable size
@@ -385,7 +386,7 @@ Feature: Readability review gate
     And the review says "cannot analyze src/engine.rs at head"
 
 
-  @givn.added @wip
+  @givn.added
   Scenario: A changed Rust file the analyzer skips fails closed
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has no type over the readable size
@@ -393,7 +394,7 @@ Feature: Readability review gate
     When the readability review assesses the change
     Then the review fails
     And the review says "changed production file 'src/tests/support.rs' was not analyzed; the analyzer scope or extension filter is wrong"
-  @givn.added @wip
+  @givn.added
   Scenario: A temporary rationale without a follow-up fails
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -405,7 +406,7 @@ Feature: Readability review gate
     And the review says "missing Follow-up:"
 
 
-  @givn.added @wip
+  @givn.added
   Scenario: A temporary rationale with a follow-up and expiry passes
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -416,7 +417,7 @@ Feature: Readability review gate
     When the readability review assesses the change
     Then the review passes
     And the review reports "JUSTIFIED type:src/engine.rs::Engine"
-  @givn.added @wip
+  @givn.added
   Scenario: Conflicting decisions for one unit fail
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -430,7 +431,7 @@ Feature: Readability review gate
     And the review says "conflicting decisions for type:src/engine.rs::Engine"
 
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unknown readability marker fails
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -440,7 +441,7 @@ Feature: Readability review gate
     Then the review fails
     And the review says "readability review: FAIL (unknown readability marker: READABILITY: DEFERRED type:src/engine.rs::Engine)"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Several failures are reported together
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -452,7 +453,7 @@ Feature: Readability review gate
     And the review reports "FAILURE  invalid-fixed  FIXED marker for type:src/engine.rs::Engine, but type:src/engine.rs::Engine is still a finding: god-type 700 code lines (base 620)"
     And the review reports "FAILURE  unaccounted  MISSING type:src/cohesive.rs::Cohesive"
     And the review says "readability review: FAIL (2 failures; first: FIXED marker for type:src/engine.rs::Engine, but type:src/engine.rs::Engine is still a finding: god-type 700 code lines (base 620))"
-  @givn.added @wip
+  @givn.added
   Scenario: A symlink in place of a touched production file fails closed
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a type in "src/engine.rs"
@@ -461,7 +462,7 @@ Feature: Readability review gate
     Then the review fails
     And the review says "cannot analyze src/engine.rs at head: symlink"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A base with no production sources makes every head unit new
     Given a Givn project with the readability experiment enabled
     And a committed change directory with no production sources at its parent
@@ -473,7 +474,7 @@ Feature: Readability review gate
     Then the review passes
     And the review says "new type: 620 code lines"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A head with no production sources passes with no findings
     Given a Givn project with the readability experiment enabled
     And a committed change directory with no production sources at base or head
@@ -482,7 +483,7 @@ Feature: Readability review gate
     And the review says "touched 0 unit(s), 0 finding(s)"
     And the review says "readability review: PASS"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A production commit before the change directory is part of the base
     Given a Givn project with the readability experiment enabled
     And a commit that grows a type to 620 code lines before the change directory exists
@@ -491,7 +492,7 @@ Feature: Readability review gate
     Then the review reports the base size 620
     And the review reports the head size 700
 
-  @givn.added @wip
+  @givn.added
   Scenario: A root commit whose change directory is the first commit has an empty base
     Given a Givn project with the readability experiment enabled
     And the change directory and a god type of 620 code lines are added in the root commit
@@ -499,7 +500,7 @@ Feature: Readability review gate
     Then the review says "base none (root change commit; empty base tree)"
     And the review reports "MISSING type:src/engine.rs::Engine"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A merge commit uses its first parent as the change base
     Given a Givn project with the readability experiment enabled
     And a change directory commit on the branch grows a type from 450 to 620 code lines
@@ -508,7 +509,7 @@ Feature: Readability review gate
     Then the review reports the base size 450
     And the review reports the head size 620
 
-  @givn.added @wip
+  @givn.added
   Scenario: A rebase recomputes the change base
     Given a Givn project with the readability experiment enabled
     And a change directory commit grows a type from 450 to 620 code lines
@@ -517,7 +518,7 @@ Feature: Readability review gate
     Then the review reports the base size 500
     And the review reports the head size 620
 
-  @givn.added @wip
+  @givn.added
   Scenario: A change directory without a reachable commit fails closed
     Given a Givn project with the readability experiment enabled
     And a change directory "givn/changes/test-change/" that no commit touched
@@ -525,7 +526,7 @@ Feature: Readability review gate
     Then the review fails
     And the review says "change directory 'givn/changes/test-change/' has no reachable commit; commit the change directory before review"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A shallow clone fails closed
     Given a Givn project with the readability experiment enabled
     And a shallow clone whose first change commit is beyond the fetched history
@@ -533,7 +534,7 @@ Feature: Readability review gate
     Then the review fails
     And the review says "cannot resolve change base: repository is shallow; fetch the full history before review"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A sibling Fossil timeline is not the change base
     Given a Fossil project with the readability experiment enabled
     And a sibling timeline that touches the change directory
@@ -543,7 +544,7 @@ Feature: Readability review gate
     And the review ignores the sibling timeline
 
 
-  @givn.added @wip
+  @givn.added
   Scenario: A Fossil merge check-in uses its parent field as the change base
     Given a Fossil project with the readability experiment enabled
     And a change directory check-in on the branch grows a type from 450 to 620 code lines
@@ -551,7 +552,7 @@ Feature: Readability review gate
     When the readability review assesses the change
     Then the review reports the base size 450
     And the review reports the head size 620
-  @givn.added @wip
+  @givn.added
   Scenario: Dirty production paths fail closed before analysis
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -560,7 +561,7 @@ Feature: Readability review gate
     Then the review fails
     And the review says "production paths are dirty; commit or discard before review: src/engine.rs"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A file move closes the old unit and needs a decision for the new unit
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -574,7 +575,7 @@ Feature: Readability review gate
     And the review reports "FIXED type:src/engine.rs::Engine"
     And the review reports "JUSTIFIED type:src/core.rs::Engine"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Deleting a finding requires a fixed marker
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -585,7 +586,7 @@ Feature: Readability review gate
     Then the review passes
     And the review reports "FIXED type:src/engine.rs::Engine"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Deleting a production file needs a decision for its removed unit
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -596,7 +597,7 @@ Feature: Readability review gate
     Then the review passes
     And the review reports "removed: base 620 code lines; finding no longer fires"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The readability review is deterministic
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has a god type of 620 code lines split across files in "src/engine.rs"
@@ -604,7 +605,7 @@ Feature: Readability review gate
     When the readability review assesses the change twice
     Then both results are identical
 
-  @givn.added @wip
+  @givn.added
   Scenario: The readability review stores no classification baseline
     Given a Givn project with the readability experiment enabled
     And a committed change whose base has no type over the readable size
@@ -612,7 +613,7 @@ Feature: Readability review gate
     When the readability review assesses the change
     Then the review writes no readability baseline file
 
-  @givn.added @wip
+  @givn.added
   Scenario: The review guidance carries the fixed readability vocabulary
     Given a Givn project with the readability experiment enabled
     When the reviewer reads the review guidance
