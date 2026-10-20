@@ -152,6 +152,45 @@ impl FossilCheckout {
         Ok(out)
     }
 
+    /// Whether `revision` names a check-in.
+    pub fn commit_exists(&self, revision: &str) -> Result<bool> {
+        let output = self.run(&["info", revision])?;
+        Ok(output.status.success())
+    }
+
+    /// The comment of `revision`, or `None` when it does not exist.
+    pub fn commit_message(&self, revision: &str) -> Result<Option<String>> {
+        let output = self.run(&["info", revision])?;
+        if !output.status.success() {
+            return Ok(None);
+        }
+        let text = String::from_utf8_lossy(&output.stdout);
+        let mut message = String::new();
+        let mut in_comment = false;
+        for line in text.lines() {
+            if let Some(rest) = line.strip_prefix("comment:") {
+                in_comment = true;
+                message.push_str(rest.trim_start());
+                continue;
+            }
+            if in_comment {
+                if line.starts_with(char::is_whitespace) {
+                    message.push('\n');
+                    message.push_str(line.trim_start());
+                } else {
+                    break;
+                }
+            }
+        }
+        Ok(Some(message))
+    }
+
+    /// Fossil exposes check-in ancestry through `info`; existence is the
+    /// available proof for this gate.
+    pub fn is_ancestor(&self, revision: &str) -> Result<bool> {
+        self.commit_exists(revision)
+    }
+
     /// Whether the checkout holds pending changes. Fossil has no index; the
     /// clean-state preflight bounds the pending set to the staged writes.
     pub fn has_staged_changes(&self) -> Result<bool> {

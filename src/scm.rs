@@ -106,6 +106,30 @@ impl Backend {
         }
     }
 
+    /// Whether `revision` names a commit/check-in.
+    pub fn commit_exists(&self, revision: &str) -> Result<bool> {
+        match self {
+            Self::Git(worktree) => worktree.commit_exists(revision),
+            Self::Fossil(checkout) => checkout.commit_exists(revision),
+        }
+    }
+
+    /// The full message of `revision`.
+    pub fn commit_message(&self, revision: &str) -> Result<Option<String>> {
+        match self {
+            Self::Git(worktree) => worktree.commit_message(revision),
+            Self::Fossil(checkout) => checkout.commit_message(revision),
+        }
+    }
+
+    /// Whether `revision` is reachable from the current revision.
+    pub fn is_ancestor(&self, revision: &str) -> Result<bool> {
+        match self {
+            Self::Git(worktree) => worktree.is_ancestor(revision),
+            Self::Fossil(checkout) => checkout.is_ancestor(revision),
+        }
+    }
+
     /// Whether `path` is present in the current revision.
     pub fn revision_contains(&self, path: &str) -> Result<bool> {
         match self {

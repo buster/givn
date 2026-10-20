@@ -381,6 +381,20 @@ runs only the merged regular and e2e scopes. A receipt is stale when the
 revision, delta-feature digest, or verify-command digest differs, or when the
 counts are not green.
 
+### 6.7.1 Scenario commit evidence
+
+`givn check tasks` parses each checked scenario in `tasks.md` and requires one
+unique revision. The revision must exist, be reachable from `HEAD`, and carry
+the scenario title in its commit message. Missing, duplicate, placeholder,
+unreachable, and untitled revisions are reported together and block. `givn
+check review` repeats the gate. There is no shared or one-pass mode: an agent
+that implemented in one pass must split the commits before the check.
+
+A change whose design declares no visual contract may record
+`VISUAL-REVIEW: NOT APPLICABLE`; a rendered interface still requires
+`VISUAL-REVIEW: PASS`. Plain-text CLI transcripts remain evidence under the
+change's `evidence/` tree.
+
 ## 6.12 Addons, Upgrade, and Completion Commands
 
 `givn addons list` reads enabled flags from `givn/config.yaml`. `enable arc42`

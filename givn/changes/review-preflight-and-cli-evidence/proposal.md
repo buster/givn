@@ -2,7 +2,7 @@
 
 ## Release note
 
-Surface task-integrity and README-impact requirements before implementation, and preserve plain-text CLI interaction evidence without forcing a visual-review sign-off.
+Enforce one real revision per scenario before review, surface task-integrity and README-impact requirements early, and preserve plain-text CLI interaction evidence without forcing a visual-review sign-off.
 
 ## Use-Case Context
 
@@ -21,7 +21,7 @@ Plain-text CLI transcripts are valuable evidence. Archive currently rejects tran
 
 ## Proposed Solution
 
-Before implementation, a task-integrity preflight reports missing or duplicate revision slots, missing README impact decisions, and an unsupported one-pass task structure in one pass. The task template makes the revision choice explicit instead of forcing fabricated per-scenario hashes.
+Before review, a blocking task-integrity check requires one real, unique revision per checked scenario, verifies it exists and is reachable, and requires the commit message to name the scenario. There is no shared or one-pass mode. The preflight reports every finding in one pass.
 
 A machine-only product can record `VISUAL-REVIEW: NOT APPLICABLE` and keep plain-text interaction transcripts as evidence. No human visual sign-off is required for a CLI. A genuinely rendered interface still requires visual review and human sign-off.
 
@@ -31,9 +31,9 @@ Change evidence under `givn/changes/<id>/evidence/` is declared evidence for the
 
 | Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
 |---|---|---|---|
-| Visual verdict for non-visual interfaces | `EXTEND visual-review-gate` (verify-change, 15.00) | `EXTEND visual-review-gate` | The existing gate owns visual classification and the not-applicable path. |
-| Task-integrity and README-impact preflight | `EXTEND givn-workflow-enforcement` (verify-change, 14.00) | `EXTEND givn-workflow-enforcement` | The preflight reuses the existing review/integrity rules but runs earlier. |
-| Visual contract classification in change authoring | not ranked | `EXTEND visual-design-contract` | The design template must make `Interface: none` explicit for machine-only products. |
+| visual-review-gate | `EXTEND visual-review-gate` (verify-change, 15.00) | `EXTEND visual-review-gate` | The existing gate owns visual classification and the not-applicable path. |
+| givn-workflow-enforcement | `EXTEND givn-workflow-enforcement` (verify-change, 14.00) | `EXTEND givn-workflow-enforcement` | The preflight reuses the existing review/integrity rules but runs earlier. |
+| archive-proof | not ranked | `EXTEND archive-proof` | The archive-proof capability owns the evidence predicate that accepts CLI transcripts without a tested-tree rejection. |
 
 ## Out of Scope
 
@@ -55,11 +55,11 @@ Change evidence under `givn/changes/<id>/evidence/` is declared evidence for the
 
 ### D2 — Should the task template support a one-pass implementation explicitly?
 
-- Question: The current task template implies one revision per scenario. Should one-pass disclosure be a supported mode?
+- Question: Should a one-pass implementation be an accepted task structure?
 - Options:
-  1. **Support disclosure** — add an explicit one-pass disclosure form that records one production revision and replay evidence. Gain: no fabrication. Cost: the rule is less strict. In practice: a one-pass implementation records one honest revision.
-  2. **Require per-scenario commits** — keep the strict template. Gain: traceability per scenario. Cost: the agent may fabricate hashes or rewrite history. In practice: the workflow must genuinely commit per scenario.
-- Disposition: carried to `design.md` — decide the supported form and the preflight consequence.
+  1. **No** — every scenario needs its own real revision whose message names the scenario. Gain: traceable evidence. Cost: an agent that implemented in one pass must split the commits before review. In practice: a one-pass implementation fails `check tasks` until the commits exist.
+  2. **Yes, with disclosure** — one revision covers every scenario. Gain: less commit work. Cost: the agent can redefine the rule after the fact and hide which work belongs to which scenario. In practice: a retroactive disclosure turns a failed rule into a pass.
+- Disposition: answered — option 1. There is no one-pass mode. A shared revision is rejected even when disclosed.
 
 ### D3 — Is visual review ever required for a CLI?
 
