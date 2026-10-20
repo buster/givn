@@ -29,6 +29,13 @@ size because they aggregate cross-file facts or own one shared registry. The
 five long methods should be split; the two structural units should keep their
 shape and carry a reviewed rationale.
 
+The branch also has one stale unit-test fixture from the independent-review
+work: its valid rationale predates the reviewer fields, so the test fails
+before it checks anything. Repairing that fixture touches the rationale
+validator, whose `validate_text` is itself a 107-line method finding; the same
+extraction discipline removes it, so the touched unit is fixed rather than
+newly justified.
+
 ## Proposed Solution
 
 Apply the independent-review rule to this branch:

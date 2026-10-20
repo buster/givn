@@ -7,13 +7,15 @@ follow in one later commit.
 
 ## Bundle
 
-- [ ] Apply the independent-review findings to the branch:
-  - [ ] Extract `decide`, `review`, `decide` (findings), `render_json`, and
+- [x] Apply the independent-review findings to the branch:
+  - [x] Extract `decide`, `review`, `decide` (findings), `render_json`, and
         `find_block_end` into named helpers without behavior change.
-  - [ ] Touch `src/readability/syn_adapter.rs` and `src/skills/targets.rs`
+  - [x] Repair the stale validator fixture and extract `validate_text` so the
+        touched `rationale.rs` unit is fixed rather than newly justified.
+  - [x] Touch `src/readability/syn_adapter.rs` and `src/skills/targets.rs`
         with the two small helper extractions.
-  - [ ] Record the two structural rationales and the review markers.
-  - [ ] COMMIT: pending
+  - [x] Record the two structural rationales and the review markers.
+  - [x] COMMIT: da22c811617332c09464797f86b4926bbf660bd8
 
 ## Evidence
 
