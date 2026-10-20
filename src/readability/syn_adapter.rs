@@ -205,7 +205,7 @@ impl FileBuilder {
                 Item::Macro(item) => {
                     let span = line_span(&self.content, &self.path, macro_line(item));
                     self.unsupported.push(UnsupportedNote {
-                        construct: Construct::FileModule,
+                        construct: Construct::ItemMacro,
                         span: span.clone(),
                         reason: "item-position macro is not expanded".to_string(),
                     });

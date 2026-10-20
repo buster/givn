@@ -88,7 +88,7 @@ Feature: Readability report
     Then the command exits with code 1
     And stderr names "missing/report.txt"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unsupported construct is named and not invented
     Given a Givn project with the readability experiment enabled
     And a production source file with an item-position macro

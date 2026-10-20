@@ -51,6 +51,14 @@ pub fn write_cohesive_type(env: &TestEnv, name: &str, lines_per_method: usize) {
     write_source(env, "src/cohesive.rs", &source);
 }
 
+pub fn write_item_macro(env: &TestEnv) {
+    write_source(
+        env,
+        "src/macro_items.rs",
+        "macro_rules! make_items { () => {} }\nmake_items!();\npub struct Real { pub value: u64 }\n",
+    );
+}
+
 pub fn write_god_type(env: &TestEnv, name: &str) {
     let mut source = format!(
         "pub struct {name} {{\n    a: u64,\n    b: u64,\n    c: u64,\n}}\n\nimpl {name} {{\n"
