@@ -92,11 +92,7 @@ pub fn assessment_counts(env: &TestEnv) -> (usize, usize, usize) {
             .iter()
             .filter(|unit| !unit.classification.label().is_empty())
             .count(),
-        assessment
-            .units
-            .iter()
-            .filter(|unit| !unit.action.label().is_empty())
-            .count(),
+        assessment.units.len(),
     )
 }
 
@@ -212,6 +208,22 @@ pub fn write_boundary_type(env: &TestEnv, total_code_lines: usize) {
     }
     source.push_str("}\n");
     write_source(env, "src/boundary.rs", &source);
+}
+
+pub fn assess_json(env: &TestEnv) -> String {
+    let request = AnalysisRequest {
+        project_root: env.root(),
+        scope: SourceScope {
+            language: Language::Rust,
+            roots: vec![PathBuf::from("src")],
+            include_test_sources: false,
+        },
+    };
+    let analyzer = readability::rust_analyzer();
+    let capabilities = analyzer.capabilities();
+    let analysis = readability::analyze(&request, analyzer.as_ref()).expect("analyze fixture");
+    let assessment = readability::assess(&analysis, capabilities);
+    readability::report::render_json(&assessment, &request.scope)
 }
 
 pub fn assess_report(env: &TestEnv) -> String {

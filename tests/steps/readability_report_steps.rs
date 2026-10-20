@@ -91,7 +91,8 @@ fn command_exits_with_code_0(world: &mut GivnWorld) {
 
 #[given("the readability fixture corpus")]
 fn fixture_corpus(world: &mut GivnWorld) {
-    let env = common::make_bare_root();
+    let env = common::make_init_root();
+    crate::steps::readability_report_support::enable_readability(&env);
     crate::steps::readability_report_support::write_fixture_corpus(&env);
     world.env = Some(env);
 }
@@ -451,6 +452,145 @@ fn report_classifies_cohesive(world: &mut GivnWorld) {
     );
 }
 
+#[given("a production source unit within the readable size")]
+fn within_readable_size(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::readability_report_support::write_small_unit(env);
+}
+
+#[then("the report labels the unit as a finding")]
+fn report_labels_finding(world: &mut GivnWorld) {
+    let report = report_text(world);
+    assert!(
+        report.contains("FINDING"),
+        "expected a FINDING label: {report}"
+    );
+}
+
+#[then("the report records no recommendation")]
+fn report_records_no_recommendation(world: &mut GivnWorld) {
+    let report = report_text(world);
+    assert!(
+        !report.to_lowercase().contains("recommendation"),
+        "the report must not recommend an action: {report}"
+    );
+}
+
+#[then("the report labels the unit as within limits")]
+fn report_labels_within_limits(world: &mut GivnWorld) {
+    let report = report_text(world);
+    assert!(
+        report.contains("WITHIN-LIMITS"),
+        "expected a WITHIN-LIMITS label: {report}"
+    );
+}
+
+#[then("the JSON report has no action or recommendation fields")]
+fn json_has_no_action_fields(world: &mut GivnWorld) {
+    let value = json_output(world);
+    let text = value.to_string();
+    assert!(!text.contains("\"action\""), "action field remains: {text}");
+    assert!(
+        !text.contains("\"recommendation\""),
+        "recommendation field remains: {text}"
+    );
+}
+
+#[then("the JSON report reports 2 findings")]
+fn json_reports_two_findings(world: &mut GivnWorld) {
+    let value = json_output(world);
+    assert_eq!(
+        value["summary"]["findings"], 2,
+        "unexpected findings count: {value}"
+    );
+}
+
+#[then("the JSON findings count matches the non-within-limits units")]
+fn json_findings_count_matches(world: &mut GivnWorld) {
+    let value = json_output(world);
+    let units = value["units"].as_array().expect("units");
+    let expected = units
+        .iter()
+        .filter(|unit| unit["classification"] != "within-limits")
+        .count();
+    assert_eq!(
+        value["summary"]["findings"].as_u64(),
+        Some(expected as u64),
+        "findings count does not match classifications: {value}"
+    );
+}
+
+#[then("the JSON report classifies the data-only unit")]
+fn json_classifies_data_only(world: &mut GivnWorld) {
+    let value = json_output(world);
+    let units = value["units"].as_array().expect("units");
+    assert!(
+        units
+            .iter()
+            .any(|unit| unit["classification"] == "data-only"),
+        "no data-only unit: {value}"
+    );
+}
+
+#[then("every unit has exactly one classification")]
+fn every_unit_has_one_classification(world: &mut GivnWorld) {
+    let output = world
+        .additional_output
+        .as_deref()
+        .expect("assessment counts");
+    let values: Vec<usize> = output
+        .split(',')
+        .map(|value| value.parse().expect("count"))
+        .collect();
+    assert!(values[0] > 0, "no units assessed");
+    assert_eq!(values[1], values[0], "some unit has no classification");
+}
+
+#[then("no unit carries an action or recommendation")]
+fn no_unit_carries_action(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let json = crate::steps::readability_report_support::assess_json(env);
+    let value: serde_json::Value = serde_json::from_str(&json).expect("valid JSON");
+    let text = value["units"].to_string();
+    assert!(!text.contains("\"action\""), "action remains: {text}");
+    assert!(
+        !text.contains("\"recommendation\""),
+        "recommendation remains: {text}"
+    );
+}
+
+#[then("the report lists units by classification, then path, then unit id")]
+fn report_sorted_by_classification(world: &mut GivnWorld) {
+    let report = report_text(world);
+    let mut keys = Vec::new();
+    for line in report.lines() {
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() >= 5 && (parts[0] == "FINDING" || parts[0] == "WITHIN-LIMITS") {
+            keys.push((
+                parts[4].to_string(),
+                parts[2].to_string(),
+                parts[3].to_string(),
+            ));
+        }
+    }
+    assert!(
+        keys.len() > 1,
+        "need several units to check ordering: {report}"
+    );
+    let mut sorted = keys.clone();
+    sorted.sort();
+    assert_eq!(
+        keys, sorted,
+        "units are not sorted by classification/path/id"
+    );
+}
+
 #[given("a production source unit")]
 fn production_source_unit(world: &mut GivnWorld) {
     if world.env.is_none() {
@@ -484,10 +624,10 @@ fn json_analyzer_limitations(world: &mut GivnWorld) {
     );
 }
 
-#[then("the JSON report has schema version 1")]
+#[then("the JSON report has schema version 2")]
 fn json_schema_version(world: &mut GivnWorld) {
     let value = json_output(world);
-    assert_eq!(value["schema_version"], 1, "unexpected schema version");
+    assert_eq!(value["schema_version"], 2, "unexpected schema version");
 }
 
 #[then("the JSON report has rules version 1")]
