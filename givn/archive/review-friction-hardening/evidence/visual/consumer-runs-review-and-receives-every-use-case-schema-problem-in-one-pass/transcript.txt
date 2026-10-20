@@ -1,6 +1,6 @@
 Scenario: Consumer runs review and receives every use-case schema problem in one pass
 argv: givn check review --change review-diagnostics-demo
-cwd (fixture project root): /tmp/.tmp9EXlHC
+cwd (fixture project root): /tmp/.tmppVedbc
 exit code: 1
 --- stdout ---
 Mandatory checks for 'review':
