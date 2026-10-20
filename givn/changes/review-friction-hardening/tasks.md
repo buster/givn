@@ -12,7 +12,7 @@ Use-case constraints carried into every scenario:
 
 ## Setup — runner, strict mode, and e2e configuration
 
-- [ ] Setup task
+- [x] Setup task
 
 Design constraints:
 
@@ -49,6 +49,8 @@ GIVN_FEATURES="$scratch" cargo test --locked --test features_runner -- --name "U
 
 ## Scenario 1 — A case-mismatched document title is refused with the exact correction
 
+- [x] Scenario: `A case-mismatched document title is refused with the exact correction`
+
 - [x] RED
 - [x] GREEN
 - [x] REFACTOR
@@ -73,6 +75,8 @@ Evidence:
 
 ## Scenario 2 — A near-miss section heading is refused with the exact accepted spellings
 
+- [x] Scenario: `A near-miss section heading is refused with the exact accepted spellings`
+
 - [x] RED
 - [x] GREEN
 - [x] REFACTOR
@@ -95,6 +99,8 @@ Evidence:
 - COMMIT: f13f3024bdcb00db39c774b037bc4b1f933099ea
 
 ## Scenario 3 — Missing required sections and a malformed interaction table are reported together
+
+- [x] Scenario: `Missing required sections and a malformed interaction table are reported together`
 
 - [x] RED
 - [x] GREEN
@@ -119,6 +125,8 @@ Evidence:
 
 ## Scenario 4 — One use-case parse failure is reported once across several delta capabilities
 
+- [x] Scenario: `One use-case parse failure is reported once across several delta capabilities`
+
 - [x] RED
 - [x] GREEN
 - [x] REFACTOR
@@ -142,6 +150,8 @@ Evidence:
 
 ## Scenario 5 — Review validates an active delta use-case narrative even for an extension
 
+- [x] Scenario: `Review validates an active delta use-case narrative even for an extension`
+
 - [x] RED
 - [x] GREEN
 - [x] REFACTOR
@@ -164,6 +174,8 @@ Evidence:
 - COMMIT: dcbd4541ccd52e2cacad52b15d1b746d19796848
 
 ## Scenario 6 — Review accepts a green proof after documentation-only review edits
+
+- [x] Scenario: `Review accepts a green proof after documentation-only review edits`
 
 - [x] RED
 - [x] GREEN
@@ -189,6 +201,8 @@ Evidence:
 
 ## Scenario 7 — Archive reuses a proof committed with its receipt
 
+- [x] Scenario: `Archive reuses a proof committed with its receipt`
+
 - [x] RED
 - [x] GREEN
 - [x] REFACTOR
@@ -210,10 +224,12 @@ Evidence:
 
 ## Scenario 8 — Archive refuses a proof after tested content changed
 
+- [x] Scenario: `Archive refuses a proof after tested content changed`
+
 - [x] RED
 - [x] GREEN
 - [x] REFACTOR
-- [ ] COMMIT
+- [x] COMMIT
 
 Design constraints:
 
@@ -232,6 +248,8 @@ Evidence:
 - COMMIT: 4126995e4bb4677e0737893ad2194eeddfddfe1a
 
 ## Scenario 9 — Consumer runs review and receives every use-case schema problem in one pass (e2e)
+
+- [x] Scenario: `Consumer runs review and receives every use-case schema problem in one pass`
 
 - [x] RED
 - [x] GREEN
@@ -255,6 +273,8 @@ Evidence:
 - COMMIT: c9e342ebe7508ae632658297a80c216ee6b00247
 
 ## Scenario 10 — Consumer archives a change after documentation-only review edits and the proof is reused (e2e)
+
+- [x] Scenario: `Consumer archives a change after documentation-only review edits and the proof is reused`
 
 - [x] RED
 - [x] GREEN
