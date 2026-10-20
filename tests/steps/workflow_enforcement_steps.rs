@@ -1686,3 +1686,40 @@ fn stdout_says_receipt_reused(world: &mut GivnWorld) {
         "stdout missing reuse message: {text}"
     );
 }
+
+pub(crate) fn write_archive_ready_review_fixture(world: &mut GivnWorld, id: &str) {
+    let contract = review_contract(
+        id,
+        None,
+        "- alpha-capability",
+        &valid_interactions(&["alpha-capability"]),
+        "- A valid example.",
+        "",
+    );
+    write_review_fixture_with_options(
+        world,
+        id,
+        id,
+        &contract,
+        &["alpha-capability"],
+        &[("alpha-capability", &format!("NEW in {id}"))],
+        true,
+    );
+    world.verification_invocations_before = Some(change_suite_invocation_count(world));
+    world.skip_receipt_autowrite = true;
+}
+
+pub(crate) fn change_suite_invocation_count(world: &GivnWorld) -> usize {
+    let id = world
+        .last_change_id
+        .clone()
+        .expect("a change id is required");
+    let path = project_root(world).join(format!("givn/changes/{id}/verification/invocations.log"));
+    std::fs::read_to_string(path)
+        .map(|text| {
+            text.lines()
+                .filter(|line| line.contains("givn/changes/"))
+                .count()
+        })
+        .unwrap_or(0)
+}
