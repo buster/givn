@@ -14,7 +14,7 @@ Feature: Archive proof reuse across documentation-only revisions
     And the merged regular scope ran once with features path "givn/specs"
     And stdout says the change verification receipt was reused
 
-  @givn.added @wip
+  @givn.added
   Scenario: Archive reuses a proof committed with its receipt
     Given a clean committed change with a green change verification receipt recorded at an earlier revision
     And the developer commits only the verification receipt after that revision

@@ -1178,3 +1178,53 @@ fn runner_never_used_change_features(world: &mut GivnWorld) {
         "the change suite was invoked during archive: {content}"
     );
 }
+
+// ─── proof reuse across documentation-only revisions ──────────────────────
+
+#[given(
+    "a clean committed change with a green change verification receipt recorded at an earlier revision"
+)]
+fn proof_reuse_fixture(world: &mut GivnWorld) {
+    super::workflow_enforcement_steps::write_archive_ready_review_fixture(
+        world,
+        "review-proof-demo",
+    );
+}
+
+#[given("the developer commits only the verification receipt after that revision")]
+fn commit_only_receipt(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    support::commit_path(
+        support::env(world),
+        &format!("givn/changes/{id}/verification/tasks-verification.json"),
+        "fixture: commit the change verification receipt",
+    );
+}
+
+#[given("the verify command records every invocation with its scope and features path")]
+fn verify_command_records_invocations(world: &mut GivnWorld) {
+    world.verification_invocations_before =
+        Some(super::workflow_enforcement_steps::change_suite_invocation_count(world));
+}
+
+#[then("the archive is proven")]
+fn archive_is_proven(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    assert_eq!(
+        support::receipt_status(world, &id),
+        "proven",
+        "the archive receipt is not proven"
+    );
+}
+
+#[then("the change suite was not invoked again")]
+fn change_suite_was_not_invoked(world: &mut GivnWorld) {
+    let before = world
+        .verification_invocations_before
+        .expect("the fixture must record the invocation count");
+    let after = super::workflow_enforcement_steps::change_suite_invocation_count(world);
+    assert_eq!(
+        after, before,
+        "the change suite ran again: {before} -> {after} invocations"
+    );
+}
