@@ -235,7 +235,7 @@ Route reported signal: `EXTEND givn-workflow-enforcement` (use case
 | Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
 |---|---|---|---|
 | `readability-review-gate` | `EXTEND givn-workflow-enforcement` | `NEW in verify-change` | A distinct opt-in review gate with its own marker vocabulary, unit-level rationale artifacts, and committed-head analysis. `givn-workflow-enforcement` owns always-on workflow integrity (hooks, receipts, task commits, migration coverage); folding readability into it would mix an experimental opt-in gate with those guarantees. The existing `visual-review-gate` is the precedent: a specialised review gate inside `givn check review` with its own conditional instruction. |
-| `readability-report` | none — existing capability | `MODIFIED in assess-code-structure` | The change removes `action` and `recommendation` from the report's public contract and bumps the JSON schema to 2. The report capability owns that output, so its permanent spec and use case are modified rather than duplicated under the gate. |
+| `readability-report` | none — existing capability | `EXTEND readability-report` | The change removes `action` and `recommendation` from the report's public contract and bumps the JSON schema to 2. The report capability owns that output, so its permanent spec and use case are modified rather than duplicated under the gate. |
 
 The new capability is declared in `verify-change`'s capability list and its
 interaction inventory in this change; the design records the exact row and the
