@@ -408,9 +408,12 @@ Every finding needs one of two decisions, at unit level:
 A rationale names the unit and classification, cites the evidence, states why
 the current shape is the right one and what the unit is responsible for, names
 at least one rejected alternative, and records the owner. A temporary decision
-also records a follow-up and expiry. Ownership is collective: "not my code",
-"not this change", "legacy", "out of scope", "too risky", "no time", and
-"later" are not acceptable reasons.
+also records a follow-up and expiry. Truth and quality are the owner's
+judgment; the gate checks the mechanical floor only. A justification cannot
+use ownership or scope as a reason. Code is owned by everyone working on the
+project; leaving debt because it is not your code is not acceptable. The
+banned reasons include "not my code", "not this change", "legacy", "out of
+scope", "too risky", "no time", and "later".
 
 When any finding exists, record `READABILITY: PASS` after a fresh reviewer
 context reads only the deterministic outline and can explain the unit's

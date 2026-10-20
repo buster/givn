@@ -67,7 +67,7 @@ impl FossilCheckout {
             );
         }
         let stdout = String::from_utf8_lossy(&output.stdout);
-        let mut entries: Vec<PathBuf> = stdout.lines().filter_map(parse_change_line).collect();
+        let mut entries: Vec<PathBuf> = stdout.lines().flat_map(parse_change_paths).collect();
         entries.sort();
         entries.dedup();
         Ok(entries)
@@ -256,10 +256,9 @@ impl FossilCheckout {
         if !output.status.success() {
             return Ok(None);
         }
-        Ok(String::from_utf8_lossy(&output.stdout)
-            .lines()
-            .next()
-            .map(ToString::to_string))
+        Ok(first_revision_line(&String::from_utf8_lossy(
+            &output.stdout,
+        )))
     }
 
     /// The first parent of `revision`, or `None` for a root revision.
@@ -270,7 +269,9 @@ impl FossilCheckout {
         }
         for line in String::from_utf8_lossy(&output.stdout).lines() {
             if let Some(parent) = line.trim().strip_prefix("parent:") {
-                return Ok(Some(parent.trim().to_string()));
+                // `fossil info` prints `<hash> <date>`; the revision is the
+                // first token. `merged-from:` is never the first parent.
+                return Ok(parent.split_whitespace().next().map(ToString::to_string));
             }
         }
         Ok(None)
@@ -282,13 +283,13 @@ impl FossilCheckout {
         revision: &str,
         root: &str,
     ) -> Result<Vec<(String, crate::scm::EntryKind)>> {
-        let output = self.run(&["ls", "-r", revision])?;
+        let output = self.run(&["ls", "-r", revision_arg(revision)])?;
         if !output.status.success() {
             return Ok(Vec::new());
         }
         Ok(String::from_utf8_lossy(&output.stdout)
             .lines()
-            .filter(|line| line.starts_with(root) && line.ends_with(".rs"))
+            .filter(|line| under_root(line, root) && line.ends_with(".rs"))
             .map(|line| (line.to_string(), crate::scm::EntryKind::Regular))
             .collect())
     }
@@ -301,7 +302,7 @@ impl FossilCheckout {
     ) -> Result<Vec<(String, Vec<u8>)>> {
         let mut blobs = Vec::new();
         for path in paths {
-            let output = self.run(&["cat", "-r", revision, path])?;
+            let output = self.run(&["cat", "-r", revision_arg(revision), path])?;
             if output.status.success() {
                 blobs.push((path.clone(), output.stdout));
             }
@@ -316,25 +317,25 @@ impl FossilCheckout {
             let output = self.run(&["diff", "--from", base, "--to", "current", "--brief"])?;
             if output.status.success() {
                 for line in String::from_utf8_lossy(&output.stdout).lines() {
-                    if let Some(path) = line.split_whitespace().last()
-                        && path.starts_with(root)
-                        && path.ends_with(".rs")
-                    {
-                        paths.push(path.to_string());
+                    for path in parse_change_paths(line) {
+                        let path = path.to_string_lossy().replace('\\', "/");
+                        if under_root(&path, root) && path.ends_with(".rs") {
+                            paths.push(path);
+                        }
                     }
                 }
             }
         } else {
             let output = self.run(&["ls"])?;
             for line in String::from_utf8_lossy(&output.stdout).lines() {
-                if line.starts_with(root) && line.ends_with(".rs") {
+                if under_root(line, root) && line.ends_with(".rs") {
                     paths.push(line.to_string());
                 }
             }
         }
         let extras = self.run(&["extras"])?;
         for line in String::from_utf8_lossy(&extras.stdout).lines() {
-            if line.starts_with(root) && line.ends_with(".rs") {
+            if under_root(line, root) && line.ends_with(".rs") {
                 paths.push(line.to_string());
             }
         }
@@ -377,25 +378,60 @@ impl FossilCheckout {
     }
 }
 
-/// Parse one `fossil changes --differ` line into its path. A hard rename
-/// prints `<STATUS> old -> new`, so the destination wins.
-fn parse_change_line(line: &str) -> Option<PathBuf> {
+/// Parse one `fossil changes --differ` line into its paths. A hard rename
+/// prints `<STATUS> old -> new`; both sides are covered so a move out of a
+/// production root is still a dirty production path.
+fn parse_change_paths(line: &str) -> Vec<PathBuf> {
     let trimmed = line.trim_end();
     if trimmed.is_empty() {
-        return None;
+        return Vec::new();
     }
-    let rest = trimmed.split_once(char::is_whitespace)?.1.trim_start();
-    if rest.is_empty() {
-        return None;
-    }
-    let path = match rest.split_once("->") {
-        Some((_, destination)) => destination.trim(),
-        None => rest,
+    let Some((_, rest)) = trimmed.split_once(char::is_whitespace) else {
+        return Vec::new();
     };
-    if path.is_empty() {
-        return None;
+    let rest = rest.trim_start();
+    if let Some((source, destination)) = rest.split_once("->") {
+        [source.trim(), destination.trim()]
+            .into_iter()
+            .filter(|path| !path.is_empty())
+            .map(PathBuf::from)
+            .collect()
+    } else if rest.is_empty() {
+        Vec::new()
+    } else {
+        vec![PathBuf::from(rest)]
     }
-    Some(PathBuf::from(path))
+}
+
+/// Fossil calls the checked-out head `current`; the gate names it `HEAD`
+/// because that is the SCM-neutral contract.
+fn revision_arg(revision: &str) -> &str {
+    if revision == "HEAD" {
+        "current"
+    } else {
+        revision
+    }
+}
+
+/// Fossil's timeline ends with `+++ end of timeline (n) +++`; only a real
+/// hash is a revision. With no match the command still exits successfully.
+fn first_revision_line(output: &str) -> Option<String> {
+    output
+        .lines()
+        .map(str::trim)
+        .find(|line| {
+            !line.is_empty()
+                && !line.starts_with("+++")
+                && line.chars().all(|character| character.is_ascii_hexdigit())
+        })
+        .map(ToString::to_string)
+}
+
+fn under_root(path: &str, root: &str) -> bool {
+    path == root
+        || path
+            .strip_prefix(root)
+            .is_some_and(|rest| rest.starts_with('/'))
 }
 
 fn stderr(output: &Output) -> String {
@@ -409,22 +445,31 @@ mod tests {
     #[test]
     fn parses_status_lines_including_extra_and_renames() {
         assert_eq!(
-            parse_change_line("ADDED      givn/specs/a.feature"),
-            Some(PathBuf::from("givn/specs/a.feature"))
+            parse_change_paths("ADDED      givn/specs/a.feature"),
+            vec![PathBuf::from("givn/specs/a.feature")]
         );
         assert_eq!(
-            parse_change_line("EXTRA      notes.txt"),
-            Some(PathBuf::from("notes.txt"))
+            parse_change_paths("EXTRA      notes.txt"),
+            vec![PathBuf::from("notes.txt")]
         );
         assert_eq!(
-            parse_change_line("MISSING    givn/changes/x/proposal.md"),
-            Some(PathBuf::from("givn/changes/x/proposal.md"))
+            parse_change_paths("MISSING    givn/changes/x/proposal.md"),
+            vec![PathBuf::from("givn/changes/x/proposal.md")]
         );
         assert_eq!(
-            parse_change_line("RENAMED    old.txt  ->  new.txt"),
-            Some(PathBuf::from("new.txt"))
+            parse_change_paths("RENAMED    old.txt  ->  new.txt"),
+            vec![PathBuf::from("old.txt"), PathBuf::from("new.txt")]
         );
-        assert_eq!(parse_change_line(""), None);
-        assert_eq!(parse_change_line("EDITED"), None);
+        assert!(parse_change_paths("").is_empty());
+        assert!(parse_change_paths("EDITED").is_empty());
+    }
+
+    #[test]
+    fn a_timeline_end_marker_is_not_a_revision() {
+        assert_eq!(first_revision_line("+++ end of timeline (0) +++\n"), None);
+        assert_eq!(
+            first_revision_line("abc123\ndef456\n+++ end of timeline (2) +++\n"),
+            Some("abc123".to_string())
+        );
     }
 }

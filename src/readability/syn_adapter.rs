@@ -57,11 +57,13 @@ impl SourceAnalyzer for SynAnalyzer {
     fn analyze(&self, request: &AnalysisRequest) -> Result<Analysis> {
         let sources = scan::discover(&request.project_root, &request.scope.roots)?;
         let mut analysis = Analysis::default();
+        let mut impls = ImplCollector::default();
 
         for source in sources {
-            analyze_file(source, &mut analysis);
+            analyze_file(source, &mut analysis, &mut impls);
         }
 
+        attach_impls(&mut analysis, impls);
         analysis.units.sort_by(|a, b| a.id.cmp(&b.id));
         analysis.diagnostics.sort_by(|a, b| {
             (a.path.clone(), a.line, a.message.clone()).cmp(&(
@@ -74,7 +76,7 @@ impl SourceAnalyzer for SynAnalyzer {
     }
 }
 
-fn analyze_file(source: ScannedSource, analysis: &mut Analysis) {
+fn analyze_file(source: ScannedSource, analysis: &mut Analysis, impls: &mut ImplCollector) {
     let path = source.path.clone();
     let physical_lines = source.lines.len() as u32;
     let parsed = syn::parse_file(&source.content);
@@ -110,8 +112,12 @@ fn analyze_file(source: ScannedSource, analysis: &mut Analysis) {
         outline: Vec::new(),
         diagnostics: Vec::new(),
         unsupported: Vec::new(),
+        pending_impls: Vec::new(),
+        impl_records: Vec::new(),
     };
     file.walk_items(&parsed.items, &module_path);
+    impls.pending.append(&mut file.pending_impls);
+    impls.records.append(&mut file.impl_records);
 
     let mut unit_ids: Vec<UnitId> = file.units.iter().map(|unit| unit.id.clone()).collect();
     unit_ids.push(UnitId(format!("module:{}", path)));
@@ -157,6 +163,8 @@ struct FileBuilder {
     outline: Vec<OutlineItem>,
     diagnostics: Vec<AnalysisDiagnostic>,
     unsupported: Vec<UnsupportedNote>,
+    pending_impls: Vec<PendingImpl>,
+    impl_records: Vec<ImplRecord>,
 }
 
 impl FileBuilder {
@@ -234,10 +242,11 @@ impl FileBuilder {
         methods: Vec<Method>,
         outline: Vec<OutlineItem>,
     ) {
-        let id = UnitId(format!(
-            "type:{module_path}::{name}",
-            module_path = self.module_path
-        ));
+        // The stable unit id is the declaration file plus the type name. The
+        // module path stays available for method ids and outline ordering, but
+        // it is not part of the public identity: a type implemented in another
+        // file is still one unit (see `attach_impls`).
+        let id = UnitId(format!("type:{}::{name}", self.path));
         let mut unit = SourceUnit {
             id: id.clone(),
             kind: UnitKind::Type(type_kind),
@@ -428,16 +437,17 @@ impl FileBuilder {
         );
     }
 
-    fn push_impl(&mut self, item: &ItemImpl, _module_path: &str) {
-        let name = impl_target_name(&item.self_ty);
-        let Some(index) = name
-            .as_ref()
-            .and_then(|name| self.unit_by_name.get(name).copied())
-        else {
+    fn push_impl(&mut self, item: &ItemImpl, module_path: &str) {
+        let Some(name) = impl_target_name(&item.self_ty) else {
             return;
         };
+        let trait_name = item.trait_.as_ref().and_then(|(path, _)| {
+            path.segments
+                .last()
+                .map(|segment| segment.ident.to_string())
+        });
         let impl_span = impl_span_of(item, &self.content, &self.path);
-        self.spans.push(impl_span);
+        self.spans.push(impl_span.clone());
         let mut methods = Vec::new();
         let mut outline = Vec::new();
         for impl_item in &item.items {
@@ -460,17 +470,195 @@ impl FileBuilder {
         }
         let method_spans: Vec<SourceSpan> =
             methods.iter().map(|method| method.span.clone()).collect();
-        let unit = &mut self.units[index];
-        unit.spans.extend(method_spans);
-        unit.methods.extend(methods);
-        unit.methods.sort_by(|a, b| a.name.cmp(&b.name));
-        unit.spans
-            .push(impl_span_of(item, &self.content, &self.path));
-        if unit.files.iter().all(|file| file != &self.path) {
-            unit.files.push(self.path.clone());
+        let start_line = impl_span.start_line;
+        let mut spans = method_spans;
+        spans.push(impl_span);
+
+        if let Some(index) = self.unit_by_name.get(&name).copied() {
+            let unit = &mut self.units[index];
+            unit.spans.extend(spans);
+            unit.methods.extend(methods);
+            unit.methods.sort_by(|a, b| a.name.cmp(&b.name));
+            if unit.files.iter().all(|file| file != &self.path) {
+                unit.files.push(self.path.clone());
+            }
+            unit.outline.extend(outline);
+            unit.outline.sort_by_key(|item| item.order);
+            if let Some(trait_name) = trait_name {
+                self.impl_records.push(ImplRecord {
+                    implementor_id: unit.id.clone(),
+                    trait_name,
+                    file: self.path.clone(),
+                    line: Some(start_line),
+                });
+            }
+            return;
         }
-        unit.outline.extend(outline);
-        unit.outline.sort_by_key(|item| item.order);
+
+        // The declaration may live in another file. Keep the impl until every
+        // file has been visited, then attach it to the unique type with this
+        // name (or refuse an ambiguous name).
+        self.pending_impls.push(PendingImpl {
+            file: self.path.clone(),
+            module_path: module_path.to_string(),
+            target: name,
+            trait_name,
+            spans,
+            methods,
+            outline,
+            line: Some(start_line),
+        });
+    }
+}
+
+/// Impls whose type declaration was not in the same file, plus the trait
+/// relation facts collected from every attached impl.
+#[derive(Default)]
+struct ImplCollector {
+    pending: Vec<PendingImpl>,
+    records: Vec<ImplRecord>,
+}
+
+struct PendingImpl {
+    file: RepoPath,
+    module_path: String,
+    target: String,
+    trait_name: Option<String>,
+    spans: Vec<SourceSpan>,
+    methods: Vec<Method>,
+    outline: Vec<OutlineItem>,
+    line: Option<u32>,
+}
+
+struct ImplRecord {
+    implementor_id: UnitId,
+    trait_name: String,
+    file: RepoPath,
+    line: Option<u32>,
+}
+
+/// Attach cross-file impls to the unique type with the same name, then resolve
+/// trait/implementor relations by type name.
+///
+/// A name declared more than once is ambiguous: the impl is never merged and
+/// an `AmbiguousType` diagnostic is recorded. Same-file impls already attached
+/// by `FileBuilder` are left untouched.
+fn attach_impls(analysis: &mut Analysis, mut collector: ImplCollector) {
+    let mut by_name: BTreeMap<String, Vec<usize>> = BTreeMap::new();
+    for (index, unit) in analysis.units.iter().enumerate() {
+        if matches!(unit.kind, UnitKind::Type(_)) {
+            by_name.entry(unit.name.clone()).or_default().push(index);
+        }
+    }
+
+    for pending in collector.pending {
+        let named = by_name.get(&pending.target).map(Vec::as_slice);
+        let candidates: Vec<usize> = match named {
+            Some([index]) => vec![*index],
+            Some(indices) => indices
+                .iter()
+                .copied()
+                .filter(|index| {
+                    let declared = &analysis.units[*index].module_path;
+                    pending.module_path == *declared
+                        || pending.module_path.starts_with(&format!("{declared}::"))
+                })
+                .collect(),
+            None => Vec::new(),
+        };
+        match candidates.as_slice() {
+            [index] => {
+                let unit = &mut analysis.units[*index];
+                unit.spans.extend(pending.spans);
+                unit.methods.extend(pending.methods);
+                unit.methods.sort_by(|a, b| a.name.cmp(&b.name));
+                if unit.files.iter().all(|file| file != &pending.file) {
+                    unit.files.push(pending.file.clone());
+                }
+                unit.outline.extend(pending.outline);
+                unit.outline.sort_by_key(|item| item.order);
+                if let Some(trait_name) = pending.trait_name {
+                    collector.records.push(ImplRecord {
+                        implementor_id: unit.id.clone(),
+                        trait_name,
+                        file: pending.file,
+                        line: pending.line,
+                    });
+                }
+            }
+            _ if named.is_some() => {
+                // A duplicate type name is resolved only when the impl's
+                // module tree identifies exactly one declaration. Anything
+                // else stays an explicit ambiguity and is never merged.
+                analysis.diagnostics.push(AnalysisDiagnostic {
+                    kind: DiagnosticKind::AmbiguousType,
+                    path: pending.file,
+                    line: pending.line,
+                    message: format!(
+                        "impl target '{}' matches {} declared types; not merged",
+                        pending.target,
+                        named.map(|indices| indices.len()).unwrap_or(0)
+                    ),
+                });
+            }
+            _ => {}
+        }
+    }
+
+    let mut traits_by_name: BTreeMap<String, Vec<usize>> = BTreeMap::new();
+    for (index, unit) in analysis.units.iter().enumerate() {
+        if matches!(unit.kind, UnitKind::Type(TypeKind::Trait)) {
+            traits_by_name
+                .entry(unit.name.clone())
+                .or_default()
+                .push(index);
+        }
+    }
+
+    for record in collector.records {
+        let matches = traits_by_name.get(&record.trait_name).map(Vec::as_slice);
+        let Some([trait_index]) = matches else {
+            if let Some(ambiguous) = matches.filter(|matches| matches.len() > 1) {
+                analysis.diagnostics.push(AnalysisDiagnostic {
+                    kind: DiagnosticKind::AmbiguousType,
+                    path: record.file,
+                    line: record.line,
+                    message: format!(
+                        "trait '{}' matches {} declared traits; implementors not expanded",
+                        record.trait_name,
+                        ambiguous.len()
+                    ),
+                });
+            }
+            continue;
+        };
+        let Some(implementor_index) = analysis
+            .units
+            .iter()
+            .position(|unit| unit.id == record.implementor_id)
+        else {
+            continue;
+        };
+        let trait_id = analysis.units[*trait_index].id.clone();
+        let implementor_id = analysis.units[implementor_index].id.clone();
+        let implementor = &mut analysis.units[implementor_index];
+        if !implementor
+            .relations
+            .contains(&TypeRelation::ImplementsUnit(trait_id.clone()))
+        {
+            implementor
+                .relations
+                .push(TypeRelation::ImplementsUnit(trait_id));
+        }
+        let trait_unit = &mut analysis.units[*trait_index];
+        if !trait_unit
+            .relations
+            .contains(&TypeRelation::ImplementedBy(implementor_id.clone()))
+        {
+            trait_unit
+                .relations
+                .push(TypeRelation::ImplementedBy(implementor_id));
+        }
     }
 }
 
@@ -861,3 +1049,187 @@ fn has_cfg_test(attrs: &[Attribute]) -> bool {
 
 #[allow(dead_code)]
 fn _call_id(_id: CallId) {}
+
+#[cfg(test)]
+mod tests {
+    use super::super::model::SourceScope;
+    use super::*;
+
+    fn analyze_sources(files: &[(&str, &str)]) -> Analysis {
+        let root = tempfile::tempdir().expect("temp project");
+        for (path, content) in files {
+            let target = root.path().join(path);
+            std::fs::create_dir_all(target.parent().unwrap()).unwrap();
+            std::fs::write(target, content).unwrap();
+        }
+        let request = AnalysisRequest {
+            project_root: root.path().to_path_buf(),
+            scope: SourceScope {
+                language: Language::Rust,
+                roots: vec![std::path::PathBuf::from("src")],
+                include_test_sources: false,
+            },
+        };
+        SynAnalyzer.analyze(&request).expect("analyze")
+    }
+
+    #[test]
+    fn type_ids_use_the_declaration_file_and_impls_merge_across_files() {
+        let analysis = analyze_sources(&[
+            (
+                "src/engine.rs",
+                "pub struct Engine { a: u64, b: u64 }\nimpl Engine {\n    pub fn first(&self) -> u64 { self.a }\n}\n",
+            ),
+            (
+                "src/engine/parts.rs",
+                "impl Engine {\n    pub fn second(&self) -> u64 { self.b }\n    pub fn third(&self) -> u64 { self.a }\n}\n",
+            ),
+        ]);
+
+        let engine = analysis
+            .units
+            .iter()
+            .find(|unit| unit.id == UnitId("type:src/engine.rs::Engine".to_string()))
+            .expect("the type is identified by its declaration file");
+        assert_eq!(engine.name, "Engine");
+        assert_eq!(
+            engine.files,
+            vec![
+                RepoPath::new("src/engine.rs"),
+                RepoPath::new("src/engine/parts.rs")
+            ]
+        );
+        let methods: Vec<&str> = engine
+            .methods
+            .iter()
+            .map(|method| method.name.as_str())
+            .collect();
+        assert_eq!(methods, vec!["first", "second", "third"]);
+        assert!(
+            engine
+                .spans
+                .iter()
+                .any(|span| span.file == RepoPath::new("src/engine/parts.rs"))
+        );
+        assert!(
+            analysis
+                .units
+                .iter()
+                .any(|unit| unit.id == UnitId("module:src/engine/parts.rs".to_string()))
+        );
+        assert!(
+            analysis
+                .diagnostics
+                .iter()
+                .all(|diagnostic| diagnostic.kind != DiagnosticKind::AmbiguousType)
+        );
+    }
+
+    #[test]
+    fn an_ambiguous_type_name_is_not_merged() {
+        let analysis = analyze_sources(&[
+            ("src/a.rs", "pub struct C;\n"),
+            ("src/b.rs", "pub struct C;\n"),
+            (
+                "src/c.rs",
+                "impl C {\n    pub fn only(&self) -> u64 { 1 }\n}\n",
+            ),
+        ]);
+
+        assert!(analysis.diagnostics.iter().any(|diagnostic| {
+            diagnostic.kind == DiagnosticKind::AmbiguousType
+                && diagnostic.path == RepoPath::new("src/c.rs")
+        }));
+        for unit in analysis
+            .units
+            .iter()
+            .filter(|unit| unit.name == "C" && matches!(unit.kind, UnitKind::Type(_)))
+        {
+            assert!(
+                unit.files
+                    .iter()
+                    .all(|file| file != &RepoPath::new("src/c.rs")),
+                "an ambiguous impl was merged into {}",
+                unit.id
+            );
+        }
+    }
+
+    #[test]
+    fn a_duplicate_name_resolves_by_the_impl_module_tree() {
+        let analysis = analyze_sources(&[
+            (
+                "src/a_b.rs",
+                "pub struct C;\nimpl C {\n    pub fn one(&self) {}\n}\n",
+            ),
+            (
+                "src/a_b/parts.rs",
+                "impl C {\n    pub fn two(&self) {}\n}\n",
+            ),
+            (
+                "src/a-b.rs",
+                "pub struct C;\nimpl C {\n    pub fn one(&self) {}\n}\n",
+            ),
+            (
+                "src/a-b/parts.rs",
+                "impl C {\n    pub fn two(&self) {}\n}\n",
+            ),
+        ]);
+        assert!(
+            analysis
+                .diagnostics
+                .iter()
+                .all(|diagnostic| diagnostic.kind != DiagnosticKind::AmbiguousType),
+            "each impl belongs to its own module tree"
+        );
+        for id in ["type:src/a_b.rs::C", "type:src/a-b.rs::C"] {
+            let unit = analysis
+                .units
+                .iter()
+                .find(|unit| unit.id == UnitId(id.to_string()))
+                .expect("type unit");
+            let methods: Vec<&str> = unit
+                .methods
+                .iter()
+                .map(|method| method.name.as_str())
+                .collect();
+            assert_eq!(methods, vec!["one", "two"]);
+            assert_eq!(unit.files.len(), 2);
+        }
+    }
+
+    #[test]
+    fn a_cross_file_trait_impl_records_both_relations() {
+        let analysis = analyze_sources(&[
+            (
+                "src/api.rs",
+                "pub trait Api {\n    fn call(&self) -> u64;\n}\n",
+            ),
+            (
+                "src/engine.rs",
+                "pub struct Engine;\nimpl Api for Engine {\n    fn call(&self) -> u64 { 1 }\n}\n",
+            ),
+        ]);
+
+        let api = analysis
+            .units
+            .iter()
+            .find(|unit| unit.id == UnitId("type:src/api.rs::Api".to_string()))
+            .expect("trait unit");
+        assert!(api.relations.contains(&TypeRelation::ImplementedBy(UnitId(
+            "type:src/engine.rs::Engine".to_string()
+        ))));
+        let engine = analysis
+            .units
+            .iter()
+            .find(|unit| unit.id == UnitId("type:src/engine.rs::Engine".to_string()))
+            .expect("implementor unit");
+        assert!(
+            engine
+                .relations
+                .contains(&TypeRelation::ImplementsUnit(UnitId(
+                    "type:src/api.rs::Api".to_string()
+                )))
+        );
+    }
+}

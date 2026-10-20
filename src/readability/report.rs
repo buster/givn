@@ -25,7 +25,7 @@ pub fn render_human(assessment: &Assessment) -> String {
         assessment.units.len(),
         findings
     );
-    out.push_str("advisory: this report does not block review or archive\n\n");
+    out.push_str("findings only: this report does not block review or archive\n\n");
 
     let mut units: Vec<&ClassifiedUnit> = assessment.units.iter().collect();
     units.sort_by(|left, right| {
