@@ -142,9 +142,13 @@ fn capture_archive_transcript(world: &mut GivnWorld) {
         "Consumer archives a change after documentation-only review edits and the proof is reused";
     let slug = givn::integrity_hook::scenario_slug(title);
     let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let dir = root
-        .join("givn/changes/review-friction-hardening/evidence/visual")
-        .join(&slug);
+    let active = root.join("givn/changes/review-friction-hardening");
+    let dir = if active.exists() {
+        active.join("evidence/visual").join(&slug)
+    } else {
+        root.join("target/review-friction-hardening-evidence")
+            .join(&slug)
+    };
     std::fs::create_dir_all(&dir).expect("create transcript directory");
     let cwd = support::root(world).display().to_string();
     let text = format!(
