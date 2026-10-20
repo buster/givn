@@ -70,7 +70,10 @@ impl Worktree {
 
     /// Whether `revision` is reachable from `HEAD`.
     pub fn is_ancestor(&self, revision: &str) -> Result<bool> {
-        let output = run_git(&self.root, &["merge-base", "--is-ancestor", revision, "HEAD"])?;
+        let output = run_git(
+            &self.root,
+            &["merge-base", "--is-ancestor", revision, "HEAD"],
+        )?;
         match output.status.code() {
             Some(0) => Ok(true),
             Some(1) => Ok(false),

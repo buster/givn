@@ -30,10 +30,7 @@ pub const SLOW_VERIFY_COMMAND: &str = "sleep 2";
 /// `givn check tasks --change <id>` runs through the shell choke point.
 pub fn declare_verify_command(env: &common::TestEnv, command: &str) {
     // Single-quote the YAML scalar so shell double quotes stay literal.
-    let yaml = format!(
-        "verify:\n  command: '{}'\n",
-        command.replace('\'', "''")
-    );
+    let yaml = format!("verify:\n  command: '{}'\n", command.replace('\'', "''"));
     common::write_commands_yaml(&env.path("givn/commands.yaml"), &yaml);
 }
 

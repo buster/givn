@@ -581,7 +581,8 @@ Feature: Delta
             scenario: &feature.scenarios[0],
             op: DeltaOp::Modified,
         };
-        let first = apply_deltas_retry(Some(PERMANENT), std::slice::from_ref(&delta), "Delta").unwrap();
+        let first =
+            apply_deltas_retry(Some(PERMANENT), std::slice::from_ref(&delta), "Delta").unwrap();
         let second = apply_deltas_retry(Some(&first), &[delta], "Delta").unwrap();
         assert_eq!(first, second);
     }

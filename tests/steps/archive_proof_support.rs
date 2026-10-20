@@ -209,11 +209,7 @@ pub(crate) fn write_change_artifacts_at(base: &Path, id: &str, with_e2e: bool) {
     .expect("write design");
     fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n")
         .expect("write design-review");
-    fs::write(
-        change.join("tasks.md"),
-        "- [x] COMMIT: a1b2c3d4 -- done\n",
-    )
-    .expect("write tasks");
+    fs::write(change.join("tasks.md"), "- [x] COMMIT: a1b2c3d4 -- done\n").expect("write tasks");
     fs::write(
         change.join("review.md"),
         "REVIEW: PASS\nREADME-IMPACT: none\n",
