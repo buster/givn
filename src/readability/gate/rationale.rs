@@ -48,6 +48,9 @@ pub struct RationaleArtifact {
     pub why: String,
     pub alternatives: String,
     pub owner: String,
+    pub author: String,
+    pub reviewed_by: String,
+    pub review_verdict: String,
     pub follow_up: Option<String>,
     pub expiry: Option<String>,
 }
@@ -107,6 +110,15 @@ fn validate_text(
         "missing Alternatives considered:",
     )?;
     let owner = fields.required("Owner", "missing Owner:")?;
+    let author = fields.required("Author", "missing Author:")?;
+    let reviewed_by = fields.required("Reviewed-by", "missing Reviewed-by:")?;
+    let review_verdict = fields.required("Review verdict", "missing Review verdict:")?;
+    if author == reviewed_by {
+        return Err("Reviewed-by must differ from Author".to_string());
+    }
+    if !review_verdict.eq_ignore_ascii_case("accept") {
+        return Err(format!("Review verdict '{review_verdict}' is not accept"));
+    }
 
     if unit != finding.unit_id.to_string() {
         return Err(format!(
@@ -183,6 +195,9 @@ fn validate_text(
         why,
         alternatives,
         owner,
+        author,
+        reviewed_by,
+        review_verdict,
         follow_up,
         expiry,
     })
@@ -202,6 +217,9 @@ impl Fields {
             "Why this shape is right",
             "Alternatives considered",
             "Owner",
+            "Author",
+            "Reviewed-by",
+            "Review verdict",
             "Follow-up",
             "Expiry",
         ];
