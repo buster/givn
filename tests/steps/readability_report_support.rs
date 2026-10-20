@@ -63,6 +63,43 @@ pub fn write_conditional_unit(env: &TestEnv) {
     );
 }
 
+pub fn write_fixture_corpus(env: &TestEnv) {
+    write_god_type(env, "GodType");
+    write_data_only_enum(env, "BigEnum", 520);
+    write_large_trait(env, "BigTrait", 520);
+    write_cohesive_type(env, "Cohesive", 260);
+    write_item_macro(env);
+    write_source(env, "src/malformed.rs", "pub struct Broken {\n");
+}
+
+pub fn assessment_counts(env: &TestEnv) -> (usize, usize, usize) {
+    let request = AnalysisRequest {
+        project_root: env.root(),
+        scope: SourceScope {
+            language: Language::Rust,
+            roots: vec![PathBuf::from("src")],
+            include_test_sources: false,
+        },
+    };
+    let analyzer = readability::rust_analyzer();
+    let capabilities = analyzer.capabilities();
+    let analysis = readability::analyze(&request, analyzer.as_ref()).expect("analyze corpus");
+    let assessment = readability::assess(&analysis, capabilities);
+    (
+        assessment.units.len(),
+        assessment
+            .units
+            .iter()
+            .filter(|unit| !unit.classification.label().is_empty())
+            .count(),
+        assessment
+            .units
+            .iter()
+            .filter(|unit| !unit.action.label().is_empty())
+            .count(),
+    )
+}
+
 pub fn write_small_unit(env: &TestEnv) {
     write_source(env, "src/small.rs", "pub struct Small;\n");
 }

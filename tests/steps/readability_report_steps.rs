@@ -22,6 +22,40 @@ fn readability_addon_is_listed_as_disabled(world: &mut GivnWorld) {
     readability_addon_is_disabled(world);
 }
 
+#[given("the readability fixture corpus")]
+fn fixture_corpus(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    crate::steps::readability_report_support::write_fixture_corpus(&env);
+    world.env = Some(env);
+}
+
+#[when("the readability report assesses every unit")]
+fn assess_every_unit(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let (units, classified, actions) =
+        crate::steps::readability_report_support::assessment_counts(env);
+    world.additional_output = Some(format!("{units},{classified},{actions}"));
+}
+
+#[then("every unit has exactly one classification and one action")]
+fn every_unit_has_one(world: &mut GivnWorld) {
+    let output = world
+        .additional_output
+        .as_deref()
+        .expect("assessment counts");
+    let values: Vec<usize> = output
+        .split(',')
+        .map(|value| value.parse().expect("count"))
+        .collect();
+    assert_eq!(values.len(), 3, "expected three counts");
+    assert!(values[0] > 0, "no units assessed");
+    assert_eq!(values[1], values[0], "some unit has no classification");
+    assert_eq!(values[2], values[0], "some unit has no action");
+}
+
 #[given("a Givn project with the readability experiment enabled")]
 fn readability_enabled_project(world: &mut GivnWorld) {
     let env = common::make_init_root();
