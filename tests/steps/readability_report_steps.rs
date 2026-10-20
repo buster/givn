@@ -165,6 +165,36 @@ fn two_reports_identical(world: &mut GivnWorld) {
     assert_eq!(syn, fake, "analysis engines produced different reports");
 }
 
+#[given(
+    regex = r#"^a workspace member "([^"]+)" with a production source unit that is over the readable size$"#
+)]
+fn workspace_member(world: &mut GivnWorld, member: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let relative = format!("{member}/src/engine.rs");
+    crate::steps::readability_report_support::write_god_type_at(env, "Engine", &relative);
+}
+
+#[then("the report classifies the unit as a god type")]
+fn report_classifies_god_type(world: &mut GivnWorld) {
+    let stdout = report_text(world);
+    assert!(
+        stdout.contains("god-type"),
+        "expected a god-type classification, got: {stdout}"
+    );
+}
+
+#[then(regex = r#"^the report names the file "([^"]+)"$"#)]
+fn report_names_file(world: &mut GivnWorld, relative: String) {
+    let stdout = report_text(world);
+    assert!(
+        stdout.contains(&relative),
+        "expected the report to name {relative}, got: {stdout}"
+    );
+}
+
 #[given("a production source unit with platform-conditional methods")]
 fn platform_conditional(world: &mut GivnWorld) {
     let env = common::make_bare_root();

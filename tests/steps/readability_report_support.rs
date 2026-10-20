@@ -113,6 +113,10 @@ pub fn write_item_macro(env: &TestEnv) {
 }
 
 pub fn write_god_type(env: &TestEnv, name: &str) {
+    write_god_type_at(env, name, "src/god_type.rs");
+}
+
+pub fn write_god_type_at(env: &TestEnv, name: &str, relative: &str) {
     let mut source = format!(
         "pub struct {name} {{\n    a: u64,\n    b: u64,\n    c: u64,\n}}\n\nimpl {name} {{\n"
     );
@@ -124,7 +128,7 @@ pub fn write_god_type(env: &TestEnv, name: &str) {
         source.push_str(&format!("        self.{field}\n    }}\n"));
     }
     source.push_str("}\n");
-    write_source(env, "src/god_type.rs", &source);
+    write_source(env, relative, &source);
 }
 
 pub fn write_boundary_type(env: &TestEnv, total_code_lines: usize) {

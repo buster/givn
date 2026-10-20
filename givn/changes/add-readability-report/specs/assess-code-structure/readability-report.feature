@@ -135,7 +135,7 @@ Feature: Readability report
     When the readability report assesses every unit
     Then every unit has exactly one classification and one action
 
-  @givn.added @wip
+  @givn.added
   Scenario: A developer scopes the report to a workspace member
     Given a Givn project with the readability experiment enabled
     And a workspace member "crates/core" with a production source unit that is over the readable size
