@@ -5,7 +5,6 @@ Release note: Enforce one real revision per scenario before review, surface task
 ## Setup
 
 - [x] Add the SCM commit inspection seam, the scenario parser, and the blocking check.
-  - [x] COMMIT: 024043f3b12921f933c1a40f0d8e4fa02d6d5179 -- feat(givn-workflow-enforcement): enforce one real revision per scenario
 
 ## Scenario tasks
 
@@ -30,4 +29,3 @@ Release note: Enforce one real revision per scenario before review, surface task
 ## Readiness
 
 - [x] Run the full suites and commit the review artifacts.
-  - [x] COMMIT: 024043f3b12921f933c1a40f0d8e4fa02d6d5179 -- feat(givn-workflow-enforcement): enforce one real revision per scenario
