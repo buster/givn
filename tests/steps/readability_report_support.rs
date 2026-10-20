@@ -51,6 +51,14 @@ pub fn write_cohesive_type(env: &TestEnv, name: &str, lines_per_method: usize) {
     write_source(env, "src/cohesive.rs", &source);
 }
 
+pub fn write_conditional_unit(env: &TestEnv) {
+    write_source(
+        env,
+        "src/conditional.rs",
+        "pub struct Conditional { value: u64 }\nimpl Conditional {\n    #[cfg(unix)]\n    pub fn poll_unix(&self) -> u64 { self.value }\n    #[cfg(windows)]\n    pub fn poll_windows(&self) -> u64 { self.value }\n}\n",
+    );
+}
+
 pub fn write_small_unit(env: &TestEnv) {
     write_source(env, "src/small.rs", "pub struct Small;\n");
 }

@@ -93,6 +93,22 @@ fn json_report_classifies(world: &mut GivnWorld) {
     );
 }
 
+#[given("a production source unit with platform-conditional methods")]
+fn platform_conditional(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    crate::steps::readability_report_support::write_conditional_unit(&env);
+    world.env = Some(env);
+}
+
+#[then("the report counts both platform variants")]
+fn report_counts_both_variants(world: &mut GivnWorld) {
+    let block = unit_block(world, "Conditional");
+    assert!(
+        block.contains("methods 2"),
+        "expected both variants to count, got: {block}"
+    );
+}
+
 #[given("a production source unit with exactly 500 code lines and cohesive methods")]
 fn boundary_500(world: &mut GivnWorld) {
     let env = common::make_bare_root();
