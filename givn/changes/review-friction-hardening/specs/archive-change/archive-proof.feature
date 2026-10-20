@@ -24,14 +24,14 @@ Feature: Archive proof reuse across documentation-only revisions
     And the archive is proven
     And the change suite was not invoked again
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Archive refuses a proof after tested content changed
     Given a clean committed change with a green change verification receipt recorded at an earlier revision
     And the <changed content> is changed and committed after that revision
     When the developer runs `givn archive --change review-proof-demo`
     Then the command exits non-zero
     And stderr says the verification receipt is stale
-    And stderr names the changed tested content
+    And stderr names the changed boundary
     And the change directory still exists under givn/changes/
     And no archive candidate exists for "review-proof-demo"
 

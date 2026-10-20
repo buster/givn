@@ -1228,3 +1228,53 @@ fn change_suite_was_not_invoked(world: &mut GivnWorld) {
         "the change suite ran again: {before} -> {after} invocations"
     );
 }
+
+#[given(regex = r"^the (.+) is changed and committed after that revision$")]
+fn change_tested_content(world: &mut GivnWorld, boundary: String) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let root = support::root(world);
+    match boundary.as_str() {
+        "delta feature" => {
+            let path = root.join(format!(
+                "givn/changes/{id}/specs/{id}/alpha-capability.feature"
+            ));
+            let mut content = std::fs::read_to_string(&path).unwrap();
+            content.push_str("\n  @givn.added\n  Scenario: Fixture changed alpha-capability\n    Given a changed thing\n    Then it still works\n");
+            std::fs::write(path, content).unwrap();
+        }
+        "verify command" => {
+            let path = root.join("givn/commands.yaml");
+            let content = std::fs::read_to_string(&path).unwrap();
+            std::fs::write(
+                path,
+                content.replace(
+                    "command: \"./emit-result.sh regular\"",
+                    "command: \"./emit-result.sh regular-changed\"",
+                ),
+            )
+            .unwrap();
+        }
+        "source code" => {
+            std::fs::write(root.join("src/lib.rs"), "pub fn fixture() -> u32 { 2 }\n").unwrap();
+        }
+        other => panic!("unknown changed boundary '{other}'"),
+    }
+    common::commit_fixture(support::env(world));
+    world.changed_boundary = Some(boundary);
+}
+
+#[then("stderr names the changed boundary")]
+fn stderr_names_changed_boundary(world: &mut GivnWorld) {
+    let boundary = world
+        .changed_boundary
+        .clone()
+        .expect("the fixture must record the changed boundary");
+    let needle = match boundary.as_str() {
+        "delta feature" => "delta features changed",
+        "verify command" => "verify command changed",
+        "source code" => "tested content changed",
+        other => panic!("unknown changed boundary '{other}'"),
+    };
+    let text = crate::steps::stderr(world);
+    assert!(text.contains(needle), "stderr missing {needle:?}: {text}");
+}
