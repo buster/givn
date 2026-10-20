@@ -798,6 +798,7 @@ mod tests {
         for path in [
             "/project/givn/changes/demo/verification.json",
             "givn/changes/demo/evidence/run.log",
+            "givn/changes/demo/evidence/cli/session.txt",
             "givn/changes/demo/verification/notes.txt",
         ] {
             assert!(
