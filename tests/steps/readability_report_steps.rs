@@ -499,7 +499,7 @@ fn report_recommends_no_plan(world: &mut GivnWorld) {
     );
 }
 
-#[then("the readability addon is disabled")]
+#[given("the readability addon is disabled")]
 fn readability_addon_is_disabled(world: &mut GivnWorld) {
     let env = world
         .env

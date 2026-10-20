@@ -27,7 +27,7 @@ Feature: enable-optional-addons
     Then stdout contains "[disabled]  readability"
     And stdout contains "givn addons enable"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer enables the readability addon and it is listed as enabled
     Given a project root with givn/ initialised without addons
     And the readability addon is disabled
