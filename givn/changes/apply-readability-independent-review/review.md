@@ -6,7 +6,9 @@ impl index, and the target registry keeps its justified shape. The gate
 decisions are recorded. The branch also carried a stale validator test
 fixture; fixing it required touching `src/readability/gate/rationale.rs`, so
 its 107-line `validate_text` was extracted as well and is recorded as a sixth
-fixed unit. The independent reviewer accepted the `targets` rationale.
+fixed unit. The independent reviewer rejected the `syn` adapter rationale and
+accepted the `targets` rationale; the adapter was split and now measures
+within limits, so only the target registry keeps a reviewed rationale.
 
 README-IMPACT: none
 
@@ -82,3 +84,5 @@ READABILITY: FIXED module:src/readability/gate/rationale.rs
 READABILITY: FIXED module:src/readability/syn_adapter.rs
 READABILITY: JUSTIFIED module:src/skills/targets.rs
 READABILITY: PASS
+
+REVIEW: PASS

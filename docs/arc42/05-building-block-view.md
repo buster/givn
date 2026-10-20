@@ -84,7 +84,7 @@ flowchart TD
 | `readability::gate::findings` | Apply the finding predicate (classification other than within-limits, data-only size exemption, method length, crossed threshold, growth) and attach the unit-level reason and decision; run the post-analysis guard for every changed production `.rs` path present at head (a deletion is proven by the base unit's removal). |
 | `readability::gate::markers` | Parse the fixed `READABILITY: FIXED`, `READABILITY: JUSTIFIED`, `READABILITY: PASS`, and `FAIL` vocabulary from `review.md`; reject unknown `READABILITY:` lines and conflicting decisions, ignore fenced examples, and treat duplicate identical decisions as one. |
 | `readability::gate::rationale` | Locate `rationales/<unit-slug>.md`, validate the required fields, unit and classification match, concrete evidence, a named responsibility, a named rejected alternative, the confirmed owner, banned whole-word reasons, and the `Follow-up:`/`Expiry:` pair. |
-| `readability::analyzer` and `syn_adapter` | Define the `SourceAnalyzer` port and its neutral `Analysis` contract; implement the first adapter with `syn`, keeping parser types inside `syn_adapter.rs` and returning per-file failures as diagnostics. |
+| `readability::analyzer` and `syn_adapter` | Define the `SourceAnalyzer` port and its neutral `Analysis` contract; implement the first adapter with `syn`, keeping parser types inside the `syn_adapter/` directory and returning per-file failures as diagnostics. |
 | `cli::missing_run_command` | Sentinel behind `givn missing-run-command`: prints start-configuration guidance to stderr and exits 1. |
 | `config::manifest` | Define artifact, apply, verify, coverage, addon, hook, and run-declaration data structures. |
 | `config::overlay` | Apply `givn/config.yaml` and then `givn/commands.yaml`, expand Arc42, and validate graph references/cycles. |
@@ -128,7 +128,7 @@ remain separate evidence; the former does not prove agent compliance.
 | `clap`, `clap_complete` | CLI parsing and shell completion |
 | `serde`, `serde_yaml_ng`, `serde_json` | Manifest, config, index, and machine-readable output |
 | `gherkin` | Feature parsing and AST access |
-| `syn` | Rust source parsing in the first `SourceAnalyzer` adapter; `full`, `parsing`, and `visit` features only, with parser types confined to `syn_adapter.rs` |
+| `syn` | Rust source parsing in the first `SourceAnalyzer` adapter; `full`, `parsing`, and `visit` features only, with parser types confined to the `syn_adapter/` directory |
 | `anyhow`, `thiserror` | Application context and typed errors |
 | `rust-embed` | Embedded defaults and addon assets |
 | `tempfile` | The readability gate's temporary base tree, created outside the project and removed on drop; no other production use. |

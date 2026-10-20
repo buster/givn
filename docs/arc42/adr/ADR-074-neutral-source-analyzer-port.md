@@ -141,7 +141,7 @@ hand-written neutral `Analysis` supplied by a fake adapter and from
 `SynAnalyzer`, and requires byte-identical output; the boundary and determinism
 scenarios exercise the same public surface. A `#[cfg(test)]` source scan of
 `src/readability/**` and `src/cli/readability.rs` keeps `use syn` and `syn::`
-only in `syn_adapter.rs`. A future tree-sitter adapter is
+only in the `syn_adapter/` directory. A future tree-sitter adapter is
 accepted only when it is registered in the factory and the same non-E2E
 scenarios pass unchanged.
 
