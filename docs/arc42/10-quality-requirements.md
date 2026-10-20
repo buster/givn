@@ -105,6 +105,7 @@ graph TD
 | Q-104 | Archive proof | An archive attempt is interrupted before or after the change leaves its active location. | A failure before the rename leaves the active change intact; a failure after it leaves a pending candidate whose receipt records whether the merge completed, and a rerun finishes the merge or verification without deleting either directory. An identical active change and pending candidate are reconciled on rerun; only conflicting copies are refused as corrupt. |
 | Q-105 | Change verification | A review or archive runs without a current green change-scoped receipt, or the delta specs or verify command changed after the receipt. | Review and archive refuse with the revision/features/command mismatch, name `givn check tasks`, and run no change-scoped tests; archive still runs the merged suite once when the receipt is current. |
 | Q-106 | Review preflight | A change has a checked scenario without a commit, a duplicate revision, an unreachable revision, or a commit message that omits the scenario title. | Check tasks and review block with every finding in one pass; a valid per-scenario list passes. A machine-only CLI passes without visual sign-off. |
+| Q-107 | Record quality | A request produces duplicate usage, an unattributed answer, a failed command without error text, or usage/model data without identity. | The record carries one derived-marked linked usage, selected/source/time on answers, a bounded first error line, and provider/model/variant where known; absent values stay explicit. |
 
 ## 10.3 Verification Signals
 

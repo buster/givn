@@ -395,6 +395,14 @@ A change whose design declares no visual contract may record
 `VISUAL-REVIEW: PASS`. Plain-text CLI transcripts remain evidence under the
 change's `evidence/` tree.
 
+### 6.7.4 Development-record quality
+
+A reported turn stores its inline usage once and marks a linked usage entry
+`derived: true` with the turn as its parent. An answered question stores
+`selected`, `source`, and `answered_at`; an unanswered question stores none. A
+failed command stores the bounded first line of its dispatch error. Provider,
+model, and variant are recorded where known; unavailable usage stays explicit.
+
 ## 6.12 Addons, Upgrade, and Completion Commands
 
 `givn addons list` reads enabled flags from `givn/config.yaml`. `enable arc42`

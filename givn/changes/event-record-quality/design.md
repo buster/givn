@@ -2,46 +2,37 @@
 
 ## Decisions
 
-- **Decides D1: mark the linked usage derived, do not omit it.** A usage entry
-  emitted beside a turn keeps its counts and carries `data.derived: true`;
-  its `parent` already names the turn. Old consumers keep reading it; the
-  analyzer can skip derived entries by rule. Omission would break linked-usage
-  consumers.
-- **Decides D2: answered questions carry selected, source, and time.** The
-  intake accepts `selected`, `answered_by` (alias `answer_source`),
-  `answered_at`, and an optional bounded `answer`. An unanswered question has
-  none of them; silence is never approval.
-- **Decides D3: failed commands record a bounded first error line.** The
-  recorder's `finish` receives the dispatch error, stores `data.error` through
-  the existing `bound_error` first-line bound, and leaves full output opt-in.
-- **D4: model identity is additive.** `provider` and `variant` join the turn,
-  usage, and subagent data when reported; `model` is already present. A missing
-  value stays absent, and `usage: unavailable` stays explicit.
+- **D1: mark a linked usage entry derived.** The usage entry beside a turn keeps
+  its counts and carries `data.derived: true`; its parent is the turn. The
+  analyzer can skip derived entries, and old consumers keep reading the entry.
+- **D2: an answered question records selection, source, and time.** The intake
+  accepts `selected`, `answered_by` (alias `answer_source`), `answered_at`, and
+  an optional bounded `answer`. Silence records none of them.
+- **D3: a failed command records a bounded first error line.** `finish` stores
+  the dispatch error through the existing `bound_error` first-line bound. Full
+  output remains opt-in.
+- **D4: identity is additive.** `provider`, `model`, and `variant` join turn and
+  usage data where reported. Missing values stay absent; `usage: unavailable`
+  stays explicit.
 
 ## Architecture impact
 
 | File | Change |
 |---|---|
-| `src/history.rs` | `finish` accepts an optional error and stores the bounded line in the command data. |
-| `src/cli/history.rs` | New intake fields; derived usage marker; answer fields; provider/variant on turn and usage. |
+| `src/cli/history.rs` | Derived marker; answer fields; provider/variant on turn and usage. |
+| `src/history.rs` | `finish` stores a bounded command error. |
 | `src/main.rs` | Passes the dispatch error to the recorder. |
-| `tests/steps/development_record_steps.rs` | One scenario covering all four guarantees through the real intake. |
+| `tests/steps/development_record_steps.rs` | Four scenarios through the real intake. |
 
-The schema version stays `1`; all fields are additive and absent fields keep
-their old meaning.
+Schema stays `1`; every field is additive.
 
 ## Test design
 
 Delta feature:
 `givn/changes/event-record-quality/specs/inspect-development-history/development-record.feature`.
+Four scenarios: derived usage, answered question, bounded error, identity.
 Steps: `tests/steps/development_record_steps.rs`. Runner:
-`./run-tests.sh --non-e2e`; the scenario runs in the regular scope. Strict mode
-is `.fail_on_skipped()`.
-
-## Interaction coverage
-
-The scenario uses the existing `history ingest` interaction and the existing
-development-record E2E driver; no new consumer action.
+`./run-tests.sh --non-e2e`; strict mode `.fail_on_skipped()`.
 
 ## Visual Design Contract
 

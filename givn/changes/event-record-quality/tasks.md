@@ -1,17 +1,25 @@
 # Tasks — event-record-quality
 
-IMPLEMENTATION-MODE: one-pass
-ONE-PASS-COMMIT: 700b055f6a6110cf7e6a6d870ab1b06f9c21e8a0
-
 Release note: Make development records unambiguous by recording one usage representation per request, explicit answers to questions, bounded failure text and known model identity.
 
-- [x] Add the additive intake fields and the derived usage marker.
-  - [x] COMMIT: 700b055f6a6110cf7e6a6d870ab1b06f9c21e8a0 — feat(development-record): derived usage
-- [x] Record selected/source/time on answered questions and leave silence unanswered.
-  - [x] COMMIT: 700b055f6a6110cf7e6a6d870ab1b06f9c21e8a0 — feat(development-record): answers
-- [x] Record a bounded first error line on failed commands.
-  - [x] COMMIT: 700b055f6a6110cf7e6a6d870ab1b06f9c21e8a0 — feat(development-record): bounded errors
-- [x] Record provider/model/variant where known and keep unavailable explicit.
-  - [x] COMMIT: 700b055f6a6110cf7e6a6d870ab1b06f9c21e8a0 — feat(development-record): identity
-- [x] Full-suite readiness: `./run-tests.sh` and `./run-tests.sh --e2e` passing.
-  - [x] COMMIT: 700b055f6a6110cf7e6a6d870ab1b06f9c21e8a0 — feat(development-record): readiness
+## Setup
+
+- [x] Add the additive intake fields and the recorder error path.
+
+## Scenario tasks
+
+- [x] Scenario: A linked usage entry is marked derived
+  - [x] COMMIT: ae4d333a05f7576131b71f8b7fd9f42045167bd7 -- feat(development-record): mark a linked usage entry as derived
+
+- [x] Scenario: An answered question records selection, source, and time
+  - [x] COMMIT: 726902e5ee91d201bbfc3137f0b6142d81f6d52f -- feat(development-record): record an answered question
+
+- [x] Scenario: A failed command records a bounded error line
+  - [x] COMMIT: 637f57d5322253bb869fd9c6ecc4429b2e52fec0 -- feat(development-record): record a bounded error
+
+- [x] Scenario: Usage identity names provider, model, and variant
+  - [x] COMMIT: 149449d7640b808ef9602dac5cdbe25136e5c492 -- feat(development-record): record identity
+
+## Readiness
+
+- [x] Full suites and review artifacts.
