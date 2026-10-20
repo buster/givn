@@ -4,6 +4,8 @@
 //! enable the `readability` addon; they contain no step bindings.
 
 use crate::common::{self, TestEnv};
+use givn::readability::{self, AnalysisRequest, SourceScope, model::Language};
+use std::path::PathBuf;
 
 pub fn enable_readability(env: &TestEnv) {
     let out = common::run_givn(env, &["addons", "enable", "readability"]);
@@ -47,6 +49,38 @@ pub fn write_cohesive_type(env: &TestEnv, name: &str, lines_per_method: usize) {
     }
     source.push_str("}\n");
     write_source(env, "src/cohesive.rs", &source);
+}
+
+pub fn write_boundary_type(env: &TestEnv, total_code_lines: usize) {
+    let fields = total_code_lines - 12;
+    let mut source = String::from("pub struct Boundary {\n    value: u64,\n");
+    for index in 0..fields.saturating_sub(1) {
+        source.push_str(&format!("    field_{index}: u64,\n"));
+    }
+    source.push_str("}\n\nimpl Boundary {\n");
+    for index in 0..2 {
+        source.push_str(&format!(
+            "    pub fn method_{index}(&self) -> u64 {{\n        let _ = self.value;\n        self.value\n    }}\n"
+        ));
+    }
+    source.push_str("}\n");
+    write_source(env, "src/boundary.rs", &source);
+}
+
+pub fn assess_report(env: &TestEnv) -> String {
+    let request = AnalysisRequest {
+        project_root: env.root(),
+        scope: SourceScope {
+            language: Language::Rust,
+            roots: vec![PathBuf::from("src")],
+            include_test_sources: false,
+        },
+    };
+    let analyzer = readability::rust_analyzer();
+    let capabilities = analyzer.capabilities();
+    let analysis = readability::analyze(&request, analyzer.as_ref()).expect("analyze fixture");
+    let assessment = readability::assess(&analysis, capabilities);
+    readability::report::render_human(&assessment)
 }
 
 pub fn write_source(env: &TestEnv, relative: &str, source: &str) {

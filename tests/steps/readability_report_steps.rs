@@ -47,6 +47,52 @@ fn large_trait(world: &mut GivnWorld) {
     crate::steps::readability_report_support::write_large_trait(env, "BigTrait", 520);
 }
 
+#[given("a production source unit with exactly 500 code lines and cohesive methods")]
+fn boundary_500(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    crate::steps::readability_report_support::write_boundary_type(&env, 500);
+    world.env = Some(env);
+}
+
+#[when("the readability report assesses the unit")]
+fn assess_unit_in_process(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    world.additional_output = Some(crate::steps::readability_report_support::assess_report(env));
+}
+
+#[then("the report classifies the unit as within-limits")]
+fn report_classifies_within_limits(world: &mut GivnWorld) {
+    let block = unit_block(world, "Boundary");
+    assert!(
+        block.contains("within-limits"),
+        "expected within-limits, got: {block}"
+    );
+}
+
+#[then("the report recommends no action")]
+fn report_recommends_no_action(world: &mut GivnWorld) {
+    let block = unit_block(world, "Boundary");
+    assert!(
+        block.contains("NONE") || block.contains("recommendation: none"),
+        "expected no action, got: {block}"
+    );
+}
+
+fn unit_block(world: &GivnWorld, name: &str) -> String {
+    let report = world
+        .additional_output
+        .as_deref()
+        .expect("an in-process report was produced");
+    report
+        .split("\n\n")
+        .find(|block| block.contains(name))
+        .unwrap_or(report)
+        .to_string()
+}
+
 #[given("a production source unit with a cohesive type over the readable size")]
 fn cohesive_type(world: &mut GivnWorld) {
     let env = world
