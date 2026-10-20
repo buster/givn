@@ -24,23 +24,26 @@ The developer requests verification of a change.
 ## Main flow
 
 1. The developer requests verification; the system reads the active specifications and workflow artifacts.
-2. The system confirms the change-scoped verification receipt is current, green, and bound to the tested revision, selected features, and verify command.
-3. The system detects duplicate behavior, structural overlap, and invalid references.
-4. The system compares migration evidence when a migration is checked.
+2. The system detects structural failures, duplicate behavior, structural overlap, and invalid references.
+3. The system compares migration evidence when a migration is checked.
+4. The system confirms the change-scoped verification receipt is current (or reusable across a documentation-only revision), green, and bound to the tested revision, selected features, verify command, and tested content.
 5. The system reports blocking and advisory findings.
 
 ## Extensions
 
 - 5: a review disposition is missing → completion is blocked; protects the success guarantee.
-- 4: a migration shows missing behavior, lost E2E evidence, lower interaction coverage, or lower source coverage → completion is blocked; protects the success guarantee.
+- 3: a migration shows missing behavior, lost E2E evidence, lower interaction coverage, or lower source coverage → completion is blocked; protects the success guarantee.
+- 4: the receipt is missing or stale → completion is blocked; protects the success guarantee.
 
 ## Rules
 
 - Structural failures outrank other findings.
-- A review PASS requires a current green change-scoped verification receipt.
+- A review PASS requires a current green change-scoped verification receipt, including one reused across a documentation-only revision.
 - Each checked scenario records one real, unique revision whose message names the scenario; the task check refuses a missing, duplicate, unreachable, or unnamed revision.
 - The README-impact decision is reported before review and remains a blocking review requirement.
-- The receipt binds the tested revision, the selected delta features, and the verify command.
+- The receipt binds the tested revision, the selected delta features, the verify command, and the tested content.
+- A revision that changes only documentation or evidence keeps the receipt current; any change to tested content makes it stale.
+- A review report names every use-case schema and capability-routing problem in one pass; the schema stays strict and semantic validation is not weakened.
 - Every blocking overlap has an explicit disposition.
 - Migration coverage cannot regress without an explicit retirement record.
 
@@ -86,6 +89,7 @@ The developer receives a complete verification result.
 | givn-workflow-enforcement | run migration coverage check | Consumer runs migration coverage check and sees passed evidence |
 | givn-workflow-enforcement | run the change-scoped checks | Consumer runs check tasks and receives a change verification receipt |
 | givn-workflow-enforcement | write a runner result | The result helper writes four counts without a scope |
+| givn-workflow-enforcement | run the review check on a change with use-case schema errors | Consumer runs review and receives every use-case schema problem in one pass |
 
 ## Includes
 
@@ -108,4 +112,4 @@ flowchart LR
   Check --> Findings[[Resolve findings]]
 ```
 
-<!-- givn:base-sha256:6418bc55849fa6c8ef40a62cd8a741aefd763201f7cbee5f418ecf95dc8f34f5 -->
+<!-- givn:base-sha256:2a8395dea51c230f8ff63ba95ccec982908d623d2d768b042f27fc74bcbe5669 -->

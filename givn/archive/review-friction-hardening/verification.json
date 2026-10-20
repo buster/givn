@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "change": "review-friction-hardening",
+  "status": "pending",
+  "candidate_revision": null,
+  "tested_revision": null,
+  "scopes": {},
+  "coverage": null,
+  "merge_completed": true,
+  "merged_deltas": [
+    "archive-change/archive-proof.feature",
+    "verify-change/givn-workflow-enforcement.feature"
+  ],
+  "merge_in_progress": null,
+  "merge_plan": [
+    "archive-change/archive-proof.feature",
+    "verify-change/givn-workflow-enforcement.feature"
+  ],
+  "merge_targets": {
+    "archive-change/archive-proof.feature": "givn/specs/archive-change/archive-proof.feature",
+    "verify-change/givn-workflow-enforcement.feature": "givn/specs/verify-change/givn-workflow-enforcement.feature"
+  },
+  "started_at_unix": 1792536180,
+  "finished_at_unix": null
+}
