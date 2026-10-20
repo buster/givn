@@ -71,7 +71,7 @@ Evidence:
 - GREEN output: `1 feature, 1 scenario (1 passed), 5 steps (5 passed)`; the unit test `case_mismatched_title_recovers_and_suggests_the_exact_spelling` also passes.
 - REFACTOR output: re-ran after `cargo fmt`; scenario still passes.
 - Production files: `src/gherkin/usecase_md.rs` (parser + regression unit test), `src/spec/routing_table.rs`, `tests/steps/workflow_enforcement_steps.rs`, `tests/steps/mod.rs`; planning artifacts `design.md`, `design-review.md`, `tasks.md`, `arc42.md`, and arc42 chapters.
-- COMMIT: 26b1bb02aebfb60c930ff30584fdfc04e8f9e116
+- [x] COMMIT: 26b1bb02aebfb60c930ff30584fdfc04e8f9e116
 
 ## Scenario 2 — A near-miss section heading is refused with the exact accepted spellings
 
@@ -96,7 +96,7 @@ Evidence:
 - GREEN output: `1 feature, 1 scenario (1 passed), 5 steps (5 passed)` after matching `did you mean` plus the accepted heading text.
 - REFACTOR output: `cargo fmt`; scenario still passes.
 - Production files: `tests/steps/workflow_enforcement_steps.rs`, the feature file, and the already-committed parser.
-- COMMIT: f13f3024bdcb00db39c774b037bc4b1f933099ea
+- [x] COMMIT: f13f3024bdcb00db39c774b037bc4b1f933099ea
 
 ## Scenario 3 — Missing required sections and a malformed interaction table are reported together
 
@@ -121,7 +121,7 @@ Evidence:
 - GREEN output: `1 feature, 1 scenario (1 passed), 5 steps (5 passed)`
 - REFACTOR output: `cargo fmt`; scenario still passes.
 - Production files: `tests/steps/workflow_enforcement_steps.rs`, the feature file, and the already-committed parser.
-- COMMIT: a71cfd2a8b773681d25f6c824d923844219c26d3
+- [x] COMMIT: a71cfd2a8b773681d25f6c824d923844219c26d3
 
 ## Scenario 4 — One use-case parse failure is reported once across several delta capabilities
 
@@ -146,7 +146,7 @@ Evidence:
 - GREEN output: `1 feature, 1 scenario (1 passed), 6 steps (6 passed)`
 - REFACTOR output: `cargo fmt`; scenario still passes.
 - Production files: `tests/steps/workflow_enforcement_steps.rs` (overlap dispositions in the fixture), the feature file, and the already-committed routing cache.
-- COMMIT: 0af5cb2ca0c799b77b7802ff3c0b2b66cf090400
+- [x] COMMIT: 0af5cb2ca0c799b77b7802ff3c0b2b66cf090400
 
 ## Scenario 5 — Review validates an active delta use-case narrative even for an extension
 
@@ -171,7 +171,7 @@ Evidence:
 - GREEN output: `1 feature, 1 scenario (1 passed), 5 steps (5 passed)`
 - REFACTOR output: `cargo fmt`; scenario still passes.
 - Production files: `tests/steps/workflow_enforcement_steps.rs` (EXTEND fixture and disposition), the feature file, and the already-committed narrative cache.
-- COMMIT: dcbd4541ccd52e2cacad52b15d1b746d19796848
+- [x] COMMIT: dcbd4541ccd52e2cacad52b15d1b746d19796848
 
 ## Scenario 6 — Review accepts a green proof after documentation-only review edits
 
@@ -197,7 +197,7 @@ Evidence:
 
 - RED: strict head equality refused the docs-only revision with `change verification receipt is stale` (exit 1). GREEN: `1 feature, 1 scenario (1 passed), 6 steps (6 passed)` after the shared freshness result returned `DocumentationOnly`; no suite invocation was recorded. REFACTOR: `cargo fmt`.
 - Production files: `src/proof.rs`, `src/scm.rs`, `src/git.rs`, `src/fossil.rs`, `src/cli/check.rs`, `src/cli/archive.rs`, `tests/steps/archive_proof_support.rs`, `tests/steps/workflow_enforcement_steps.rs`, `tests/steps/archive_proof_steps.rs`.
-- COMMIT: e64af9559b2525190f9f59d09af1dc795d5a108c
+- [x] COMMIT: e64af9559b2525190f9f59d09af1dc795d5a108c
 
 ## Scenario 7 — Archive reuses a proof committed with its receipt
 
@@ -220,7 +220,7 @@ Evidence:
 
 - RED: strict head equality refused the receipt-only commit with `change verification receipt is stale` (exit 1). GREEN: `1 feature, 1 scenario (1 passed), 7 steps (7 passed)`; the archive was proven and no change-suite invocation was recorded. REFACTOR: `cargo fmt`.
 - Production files: `src/proof.rs`, `src/scm.rs`, `src/git.rs`, `src/fossil.rs`, `src/cli/check.rs`, `src/cli/archive.rs`, `tests/steps/archive_proof_support.rs`, `tests/steps/workflow_enforcement_steps.rs`, `tests/steps/archive_proof_steps.rs`.
-- COMMIT: d9f2d85a6593c4f44641b783e9da9b3d22af4632
+- [x] COMMIT: d9f2d85a6593c4f44641b783e9da9b3d22af4632
 
 ## Scenario 8 — Archive refuses a proof after tested content changed
 
@@ -245,7 +245,7 @@ Evidence:
 - GREEN output: `1 feature, 3 scenarios (3 passed), 24 steps (24 passed)`; all three examples name delta features, verify command, or tested content and leave no candidate.
 - REFACTOR output: `cargo fmt`; all three examples still pass.
 - Production files: `tests/steps/archive_proof_steps.rs`, the feature file, and the already-committed freshness result.
-- COMMIT: 4126995e4bb4677e0737893ad2194eeddfddfe1a
+- [x] COMMIT: 4126995e4bb4677e0737893ad2194eeddfddfe1a
 
 ## Scenario 9 — Consumer runs review and receives every use-case schema problem in one pass (e2e)
 
@@ -270,7 +270,7 @@ Evidence:
 - GREEN output: `1 feature, 1 scenario (1 passed), 7 steps (7 passed)` under the real CLI; transcript `evidence/visual/consumer-runs-review-and-receives-every-use-case-schema-problem-in-one-pass/transcript.txt` records argv, cwd, exit code 1, and the complete stdout/stderr.
 - REFACTOR output: `cargo fmt`; scenario still passes.
 - Production files: `tests/steps/workflow_enforcement_e2e_steps.rs` (transcript capture), the feature file, committed transcript.
-- COMMIT: c9e342ebe7508ae632658297a80c216ee6b00247
+- [x] COMMIT: c9e342ebe7508ae632658297a80c216ee6b00247
 
 ## Scenario 10 — Consumer archives a change after documentation-only review edits and the proof is reused (e2e)
 
@@ -295,7 +295,7 @@ Evidence:
 - GREEN output: `1 feature, 1 scenario (1 passed), 10 steps (10 passed)`; transcript `evidence/visual/consumer-archives-a-change-after-documentation-only-review-edits-and-the-proof-is-reused/transcript.txt` records the reused-proof line, one `regular givn/specs` invocation, no change-features invocation, exit 0, and the proven archive.
 - REFACTOR output: `cargo fmt`; scenario still passes.
 - Production files: `tests/steps/archive_proof_e2e_steps.rs`, the feature file, committed transcript.
-- COMMIT: 7d10f21bf9a8b782125b056bf4d636d1daab3bc7
+- [x] COMMIT: 7d10f21bf9a8b782125b056bf4d636d1daab3bc7
 
 ## Final gates
 
