@@ -101,4 +101,7 @@ README-IMPACT: updated - What it is
 
 `Interface: none`; line-oriented CLI. Not applicable.
 
+READABILITY: JUSTIFIED module:src/readability/gate/rationale.rs
+READABILITY: PASS
+
 REVIEW: PASS
