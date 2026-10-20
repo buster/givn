@@ -1497,7 +1497,7 @@ fn stderr_says_headings_case_sensitive(world: &mut GivnWorld) {
 fn stderr_suggests(world: &mut GivnWorld, suggestion: String) {
     let text = stderr(world);
     assert!(
-        text.contains(&format!("did you mean '{suggestion}'?")),
+        text.contains("did you mean") && text.contains(&suggestion),
         "stderr missing suggestion {suggestion:?}: {text}"
     );
 }

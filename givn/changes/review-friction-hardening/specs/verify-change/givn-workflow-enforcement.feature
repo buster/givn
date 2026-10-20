@@ -19,7 +19,7 @@ Feature: Review diagnostics and proof reuse
     And stderr says headings are case-sensitive
     And stderr suggests "# Use case: review-diagnostics-demo"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A near-miss section heading is refused with the exact accepted spellings
     Given a clean committed change whose use-case contract has an unknown "## Guarantees" heading
     When the developer runs `givn check review --change review-diagnostics-demo`

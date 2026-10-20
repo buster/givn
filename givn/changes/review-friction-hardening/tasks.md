@@ -49,10 +49,10 @@ GIVN_FEATURES="$scratch" cargo test --locked --test features_runner -- --name "U
 
 ## Scenario 1 — A case-mismatched document title is refused with the exact correction
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
-- [ ] COMMIT
+- [x] RED
+- [x] GREEN
+- [x] REFACTOR
+- [x] COMMIT
 
 Design constraints:
 
@@ -65,11 +65,11 @@ Design constraints:
 
 Evidence:
 
-- RED output: `<paste>`
-- GREEN output: `<paste>`
-- REFACTOR output: `<paste>`
-- Production files: `<list>`
-- COMMIT: `<hash>`
+- RED output: `stderr missing "unknown heading '## Guarantees'": error: capability routing decisions do not match the built delta: decision NEW in review-diagnostics-demo: usecase.md failed to parse: line 1: expected '# Use case: <kebab-case-id>', got '# Use Case: review-diagnostics-demo', (exit 1)`
+- GREEN output: `1 feature, 1 scenario (1 passed), 6 steps (6 passed)`
+- REFACTOR output: re-ran after `cargo fmt`; scenario still passes.
+- Production files: `src/gherkin/usecase_md.rs`, `src/spec/routing_table.rs`, `tests/steps/workflow_enforcement_steps.rs`, `tests/steps/mod.rs`; planning artifacts `design.md`, `design-review.md`, `tasks.md`, `arc42.md`, and arc42 chapters.
+- COMMIT: 961545e9
 
 ## Scenario 2 — A near-miss section heading is refused with the exact accepted spellings
 
