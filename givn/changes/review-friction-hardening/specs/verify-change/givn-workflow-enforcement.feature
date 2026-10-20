@@ -35,7 +35,7 @@ Feature: Review diagnostics and proof reuse
     Then the command exits non-zero
     And stderr names both missing sections and the malformed interaction table together
 
-  @givn.added @wip
+  @givn.added
   Scenario: One use-case parse failure is reported once across several delta capabilities
     Given a clean committed change with three delta capabilities routed "NEW in review-diagnostics-demo"
     And the use-case contract has a case-mismatched title and an unknown "## Guarantees" heading
