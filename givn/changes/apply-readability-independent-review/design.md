@@ -25,8 +25,8 @@ The branch carries seven findings from the earlier gate work:
 | `module:src/skills/targets.rs` | multi-type-module | existing grown | 673 code lines |
 
 The five method-length units become `FIXED` when their longest method falls to
-100 code lines or fewer and complexity 50 or lower. The two structural units
-stay `JUSTIFIED`.
+100 code lines or fewer and complexity 50 or lower. The syn adapter is
+`FIXED` by splitting the module; the target registry stays `JUSTIFIED`.
 
 The branch also carries a pre-existing failure: the rationale validator's
 `a_complete_rationale_passes_and_each_floor_fails` fixture predates the
@@ -126,17 +126,17 @@ predicates instead of comparing literal directive text inside their bodies.
 the test module, so its measured length drops to its real size. The accepted
 and rejected template behavior is unchanged.
 
-## Justified units
+## Structural units
 
-### `src/readability/syn_adapter.rs`
+### `src/readability/syn_adapter/`
 
-The module remains the single `syn` boundary fixed by ADR-074. It stays a
-multi-type module because cross-file impl attachment and the trait/implementor
-relation pass aggregate facts for types declared in other files. The existing
-rationale keeps that boundary and rejects splitting `syn` handling across
-sibling modules. The touch extracts the pending-impl attachment and the
-trait-relation resolution into two private helpers so `attach_impls` names the
-two phases instead of carrying both.
+The former `syn_adapter.rs` is now a directory module. `mod.rs` keeps
+`SynAnalyzer` and the public adapter behavior; `file_builder.rs` walks each
+file, `facts.rs` owns the visitor and method facts, `spans.rs` and `syntax.rs`
+map source spans and types, and the syn-free `impl_index.rs` owns `PendingImpl`,
+`ImplRecord`, cross-file impl attachment, and trait-relation resolution. Every
+file is under 500 code lines, and `syn` types remain inside the adapter tree,
+so ADR-074 still holds.
 
 ### `src/skills/targets.rs`
 

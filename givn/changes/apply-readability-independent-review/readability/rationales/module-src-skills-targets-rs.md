@@ -6,3 +6,5 @@ Why this shape is right: the `targets` module owns the single list of agent targ
 Alternatives considered: Split the registry by target; rejected: the shared path and ownership rules and the sync order are one contract and would be duplicated across files.
 Owner: givn-maintainer--owner
 Author: agent
+Reviewed-by: fresh-context-reviewer-2026-10-20
+Review verdict: accept

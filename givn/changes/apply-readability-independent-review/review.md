@@ -1,13 +1,12 @@
 # Review: apply-readability-independent-review
 
 Status: implementation complete. The five requested long methods are
-extracted, the two structural units are touched and justified, and the gate
+extracted, the syn adapter is split into a directory module with a syn-free
+impl index, and the target registry keeps its justified shape. The gate
 decisions are recorded. The branch also carried a stale validator test
 fixture; fixing it required touching `src/readability/gate/rationale.rs`, so
 its 107-line `validate_text` was extracted as well and is recorded as a sixth
-fixed unit. The two rationales deliberately carry no independent reviewer fields
-yet; the main agent adds `Reviewed-by:` and `Review verdict:` after the
-fresh-context review, and only then the readability gate can pass.
+fixed unit. The independent reviewer accepted the `targets` rationale.
 
 README-IMPACT: none
 
@@ -31,9 +30,8 @@ README-IMPACT: none
 2. Missing coverage: the existing unit and gate suites cover the extracted
    paths. The new scenario pins the invalid-rationale message so the applied
    rationale review names the offending file.
-3. Hard to test: none beyond the independent reviewer's judgement of the two
-   structural rationales, which is deliberately left to the fresh-context
-   review.
+3. Hard to test: none beyond the independent reviewer's judgement of the
+   remaining structural rationale for the target registry.
 
 ## Overlap dispositions
 
@@ -81,6 +79,6 @@ READABILITY: FIXED module:src/readability/gate/findings.rs
 READABILITY: FIXED module:src/readability/report.rs
 READABILITY: FIXED module:src/skills/render.rs
 READABILITY: FIXED module:src/readability/gate/rationale.rs
-READABILITY: JUSTIFIED module:src/readability/syn_adapter.rs
+READABILITY: FIXED module:src/readability/syn_adapter.rs
 READABILITY: JUSTIFIED module:src/skills/targets.rs
 READABILITY: PASS
