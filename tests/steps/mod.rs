@@ -482,7 +482,7 @@ pub(crate) fn world_envs(_world: &GivnWorld) -> Vec<(&'static str, &'static str)
 // --- When ------------------------------------------------------------------
 
 #[when(regex = r#"^the user runs "([^"]+)"$"#)]
-fn user_runs_quoted(world: &mut GivnWorld, cmd: String) {
+pub(crate) fn user_runs_quoted(world: &mut GivnWorld, cmd: String) {
     user_runs(world, cmd);
 }
 

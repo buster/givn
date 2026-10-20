@@ -5,7 +5,22 @@
 
 use crate::common;
 use crate::steps::GivnWorld;
-use cucumber::then;
+use cucumber::{given, then, when};
+
+#[given("a Givn project with the readability experiment disabled")]
+fn readability_disabled_project(world: &mut GivnWorld) {
+    world.env = Some(common::make_init_root());
+}
+
+#[when(regex = r#"^the developer runs "([^"]+)"$"#)]
+fn developer_runs(world: &mut GivnWorld, cmd: String) {
+    crate::steps::user_runs_quoted(world, cmd);
+}
+
+#[then("the readability addon is listed as disabled")]
+fn readability_addon_is_listed_as_disabled(world: &mut GivnWorld) {
+    readability_addon_is_disabled(world);
+}
 
 #[then("the readability addon is disabled")]
 fn readability_addon_is_disabled(world: &mut GivnWorld) {

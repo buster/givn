@@ -11,7 +11,7 @@ Feature: Readability report
     And the report recommends a plan
     And the report writes no baseline file
 
-  @givn.added @wip
+  @givn.added
   Scenario: The readability experiment is disabled by default
     Given a Givn project with the readability experiment disabled
     When the developer runs "givn addons list"
