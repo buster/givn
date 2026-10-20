@@ -21,7 +21,7 @@ Plain-text CLI transcripts are valuable evidence. Archive currently rejects tran
 
 ## Proposed Solution
 
-Before review, a blocking task-integrity check requires one real, unique revision per checked scenario, verifies it exists and is reachable, and requires the commit message to name the scenario. There is no shared or one-pass mode. The preflight reports every finding in one pass.
+Before review, a blocking task-integrity check requires one real, unique revision per checked scenario, verifies it exists and is reachable, and requires the commit message to name the scenario. A shared revision is rejected. The preflight reports every finding at once.
 
 A machine-only product can record `VISUAL-REVIEW: NOT APPLICABLE` and keep plain-text interaction transcripts as evidence. No human visual sign-off is required for a CLI. A genuinely rendered interface still requires visual review and human sign-off.
 
@@ -53,13 +53,13 @@ Change evidence under `givn/changes/<id>/evidence/` is declared evidence for the
   2. **Add an interaction category** — write `evidence/interaction/` and exempt both paths. Gain: clearer vocabulary. Cost: migration and dual-path support. In practice: CLI evidence is clearly separate from screenshots.
 - Disposition: carried to `design.md` — choose the path policy while preserving existing evidence.
 
-### D2 — Should the task template support a one-pass implementation explicitly?
+### D2 — How is each checked scenario recorded?
 
-- Question: Should a one-pass implementation be an accepted task structure?
+- Question: What revision evidence does a checked scenario carry?
 - Options:
-  1. **No** — every scenario needs its own real revision whose message names the scenario. Gain: traceable evidence. Cost: an agent that implemented in one pass must split the commits before review. In practice: a one-pass implementation fails `check tasks` until the commits exist.
-  2. **Yes, with disclosure** — one revision covers every scenario. Gain: less commit work. Cost: the agent can redefine the rule after the fact and hide which work belongs to which scenario. In practice: a retroactive disclosure turns a failed rule into a pass.
-- Disposition: answered — option 1. There is no one-pass mode. A shared revision is rejected even when disclosed.
+  1. **One real revision per scenario** — the revision exists, is reachable from HEAD, and its message names the scenario. Gain: traceable evidence. Cost: the work must be split into scenario commits before check tasks.
+  2. **A shared revision** — one revision covers several scenarios. Gain: fewer commits. Cost: the record cannot say which work belongs to which scenario, and a failed scenario cannot be isolated. In practice: a shared hash is rejected.
+- Disposition: answered — option 1. Every checked scenario records its own real revision; a shared revision is rejected.
 
 ### D3 — Is visual review ever required for a CLI?
 

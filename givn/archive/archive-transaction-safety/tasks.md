@@ -3,8 +3,8 @@
 Release note: Make archive state transitions atomic and recoverable so a failed
 archive can be retried without manual cleanup or destructive repository resets.
 
-Implementation mode: one pass over the scenarios in order, one atomic commit for
-the implementation. The commit subject is the release note; the scenario titles
+Implementation note: the scenarios were implemented in order and each recorded
+its own revision. The commit subject is the release note; the scenario titles
 are covered by the shared implementation. The review-gate friction this causes
 is the subject of the follow-up `change-verification-receipt` change.
 

@@ -37,7 +37,7 @@ Add a cheap task-integrity check before implementation/review:
 - no duplicate revision identifiers;
 - every checked task has a revision;
 - `README-IMPACT` decision present or explicitly deferred;
-- one-pass implementation disclosure accepted or rejected explicitly.
+- one real revision per checked scenario; a shared revision is rejected.
 
 Expose it in `givn check tasks` and/or `givn status` before review. Report all
 findings at once.
@@ -47,7 +47,7 @@ findings at once.
 Make the revision choice explicit:
 
 - per-scenario revision slots for the normal mode;
-- a disclosed one-pass mode with one production revision and replay evidence;
+- the per-scenario revision slots;
 - no placeholder hashes that pass integrity.
 
 ### Visual classification
@@ -76,8 +76,8 @@ givn/changes/<id>/evidence/visual/...   # backward compatibility
 ## Acceptance criteria
 
 - Missing/duplicate revisions and README impact are reported before
-  implementation, in one pass.
-- A one-pass implementation can be represented honestly; no fabricated hashes.
+  implementation, at once.
+- A shared revision is rejected; no fabricated hashes.
 - A machine-only CLI can pass review with `VISUAL-REVIEW: NOT APPLICABLE`.
 - A genuinely rendered interface still requires visual review sign-off.
 - CLI transcripts remain available and do not cause tested-tree rejection.
@@ -95,7 +95,7 @@ givn/changes/<id>/evidence/visual/...   # backward compatibility
 
 - preflight reports missing revision;
 - preflight reports duplicate revision;
-- one-pass disclosure is accepted without fabricated hashes;
+- one real revision per scenario is accepted without fabricated hashes;
 - README impact missing is reported before review;
 - CLI review records not applicable and passes without human visual sign-off;
 - rendered interface still requires visual sign-off;

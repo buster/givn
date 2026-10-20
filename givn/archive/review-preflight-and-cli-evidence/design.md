@@ -5,12 +5,12 @@
 - **D1: keep the existing evidence paths.** CLI transcripts live under the
   change's `evidence/` tree; the existing predicate exempts it. No new category
   and no migration.
-- **D2: one real revision per scenario, with no one-pass mode.** A checked
+- **D2: one real revision per scenario.** A checked
   scenario must name one unique commit. `givn check tasks` and `givn check
   review` verify that the commit exists, is reachable from HEAD, and its
   message body contains the scenario title. Missing, duplicate, placeholder,
   unreachable, or untitled revisions block. A shared revision is always an
-  error; there is no disclosure that makes it legal.
+  error.
 - **D3: no human visual sign-off for line-oriented CLI output.** A change whose
   design declares no visual contract is exempt. `VISUAL-REVIEW: NOT
   APPLICABLE` is accepted for that change; a declared Web UI or rendered
