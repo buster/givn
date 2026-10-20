@@ -27,7 +27,7 @@ owning documents.
 ## Active Register
 
 The active register contains only independent durable architecture decisions:
-25 accepted records. The fifteen semantic-engine records were
+26 accepted records and no proposed records. The fifteen semantic-engine records were
 superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 [`archive/`](archive/) by the `drop-embedding-features` change.
 
@@ -58,6 +58,7 @@ superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 | [ADR-071](ADR-071-scm-backend-selection.md) | accepted | Select the SCM backend from project markers through one seam | component boundary and backend-selection contract |
 | [ADR-072](ADR-072-witness-bounded-publication.md) | accepted | Publish revisions through the SCM seam with witness-bounded commits | publication contract and candidate-exactness invariant |
 | [ADR-073](ADR-073-development-record-ownership.md) | accepted | Own the development record and report harness activity through one intake interface | record-ownership and intake-contract boundary |
+| [ADR-074](ADR-074-neutral-source-analyzer-port.md) | accepted | Analyze source code behind a neutral `SourceAnalyzer` port with a `syn` adapter | dependency-direction and engine-replacement boundary |
 
 ## Relationships
 
@@ -66,9 +67,10 @@ superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 | ADR-019 -> retired ADR-027 | ADR-027 superseded the old `givn verify` naming and was later retired as non-qualifying; the lint naming contract lives in `givn/specs/verify-change/`. |
 | ADR-039, 041, 044, 045, 046, 047, 052, 054, 055-061, 063, 064, 066, 068 -> ADR-069 | ADR-069 supersedes the semantic-engine records; the deterministic overlap boundary of ADR-037 remains current. |
 | ADR-070 -> ADR-072 | ADR-072 generalizes ADR-070's Git-specific publication consequence onto the backend seam; ADR-070 keeps the forward-only proof decision. |
-| ADR-071 (amended by maintain-project) | The seam decision now also governs the managed upgrade and migration bundles on Fossil: allowlist staging, pending-change detection, and commit run on both backends. |
+| ADR-071 (amended by maintain-project, amended by add-readability-review-gate) | The seam decision now also governs the managed upgrade and migration bundles on Fossil, and it carries the five history/revision operations the readability review gate consumes: first-touch and parent resolution, revision files with entry kinds, revision blobs, and changed paths including worktree extras. Git refuses a shallow repository for the base lookup; Fossil walks only `ancestors current`. |
 | ADR-013 (amended by require-agent-target, refined by keep-agent-prompt-open, amended by development-timeline) | Initialization requires an explicitly selected target set: the interactive prompt opens with `opencode` marked and re-asks until something is marked, while a non-terminal empty selection is refused before the first write; synchronization keeps the fallback for a configuration without a `skills:` block. The destinations later gained `maki` (`.maki`) as a full target — skills to `.maki/skills/`, commands to `.maki/commands/`, plus the development reporter (module, merged grants, and a managed fail-soft fence in `.maki/init.lua`) — so a `maki`-only selection is fully equipped. |
 | ADR-023 (amended by 0.3.0) | The versioned-config decision now also governs managed-only commits, catalog-selected migrations, aggregate plans, and their clean-worktree boundary. |
+| ADR-028 (amended by add-readability-review-gate) | The mandatory review check gains a conditional readability member: with the addon enabled, every gate finding needs `READABILITY: FIXED` or a validated `READABILITY: JUSTIFIED` rationale, and the member cannot be disabled by a `post` entry. |
 | ADR-073 (related to ADR-014, ADR-013, ADR-028) | The development record is a durable journal deliberately outside ADR-014's filesystem-derived state, delivered as one generated agent integration under ADR-013's ownership rule, and explicitly outside ADR-028's gate boundary — the record is never a gate input. |
 
 ## Evidence

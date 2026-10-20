@@ -63,6 +63,17 @@ the persona-ID resolution respectively. The register in
 [`../09-architecture-decisions.md`](../09-architecture-decisions.md) records
 the amendments.
 
+Amended 2026-10-20 by the `add-readability-review-gate` change. The mandatory
+review check gains a conditional member: when `addons.readability` is enabled,
+`givn check review --change <id>` analyzes the production units the change
+touched at the committed `HEAD` and at the change base and refuses while any
+gate finding has neither `READABILITY: FIXED` nor `READABILITY: JUSTIFIED`.
+A `JUSTIFIED` decision requires a change-scoped rationale whose fields, owner,
+and banned-reason check pass; the owner judges the content. The member is
+conditional on the opt-in addon, but once enabled it cannot be removed or
+downgraded by a `post` entry, and `FAIL <reason>` always blocks. The gate stores
+no baseline, watchlist, classification history, or feedback ledger.
+
 ### Consequences
 
 - The embedded default manifest has empty `post` lists for `tasks` and `review`; older comments claiming default `post: [verify]` are not the effective runtime contract.

@@ -138,6 +138,7 @@ fn addon_flags(manifest: &crate::config::manifest::Manifest) -> Vec<(&'static st
         ("absolute_mode", manifest.addons.absolute_mode),
         ("readme", manifest.addons.readme),
         ("coverage", manifest.addons.coverage),
+        ("readability", manifest.addons.readability),
     ]
 }
 

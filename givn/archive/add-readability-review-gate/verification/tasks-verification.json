@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "change": "add-readability-review-gate",
+  "status": "passed",
+  "head": "e15e15ff49f5820afa245970a15ba19013571765",
+  "features_path": "givn/changes/add-readability-review-gate/specs",
+  "features_digest": "e4ea6f37e5b97c5aa879fe0bf4c525da8c19855a5a1f0c5036ccd5afc5dfef19",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 71,
+    "passed": 71,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1792526691
+}

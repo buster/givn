@@ -4,40 +4,60 @@
 /// via the `addons:` key in `givn/config.yaml`. See arc42 ch.8.11.
 use anyhow::{Result, bail};
 
-/// Registry of all known addons (id, one-line description).
-pub const KNOWN_ADDONS: &[(&str, &str)] = &[
-    (
-        "arc42",
-        "Arc42 architecture documentation — creates and maintains durable docs/arc42/ chapters",
-    ),
-    (
-        "absolute_mode",
-        "Absolute Mode communication policy — manages a fenced block in AGENTS.md",
-    ),
-    (
-        "readme",
-        "README scaffolding — writes an initial README.md to the project root",
-    ),
-    (
-        "coverage",
-        "Archive-level coverage gate — runs project measurement and merge scripts, updates README from the merged Cobertura XML",
-    ),
-    (
-        "domain_modeling",
-        "Skill — model a change's domain (ubiquitous language, aggregates, invariants) before design",
-    ),
-    (
-        "dev_principles",
-        "Skill — apply the team's engineering principles during implementation",
-    ),
-    (
-        "grill_me",
-        "Command — Socratically grill the current plan/design, one question at a time",
-    ),
-    (
-        "grill_with_docs",
-        "Command — grill the plan/design, citing a source in the project's own docs for every challenge",
-    ),
+/// One registered addon.
+pub struct AddonSpec {
+    pub id: &'static str,
+    pub description: &'static str,
+    pub default_enabled: bool,
+}
+
+/// Registry of all known addons.
+pub const KNOWN_ADDONS: &[AddonSpec] = &[
+    AddonSpec {
+        id: "arc42",
+        description: "Arc42 architecture documentation — creates and maintains durable docs/arc42/ chapters",
+        default_enabled: true,
+    },
+    AddonSpec {
+        id: "absolute_mode",
+        description: "Absolute Mode communication policy — manages a fenced block in AGENTS.md",
+        default_enabled: true,
+    },
+    AddonSpec {
+        id: "readme",
+        description: "README scaffolding — writes an initial README.md to the project root",
+        default_enabled: true,
+    },
+    AddonSpec {
+        id: "coverage",
+        description: "Archive-level coverage gate — runs project measurement and merge scripts, updates README from the merged Cobertura XML",
+        default_enabled: true,
+    },
+    AddonSpec {
+        id: "domain_modeling",
+        description: "Skill — model a change's domain (ubiquitous language, aggregates, invariants) before design",
+        default_enabled: true,
+    },
+    AddonSpec {
+        id: "dev_principles",
+        description: "Skill — apply the team's engineering principles during implementation",
+        default_enabled: true,
+    },
+    AddonSpec {
+        id: "grill_me",
+        description: "Command — Socratically grill the current plan/design, one question at a time",
+        default_enabled: true,
+    },
+    AddonSpec {
+        id: "grill_with_docs",
+        description: "Command — grill the plan/design, citing a source in the project's own docs for every challenge",
+        default_enabled: true,
+    },
+    AddonSpec {
+        id: "readability",
+        description: "Opt-in readability report — default off; enable with `givn addons enable readability`",
+        default_enabled: false,
+    },
 ];
 
 /// `givn addons list` — print all known addons and their enabled/disabled status.
@@ -54,8 +74,10 @@ pub fn run_list() -> Result<()> {
     };
 
     println!("Available addons:\n");
-    for (id, description) in KNOWN_ADDONS {
-        let state = if *enabled.get(*id).unwrap_or(&false) {
+    for addon in KNOWN_ADDONS {
+        let id = addon.id;
+        let description = addon.description;
+        let state = if *enabled.get(id).unwrap_or(&false) {
             "enabled "
         } else {
             "disabled"
@@ -230,10 +252,10 @@ pub fn disable_scaffold(name: &str) -> Result<()> {
 // ── Internals ────────────────────────────────────────────────────────────────
 
 fn validate_addon_name(name: &str) -> Result<()> {
-    if KNOWN_ADDONS.iter().any(|(id, _)| *id == name) {
+    if KNOWN_ADDONS.iter().any(|addon| addon.id == name) {
         Ok(())
     } else {
-        let known: Vec<&str> = KNOWN_ADDONS.iter().map(|(id, _)| *id).collect();
+        let known: Vec<&str> = KNOWN_ADDONS.iter().map(|addon| addon.id).collect();
         bail!("unknown addon '{name}'. Known addons: {}", known.join(", "))
     }
 }

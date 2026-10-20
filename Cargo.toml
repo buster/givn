@@ -14,6 +14,7 @@ repository = "https://github.com/buster/givn"
 path = "src/lib.rs"
 
 [dependencies]
+tempfile = "3"
 clap = { version = "4.6", features = ["derive"] }
 clap_complete = "4"
 dialoguer = "0.12"
@@ -26,6 +27,8 @@ anyhow = "1.0"
 thiserror = "2.0"
 quick-xml = { version = "0.42", features = ["serialize"] }
 sha2 = "=0.11.0"
+proc-macro2 = { version = "1", features = ["span-locations"] }
+syn = { version = "=3.0.9", default-features = false, features = ["full", "parsing", "visit"] }
 
 [features]
 default = []

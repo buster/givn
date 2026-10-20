@@ -139,7 +139,8 @@ givn_config_version: "{{GIVN_VERSION}}"
 
 # --- Addons ------------------------------------------------------------------
 # Pre-packaged artifact sets. See arc42 ch.8.11.
-# `givn init` enables ALL addons by default (opt-out via `givn init --no-addons`).
+# `givn init` enables the default-on addons (opt-out via `givn init --no-addons`);
+# default-off addons such as `readability` are listed but stay disabled.
 # This project's actual settings are below, written by `givn init`/`givn addons`:
 #
 # addons:
@@ -153,6 +154,7 @@ givn_config_version: "{{GIVN_VERSION}}"
 #   dev_principles: true    # project-level skill; see below
 #   grill_me: true          # project-level command; see below
 #   grill_with_docs: true   # project-level command; see below
+#   readability: false      # opt-in readability report; default off
 #                          # Toggle with: givn addons enable|disable <name>, or
 #                          # `givn addons list` to see all known addons.
 

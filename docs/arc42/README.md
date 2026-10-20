@@ -84,6 +84,30 @@ ADR-013's generated-integration ownership, and ADR-028's gate boundary. The
 browser report and its visual contract are documented in
 `docs/design/design-system.md`.
 
+The `add-readability-report` change records ADR-074: source analysis sits behind
+a neutral `SourceAnalyzer` port, `SynAnalyzer` is the first adapter, metrics and
+classification run above the port, and a later tree-sitter adapter must pass the
+same contract without changing the report. The report is an opt-in, default-off,
+advisory experiment with no stored baseline. Durable facts live in chapters 1
+(FR-46), 2 (TC-42, 2.3), 3, 4, 5, 6.1/6.12/6.19, 8.11/8.26, 10 (Q-108 to Q-111),
+11 (R-104 to R-108, D-24, D-25), and 12.
+
+The `add-readability-review-gate` change adds the same experiment's review stage
+and revises the report. The report becomes findings-only at schema version 2:
+each unit carries one classification and evidence, never an action or a
+recommendation. `givn check review --change <id>` compares the production units
+the change touched at the change base and at the committed head and fails while
+any gate finding has neither `READABILITY: FIXED` nor `READABILITY: JUSTIFIED`
+with a validated, owner-approved rationale. A dirty production path, a missing
+change-directory commit, and a shallow clone fail closed. The change reuses
+ADR-074's pipeline and amends two existing records: ADR-028 (the conditional
+mandatory review member) and ADR-071 (the five SCM history/revision operations).
+Its observable rules, markers, and rationale artifacts are owned by the
+`readability-review-gate` Gherkin capability, the `verify-change` use case, and
+the change design. Durable facts live in chapters 1 (FR-46, FR-47), 2 (TC-42,
+TC-43), 3, 4, 5, 6.20, 8.12/8.26a, 10 (Q-112 to Q-117), 11 (R-108 to R-115,
+D-24 to D-26), and 12.
+
 Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
 register](adr/README.md) for status, relationships, evidence, reserved IDs, and
 historical records.
