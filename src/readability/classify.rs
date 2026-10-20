@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-//! Shared classification and action recommendation.
+//! Shared classification and evidence.
 
 use super::metrics::{self, MethodFinding, MethodMetrics, UnitMetrics};
 use super::model::{
@@ -31,37 +31,6 @@ impl Classification {
             Self::CohesiveLargeType => "cohesive-large-type",
             Self::MethodLength => "method-length",
             Self::WithinLimits => "within-limits",
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Action {
-    Plan,
-    Exception,
-    Watch,
-    Advisory,
-    None,
-}
-
-impl Action {
-    pub fn label(self) -> &'static str {
-        match self {
-            Self::Plan => "plan",
-            Self::Exception => "exception",
-            Self::Watch => "watch",
-            Self::Advisory => "advisory",
-            Self::None => "none",
-        }
-    }
-
-    pub fn severity(self) -> u8 {
-        match self {
-            Self::Plan => 0,
-            Self::Exception => 1,
-            Self::Watch => 2,
-            Self::Advisory => 3,
-            Self::None => 4,
         }
     }
 }
@@ -121,8 +90,6 @@ pub struct ClassifiedUnit {
     pub path: RepoPath,
     pub files: Vec<RepoPath>,
     pub classification: Classification,
-    pub action: Action,
-    pub recommendation: &'static str,
     pub metrics: UnitMetrics,
     pub method_findings: Vec<(String, MethodFinding)>,
     pub method_names: Vec<String>,
@@ -181,7 +148,7 @@ fn classify_unit(unit: &SourceUnit, metrics: &UnitMetrics, analysis: &Analysis) 
         })
         .collect();
 
-    let (classification, action, recommendation, evidence) = decide(unit, metrics);
+    let (classification, evidence) = decide(unit, metrics);
     ClassifiedUnit {
         unit_id: unit.id.clone(),
         kind: unit.kind,
@@ -189,8 +156,6 @@ fn classify_unit(unit: &SourceUnit, metrics: &UnitMetrics, analysis: &Analysis) 
         path: unit.declaration_file.clone(),
         files: unit.files.clone(),
         classification,
-        action,
-        recommendation,
         metrics: metrics.clone(),
         method_findings,
         method_names: unit
@@ -204,10 +169,7 @@ fn classify_unit(unit: &SourceUnit, metrics: &UnitMetrics, analysis: &Analysis) 
     }
 }
 
-fn decide(
-    unit: &SourceUnit,
-    metrics: &UnitMetrics,
-) -> (Classification, Action, &'static str, Vec<Evidence>) {
+fn decide(unit: &SourceUnit, metrics: &UnitMetrics) -> (Classification, Vec<Evidence>) {
     let code_lines = MetricValue::Count(metrics.code_lines as u64);
     let over_type_limit = metrics.code_lines > 500;
     let over_method_limit = metrics.max_method_code_lines > 100
@@ -218,8 +180,6 @@ fn decide(
         if (type_kind == TypeKind::Trait && over_type_limit) || metrics.public_methods > 50 {
             return (
                 Classification::Interface,
-                Action::Plan,
-                "trait-composition plan: split by trait composition and parameter objects, not by line count",
                 vec![evidence(
                     "type-kind-trait",
                     MetricValue::Count(1),
@@ -234,8 +194,6 @@ fn decide(
         {
             return (
                 Classification::DataOnly,
-                Action::Advisory,
-                "data-only; exempt from the god-type rule",
                 vec![
                     evidence(
                         "type-code-lines",
@@ -257,8 +215,6 @@ fn decide(
         {
             return (
                 Classification::GodType,
-                Action::Plan,
-                "decomposition plan",
                 vec![
                     evidence(
                         "type-code-lines",
@@ -281,8 +237,6 @@ fn decide(
         {
             return (
                 Classification::CohesiveLargeType,
-                Action::Advisory,
-                "inspect the outline; grow only with an exception",
                 vec![evidence(
                     "type-code-lines",
                     code_lines,
@@ -294,8 +248,6 @@ fn decide(
         if over_type_limit {
             return (
                 Classification::CohesiveLargeType,
-                Action::Exception,
-                "inspect; plan or record an exception with evidence",
                 vec![evidence(
                     "type-code-lines",
                     code_lines,
@@ -310,8 +262,6 @@ fn decide(
         if metrics.code_lines > 1000 {
             return (
                 Classification::Module,
-                Action::Exception,
-                "plan or recorded exception",
                 vec![evidence(
                     "module-code-lines",
                     code_lines,
@@ -323,8 +273,6 @@ fn decide(
         if (500..=1000).contains(&metrics.code_lines) && metrics.declared_types >= 2 {
             return (
                 Classification::MultiTypeModule,
-                Action::Watch,
-                "review the module outline; extract only visible seams",
                 vec![evidence(
                     "module-declared-types",
                     MetricValue::Count(metrics.declared_types as u64),
@@ -336,8 +284,6 @@ fn decide(
         if (500..=1000).contains(&metrics.code_lines) {
             return (
                 Classification::Module,
-                Action::Watch,
-                "review the module outline",
                 vec![evidence(
                     "module-code-lines",
                     code_lines,
@@ -351,8 +297,6 @@ fn decide(
     if over_method_limit {
         return (
             Classification::MethodLength,
-            Action::Watch,
-            "split the method; separate from unit size",
             vec![evidence(
                 "method-code-lines",
                 MetricValue::Count(metrics.max_method_code_lines as u64),
@@ -362,12 +306,7 @@ fn decide(
         );
     }
 
-    (
-        Classification::WithinLimits,
-        Action::None,
-        "none",
-        Vec::new(),
-    )
+    (Classification::WithinLimits, Vec::new())
 }
 
 impl UnitMetrics {

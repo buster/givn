@@ -1,14 +1,12 @@
 //! Human and JSON rendering from one classified model.
 
-use super::classify::{
-    Action, Assessment, Classification, ClassifiedUnit, Comparison, MetricValue,
-};
+use super::classify::{Assessment, Classification, ClassifiedUnit, Comparison, MetricValue};
 use super::model::{
     AnalyzedFile, LineKind, OutlineKind, SourceScope, TypeKind, UnitKind, Visibility,
 };
 use serde_json::{Value, json};
 
-pub const SCHEMA_VERSION: u32 = 1;
+pub const SCHEMA_VERSION: u32 = 2;
 pub const RULES_VERSION: u32 = 1;
 
 pub fn render_human(assessment: &Assessment) -> String {
@@ -31,24 +29,25 @@ pub fn render_human(assessment: &Assessment) -> String {
 
     let mut units: Vec<&ClassifiedUnit> = assessment.units.iter().collect();
     units.sort_by(|left, right| {
-        left.action
-            .severity()
-            .cmp(&right.action.severity())
-            .then_with(|| {
-                left.classification
-                    .label()
-                    .cmp(right.classification.label())
-            })
+        left.classification
+            .label()
+            .cmp(right.classification.label())
             .then_with(|| left.path.cmp(&right.path))
             .then_with(|| left.unit_id.cmp(&right.unit_id))
     });
 
     for unit in units {
+        let label = if unit.classification == Classification::WithinLimits {
+            "WITHIN-LIMITS"
+        } else {
+            "FINDING"
+        };
         out.push_str(&format!(
-            "{:<11} {:<7} {:<36} {}\n",
-            unit.action.label().to_uppercase(),
+            "{:<13} {:<7} {:<36} {:<44} {}\n",
+            label,
             kind_label(unit.kind),
-            format!("{}::{}", unit.path, unit.name),
+            unit.path.as_str(),
+            unit.unit_id,
             unit.classification.label()
         ));
         out.push_str(&format!(
@@ -76,10 +75,6 @@ pub fn render_human(assessment: &Assessment) -> String {
                 ));
             }
         }
-        out.push_str(&format!(
-            "            recommendation: {}\n\n",
-            unit.recommendation
-        ));
     }
 
     if !assessment.diagnostics.is_empty() {
@@ -148,8 +143,6 @@ pub fn render_json(assessment: &Assessment, scope: &SourceScope) -> String {
                 "declaration_file": unit.path.as_str(),
                 "files": unit.files.iter().map(|file| file.as_str()).collect::<Vec<_>>(),
                 "classification": unit.classification.label(),
-                "action": unit.action.label(),
-                "recommendation": unit.recommendation,
                 "metrics": {
                     "physical_lines": unit.metrics.physical_lines,
                     "code_lines": unit.metrics.code_lines,
@@ -240,7 +233,7 @@ pub fn render_json(assessment: &Assessment, scope: &SourceScope) -> String {
             "files_analyzed": assessment.files.iter().filter(|file: &&AnalyzedFile| matches!(file.status, super::model::FileStatus::Analyzed)).count(),
             "files_failed": assessment.files.iter().filter(|file: &&AnalyzedFile| matches!(file.status, super::model::FileStatus::Failed)).count(),
             "units": assessment.units.len(),
-            "units_classified": assessment.units.iter().filter(|unit| unit.classification != Classification::WithinLimits).count() + assessment.units.iter().filter(|unit| unit.classification == Classification::WithinLimits).count(),
+            "units_classified": assessment.units.len(),
             "units_unsupported": assessment.unsupported.len(),
             "findings": assessment.units.iter().filter(|unit| unit.classification != Classification::WithinLimits).count(),
             "unsupported": assessment.unsupported.len(),
@@ -289,11 +282,6 @@ fn visibility_label(visibility: Visibility) -> &'static str {
         Visibility::Restricted => "restricted",
         Visibility::Private => "private",
     }
-}
-
-#[allow(dead_code)]
-fn _action_label(action: Action) -> &'static str {
-    action.label()
 }
 
 #[allow(dead_code)]

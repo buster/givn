@@ -298,7 +298,7 @@ only when its evidence and `COMMIT:` hash are filled.
   - Body: `A report is available in machine-readable form`
   - `COMMIT:` <hash>
 
-### Scenario: The JSON findings count counts every classification other than within-limits
+### Scenario: The JSON findings count counts every non-within-limits unit
 
 - [ ] RED: remove `@wip` from this scenario only; stub the new steps; run the single-scenario command; paste non-zero output.
   - Design constraints: Unit-level rationale schema and mechanical floor: Unit/Classification/Finding/Evidence/Why this shape is right/Alternatives considered (named + rejected)/Owner/Follow-up+Expiry; owner judgment for truth.
@@ -316,8 +316,8 @@ only when its evidence and `COMMIT:` hash are filled.
     ```
     REFACTOR OUTPUT AND EXIT
     ```
-- [ ] COMMIT: `feat(readability-report): The JSON findings count counts every classification other than within-limits`
-  - Body: `The JSON findings count counts every classification other than within-limits`
+- [ ] COMMIT: `feat(readability-report): The JSON findings count counts every non-within-limits unit`
+  - Body: `The JSON findings count counts every non-within-limits unit`
   - `COMMIT:` <hash>
 
 ### Scenario: The JSON report carries the schema and rules versions
