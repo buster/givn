@@ -82,6 +82,21 @@ command the same refusals without a config migration.
 
 ### Consequences
 
+Amended 2026-10-20 by the `add-readability-review-gate` change. The seam gains
+five history and revision operations used by the review gate:
+`first_touching_revision`, `parent_revision`, `revision_files`,
+`revision_blobs`, and `changed_paths`. `revision_files` returns each
+project-relative path with its entry kind (`regular`, `symlink`, or
+`submodule`) from `git ls-tree -r -z` or `fossil ls`; a non-UTF-8 path is
+refused. `changed_paths` includes untracked and extra working-tree paths when
+asked for the worktree, which is how the gate's dirty-production guard and its
+changed set share one operation. Git resolves the first touch from
+`rev-list --reverse --full-history --parents` and refuses a shallow repository;
+Fossil walks `ancestors current`, never sibling timelines. The gate runs no
+`git` or `fossil` command itself. The backend-selection decision — project
+markers, fixed detection order, named refusals, and no configuration key — is
+unchanged.
+
 - Good, because a Git project keeps its current behavior while the refusal
   wording becomes backend-neutral and shared.
 - Good, because adding the Fossil backend later means adding a `Backend`

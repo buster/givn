@@ -250,6 +250,7 @@ Feature: givn Workflow Enforcement
     Then  the command exits 0
     And  stdout contains "change verification receipt passed"
 
+  @e2e
   Scenario: The result helper writes four counts without a scope
     Given  a givn project with a result file path
     When  the user runs the result helper for 3 total and 3 passed
