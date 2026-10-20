@@ -453,7 +453,10 @@ impl FileBuilder {
                 methods.push(method);
             }
         }
+        let method_spans: Vec<SourceSpan> =
+            methods.iter().map(|method| method.span.clone()).collect();
         let unit = &mut self.units[index];
+        unit.spans.extend(method_spans);
         unit.methods.extend(methods);
         unit.methods.sort_by(|a, b| a.name.cmp(&b.name));
         unit.spans

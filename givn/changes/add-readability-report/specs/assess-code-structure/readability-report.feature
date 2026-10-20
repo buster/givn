@@ -41,7 +41,7 @@ Feature: Readability report
     Then the report classifies the unit as an interface
     And the report recommends a trait-composition plan
 
-  @givn.added @wip
+  @givn.added
   Scenario: A cohesive type is not treated as a god type
     Given a Givn project with the readability experiment enabled
     And a production source unit with a cohesive type over the readable size

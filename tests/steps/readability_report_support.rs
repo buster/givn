@@ -35,6 +35,20 @@ pub fn write_large_trait(env: &TestEnv, name: &str, methods: usize) {
     write_source(env, "src/big_trait.rs", &source);
 }
 
+pub fn write_cohesive_type(env: &TestEnv, name: &str, lines_per_method: usize) {
+    let mut source = format!("pub struct {name} {{\n    value: u64,\n}}\n\n");
+    source.push_str(&format!("impl {name} {{\n"));
+    for method in ["first", "second"] {
+        source.push_str(&format!("    pub fn {method}(&self) -> u64 {{\n"));
+        for _ in 0..lines_per_method {
+            source.push_str("        let _ = self.value;\n");
+        }
+        source.push_str("        self.value\n    }\n");
+    }
+    source.push_str("}\n");
+    write_source(env, "src/cohesive.rs", &source);
+}
+
 pub fn write_source(env: &TestEnv, relative: &str, source: &str) {
     let path = env.path(relative);
     if let Some(parent) = path.parent() {
