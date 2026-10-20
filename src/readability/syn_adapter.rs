@@ -194,6 +194,7 @@ impl FileBuilder {
                         visibility(&item.vis),
                         &self.content,
                     );
+                    self.spans.push(method.span.clone());
                     self.free_functions.push(method.clone());
                     self.outline.push(outline_method(&method, false));
                 }
