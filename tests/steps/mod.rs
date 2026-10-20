@@ -53,6 +53,9 @@ pub mod prose_consolidation_steps;
 pub mod readability_report_e2e_steps;
 pub mod readability_report_steps;
 pub mod readability_report_support;
+pub mod readability_review_gate_e2e_steps;
+pub mod readability_review_gate_steps;
+pub mod readability_review_gate_support;
 pub mod readme_coverage_badge_steps;
 pub mod readme_enforcement_e2e_steps;
 pub mod readme_enforcement_steps;
@@ -193,6 +196,9 @@ pub struct GivnWorld {
     #[allow(dead_code)] // Tasks E5–E9 read it.
     pub(crate) development_report_e2e:
         Option<development_report_e2e_steps::DevelopmentReportE2eState>,
+    /// State for the readability review gate fixtures: the last report, the
+    /// rationale metadata, and the history hashes the assertions need.
+    pub(crate) readability_gate: readability_review_gate_steps::GateState,
 }
 
 /// A readiness probe running on a background thread.

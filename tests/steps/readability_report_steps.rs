@@ -12,8 +12,13 @@ fn readability_disabled_project(world: &mut GivnWorld) {
     world.env = Some(common::make_init_root());
 }
 
-#[when(regex = r#"^the developer runs "([^"]+)"$"#)]
+#[when(regex = r#"^the developer runs "(givn readability report[^"]*)"$"#)]
 fn developer_runs(world: &mut GivnWorld, cmd: String) {
+    crate::steps::user_runs_quoted(world, cmd);
+}
+
+#[when(regex = r#"^the developer runs "(givn addons list)"$"#)]
+fn developer_runs_addons_list(world: &mut GivnWorld, cmd: String) {
     crate::steps::user_runs_quoted(world, cmd);
 }
 
