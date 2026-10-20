@@ -64,7 +64,7 @@ Feature: Readability report
     And the report recommends an advisory action
     And the report records 501 code lines
 
-  @givn.added @wip
+  @givn.added
   Scenario: A report is available in machine-readable form
     Given a Givn project with the readability experiment enabled
     And a production source unit that is over the readable size

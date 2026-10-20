@@ -51,6 +51,21 @@ pub fn write_cohesive_type(env: &TestEnv, name: &str, lines_per_method: usize) {
     write_source(env, "src/cohesive.rs", &source);
 }
 
+pub fn write_god_type(env: &TestEnv, name: &str) {
+    let mut source = format!(
+        "pub struct {name} {{\n    a: u64,\n    b: u64,\n    c: u64,\n}}\n\nimpl {name} {{\n"
+    );
+    for (method, field) in [("first", "a"), ("second", "b"), ("third", "c")] {
+        source.push_str(&format!("    pub fn {method}(&self) -> u64 {{\n"));
+        for _ in 0..168 {
+            source.push_str(&format!("        let _ = self.{field};\n"));
+        }
+        source.push_str(&format!("        self.{field}\n    }}\n"));
+    }
+    source.push_str("}\n");
+    write_source(env, "src/god_type.rs", &source);
+}
+
 pub fn write_boundary_type(env: &TestEnv, total_code_lines: usize) {
     let mut source;
     if total_code_lines == 501 {
