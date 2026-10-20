@@ -129,7 +129,7 @@ Feature: Readability report
     When the readability report is produced twice
     Then the two reports are identical
 
-  @givn.added @wip
+  @givn.added
   Scenario: Every analyzed unit has one classification and one action
     Given the readability fixture corpus
     When the readability report assesses every unit
