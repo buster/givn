@@ -262,6 +262,28 @@ fn report_names_file(world: &mut GivnWorld, relative: String) {
     );
 }
 
+#[given("a production source unit with a long method")]
+fn long_method(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    crate::steps::readability_report_support::write_long_method(&env);
+    world.env = Some(env);
+}
+
+#[then("the report classifies the unit as a method-length finding")]
+fn report_classifies_method_length(world: &mut GivnWorld) {
+    let block = unit_block(world, "Long");
+    assert!(
+        block.contains("method-length"),
+        "expected method-length, got: {block}"
+    );
+}
+
+#[then("the report recommends a watch action")]
+fn report_recommends_watch(world: &mut GivnWorld) {
+    let block = unit_block(world, "Long");
+    assert!(block.contains("WATCH"), "expected WATCH, got: {block}");
+}
+
 #[given("a production source unit with a module over the plan limit")]
 fn module_over_limit(world: &mut GivnWorld) {
     let env = common::make_bare_root();

@@ -70,6 +70,13 @@ Feature: Readability report
     Then the report classifies the unit as a module
     And the report recommends an exception action
 
+  @givn.added @wip
+  Scenario: A long method is a method-length finding
+    Given a production source unit with a long method
+    When the readability report assesses the unit
+    Then the report classifies the unit as a method-length finding
+    And the report recommends a watch action
+
   @givn.added
   Scenario: A type at the readable size limit is within limits
     Given a production source unit with exactly 500 code lines and cohesive methods
