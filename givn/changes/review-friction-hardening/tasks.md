@@ -65,11 +65,11 @@ Design constraints:
 
 Evidence:
 
-- RED output: `stderr missing "unknown heading '## Guarantees'": error: capability routing decisions do not match the built delta: decision NEW in review-diagnostics-demo: usecase.md failed to parse: line 1: expected '# Use case: <kebab-case-id>', got '# Use Case: review-diagnostics-demo', (exit 1)`
-- GREEN output: `1 feature, 1 scenario (1 passed), 6 steps (6 passed)`
+- RED output: the scenario failed at `stderr says headings are case-sensitive`; the old parser reported only `line 1: expected '# Use case: <kebab-case-id>', got '# Use Case: review-diagnostics-demo'` (exit 1).
+- GREEN output: `1 feature, 1 scenario (1 passed), 5 steps (5 passed)`; the unit test `case_mismatched_title_recovers_and_suggests_the_exact_spelling` also passes.
 - REFACTOR output: re-ran after `cargo fmt`; scenario still passes.
-- Production files: `src/gherkin/usecase_md.rs`, `src/spec/routing_table.rs`, `tests/steps/workflow_enforcement_steps.rs`, `tests/steps/mod.rs`; planning artifacts `design.md`, `design-review.md`, `tasks.md`, `arc42.md`, and arc42 chapters.
-- COMMIT: 961545e9424bdcb7710802040c26ec0e94b2de64
+- Production files: `src/gherkin/usecase_md.rs` (parser + regression unit test), `src/spec/routing_table.rs`, `tests/steps/workflow_enforcement_steps.rs`, `tests/steps/mod.rs`; planning artifacts `design.md`, `design-review.md`, `tasks.md`, `arc42.md`, and arc42 chapters.
+- COMMIT: 26b1bb02aebfb60c930ff30584fdfc04e8f9e116
 
 ## Scenario 2 — A near-miss section heading is refused with the exact accepted spellings
 
@@ -279,8 +279,9 @@ Evidence:
 
 ## Final gates
 
-- [ ] `cargo fmt` and `cargo clippy --workspace --all-targets -- -D warnings`
-- [ ] `./run-tests.sh --non-e2e`
-- [ ] `./run-tests.sh --e2e`
-- [ ] `givn lint --change review-friction-hardening` reports no `@wip`
-- [ ] Both transcripts committed under `evidence/visual/`
+- [x] `cargo fmt` and `cargo clippy --workspace --all-targets -- -D warnings` — clippy finished clean.
+- [x] `./run-tests.sh --non-e2e` — `615 tests run: 615 passed, 105 skipped`.
+- [x] `./run-tests.sh --e2e` — `105 tests run: 105 passed, 615 skipped`.
+- [x] `givn lint --change review-friction-hardening` reports no `@wip` — `2 file(s) checked — clean`.
+- [x] Both transcripts committed under `evidence/visual/` — review and archive transcripts include argv, cwd, exit code, and raw stdout/stderr.
+- [x] Unit coverage for schema 1, unknown schema/scope, digest stability, documentation-only reuse, and Fossil `content_paths`.

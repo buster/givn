@@ -1454,7 +1454,7 @@ fn review_fixture_extend_narrative(world: &mut GivnWorld) {
     .unwrap();
     std::fs::write(
         permanent.join("usecase.md"),
-        &review_contract(
+        review_contract(
             "existing-use",
             None,
             "- existing-cap",

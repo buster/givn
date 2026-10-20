@@ -338,6 +338,52 @@ mod tests {
     use super::*;
 
     #[test]
+    fn content_paths_include_tracked_and_extra_files() {
+        use std::process::Command;
+        let available = Command::new("fossil")
+            .arg("version")
+            .output()
+            .map(|output| output.status.success())
+            .unwrap_or(false);
+        if !available {
+            return;
+        }
+        let dir = tempfile::TempDir::new().unwrap();
+        let root = dir.path();
+        let repository = dir.path().join("fossil-repo");
+        let run = |args: &[&str]| {
+            let output = Command::new("fossil")
+                .args(args)
+                .current_dir(root)
+                .env("FOSSIL_USER", "fixture")
+                .env("USER", "fixture")
+                .output()
+                .expect("run fossil");
+            assert!(
+                output.status.success(),
+                "fossil {:?} failed: {}",
+                args,
+                String::from_utf8_lossy(&output.stderr)
+            );
+        };
+        run(&["init", "-q", repository.to_str().unwrap()]);
+        run(&["open", repository.to_str().unwrap()]);
+        std::fs::write(root.join("tracked.txt"), "tracked\n").unwrap();
+        run(&["add", "tracked.txt"]);
+        run(&["commit", "-m", "fixture"]);
+        std::fs::write(root.join("extra.txt"), "extra\n").unwrap();
+        let checkout = FossilCheckout::at(root);
+        let paths: Vec<String> = checkout
+            .content_paths()
+            .unwrap()
+            .into_iter()
+            .map(|entry| entry.path.to_string_lossy().replace('\\', "/"))
+            .collect();
+        assert!(paths.contains(&"tracked.txt".to_string()), "{paths:?}");
+        assert!(paths.contains(&"extra.txt".to_string()), "{paths:?}");
+    }
+
+    #[test]
     fn parses_status_lines_including_extra_and_renames() {
         assert_eq!(
             parse_change_line("ADDED      givn/specs/a.feature"),

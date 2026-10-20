@@ -749,6 +749,7 @@ fn split_table_row(line: &str) -> Result<Vec<String>> {
         .collect())
 }
 
+#[allow(dead_code)]
 pub fn usecase_md_template() -> String {
     r#"# Use case: <usecase-id>
 
