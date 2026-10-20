@@ -285,19 +285,19 @@ fn write_fixture_change_receipt(world: &GivnWorld, id: &str) {
     let change = change_dir_for(world, id);
     let env = world.env.as_ref().expect("a fixture project");
     let head = match env.backend() {
-        common::BackendKind::Git => String::from_utf8_lossy(
-            &common::git(env, &["rev-parse", "HEAD"]).stdout,
-        )
-        .trim()
-        .to_string(),
-        common::BackendKind::Fossil => String::from_utf8_lossy(
-            &common::fossil(env, &["info"]).stdout,
-        )
-        .lines()
-        .find_map(|line| line.strip_prefix("checkout:"))
-        .and_then(|rest| rest.split_whitespace().next())
-        .unwrap_or_default()
-        .to_string(),
+        common::BackendKind::Git => {
+            String::from_utf8_lossy(&common::git(env, &["rev-parse", "HEAD"]).stdout)
+                .trim()
+                .to_string()
+        }
+        common::BackendKind::Fossil => {
+            String::from_utf8_lossy(&common::fossil(env, &["info"]).stdout)
+                .lines()
+                .find_map(|line| line.strip_prefix("checkout:"))
+                .and_then(|rest| rest.split_whitespace().next())
+                .unwrap_or_default()
+                .to_string()
+        }
     };
     givn::proof::write_change_receipt(
         &root,
@@ -937,19 +937,19 @@ fn change_directory_has_passed_receipt(world: &mut GivnWorld) {
     assert_eq!(receipt.status, "passed");
     let env = world.env.as_ref().expect("a fixture project");
     let head = match env.backend() {
-        common::BackendKind::Git => String::from_utf8_lossy(
-            &common::git(env, &["rev-parse", "HEAD"]).stdout,
-        )
-        .trim()
-        .to_string(),
-        common::BackendKind::Fossil => String::from_utf8_lossy(
-            &common::fossil(env, &["info"]).stdout,
-        )
-        .lines()
-        .find_map(|line| line.strip_prefix("checkout:"))
-        .and_then(|rest| rest.split_whitespace().next())
-        .unwrap_or_default()
-        .to_string(),
+        common::BackendKind::Git => {
+            String::from_utf8_lossy(&common::git(env, &["rev-parse", "HEAD"]).stdout)
+                .trim()
+                .to_string()
+        }
+        common::BackendKind::Fossil => {
+            String::from_utf8_lossy(&common::fossil(env, &["info"]).stdout)
+                .lines()
+                .find_map(|line| line.strip_prefix("checkout:"))
+                .and_then(|rest| rest.split_whitespace().next())
+                .unwrap_or_default()
+                .to_string()
+        }
     };
     assert_eq!(receipt.head, head);
 }
@@ -971,7 +971,6 @@ fn stderr_says_receipt_stale(world: &mut GivnWorld) {
         "stderr missing stale receipt: {stderr}"
     );
 }
-
 
 #[given("a givn project with a result file path")]
 fn project_with_result_path(world: &mut GivnWorld) {
@@ -1005,9 +1004,10 @@ fn run_result_helper(world: &mut GivnWorld) {
 #[then("the result file contains total 3, passed 3, failed 0 and skipped 0 without a scope")]
 fn result_file_has_counts(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("a project root");
-    let value: serde_json::Value =
-        serde_json::from_str(&std::fs::read_to_string(env.path("result.json")).expect("result file"))
-            .expect("valid result JSON");
+    let value: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(env.path("result.json")).expect("result file"),
+    )
+    .expect("valid result JSON");
     assert_eq!(value["total"], 3);
     assert_eq!(value["passed"], 3);
     assert_eq!(value["failed"], 0);
@@ -1067,9 +1067,7 @@ fn tasks_message_without_title(world: &mut GivnWorld) {
     write_tasks_and_commit(
         world,
         &id,
-        &format!(
-            "- [x] Scenario: Scenario with a title\n  - [x] COMMIT: {hash} -- unrelated\n"
-        ),
+        &format!("- [x] Scenario: Scenario with a title\n  - [x] COMMIT: {hash} -- unrelated\n"),
     );
 }
 

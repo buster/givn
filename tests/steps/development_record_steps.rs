@@ -2919,7 +2919,10 @@ fn turn_has_inline_usage(world: &mut GivnWorld) {
 #[then("the linked usage entry is marked derived")]
 fn linked_usage_derived(world: &mut GivnWorld) {
     let entries = quality_entries(world);
-    let usage = entries.iter().find(|e| e["kind"] == "usage").expect("usage");
+    let usage = entries
+        .iter()
+        .find(|e| e["kind"] == "usage")
+        .expect("usage");
     assert_eq!(usage["data"]["derived"], true);
     let turn = entries.iter().find(|e| e["kind"] == "turn").expect("turn");
     assert_eq!(usage["parent"], turn["id"]);
@@ -2928,7 +2931,10 @@ fn linked_usage_derived(world: &mut GivnWorld) {
 #[then("the question records its selected option, source, and answer time")]
 fn question_answer_attributable(world: &mut GivnWorld) {
     let entries = quality_entries(world);
-    let question = entries.iter().find(|e| e["kind"] == "question").unwrap_or_else(|| panic!("entries: {entries:#?}"));
+    let question = entries
+        .iter()
+        .find(|e| e["kind"] == "question")
+        .unwrap_or_else(|| panic!("entries: {entries:#?}"));
     assert_eq!(question["data"]["selected"], "yes");
     assert_eq!(question["data"]["source"], "human");
     assert_eq!(question["data"]["answered_at"], "2026-10-19T10:00:02.000Z");
@@ -2944,7 +2950,10 @@ fn failed_tool_bounded_error(world: &mut GivnWorld) {
 #[then("the usage entry names the provider, model, and variant")]
 fn usage_names_identity(world: &mut GivnWorld) {
     let entries = quality_entries(world);
-    let usage = entries.iter().find(|e| e["kind"] == "usage").expect("usage");
+    let usage = entries
+        .iter()
+        .find(|e| e["kind"] == "usage")
+        .expect("usage");
     assert_eq!(usage["data"]["model"], "fixture-model");
     assert_eq!(usage["data"]["provider"], "fixture-provider");
     assert_eq!(usage["data"]["variant"], "fixture-variant");

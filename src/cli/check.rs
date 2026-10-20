@@ -338,10 +338,7 @@ fn check_scenario_commits(
         }
     }
     if !errors.is_empty() {
-        bail!(
-            "scenario commit check failed:\n  {}",
-            errors.join("\n  ")
-        );
+        bail!("scenario commit check failed:\n  {}", errors.join("\n  "));
     }
     println!(
         "  ✓ scenario commits passed ({} scenario(s))",
@@ -387,7 +384,10 @@ fn run_change_verification(
             offending.join(", ")
         );
     }
-    let rules = project_root.join("givn/changes").join(change_id).join("specs");
+    let rules = project_root
+        .join("givn/changes")
+        .join(change_id)
+        .join("specs");
     let features = rules.to_string_lossy().into_owned();
     let result_file = change_dir.join(crate::proof::CHANGE_RESULT_FILE);
     if let Some(parent) = result_file.parent() {
@@ -440,9 +440,7 @@ fn check_change_receipt(
 ) -> anyhow::Result<()> {
     let change_dir = crate::state::resolve_change_dir(project_root, change_id)?;
     let receipt = crate::proof::ChangeReceipt::read(&change_dir).map_err(|error| {
-        anyhow::anyhow!(
-            "{error}. Run `givn check tasks --change {change_id}` before review."
-        )
+        anyhow::anyhow!("{error}. Run `givn check tasks --change {change_id}` before review.")
     })?;
     let backend = crate::scm::select(project_root)?;
     check_scenario_commits(&backend, &change_dir)?;
@@ -610,5 +608,4 @@ mod tests {
         assert!(scenarios[0].checked);
         assert_eq!(scenarios[0].hash.as_deref(), Some("abc"));
     }
-
 }

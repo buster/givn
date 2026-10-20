@@ -8,10 +8,12 @@ use std::path::{Path, PathBuf};
 /// The runner contract is four integers and a process exit code. `scope` is
 /// never required: Givn labels the invocation that supplied the result path.
 pub fn run(total: u64, passed: u64, failed: u64, skipped: u64) -> Result<()> {
-    let path = std::env::var("GIVN_RESULT_FILE").map(PathBuf::from).context(
-        "GIVN_RESULT_FILE is not set — run this helper from a Givn verification command \
+    let path = std::env::var("GIVN_RESULT_FILE")
+        .map(PathBuf::from)
+        .context(
+            "GIVN_RESULT_FILE is not set — run this helper from a Givn verification command \
          (givn check tasks, givn archive, or a configured hook)",
-    )?;
+        )?;
     write_result(&path, total, passed, failed, skipped)?;
     println!(
         "givn test-result: total {total}, passed {passed}, failed {failed}, skipped {skipped}"

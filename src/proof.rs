@@ -522,12 +522,7 @@ impl ChangeReceipt {
 
     /// Whether this receipt still proves the same revision, delta features,
     /// and verify command.
-    pub fn is_current(
-        &self,
-        change_dir: &Path,
-        head: &str,
-        command: &str,
-    ) -> Result<bool> {
+    pub fn is_current(&self, change_dir: &Path, head: &str, command: &str) -> Result<bool> {
         let features = change_dir.join("specs");
         Ok(self.status == "passed"
             && self.head == head
@@ -774,7 +769,10 @@ mod tests {
         assert!(!receipt.merge_completed);
         assert_eq!(receipt.merge_plan, vec!["cap/file.feature"]);
         assert_eq!(
-            receipt.merge_targets.get("cap/file.feature").map(String::as_str),
+            receipt
+                .merge_targets
+                .get("cap/file.feature")
+                .map(String::as_str),
             Some("givn/specs/group/cap.feature")
         );
 
@@ -888,7 +886,10 @@ mod tests {
     fn change_receipt_read_names_the_missing_receipt() {
         let dir = tempfile::TempDir::new().unwrap();
         let err = ChangeReceipt::read(dir.path()).unwrap_err();
-        assert!(err.to_string().contains("verification receipt missing"), "{err}");
+        assert!(
+            err.to_string().contains("verification receipt missing"),
+            "{err}"
+        );
     }
 
     #[test]

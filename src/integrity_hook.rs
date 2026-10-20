@@ -1139,5 +1139,4 @@ mod tests {
         .unwrap();
         check_visual_review(dir.path()).unwrap();
     }
-
 }
