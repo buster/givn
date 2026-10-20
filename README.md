@@ -171,7 +171,7 @@ to the conditions of this license.
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 68% (11868/17499)
+Line coverage: 68% (12459/18289)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:
