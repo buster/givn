@@ -361,4 +361,13 @@ Givn maintainer are review lenses; no biography is a Gherkin actor.
 The design declares `Interface: none`; the capability is line-oriented CLI
 output. Visual review is not applicable.
 
+READABILITY: JUSTIFIED module:src/readability/classify.rs
+READABILITY: JUSTIFIED module:src/readability/gate.rs
+READABILITY: JUSTIFIED module:src/readability/gate/findings.rs
+READABILITY: JUSTIFIED module:src/readability/report.rs
+READABILITY: JUSTIFIED module:src/readability/syn_adapter.rs
+READABILITY: JUSTIFIED module:src/skills/render.rs
+READABILITY: JUSTIFIED module:src/skills/targets.rs
+READABILITY: PASS
+
 REVIEW: PASS
