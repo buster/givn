@@ -61,7 +61,7 @@ The developer archives a reviewed change.
 - The candidate revision contains exactly the merged corpus paths.
 - The finalization revision contains only resolved evidence paths.
 - The tested revision equals the published candidate revision.
-- A file the version-control system would not publish still counts as dirty and blocks the archive outside the resolved evidence paths: untracked and extra files both block.
+- A file the version-control system would not publish still counts as dirty and blocks the archive outside the resolved evidence paths: untracked and extra files both block. Plain-text CLI and interaction transcripts under the change's `evidence/` tree are declared evidence.
 - Givn publishes the candidate revision and the finalization revision on both supported systems; the developer's per-scenario revisions remain theirs.
 - The hook-rejection promise is "unproven and repairable", not an identical internal state.
 - The active change and a pending archive candidate whose active artifacts are byte-identical are reconciled; a conflicting pair is corrupt.
@@ -140,4 +140,4 @@ flowchart LR
   Proof --> Archive[[Finalize archive]]
 ```
 
-<!-- givn:base-sha256:be6bc746ea32520f4f13598d53e38471d482498a5514290a88594d6fd74212cd -->
+<!-- givn:base-sha256:4e962c7ee4240b9d3e0a6ce33643ada3421bf1a5cc91900c14325353f764f2bd -->
