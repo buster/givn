@@ -88,7 +88,11 @@ and an unchanged project tree. The driver is `common::run_givn` on the built
 `verify.command` is `./run-tests.sh --non-e2e`; `verify.e2e_command` is
 `./run-tests.sh --e2e`. They are different strings, and the delta proof is
 28 non-E2E passed / 2 skipped versus 2 E2E passed / 28 skipped. The E2E scope
-is a strict subset.
+is a strict subset. The runner tag expressions also carry
+`and not @givn.removed`, so the removal record in the addon delta is a merge
+instruction in every scope and never an execution unit; this also fixes the
+plain `cargo test` path, whose CLI tag filter otherwise bypassed the custom
+removed-scenario predicate.
 
 ### Design conformity
 
