@@ -42,6 +42,11 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   and `givn timeline` renders one change or ideation topic as a self-contained
   interactive report: the workflow top to bottom, each phase's vertical
   session lanes and lane log, the longest steps, and where the time went.
+- **An opt-in readability report.** The default-off `readability` addon adds
+  `givn readability report`: an advisory, deterministic snapshot of production
+  Rust units — size, public surface, cohesion/coupling, and method complexity —
+  with one classification and action per unit. It stores no baseline and never
+  changes a review or archive exit code.
 - **Scenario-by-scenario TDD with proof.** Each scenario runs RED (targeted,
   genuinely failing) → GREEN (minimum code) → REFACTOR → one atomic commit.
   The runner's strict mode is proven up front so an empty step definition can
