@@ -165,10 +165,10 @@ Evidence:
 
 ## Scenario 6 — Review accepts a green proof after documentation-only review edits
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
-- [ ] COMMIT
+- [x] RED
+- [x] GREEN
+- [x] REFACTOR
+- [x] COMMIT
 
 Design constraints:
 
@@ -183,18 +183,16 @@ Design constraints:
 
 Evidence:
 
-- RED output: `<paste>`
-- GREEN output: `<paste>`
-- REFACTOR output: `<paste>`
-- Production files: `<list>`
-- COMMIT: `<hash>`
+- RED: strict head equality refused the docs-only revision with `change verification receipt is stale` (exit 1). GREEN: `1 feature, 1 scenario (1 passed), 6 steps (6 passed)` after the shared freshness result returned `DocumentationOnly`; no suite invocation was recorded. REFACTOR: `cargo fmt`.
+- Production files: `src/proof.rs`, `src/scm.rs`, `src/git.rs`, `src/fossil.rs`, `src/cli/check.rs`, `src/cli/archive.rs`, `tests/steps/archive_proof_support.rs`, `tests/steps/workflow_enforcement_steps.rs`, `tests/steps/archive_proof_steps.rs`.
+- COMMIT: e64af9559b2525190f9f59d09af1dc795d5a108c
 
 ## Scenario 7 — Archive reuses a proof committed with its receipt
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
-- [ ] COMMIT
+- [x] RED
+- [x] GREEN
+- [x] REFACTOR
+- [x] COMMIT
 
 Design constraints:
 
@@ -206,17 +204,15 @@ Design constraints:
 
 Evidence:
 
-- RED output: `<paste>`
-- GREEN output: `<paste>`
-- REFACTOR output: `<paste>`
-- Production files: `<list>`
-- COMMIT: `<hash>`
+- RED: strict head equality refused the receipt-only commit with `change verification receipt is stale` (exit 1). GREEN: `1 feature, 1 scenario (1 passed), 7 steps (7 passed)`; the archive was proven and no change-suite invocation was recorded. REFACTOR: `cargo fmt`.
+- Production files: `src/proof.rs`, `src/scm.rs`, `src/git.rs`, `src/fossil.rs`, `src/cli/check.rs`, `src/cli/archive.rs`, `tests/steps/archive_proof_support.rs`, `tests/steps/workflow_enforcement_steps.rs`, `tests/steps/archive_proof_steps.rs`.
+- COMMIT: d9f2d85a6593c4f44641b783e9da9b3d22af4632
 
 ## Scenario 8 — Archive refuses a proof after tested content changed
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
+- [x] RED
+- [x] GREEN
+- [x] REFACTOR
 - [ ] COMMIT
 
 Design constraints:
@@ -229,10 +225,10 @@ Design constraints:
 
 Evidence:
 
-- RED output: `<paste>`
-- GREEN output: `<paste>`
-- REFACTOR output: `<paste>`
-- Production files: `<list>`
+- RED output: the source-code example failed with `stderr missing "tested content changed": ... the receipt is a legacy receipt without tested-content binding` (exit 1); the delta-feature and verify-command examples already named their boundaries.
+- GREEN output: `1 feature, 3 scenarios (3 passed), 24 steps (24 passed)`; all three examples name delta features, verify command, or tested content and leave no candidate.
+- REFACTOR output: `cargo fmt`; all three examples still pass.
+- Production files: `tests/steps/archive_proof_steps.rs`, the feature file, and the already-committed freshness result.
 - COMMIT: `<hash>`
 
 ## Scenario 9 — Consumer runs review and receives every use-case schema problem in one pass (e2e)
