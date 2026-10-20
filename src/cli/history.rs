@@ -159,6 +159,18 @@ pub struct IngestedEvent {
     /// the one content value stored in every mode, under the question bound.
     #[serde(default)]
     pub question: Option<BoundedText>,
+    /// The selected option when the question was answered (`kind: "question"`).
+    #[serde(default)]
+    pub selected: Option<String>,
+    /// Who or what answered the question (`kind: "question"`).
+    #[serde(default, alias = "answer_source")]
+    pub answered_by: Option<String>,
+    /// RFC 3339 UTC answer timestamp (`kind: "question"`).
+    #[serde(default)]
+    pub answered_at: Option<String>,
+    /// Free-text answer when the reporter captured one (`kind: "question"`).
+    #[serde(default)]
+    pub answer: Option<BoundedText>,
     /// The reporter's LLM-facing content fields: stored only when the effective
     /// mode is `full`, and always re-capped by the intake.
     #[serde(default)]
@@ -411,6 +423,24 @@ impl IngestedEvent {
                 "title".to_string(),
                 Value::String(bound_text_metadata(title)),
             );
+        }
+        if let Some(selected) = &self.selected {
+            data.insert(
+                "selected".to_string(),
+                Value::String(bound_text_metadata(selected)),
+            );
+        }
+        if let Some(source) = &self.answered_by {
+            data.insert(
+                "source".to_string(),
+                Value::String(bound_text_metadata(source)),
+            );
+        }
+        if let Some(at) = &self.answered_at {
+            data.insert("answered_at".to_string(), Value::String(at.clone()));
+        }
+        if let Some(answer) = &self.answer {
+            data.insert("answer".to_string(), serde_json::json!(answer));
         }
         if !data.is_empty() {
             entry.data = Some(Value::Object(data));
@@ -789,6 +819,10 @@ fn reported_event(kind: &str, at: &str) -> IngestedEvent {
         turn: None,
         model: None,
         usage: None,
+        selected: None,
+        answered_by: None,
+        answered_at: None,
+        answer: None,
         stop_reason: None,
         cost: None,
         list_cost: None,
