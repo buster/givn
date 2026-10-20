@@ -1095,7 +1095,7 @@ contract is:
   with `/`, output carries no timestamps or analyzer identity, line counts and
   ratio metrics are integers, and no model or network call exists.
 - **Neutral analysis boundary.** `SourceAnalyzer` is the port; `SynAnalyzer` is
-  the first adapter; parser types stay inside `syn_adapter.rs`. Production
+  the first adapter; parser types stay inside the `syn_adapter/` directory. Production
   discovery, metrics, classification, and both renderers run above the port.
   A hand-written fake adapter proves the port's sufficiency, a source scan keeps
   `syn` out of every non-adapter module, and a later tree-sitter adapter is
