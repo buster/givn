@@ -273,7 +273,7 @@ fn fake_analysis() -> Analysis {
         end_line: 1,
     };
     let module_id = UnitId("module:src/small.rs".to_string());
-    let type_id = UnitId("type:small::Small".to_string());
+    let type_id = UnitId("type:src/small.rs::Small".to_string());
     let file = AnalyzedFile {
         path: path.clone(),
         physical_lines: 1,
