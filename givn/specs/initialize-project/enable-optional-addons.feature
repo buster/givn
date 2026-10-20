@@ -1,15 +1,5 @@
 Feature: enable-optional-addons
 
-  Scenario: givn init defaults to all addons enabled and generates their files
-    Given  a project root without a givn/ directory
-    When  the user runs `givn init --agents opencode`
-    Then  the command exits 0
-    And  the file ".opencode/skills/givn-domain-modeling/SKILL.md" exists
-    And  the file ".opencode/skills/givn-dev-principles/SKILL.md" exists
-    And  the file ".opencode/commands/grill-me.md" exists
-    And  the file ".opencode/commands/grill-with-docs.md" exists
-    And  the directory ".agents/skills/givn-domain-modeling" does not exist
-
   Scenario: givn init --no-addons produces no skill or command addon files
     Given  a project root without a givn/ directory
     When  the user runs `givn init --no-addons --agents opencode`
@@ -116,3 +106,31 @@ Feature: enable-optional-addons
     When  the user runs `givn addons enable absolute_mode`
     Then  the command exits 0
     And  the file "AGENTS.md" contains "Context required to answer a question is not filler"
+  Scenario: givn init enables only default-on addons
+    Given  a project root without a givn/ directory
+    When  the user runs "givn init --agents opencode"
+    Then  the command exits 0
+    And  the file ".opencode/skills/givn-domain-modeling/SKILL.md" exists
+    And  the file ".opencode/skills/givn-dev-principles/SKILL.md" exists
+    And  the file ".opencode/commands/grill-me.md" exists
+    And  the file ".opencode/commands/grill-with-docs.md" exists
+    And  the readability addon is disabled
+
+  Scenario: givn init lists default-off addons and how to enable them
+    Given  a project root without a givn/ directory
+    When  the user runs "givn init --agents opencode"
+    Then  the command exits 0
+    And  stdout contains "addons available (default off): readability"
+    When  the user runs "givn addons list"
+    Then  stdout contains "[disabled]  readability"
+    And  stdout contains "givn addons enable"
+
+  @e2e
+  Scenario: Consumer enables the readability addon and it is listed as enabled
+    Given  a project root with givn/ initialised without addons
+    And  the readability addon is disabled
+    When  the user runs "givn addons enable readability"
+    Then  the command exits 0
+    And  stdout contains "enabled addon 'readability'"
+    When  the user runs "givn addons list"
+    Then  stdout contains "[enabled ]  readability"
