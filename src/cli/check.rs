@@ -585,4 +585,14 @@ mod tests {
         .unwrap();
         check_retirement_disclosed(&project, "plain-change").unwrap();
     }
+    #[test]
+    fn parses_two_scenarios_with_the_same_revision() {
+        let content = "- [x] Scenario: First\n  - [x] COMMIT: abc -- first\n\
+                       - [x] Scenario: Second\n  - [x] COMMIT: abc -- second\n";
+        let scenarios = parse_scenario_commits(content);
+        assert_eq!(scenarios.len(), 2);
+        assert_eq!(scenarios[0].hash.as_deref(), Some("abc"));
+        assert_eq!(scenarios[1].hash.as_deref(), Some("abc"));
+    }
+
 }
