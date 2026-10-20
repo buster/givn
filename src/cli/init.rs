@@ -21,8 +21,8 @@ const BANNER: &str = r#"
 const DEFAULT_PROMPT_TARGET: AgentTarget = AgentTarget::Opencode;
 
 /// Scaffold `givn/{specs,changes,archive}` and write the documented,
-/// versioned `givn/config.yaml`. Enables all addons by default (opt-out via
-/// `--no-addons`). Generates skills. Idempotent. `AGENTS.md` is otherwise
+/// versioned `givn/config.yaml`. Enables the default-on addons (opt-out via
+/// `--no-addons`); default-off addons stay disabled. Generates skills. Idempotent. `AGENTS.md` is otherwise
 /// user-owned: givn writes to it only inside its own fenced
 /// `<!-- givn:begin:* -->` blocks (e.g. the `absolute_mode` addon), and only
 /// when the corresponding addon is enabled.
@@ -93,8 +93,10 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
     // generated once below instead of per addon).
     if !no_addons {
         println!("\nEnabling addons...\n");
-        for (name, _) in crate::cli::addons::KNOWN_ADDONS {
-            crate::cli::addons::enable_scaffold(name)?;
+        for addon in crate::cli::addons::KNOWN_ADDONS {
+            if addon.default_enabled {
+                crate::cli::addons::enable_scaffold(addon.id)?;
+            }
         }
     }
 
@@ -161,8 +163,10 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
         println!("  addons:  disabled (--no-addons)");
     } else {
         println!("  addons:  enabled");
-        for (name, description) in crate::cli::addons::KNOWN_ADDONS {
-            println!("    - {name}: {description}");
+        for addon in crate::cli::addons::KNOWN_ADDONS {
+            if addon.default_enabled {
+                println!("    - {}: {}", addon.id, addon.description);
+            }
         }
     }
 

@@ -50,6 +50,9 @@ pub mod local_only_rules_steps;
 pub mod preserve_docstrings_on_archive_steps;
 pub mod prose_consolidation_e2e_steps;
 pub mod prose_consolidation_steps;
+pub mod readability_report_e2e_steps;
+pub mod readability_report_steps;
+pub mod readability_report_support;
 pub mod readme_coverage_badge_steps;
 pub mod readme_enforcement_e2e_steps;
 pub mod readme_enforcement_steps;
@@ -477,6 +480,11 @@ pub(crate) fn world_envs(_world: &GivnWorld) -> Vec<(&'static str, &'static str)
 }
 
 // --- When ------------------------------------------------------------------
+
+#[when(regex = r#"^the user runs "([^"]+)"$"#)]
+fn user_runs_quoted(world: &mut GivnWorld, cmd: String) {
+    user_runs(world, cmd);
+}
 
 #[when(regex = r"^the user runs `([^`]+)`$")]
 fn user_runs(world: &mut GivnWorld, cmd: String) {
