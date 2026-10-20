@@ -89,6 +89,42 @@ pub fn validate(
     validate_text(project_root, relative, &text, finding).map_err(RationaleError::Invalid)
 }
 
+struct RequiredFields {
+    unit: String,
+    classification: String,
+    finding: String,
+    evidence: String,
+    why: String,
+    alternatives: String,
+    owner: String,
+    author: String,
+    reviewed_by: String,
+    review_verdict: String,
+}
+
+impl RequiredFields {
+    fn read(fields: &Fields) -> Result<Self, String> {
+        Ok(Self {
+            unit: fields.required("Unit", "missing Unit:")?,
+            classification: fields.required("Classification", "missing Classification:")?,
+            finding: fields.required("Finding", "missing Finding:")?,
+            evidence: fields.required("Evidence", "missing Evidence:")?,
+            why: fields.required(
+                "Why this shape is right",
+                "missing Why this shape is right:",
+            )?,
+            alternatives: fields.required(
+                "Alternatives considered",
+                "missing Alternatives considered:",
+            )?,
+            owner: fields.required("Owner", "missing Owner:")?,
+            author: fields.required("Author", "missing Author:")?,
+            reviewed_by: fields.required("Reviewed-by", "missing Reviewed-by:")?,
+            review_verdict: fields.required("Review verdict", "missing Review verdict:")?,
+        })
+    }
+}
+
 fn validate_text(
     project_root: &Path,
     relative: &str,
@@ -96,111 +132,124 @@ fn validate_text(
     finding: &GateFinding,
 ) -> Result<RationaleArtifact, String> {
     let fields = Fields::parse(text);
+    let required = RequiredFields::read(&fields)?;
+    check_independent_review(&required)?;
+    check_finding_identity(&required, finding)?;
 
-    let unit = fields.required("Unit", "missing Unit:")?;
-    let classification = fields.required("Classification", "missing Classification:")?;
-    let finding_reason = fields.required("Finding", "missing Finding:")?;
-    let evidence = fields.required("Evidence", "missing Evidence:")?;
-    let why = fields.required(
-        "Why this shape is right",
-        "missing Why this shape is right:",
-    )?;
-    let alternatives = fields.required(
-        "Alternatives considered",
-        "missing Alternatives considered:",
-    )?;
-    let owner = fields.required("Owner", "missing Owner:")?;
-    let author = fields.required("Author", "missing Author:")?;
-    let reviewed_by = fields.required("Reviewed-by", "missing Reviewed-by:")?;
-    let review_verdict = fields.required("Review verdict", "missing Review verdict:")?;
-    if author == reviewed_by {
+    let follow_up = fields.value("Follow-up");
+    let expiry = fields.value("Expiry");
+    check_prose(&required, finding, follow_up.as_deref(), expiry.as_deref())?;
+    check_owner(project_root, &required.owner)?;
+    check_follow_up(follow_up.as_deref(), expiry.as_deref())?;
+
+    Ok(RationaleArtifact {
+        path: relative.to_string(),
+        unit: finding.unit_id.clone(),
+        classification: required.classification,
+        finding: required.finding,
+        evidence: required.evidence,
+        why: required.why,
+        alternatives: required.alternatives,
+        owner: required.owner,
+        author: required.author,
+        reviewed_by: required.reviewed_by,
+        review_verdict: required.review_verdict,
+        follow_up,
+        expiry,
+    })
+}
+
+fn check_independent_review(required: &RequiredFields) -> Result<(), String> {
+    if required.author == required.reviewed_by {
         return Err("Reviewed-by must differ from Author".to_string());
     }
-    if !review_verdict.eq_ignore_ascii_case("accept") {
-        return Err(format!("Review verdict '{review_verdict}' is not accept"));
-    }
-
-    if unit != finding.unit_id.to_string() {
+    if !required.review_verdict.eq_ignore_ascii_case("accept") {
         return Err(format!(
-            "Unit: {unit} does not match the finding {}",
-            finding.unit_id
+            "Review verdict '{}' is not accept",
+            required.review_verdict
+        ));
+    }
+    Ok(())
+}
+
+fn check_finding_identity(required: &RequiredFields, finding: &GateFinding) -> Result<(), String> {
+    if required.unit != finding.unit_id.to_string() {
+        return Err(format!(
+            "Unit: {} does not match the finding {}",
+            required.unit, finding.unit_id
         ));
     }
     let head_label = finding
         .head_classification
         .map(|classification| classification.label())
         .unwrap_or("within-limits");
-    if classification != head_label {
+    if required.classification != head_label {
         return Err(format!(
-            "Classification: {classification} does not match {head_label}"
+            "Classification: {} does not match {head_label}",
+            required.classification
         ));
     }
-    if finding_reason != finding.reason.label() {
+    if required.finding != finding.reason.label() {
         return Err(format!(
-            "Finding: {finding_reason} does not match {}",
+            "Finding: {} does not match {}",
+            required.finding,
             finding.reason.label()
         ));
     }
+    Ok(())
+}
 
-    let follow_up_prose = fields.value("Follow-up").unwrap_or_default();
-    let expiry_prose = fields.value("Expiry").unwrap_or_default();
+fn check_prose(
+    required: &RequiredFields,
+    finding: &GateFinding,
+    follow_up: Option<&str>,
+    expiry: Option<&str>,
+) -> Result<(), String> {
     let prose = [
-        evidence.as_str(),
-        why.as_str(),
-        alternatives.as_str(),
-        owner.as_str(),
-        follow_up_prose.as_str(),
-        expiry_prose.as_str(),
+        required.evidence.as_str(),
+        required.why.as_str(),
+        required.alternatives.as_str(),
+        required.owner.as_str(),
+        follow_up.unwrap_or_default(),
+        expiry.unwrap_or_default(),
     ]
     .join("\n");
     if let Some(phrase) = banned_phrase(&prose) {
         return Err(format!("banned reason '{phrase}'"));
     }
-    if !evidence_cites(&evidence, finding) {
+    if !evidence_cites(&required.evidence, finding) {
         return Err(
             "Evidence: must cite a concrete metric or path from the gate finding".to_string(),
         );
     }
-    if !names_responsibility(&why, finding) {
+    if !names_responsibility(&required.why, finding) {
         return Err("Why this shape is right: must name the unit's responsibility".to_string());
     }
-    if !alternatives_ok(&alternatives) {
+    if !alternatives_ok(&required.alternatives) {
         return Err(
             "Alternatives considered: must name at least one alternative and why it was rejected"
                 .to_string(),
         );
     }
+    Ok(())
+}
 
+fn check_owner(project_root: &Path, owner: &str) -> Result<(), String> {
     let owners = confirmed_owners(project_root);
-    if owner.eq_ignore_ascii_case("none") || !owners.contains(&owner) {
+    if owner.eq_ignore_ascii_case("none") || !owners.contains(owner) {
         return Err(format!(
             "Owner: '{owner}' is not a confirmed owner; use givn-maintainer--owner"
         ));
     }
+    Ok(())
+}
 
-    let follow_up = fields.value("Follow-up");
-    let expiry = fields.value("Expiry");
-    match (&follow_up, &expiry) {
-        (Some(_), None) => return Err("missing Expiry:".to_string()),
-        (None, Some(_)) => return Err("missing Follow-up:".to_string()),
-        _ => {}
+fn check_follow_up(follow_up: Option<&str>, expiry: Option<&str>) -> Result<(), String> {
+    match (follow_up, expiry) {
+        (Some(_), None) => Err("missing Expiry:".to_string()),
+        (None, Some(_)) => Err("missing Follow-up:".to_string()),
+        _ => Ok(()),
     }
-
-    Ok(RationaleArtifact {
-        path: relative.to_string(),
-        unit: finding.unit_id.clone(),
-        classification,
-        finding: finding_reason,
-        evidence,
-        why,
-        alternatives,
-        owner,
-        author,
-        reviewed_by,
-        review_verdict,
-        follow_up,
-        expiry,
-    })
 }
 
 struct Fields {
@@ -478,7 +527,10 @@ Finding: existing-grown\n\
 Evidence: 620 -> 700 code lines; every call site is in src/engine.rs.\n\
 Why this shape is right: Engine owns the engine state machine and its phase order, so splitting it would move the transition rules into two modules.\n\
 Alternatives considered: Extract the renderer. Rejected: rendering delegates already and the extraction adds indirection.\n\
-Owner: givn-maintainer--owner\n";
+Owner: givn-maintainer--owner\n\
+Author: agent\n\
+Reviewed-by: fresh-context-reviewer\n\
+Review verdict: accept\n";
 
     #[test]
     fn a_complete_rationale_passes_and_each_floor_fails() {

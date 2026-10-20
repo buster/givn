@@ -371,7 +371,24 @@ pub fn decide(
     record_missing: bool,
 ) -> Vec<GateFailure> {
     let mut failures = Vec::new();
+    let conflicted = conflicting_units(markers, &mut failures);
+    let colliding = slug_collisions(findings, &mut failures);
 
+    for finding in findings.iter_mut() {
+        finding.decision = decision_for(
+            finding,
+            markers,
+            request,
+            record_missing,
+            &conflicted,
+            &colliding,
+            &mut failures,
+        );
+    }
+    failures
+}
+
+fn conflicting_units(markers: &ReviewMarkers, failures: &mut Vec<GateFailure>) -> BTreeSet<UnitId> {
     let mut conflicted = BTreeSet::new();
     for unit in markers.fixed.keys() {
         if markers.justified.contains_key(unit) {
@@ -381,7 +398,10 @@ pub fn decide(
             });
         }
     }
+    conflicted
+}
 
+fn slug_collisions(findings: &[GateFinding], failures: &mut Vec<GateFailure>) -> BTreeSet<UnitId> {
     let mut by_slug: BTreeMap<String, Vec<UnitId>> = BTreeMap::new();
     for finding in findings.iter() {
         by_slug
@@ -402,83 +422,86 @@ pub fn decide(
             colliding.insert(pair[1].clone());
         }
     }
+    colliding
+}
 
-    for finding in findings.iter_mut() {
-        let fixed = markers.fixed.get(&finding.unit_id).copied().unwrap_or(0);
-        let justified = markers
-            .justified
-            .get(&finding.unit_id)
-            .copied()
-            .unwrap_or(0);
+#[allow(clippy::too_many_arguments)]
+fn decision_for(
+    finding: &GateFinding,
+    markers: &ReviewMarkers,
+    request: &GateRequest,
+    record_missing: bool,
+    conflicted: &BTreeSet<UnitId>,
+    colliding: &BTreeSet<UnitId>,
+    failures: &mut Vec<GateFailure>,
+) -> Decision {
+    let fixed = markers.fixed.get(&finding.unit_id).copied().unwrap_or(0);
+    let justified = markers
+        .justified
+        .get(&finding.unit_id)
+        .copied()
+        .unwrap_or(0);
 
-        if conflicted.contains(&finding.unit_id) {
-            finding.decision = Decision::Missing;
-            continue;
-        }
-
-        if fixed > 0 {
-            if finding.is_head_finding() {
-                failures.push(GateFailure::InvalidFixed {
-                    unit: finding.unit_id.to_string(),
-                    classification: finding.head_label().to_string(),
-                    head: finding.head_code_lines.unwrap_or(0),
-                    base: finding.base_code_lines.unwrap_or(0),
-                });
-            }
-            finding.decision = Decision::Fixed {
-                marker_count: fixed,
-            };
-            continue;
-        }
-
-        if justified > 0 {
-            let relative = rationale::relative_path(&request.change_id, &finding.unit_id);
-            if !finding.is_head_finding() {
-                failures.push(GateFailure::JustifiedWithoutFinding {
-                    unit: finding.unit_id.to_string(),
-                });
-                finding.decision = Decision::Justified {
-                    rationale: PathBuf::from(&relative),
-                };
-            } else if colliding.contains(&finding.unit_id) {
-                finding.decision = Decision::Justified {
-                    rationale: PathBuf::from(&relative),
-                };
-            } else {
-                match rationale::validate(&request.project_root, &relative, finding) {
-                    Ok(_) => {
-                        finding.decision = Decision::Justified {
-                            rationale: PathBuf::from(&relative),
-                        };
-                    }
-                    Err(RationaleError::Missing) => {
-                        failures.push(GateFailure::MissingRationale {
-                            unit: finding.unit_id.to_string(),
-                            path: relative,
-                        });
-                        finding.decision = Decision::Missing;
-                    }
-                    Err(RationaleError::Invalid(message)) => {
-                        failures.push(GateFailure::InvalidRationale {
-                            path: relative,
-                            message,
-                        });
-                        finding.decision = Decision::Missing;
-                    }
-                }
-            }
-            continue;
-        }
-
-        finding.decision = Decision::Missing;
-        if !record_missing && markers.unknown.is_empty() {
-            failures.push(GateFailure::Unaccounted {
-                unit: finding.unit_id.to_string(),
-            });
-        }
+    if conflicted.contains(&finding.unit_id) {
+        return Decision::Missing;
     }
 
-    failures
+    if fixed > 0 {
+        if finding.is_head_finding() {
+            failures.push(GateFailure::InvalidFixed {
+                unit: finding.unit_id.to_string(),
+                classification: finding.head_label().to_string(),
+                head: finding.head_code_lines.unwrap_or(0),
+                base: finding.base_code_lines.unwrap_or(0),
+            });
+        }
+        return Decision::Fixed {
+            marker_count: fixed,
+        };
+    }
+
+    if justified > 0 {
+        let relative = rationale::relative_path(&request.change_id, &finding.unit_id);
+        if !finding.is_head_finding() {
+            failures.push(GateFailure::JustifiedWithoutFinding {
+                unit: finding.unit_id.to_string(),
+            });
+            return Decision::Justified {
+                rationale: PathBuf::from(&relative),
+            };
+        }
+        if colliding.contains(&finding.unit_id) {
+            return Decision::Justified {
+                rationale: PathBuf::from(&relative),
+            };
+        }
+        return match rationale::validate(&request.project_root, &relative, finding) {
+            Ok(_) => Decision::Justified {
+                rationale: PathBuf::from(&relative),
+            },
+            Err(RationaleError::Missing) => {
+                failures.push(GateFailure::MissingRationale {
+                    unit: finding.unit_id.to_string(),
+                    path: relative,
+                });
+                Decision::Missing
+            }
+            Err(RationaleError::Invalid(message)) => {
+                failures.push(GateFailure::InvalidRationale {
+                    path: relative,
+                    message,
+                });
+                Decision::Missing
+            }
+        };
+    }
+
+    if !record_missing && markers.unknown.is_empty() {
+        failures.push(GateFailure::Unaccounted {
+            unit: finding.unit_id.to_string(),
+        });
+    }
+    Decision::Missing
 }
 
 #[cfg(test)]
