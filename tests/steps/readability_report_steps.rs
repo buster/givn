@@ -47,6 +47,26 @@ fn large_trait(world: &mut GivnWorld) {
     crate::steps::readability_report_support::write_large_trait(env, "BigTrait", 520);
 }
 
+#[given("a production source unit that is over the readable size")]
+fn over_readable_size(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::readability_report_support::write_god_type(env, "GodType");
+}
+
+#[then("the JSON report classifies the unit")]
+fn json_report_classifies(world: &mut GivnWorld) {
+    let stdout = crate::steps::stdout(world);
+    let value: serde_json::Value = serde_json::from_str(&stdout).expect("valid JSON");
+    let units = value["units"].as_array().expect("units array");
+    assert!(
+        units.iter().any(|unit| unit["classification"].is_string()),
+        "no classified unit in {stdout}"
+    );
+}
+
 #[given("a production source unit with exactly 500 code lines and cohesive methods")]
 fn boundary_500(world: &mut GivnWorld) {
     let env = common::make_bare_root();
