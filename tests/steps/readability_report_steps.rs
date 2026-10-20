@@ -93,6 +93,38 @@ fn unit_block(world: &GivnWorld, name: &str) -> String {
         .to_string()
 }
 
+#[given("a production source unit with 501 code lines and cohesive methods")]
+fn boundary_501(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    crate::steps::readability_report_support::write_boundary_type(&env, 501);
+    world.env = Some(env);
+}
+
+#[then("the report classifies the unit as a cohesive large type")]
+fn report_classifies_cohesive_large(world: &mut GivnWorld) {
+    let block = unit_block(world, "Boundary");
+    assert!(
+        block.contains("cohesive-large-type"),
+        "expected cohesive-large-type, got: {block}"
+    );
+}
+
+#[then("the report records 501 code lines")]
+fn report_records_501(world: &mut GivnWorld) {
+    let block = unit_block(world, "Boundary");
+    assert!(
+        block.contains("501"),
+        "expected 501 code lines, got: {block}"
+    );
+}
+
+fn report_text(world: &GivnWorld) -> String {
+    if let Some(text) = &world.additional_output {
+        return text.clone();
+    }
+    crate::steps::stdout(world)
+}
+
 #[given("a production source unit with a cohesive type over the readable size")]
 fn cohesive_type(world: &mut GivnWorld) {
     let env = world
@@ -104,7 +136,7 @@ fn cohesive_type(world: &mut GivnWorld) {
 
 #[then("the report classifies the unit as a cohesive-large-type")]
 fn report_classifies_cohesive(world: &mut GivnWorld) {
-    let stdout = crate::steps::stdout(world);
+    let stdout = report_text(world);
     assert!(
         stdout.contains("cohesive-large-type"),
         "expected a cohesive-large-type classification, got: {stdout}"
@@ -113,7 +145,7 @@ fn report_classifies_cohesive(world: &mut GivnWorld) {
 
 #[then("the report classifies the unit as an interface")]
 fn report_classifies_interface(world: &mut GivnWorld) {
-    let stdout = crate::steps::stdout(world);
+    let stdout = report_text(world);
     assert!(
         stdout.contains("interface"),
         "expected an interface classification, got: {stdout}"
@@ -122,7 +154,7 @@ fn report_classifies_interface(world: &mut GivnWorld) {
 
 #[then("the report recommends a trait-composition plan")]
 fn report_recommends_trait_composition(world: &mut GivnWorld) {
-    let stdout = crate::steps::stdout(world);
+    let stdout = report_text(world);
     assert!(
         stdout.contains("trait-composition plan"),
         "expected a trait-composition plan, got: {stdout}"
@@ -131,7 +163,7 @@ fn report_recommends_trait_composition(world: &mut GivnWorld) {
 
 #[then("the report classifies the unit as data-only")]
 fn report_classifies_data_only(world: &mut GivnWorld) {
-    let stdout = crate::steps::stdout(world);
+    let stdout = report_text(world);
     assert!(
         stdout.contains("data-only"),
         "expected a data-only classification, got: {stdout}"
@@ -140,7 +172,7 @@ fn report_classifies_data_only(world: &mut GivnWorld) {
 
 #[then("the report recommends an advisory action")]
 fn report_recommends_advisory(world: &mut GivnWorld) {
-    let stdout = crate::steps::stdout(world);
+    let stdout = report_text(world);
     assert!(
         stdout.contains("ADVISORY"),
         "expected an advisory action, got: {stdout}"
@@ -149,7 +181,7 @@ fn report_recommends_advisory(world: &mut GivnWorld) {
 
 #[then("the report recommends no plan for the unit")]
 fn report_recommends_no_plan(world: &mut GivnWorld) {
-    let stdout = crate::steps::stdout(world);
+    let stdout = report_text(world);
     let block = stdout
         .split("\n\n")
         .find(|block| block.contains("BigEnum"))

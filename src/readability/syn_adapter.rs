@@ -688,7 +688,7 @@ fn macro_line(item: &syn::ItemMacro) -> u32 {
 }
 
 fn impl_span_of(item: &ItemImpl, content: &str, file: &RepoPath) -> SourceSpan {
-    let line = item
+    let first_method = item
         .items
         .iter()
         .find_map(|item| match item {
@@ -696,7 +696,16 @@ fn impl_span_of(item: &ItemImpl, content: &str, file: &RepoPath) -> SourceSpan {
             _ => None,
         })
         .unwrap_or(1);
-    line_span(content, file, line)
+    let lines: Vec<&str> = content.lines().collect();
+    let start = (1..=first_method)
+        .rev()
+        .find(|line| {
+            lines
+                .get(*line as usize - 1)
+                .is_some_and(|text| text.trim_start().starts_with("impl"))
+        })
+        .unwrap_or(first_method);
+    line_span(content, file, start)
 }
 
 fn line_span(content: &str, file: &RepoPath, start_line: u32) -> SourceSpan {

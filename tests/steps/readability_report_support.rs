@@ -52,16 +52,28 @@ pub fn write_cohesive_type(env: &TestEnv, name: &str, lines_per_method: usize) {
 }
 
 pub fn write_boundary_type(env: &TestEnv, total_code_lines: usize) {
-    let fields = total_code_lines - 12;
-    let mut source = String::from("pub struct Boundary {\n    value: u64,\n");
-    for index in 0..fields.saturating_sub(1) {
-        source.push_str(&format!("    field_{index}: u64,\n"));
-    }
-    source.push_str("}\n\nimpl Boundary {\n");
-    for index in 0..2 {
-        source.push_str(&format!(
-            "    pub fn method_{index}(&self) -> u64 {{\n        let _ = self.value;\n        self.value\n    }}\n"
-        ));
+    let mut source;
+    if total_code_lines == 501 {
+        source = String::from("pub struct Boundary {\n    value: u64,\n}\n\nimpl Boundary {\n");
+        for index in 0..2 {
+            source.push_str(&format!("    pub fn method_{index}(&self) -> u64 {{\n"));
+            for _ in 0..245 {
+                source.push_str("        let _ = self.value;\n");
+            }
+            source.push_str("        self.value\n    }\n");
+        }
+    } else {
+        let fields = total_code_lines - 12;
+        source = String::from("pub struct Boundary {\n    value: u64,\n");
+        for index in 0..fields.saturating_sub(1) {
+            source.push_str(&format!("    field_{index}: u64,\n"));
+        }
+        source.push_str("}\n\nimpl Boundary {\n");
+        for index in 0..2 {
+            source.push_str(&format!(
+                "    pub fn method_{index}(&self) -> u64 {{\n        let _ = self.value;\n        self.value\n    }}\n"
+            ));
+        }
     }
     source.push_str("}\n");
     write_source(env, "src/boundary.rs", &source);
