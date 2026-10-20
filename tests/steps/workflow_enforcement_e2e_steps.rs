@@ -19,9 +19,13 @@ fn write_transcript(world: &GivnWorld, title: &str, argv: &str) {
         .expect("the scenario must run the real CLI first");
     let slug = givn::integrity_hook::scenario_slug(title);
     let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let dir = root
-        .join("givn/changes/review-friction-hardening/evidence/visual")
-        .join(&slug);
+    let active = root.join("givn/changes/review-friction-hardening");
+    let dir = if active.exists() {
+        active.join("evidence/visual").join(&slug)
+    } else {
+        root.join("target/review-friction-hardening-evidence")
+            .join(&slug)
+    };
     std::fs::create_dir_all(&dir).expect("create transcript directory");
     let cwd = world
         .env
