@@ -171,6 +171,12 @@ pub struct IngestedEvent {
     /// Free-text answer when the reporter captured one (`kind: "question"`).
     #[serde(default)]
     pub answer: Option<BoundedText>,
+    /// The provider that produced the turn or usage (`kind: "turn" | "usage"`).
+    #[serde(default)]
+    pub provider: Option<String>,
+    /// The model variant the provider reported (`kind: "turn" | "usage"`).
+    #[serde(default)]
+    pub variant: Option<String>,
     /// The reporter's LLM-facing content fields: stored only when the effective
     /// mode is `full`, and always re-capped by the intake.
     #[serde(default)]
@@ -331,6 +337,18 @@ impl IngestedEvent {
         {
             data.insert("model".to_string(), Value::String(model.clone()));
         }
+        if let Some(provider) = &self.provider {
+            data.insert(
+                "provider".to_string(),
+                Value::String(bound_text_metadata(provider)),
+            );
+        }
+        if let Some(variant) = &self.variant {
+            data.insert(
+                "variant".to_string(),
+                Value::String(bound_text_metadata(variant)),
+            );
+        }
         if let Some(reason) = &self.stop_reason {
             data.insert(
                 "stop_reason".to_string(),
@@ -395,6 +413,18 @@ impl IngestedEvent {
         let mut data = usage.data(model, subagent);
         if let Some(object) = data.as_object_mut() {
             object.insert("derived".to_string(), Value::Bool(true));
+            if let Some(provider) = &self.provider {
+                object.insert(
+                    "provider".to_string(),
+                    Value::String(bound_text_metadata(provider)),
+                );
+            }
+            if let Some(variant) = &self.variant {
+                object.insert(
+                    "variant".to_string(),
+                    Value::String(bound_text_metadata(variant)),
+                );
+            }
         }
         entry.data = Some(data);
         entry.outcome = self.outcome_word();
@@ -823,6 +853,8 @@ fn reported_event(kind: &str, at: &str) -> IngestedEvent {
         answered_by: None,
         answered_at: None,
         answer: None,
+        provider: None,
+        variant: None,
         stop_reason: None,
         cost: None,
         list_cost: None,
