@@ -100,6 +100,18 @@ pub fn assessment_counts(env: &TestEnv) -> (usize, usize, usize) {
     )
 }
 
+pub fn write_large_module(env: &TestEnv) {
+    let mut source = String::new();
+    for index in 0..21 {
+        source.push_str(&format!("pub fn function_{index}() -> u64 {{\n"));
+        for _ in 0..50 {
+            source.push_str("    let _value = 1;\n");
+        }
+        source.push_str("    0\n}\n\n");
+    }
+    write_source(env, "src/large_module.rs", &source);
+}
+
 pub fn write_inspect_band_type(env: &TestEnv) {
     let mut source =
         String::from("pub struct Boundary {\n    a: u64,\n    b: u64,\n}\n\nimpl Boundary {\n");

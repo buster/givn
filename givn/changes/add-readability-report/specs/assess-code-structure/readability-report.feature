@@ -63,6 +63,13 @@ Feature: Readability report
     Then the report classifies the unit as a cohesive large type
     And the report recommends an exception action
 
+  @givn.added @wip
+  Scenario: A module over the plan limit needs an exception
+    Given a production source unit with a module over the plan limit
+    When the readability report assesses the unit
+    Then the report classifies the unit as a module
+    And the report recommends an exception action
+
   @givn.added
   Scenario: A type at the readable size limit is within limits
     Given a production source unit with exactly 500 code lines and cohesive methods
