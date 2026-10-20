@@ -15,6 +15,7 @@ pub fn run_report(json: bool, out: Option<PathBuf>, paths: Vec<PathBuf>) -> Resu
     }
 
     let project_root = std::env::current_dir().context("resolve the project root")?;
+    let explicit_scope = !paths.is_empty();
     let roots = if paths.is_empty() {
         vec![PathBuf::from("src")]
     } else {
@@ -23,6 +24,13 @@ pub fn run_report(json: bool, out: Option<PathBuf>, paths: Vec<PathBuf>) -> Resu
             .map(|path| validate_scope(&path))
             .collect::<Result<Vec<_>>>()?
     };
+    if explicit_scope {
+        for root in &roots {
+            if !project_root.join(root).exists() {
+                bail!("--path does not exist: {}", root.display());
+            }
+        }
+    }
 
     let request = AnalysisRequest {
         project_root: project_root.clone(),
