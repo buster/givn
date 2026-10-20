@@ -408,9 +408,7 @@ fn parse_document(
                 let mut diagnostic = UsecaseDiagnostic::at(number, message);
                 if let Some(recovered) = suggestion.clone() {
                     diagnostic.suggestion = Some(recovered);
-                    if let Some(recovered_id) = recover_title(&expected_title, trimmed) {
-                        title = Some(recovered_id);
-                    }
+                    title = Some(trimmed[expected_title.len()..].trim().to_string());
                 }
                 diagnostics.push(diagnostic);
             }
@@ -978,6 +976,23 @@ flowchart LR
         assert_eq!(
             doc.child_usecases().collect::<Vec<_>>(),
             vec!["start-project"]
+        );
+    }
+
+    #[test]
+    fn case_mismatched_title_recovers_and_suggests_the_exact_spelling() {
+        let text = VALID_LEAF.replace("# Use case: start-project", "# Use Case: start-project");
+        let (doc, diagnostics) = parse_usecase_md_diagnostics(&text);
+        let doc = doc.expect("a case-mismatched title is recoverable");
+        assert_eq!(doc.id, "start-project");
+        let rendered = diagnostics.to_string();
+        assert!(
+            rendered.contains("headings are case-sensitive"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("did you mean '# Use case: start-project'?"),
+            "{rendered}"
         );
     }
 
