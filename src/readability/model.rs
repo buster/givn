@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 //! Neutral data model shared by every analyzer.
 //!
 //! Nothing here imports `syn`. Metrics and classifications are computed above

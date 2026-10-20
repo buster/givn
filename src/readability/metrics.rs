@@ -1,7 +1,7 @@
 //! Shared metric computation above the analyzer port.
 
 use super::model::{
-    Analysis, AnalyzedFile, Flow, Method, RepoPath, SourceUnit, UnitId, UnitKind, Visibility,
+    Analysis, AnalyzedFile, Flow, Method, SourceUnit, UnitId, UnitKind, Visibility,
 };
 use super::scan;
 use std::collections::{HashMap, HashSet};
@@ -150,7 +150,11 @@ fn method_metrics(method: &Method, analysis: &Analysis) -> MethodMetrics {
         .iter()
         .find(|analyzed: &&AnalyzedFile| analyzed.path == method.span.file)
         .map(|analyzed| {
-            scan::code_lines(&analyzed.lines, &[method.span.clone()], &method.span.file)
+            scan::code_lines(
+                &analyzed.lines,
+                std::slice::from_ref(&method.span),
+                &method.span.file,
+            )
         })
         .unwrap_or(0);
     let complexity = flow_complexity(&method.flow);
@@ -207,17 +211,19 @@ fn cohesion(unit: &SourceUnit) -> (u32, Option<u32>, Option<u32>) {
     }
     for (index, method) in unit.methods.iter().enumerate() {
         for call in &method.calls {
-            if let Some(target) = &call.target {
-                if let Some(target_index) = unit.methods.iter().position(|m| &m.id == target) {
-                    union(&mut parent, index, target_index);
-                }
+            if let Some(target_index) = call
+                .target
+                .as_ref()
+                .and_then(|target| unit.methods.iter().position(|m| &m.id == target))
+            {
+                union(&mut parent, index, target_index);
             }
         }
     }
     for index in 0..nodes {
         parent[index] = find(&mut parent, index);
     }
-    nodes = parent.iter().copied().collect::<HashSet<_>>().len() as usize;
+    nodes = parent.iter().copied().collect::<HashSet<_>>().len();
     let lcom4 = if nodes == 0 { 0 } else { nodes as u32 };
 
     let with_fields: Vec<usize> = method_fields
@@ -287,8 +293,4 @@ pub fn flow_nesting(flow: &Flow) -> u32 {
         Flow::Return(inner) => inner.as_deref().map(flow_nesting).unwrap_or(0),
         Flow::Call(_) => 0,
     }
-}
-
-pub fn file_path(file: &RepoPath) -> &RepoPath {
-    file
 }

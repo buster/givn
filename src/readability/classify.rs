@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 //! Shared classification and action recommendation.
 
 use super::metrics::{self, MethodFinding, MethodMetrics, UnitMetrics};
