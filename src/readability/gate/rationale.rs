@@ -556,3 +556,139 @@ Owner: givn-maintainer--owner\n";
         assert!(!owners.contains("agent--technical-role"));
     }
 }
+
+#[cfg(test)]
+mod recheck_previous_rationales {
+    use super::super::findings::{Decision, FindingReason};
+    use super::*;
+    use crate::readability::classify::Classification;
+    use crate::readability::model::{RepoPath, UnitId, UnitKind};
+
+    fn finding(
+        unit: &str,
+        path: &str,
+        name: &str,
+        kind: UnitKind,
+        classification: Classification,
+        reason: FindingReason,
+    ) -> GateFinding {
+        GateFinding {
+            unit_id: UnitId(unit.to_string()),
+            path: RepoPath::new(path),
+            files: vec![RepoPath::new(path)],
+            kind,
+            name: name.to_string(),
+            head_classification: Some(classification),
+            base_code_lines: Some(620),
+            head_code_lines: Some(700),
+            public_methods: 8,
+            method_findings: Vec::new(),
+            reason,
+            decision: Decision::Missing,
+        }
+    }
+
+    #[test]
+    fn recheck_the_old_seven_rationales() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let archive = "givn/archive/add-readability-review-gate/readability/rationales";
+        let cases = [
+            (
+                "module-src-readability-classify-rs.md",
+                finding(
+                    "module:src/readability/classify.rs",
+                    "src/readability/classify.rs",
+                    "classify",
+                    UnitKind::Module,
+                    Classification::MethodLength,
+                    FindingReason::MethodLength,
+                ),
+            ),
+            (
+                "module-src-readability-gate-rs.md",
+                finding(
+                    "module:src/readability/gate.rs",
+                    "src/readability/gate.rs",
+                    "gate",
+                    UnitKind::Module,
+                    Classification::MethodLength,
+                    FindingReason::NewModule,
+                ),
+            ),
+            (
+                "module-src-readability-gate-findings-rs.md",
+                finding(
+                    "module:src/readability/gate/findings.rs",
+                    "src/readability/gate/findings.rs",
+                    "findings",
+                    UnitKind::Module,
+                    Classification::MethodLength,
+                    FindingReason::NewModule,
+                ),
+            ),
+            (
+                "module-src-readability-report-rs.md",
+                finding(
+                    "module:src/readability/report.rs",
+                    "src/readability/report.rs",
+                    "report",
+                    UnitKind::Module,
+                    Classification::MethodLength,
+                    FindingReason::MethodLength,
+                ),
+            ),
+            (
+                "module-src-readability-syn-adapter-rs.md",
+                finding(
+                    "module:src/readability/syn_adapter.rs",
+                    "src/readability/syn_adapter.rs",
+                    "syn_adapter",
+                    UnitKind::Module,
+                    Classification::MultiTypeModule,
+                    FindingReason::ExistingGrown,
+                ),
+            ),
+            (
+                "module-src-skills-render-rs.md",
+                finding(
+                    "module:src/skills/render.rs",
+                    "src/skills/render.rs",
+                    "render",
+                    UnitKind::Module,
+                    Classification::MethodLength,
+                    FindingReason::MethodLength,
+                ),
+            ),
+            (
+                "module-src-skills-targets-rs.md",
+                finding(
+                    "module:src/skills/targets.rs",
+                    "src/skills/targets.rs",
+                    "targets",
+                    UnitKind::Module,
+                    Classification::MultiTypeModule,
+                    FindingReason::ExistingGrown,
+                ),
+            ),
+        ];
+
+        for (file, finding) in cases {
+            let relative = format!("{archive}/{file}");
+            let text = std::fs::read_to_string(root.join(&relative)).expect("archived rationale");
+            let old = validate_text(root, &relative, &text, &finding);
+            let error = old.expect_err("the old rationale must fail the new gate");
+            println!("OLD       {file}: {error}");
+
+            let corrected = format!(
+                "{text}\nAuthor: agent\nReviewed-by: fresh-context-reviewer\nReview verdict: accept\n"
+            );
+            let reviewed = validate_text(root, &relative, &corrected, &finding);
+            assert!(
+                reviewed.is_ok(),
+                "a rationale with an independent accept must pass: {:?}",
+                reviewed.err()
+            );
+            println!("CORRECTED {file}: ACCEPT");
+        }
+    }
+}
