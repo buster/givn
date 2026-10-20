@@ -34,6 +34,9 @@ flowchart TD
     G --> ASSET[embedded assets]
     G --> TEST[repository acceptance tests]
     G --> COV[spec coverage inventory and migration comparison]
+    G --> READ[readability analysis and report]
+    READ --> PORT[SourceAnalyzer port and neutral model]
+    PORT --> SYN[syn adapter]
     CLI --> CHECK[mandatory check and archive gates]
     CLI --> RUNBLK[run-declaration validation and run executor]
     CFG --> GRAPH[manifest overlay and facet cascade]
@@ -48,7 +51,7 @@ flowchart TD
 | Building block | Responsibility |
 |---|---|
 | `main.rs` | Parse `clap` commands, dispatch, and map results to process exit. |
-| `cli::init` | Create `givn/{specs,changes,archive}`, write config and commands scaffolds, enable addons unless `--no-addons`, prompt agent targets, and sync outputs. |
+| `cli::init` | Create `givn/{specs,changes,archive}`, write config and commands scaffolds, enable default-on addons unless `--no-addons`, prompt agent targets, and sync outputs. |
 | `cli::new` | Validate change id, create a change directory, scaffold proposal unless skipped, and write `.givn-skip` when requested. |
 | `cli::instructions` | Resolve effective artifact instructions and non-artifact policy and step instructions with optional JSON metadata; render addon-conditional sections against the effective addon flags; append the project's extension under the marked section; provide context-aware generic guidance without an artifact id. |
 | `cli::lint` | Parse features, report WIP/PENDING, run the default tree-wide overlap scan with exit precedence 1, 3, 2, 0, report advisory change-seed status findings and dangling persona references, and classify every finding as `advisory`, `finding`, or `blocking` in the rendered and JSON output. |
@@ -60,13 +63,16 @@ flowchart TD
 | `cli::eject` | Materialize an embedded facet, skill, or manifest into project-owned `givn/` content. |
 | `cli::commit` | Create one attributed revision through the selected backend: stage the named paths (or, under the `local-only` policy, every pending project path except `AGENTS.md` and the strict rules), stamp the managed attribution trailer when context is active, and commit; refuse a project without a backend by name. |
 | `cli::readme` | Scaffold the README from the marked template with the development and run managed blocks, run the deterministic completeness check behind `givn readme check`, and refresh the development and run managed blocks from the effective command file at archive time. |
-| `cli::addons` | Toggle addon flags; Arc42 enable scaffolds fixed `docs/arc42/` files without overwriting existing files. |
+| `cli::addons` | Toggle addon flags from a registry that records each addon's default state; Arc42 enable scaffolds fixed `docs/arc42/` files without overwriting existing files, and a default-off addon such as `readability` is listed as disabled until explicitly enabled. |
 | `cli::skills` | Synchronize the selected skill targets, their commands, and their attribution integrations; refresh the project-start block with its resident rules rendered from the canonical tasks instruction. |
 | `cli::attribution` | Stamp commit messages from optional runtime attribution, format Claude Bash hook responses, and install the checked-in Git hook with a local dispatcher. |
 | `cli::upgrade` | Refresh managed config comments, preserve uncommented overrides, backfill the `run:` scaffold into `givn/commands.yaml` when the key is absent, and dispatch the exact legacy migration preparation route. |
 | `cli::migration` | Load the release migration catalog, resolve ordered bundle paths, preflight the selected backend state through the SCM seam (a dirty checkout or a missing backend is refused before any write), calculate the managed-path allowlist (including `givn/commands.yaml` for the run backfill), create managed/migration revisions on the selected backend, and write the aggregate maintenance plan. |
 | `cli::run_block` | Validate the `run:` declaration with the deterministic rules (R1–R10) and produce labeled findings for `check review` and the archive gate. |
 | `cli::run` | Resolve the start plan (product type, port source, `--port`/`--print`), execute the declared command, probe readiness over `std::net`, print the ready line, forward child exit codes, and forward SIGINT/SIGTERM on unix. |
+| `cli::readability` | Gate `givn readability report` on the readability addon at runtime, build the analysis request for the project-root `src/` tree, select human or JSON output, and write to stdout or the explicit `--out` path. |
+| `readability` | Orchestrate production-source discovery, neutral analysis, shared metric computation, classification and action selection, and human/JSON rendering. The model, metrics, classification, and report depend on the neutral contract, never on a parser. |
+| `readability::analyzer` and `syn_adapter` | Define the `SourceAnalyzer` port and its neutral `Analysis` contract; implement the first adapter with `syn`, keeping parser types inside `syn_adapter.rs` and returning per-file failures as diagnostics. |
 | `cli::missing_run_command` | Sentinel behind `givn missing-run-command`: prints start-configuration guidance to stderr and exits 1. |
 | `config::manifest` | Define artifact, apply, verify, coverage, addon, hook, and run-declaration data structures. |
 | `config::overlay` | Apply `givn/config.yaml` and then `givn/commands.yaml`, expand Arc42, and validate graph references/cycles. |
@@ -108,6 +114,7 @@ remain separate evidence; the former does not prove agent compliance.
 | `clap`, `clap_complete` | CLI parsing and shell completion |
 | `serde`, `serde_yaml_ng`, `serde_json` | Manifest, config, index, and machine-readable output |
 | `gherkin` | Feature parsing and AST access |
+| `syn` | Rust source parsing in the first `SourceAnalyzer` adapter; `full`, `parsing`, and `visit` features only, with parser types confined to `syn_adapter.rs` |
 | `anyhow`, `thiserror` | Application context and typed errors |
 | `rust-embed` | Embedded defaults and addon assets |
 | `quick-xml` | Cobertura coverage parsing |

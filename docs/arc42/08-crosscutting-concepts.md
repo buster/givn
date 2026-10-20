@@ -154,8 +154,10 @@ docs/arc42/                      # fixed durable Arc42 output path
 ```
 
 `givn init` creates the core `givn/` directories and command/config files. The
-current init path also enables all known addons unless `--no-addons` is passed;
-Arc42 scaffolding therefore normally appears during initialization. There is
+current init path also enables every default-on registered addon unless
+`--no-addons` is passed; Arc42 scaffolding therefore normally appears during
+initialization, while a default-off addon such as `readability` stays absent
+until it is explicitly enabled. There is
 no effective `arc42.output_dir` or chapter-list setting, and no lifecycle
 cascade for selecting individual durable chapter files.
 
@@ -449,7 +451,10 @@ exception into a general bypass for product changes.
 
 An addon is embedded behavior toggled through `addons.<name>` in the project
 config. The embedded default flags are false, but the current `givn init` path
-enables every registered addon unless `--no-addons` is supplied.
+enables every default-on registered addon unless `--no-addons` is supplied. A
+registry entry records whether it is default-on; `readability` is the first
+default-off entry, so initialization lists it as available instead of enabling
+it, and `givn addons enable readability` is the only opt-in step.
 
 For Arc42 specifically, `givn addons enable arc42`:
 
@@ -1053,5 +1058,44 @@ Chromium through `./setup-e2e-browser.sh`, and a JSON-line driver holds one
 browser context per scenario so page state, zoom level, and open panels persist
 across steps. The artifacts under test are the real generated report and the
 real `givn` binary; the driver never substitutes an API call for a click.
+
+## 8.26 The Readability Report and the Source Analysis Boundary
+
+The readability experiment is a default-off addon. It adds no review or archive
+gate, and its command is a read view that appends no development-record entry.
+Its contract is:
+
+- **Opt-in only.** `addons.readability` is absent or false in an ordinary
+  project. The command is still registered so the disabled path can name the
+  experiment and the enabling command; that path exits 1.
+- **Advisory output.** A produced report exits 0 regardless of how many findings
+  it contains. The only failure exits are a disabled experiment, an unwritable
+  `--out` target, and invalid CLI usage. Findings never enter a gate.
+- **No stored state.** The report writes only stdout/stderr or the explicit
+  `--out` path. There is no baseline, watchlist, cache, classification history,
+  or feedback ledger; the later review gate evaluates the units a change touches
+  at its base and head instead.
+- **Production scope.** The first release scans the project-root `src/` tree and
+  excludes `tests/`, `benches/`, `examples/`, `target/`, and `#[cfg(test)]`
+  items. `src/bin/**` is included. A multi-crate workspace whose members live
+  outside that tree is not scanned in this release.
+- **Deterministic and offline.** Traversal is sorted, paths are project-relative
+  with `/`, output carries no timestamps or analyzer identity, line counts and
+  ratio metrics are integers, and no model or network call exists.
+- **Neutral analysis boundary.** `SourceAnalyzer` is the port; `SynAnalyzer` is
+  the first adapter; parser types stay inside `syn_adapter.rs`. Production
+  discovery, metrics, classification, and both renderers run above the port.
+  A hand-written fake adapter proves the port's sufficiency, a source scan keeps
+  `syn` out of every non-adapter module, and a later tree-sitter adapter is
+  accepted only by passing the same contract suite unchanged. ADR-074 records
+  this cross-change boundary.
+- **Diagnostics are data.** A file that cannot be read or parsed, an
+  item-position macro, or another unsupported construct is reported by path and
+  kind; the report continues. A wholly unsupported unit is never classified and
+  no data is invented for it.
+- **Format versions are explicit.** `schema_version` changes only for a breaking
+  document-shape change; `rules_version` changes when thresholds or
+  classification rules change. The human and JSON forms render from the same
+  classified model, so a rule change does not silently alter the schema.
 
 *[Architecture documentation index](README.md)*
