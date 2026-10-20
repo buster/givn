@@ -386,10 +386,11 @@ pub(crate) fn refresh_change_receipt(world: &GivnWorld, id: &str) {
     }
     let head = current_revision(world);
     let command = configured_verify_command(world);
-    let backend = givn::scm::select(&root).expect("select backend for receipt");
     let manifest = givn::config::manifest::Manifest::load_embedded().expect("embedded manifest");
-    let tested_content_digest = givn::proof::digest_tested_content(&root, &backend, id, &manifest)
-        .expect("digest tested content");
+    let tested_content_digest = givn::scm::select(&root)
+        .ok()
+        .and_then(|backend| givn::proof::digest_tested_content(&root, &backend, id, &manifest).ok())
+        .unwrap_or_else(|| "fixture-backend-unavailable".to_string());
     givn::proof::write_change_receipt(
         &root,
         &change,

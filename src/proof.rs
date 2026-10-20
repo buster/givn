@@ -693,6 +693,7 @@ impl ChangeReceipt {
     }
 
     /// Strict revision equality used by older callers and tests.
+    #[allow(dead_code)]
     pub fn is_current(&self, change_dir: &Path, head: &str, command: &str) -> Result<bool> {
         let features = change_dir.join("specs");
         Ok(self.status == "passed"
@@ -719,10 +720,11 @@ pub fn is_documentation_or_evidence_path(
     let normalized = normalized.trim_start_matches("./");
     let change_root = format!("givn/changes/{change}");
 
-    if let Some(name) = normalized.strip_prefix(&format!("{change_root}/")) {
-        if !name.contains('/') && name.ends_with(".md") {
-            return true;
-        }
+    if let Some(name) = normalized.strip_prefix(&format!("{change_root}/"))
+        && !name.contains('/')
+        && name.ends_with(".md")
+    {
+        return true;
     }
     if normalized == format!("{change_root}/verification.json")
         || normalized.starts_with(&format!("{change_root}/evidence/"))
@@ -814,6 +816,7 @@ pub fn digest_tested_content(
 }
 
 /// Write a change-scoped receipt atomically.
+#[allow(clippy::too_many_arguments)]
 pub fn write_change_receipt(
     project_root: &Path,
     change_dir: &Path,
@@ -1205,6 +1208,191 @@ mod tests {
         assert!(!receipt.is_current(&change, "def", "runner").unwrap());
         std::fs::write(specs.join("demo.feature"), "Feature: Changed\n").unwrap();
         assert!(!receipt.is_current(&change, "abc", "runner").unwrap());
+    }
+
+    fn git_fixture() -> (tempfile::TempDir, crate::scm::Backend) {
+        use std::process::Command;
+        let dir = tempfile::TempDir::new().unwrap();
+        let root = dir.path();
+        let run = |args: &[&str]| {
+            let output = Command::new("git")
+                .args(args)
+                .current_dir(root)
+                .env("GIT_AUTHOR_NAME", "fixture")
+                .env("GIT_AUTHOR_EMAIL", "fixture@example.com")
+                .env("GIT_COMMITTER_NAME", "fixture")
+                .env("GIT_COMMITTER_EMAIL", "fixture@example.com")
+                .output()
+                .expect("run git");
+            assert!(
+                output.status.success(),
+                "git {:?} failed: {}",
+                args,
+                String::from_utf8_lossy(&output.stderr)
+            );
+        };
+        run(&["init", "-q"]);
+        std::fs::create_dir_all(root.join("src")).unwrap();
+        std::fs::write(root.join("src/lib.rs"), "pub fn fixture() -> u32 { 1 }\n").unwrap();
+        std::fs::write(root.join("README.md"), "fixture readme\n").unwrap();
+        run(&["add", "."]);
+        run(&["commit", "-q", "-m", "fixture"]);
+        let backend = crate::scm::select(root).expect("select the git fixture");
+        (dir, backend)
+    }
+
+    fn commit_git(root: &Path, message: &str) {
+        use std::process::Command;
+        for args in [vec!["add", "-A"], vec!["commit", "-q", "-m", message]] {
+            let output = Command::new("git")
+                .args(&args)
+                .current_dir(root)
+                .env("GIT_AUTHOR_NAME", "fixture")
+                .env("GIT_AUTHOR_EMAIL", "fixture@example.com")
+                .env("GIT_COMMITTER_NAME", "fixture")
+                .env("GIT_COMMITTER_EMAIL", "fixture@example.com")
+                .output()
+                .expect("run git");
+            assert!(
+                output.status.success(),
+                "git {:?} failed: {}",
+                args,
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+    }
+
+    fn manifest() -> crate::config::manifest::Manifest {
+        crate::config::manifest::Manifest::load_embedded().unwrap()
+    }
+
+    #[test]
+    fn tested_content_digest_ignores_documentation_and_tracks_source() {
+        let (dir, backend) = git_fixture();
+        let root = dir.path();
+        let manifest = manifest();
+        let before = digest_tested_content(root, &backend, "demo", &manifest).unwrap();
+        std::fs::write(root.join("README.md"), "changed readme\n").unwrap();
+        let after_docs = digest_tested_content(root, &backend, "demo", &manifest).unwrap();
+        assert_eq!(before, after_docs, "README must not change tested content");
+        std::fs::write(root.join("src/lib.rs"), "pub fn fixture() -> u32 { 2 }\n").unwrap();
+        let after_source = digest_tested_content(root, &backend, "demo", &manifest).unwrap();
+        assert_ne!(before, after_source, "source must change tested content");
+    }
+
+    #[test]
+    fn freshness_reuses_tested_content_across_a_documentation_only_commit() {
+        let (dir, backend) = git_fixture();
+        let root = dir.path();
+        let change = root.join("givn/changes/demo");
+        std::fs::create_dir_all(change.join("specs")).unwrap();
+        let manifest = manifest();
+        let head = backend.revision().unwrap();
+        let digest = digest_tested_content(root, &backend, "demo", &manifest).unwrap();
+        write_change_receipt(
+            root,
+            &change,
+            "demo",
+            &head,
+            &manifest.verify.command,
+            &digest,
+            RunnerResult {
+                scope: None,
+                total: 1,
+                passed: 1,
+                failed: 0,
+                skipped: 0,
+            },
+            1,
+        )
+        .unwrap();
+        std::fs::write(root.join("README.md"), "documentation-only change\n").unwrap();
+        commit_git(root, "docs");
+        let receipt = ChangeReceipt::read(&change).unwrap();
+        let status = receipt
+            .freshness(&manifest, &change, &backend, root)
+            .unwrap();
+        assert!(
+            matches!(status, ProofStatus::DocumentationOnly { .. }),
+            "expected documentation-only reuse, got {status:?}"
+        );
+
+        std::fs::write(root.join("src/lib.rs"), "pub fn fixture() -> u32 { 3 }\n").unwrap();
+        commit_git(root, "source");
+        let receipt = ChangeReceipt::read(&change).unwrap();
+        let status = receipt
+            .freshness(&manifest, &change, &backend, root)
+            .unwrap();
+        assert!(
+            matches!(
+                status,
+                ProofStatus::Stale(ref reasons)
+                    if reasons.iter().any(|reason| matches!(reason, StaleReason::TestedContentChanged { .. }))
+            ),
+            "expected a tested-content stale reason, got {status:?}"
+        );
+    }
+
+    #[test]
+    fn schema_1_and_unknown_schemas_keep_the_compatibility_boundary() {
+        let (dir, backend) = git_fixture();
+        let root = dir.path();
+        let change = root.join("givn/changes/demo");
+        std::fs::create_dir_all(change.join("specs")).unwrap();
+        let manifest = manifest();
+        let write = |schema: u32, scope: Option<&str>| {
+            let head = backend.revision().unwrap();
+            let mut value = serde_json::json!({
+                "schema": schema,
+                "change": "demo",
+                "status": "passed",
+                "head": head,
+                "features_path": "givn/changes/demo/specs",
+                "features_digest": digest_features(&change.join("specs")).unwrap(),
+                "command_digest": digest_text(&manifest.verify.command),
+                "command": manifest.verify.command,
+                "runner_exit": 0,
+                "result": {"scope": null, "total": 1, "passed": 1, "failed": 0, "skipped": 0},
+                "finished_at_unix": 1,
+            });
+            if schema == 2 {
+                value["tested_content_digest"] = serde_json::json!(
+                    digest_tested_content(root, &backend, "demo", &manifest).unwrap()
+                );
+                value["content_scope"] = serde_json::json!(scope.unwrap_or(CONTENT_SCOPE));
+            }
+            std::fs::create_dir_all(change.join("verification")).unwrap();
+            std::fs::write(
+                change.join(CHANGE_RECEIPT_FILE),
+                serde_json::to_string_pretty(&value).unwrap(),
+            )
+            .unwrap();
+            ChangeReceipt::read(&change).unwrap()
+        };
+
+        let schema_1 = write(1, None);
+        let status = schema_1
+            .freshness(&manifest, &change, &backend, root)
+            .unwrap();
+        assert_eq!(status, ProofStatus::Current);
+
+        let unknown = write(99, None);
+        assert_eq!(
+            unknown
+                .freshness(&manifest, &change, &backend, root)
+                .unwrap(),
+            ProofStatus::Stale(vec![StaleReason::UnsupportedReceiptSchema { schema: 99 }])
+        );
+
+        let future_scope = write(2, Some("change-proof/v2"));
+        assert_eq!(
+            future_scope
+                .freshness(&manifest, &change, &backend, root)
+                .unwrap(),
+            ProofStatus::Stale(vec![StaleReason::UnsupportedContentScope {
+                scope: "change-proof/v2".to_string()
+            }])
+        );
     }
 
     #[test]
