@@ -2,9 +2,10 @@
 
 Feature: Review diagnostics and proof reuse
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer runs review and receives every use-case schema problem in one pass
-    Given a clean committed change whose use-case contract has a case-mismatched title, an unknown "## Guarantees" heading, a capability line that is not a bullet, an interaction that names an undeclared capability, and an example line that is not a bullet
+    Given a clean committed change whose delta capability is routed "NEW in review-diagnostics-demo"
+    And the use-case contract has a case-mismatched title, an unknown "## Guarantees" heading, a capability line that is not a bullet, an interaction that names an undeclared capability, and an example line that is not a bullet
     When the developer runs `givn check review --change review-diagnostics-demo`
     Then the command exits non-zero
     And stderr reports the title, the unknown heading, the capability line, the undeclared interaction, and the example line together in one review run
@@ -19,13 +20,29 @@ Feature: Review diagnostics and proof reuse
     And stderr suggests "# Use case: review-diagnostics-demo"
 
   @givn.added @wip
-  Scenario: Capability routing reports every undeclared capability in one pass
-    Given a clean committed change with three delta capabilities and a routing table that declares only one of them
-    And the use-case contract does not declare two of those capabilities
-    And one interaction names a fourth undeclared capability
+  Scenario: A near-miss section heading is refused with the exact accepted spellings
+    Given a clean committed change whose use-case contract has an unknown "## Guarantees" heading
     When the developer runs `givn check review --change review-diagnostics-demo`
     Then the command exits non-zero
-    And stderr names every undeclared capability and the undeclared interaction together
+    And stderr suggests "## Minimal guarantee"
+    And stderr suggests "## Success guarantee"
+
+  @givn.added @wip
+  Scenario: Missing required sections and a malformed interaction table are reported together
+    Given a clean committed change whose use-case contract omits "## Minimal guarantee" and "## Success guarantee"
+    And the interaction table separator row has the wrong column count
+    When the developer runs `givn check review --change review-diagnostics-demo`
+    Then the command exits non-zero
+    And stderr names both missing sections and the malformed interaction table together
+
+  @givn.added @wip
+  Scenario: One use-case parse failure is reported once across several delta capabilities
+    Given a clean committed change with three delta capabilities routed "NEW in review-diagnostics-demo"
+    And the use-case contract has a case-mismatched title and an unknown "## Guarantees" heading
+    When the developer runs `givn check review --change review-diagnostics-demo`
+    Then the command exits non-zero
+    And stderr names the case-mismatched title once
+    And stderr names the unknown heading once
 
   @givn.added @wip
   Scenario: Review validates an active delta use-case narrative even for an extension
@@ -37,9 +54,9 @@ Feature: Review diagnostics and proof reuse
 
   @givn.added @wip
   Scenario: Review accepts a green proof after documentation-only review edits
-    Given a clean committed change with a green change proof recorded at one revision
+    Given a clean committed change with a green change verification receipt recorded at one revision
     And the developer commits only proposal, design, tasks, review, arc42, and use-case narrative edits after that revision
     When the developer runs `givn check review --change review-proof-demo`
     Then the command exits 0
     And the change suite did not run again
-    And stdout says the change proof was reused
+    And stdout says the change verification receipt was reused

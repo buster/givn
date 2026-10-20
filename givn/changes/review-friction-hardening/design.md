@@ -83,13 +83,15 @@ pub struct UsecaseDiagnostic {
 pub struct UsecaseDiagnostics(pub Vec<UsecaseDiagnostic>);
 ```
 
-`Display` renders `line <n>: <message>` and appends
+`Display` renders `line <n>: <message>` for a located diagnostic and
+`<message>` for a document-level diagnostic, appending
 ` — did you mean '<suggestion>'?` when present. A missing-heading diagnostic
-uses the document title line, or line 0 when no title was recognised.
-Diagnostics are sorted by line, then message, then suggestion. Duplicates with the same
-`(line, message, suggestion)` are emitted once. The diagnostic sink also
-deduplicates identical document-level messages that would otherwise repeat
-once per delta capability.
+uses the document title line when one was recognised; a diagnostic with no
+addressable line is document-level and carries no line prefix (never `line 0`).
+Diagnostics are sorted by line (document-level first), then message, then
+suggestion. Duplicates with the same `(line, message, suggestion)` are emitted
+once. The diagnostic sink also deduplicates identical document-level messages
+that would otherwise repeat once per delta capability.
 
 ### Parser recovery
 
@@ -129,20 +131,41 @@ suggestion removes the "which spelling?" iteration; the batch removes the
 
 `check_routing_consistency` builds a document cache:
 
-1. Resolve every delta capability and every declared routing row.
-2. Collect the referenced `usecase.md`/`fragment.md` documents (declared
-   use case plus expected location) and every active delta narrative under
-   `change_dir/specs/**` into a `BTreeMap<PathBuf, ParseResult>`. A delta
-   narrative is validated even when its capability decision is `EXTEND`.
-3. Parse each document once. On failure, append each parser diagnostic once
-   under the document path and skip only the routing-level checks that need a
-   complete `UsecaseDoc` (for example "does not declare capability" or "has
-   no interaction"); the parser's own capability and interaction diagnostics
-   are already in the batch. Do not add a routing cascade on top of them.
-4. On success, run every independent routing check for every delta
-   capability: row presence, `EXTEND` existence/placement, `NEW in` placement,
-   permanent-corpus collision, declared capability, interaction presence.
-5. Deduplicate exact error strings and print the grouped report.
+```rust
+struct ParseResult {
+    doc: Option<UsecaseDoc>,
+    diagnostics: Vec<UsecaseDiagnostic>,
+}
+```
+
+`doc` is `Some` only when the parser recovered every section it needs for the
+routing checks. A case-mismatched title is recoverable: the id and sections are
+read, so capability and interaction checks still run. A malformed or missing
+`## Capabilities`/`## Interactions` section is not recoverable for the checks
+that need it; the parser diagnostics are the complete report for that
+document, and no routing-level "does not declare capability" or "has no
+interaction" cascade is added on top.
+
+1. Collect every active delta narrative under `change_dir/specs/**` and every
+   referenced permanent/declared `usecase.md`/`fragment.md` document into a
+   `BTreeMap<PathBuf, ParseResult>`. A delta narrative is validated even when
+   its capability decision is `EXTEND`, and even when no delta capability is
+   discovered (a narrative-only delta).
+2. If no delta capability exists, report the collected narrative diagnostics
+   (if any) and return; the routing-table advisory does not apply because there
+   are no routing decisions to make.
+3. Resolve every delta capability and every declared routing row. If the
+   routing table has no filled rows, report the collected narrative
+   diagnostics, keep the existing advisory for the undeclared delta
+   capabilities, and return.
+4. Parse each referenced document once. On a non-recoverable failure, append
+   each parser diagnostic once under the document path and skip only the
+   routing-level checks that need a complete `UsecaseDoc`.
+5. On a recovered or successful document, run every independent routing check
+   for every delta capability: row presence, `EXTEND` existence/placement,
+   `NEW in` placement, permanent-corpus collision, declared capability,
+   interaction presence.
+6. Deduplicate exact error strings and print the grouped report.
 
 Example shape:
 
@@ -207,7 +230,10 @@ the captured digest into the receipt after a green run:
    a test script is tested content too.
 5. Store the hex digest and `content_scope: "change-proof/v1"` in the receipt.
 
-Tracked plus untracked-non-ignored hashing keeps ignored build output,
+A Git gitlink (submodule) has no readable file body: hash the path, the
+gitlink marker, and the recorded object id instead. A symlink is hashed by its
+link target bytes, not by following it. An unreadable regular path is a named
+error. Tracked plus untracked-non-ignored hashing keeps ignored build output,
 coverage output, local history, and editor files out of the digest, while an
 untracked source or test file still changes the digest at review time. Both
 `check tasks` and archive require a clean tree outside evidence before the
@@ -218,8 +244,8 @@ shorter digest.
 
 ### Documentation-only boundary (exact)
 
-`is_documentation_or_evidence_path(project_root, change, path)` returns true
-only for:
+`is_documentation_or_evidence_path(project_root, change, manifest, path)` returns
+true only for:
 
 - Active change root, directly contained: `proposal.md`, `design.md`,
   `design-review.md`, `tasks.md`, `review.md`, `arc42.md`, `HANDOFF.md`, and
@@ -240,10 +266,14 @@ only for:
 - Durable architecture documentation: `docs/arc42/**`.
 - Managed project documentation: `README.md`.
 
-The predicate reuses the existing `is_evidence_path` decision for evidence
-paths and adds the documentation predicates; it does not create a second
-clean-state witness. Everything else is tested content. Explicitly not
-documentation-only:
+The predicate reuses the existing `is_evidence_path` decision for the
+change's evidence/verification/results paths, then adds the unconditional
+documentation rules above. `README.md` is documentation even when the readme
+addon is disabled, and configured coverage outputs are documentation only when
+they fall under `docs/arc42/**`; the predicate does not create a second
+clean-state witness. The generated semantic caches are derived indexes, never
+test input, so excluding them cannot hide a tested change. Everything else is
+tested content. Explicitly not documentation-only:
 
 - `src/**`, `tests/**`, `assets/**`, `run-tests.sh`,
   `measure-coverage.sh`, `merge-coverages.sh`, scripts, and any other
@@ -275,8 +305,9 @@ pub enum StaleReason {
     FeaturesChanged { receipt: String, current: String },
     CommandChanged { receipt: String, current: String },
     TestedContentChanged { receipt: String, current: String },
-    RevisionNotReachable { tested_revision: String },
+    TestedRevisionUnavailable { tested_revision: String },
     LegacyReceiptWithoutContentBinding { tested_revision: String },
+    UnsupportedContentScope { scope: String },
     UnsupportedReceiptSchema { schema: u32 },
 }
 ```
@@ -292,16 +323,22 @@ order:
    `CommandChanged`.
 3. `features_digest` matches the delta features; otherwise
    `FeaturesChanged`.
-4. Schema 1, or schema 2 without `content_scope == "change-proof/v1"` or
+4. Schema 2 with a `content_scope` other than `change-proof/v1` ->
+   `UnsupportedContentScope`; never reuse.
+5. Schema 1, or schema 2 without `content_scope == "change-proof/v1"` or
    without `tested_content_digest`: current only when `head == current`; a
    different head is `LegacyReceiptWithoutContentBinding`. This is D6.
-5. Schema 2 with scope v1: recompute the tested-content digest.
+6. Schema 2 with scope v1: recompute the tested-content digest.
    - Different -> `TestedContentChanged`.
    - Same and `head == current` -> `Current`.
-   - Same and `head != current`: require `backend.is_ancestor(&receipt.head)`.
-     Reachable -> `DocumentationOnly`; otherwise `RevisionNotReachable`.
+   - Same and `head != current`: Git requires
+     `backend.is_ancestor(&receipt.head)`; Fossil's seam can prove only that
+     the tested revision exists in the repository. Available ->
+     `DocumentationOnly`; otherwise `TestedRevisionUnavailable`.
 All independently checkable stale reasons are collected so the refusal can
-name every changed boundary, not just the first.
+name every changed boundary, not just the first. A feature or command change
+can also change the tested-content digest; both reasons may be named because
+each names a distinct boundary.
 
 ```mermaid
 flowchart TD
@@ -317,12 +354,16 @@ flowchart TD
   H -- yes --> OK[Current]
   L -- yes --> D{Tested-content digest matches}
   D -- no --> S4[Stale: tested content changed]
-  D -- yes --> HB{Receipt revision reachable}
-  HB -- no --> S5[Stale: tested revision not reachable]
+  D -- yes --> HB{Tested revision available}
+  HB -- no --> S5[Stale: tested revision unavailable]
   HB -- yes --> EQ{Head equals current}
   EQ -- yes --> OK
   EQ -- no --> REUSE[Reuse across documentation-only revision]
 ```
+
+`Current` is head equality. `DocumentationOnly` is the same tested content
+under a different revision; the proof is reused, but the receipt does not claim
+that the intervening commits touched only documentation.
 
 ### Command behavior
 
@@ -344,9 +385,14 @@ publishes finalization. Reuse removes only the pre-mutation refusal; it never
 adds a test invocation and never skips the merged suite.
 
 A documentation-only revision must be committed. An uncommitted documentation
-edit still blocks archive through the existing clean-state witness. A history
-rewrite that makes the tested revision unreachable is refused even when the
-tree content matches.
+edit still blocks archive through the existing clean-state witness. The check
+establishes that the tested content is byte-for-byte unchanged under a
+different revision; it does not inspect the intermediate diff. A revision that
+changes tested content and then reverts it therefore reuses the proof, which is
+sound because the tested bytes are identical. On Git a history rewrite that
+makes the tested revision unreachable is refused even when the tree content
+matches; Fossil's seam proves revision existence, not ancestry, and that
+limitation is recorded in R-106.
 
 ## Test strategy
 
@@ -382,10 +428,27 @@ tree content matches.
 Shared fixtures stay in `tests/steps/archive_proof_support.rs` and
 `tests/steps/mod.rs`. `refresh_change_receipt` must compute the fixture's
 tested-content digest (with the selected backend) and pass it to
-`write_change_receipt` so fixtures produce schema 2 receipts. New helper steps must commit documentation-only revisions with the
-real SCM helper, run the real `givn` binary, and assert on captured stdout,
-stderr, exit code, and the runner invocation log. No step may call the parser
-or digest directly for an `@e2e` assertion.
+`write_change_receipt` so fixtures produce schema 2 receipts. A docs-only
+fixture must set `skip_receipt_autowrite` before the documentation commit, or
+the shared autowrite would refresh the receipt at the new head and hide the
+reuse path. The review-diagnostics fixture must pin its routing decision so a
+missing delta-narrative check cannot make the scenario RED for the wrong
+reason. The tested-content outline rows must commit the changed content before
+the archive run; an uncommitted change exercises the clean-state refusal, not
+the stale-receipt path. New helper steps must commit documentation-only
+revisions with the real SCM helper, run the real `givn` binary, and assert on
+captured stdout, stderr, exit code, and the runner invocation log. No step may
+call the parser or digest directly for an `@e2e` assertion.
+
+Unit tests cover what the CLI scenarios cannot exhaust: every parser recovery
+branch (including a missing required section and a malformed interaction
+table), line numbering, suggestion text, deduplication, `content_paths` on
+both Git and Fossil fixtures, digest stability, a receipt round trip
+(`Current` with no tree change, `DocumentationOnly` after a receipt-only
+commit, `TestedContentChanged` after one tested-file edit, and excluded
+`verification/**`), a dirty/untracked tested file at review, gitlinks and
+symlinks, schema 1 strict equality, an unknown content scope, and an unknown
+schema.
 
 ### E2E infrastructure
 
@@ -409,9 +472,10 @@ or digest directly for an `@e2e` assertion.
 The `@e2e` scenarios drive the real `givn` binary through the real CLI. The
 unit tests are retained only for cases the CLI scenarios cannot exhaust:
 every diagnostic recovery branch, line numbering, suggestion text,
-deduplication, digest stability, schema-1 fallback, and unknown-scope refusal.
-The E2E scenarios prove the developer-visible report and the archive proof
-reuse; they are not duplicated by in-process assertions.
+deduplication, both backend content-path listings, digest stability,
+schema-1 fallback, and unknown-scope refusal. The E2E scenarios prove the
+developer-visible report and the archive proof reuse; they are not duplicated
+by in-process assertions.
 
 ### Coverage
 
@@ -427,7 +491,11 @@ remain covered by their existing permanent scenarios. The documentation-only
 archive entry is distinct from the ordinary archive entry: its observable
 contract is proof reuse and the absence of a change-suite invocation, which
 the ordinary archive E2E does not assert. It is not a flag variant of the
-ordinary archive action.
+ordinary archive action: the fixture state (a green receipt followed only by
+documentation/evidence revisions) is what makes the no-change-suite-run
+contract observable, and the owner's handoff requires this transcript. The
+existing backend-parameterized archive outline continues to own the ordinary
+completed-change action.
 
 | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
@@ -500,11 +568,20 @@ ordinary archive action.
 | `developer--primary-user` | Sees the complete review diagnosis in one pass and can archive after documentation-only review edits without rerunning the change suite. This is the primary friction reduction. |
 | `agent--technical-role` | Receives a machine-readable complete diagnostic report and a receipt that distinguishes current, documentation-only, and stale states. The archive route and exit codes remain stable. |
 | `givn-maintainer--owner` | Owns the strict schema, the closed documentation boundary, the receipt scope version, and the unchanged archive proof. Must keep the permanent specs, arc42 runtime view, and glossary truthful. |
-| `external-contributor--open-source-consumer` | No impact; no new runtime dependency, no generated artifact required to build or test. |
 
 No Persona is invented, promoted, or revalidated. The terminal Persona gate
 is unchanged: a `PERSONAS: <persona>` line and a confirmed Persona file are
 still required; `PERSONAS: none` is not added.
+
+## Documentation impact
+
+`README.md` describes the change lifecycle and the blocking gates, so it is
+updated with the two observable changes: review reports the complete use-case
+schema and routing diagnosis in one pass, and review/archive reuse a green
+change verification receipt when the tested content is unchanged. The review
+records `README-IMPACT: updated` with that evidence. The temporary review
+evidence lives under the change's `evidence/visual/` paths declared above and
+is not permanent documentation.
 
 ## Local runnability and digital twins
 
@@ -534,7 +611,7 @@ measurement path, and the archive still measures coverage once.
 
 - Decides D1: Keep the schema strict; batch diagnostics and suggest the exact
   accepted spelling. No title or heading variant is accepted. Realized in
-  `src/gherkin/usecase_md.rs` and the two strictness scenarios.
+  `src/gherkin/usecase_md.rs` and the strictness scenarios.
 - Decides D2: Use the closed documentation/evidence allowlist above. All
   other paths are tested content. Realized in
   `is_documentation_or_evidence_path` and the digest filter.
@@ -562,7 +639,14 @@ measurement path, and the archive still measures coverage once.
   path on the allowlist, a docs-only commit could change test input without a
   rerun. The closed list, the scope version, and the use-case rules make that
   visible; a future test input must move out of the allowlist or bump the
-  scope.
+  scope. Generated semantic caches are excluded because they are derived
+  indexes, never test input.
+- Fossil's seam proves that the tested revision exists, not that it is an
+  ancestor of `HEAD`; a rewritten revision that still exists could be reused.
+  The tested-content digest is the actual proof, the Git backend uses real
+  ancestry, and R-106 records the limitation. A consumer repository with a
+  gitlink, symlink, or unreadable path is handled by the named digest rules
+  above rather than a silently shorter digest.
 - Existing schema 1 receipts require one rerun after the upgrade. This is
   deliberate and is the D6 cost.
 - Rewriting the parser is higher risk than adding a second error path. The

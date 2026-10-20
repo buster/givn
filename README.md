@@ -31,8 +31,11 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   implement → review → archive. Archive is forward-only and SCM-backed (Git or Fossil): it
   commits the merged archive candidate, runs each verification scope once
   against that commit, and records a verification receipt; a failed candidate
-  stays in place and is repaired forward. Tagged delta scenarios merge into
-  the permanent specs and the tags are stripped. Optionally preceded by
+  stays in place and is repaired forward. Review reports the complete use-case
+  schema and capability-routing diagnosis in one pass, and review/archive reuse
+  a green change verification receipt when a later revision leaves the tested
+  content unchanged; the merged archive suite still runs once. Tagged delta
+  scenarios merge into the permanent specs and the tags are stripped. Optionally preceded by
   `/givn-ideation` — a domain-driven event storming flow that turns a vague
   idea into change-ready use cases.
 - **A development record and report.** Givn records the steps it runs and the

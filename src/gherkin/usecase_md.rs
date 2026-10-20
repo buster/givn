@@ -131,149 +131,387 @@ pub struct FragmentDoc {
     pub diagram: String,
 }
 
-/// Parse a strict use-case narrative.
-pub fn parse_usecase_md(content: &str) -> Result<UsecaseDoc> {
-    let (id, sections) = parse_document(content, "Use case", USECASE_HEADINGS)?;
-    let level_text = required_text(&sections, HEADING_LEVEL)?;
-    let level = GoalLevel::parse(&level_text)?;
-    let capabilities = list_section(&sections, HEADING_CAPABILITIES, "capability")?;
-    let interactions = interaction_section(&sections, &capabilities)?;
-
-    if level == GoalLevel::Leaf && capabilities.is_empty() {
-        bail!("leaf use case '{id}' must declare at least one capability");
-    }
-
-    Ok(UsecaseDoc {
-        id,
-        level,
-        actors: list_section(&sections, HEADING_ACTORS, "actor")?,
-        goal: required_text(&sections, HEADING_GOAL)?,
-        trigger: required_text(&sections, HEADING_TRIGGER)?,
-        preconditions: list_section(&sections, HEADING_PRECONDITIONS, "precondition")?,
-        main_flow: required_text(&sections, HEADING_MAIN_FLOW)?,
-        extensions: list_section(&sections, HEADING_EXTENSIONS, "extension")?,
-        rules: list_section(&sections, HEADING_RULES, "rule")?,
-        examples: list_section(&sections, HEADING_EXAMPLES, "example")?,
-        minimal_guarantee: required_text(&sections, HEADING_MINIMAL_GUARANTEE)?,
-        success_guarantee: required_text(&sections, HEADING_SUCCESS_GUARANTEE)?,
-        personas: list_section(&sections, HEADING_PERSONAS, "persona")?,
-        capabilities,
-        interactions,
-        includes: relationship_section(&sections, HEADING_INCLUDES)?,
-        extends: relationship_section(&sections, HEADING_EXTENDS)?,
-        out_of_scope: required_text(&sections, HEADING_OUT_OF_SCOPE)?,
-        diagram: required_text(&sections, HEADING_DIAGRAM)?,
-    })
+/// One parser diagnostic. `line` is `None` for a document-level problem.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UsecaseDiagnostic {
+    pub line: Option<usize>,
+    pub message: String,
+    pub suggestion: Option<String>,
 }
 
-/// Parse a reusable fragment narrative. Fragments deliberately have no actor,
-/// goal, or Persona sections because they are not independent user goals.
-pub fn parse_fragment_md(content: &str) -> Result<FragmentDoc> {
-    let (id, sections) = parse_document(content, "Fragment", FRAGMENT_HEADINGS)?;
-    let capabilities = list_section(&sections, HEADING_CAPABILITIES, "capability")?;
-    if capabilities.is_empty() {
-        bail!("fragment '{id}' must declare at least one capability");
+impl UsecaseDiagnostic {
+    fn at(line: usize, message: impl Into<String>) -> Self {
+        Self {
+            line: Some(line),
+            message: message.into(),
+            suggestion: None,
+        }
     }
-    Ok(FragmentDoc {
-        id,
-        capabilities: capabilities.clone(),
-        interactions: interaction_section(&sections, &capabilities)?,
-        diagram: required_text(&sections, HEADING_DIAGRAM)?,
-    })
+
+    fn document(message: impl Into<String>) -> Self {
+        Self {
+            line: None,
+            message: message.into(),
+            suggestion: None,
+        }
+    }
+
+    pub fn rendered(&self) -> String {
+        let mut text = match self.line {
+            Some(line) => format!("line {line}: {}", self.message),
+            None => self.message.clone(),
+        };
+        if let Some(suggestion) = &self.suggestion {
+            text.push_str(&format!(" — did you mean '{suggestion}'?"));
+        }
+        text
+    }
+}
+
+/// The complete diagnostic set for one document.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct UsecaseDiagnostics(pub Vec<UsecaseDiagnostic>);
+
+impl UsecaseDiagnostics {
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    fn push(&mut self, diagnostic: UsecaseDiagnostic) {
+        if !self.0.contains(&diagnostic) {
+            self.0.push(diagnostic);
+        }
+    }
+
+    fn sort(&mut self) {
+        self.0.sort_by(|a, b| {
+            a.line
+                .cmp(&b.line)
+                .then_with(|| a.message.cmp(&b.message))
+                .then_with(|| a.suggestion.cmp(&b.suggestion))
+        });
+    }
+}
+
+impl std::fmt::Display for UsecaseDiagnostics {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut diagnostics = self.clone();
+        diagnostics.sort();
+        let rendered = diagnostics
+            .0
+            .iter()
+            .map(UsecaseDiagnostic::rendered)
+            .collect::<Vec<_>>()
+            .join("\n");
+        formatter.write_str(&rendered)
+    }
+}
+
+type SectionLines = std::collections::BTreeMap<&'static str, Vec<(usize, String)>>;
+
+/// Parse a strict use-case narrative, returning every diagnostic.
+pub fn parse_usecase_md_diagnostics(content: &str) -> (Option<UsecaseDoc>, UsecaseDiagnostics) {
+    let (title, sections, seen, mut diagnostics) =
+        parse_document(content, "Use case", USECASE_HEADINGS);
+
+    let id = title.clone().unwrap_or_default();
+    let level_text = required_text(&sections, HEADING_LEVEL, &mut diagnostics);
+    let level = match GoalLevel::parse(&level_text) {
+        Ok(level) => level,
+        Err(error) => {
+            diagnostics.push(UsecaseDiagnostic::document(error.to_string()));
+            GoalLevel::Leaf
+        }
+    };
+    let capabilities = list_section(
+        &sections,
+        HEADING_CAPABILITIES,
+        "capability",
+        &mut diagnostics,
+    );
+    let interactions = interaction_section(&sections, &capabilities, &mut diagnostics);
+
+    if level == GoalLevel::Leaf && capabilities.is_empty() {
+        diagnostics.push(UsecaseDiagnostic::document(format!(
+            "leaf use case '{id}' must declare at least one capability"
+        )));
+    }
+
+    let doc = if title.is_some()
+        && seen.contains(HEADING_CAPABILITIES)
+        && seen.contains(HEADING_INTERACTIONS)
+    {
+        Some(UsecaseDoc {
+            id,
+            level,
+            actors: list_section(&sections, HEADING_ACTORS, "actor", &mut diagnostics),
+            goal: required_text(&sections, HEADING_GOAL, &mut diagnostics),
+            trigger: required_text(&sections, HEADING_TRIGGER, &mut diagnostics),
+            preconditions: list_section(
+                &sections,
+                HEADING_PRECONDITIONS,
+                "precondition",
+                &mut diagnostics,
+            ),
+            main_flow: required_text(&sections, HEADING_MAIN_FLOW, &mut diagnostics),
+            extensions: list_section(&sections, HEADING_EXTENSIONS, "extension", &mut diagnostics),
+            rules: list_section(&sections, HEADING_RULES, "rule", &mut diagnostics),
+            examples: list_section(&sections, HEADING_EXAMPLES, "example", &mut diagnostics),
+            minimal_guarantee: required_text(
+                &sections,
+                HEADING_MINIMAL_GUARANTEE,
+                &mut diagnostics,
+            ),
+            success_guarantee: required_text(
+                &sections,
+                HEADING_SUCCESS_GUARANTEE,
+                &mut diagnostics,
+            ),
+            personas: list_section(&sections, HEADING_PERSONAS, "persona", &mut diagnostics),
+            capabilities,
+            interactions,
+            includes: relationship_section(&sections, HEADING_INCLUDES, &mut diagnostics),
+            extends: relationship_section(&sections, HEADING_EXTENDS, &mut diagnostics),
+            out_of_scope: required_text(&sections, HEADING_OUT_OF_SCOPE, &mut diagnostics),
+            diagram: required_text(&sections, HEADING_DIAGRAM, &mut diagnostics),
+        })
+    } else {
+        None
+    };
+
+    diagnostics.sort();
+    (doc, diagnostics)
+}
+
+/// Parse a strict use-case narrative, formatting every diagnostic on failure.
+pub fn parse_usecase_md(content: &str) -> Result<UsecaseDoc> {
+    let (doc, diagnostics) = parse_usecase_md_diagnostics(content);
+    if !diagnostics.is_empty() {
+        bail!("{diagnostics}");
+    }
+    doc.ok_or_else(|| anyhow::anyhow!("use-case document could not be parsed"))
+}
+
+/// Parse a fragment narrative, returning every diagnostic.
+pub fn parse_fragment_md_diagnostics(content: &str) -> (Option<FragmentDoc>, UsecaseDiagnostics) {
+    let (title, sections, seen, mut diagnostics) =
+        parse_document(content, "Fragment", FRAGMENT_HEADINGS);
+
+    let id = title.clone().unwrap_or_default();
+    let capabilities = list_section(
+        &sections,
+        HEADING_CAPABILITIES,
+        "capability",
+        &mut diagnostics,
+    );
+    if capabilities.is_empty() {
+        diagnostics.push(UsecaseDiagnostic::document(format!(
+            "fragment '{id}' must declare at least one capability"
+        )));
+    }
+    let interactions = interaction_section(&sections, &capabilities, &mut diagnostics);
+
+    let doc = if title.is_some()
+        && seen.contains(HEADING_CAPABILITIES)
+        && seen.contains(HEADING_INTERACTIONS)
+    {
+        Some(FragmentDoc {
+            id,
+            capabilities: capabilities.clone(),
+            interactions,
+            diagram: required_text(&sections, HEADING_DIAGRAM, &mut diagnostics),
+        })
+    } else {
+        None
+    };
+
+    diagnostics.sort();
+    (doc, diagnostics)
+}
+
+/// Parse a fragment narrative, formatting every diagnostic on failure.
+pub fn parse_fragment_md(content: &str) -> Result<FragmentDoc> {
+    let (doc, diagnostics) = parse_fragment_md_diagnostics(content);
+    if !diagnostics.is_empty() {
+        bail!("{diagnostics}");
+    }
+    doc.ok_or_else(|| anyhow::anyhow!("fragment document could not be parsed"))
 }
 
 fn parse_document(
     content: &str,
     kind: &str,
     headings: &[&'static str],
-) -> Result<(
-    String,
-    std::collections::BTreeMap<&'static str, Vec<String>>,
-)> {
+) -> (
+    Option<String>,
+    SectionLines,
+    std::collections::BTreeSet<&'static str>,
+    UsecaseDiagnostics,
+) {
     let expected_title = format!("# {kind}: ");
     let mut title: Option<String> = None;
     let mut current: Option<&'static str> = None;
     let mut seen_headings = std::collections::BTreeSet::new();
-    let mut in_fence = false;
-    let mut sections: std::collections::BTreeMap<&'static str, Vec<String>> = headings
+    let mut sections: SectionLines = headings
         .iter()
         .map(|heading| (*heading, Vec::new()))
         .collect();
+    let mut diagnostics = UsecaseDiagnostics::default();
+    let mut in_fence = false;
+    let mut ignoring_section = false;
+    let mut outside_block_reported = false;
 
     for (line_number, line) in content.lines().enumerate() {
+        let number = line_number + 1;
         let trimmed = line.trim();
+
         if trimmed.starts_with("```") {
             in_fence = !in_fence;
-            if let Some(heading) = current {
-                sections
-                    .get_mut(heading)
-                    .expect("heading exists")
-                    .push(line.to_string());
+            if !ignoring_section
+                && let Some(heading) = current
+                && let Some(lines) = sections.get_mut(heading)
+            {
+                lines.push((number, line.to_string()));
             }
             continue;
         }
         if in_fence {
-            if let Some(heading) = current {
-                sections
-                    .get_mut(heading)
-                    .expect("heading exists")
-                    .push(line.to_string());
+            if !ignoring_section
+                && let Some(heading) = current
+                && let Some(lines) = sections.get_mut(heading)
+            {
+                lines.push((number, line.to_string()));
             }
             continue;
         }
 
         if trimmed.starts_with("# ") {
-            if title.is_some() {
-                bail!("line {}: duplicate document title", line_number + 1);
-            }
-            if !trimmed.starts_with(&expected_title) {
-                bail!(
-                    "line {}: expected '{}<kebab-case-id>', got '{}',",
-                    line_number + 1,
-                    expected_title,
-                    trimmed
-                );
-            }
-            let id = trimmed[expected_title.len()..].trim();
-            validate_id(id, kind)?;
-            title = Some(id.to_string());
             current = None;
+            ignoring_section = false;
+            outside_block_reported = false;
+            if title.is_some() {
+                diagnostics.push(UsecaseDiagnostic::at(number, "duplicate document title"));
+                continue;
+            }
+            if trimmed.starts_with(&expected_title) {
+                let id = trimmed[expected_title.len()..].trim().to_string();
+                if let Err(error) = validate_id(&id, kind) {
+                    diagnostics.push(UsecaseDiagnostic::at(number, error.to_string()));
+                }
+                title = Some(id);
+            } else {
+                let suggestion = recover_title(&expected_title, trimmed);
+                let message = format!(
+                    "expected '{}<kebab-case-id>', got '{}'; headings are case-sensitive",
+                    expected_title, trimmed
+                );
+                let mut diagnostic = UsecaseDiagnostic::at(number, message);
+                if let Some(recovered) = suggestion.clone() {
+                    diagnostic.suggestion = Some(recovered);
+                    if let Some(recovered_id) = recover_title(&expected_title, trimmed) {
+                        title = Some(recovered_id);
+                    }
+                }
+                diagnostics.push(diagnostic);
+            }
             continue;
         }
+
         if trimmed.starts_with("## ") {
-            let Some(heading) = headings
+            current = None;
+            outside_block_reported = false;
+            if let Some(heading) = headings
                 .iter()
                 .copied()
                 .find(|candidate| *candidate == trimmed)
-            else {
-                bail!("line {}: unknown heading '{trimmed}'", line_number + 1);
-            };
-            if !seen_headings.insert(heading) {
-                bail!("line {}: duplicate heading '{heading}'", line_number + 1);
+            {
+                if seen_headings.insert(heading) {
+                    current = Some(heading);
+                    ignoring_section = false;
+                } else {
+                    diagnostics.push(UsecaseDiagnostic::at(
+                        number,
+                        format!("duplicate heading '{heading}'"),
+                    ));
+                    ignoring_section = true;
+                }
+            } else {
+                let suggestion = suggest_heading(trimmed, headings);
+                let mut message = format!("unknown heading '{trimmed}'");
+                if suggestion.is_none() {
+                    message.push_str("; expected one of ");
+                    message.push_str(
+                        &headings
+                            .iter()
+                            .map(|heading| format!("'{heading}'"))
+                            .collect::<Vec<_>>()
+                            .join(", "),
+                    );
+                } else if trimmed.eq_ignore_ascii_case("## Guarantees") {
+                    message.push_str(
+                        "; expected one of '## Minimal guarantee', '## Success guarantee'",
+                    );
+                }
+                let mut diagnostic = UsecaseDiagnostic::at(number, message);
+                diagnostic.suggestion = suggestion;
+                diagnostics.push(diagnostic);
+                ignoring_section = true;
             }
-            current = Some(heading);
+            continue;
+        }
+
+        if ignoring_section {
             continue;
         }
         if let Some(heading) = current {
-            sections
-                .get_mut(heading)
-                .expect("heading exists")
-                .push(line.to_string());
-        } else if !trimmed.is_empty() && title.is_some() {
-            bail!(
-                "line {}: content is outside a recognised section",
-                line_number + 1
-            );
+            if let Some(lines) = sections.get_mut(heading) {
+                lines.push((number, line.to_string()));
+            }
+        } else if !trimmed.is_empty() && title.is_some() && !outside_block_reported {
+            diagnostics.push(UsecaseDiagnostic::at(
+                number,
+                "content is outside a recognised section",
+            ));
+            outside_block_reported = true;
         }
     }
 
-    let id = title.ok_or_else(|| anyhow::anyhow!("document is missing '# {kind}: <id>'"))?;
+    if title.is_none() {
+        diagnostics.push(UsecaseDiagnostic::document(format!(
+            "document is missing '# {kind}: <id>'"
+        )));
+    }
     for heading in headings {
         if !seen_headings.contains(heading) {
-            bail!("document schema does not recognise '{heading}'");
+            diagnostics.push(UsecaseDiagnostic::document(format!(
+                "document schema does not recognise '{heading}'"
+            )));
         }
     }
-    Ok((id, sections))
+
+    (title, sections, seen_headings, diagnostics)
+}
+
+fn recover_title(expected_title: &str, line: &str) -> Option<String> {
+    if line.len() >= expected_title.len()
+        && line[..expected_title.len()].eq_ignore_ascii_case(expected_title)
+    {
+        let id = line[expected_title.len()..].trim();
+        Some(format!("{expected_title}{id}"))
+    } else {
+        None
+    }
+}
+
+fn suggest_heading(unknown: &str, headings: &[&'static str]) -> Option<String> {
+    if unknown.eq_ignore_ascii_case("## Guarantees") {
+        return Some("## Minimal guarantee' or '## Success guarantee".to_string());
+    }
+    headings
+        .iter()
+        .copied()
+        .find(|heading| heading.eq_ignore_ascii_case(unknown))
+        .map(str::to_string)
 }
 
 fn validate_id(id: &str, kind: &str) -> Result<()> {
@@ -291,26 +529,38 @@ fn validate_id(id: &str, kind: &str) -> Result<()> {
 }
 
 fn required_text(
-    sections: &std::collections::BTreeMap<&'static str, Vec<String>>,
+    sections: &SectionLines,
     heading: &'static str,
-) -> Result<String> {
+    diagnostics: &mut UsecaseDiagnostics,
+) -> String {
     let text = sections
         .get(heading)
-        .map(|lines| lines.join("\n").trim().to_string())
+        .map(|lines| {
+            lines
+                .iter()
+                .map(|(_, line)| line.as_str())
+                .collect::<Vec<_>>()
+                .join("\n")
+                .trim()
+                .to_string()
+        })
         .unwrap_or_default();
     if text.is_empty() {
-        bail!("section '{heading}' must not be empty");
+        diagnostics.push(UsecaseDiagnostic::document(format!(
+            "section '{heading}' must not be empty"
+        )));
     }
-    Ok(text)
+    text
 }
 
 fn list_section(
-    sections: &std::collections::BTreeMap<&'static str, Vec<String>>,
+    sections: &SectionLines,
     heading: &'static str,
     noun: &str,
-) -> Result<Vec<String>> {
+    diagnostics: &mut UsecaseDiagnostics,
+) -> Vec<String> {
     let mut values = Vec::new();
-    for line in sections.get(heading).expect("known heading") {
+    for (line_number, line) in sections.get(heading).expect("known heading") {
         let trimmed = line.trim();
         if trimmed.is_empty() {
             continue;
@@ -319,95 +569,159 @@ fn list_section(
             .strip_prefix("- ")
             .or_else(|| trimmed.strip_prefix("* "))
         else {
-            bail!("section '{heading}' must contain one {noun} per bullet");
+            diagnostics.push(UsecaseDiagnostic::at(
+                *line_number,
+                format!("section '{heading}' must contain one {noun} per bullet: '{trimmed}'"),
+            ));
+            continue;
         };
         let value = value.trim();
         if !value.is_empty() && !value.eq_ignore_ascii_case("none") {
             values.push(value.to_string());
         }
     }
-    Ok(values)
+    values
 }
 
 fn relationship_section(
-    sections: &std::collections::BTreeMap<&'static str, Vec<String>>,
+    sections: &SectionLines,
     heading: &'static str,
-) -> Result<Vec<RelationshipTarget>> {
+    diagnostics: &mut UsecaseDiagnostics,
+) -> Vec<RelationshipTarget> {
     let mut values = Vec::new();
-    for line in sections.get(heading).expect("known heading") {
+    for (line_number, line) in sections.get(heading).expect("known heading") {
         let trimmed = line.trim();
         if trimmed.is_empty() || trimmed.eq_ignore_ascii_case("- none") {
             continue;
         }
         let Some(value) = trimmed.strip_prefix("- ") else {
-            bail!("section '{heading}' must contain typed relationship bullets");
+            diagnostics.push(UsecaseDiagnostic::at(
+                *line_number,
+                format!("section '{heading}' must contain typed relationship bullets"),
+            ));
+            continue;
         };
         let Some((kind, id)) = value.split_once(':') else {
-            bail!(
-                "section '{heading}' relationship '{value}' must use 'usecase: id' or 'fragment: id'"
-            );
+            diagnostics.push(UsecaseDiagnostic::at(
+                *line_number,
+                format!(
+                    "section '{heading}' relationship '{value}' must use 'usecase: id' or 'fragment: id'"
+                ),
+            ));
+            continue;
         };
         let id = id.trim();
-        validate_id(id, "relationship target")?;
+        if let Err(error) = validate_id(id, "relationship target") {
+            diagnostics.push(UsecaseDiagnostic::at(*line_number, error.to_string()));
+            continue;
+        }
         let target = match kind.trim() {
             "usecase" => RelationshipTarget::Usecase(id.to_string()),
             "fragment" => RelationshipTarget::Fragment(id.to_string()),
-            other => bail!("section '{heading}' has unknown relationship target kind '{other}'"),
+            other => {
+                diagnostics.push(UsecaseDiagnostic::at(
+                    *line_number,
+                    format!("section '{heading}' has unknown relationship target kind '{other}'"),
+                ));
+                continue;
+            }
         };
         if values.contains(&target) {
-            bail!(
-                "section '{heading}' contains duplicate relationship '{}'",
-                target.id()
-            );
+            diagnostics.push(UsecaseDiagnostic::at(
+                *line_number,
+                format!(
+                    "section '{heading}' contains duplicate relationship '{}'",
+                    target.id()
+                ),
+            ));
+            continue;
         }
         values.push(target);
     }
-    Ok(values)
+    values
 }
 
 fn interaction_section(
-    sections: &std::collections::BTreeMap<&'static str, Vec<String>>,
+    sections: &SectionLines,
     capabilities: &[String],
-) -> Result<Vec<Interaction>> {
+    diagnostics: &mut UsecaseDiagnostics,
+) -> Vec<Interaction> {
     let lines = sections.get(HEADING_INTERACTIONS).expect("known heading");
-    let rows: Vec<&str> = lines
+    let rows: Vec<(usize, &str)> = lines
         .iter()
-        .map(String::as_str)
-        .filter(|line| !line.trim().is_empty())
+        .map(|(number, line)| (*number, line.as_str()))
+        .filter(|(_, line)| !line.trim().is_empty())
         .collect();
-    if rows.len() == 1 && rows[0].trim().eq_ignore_ascii_case("- none") {
-        return Ok(Vec::new());
+    if rows.len() == 1 && rows[0].1.trim().eq_ignore_ascii_case("- none") {
+        return Vec::new();
     }
     if rows.len() < 2 {
-        bail!("section '{HEADING_INTERACTIONS}' must contain a Markdown table");
+        diagnostics.push(UsecaseDiagnostic::document(format!(
+            "section '{HEADING_INTERACTIONS}' must contain a Markdown table"
+        )));
+        return Vec::new();
     }
-    let header = split_table_row(rows[0])?;
+    let (header_line, header_text) = rows[0];
+    let header = match split_table_row(header_text) {
+        Ok(header) => header,
+        Err(error) => {
+            diagnostics.push(UsecaseDiagnostic::at(header_line, error.to_string()));
+            return Vec::new();
+        }
+    };
     if header != ["Capability", "Consumer action", "E2E scenario"] {
-        bail!(
-            "section '{HEADING_INTERACTIONS}' must use columns Capability, Consumer action, E2E scenario"
-        );
+        diagnostics.push(UsecaseDiagnostic::at(
+            header_line,
+            format!(
+                "section '{HEADING_INTERACTIONS}' must use columns Capability, Consumer action, E2E scenario"
+            ),
+        ));
+        return Vec::new();
     }
-    if split_table_row(rows[1])?.iter().any(|cell| {
-        !cell
-            .chars()
-            .all(|c| c == '-' || c == ':' || c.is_whitespace())
-    }) {
-        bail!("section '{HEADING_INTERACTIONS}' is missing its Markdown separator row");
+    let (separator_line, separator_text) = rows[1];
+    match split_table_row(separator_text) {
+        Ok(cells) if cells.iter().all(|cell| is_separator_cell(cell)) && cells.len() == 3 => {}
+        Ok(_) => {
+            diagnostics.push(UsecaseDiagnostic::at(
+                separator_line,
+                format!("section '{HEADING_INTERACTIONS}' has a malformed separator row"),
+            ));
+            return Vec::new();
+        }
+        Err(error) => {
+            diagnostics.push(UsecaseDiagnostic::at(separator_line, error.to_string()));
+            return Vec::new();
+        }
     }
+
     let mut interactions = Vec::new();
-    for row in &rows[2..] {
-        let cells = split_table_row(row)?;
+    for (line_number, line) in &rows[2..] {
+        let cells = match split_table_row(line) {
+            Ok(cells) => cells,
+            Err(error) => {
+                diagnostics.push(UsecaseDiagnostic::at(*line_number, error.to_string()));
+                continue;
+            }
+        };
         if cells.len() != 3 || cells.iter().any(String::is_empty) {
-            bail!("section '{HEADING_INTERACTIONS}' contains a malformed table row");
+            diagnostics.push(UsecaseDiagnostic::at(
+                *line_number,
+                format!("section '{HEADING_INTERACTIONS}' contains a malformed table row"),
+            ));
+            continue;
         }
         if !capabilities
             .iter()
             .any(|capability| capability == &cells[0])
         {
-            bail!(
-                "interaction references undeclared capability '{}'",
-                cells[0]
-            );
+            diagnostics.push(UsecaseDiagnostic::at(
+                *line_number,
+                format!(
+                    "interaction references undeclared capability '{}'",
+                    cells[0]
+                ),
+            ));
+            continue;
         }
         interactions.push(Interaction {
             capability: cells[0].clone(),
@@ -415,7 +729,14 @@ fn interaction_section(
             e2e_scenario: cells[2].clone(),
         });
     }
-    Ok(interactions)
+    interactions
+}
+
+fn is_separator_cell(cell: &str) -> bool {
+    !cell.is_empty()
+        && cell
+            .chars()
+            .all(|c| c == '-' || c == ':' || c.is_whitespace())
 }
 
 fn split_table_row(line: &str) -> Result<Vec<String>> {
@@ -430,7 +751,6 @@ fn split_table_row(line: &str) -> Result<Vec<String>> {
         .collect())
 }
 
-#[allow(dead_code)]
 pub fn usecase_md_template() -> String {
     r#"# Use case: <usecase-id>
 
