@@ -115,8 +115,12 @@ pub fn code_lines(lines: &[LineKind], spans: &[super::model::SourceSpan], file: 
     for span in spans.iter().filter(|span| &span.file == file) {
         let start = span.start_line.saturating_sub(1) as usize;
         let end = span.end_line.saturating_sub(1) as usize;
-        for index in start..=end.min(lines.len().saturating_sub(1)) {
-            marked[index] = true;
+        for marked_line in marked
+            .iter_mut()
+            .take(end.min(lines.len().saturating_sub(1)) + 1)
+            .skip(start)
+        {
+            *marked_line = true;
         }
     }
     marked

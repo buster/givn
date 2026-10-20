@@ -15,8 +15,7 @@ pub struct AddonSpec {
 pub const KNOWN_ADDONS: &[AddonSpec] = &[
     AddonSpec {
         id: "arc42",
-        description:
-            "Arc42 architecture documentation — creates and maintains durable docs/arc42/ chapters",
+        description: "Arc42 architecture documentation — creates and maintains durable docs/arc42/ chapters",
         default_enabled: true,
     },
     AddonSpec {
@@ -31,14 +30,12 @@ pub const KNOWN_ADDONS: &[AddonSpec] = &[
     },
     AddonSpec {
         id: "coverage",
-        description:
-            "Archive-level coverage gate — runs project measurement and merge scripts, updates README from the merged Cobertura XML",
+        description: "Archive-level coverage gate — runs project measurement and merge scripts, updates README from the merged Cobertura XML",
         default_enabled: true,
     },
     AddonSpec {
         id: "domain_modeling",
-        description:
-            "Skill — model a change's domain (ubiquitous language, aggregates, invariants) before design",
+        description: "Skill — model a change's domain (ubiquitous language, aggregates, invariants) before design",
         default_enabled: true,
     },
     AddonSpec {
@@ -53,8 +50,7 @@ pub const KNOWN_ADDONS: &[AddonSpec] = &[
     },
     AddonSpec {
         id: "grill_with_docs",
-        description:
-            "Command — grill the plan/design, citing a source in the project's own docs for every challenge",
+        description: "Command — grill the plan/design, citing a source in the project's own docs for every challenge",
         default_enabled: true,
     },
     AddonSpec {
