@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "change": "event-record-quality",
+  "status": "pending",
+  "candidate_revision": null,
+  "tested_revision": null,
+  "scopes": {},
+  "coverage": null,
+  "merge_completed": true,
+  "merged_deltas": [
+    "inspect-development-history/development-record.feature"
+  ],
+  "merge_in_progress": null,
+  "merge_plan": [
+    "inspect-development-history/development-record.feature"
+  ],
+  "merge_targets": {
+    "inspect-development-history/development-record.feature": "givn/specs/inspect-development-history/development-record.feature"
+  },
+  "started_at_unix": 1792472778,
+  "finished_at_unix": null
+}
