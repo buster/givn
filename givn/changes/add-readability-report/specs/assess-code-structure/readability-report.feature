@@ -33,7 +33,7 @@ Feature: Readability report
     And the report recommends an advisory action
     And the report recommends no plan for the unit
 
-  @givn.added @wip
+  @givn.added
   Scenario: An interface is classified as an interface, not a god type
     Given a Givn project with the readability experiment enabled
     And a production source unit with a trait over the readable size
