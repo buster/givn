@@ -100,6 +100,17 @@ pub fn assessment_counts(env: &TestEnv) -> (usize, usize, usize) {
     )
 }
 
+pub fn write_many_public_methods(env: &TestEnv) {
+    let mut source = String::from("pub struct ManyPublic;\nimpl ManyPublic {\n");
+    for index in 0..51 {
+        source.push_str(&format!(
+            "    pub fn method_{index}(&self) -> u64 {{ {index} }}\n"
+        ));
+    }
+    source.push_str("}\n");
+    write_source(env, "src/many_public.rs", &source);
+}
+
 pub fn write_small_unit(env: &TestEnv) {
     write_source(env, "src/small.rs", "pub struct Small;\n");
 }
