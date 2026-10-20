@@ -38,7 +38,7 @@ Old records remain readable. New fields are additive and the analyzer tolerates 
 
 | Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
 |---|---|---|---|
-| Development record quality | `EXTEND prose-consolidation` (create-change, 14.00) | `EXTEND development-record` (inspect-development-history) | The route matched generic words such as “source” and “selected”; the behaviour is recorder provenance, owned by development-record. |
+| development-record | `EXTEND prose-consolidation` (create-change, 14.00) | `EXTEND development-record` | The route matched generic words such as “source” and “selected”; the behaviour is recorder provenance, owned by development-record. |
 
 ## Out of Scope
 
