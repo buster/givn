@@ -189,6 +189,35 @@ fn report_classifies_cohesive(world: &mut GivnWorld) {
     );
 }
 
+#[given("a production source file with an item-position macro")]
+fn item_position_macro(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::readability_report_support::write_item_macro(env);
+}
+
+#[then("the report names the unsupported construct")]
+fn report_names_unsupported(world: &mut GivnWorld) {
+    let stdout = report_text(world);
+    assert!(
+        stdout.contains("item-macros") && stdout.contains("unsupported"),
+        "expected an unsupported item-macros section, got: {stdout}"
+    );
+}
+
+#[then("the report does not classify the unsupported unit")]
+fn report_does_not_classify_unsupported(world: &mut GivnWorld) {
+    let stdout = report_text(world);
+    assert!(
+        !stdout
+            .lines()
+            .any(|line| line.contains("type") && line.contains("make_items")),
+        "the macro must not become a classified unit: {stdout}"
+    );
+}
+
 #[then("the report classifies the unit as an interface")]
 fn report_classifies_interface(world: &mut GivnWorld) {
     let stdout = report_text(world);

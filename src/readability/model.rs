@@ -60,6 +60,7 @@ pub enum Construct {
     InlineModule,
     FileModule,
     FreeFunction,
+    ItemMacro,
 }
 
 impl Construct {
@@ -75,6 +76,7 @@ impl Construct {
             Self::InlineModule => "inline_module",
             Self::FileModule => "file_module",
             Self::FreeFunction => "free_function",
+            Self::ItemMacro => "item-macros",
         }
     }
 }
