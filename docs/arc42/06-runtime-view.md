@@ -387,8 +387,8 @@ counts are not green.
 unique revision. The revision must exist, be reachable from `HEAD`, and carry
 the scenario title in its commit message. Missing, duplicate, placeholder,
 unreachable, and untitled revisions are reported together and block. `givn
-check review` repeats the gate. There is no shared or one-pass mode: an agent
-that implemented in one pass must split the commits before the check.
+check review` repeats the gate. Every scenario needs its own commit: the work
+must be split into scenario commits before the check, not asserted after it.
 
 A change whose design declares no visual contract may record
 `VISUAL-REVIEW: NOT APPLICABLE`; a rendered interface still requires

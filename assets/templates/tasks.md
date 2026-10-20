@@ -4,12 +4,27 @@ RED→GREEN→REFACTOR→COMMIT per scenario. Non-@e2e first, then @e2e.
 
 Legend: `[ ]` pending · `[x]` done only when evidence + commit hash are filled in. Check boxes immediately after each scenario — tasks.md must always reflect true state.
 
-## Commit evidence
+## Scenario revisions
 
-One checked scenario = one real revision. The `COMMIT:` hash must exist, be
-reachable from HEAD, be unique, and the commit message body must name the
-scenario. `givn check tasks` blocks on a missing, duplicate, placeholder,
-unreachable, or untitled revision. There is no shared or one-pass mode.
+Allowed:
+
+- exactly one `COMMIT:` line per checked scenario;
+- a real revision that exists and is reachable from `HEAD`;
+- a commit message body that names the scenario;
+- a commit containing the scenario's implementation, or its regression test
+  when the behavior already exists.
+
+Not allowed:
+
+- one revision shared by two or more scenarios;
+- a placeholder, invented, or non-existent hash;
+- a revision not reachable from `HEAD`;
+- a checked scenario without a `COMMIT:` line;
+- a commit message that does not name the scenario;
+- a commit that only edits `tasks.md` or the `.feature` scenario text.
+
+`givn check tasks` and `givn check review` enforce the first five
+mechanically; review checks the last one.
 
 ---
 

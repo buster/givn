@@ -12,7 +12,7 @@
 | 8 | 08 crosscutting-concepts | Yes | Revision evidence and CLI transcripts are cross-cutting workflow rules. |
 | 9 | 09 architecture-decisions | No | Workflow policy owned by the use cases and `design.md`; ADR-070/072 unaffected. |
 | 10 | 10 quality-requirements | Yes | Q-106 adds the scenario-commit and not-applicable scenario. |
-| 11 | 11 risks-and-technical-debt | Yes | R-102 records the synthetic-commit/one-pass abuse this rule removes. |
+| 11 | 11 risks-and-technical-debt | Yes | R-102 records the synthetic or shared-commit evidence this rule removes. |
 | 12 | 12 glossary | Yes | Adds "Scenario revision" and "Interaction transcript". |
 
 ## Status

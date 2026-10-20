@@ -53,7 +53,7 @@ README-IMPACT: none
 
 - [x] Fabrication audit clean.
 - [x] Every scenario has a real, unique, scenario-named revision.
-- [x] No one-pass or shared-revision mode.
+- [x] Each checked scenario has its own real, unique revision.
 - [x] Strict mode, E2E scope, interaction coverage, and arc42 conformance verified.
 - [x] No unresolved coverage gap.
 
