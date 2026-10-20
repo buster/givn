@@ -23,6 +23,7 @@ pub const KNOWN_ADDON_KEYS: &[&str] = &[
     "grill_with_docs",
     "absolute_mode",
     "readme",
+    "readability",
     "coverage",
 ];
 
