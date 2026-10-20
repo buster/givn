@@ -80,7 +80,7 @@ Feature: Readability report
     Then the report is written to "report.txt"
     And stdout is empty
 
-  @givn.added @wip
+  @givn.added
   Scenario: A report output path that cannot be written is an error
     Given a Givn project with the readability experiment enabled
     And a production source unit that is over the readable size
