@@ -143,7 +143,7 @@ Feature: Readability report
     Then the report classifies the unit as a god type
     And the report names the file "crates/core/src/engine.rs"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The report says when the scope has no production sources
     Given a Givn project with the readability experiment enabled
     And no production source files

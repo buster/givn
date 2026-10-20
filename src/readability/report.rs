@@ -12,6 +12,10 @@ pub const SCHEMA_VERSION: u32 = 1;
 pub const RULES_VERSION: u32 = 1;
 
 pub fn render_human(assessment: &Assessment) -> String {
+    if assessment.files.is_empty() {
+        return "readability report — rust, 0 files, 0 units, 0 findings\nNo production sources found in the requested scope.\n"
+            .to_string();
+    }
     let findings = assessment
         .units
         .iter()
