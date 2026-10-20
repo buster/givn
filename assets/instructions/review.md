@@ -391,6 +391,34 @@ rather than trusting the subagent's report:
 9. Any contradiction: reject `REVIEW: PASS` and re-run the review subagent
    with the discrepancy named.
 
+{{#if addons.readability}}
+## Readability review gate
+
+When the `readability` addon is enabled, `givn check review --change <id>`
+runs the readability gate after the verification receipt. It analyzes every
+unit the change touched at the change base and at committed `HEAD` and reports
+each finding with its base/head size and classification.
+
+Every finding needs one of two decisions, at unit level:
+
+- `READABILITY: FIXED <unit>` — the unit is under its threshold at head.
+- `READABILITY: JUSTIFIED <unit>` — the unit remains a finding and a rationale
+  exists at `givn/changes/<id>/readability/rationales/<slug>.md`.
+
+A rationale names the unit and classification, cites the evidence, states why
+the current shape is the right one and what the unit is responsible for, names
+at least one rejected alternative, and records the owner. A temporary decision
+also records a follow-up and expiry. Ownership is collective: "not my code",
+"not this change", "legacy", "out of scope", "too risky", "no time", and
+"later" are not acceptable reasons.
+
+When any finding exists, record `READABILITY: PASS` after a fresh reviewer
+context reads only the deterministic outline and can explain the unit's
+responsibility and call order. If it cannot, record `FAIL <reason>`; a `FAIL`
+always blocks review. A migration plan may be part of a rationale, but a plan
+alone is not an escape from fixing or justifying the current shape.
+{{/if}}
+
 ## Result
 
 End the file with `REVIEW: PASS` or `REVIEW: FAIL`. The archive gate reads
