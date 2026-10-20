@@ -1128,4 +1128,16 @@ mod tests {
         std::fs::write(change.join("design.md"), content).unwrap();
         assert!(check_promised_files_exist(&change).is_ok());
     }
+    #[test]
+    fn no_visual_contract_accepts_not_applicable() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("design.md"), "# Design\n").unwrap();
+        std::fs::write(
+            dir.path().join("review.md"),
+            "VISUAL-REVIEW: NOT APPLICABLE\n",
+        )
+        .unwrap();
+        check_visual_review(dir.path()).unwrap();
+    }
+
 }
