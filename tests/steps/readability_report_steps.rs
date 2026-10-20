@@ -93,6 +93,33 @@ fn json_report_classifies(world: &mut GivnWorld) {
     );
 }
 
+#[given("a production source unit supported by two analysis engines")]
+fn two_engines_fixture(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    crate::steps::readability_report_support::write_small_unit(&env);
+    world.env = Some(env);
+}
+
+#[when("the readability report is rendered from each engine")]
+fn render_from_each_engine(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let (syn, fake) = crate::steps::readability_report_support::engine_reports(env);
+    world.additional_output = Some(format!("{syn}\u{0}{fake}"));
+}
+
+#[then("the two reports are identical")]
+fn two_reports_identical(world: &mut GivnWorld) {
+    let combined = world
+        .additional_output
+        .as_deref()
+        .expect("two reports were produced");
+    let (syn, fake) = combined.split_once('\u{0}').expect("two reports");
+    assert_eq!(syn, fake, "analysis engines produced different reports");
+}
+
 #[given("a production source unit with platform-conditional methods")]
 fn platform_conditional(world: &mut GivnWorld) {
     let env = common::make_bare_root();

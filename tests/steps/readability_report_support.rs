@@ -4,7 +4,11 @@
 //! enable the `readability` addon; they contain no step bindings.
 
 use crate::common::{self, TestEnv};
-use givn::readability::{self, AnalysisRequest, SourceScope, model::Language};
+use givn::readability::model::{
+    Analysis, AnalyzedFile, FileStatus, LineKind, RepoPath, SourceSpan, SourceUnit, TypeKind,
+    TypeRelation, UnitId, UnitKind, UnitOrigin, Visibility,
+};
+use givn::readability::{self, AnalysisRequest, SourceAnalyzer, SourceScope, model::Language};
 use std::path::PathBuf;
 
 pub fn enable_readability(env: &TestEnv) {
@@ -136,4 +140,106 @@ pub fn write_source(env: &TestEnv, relative: &str, source: &str) {
         std::fs::create_dir_all(parent).expect("create source parent");
     }
     std::fs::write(path, source).expect("write source fixture");
+}
+
+struct FakeAnalyzer {
+    analysis: Analysis,
+    capabilities: givn::readability::model::AnalyzerCapabilities,
+}
+
+impl SourceAnalyzer for FakeAnalyzer {
+    fn capabilities(&self) -> givn::readability::model::AnalyzerCapabilities {
+        self.capabilities.clone()
+    }
+
+    fn analyze(&self, _request: &AnalysisRequest) -> anyhow::Result<Analysis> {
+        Ok(self.analysis.clone())
+    }
+}
+
+fn fake_analysis() -> Analysis {
+    let path = RepoPath::new("src/small.rs");
+    let span = SourceSpan {
+        file: path.clone(),
+        start_line: 1,
+        end_line: 1,
+    };
+    let module_id = UnitId("module:src/small.rs".to_string());
+    let type_id = UnitId("type:small::Small".to_string());
+    let file = AnalyzedFile {
+        path: path.clone(),
+        physical_lines: 1,
+        lines: vec![LineKind::Code],
+        status: FileStatus::Analyzed,
+        unit_ids: vec![type_id.clone(), module_id.clone()],
+    };
+    let type_unit = SourceUnit {
+        id: type_id,
+        kind: UnitKind::Type(TypeKind::Struct),
+        name: "Small".to_string(),
+        module_path: "small".to_string(),
+        declaration_file: path.clone(),
+        files: vec![path.clone()],
+        spans: vec![span.clone()],
+        visibility: Visibility::Public,
+        origin: UnitOrigin::Production,
+        methods: Vec::new(),
+        fields: Vec::new(),
+        relations: vec![TypeRelation::ContainedIn(module_id.clone())],
+        outline: Vec::new(),
+        complete: true,
+        unsupported: Vec::new(),
+    };
+    let module = SourceUnit {
+        id: module_id,
+        kind: UnitKind::Module,
+        name: "src/small.rs".to_string(),
+        module_path: "small".to_string(),
+        declaration_file: path.clone(),
+        files: vec![path],
+        spans: vec![span],
+        visibility: Visibility::Private,
+        origin: UnitOrigin::Production,
+        methods: Vec::new(),
+        fields: Vec::new(),
+        relations: Vec::new(),
+        outline: Vec::new(),
+        complete: true,
+        unsupported: Vec::new(),
+    };
+    Analysis {
+        files: vec![file],
+        units: vec![module, type_unit],
+        diagnostics: Vec::new(),
+    }
+}
+
+pub fn engine_reports(env: &TestEnv) -> (String, String) {
+    let request = AnalysisRequest {
+        project_root: env.root(),
+        scope: SourceScope {
+            language: Language::Rust,
+            roots: vec![PathBuf::from("src")],
+            include_test_sources: false,
+        },
+    };
+    let syn = readability::rust_analyzer();
+    let capabilities = syn.capabilities();
+    let syn_analysis = readability::analyze(&request, syn.as_ref()).expect("syn analysis");
+    let fake = FakeAnalyzer {
+        analysis: fake_analysis(),
+        capabilities: capabilities.clone(),
+    };
+    let fake_analysis = readability::analyze(&request, &fake).expect("fake analysis");
+    assert_eq!(
+        syn_analysis, fake_analysis,
+        "the fake and syn analyses must be the same neutral model"
+    );
+    let syn_report = readability::report::render_human(&readability::assess(
+        &syn_analysis,
+        capabilities.clone(),
+    ));
+    let fake_report =
+        readability::report::render_human(&readability::assess(&fake_analysis, capabilities));
+    (syn_report, fake_report)
 }

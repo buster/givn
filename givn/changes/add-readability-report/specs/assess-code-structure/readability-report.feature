@@ -117,7 +117,7 @@ Feature: Readability report
     When the readability report assesses the unit
     Then the report counts both platform variants
 
-  @givn.added @wip
+  @givn.added
   Scenario: The same source produces the same report through either analysis engine
     Given a production source unit supported by two analysis engines
     When the readability report is rendered from each engine
