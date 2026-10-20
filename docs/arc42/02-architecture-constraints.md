@@ -35,6 +35,7 @@ register](adr/README.md).
 | TC-35 | The development report is one self-contained file: no server, no port, no remote resource, and no third-party JavaScript. It renders from the embedded record data alone, so its pixels are reproducible for a given record. | `src/cli/timeline.rs`, `assets/timeline/report.html` |
 | TC-36 | The Maki target is a full agent target: it writes skills to `.maki/skills/<name>/SKILL.md` and commands to `.maki/commands/<name>.md` (Markdown with optional `---` frontmatter and `$ARGUMENTS`), and it also installs the development reporter — the Lua module `.maki/lua/givn-timeline.lua`, its grants merged into `.maki/plugin.toml`, and a managed `-- givn:begin:timeline` fence in `.maki/init.lua` (Maki runs only that file). The module path and the guidance files are managed generated paths; `init.lua` and `plugin.toml` are merged user-owned files, so only the fenced region and grant keys are touched. Maki loads nothing from `.maki/` in a folder the developer has not trusted, so the reporter is inactive there by the harness's own gate. | `assets/agent-integrations/maki/givn-timeline.lua`, `assets/agent-integrations/maki/plugin.toml`, `src/skills/targets.rs` |
 | TC-37 | The record's capture control is one project key, `record.mode: on \| off \| full` in `givn/config.yaml`, defaulting to **`on`** when absent or unparseable (one warning names the fallback). The key is parsed leniently by `OverlayDoc` (`src/config/overlay.rs`), so an invalid value is a warning, never a config-parse failure, and `givn upgrade` preserves it. `off` is absolute: no append, no pending state, no record-side ignore write, and `givn history ingest --with-full-content` is ignored with one warning and exit 0 (reads still work); lowering the mode retains already-captured entries and never purges them. `on` records every available metadata field with the documented bounds (label 120, text metadata 240, error text 1 000 characters) and question text in full (4 000 characters per question entry), and `full` adds the complete LLM-facing content capped at 64 KiB per field and 256 KiB per entry. The intake is the single enforcement site for every bound and enforces the mode for payloads, while Claude's in-process `harness_hook` is the second `off` site, so a stale reporter cannot bloat or leak the store; `givn history settings [--json]` reports the resolved mode and its source (`config` or `default`). Content is stored inline in the same record line under `givn/history/`, so the existing managed ignore block covers it with no new destination. | `src/history.rs`, `src/cli/history.rs`, `src/config/overlay.rs`, `givn/config.yaml` |
+| TC-38 | The readability experiment is Rust-only, offline, deterministic, and advisory: `syn` is the first parser, `SourceAnalyzer` is the neutral port, metrics and classification run above it, the report stores no baseline, and findings never change the exit code. The addon is default-off and is the only opt-in switch. | `src/readability/`, `src/cli/readability.rs`, `src/cli/addons.rs`, readability-report non-E2E and E2E scenarios |
 
 ## 2.2 Configuration and Gate Constraints
 
@@ -72,7 +73,9 @@ runtime contract.
 ## 2.3 Addon Constraint
 
 The embedded manifest starts with addons disabled, but `givn init` currently
-enables all known addons unless `--no-addons` is passed. The `arc42` addon:
+enables all default-on known addons unless `--no-addons` is passed. A registered
+addon may declare itself default-off; `readability` is the first such addon and
+requires `givn addons enable readability`. The `arc42` addon:
 
 - expands to a required `arc42-docs` artifact after `design`;
 - adds `arc42-docs` to `apply.requires` and to `design-review` dependencies;

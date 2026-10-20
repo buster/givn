@@ -29,6 +29,9 @@ graph TD
     MIGRATE --> BEHAVIOR[Behavior hash preservation]
     MIGRATE --> E2E[Interaction and E2E preservation]
     MIGRATE --> SOURCE[Line and branch non-regression]
+    Q --> STRUCT[Opt-in structural visibility]
+    STRUCT --> DET[Deterministic advisory report]
+    STRUCT --> ENGINE[Engine-independent analysis]
 ```
 
 ## 10.2 Quality Scenarios
@@ -102,6 +105,10 @@ graph TD
 | Q-101 | Scale | A multi-day ideation leaves a record with tens of thousands of entries. | The report renders a bounded number of shapes at every phase zoom: dense short activities collapse into per-bucket aggregate ticks naming their count and combined duration even at 15 m, individual ticks appear only where the current zoom's time-per-pixel permits, the timeline's scroll height is capped, and the summary and the longest-step ranking still cover the whole report scope — the ranking over every entry kind that carries a measured duration (R-94). A change report's linked ideation group carries its own totals and never joins the change's summary or ranking. The model omits the recorder's own command entries from the start, so the intake never competes with the work for the summary or the ranking. |
 | Q-102 | Agent ergonomics | A project selects any supported agent target and works through that harness. | The reporter generated for that harness (omp, opencode, Claude Code, or Maki) records its activity through the same intake and the same record shape; the neutral `agents` mirror receives no reporter, and a signal the harness's surface cannot deliver is recorded as missing rather than as zero. |
 | Q-103 | Analysis sufficiency | An LLM judge reviews one change's development to explain where it stalled. | The record carries by default the bounded metadata **each harness exposes** — session and title where exposed, turn stop reason/model/cost/context where exposed, tool call ids and output bytes and bounded error text, subagent identity/routing/status, question text in full, waits and retries. A field the surface cannot expose is absent rather than fabricated: Claude Code has no turn index or stop reason, opencode reports no turn count or context size, and headless Maki may omit model and title. `full` adds complete LLM-facing content when the project enabled it. No tier stores provider wire payloads, MCP params, harness system prompts, or credentials as dedicated fields; full content can carry a credential that appears inside captured work (R-92). |
+| Q-104 | Determinism | A maintainer runs the readability report twice over the same source tree and toolchain. | Human text and JSON output are byte-identical: traversal is sorted, paths are project-relative, and no timestamp, host value, absolute path, or analyzer identity appears. |
+| Q-105 | Gate safety | A readability report contains plan, exception, watch, and advisory findings. | The command exits 0 and review and archive behavior is unchanged; no baseline, watchlist, or classification file is written. |
+| Q-106 | Diagnosability | One production file is malformed while another is well formed. | The report names the failed file and its diagnostic, still classifies the well-formed unit, and exits 0. |
+| Q-107 | Replaceability | A second analyzer implementation is proposed for the same report. | It is accepted only through the existing `SourceAnalyzer` contract: the shared metrics, classification, and both renderers are unchanged, the report carries no analyzer identity, and `syn` does not appear outside the first adapter. |
 
 ## 10.3 Verification Signals
 

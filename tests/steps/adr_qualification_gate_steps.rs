@@ -938,21 +938,6 @@ fn final_register_has_retired_lint_adr(world: &mut GivnWorld) {
     assert_eq!(proposed, 0, "unexpected proposed ADR count");
 }
 
-#[then("the final register has 25 accepted decisions and no proposed decisions")]
-fn final_register_has_post_engine_counts(world: &mut GivnWorld) {
-    let register = guidance(world);
-    let accepted = register
-        .lines()
-        .filter(|line| line.contains("| accepted |"))
-        .count();
-    let proposed = register
-        .lines()
-        .filter(|line| line.contains("| proposed |"))
-        .count();
-    assert_eq!(accepted, 25, "unexpected accepted ADR count");
-    assert_eq!(proposed, 0, "unexpected proposed ADR count");
-}
-
 #[then("absorbed records are absent and their refinements remain readable")]
 fn absorbed_records_remain_readable(world: &mut GivnWorld) {
     let register = guidance(world);

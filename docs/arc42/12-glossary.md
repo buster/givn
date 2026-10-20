@@ -2,7 +2,7 @@
 
 | Term | Definition |
 |---|---|
-| **Addon** | Embedded behavior toggled through `addons.<name>`. The embedded manifest starts disabled, but current `givn init` enables all known addons unless `--no-addons` is supplied. |
+| **Addon** | Embedded behavior toggled through `addons.<name>`. The embedded manifest starts disabled, but current `givn init` enables every default-on registered addon unless `--no-addons` is supplied; a default-off addon such as `readability` requires `givn addons enable <name>`. |
 | **Addon-aware generation** | Generation that includes only the template sections whose declared addon condition matches the current effective addon set; an addon that is off leaves no trace in the generated skill or slash command. |
 | **AGENTS.md ownership** | Givn owns only the content between its own named fenced markers. All other `AGENTS.md` content is user-owned and preserved. |
 | **Agent target** | One generated guidance destination: `opencode`, `agents`, `claude`, or `omp`, represented by `.opencode/`, `.agents/`, `.claude/`, or `.omp/`. |
@@ -198,6 +198,15 @@
 | **Question wait** | The span between an agent asking the developer a question and the answer resuming its work; it is recorded as its own entry so waiting is distinguishable from working. |
 | **Aggregate marker** | One report tick that stands for a group of entries too short to draw individually at the current phase zoom, naming how many entries it covers and their combined duration; the sub-pixel threshold applies at every zoom, so it resolves into individual ticks only where the current zoom permits. Anti-term: cluster (reserved for use-case grouping). |
 | **Subagent span** | The recorded start and end of one delegated subagent execution, nested under the turn that spawned it, so fan-out into many small subagents is visible. |
+| **Readability experiment** | The default-off `readability` addon that enables an advisory, on-demand report over production source structure. It is an experiment, not a product-wide gate. Anti-terms: readability gate, code-quality score. |
+| **Readability report** | The deterministic human or JSON snapshot of production source units, their metrics, one classification, one action, and the evidence for each finding. It stores no baseline or history. Anti-term: readability baseline. |
+| **Source unit** | The unit the readability report measures: one type aggregated across its declaration and impls in other files, or one module file. Anti-term: file finding (a file can hold several units). |
+| **Production source** | A Rust source item in the project-root `src/` tree that is not a test or tooling source: `tests/`, `benches/`, `examples/`, `target/`, and `#[cfg(test)]` items are excluded. Anti-term: all source (test and tooling sources are out of the first release). |
+| **Readability classification** | The one label every analyzed unit receives: `god-type`, `interface`, `multi-type-module`, `module`, `data-only`, `cohesive-large-type`, `method-length`, or `within-limits`. Anti-term: score. |
+| **Readability action** | The one advisory recommendation attached to a classification: `watch`, `plan`, `exception`, `advisory`, or `none`. `exception` means "plan or record an exception"; the report never records the exception itself. Anti-term: gate result. |
+| **Outline** | The report's structured unit summary: type, field, method, and trait-method signatures with visibility, order, and call order, but no bodies, comments, or call arguments. |
+| **LCOM4** | The number of connected components in the graph of a type's production methods and fields, with method–field and same-file method–method edges. A type with no methods scores 0; one method scores 1. |
+| **TCC/LCC** | Tight and loose class cohesion over the methods that access at least one field: directly connected method pairs (TCC) and transitively connected pairs (LCC), stored as integer permille and absent when no method pairs exist. |
 
 Fossil-specific clauses in this glossary (Fossil `EXTRA` dirty semantics,
 attribution through `givn commit`, the Fossil backend itself) describe the

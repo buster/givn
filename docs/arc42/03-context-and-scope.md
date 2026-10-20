@@ -62,6 +62,8 @@ not alter other content.
 | Claude hook boundary | in | The generated `.claude/hooks/givn-attribution.sh` receives Claude Code's PreToolUse JSON, resolves the current model through its transcript path, and rewrites Bash commands with exported attribution variables that remain available to compound commands and shell wrappers. The generated `.claude/hooks/givn-timeline.sh` is registered per event in `.claude/settings.local.json` and pipes its payload to `givn history harness-hook --harness claude`, which maps it to record entries and reads the session record for token usage. |
 | omp hook boundary | in | The generated `.omp/hooks/pre/givn-attribution.js` is loaded by omp's extension runner as a `pre` hook; its `tool_call` handler rewrites a revision-creating Bash command with attribution exports carrying the live session model, thinking level, and the `omp` harness marker. The generated `.omp/hooks/pre/givn-timeline.js` observes tool, turn, subagent, question, and message events and reports them through `givn history ingest`. |
 | Maki plugin boundary | in | The generated `.maki/lua/givn-timeline.lua` is a project-local Lua plugin loaded by the managed fail-soft `-- givn:begin:timeline` fence in `.maki/init.lua`; its autocmd handlers observe tool, turn, compaction, subagent, status, model, and session events and report them through `givn history ingest`, with grants merged into `.maki/plugin.toml` (the reporter calls `fs_read`, `fs_write`, and `run`); question text is read at the wait's close from the live `maki.session.messages` transcript (no new grants; the every-permission tool slot is not used). The same target also writes Givn's skills to `.maki/skills/` and its commands to `.maki/commands/`. Maki loads nothing from `.maki/` in a folder it has not been trusted for, so the boundary is inactive until the developer trusts the project. |
+| `givn readability report [--json] [--out <path>]` | out | Human or schema-v1 JSON report over the project-root `src/` tree; `--out` diverts the selected form to a file and prints nothing on stdout; findings exit `0`, a disabled experiment or an unwritable `--out` exits `1`, invalid usage exits `2`. No baseline or cache is written. |
+| `addons.readability` | in | Default-off addon flag; absent or `false` disables the command with a named reason, `givn addons enable readability` opts in. |
 | Durable Arc42 path | out | Fixed `docs/arc42/`; no effective output-dir setting exists. |
 | `givn history ingest` | in | The one intake contract for reported agent activity: a JSON payload on stdin, per-event validation, a stable exit-code pair (`0` payload read, `2` unreadable stdin), and a rejected event named on stderr while the accepted ones are stored. It is the single enforcement site for every bound and enforces the project's `record.mode` for payloads (off appends nothing and warns once; on keeps metadata and drops content; full keeps content under the 64 KiB/256 KiB caps); Claude's in-process `harness_hook` separately enforces `off`. `--with-full-content` overrides `on`/`full` for one payload only and is ignored under `off` with one warning and exit 0. |
 | `givn history settings` | out | The mode query: human output `record mode: <mode> (source: <config\|default>)`, `--json` `{"mode":"on\|off\|full","source":"config\|default"}`; both exit 0. An unknown/unreadable value warns once and reports `on`/`default`; outside a Givn project it exits 1 with `error: not a Givn project (givn/ not found)`. It is a non-recorded read view, so a query never appends an entry. |
@@ -85,7 +87,10 @@ not alter other content.
 - README enforcement when the readme addon is enabled: marked scaffolding, the
   deterministic README check, the archive completeness gate, the review-level
   README impact decision, and managed development-block refresh.
-- Addon management, including fixed-path durable Arc42 scaffolding and review.
+- Addon management, including fixed-path durable Arc42 scaffolding and review,
+  and default-off addons such as `readability`.
+- The opt-in readability report: production-source discovery, neutral unit
+  analysis, shared metrics and classification, and advisory human/JSON output.
 - Agent skill/command generation with selected targets and fenced-block ownership.
 - The pending `make-user-questions-decision-ready` contract keeps one effective
   dialog policy and adds universal discovery obligations; it does not intercept
@@ -118,6 +123,9 @@ not alter other content.
   container files, or framework conventions; health monitoring beyond the
   declared readiness probe; a background or daemon mode for `givn run`.
 - A configurable Arc42 output directory or chapter selection cascade.
+- The readability review gate and its `review.md` enforcement; a stored
+  readability baseline or watchlist; non-Rust language adapters; automatic
+  refactoring; and any exit-code effect from readability findings.
 - OpenSpec backward-compatible reads or migrations from versions below the
   oldest migration route the catalog declares.
 - Multi-repository workflow coordination.

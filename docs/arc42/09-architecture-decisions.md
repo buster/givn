@@ -115,6 +115,15 @@ harness's private session log at report time) stay readable in the record. The
 compatibility surface of a stale installed reporter and the accepted record
 gaps are carried by R-84, R-88, and D-22 in chapter 11.
 
+ADR-074 is accepted by the `add-readability-report` change: source analysis sits
+behind a neutral `SourceAnalyzer` port, `SynAnalyzer` is the first adapter, and
+`syn` types stay inside that adapter. The decision fixes the dependency direction
+and the engine-independent report contract that the later
+`add-readability-review-gate` change and a later tree-sitter adapter build on. It
+is separate from ADR-069's feature-free dependency surface: the record owns the
+analysis boundary and replaceability contract, not the dependency list itself.
+Its consequences are carried by R-99 through R-102 in chapter 11.
+
 Individual ADRs preserve decision rationale and links. Current architecture
 facts remain in the relevant Arc42 chapters or implementation; the register is
 not a second copy of those facts.

@@ -23,10 +23,11 @@ The sequence is:
 5. Write `givn/commands.yaml` from the embedded project command template unless
    it already exists and `--force` is absent. The current template contains
    `./run-tests.sh`, `./run-tests.sh --e2e`, and coverage script/path entries.
-6. Unless `--no-addons` is set, enable every registered addon. In the current
-   registry this scaffolds Arc42, manages the Absolute Mode fenced block, may
-   scaffold README content, enables the archive coverage gate, and toggles
-   the four project-level skills and commands.
+6. Unless `--no-addons` is set, enable every default-on registered addon. In the
+   current registry this scaffolds Arc42, manages the Absolute Mode fenced
+   block, may scaffold README content, enables the archive coverage gate, and
+   toggles the four project-level skills and commands. A default-off addon is
+   registered but not enabled.
 7. Synchronize skills, commands, and attribution integrations to the selected
    targets. The sync
    updates only givn-owned fenced blocks in `AGENTS.md` and leaves all other
@@ -40,7 +41,10 @@ The sequence is:
 
 The embedded default manifest has addon flags disabled, but initialized projects
 normally receive enabled addon settings because the current `init` command
-enables them. Existing Arc42 files are not overwritten by addon scaffolding.
+enables the default-on set. When a registered addon is default-off, `givn init`
+prints a separate line naming it and the enabling command instead of writing its
+flag; the first such addon is `readability`. Existing Arc42 files are not
+overwritten by addon scaffolding.
 
 ## 6.1a Commit attribution
 
@@ -339,16 +343,21 @@ archive does not call the explicit `check review` mandatory branch.
 
 ## 6.12 Addons, Upgrade, and Completion Commands
 
-`givn addons list` reads enabled flags from `givn/config.yaml`. `enable arc42`
-sets the flag, scaffolds missing fixed-path chapter files, and expands the
-effective graph; `disable arc42` leaves existing docs in place. The same
-commands manage other registered addon flags.
+`givn addons list` reads enabled flags from `givn/config.yaml` and lists every
+registered addon, marking a default-off entry whose flag is absent or false as
+`[disabled]`. `enable arc42` sets the flag, scaffolds missing fixed-path chapter
+files, and expands the effective graph; `disable arc42` leaves existing docs in
+place. The same commands manage other registered addon flags. `enable
+readability` sets its flag, prints the report command, and generates no skill or
+command file; `disable readability` makes the report exit 1 with the named
+disabled reason.
 
 `givn skills sync` resolves the selected targets, writes generated skills and
 the commands of the command-owning targets, refreshes the `givn-project` block, and applies/removes the
 Absolute Mode block according to its addon flag. `givn upgrade` rewrites the
 managed config scaffold, preserves uncommented user blocks, and auto-enables
-newly known addons not represented in the old config.
+newly known default-on addons not represented in the old config; a default-off
+addon is never enabled by upgrade.
 
 `givn completions <shell>` writes no project files and prints a shell completion
 script to stdout.
@@ -611,5 +620,55 @@ the rest `content omitted; see the record`, while the store keeps every byte.
 A scope whose model holds no entries — including a record that holds only the
 recorder's own command entries — renders the empty state rather than an empty
 workflow.
+
+## 6.19 `givn readability report`
+
+The command is registered unconditionally and gated at runtime so that a
+disabled experiment can explain itself:
+
+```mermaid
+sequenceDiagram
+  actor Developer
+  participant CLI as givn readability report
+  participant CFG as config::overlay
+  participant ORCH as readability orchestration
+  participant AN as SourceAnalyzer
+  participant MET as metrics
+  participant CLS as classify
+  participant RPT as report
+  Developer->>CLI: run report [--json] [--out]
+  CLI->>CFG: load_effective()
+  alt readability disabled
+    CLI-->>Developer: exit 1, stderr names the disabled experiment
+  else enabled
+    CLI->>ORCH: report(project root, production src scope)
+    ORCH->>AN: analyze(request)
+    AN-->>ORCH: neutral Analysis plus per-file diagnostics
+    ORCH->>MET: compute(analysis)
+    MET-->>ORCH: per-unit metrics
+    ORCH->>CLS: classify(metrics)
+    CLS-->>ORCH: classification, action, evidence
+    ORCH->>RPT: render(classified units)
+    RPT-->>Developer: stdout or --out, exit 0
+  end
+```
+
+1. `clap` dispatches `readability report`; the handler loads the effective
+   configuration. An absent or false `addons.readability` stops with exit 1 and
+   a stderr message naming the enabling command.
+2. With the addon enabled, the orchestration scans the project-root `src/`
+   tree, excludes test, benchmark, example, and target directories and
+   `#[cfg(test)]` items, and presents a deterministic request to the
+   `SourceAnalyzer`.
+3. The adapter returns one neutral `Analysis`. A read or parse failure is a
+   diagnostic for that file, not an abort; the report continues with the
+   analyzable files and names every failure.
+4. Shared metrics and classification run above the port. Every analyzed unit
+   receives exactly one classification and one action; wholly unsupported units
+   are not classified and are named.
+5. The selected renderer writes human text or schema-v1 JSON. Findings never
+   change the exit code; the only write is the explicit `--out` path. The
+   command appends no development-record entry and stores no baseline, cache, or
+   classification history.
 
 *[Architecture documentation index](README.md)*

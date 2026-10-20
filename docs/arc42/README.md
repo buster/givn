@@ -84,6 +84,14 @@ ADR-013's generated-integration ownership, and ADR-028's gate boundary. The
 browser report and its visual contract are documented in
 `docs/design/design-system.md`.
 
+The `add-readability-report` change proposes ADR-074: source analysis sits behind
+a neutral `SourceAnalyzer` port, `SynAnalyzer` is the first adapter, metrics and
+classification run above the port, and a later tree-sitter adapter must pass the
+same contract without changing the report. The report is an opt-in, default-off,
+advisory experiment with no stored baseline. Durable facts live in chapters 1
+(FR-46), 2 (TC-38, 2.3), 3, 4, 5, 6.1/6.12/6.19, 8.11/8.26, 10 (Q-104 to Q-107),
+11 (R-99 to R-102, D-24, D-25), and 12.
+
 Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
 register](adr/README.md) for status, relationships, evidence, reserved IDs, and
 historical records.
