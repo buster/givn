@@ -380,7 +380,11 @@ impl IngestedEvent {
         let subagent = self.subagent.as_deref().or(usage.subagent.as_deref());
         let mut entry =
             HistoryEntry::reported(scope.clone(), "usage", model.unwrap_or("usage"), &self.at);
-        entry.data = Some(usage.data(model, subagent));
+        let mut data = usage.data(model, subagent);
+        if let Some(object) = data.as_object_mut() {
+            object.insert("derived".to_string(), Value::Bool(true));
+        }
+        entry.data = Some(data);
         entry.outcome = self.outcome_word();
         entry
     }
