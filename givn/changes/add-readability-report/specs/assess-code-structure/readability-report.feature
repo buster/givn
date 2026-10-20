@@ -17,7 +17,7 @@ Feature: Readability report
     When the developer runs "givn addons list"
     Then the readability addon is listed as disabled
 
-  @givn.added @wip
+  @givn.added
   Scenario: The readability report is unavailable when the experiment is disabled
     Given a Givn project with the readability experiment disabled
     When the developer runs "givn readability report"

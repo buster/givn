@@ -19,6 +19,7 @@ pub mod missing_run_command;
 pub mod missing_testrunner;
 pub mod new;
 pub mod project_hint;
+pub mod readability;
 pub mod readme;
 pub mod run;
 pub mod run_block;
