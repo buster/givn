@@ -100,6 +100,17 @@ fn two_engines_fixture(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
+#[when("the readability report is produced twice")]
+fn report_produced_twice(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let first = crate::steps::readability_report_support::assess_report(env);
+    let second = crate::steps::readability_report_support::assess_report(env);
+    world.additional_output = Some(format!("{first}\u{0}{second}"));
+}
+
 #[when("the readability report is rendered from each engine")]
 fn render_from_each_engine(world: &mut GivnWorld) {
     let env = world
@@ -234,6 +245,9 @@ fn report_classifies_cohesive(world: &mut GivnWorld) {
 
 #[given("a production source unit")]
 fn production_source_unit(world: &mut GivnWorld) {
+    if world.env.is_none() {
+        world.env = Some(common::make_bare_root());
+    }
     let env = world
         .env
         .as_ref()

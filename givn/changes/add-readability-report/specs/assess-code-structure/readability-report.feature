@@ -123,7 +123,7 @@ Feature: Readability report
     When the readability report is rendered from each engine
     Then the two reports are identical
 
-  @givn.added @wip
+  @givn.added
   Scenario: The report is deterministic
     Given a production source unit
     When the readability report is produced twice
