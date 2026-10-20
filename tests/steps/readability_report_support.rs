@@ -26,6 +26,15 @@ pub fn write_data_only_enum(env: &TestEnv, name: &str, variants: usize) {
     write_source(env, "src/big_enum.rs", &source);
 }
 
+pub fn write_large_trait(env: &TestEnv, name: &str, methods: usize) {
+    let mut source = format!("pub trait {name} {{\n");
+    for index in 0..methods {
+        source.push_str(&format!("    fn method_{index}(&self) -> usize;\n"));
+    }
+    source.push_str("}\n");
+    write_source(env, "src/big_trait.rs", &source);
+}
+
 pub fn write_source(env: &TestEnv, relative: &str, source: &str) {
     let path = env.path(relative);
     if let Some(parent) = path.parent() {

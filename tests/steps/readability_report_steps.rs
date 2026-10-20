@@ -38,6 +38,33 @@ fn data_only_enum(world: &mut GivnWorld) {
     crate::steps::readability_report_support::write_data_only_enum(env, "BigEnum", 520);
 }
 
+#[given("a production source unit with a trait over the readable size")]
+fn large_trait(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::readability_report_support::write_large_trait(env, "BigTrait", 520);
+}
+
+#[then("the report classifies the unit as an interface")]
+fn report_classifies_interface(world: &mut GivnWorld) {
+    let stdout = crate::steps::stdout(world);
+    assert!(
+        stdout.contains("interface"),
+        "expected an interface classification, got: {stdout}"
+    );
+}
+
+#[then("the report recommends a trait-composition plan")]
+fn report_recommends_trait_composition(world: &mut GivnWorld) {
+    let stdout = crate::steps::stdout(world);
+    assert!(
+        stdout.contains("trait-composition plan"),
+        "expected a trait-composition plan, got: {stdout}"
+    );
+}
+
 #[then("the report classifies the unit as data-only")]
 fn report_classifies_data_only(world: &mut GivnWorld) {
     let stdout = crate::steps::stdout(world);
