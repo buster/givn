@@ -84,6 +84,7 @@ so the text has exactly one home.
   an unchecked box means that scenario is not done. Never batch-check
   boxes at the end.
 - One atomic `givn commit -m "feat(<capability>): <release note>"` per
+- A checked scenario names one real, unique revision. The commit must exist, be reachable from HEAD, and its message body must contain the scenario title. Missing, duplicate, placeholder, unreachable, or untitled revisions block `givn check tasks` and review; there is no shared or one-pass mode.
   scenario (RED+GREEN+REFACTOR together); the revision message
   carries the release note as its message subject, and
   the scenario title goes in the message body. It works on Git and Fossil. A

@@ -1014,3 +1014,120 @@ fn result_file_has_counts(world: &mut GivnWorld) {
     assert_eq!(value["skipped"], 0);
     assert!(value.get("scope").is_none());
 }
+
+// --- strict scenario commit checks ----------------------------------------
+
+fn empty_commit_with_message(world: &GivnWorld, message: &str) -> String {
+    let env = world.env.as_ref().expect("a fixture project");
+    let out = common::git(env, &["commit", "--allow-empty", "-m", message]);
+    assert!(
+        out.status.success(),
+        "empty commit failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    String::from_utf8_lossy(&common::git(env, &["rev-parse", "HEAD"]).stdout)
+        .trim()
+        .to_string()
+}
+
+fn write_tasks_and_commit(world: &GivnWorld, id: &str, content: &str) {
+    let change = change_dir_for(world, id);
+    std::fs::write(change.join("tasks.md"), content).expect("write tasks");
+    common::commit_fixture(world.env.as_ref().expect("a fixture project"));
+}
+
+#[given("the change's tasks.md checks a scenario without a commit")]
+fn tasks_checked_scenario_without_commit(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    write_tasks_and_commit(
+        world,
+        &id,
+        "- [x] Scenario: A checked scenario\n  - [x] done\n",
+    );
+}
+
+#[given("the change's tasks.md checks two scenarios with the same revision")]
+fn tasks_duplicate_scenario_revision(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let hash = empty_commit_with_message(world, "feat: first and second scenario");
+    write_tasks_and_commit(
+        world,
+        &id,
+        &format!(
+            "- [x] Scenario: First scenario\n  - [x] COMMIT: {hash} -- first\n\
+             - [x] Scenario: Second scenario\n  - [x] COMMIT: {hash} -- second\n"
+        ),
+    );
+}
+
+#[given("the change's tasks.md checks a scenario whose commit message omits the title")]
+fn tasks_message_without_title(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let hash = empty_commit_with_message(world, "unrelated commit");
+    write_tasks_and_commit(
+        world,
+        &id,
+        &format!(
+            "- [x] Scenario: Scenario with a title\n  - [x] COMMIT: {hash} -- unrelated\n"
+        ),
+    );
+}
+
+#[given("the change's tasks.md checks one scenario with its own commit")]
+fn tasks_one_scenario_with_commit(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let hash = empty_commit_with_message(world, "feat: Scenario with a title");
+    write_tasks_and_commit(
+        world,
+        &id,
+        &format!(
+            "- [x] Scenario: Scenario with a title\n  - [x] COMMIT: {hash} -- Scenario with a title\n"
+        ),
+    );
+}
+
+#[then("stderr names the scenario and the missing commit")]
+fn stderr_names_missing_scenario_commit(world: &mut GivnWorld) {
+    let stderr = crate::steps::stderr(world);
+    assert!(
+        stderr.contains("A checked scenario") && stderr.contains("has no `COMMIT:` line"),
+        "stderr missing the scenario commit finding: {stderr}"
+    );
+}
+
+#[then("stderr says each scenario needs its own commit")]
+fn stderr_says_unique_scenario_commit(world: &mut GivnWorld) {
+    let stderr = crate::steps::stderr(world);
+    assert!(
+        stderr.contains("each scenario needs its own commit"),
+        "stderr missing the duplicate revision finding: {stderr}"
+    );
+}
+
+#[then("stderr says the commit does not name the scenario")]
+fn stderr_says_commit_missing_title(world: &mut GivnWorld) {
+    let stderr = crate::steps::stderr(world);
+    assert!(
+        stderr.contains("does not name the scenario in its message"),
+        "stderr missing the commit message finding: {stderr}"
+    );
+}
+
+#[then("stdout says scenario commits passed")]
+fn stdout_says_scenario_commits_passed(world: &mut GivnWorld) {
+    let stdout = crate::steps::stdout(world);
+    assert!(
+        stdout.contains("scenario commits passed"),
+        "stdout missing the scenario commit pass line: {stdout}"
+    );
+}
+
+#[given("the change's review.md records `VISUAL-REVIEW: NOT APPLICABLE`")]
+fn review_records_not_applicable(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    std::fs::write(
+        change_dir_for(world, &id).join("review.md"),
+        "REVIEW: PASS\nREADME-IMPACT: none\nVISUAL-REVIEW: NOT APPLICABLE\n",
+    )
+    .expect("write review marker");
+}

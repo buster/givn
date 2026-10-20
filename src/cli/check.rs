@@ -1,5 +1,6 @@
 use crate::config::overlay::load_effective;
 use anyhow::{Result, bail};
+use std::collections::HashSet;
 
 /// Run an artifact's post hooks (e.g. verify.command, lint).
 ///
@@ -179,6 +180,190 @@ fn run_mandatory_checks(
     Ok(())
 }
 
+struct ScenarioCommit {
+    title: String,
+    checked: bool,
+    hash: Option<String>,
+}
+
+fn scenario_title(line: &str) -> Option<(bool, String)> {
+    let trimmed = line.trim();
+    if !trimmed.starts_with("- [") {
+        return None;
+    }
+    let checked = trimmed.starts_with("- [x]") || trimmed.starts_with("- [X]");
+    let index = trimmed.find("Scenario:")?;
+    let title = trimmed[index + "Scenario:".len()..]
+        .trim()
+        .trim_matches('*')
+        .trim_matches('`')
+        .trim();
+    if title.is_empty() {
+        return None;
+    }
+    Some((checked, title.to_string()))
+}
+
+fn commit_line(line: &str) -> Option<(bool, Option<String>)> {
+    let trimmed = line.trim();
+    if !trimmed.starts_with("- [") || !trimmed.contains("COMMIT:") {
+        return None;
+    }
+    let checked = trimmed.starts_with("- [x]") || trimmed.starts_with("- [X]");
+    let hash = trimmed
+        .split_once("COMMIT:")
+        .map(|(_, rest)| rest)
+        .unwrap_or("")
+        .split("--")
+        .next()
+        .unwrap_or("")
+        .trim()
+        .trim_matches('`');
+    Some((checked, (!hash.is_empty()).then(|| hash.to_string())))
+}
+
+fn parse_scenario_commits(content: &str) -> Vec<ScenarioCommit> {
+    let mut scenarios: Vec<ScenarioCommit> = Vec::new();
+    for line in content.lines() {
+        if let Some((checked, title)) = scenario_title(line) {
+            scenarios.push(ScenarioCommit {
+                title,
+                checked,
+                hash: None,
+            });
+        } else if let Some((checked, hash)) = commit_line(line) {
+            if let Some(current) = scenarios.last_mut() {
+                if current.hash.is_none() {
+                    current.hash = hash;
+                    if checked {
+                        current.checked = true;
+                    }
+                }
+            }
+        }
+    }
+    scenarios
+}
+
+fn normalize_commit_text(text: &str) -> String {
+    text.replace(['`', '*'], "")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
+}
+
+fn placeholder_hash(hash: &str) -> bool {
+    let lower = hash.to_lowercase();
+    lower == "___"
+        || lower == "---"
+        || lower == "xxx"
+        || lower.chars().all(|c| c == 'x')
+        || lower == "tbd"
+        || lower == "todo"
+        || lower.starts_with('<')
+}
+
+/// Block unless every checked scenario has one unique, real commit whose
+/// message body contains the scenario title. A change with no checked
+/// scenario has not started implementation; it is not blocked here.
+fn check_scenario_commits(
+    backend: &crate::scm::Backend,
+    change_dir: &std::path::Path,
+) -> Result<()> {
+    let tasks = change_dir.join("tasks.md");
+    let Ok(content) = std::fs::read_to_string(&tasks) else {
+        return Ok(());
+    };
+    let scenarios = parse_scenario_commits(&content);
+    if scenarios.is_empty() || !scenarios.iter().any(|scenario| scenario.checked) {
+        return Ok(());
+    }
+    let mut errors = Vec::new();
+    let mut seen: HashSet<String> = HashSet::new();
+    for scenario in &scenarios {
+        if !scenario.checked {
+            errors.push(format!(
+                "scenario '{}' is not checked; a scenario is done only when its commit is recorded",
+                scenario.title
+            ));
+            continue;
+        }
+        let Some(hash) = scenario.hash.as_deref() else {
+            errors.push(format!(
+                "scenario '{}' has no `COMMIT:` line",
+                scenario.title
+            ));
+            continue;
+        };
+        if placeholder_hash(hash) {
+            errors.push(format!(
+                "scenario '{}' uses a placeholder revision `{hash}`",
+                scenario.title
+            ));
+            continue;
+        }
+        if !seen.insert(hash.to_string()) {
+            errors.push(format!(
+                "scenario '{}' reuses revision `{hash}`; each scenario needs its own commit",
+                scenario.title
+            ));
+            continue;
+        }
+        if !backend.commit_exists(hash)? {
+            errors.push(format!(
+                "scenario '{}' names revision `{hash}` which does not exist",
+                scenario.title
+            ));
+            continue;
+        }
+        if !backend.is_ancestor(hash)? {
+            errors.push(format!(
+                "scenario '{}' names revision `{hash}` which is not reachable from HEAD",
+                scenario.title
+            ));
+            continue;
+        }
+        let Some(message) = backend.commit_message(hash)? else {
+            errors.push(format!(
+                "scenario '{}' names revision `{hash}` with no readable message",
+                scenario.title
+            ));
+            continue;
+        };
+        if !normalize_commit_text(&message).contains(&normalize_commit_text(&scenario.title)) {
+            errors.push(format!(
+                "scenario '{}' commit `{hash}` does not name the scenario in its message",
+                scenario.title
+            ));
+        }
+    }
+    if !errors.is_empty() {
+        bail!(
+            "scenario commit check failed:\n  {}",
+            errors.join("\n  ")
+        );
+    }
+    println!(
+        "  ✓ scenario commits passed ({} scenario(s))",
+        scenarios.len()
+    );
+    Ok(())
+}
+
+/// Report a missing README-impact decision before review. The review integrity
+/// gate remains the blocking authority.
+fn preflight_readme_impact(change_dir: &std::path::Path) {
+    let review = change_dir.join("review.md");
+    match std::fs::read_to_string(&review) {
+        Ok(content) if content.contains("README-IMPACT:") => {}
+        Ok(_) => println!(
+            "  ⚠ task preflight: review.md has no README-IMPACT decision (none or updated - <sections>)"
+        ),
+        Err(_) => println!("  ⚠ task preflight: review.md is missing"),
+    }
+}
+
 /// Run the change-scoped verification and persist its receipt.
 /// The clean-tree requirement keeps the receipt bound to one revision; the
 /// agent commits implementation and evidence before this command runs.
@@ -188,7 +373,9 @@ fn run_change_verification(
     change_id: &str,
 ) -> anyhow::Result<()> {
     let change_dir = crate::state::resolve_change_dir(project_root, change_id)?;
+    preflight_readme_impact(&change_dir);
     let backend = crate::scm::select(project_root)?;
+    check_scenario_commits(&backend, &change_dir)?;
     let offending: Vec<String> = backend
         .dirty_entries()?
         .iter()
@@ -259,6 +446,7 @@ fn check_change_receipt(
         )
     })?;
     let backend = crate::scm::select(project_root)?;
+    check_scenario_commits(&backend, &change_dir)?;
     let head = backend.revision()?;
     if !receipt.is_current(&change_dir, &head, &manifest.verify.command)? {
         let features = crate::proof::digest_features(&change_dir.join("specs"))?;
