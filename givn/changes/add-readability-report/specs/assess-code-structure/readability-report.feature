@@ -151,7 +151,7 @@ Feature: Readability report
     Then the report says there are no production sources
     And the command exits with code 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: An explicitly requested scope that does not exist is an error
     Given a Givn project with the readability experiment enabled
     When the developer runs "givn readability report --path missing"
