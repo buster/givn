@@ -215,6 +215,23 @@ enum Commands {
     #[command(name = "missing-testrunner", hide = true)]
     MissingTestrunner,
 
+    /// Write the four-count runner result to `GIVN_RESULT_FILE`.
+    #[command(name = "test-result")]
+    TestResult {
+        /// Total scenarios executed.
+        #[arg(long)]
+        total: u64,
+        /// Passed scenarios.
+        #[arg(long)]
+        passed: u64,
+        /// Failed scenarios.
+        #[arg(long)]
+        failed: u64,
+        /// Skipped scenarios.
+        #[arg(long)]
+        skipped: u64,
+    },
+
     /// Sentinel default run.command: prints setup guidance and exits non-zero.
     #[command(name = "missing-run-command", hide = true)]
     MissingRunCommand,
@@ -401,9 +418,10 @@ fn main() {
     } else {
         ("failed", 1)
     };
+    let error_text = result.as_ref().err().map(|error| format!("{error:#}"));
     if let Some(recorder) = &recorder {
         recorder.observe_artifacts();
-        recorder.finish(outcome, exit_code);
+        recorder.finish(outcome, exit_code, error_text.as_deref());
     }
 
     if let Err(e) = result {
@@ -528,6 +546,12 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Upgrade => cli::upgrade::run(),
         Commands::Run { port, print } => std::process::exit(cli::run::execute(port, print)),
         Commands::MissingTestrunner => cli::missing_testrunner::run(),
+        Commands::TestResult {
+            total,
+            passed,
+            failed,
+            skipped,
+        } => cli::test_result::run(total, passed, failed, skipped),
         Commands::MissingRunCommand => cli::missing_run_command::run(),
         Commands::Completions { shell } => {
             let mut cmd = Cli::command();

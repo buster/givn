@@ -57,7 +57,14 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
         // Auto-default to detail view when exactly one active change exists.
         if changes.len() == 1 {
             if json {
-                print_json(&changes[0], scm)?;
+                let active = summary_json(&changes[0]);
+                let out = serde_json::json!({
+                    "active": active,
+                    "archived": archived,
+                    "unproven_archives": unproven,
+                    "scm": scm,
+                });
+                println!("{}", serde_json::to_string_pretty(&out)?);
             } else {
                 print_detail(&changes[0]);
                 print_unproven_archives(&unproven);

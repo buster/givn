@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "change": "review-preflight-and-cli-evidence",
+  "status": "passed",
+  "head": "a2c4d1dddda47cb0c05939ea058e535c3fdd1426",
+  "features_path": "givn/changes/review-preflight-and-cli-evidence/specs",
+  "features_digest": "4499354af9a68919b1a717a9f5763072fc68243ee25e5cd4043e3e266a9c05bb",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1792472491
+}

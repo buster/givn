@@ -67,7 +67,26 @@ addons:
 </coverage>"#,
     )
     .expect("write e2e xml");
-    world.last_change_id = Some(id);
+    world.last_change_id = Some(id.clone());
+    let head = String::from_utf8_lossy(&common::git(env, &["rev-parse", "HEAD"]).stdout)
+        .trim()
+        .to_string();
+    givn::proof::write_change_receipt(
+        &env.root(),
+        &change_dir,
+        &id,
+        &head,
+        "true",
+        givn::proof::RunnerResult {
+            scope: None,
+            total: 2,
+            passed: 2,
+            failed: 0,
+            skipped: 0,
+        },
+        1,
+    )
+    .expect("write change receipt");
 }
 
 #[given(
