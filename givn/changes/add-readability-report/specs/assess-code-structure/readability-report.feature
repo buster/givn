@@ -49,35 +49,35 @@ Feature: Readability report
     Then the report classifies the unit as a cohesive-large-type
     And the report recommends an advisory action
 
-  @givn.added @wip
+  @givn.added
   Scenario: A type with many public methods is an interface
     Given a production source unit with more than 50 public methods
     When the readability report assesses the unit
     Then the report classifies the unit as an interface
     And the report recommends a trait-composition plan
 
-  @givn.added @wip
+  @givn.added
   Scenario: A large type in the inspect band needs an exception
     Given a production source unit with a large type in the inspect band
     When the readability report assesses the unit
     Then the report classifies the unit as a cohesive large type
     And the report recommends an exception action
 
-  @givn.added @wip
+  @givn.added
   Scenario: A module over the plan limit needs an exception
     Given a production source unit with a module over the plan limit
     When the readability report assesses the unit
     Then the report classifies the unit as a module
     And the report recommends an exception action
 
-  @givn.added @wip
+  @givn.added
   Scenario: A long method is a method-length finding
     Given a production source unit with a long method
     When the readability report assesses the unit
     Then the report classifies the unit as a method-length finding
     And the report recommends a watch action
 
-  @givn.added @wip
+  @givn.added
   Scenario: Test sources are not scanned
     Given a Givn project with the readability experiment enabled
     And a production source unit and a test source unit

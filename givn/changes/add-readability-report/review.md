@@ -1,7 +1,9 @@
 # Review: add-readability-report
 
 Status: coverage review complete. No fabrication findings. Coverage classified.
-`REVIEW: PASS`.
+`README-IMPACT: updated - What it is
+
+REVIEW: PASS`.
 
 ## Fabrication audit
 
@@ -190,5 +192,7 @@ APPLICABLE`.
 None. The later `add-readability-review-gate` is a separate change, not a
 deferral of a mandatory check in this one. The experiment exit rule and the
 deferred ledger are owner decisions recorded in D4/OD1 and arc42 D-25.
+
+README-IMPACT: updated - What it is
 
 REVIEW: PASS
