@@ -38,6 +38,8 @@ The developer requests verification of a change.
 
 - Structural failures outrank other findings.
 - A review PASS requires a current green change-scoped verification receipt.
+- Each checked scenario records one real, unique revision whose message names the scenario; the task check refuses a missing, duplicate, unreachable, or unnamed revision.
+- The README-impact decision is reported before review and remains a blocking review requirement.
 - The receipt binds the tested revision, the selected delta features, and the verify command.
 - Every blocking overlap has an explicit disposition.
 - Migration coverage cannot regress without an explicit retirement record.
@@ -106,4 +108,4 @@ flowchart LR
   Check --> Findings[[Resolve findings]]
 ```
 
-<!-- givn:base-sha256:6a6ca309ef7315950b88ff30f81cb17eb3d25ca208ee2594f53e20c6e6abff4d -->
+<!-- givn:base-sha256:6418bc55849fa6c8ef40a62cd8a741aefd763201f7cbee5f418ecf95dc8f34f5 -->
