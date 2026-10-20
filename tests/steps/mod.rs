@@ -185,6 +185,10 @@ pub struct GivnWorld {
     pub(crate) archive_receipt_snapshot: Option<String>,
     /// Keep a deliberately missing or stale change-scoped review receipt.
     pub(crate) skip_receipt_autowrite: bool,
+    /// Number of change-suite invocations recorded before a review/archive run.
+    pub(crate) verification_invocations_before: Option<usize>,
+    /// The tested-content boundary a stale-receipt outline example changed.
+    pub(crate) changed_boundary: Option<String>,
     /// State for the `@e2e` `development-report` scenarios: the generated
     /// report and the browser the browser scenarios drive.
     #[allow(dead_code)] // Tasks E5–E9 read it.
