@@ -418,6 +418,18 @@ project; leaving debt because it is not your code is not acceptable. The
 banned reasons include "not my code", "not this change", "legacy", "out of
 scope", "too risky", "no time", and "later".
 
+The reviewer verifies the rationale rather than trusting it:
+
+- Verify every `Evidence:` and `Why this shape is right:` claim against the
+  actual base/head measurements and the unit's full responsibility set, and
+  reject a rationale that describes only part of the unit.
+- Reject an extraction that merely relocates a smell — a long method becoming
+  a long parameter list, a measured size lowered by hiding the literals, or a
+  suppression added to silence the symptom.
+- When a rationale claims a replaceable module boundary, require a consumer or
+  test that uses it through the neutral contract; reject a private
+  implementation split that only the current adapter can reach.
+
 When any finding exists, record `READABILITY: PASS` after a fresh reviewer
 context reads only the deterministic outline and can explain the unit's
 responsibility and call order. If it cannot, record `FAIL <reason>`; a `FAIL`
