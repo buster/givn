@@ -104,7 +104,7 @@ Feature: Readability report
     Then the JSON report has schema version 1
     And the JSON report has rules version 1
 
-  @givn.added @wip
+  @givn.added
   Scenario: The JSON report carries analyzer capabilities and limitations
     Given a Givn project with the readability experiment enabled
     When the developer runs "givn readability report --json"

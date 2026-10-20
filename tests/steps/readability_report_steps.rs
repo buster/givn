@@ -198,6 +198,27 @@ fn production_source_unit(world: &mut GivnWorld) {
     crate::steps::readability_report_support::write_small_unit(env);
 }
 
+#[then("the JSON report names the supported constructs")]
+fn json_supported_constructs(world: &mut GivnWorld) {
+    let value = json_output(world);
+    let constructs = value["capabilities"]["supported_constructs"]
+        .as_array()
+        .expect("supported_constructs array");
+    assert!(!constructs.is_empty(), "no supported constructs in {value}");
+}
+
+#[then("the JSON report names the analyzer limitations")]
+fn json_analyzer_limitations(world: &mut GivnWorld) {
+    let value = json_output(world);
+    let limitations = value["capabilities"]["limitations"]
+        .as_array()
+        .expect("limitations array");
+    assert!(
+        !limitations.is_empty(),
+        "no analyzer limitations in {value}"
+    );
+}
+
 #[then("the JSON report has schema version 1")]
 fn json_schema_version(world: &mut GivnWorld) {
     let value = json_output(world);
