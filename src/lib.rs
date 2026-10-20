@@ -16,6 +16,7 @@ pub mod hooks;
 pub mod integrity_hook;
 pub mod overlap;
 pub mod proof;
+pub mod readability;
 pub mod scm;
 pub mod skills;
 pub mod spec;

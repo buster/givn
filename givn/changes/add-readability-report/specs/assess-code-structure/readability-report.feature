@@ -24,7 +24,7 @@ Feature: Readability report
     Then the command exits non-zero
     And stderr contains "readability experiment is disabled"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A data-only type is not treated as a god type
     Given a Givn project with the readability experiment enabled
     And a production source unit with a data-only enum over the readable size

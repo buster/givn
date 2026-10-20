@@ -10,6 +10,7 @@ mod hooks;
 mod integrity_hook;
 mod overlap;
 mod proof;
+mod readability;
 mod scm;
 mod skills;
 mod spec;
