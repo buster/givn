@@ -262,6 +262,25 @@ fn report_names_file(world: &mut GivnWorld, relative: String) {
     );
 }
 
+#[given("a production source unit and a test source unit")]
+fn production_and_test_sources(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::readability_report_support::write_small_unit(env);
+    crate::steps::readability_report_support::write_god_type_at(env, "TestGod", "tests/big.rs");
+}
+
+#[then("the report does not name the test source")]
+fn report_does_not_name_test_source(world: &mut GivnWorld) {
+    let stdout = report_text(world);
+    assert!(
+        !stdout.contains("tests/big.rs"),
+        "the test source must not be scanned: {stdout}"
+    );
+}
+
 #[given("a production source unit with a long method")]
 fn long_method(world: &mut GivnWorld) {
     let env = common::make_bare_root();

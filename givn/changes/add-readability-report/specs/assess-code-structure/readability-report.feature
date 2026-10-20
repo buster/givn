@@ -77,6 +77,13 @@ Feature: Readability report
     Then the report classifies the unit as a method-length finding
     And the report recommends a watch action
 
+  @givn.added @wip
+  Scenario: Test sources are not scanned
+    Given a Givn project with the readability experiment enabled
+    And a production source unit and a test source unit
+    When the developer runs "givn readability report"
+    Then the report does not name the test source
+
   @givn.added
   Scenario: A type at the readable size limit is within limits
     Given a production source unit with exactly 500 code lines and cohesive methods
