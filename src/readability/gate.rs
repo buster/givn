@@ -10,7 +10,6 @@ use crate::readability::{self, AnalysisRequest};
 use anyhow::{Context, Result, bail};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 const BANNED: &[&str] = &[
     "not my code",
@@ -31,57 +30,40 @@ pub fn enforce(project_root: &Path, change_id: &str) -> Result<()> {
         bail!("change directory 'givn/changes/{change_id}/' does not exist");
     }
 
-    let dirty = git(project_root, &["status", "--porcelain", "--", "src"])?;
-    if !dirty.trim().is_empty() {
-        let paths = dirty
-            .lines()
-            .filter_map(|line| line.get(3..))
-            .collect::<Vec<_>>()
-            .join(", ");
-        bail!("production paths are dirty; commit or discard before review: {paths}");
+    let backend = crate::scm::select(project_root)?;
+    let dirty = backend.dirty_entries()?;
+    let dirty_src: Vec<String> = dirty
+        .iter()
+        .filter(|path| path.starts_with("src"))
+        .map(|path| path.display().to_string())
+        .collect();
+    if !dirty_src.is_empty() {
+        bail!(
+            "production paths are dirty; commit or discard before review: {}",
+            dirty_src.join(", ")
+        );
     }
 
     let change_path = format!("givn/changes/{change_id}/");
-    let revisions = git(
-        project_root,
-        &[
-            "rev-list",
-            "--reverse",
-            "--full-history",
-            "HEAD",
-            "--",
-            &change_path,
-        ],
-    )?;
-    let first = revisions
-        .lines()
-        .next()
+    let first = backend
+        .first_touching_revision(&change_path)?
         .with_context(|| format!(
             "change directory 'givn/changes/{change_id}/' has no reachable commit; commit the change directory before review"
         ))?;
-    let parent = parent_revision(project_root, first).ok();
+    let parent = backend.parent_revision(&first)?;
 
     let base_tree = tempfile::tempdir().context("create base-tree temp directory")?;
     if let Some(parent) = &parent {
-        let archive = format!(
-            "git archive {} | tar -x -C {}",
-            parent,
-            base_tree.path().display()
-        );
-        let status = Command::new("sh")
-            .arg("-c")
-            .arg(&archive)
-            .current_dir(project_root)
-            .status()
-            .context("materialize the change base tree")?;
-        if !status.success() {
-            bail!("cannot materialize base revision {parent}");
-        }
+        materialize_base(&backend, parent, base_tree.path())?;
     }
 
     let base = analyze(base_tree.path())?;
     let head = analyze(project_root)?;
-    let changed = changed_paths(project_root, parent.as_deref())?;
+    let changed: HashSet<String> = backend
+        .changed_paths(parent.as_deref(), "src")?
+        .into_iter()
+        .filter(|path| path.ends_with(".rs"))
+        .collect();
     let touched: Vec<_> = head
         .units
         .iter()
@@ -183,6 +165,27 @@ pub fn enforce(project_root: &Path, change_id: &str) -> Result<()> {
     }
 }
 
+fn materialize_base(
+    backend: &crate::scm::Backend,
+    revision: &str,
+    destination: &Path,
+) -> Result<()> {
+    let files = backend.revision_files(revision, "src")?;
+    let paths: Vec<String> = files
+        .into_iter()
+        .filter(|(_, kind)| *kind == crate::scm::EntryKind::Regular)
+        .map(|(path, _)| path)
+        .collect();
+    for (path, bytes) in backend.revision_blobs(revision, &paths)? {
+        let target = destination.join(&path);
+        if let Some(parent) = target.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(&target, bytes)?;
+    }
+    Ok(())
+}
+
 fn analyze(root: &Path) -> Result<readability::classify::Assessment> {
     let request = AnalysisRequest {
         project_root: root.to_path_buf(),
@@ -196,53 +199,6 @@ fn analyze(root: &Path) -> Result<readability::classify::Assessment> {
     let capabilities = analyzer.capabilities();
     let analysis = readability::analyze(&request, analyzer.as_ref())?;
     Ok(readability::assess(&analysis, capabilities))
-}
-
-fn parent_revision(root: &Path, revision: &str) -> Result<String> {
-    let output = Command::new("git")
-        .current_dir(root)
-        .args(["rev-parse", "--verify", &format!("{revision}^1")])
-        .output()
-        .context("resolve the change base parent")?;
-    if !output.status.success() {
-        bail!("root commit");
-    }
-    Ok(String::from_utf8(output.stdout)?.trim().to_string())
-}
-
-fn changed_paths(root: &Path, parent: Option<&str>) -> Result<HashSet<String>> {
-    let mut paths = HashSet::new();
-    let rev_args = parent
-        .map(|parent| format!("{parent}..HEAD"))
-        .unwrap_or_else(|| "HEAD".to_string());
-    let diff = git(root, &["diff", "--name-only", &rev_args, "--", "src"])?;
-    for line in diff.lines().filter(|line| line.ends_with(".rs")) {
-        paths.insert(line.to_string());
-    }
-    let untracked = git(
-        root,
-        &["ls-files", "--others", "--exclude-standard", "--", "src"],
-    )?;
-    for line in untracked.lines().filter(|line| line.ends_with(".rs")) {
-        paths.insert(line.to_string());
-    }
-    Ok(paths)
-}
-
-fn git(root: &Path, args: &[&str]) -> Result<String> {
-    let output = Command::new("git")
-        .current_dir(root)
-        .args(args)
-        .output()
-        .with_context(|| format!("run git {}", args.join(" ")))?;
-    if !output.status.success() {
-        bail!(
-            "git {} failed: {}",
-            args.join(" "),
-            String::from_utf8_lossy(&output.stderr).trim()
-        );
-    }
-    Ok(String::from_utf8_lossy(&output.stdout).into_owned())
 }
 
 #[derive(Default)]
