@@ -47,6 +47,12 @@ fn large_trait(world: &mut GivnWorld) {
     crate::steps::readability_report_support::write_large_trait(env, "BigTrait", 520);
 }
 
+#[then("the command exits with code 1")]
+fn command_exits_with_code_1(world: &mut GivnWorld) {
+    let status = crate::steps::output(world).status.code();
+    assert_eq!(status, Some(1), "stderr: {}", crate::steps::stderr(world));
+}
+
 #[then(regex = r#"^the report is written to "([^"]+)"$"#)]
 fn report_written_to_file(world: &mut GivnWorld, relative: String) {
     let env = world
