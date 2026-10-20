@@ -28,6 +28,14 @@ The five method-length units become `FIXED` when their longest method falls to
 100 code lines or fewer and complexity 50 or lower. The two structural units
 stay `JUSTIFIED`.
 
+The branch also carries a pre-existing failure: the rationale validator's
+`a_complete_rationale_passes_and_each_floor_fails` fixture predates the
+independent-review fields, so the valid fixture is rejected before the
+assertions run. Repairing the fixture touches
+`src/readability/gate/rationale.rs`, whose `validate_text` is a 107-line
+method finding. The same extraction discipline applies, so the touched unit
+also becomes `FIXED` instead of acquiring a third rationale.
+
 ## Extraction plan
 
 Every extraction moves a coherent block behind a named private function. The
@@ -99,6 +107,14 @@ Split the JSON document by section:
 `render_json` keeps the top-level keys in their existing order and serializes
 the same values with the same key names. The schema version stays 2.
 
+### `src/readability/gate/rationale.rs` — `validate_text`
+
+Repair the stale valid-rationale fixture by adding `Author: agent`,
+`Reviewed-by: fresh-context-reviewer`, and `Review verdict: accept`. Extract
+the required-field reads into `RequiredFields::read` and the independent
+review, identity, prose, owner, and follow-up checks into named helpers.
+`validate_text` keeps the same validation order and error text.
+
 ### `src/skills/render.rs` — `find_block_end`
 
 Move the directive text into module constants (`OPEN_CONDITION`,
@@ -137,8 +153,10 @@ per-target integration writes from the loop that walks all targets.
 - No changes to analyzer thresholds, classification order, decision
   vocabulary, rationale floor, or gate exit codes.
 - The existing unit tests and the existing gate feature scenarios are the
-  regression net. This change adds one narrow gate scenario for the invalid
-  rationale message; it does not replace or weaken an existing scenario.
+  regression net. The stale validator fixture is corrected to satisfy the
+  rule it tests; no assertion is removed. This change adds one narrow gate
+  scenario for the invalid rationale message; it does not replace or weaken
+  an existing scenario.
 
 ## Verification
 

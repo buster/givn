@@ -1,8 +1,11 @@
 # Review: apply-readability-independent-review
 
-Status: implementation complete. The five long methods are extracted, the two
-structural units are touched and justified, and the gate decisions are
-recorded. The two rationales deliberately carry no independent reviewer fields
+Status: implementation complete. The five requested long methods are
+extracted, the two structural units are touched and justified, and the gate
+decisions are recorded. The branch also carried a stale validator test
+fixture; fixing it required touching `src/readability/gate/rationale.rs`, so
+its 107-line `validate_text` was extracted as well and is recorded as a sixth
+fixed unit. The two rationales deliberately carry no independent reviewer fields
 yet; the main agent adds `Reviewed-by:` and `Review verdict:` after the
 fresh-context review, and only then the readability gate can pass.
 
@@ -15,6 +18,9 @@ README-IMPACT: none
 - No existing test, scenario, threshold, or gate rule is weakened.
 - The source changes are behavior-preserving extractions; each extraction is
   covered by the existing unit tests and the existing gate scenarios.
+- The stale fixture in `a_complete_rationale_passes_and_each_floor_fails`
+  lacked the independent reviewer fields; adding them restores the test
+  without weakening any assertion.
 - The gate's base is the branch state before the change directory commit, so
   all seven findings are measured against their pre-change sizes.
 
@@ -74,6 +80,7 @@ READABILITY: FIXED module:src/readability/gate.rs
 READABILITY: FIXED module:src/readability/gate/findings.rs
 READABILITY: FIXED module:src/readability/report.rs
 READABILITY: FIXED module:src/skills/render.rs
+READABILITY: FIXED module:src/readability/gate/rationale.rs
 READABILITY: JUSTIFIED module:src/readability/syn_adapter.rs
 READABILITY: JUSTIFIED module:src/skills/targets.rs
 READABILITY: PASS
