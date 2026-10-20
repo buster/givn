@@ -8,10 +8,12 @@ and PR. Each bundle has one real commit; no fabricated per-scenario hashes.
 ## Bundles
 
 - [x] Report delta — remove `Action`/`recommendation`, schema 2, findings-only
-  human and JSON. `COMMIT: d2b4b477203564eff3e820fb8eb1e99f54dc3ee8`
+  human and JSON.
+  - [x] COMMIT: d2b4b477203564eff3e820fb8eb1e99f54dc3ee8
 - [x] Gate core — path-based unit ids, cross-file aggregation, finding reasons,
   FIXED/JUSTIFIED decisions, rationale floor, exact output, SCM/fail-closed
-  guards. `COMMIT: 28babad5d66bbf40f62904bb5938784b6f851a44`
+  guards.
+  - [x] COMMIT: 28babad5d66bbf40f62904bb5938784b6f851a44
 - [x] Scenario library — 58 gate scenarios and fixtures. `COMMIT: 1d785ff85c4b15920f2212bac4a4805fa22df0b4`
 
 ## Evidence
