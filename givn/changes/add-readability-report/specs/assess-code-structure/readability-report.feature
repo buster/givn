@@ -111,7 +111,7 @@ Feature: Readability report
     Then the JSON report names the supported constructs
     And the JSON report names the analyzer limitations
 
-  @givn.added @wip
+  @givn.added
   Scenario: Conditional code is counted as written
     Given a production source unit with platform-conditional methods
     When the readability report assesses the unit
