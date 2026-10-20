@@ -240,6 +240,112 @@ impl Worktree {
             .map_err(|error| anyhow::anyhow!("archive blocked: {error}"))?;
         self.head()
     }
+
+    /// The oldest reachable revision that touched `path`.
+    pub fn first_touching_revision(&self, path: &str) -> Result<Option<String>> {
+        let output = run_git(
+            &self.root,
+            &[
+                "rev-list",
+                "--reverse",
+                "--full-history",
+                "HEAD",
+                "--",
+                path,
+            ],
+        )?;
+        Ok(String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .next()
+            .map(ToString::to_string))
+    }
+
+    /// The first parent of `revision`, or `None` for a root revision.
+    pub fn parent_revision(&self, revision: &str) -> Result<Option<String>> {
+        let output = run_git(
+            &self.root,
+            &["rev-parse", "--verify", &format!("{revision}^1")],
+        )?;
+        if !output.status.success() {
+            return Ok(None);
+        }
+        Ok(Some(
+            String::from_utf8_lossy(&output.stdout).trim().to_string(),
+        ))
+    }
+
+    /// Regular files under `root` in `revision`, with their entry kind.
+    pub fn revision_files(
+        &self,
+        revision: &str,
+        root: &str,
+    ) -> Result<Vec<(String, crate::scm::EntryKind)>> {
+        let output = run_git(&self.root, &["ls-tree", "-r", "-z", revision, "--", root])?;
+        let mut files = Vec::new();
+        for entry in output.stdout.split(|byte| *byte == 0) {
+            if entry.is_empty() {
+                continue;
+            }
+            let text = String::from_utf8_lossy(entry);
+            let Some((meta, path)) = text.split_once('\t') else {
+                continue;
+            };
+            let mut parts = meta.split_whitespace();
+            let mode = parts.next().unwrap_or("");
+            let kind = parts.next().unwrap_or("");
+            let entry_kind = if kind == "commit" {
+                crate::scm::EntryKind::Submodule
+            } else if mode == "120000" {
+                crate::scm::EntryKind::Symlink
+            } else {
+                crate::scm::EntryKind::Regular
+            };
+            files.push((path.to_string(), entry_kind));
+        }
+        Ok(files)
+    }
+
+    /// Read the named blobs from `revision`.
+    pub fn revision_blobs(
+        &self,
+        revision: &str,
+        paths: &[String],
+    ) -> Result<Vec<(String, Vec<u8>)>> {
+        let mut blobs = Vec::new();
+        for path in paths {
+            let output = run_git(&self.root, &["show", &format!("{revision}:{path}")])?;
+            if output.status.success() {
+                blobs.push((path.clone(), output.stdout));
+            }
+        }
+        Ok(blobs)
+    }
+
+    /// Changed paths under `root` from `base` to the current revision.
+    pub fn changed_paths(&self, base: Option<&str>, root: &str) -> Result<Vec<String>> {
+        let range = base.map(|base| format!("{base}..HEAD"));
+        let args: Vec<&str> = match range.as_deref() {
+            Some(range) => vec!["diff", "--name-only", range, "--", root],
+            None => vec!["ls-files", "--", root],
+        };
+        let output = run_git(&self.root, &args)?;
+        let mut paths: Vec<String> = String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .map(ToString::to_string)
+            .collect();
+        let untracked = run_git(
+            &self.root,
+            &["ls-files", "--others", "--exclude-standard", "--", root],
+        )?;
+        paths.extend(
+            String::from_utf8_lossy(&untracked.stdout)
+                .lines()
+                .map(ToString::to_string),
+        );
+        paths.sort();
+        paths.dedup();
+        Ok(paths)
+    }
 }
 
 fn run_git(root: &Path, args: &[&str]) -> Result<Output> {

@@ -237,6 +237,112 @@ impl FossilCheckout {
         Ok(())
     }
 
+    /// The oldest reachable revision that touched `path`.
+    pub fn first_touching_revision(&self, path: &str) -> Result<Option<String>> {
+        let output = self.run(&[
+            "timeline",
+            "-n",
+            "0",
+            "-t",
+            "ci",
+            "-F",
+            "%H",
+            "--reverse",
+            "ancestors",
+            "current",
+            "-p",
+            path,
+        ])?;
+        if !output.status.success() {
+            return Ok(None);
+        }
+        Ok(String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .next()
+            .map(ToString::to_string))
+    }
+
+    /// The first parent of `revision`, or `None` for a root revision.
+    pub fn parent_revision(&self, revision: &str) -> Result<Option<String>> {
+        let output = self.run(&["info", revision])?;
+        if !output.status.success() {
+            return Ok(None);
+        }
+        for line in String::from_utf8_lossy(&output.stdout).lines() {
+            if let Some(parent) = line.trim().strip_prefix("parent:") {
+                return Ok(Some(parent.trim().to_string()));
+            }
+        }
+        Ok(None)
+    }
+
+    /// Files under `root` in `revision`.
+    pub fn revision_files(
+        &self,
+        revision: &str,
+        root: &str,
+    ) -> Result<Vec<(String, crate::scm::EntryKind)>> {
+        let output = self.run(&["ls", "-r", revision])?;
+        if !output.status.success() {
+            return Ok(Vec::new());
+        }
+        Ok(String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .filter(|line| line.starts_with(root) && line.ends_with(".rs"))
+            .map(|line| (line.to_string(), crate::scm::EntryKind::Regular))
+            .collect())
+    }
+
+    /// Read the named blobs from `revision`.
+    pub fn revision_blobs(
+        &self,
+        revision: &str,
+        paths: &[String],
+    ) -> Result<Vec<(String, Vec<u8>)>> {
+        let mut blobs = Vec::new();
+        for path in paths {
+            let output = self.run(&["cat", "-r", revision, path])?;
+            if output.status.success() {
+                blobs.push((path.clone(), output.stdout));
+            }
+        }
+        Ok(blobs)
+    }
+
+    /// Changed paths under `root` from `base` to the current revision.
+    pub fn changed_paths(&self, base: Option<&str>, root: &str) -> Result<Vec<String>> {
+        let mut paths = Vec::new();
+        if let Some(base) = base {
+            let output = self.run(&["diff", "--from", base, "--to", "current", "--brief"])?;
+            if output.status.success() {
+                for line in String::from_utf8_lossy(&output.stdout).lines() {
+                    if let Some(path) = line.split_whitespace().last()
+                        && path.starts_with(root)
+                        && path.ends_with(".rs")
+                    {
+                        paths.push(path.to_string());
+                    }
+                }
+            }
+        } else {
+            let output = self.run(&["ls"])?;
+            for line in String::from_utf8_lossy(&output.stdout).lines() {
+                if line.starts_with(root) && line.ends_with(".rs") {
+                    paths.push(line.to_string());
+                }
+            }
+        }
+        let extras = self.run(&["extras"])?;
+        for line in String::from_utf8_lossy(&extras.stdout).lines() {
+            if line.starts_with(root) && line.ends_with(".rs") {
+                paths.push(line.to_string());
+            }
+        }
+        paths.sort();
+        paths.dedup();
+        Ok(paths)
+    }
+
     /// Whether `path` is present in the current revision.
     pub fn revision_contains(&self, path: &str) -> Result<bool> {
         let output = self.run(&["cat", path])?;
