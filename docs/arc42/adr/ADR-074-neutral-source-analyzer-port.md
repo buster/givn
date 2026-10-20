@@ -122,15 +122,15 @@ review gate can consume the same neutral analysis without a format change.
   every later adapter must map every construct into it, and parser-specific
   information tree-sitter exposes beyond the model can only be used after a
   contract change affecting metrics, classification, the report, and the later
-  review gate (R-99).
+  review gate (R-104).
 - Bad, because the port isolates `syn` types but not the parser's cost or
   limitations: `syn` remains a linked dependency whose binary-size effect must
   be measured, and item-position macros or non-UTF8 files can only be reported
-  as diagnostics rather than analyzed (R-100, R-102).
+  as diagnostics rather than analyzed (R-105, R-107).
 - Bad, because the shared metrics are syntactic: LCOM4 and TCC/LCC use visible
   calls and field accesses that the neutral model can represent, so dynamic or
   ambiguous dispatch is under-counted and a threshold verdict can misdirect a
-  plan as well as reveal debt (R-101).
+  plan as well as reveal debt (R-106).
 
 ### Confirmation
 

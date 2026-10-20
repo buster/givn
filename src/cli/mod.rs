@@ -26,5 +26,6 @@ pub mod run_block;
 pub mod skills;
 pub mod spec;
 pub mod status;
+pub mod test_result;
 pub mod timeline;
 pub mod upgrade;

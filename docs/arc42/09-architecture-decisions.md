@@ -122,7 +122,7 @@ and the engine-independent report contract that the later
 `add-readability-review-gate` change and a later tree-sitter adapter build on. It
 is separate from ADR-069's feature-free dependency surface: the record owns the
 analysis boundary and replaceability contract, not the dependency list itself.
-Its consequences are carried by R-99 through R-102 in chapter 11.
+Its consequences are carried by R-104 through R-107 in chapter 11.
 
 Individual ADRs preserve decision rationale and links. Current architecture
 facts remain in the relevant Arc42 chapters or implementation; the register is

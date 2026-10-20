@@ -20,11 +20,12 @@ fn project_with_failing_merge(world: &mut GivnWorld) {
 fn archive_change(world: &mut GivnWorld) {
     let id = world
         .last_change_id
-        .as_deref()
+        .clone()
         .expect("a completed change is required");
     let env = world.env.as_ref().expect("environment is set");
     crate::common::commit_fixture(env);
-    world.last_output = Some(crate::common::run_givn(env, &["archive", "--change", id]));
+    crate::steps::archive_proof_support::refresh_change_receipt(world, &id);
+    world.last_output = Some(crate::common::run_givn(env, &["archive", "--change", &id]));
 }
 
 fn write_commands(env: &crate::common::TestEnv, measure: &str, merge: &str) {

@@ -118,7 +118,7 @@ No unmapped interaction exists and no extra `@e2e` scenario was produced.
 | Arc42 chapter or fact | Durable-doc source | `arc42.md` claim | `design.md` | `tasks.md` | Implementation evidence | Match? |
 |---|---|---|---|---|---|---|
 | Opt-in structural visibility goal | CH1 | affected | D1 | addon scenarios | default-off addon registry, init filter | yes |
-| Default-off, advisory, deterministic constraints | CH2 TC-38 | affected | D2, DD6, DD7, DD12 | addon/gate/determinism tasks | registry, CLI gate, report constants | yes |
+| Default-off, advisory, deterministic constraints | CH2 TC-42 | affected | D2, DD6, DD7, DD12 | addon/gate/determinism tasks | registry, CLI gate, report constants | yes |
 | Developer CLI and later gate context | CH3 | affected | D5 | all CLI scenarios | `givn readability report` | yes |
 | Neutral port and `syn` adapter strategy | CH4 | affected | D3, DD3, DD8 | data-only through engine tasks | `model.rs`, `analyzer.rs`, `syn_adapter.rs` | yes |
 | Building blocks `cli::readability` and `readability::*` | CH5 | affected | architecture tree | every scenario | files present; clippy clean | yes |

@@ -29,7 +29,8 @@ pub const SLOW_VERIFY_COMMAND: &str = "sleep 2";
 /// Declare `command` as the fixture project's `verify.command`, which is what
 /// `givn check tasks --change <id>` runs through the shell choke point.
 pub fn declare_verify_command(env: &common::TestEnv, command: &str) {
-    let yaml = format!("verify:\n  command: \"{command}\"\n");
+    // Single-quote the YAML scalar so shell double quotes stay literal.
+    let yaml = format!("verify:\n  command: '{}'\n", command.replace('\'', "''"));
     common::write_commands_yaml(&env.path("givn/commands.yaml"), &yaml);
 }
 
@@ -1285,7 +1286,7 @@ pub const RACING_ROUNDS: usize = 6;
 /// is noticed within microseconds by every process — the failure the fixture
 /// creates is a real `EISDIR`-free, real-process interleaving, never a mocked
 /// clock and never a simulated failure.
-pub const RACE_BARRIER_COMMAND: &str = "until [ -e .givn-race-go ]; do :; done";
+pub const RACE_BARRIER_COMMAND: &str = "until [ -e .givn-race-go ]; do :; done; printf '{\"total\":1,\"passed\":1,\"failed\":0,\"skipped\":0}' > $GIVN_RESULT_FILE.$$; mv $GIVN_RESULT_FILE.$$ $GIVN_RESULT_FILE";
 
 /// The marker that releases the barrier.
 const RACE_MARKER: &str = ".givn-race-go";
@@ -1301,6 +1302,7 @@ const RACE_ARMED: std::time::Duration = std::time::Duration::from_millis(300);
 /// them (the scenario's `both commands finish` step).
 pub fn start_racing_commands(env: &common::TestEnv) -> Vec<std::process::Child> {
     declare_verify_command(env, RACE_BARRIER_COMMAND);
+    common::commit_fixture(env);
     let marker = env.path(RACE_MARKER);
     let _ = std::fs::remove_file(&marker);
     let children: Vec<std::process::Child> = (0..RACING_ROUNDS * 2)

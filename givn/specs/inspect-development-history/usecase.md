@@ -114,3 +114,5 @@ flowchart LR
   Report --> Inspect[[Inspect phases, waits, and tokens]]
   Agent((Agent)) -.->|reports activity| Record
 ```
+
+<!-- givn:base-sha256:65006102e6dbe462f30ec337cb1acea0c46ce48d18015750dea4bad6bf42295c -->

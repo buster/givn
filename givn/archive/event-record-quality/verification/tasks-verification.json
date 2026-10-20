@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "change": "event-record-quality",
+  "status": "passed",
+  "head": "3094dd0c08e0c94a74ffda64740577994945c510",
+  "features_path": "givn/changes/event-record-quality/specs",
+  "features_digest": "3326629f3d92190b8a436e060befe21c69288138d90bd91ec4ffef1c4cdba8b1",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1792472778
+}

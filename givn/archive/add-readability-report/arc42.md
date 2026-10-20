@@ -10,7 +10,7 @@
 | # | Chapter | Affected? | Reason | Files updated |
 |---|---|---|---|---|
 | 1 | 01 introduction-and-goals | Yes | The experiment adds a maintainer goal and a product functional requirement, and the existing "all addons by default" statement becomes false once an addon is default-off. | FR-46 added; the addon-default statement corrected; a short structural-visibility goal paragraph added. `docs/arc42/01-introduction-and-goals.md` |
-| 2 | 02 architecture-constraints | Yes | The experiment adds durable constraints: Rust-only first, offline and deterministic, advisory only, no stored baseline, `syn` as the first parser behind a neutral port, and default-off opt-in. | TC-38 added; the 2.3 addon-default statement corrected for default-off entries. `docs/arc42/02-architecture-constraints.md` |
+| 2 | 02 architecture-constraints | Yes | The experiment adds durable constraints: Rust-only first, offline and deterministic, advisory only, no stored baseline, `syn` as the first parser behind a neutral port, and default-off opt-in. | TC-42 added; the 2.3 addon-default statement corrected for default-off entries. `docs/arc42/02-architecture-constraints.md` |
 | 3 | 03 context-and-scope | Yes | A new user-facing command and a default-off addon flag join the external surface; the scope gains the advisory report and excludes the later review gate, baselines, other languages, and refactoring. | Interface rows for `givn readability report [--json] [--out]` and `addons.readability`; in-scope and out-of-scope bullets. `docs/arc42/03-context-and-scope.md` |
 | 4 | 04 solution-strategy | Yes | The solution strategy gains the neutral-port approach (shared metrics and classification above a replaceable analyzer) and must state the default-on addon rule correctly. | "Code-structure report" strategy row added; Arc42 strategy row corrected. `docs/arc42/04-solution-strategy.md` |
 | 5 | 05 building-block-view | Yes | New building blocks are introduced: `cli::readability`, the `readability` orchestration, the `SourceAnalyzer` port, and the `syn` adapter; the addon registry and init behavior change; `syn` becomes a dependency. | Crate diagram nodes for the port and adapter; `cli::init`, `cli::addons`, `cli::readability`, `readability`, and analyzer/adapter responsibility rows; `syn` dependency row. `docs/arc42/05-building-block-view.md` |
@@ -18,8 +18,8 @@
 | 7 | 07 deployment-view | No | The product remains one statically linked binary with no new process, container, port, database, or deployment artifact; the `syn` binary-size effect is a chapter 11 risk, not a deployment-topology change. | None |
 | 8 | 08 crosscutting-concepts | Yes | The addon-default rule changes across initialization and the directory layout, and the report adds cross-cutting rules for source scope, determinism, per-file diagnostics, advisory exits, no stored state, and parser isolation. | 8.4 and 8.11 default-on statements corrected; new 8.26 records the report and source-analysis boundary. `docs/arc42/08-crosscutting-concepts.md` |
 | 9 | 09 architecture-decisions | Yes | The neutral `SourceAnalyzer` port qualifies as one durable decision; it fixes the dependency direction and the engine-independent analysis contract for the later review gate and the later tree-sitter adapter. | ADR-074 created and marked `accepted`; chapter 09 register paragraph added; `adr/README.md` active row and count updated. `docs/arc42/09-architecture-decisions.md`, `docs/arc42/adr/README.md`, `docs/arc42/adr/ADR-074-neutral-source-analyzer-port.md` |
-| 10 | 10 quality-requirements | Yes | The report adds four testable quality scenarios: byte-stable determinism, advisory non-blocking behavior, named unanalysed files, and engine-independent replacement. | Quality-tree branch added; Q-104 through Q-107 appended in order. `docs/arc42/10-quality-requirements.md` |
-| 11 | 11 risks-and-technical-debt | Yes | The ADR's "Bad, because..." consequences and the design's experiment risks need durable entries: neutral-model compatibility, `syn` blind spots, syntactic cohesion and directional thresholds, binary growth, repeated re-classification without a baseline, and the unresolved feedback/exit rule. | R-99 through R-102 added; D-24 and D-25 added. `docs/arc42/11-risks-and-technical-debt.md` |
+| 10 | 10 quality-requirements | Yes | The report adds four testable quality scenarios: byte-stable determinism, advisory non-blocking behavior, named unanalysed files, and engine-independent replacement. | Quality-tree branch added; Q-108 through Q-111 appended in order. `docs/arc42/10-quality-requirements.md` |
+| 11 | 11 risks-and-technical-debt | Yes | The ADR's "Bad, because..." consequences and the design's experiment risks need durable entries: neutral-model compatibility, `syn` blind spots, syntactic cohesion and directional thresholds, binary growth, repeated re-classification without a baseline, and the unresolved feedback/exit rule. | R-104 through R-107 added; D-24 and D-25 added. `docs/arc42/11-risks-and-technical-debt.md` |
 | 12 | 12 glossary | Yes | New domain vocabulary is introduced and the existing Addon definition becomes false for default-off entries. | Readability experiment, readability report, source unit, production source, readability classification, readability action, outline, LCOM4, and TCC/LCC entries added; Addon definition corrected. `docs/arc42/12-glossary.md` |
 
 Index updated: `docs/arc42/README.md` records the proposed ADR and the affected
@@ -104,10 +104,10 @@ behavior, change-scoped design mechanics, or current facts owned by the spec,
 
 ADR consequence routing:
 
-- "Bad" neutral-model compatibility surface -> R-99.
-- "Bad" `syn` linked dependency, parser blind spots, and binary cost -> R-100
-  and R-102.
-- "Bad" syntactic cohesion and threshold misdirection -> R-101.
+- "Bad" neutral-model compatibility surface -> R-104.
+- "Bad" `syn` linked dependency, parser blind spots, and binary cost -> R-105
+  and R-107.
+- "Bad" syntactic cohesion and threshold misdirection -> R-106.
 - The no-baseline and unresolved-feedback costs are design/experiment debts
   recorded as D-24 and D-25; they are not additional ADRs.
 

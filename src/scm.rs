@@ -27,6 +27,14 @@ impl Backend {
         }
     }
 
+    /// Read a file from the current revision, or `None` when it is absent.
+    pub fn revision_file(&self, path: &str) -> Result<Option<String>> {
+        match self {
+            Self::Git(worktree) => worktree.revision_file(path),
+            Self::Fossil(checkout) => checkout.revision_file(path),
+        }
+    }
+
     /// Modified tracked files plus untracked non-ignored files, as paths
     /// relative to the project root.
     pub fn dirty_entries(&self) -> Result<Vec<PathBuf>> {
@@ -95,6 +103,30 @@ impl Backend {
         match self {
             Self::Git(worktree) => worktree.commit(message, paths),
             Self::Fossil(checkout) => checkout.publish(paths, message),
+        }
+    }
+
+    /// Whether `revision` names a commit/check-in.
+    pub fn commit_exists(&self, revision: &str) -> Result<bool> {
+        match self {
+            Self::Git(worktree) => worktree.commit_exists(revision),
+            Self::Fossil(checkout) => checkout.commit_exists(revision),
+        }
+    }
+
+    /// The full message of `revision`.
+    pub fn commit_message(&self, revision: &str) -> Result<Option<String>> {
+        match self {
+            Self::Git(worktree) => worktree.commit_message(revision),
+            Self::Fossil(checkout) => checkout.commit_message(revision),
+        }
+    }
+
+    /// Whether `revision` is reachable from the current revision.
+    pub fn is_ancestor(&self, revision: &str) -> Result<bool> {
+        match self {
+            Self::Git(worktree) => worktree.is_ancestor(revision),
+            Self::Fossil(checkout) => checkout.is_ancestor(revision),
         }
     }
 

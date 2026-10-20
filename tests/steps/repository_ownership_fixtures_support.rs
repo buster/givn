@@ -63,6 +63,7 @@ pub(crate) fn setup_fixture(world: &mut GivnWorld, failing: bool) {
     common::git_init(&env);
     world.env = Some(env);
     world.last_change_id = Some("fixture-consolidation".to_string());
+    crate::steps::archive_proof_support::refresh_change_receipt(world, "fixture-consolidation");
 }
 
 fn write_feature(path: &Path, content: &str) {
