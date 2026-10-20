@@ -158,7 +158,7 @@ Feature: Readability report
     Then the command exits with code 1
     And stderr names "missing"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A file that cannot be analyzed is reported and the report continues
     Given a Givn project with the readability experiment enabled
     And a well-formed production source unit
