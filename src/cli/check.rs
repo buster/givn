@@ -595,4 +595,11 @@ mod tests {
         assert_eq!(scenarios[1].hash.as_deref(), Some("abc"));
     }
 
+    #[test]
+    fn normalizes_commit_messages_for_scenario_matching() {
+        let message = normalize_commit_text("feat: **Scenario with a title**");
+        assert!(message.contains(&normalize_commit_text("Scenario with a title")));
+        assert!(!message.contains(&normalize_commit_text("Different scenario")));
+    }
+
 }
