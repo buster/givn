@@ -6,7 +6,8 @@ Feature: Readability report
     And  a production source unit that is over the readable size
     When  the developer runs "givn readability report"
     Then  the report classifies the unit as a god type
-    And  the report recommends a plan
+    And  the report labels the unit as a finding
+    And  the report records no recommendation
     And  the report writes no baseline file
 
   Scenario: The readability experiment is disabled by default
@@ -25,46 +26,34 @@ Feature: Readability report
     And  a production source unit with a data-only enum over the readable size
     When  the developer runs "givn readability report"
     Then  the report classifies the unit as data-only
-    And  the report recommends an advisory action
-    And  the report recommends no plan for the unit
+    And  the report labels the unit as a finding
+    And  the report records no recommendation
 
   Scenario: An interface is classified as an interface, not a god type
     Given  a Givn project with the readability experiment enabled
     And  a production source unit with a trait over the readable size
     When  the developer runs "givn readability report"
     Then  the report classifies the unit as an interface
-    And  the report recommends a trait-composition plan
+    And  the report records no recommendation
 
   Scenario: A cohesive type is not treated as a god type
     Given  a Givn project with the readability experiment enabled
     And  a production source unit with a cohesive type over the readable size
     When  the developer runs "givn readability report"
     Then  the report classifies the unit as a cohesive-large-type
-    And  the report recommends an advisory action
+    And  the report records no recommendation
 
   Scenario: A type with many public methods is an interface
     Given  a production source unit with more than 50 public methods
     When  the readability report assesses the unit
     Then  the report classifies the unit as an interface
-    And  the report recommends a trait-composition plan
-
-  Scenario: A large type in the inspect band needs an exception
-    Given  a production source unit with a large type in the inspect band
-    When  the readability report assesses the unit
-    Then  the report classifies the unit as a cohesive large type
-    And  the report recommends an exception action
-
-  Scenario: A module over the plan limit needs an exception
-    Given  a production source unit with a module over the plan limit
-    When  the readability report assesses the unit
-    Then  the report classifies the unit as a module
-    And  the report recommends an exception action
+    And  the report records no recommendation
 
   Scenario: A long method is a method-length finding
     Given  a production source unit with a long method
     When  the readability report assesses the unit
     Then  the report classifies the unit as a method-length finding
-    And  the report recommends a watch action
+    And  the report records no recommendation
 
   Scenario: Test sources are not scanned
     Given  a Givn project with the readability experiment enabled
@@ -76,14 +65,16 @@ Feature: Readability report
     Given  a production source unit with exactly 500 code lines and cohesive methods
     When  the readability report assesses the unit
     Then  the report classifies the unit as within-limits
-    And  the report recommends no action
+    And  the report labels the unit as within limits
+    And  the report records no recommendation
 
   Scenario: A type one line over the readable size limit is a finding
     Given  a production source unit with 501 code lines and cohesive methods
     When  the readability report assesses the unit
     Then  the report classifies the unit as a cohesive large type
-    And  the report recommends an advisory action
+    And  the report labels the unit as a finding
     And  the report records 501 code lines
+    And  the report records no recommendation
 
   Scenario: A report is available in machine-readable form
     Given  a Givn project with the readability experiment enabled
@@ -91,6 +82,7 @@ Feature: Readability report
     When  the developer runs "givn readability report --json"
     Then  stdout is valid JSON
     And  the JSON report classifies the unit
+    And  the JSON report has no action or recommendation fields
 
   Scenario: A report is written to a file
     Given  a Givn project with the readability experiment enabled
@@ -117,7 +109,7 @@ Feature: Readability report
     Given  a Givn project with the readability experiment enabled
     And  a production source unit
     When  the developer runs "givn readability report --json"
-    Then  the JSON report has schema version 1
+    Then  the JSON report has schema version 2
     And  the JSON report has rules version 1
 
   Scenario: The JSON report carries analyzer capabilities and limitations
@@ -140,11 +132,6 @@ Feature: Readability report
     Given  a production source unit
     When  the readability report is produced twice
     Then  the two reports are identical
-
-  Scenario: Every analyzed unit has one classification and one action
-    Given  the readability fixture corpus
-    When  the readability report assesses every unit
-    Then  every unit has exactly one classification and one action
 
   Scenario: A developer scopes the report to a workspace member
     Given  a Givn project with the readability experiment enabled
@@ -173,3 +160,35 @@ Feature: Readability report
     When  the developer runs "givn readability report"
     Then  the report names the malformed file
     And  the report still classifies the well-formed unit
+  Scenario: A large type in the inspect band is a cohesive large type
+    Given  a production source unit with a large type in the inspect band
+    When  the readability report assesses the unit
+    Then  the report classifies the unit as a cohesive large type
+    And  the report records no recommendation
+
+  Scenario: A module over the plan limit is a module finding
+    Given  a production source unit with a module over the plan limit
+    When  the readability report assesses the unit
+    Then  the report classifies the unit as a module
+    And  the report labels the unit as a finding
+    And  the report records no recommendation
+
+  Scenario: The JSON findings count counts every non-within-limits unit
+    Given  a Givn project with the readability experiment enabled
+    And  a production source unit that is over the readable size
+    And  a production source unit with a data-only enum over the readable size
+    And  a production source unit within the readable size
+    When  the developer runs "givn readability report --json"
+    Then  the JSON findings count matches the non-within-limits units
+    And  the JSON report classifies the data-only unit
+
+  Scenario: Every analyzed unit has exactly one classification
+    Given  the readability fixture corpus
+    When  the readability report assesses every unit
+    Then  every unit has exactly one classification
+    And  no unit carries an action or recommendation
+
+  Scenario: Units are sorted by classification and path
+    Given  the readability fixture corpus
+    When  the developer runs "givn readability report"
+    Then  the report lists units by classification, then path, then unit id
