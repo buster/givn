@@ -44,7 +44,7 @@ Feature: Review diagnostics and proof reuse
     And stderr names the case-mismatched title once
     And stderr names the unknown heading once
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review validates an active delta use-case narrative even for an extension
     Given a clean committed change that replaces an existing use-case narrative and whose routing decision extends that use case's capability
     And the replacement narrative has a case-mismatched title and an unknown "## Guarantees" heading

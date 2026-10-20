@@ -1442,7 +1442,7 @@ fn review_fixture_extend_narrative(world: &mut GivnWorld) {
     std::fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n").unwrap();
     std::fs::write(
         change.join("review.md"),
-        "REVIEW: PASS\nREADME-IMPACT: none\n",
+        "REVIEW: PASS\nREADME-IMPACT: none\n\n## Overlap dispositions\n\n         | Scenario A | Scenario B | Disposition |\n|---|---|---|\n         | `Existing` | `Fixture` | boundary |\n",
     )
     .unwrap();
 
