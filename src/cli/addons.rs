@@ -54,6 +54,11 @@ pub const KNOWN_ADDONS: &[AddonSpec] = &[
         default_enabled: true,
     },
     AddonSpec {
+        id: "architecture_principles",
+        description: "Opt-in architecture guidance — contracts now, implementation split later; default off",
+        default_enabled: false,
+    },
+    AddonSpec {
         id: "readability",
         description: "Opt-in readability report — default off; enable with `givn addons enable readability`",
         default_enabled: false,
@@ -497,6 +502,7 @@ mod tests {
     fn validate_addon_name_accepts_new_addons() {
         assert!(validate_addon_name("domain_modeling").is_ok());
         assert!(validate_addon_name("dev_principles").is_ok());
+        assert!(validate_addon_name("architecture_principles").is_ok());
         assert!(validate_addon_name("grill_me").is_ok());
         assert!(validate_addon_name("grill_with_docs").is_ok());
     }

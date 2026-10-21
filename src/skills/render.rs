@@ -19,6 +19,7 @@ pub const KNOWN_ADDON_KEYS: &[&str] = &[
     "arc42",
     "domain_modeling",
     "dev_principles",
+    "architecture_principles",
     "grill_me",
     "grill_with_docs",
     "absolute_mode",

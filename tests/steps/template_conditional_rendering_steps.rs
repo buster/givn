@@ -322,6 +322,56 @@ fn generated_domain_skill_exists(world: &mut GivnWorld) {
     );
 }
 
+// --- Then: architecture-principles addon gate -------------------------------
+
+#[when(regex = r"^a consumer enables the ([a-z0-9-]+) addon through the Givn CLI$")]
+fn consumer_enables_addon(world: &mut GivnWorld, addon: String) {
+    let key = addon.replace('-', "_");
+    let out = common::run_givn(support::env(world), &["addons", "enable", &key]);
+    assert!(
+        out.status.success(),
+        "givn addons enable {key} failed: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+    world.last_output = Some(out);
+}
+
+#[then("the served design instruction omits the Contracts and cells section")]
+fn served_design_omits_contracts_section(world: &mut GivnWorld) {
+    let content = support::served_artifact_instruction(world, "design");
+    assert!(
+        !content.contains("## Contracts and cells (mandatory)"),
+        "the served design instruction still carries the Contracts and cells section:\n{content}",
+    );
+}
+
+#[then("the served design instruction contains the Contracts and cells section")]
+fn served_design_contains_contracts_section(world: &mut GivnWorld) {
+    let content = support::served_artifact_instruction(world, "design");
+    assert!(
+        content.contains("## Contracts and cells (mandatory)"),
+        "the served design instruction is missing the Contracts and cells section:\n{content}",
+    );
+}
+
+#[then("the served design-review instruction omits the Contracts and cells branch")]
+fn served_design_review_omits_contracts_branch(world: &mut GivnWorld) {
+    let content = support::served_artifact_instruction(world, "design-review");
+    assert!(
+        !content.contains("Contracts and cells"),
+        "the served design-review instruction still carries the Contracts and cells branch:\n{content}",
+    );
+}
+
+#[then("the served design-review instruction contains the Contracts and cells branch")]
+fn served_design_review_contains_contracts_branch(world: &mut GivnWorld) {
+    let content = support::served_artifact_instruction(world, "design-review");
+    assert!(
+        content.contains("Contracts and cells"),
+        "the served design-review instruction is missing the Contracts and cells branch:\n{content}",
+    );
+}
+
 // --- Then: universal residual scan ------------------------------------------
 
 #[then("no generated skill or command mentions any disabled addon")]

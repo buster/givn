@@ -23,6 +23,9 @@ Write the technical design (the HOW layer). Implementation detail belongs here.
   `mvn test -Dcucumber.filter.name="<title>"`, `cargo test <name> -- --exact`,
   `behave -n "<title>"`.
 - Any other technical decision the implementer needs before writing tasks.
+{{#if addons.architecture_principles}}
+  A carried decision still names the default the implementer uses.
+{{/if}}
 
 ## Decisions ledger (mandatory)
 
@@ -33,6 +36,28 @@ originated in an ideation seed records the seed reference beside the ledger
 ID (`Decides D2 (seed Q5): …`), so the question-to-decision link is readable
 from the proposal and the design alone. An unresolved, unrecorded `D<n>` is a
 design-review finding.
+
+{{#if addons.architecture_principles}}
+## Contracts and cells (mandatory)
+
+Apply `givn instructions architecture-principles`. Every consumer use case
+touched by this change has a contract; one cell may implement several
+contracts. Add a `### Contracts and Cells` subsection under Architecture
+Impact with this table:
+
+| Contract | Consumer use case | Consumers | Implementing cell today | Split trigger |
+|---|---|---|---|---|
+| (e.g. `BookLending`) | (e.g. lend a book) | (e.g. `BookDesk`) | (e.g. `LendingDesk`) | (e.g. book and CD policies diverge) |
+
+A component is a unit with a named responsibility used from outside its own
+implementation; internal helpers need no contract. Contracts are current
+requirements and are not carried; the implementation split is deferred until
+the cell's responsibilities diverge. Delete the subsection when the change
+declares no contract.
+
+When a decision is carried, record its default, the trigger that forces the
+answer, why switching is cheap, and its owner in the Decisions ledger.
+{{/if}}
 
 ## Use-case traceability
 

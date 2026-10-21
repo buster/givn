@@ -40,7 +40,8 @@ register](adr/README.md).
 | TC-41 | Development-record event fields stay additive at schema 1: a linked usage entry is marked `derived: true`, an answered question carries `selected`/`source`/`answered_at`, a failed command carries a bounded `error`, and `provider`/`variant` join known model identity. Absent values stay absent; `usage: unavailable` stays explicit. | `src/history.rs`, `src/cli/history.rs`, `src/main.rs` |
 | TC-38 | The archive moves the active change into the archive location with one same-filesystem rename and no copy-and-delete fallback. A cross-filesystem or permission failure refuses by name and leaves the active change in place with the pending receipt, which is an exempt evidence path; a rerun re-runs the gates and retries the rename. | `src/cli/archive.rs`, `src/proof.rs`, archive-proof transition scenarios |
 
-| TC-42 | The readability report is Rust-only, offline, deterministic, and advisory: `syn` is the first parser, `SourceAnalyzer` is the neutral port, metrics and classification run above it, the report emits findings without an action or recommendation at schema version 2, stores no baseline, and report findings never change the exit code. The addon is default-off and is the only opt-in switch. | `src/readability/`, `src/cli/readability.rs`, `src/cli/addons.rs`, readability-report non-E2E and E2E scenarios |
+| TC-42 | The readability report is Rust-only, offline, deterministic, and advisory: `syn` is the first parser, `SourceAnalyzer` is the neutral port, metrics and classification run above it, the report emits findings without an action or recommendation at schema version 2, stores no baseline, and report findings never change the exit code. The readability addon is default-off and opt-in; `architecture_principles` is
+another default-off addon. | `src/readability/`, `src/cli/readability.rs`, `src/cli/addons.rs`, readability-report non-E2E and E2E scenarios |
 | TC-43 | The readability review gate runs only inside `givn check review --change <id>` and only while `addons.readability` is enabled. It is change-relative: the base is the parent of the first reachable commit that touched `givn/changes/<id>/` (Git first parent; Fossil `ancestors current`), the head is the committed `HEAD`, and a dirty production path fails before analysis. A missing first touch, a root commit's empty base, a shallow clone, and a merge/rebase edge each have one deterministic rule with no fallback to the working tree or a merge-base. Every gate finding carries a unit id and needs exactly one `READABILITY: FIXED` or `READABILITY: JUSTIFIED` decision; a justification requires a validated change-scoped rationale, and ownership or scope reasons are rejected. It stores no baseline, watchlist, classification history, or feedback ledger and is deterministic and offline; its only writes are two temporary trees outside the project, removed before the command returns. History and revision files come from the existing SCM seam, so the gate runs no `git` or `fossil` command itself and branches on no backend. The gate adds no CLI command, flag, JSON schema, or archive gate. | `src/readability/gate/`, `src/cli/check.rs`, `src/scm.rs`, `src/git.rs`, `src/fossil.rs`, readability-review-gate scenarios |
 
 ## 2.2 Configuration and Gate Constraints
@@ -79,7 +80,7 @@ runtime contract.
 ## 2.3 Addon Constraint
 
 The embedded manifest starts with addons disabled, but `givn init` currently
-enables all known addons unless `--no-addons` is passed. The `arc42` addon:
+enables every default-on addon unless `--no-addons` is passed. The `arc42` addon:
 
 - expands to a required `arc42-docs` artifact after `design`;
 - adds `arc42-docs` to `apply.requires` and to `design-review` dependencies;

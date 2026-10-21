@@ -294,6 +294,10 @@ pub struct Addons {
     /// Skill — apply the team's engineering principles during implementation.
     #[serde(default)]
     pub dev_principles: bool,
+    /// Opt-in architecture guidance — design the consumer's contract now and
+    /// defer the implementation split. Default off.
+    #[serde(default)]
+    pub architecture_principles: bool,
     /// Command — Socratically grill the current plan/design, one question at a time.
     #[serde(default)]
     pub grill_me: bool,

@@ -156,8 +156,8 @@ docs/arc42/                      # fixed durable Arc42 output path
 `givn init` creates the core `givn/` directories and command/config files. The
 current init path also enables every default-on registered addon unless
 `--no-addons` is passed; Arc42 scaffolding therefore normally appears during
-initialization, while a default-off addon such as `readability` stays absent
-until it is explicitly enabled. There is
+initialization, while a default-off addon such as `readability` or
+`architecture_principles` stays absent until it is explicitly enabled. There is
 no effective `arc42.output_dir` or chapter-list setting, and no lifecycle
 cascade for selecting individual durable chapter files.
 
@@ -458,9 +458,10 @@ exception into a general bypass for product changes.
 An addon is embedded behavior toggled through `addons.<name>` in the project
 config. The embedded default flags are false, but the current `givn init` path
 enables every default-on registered addon unless `--no-addons` is supplied. A
-registry entry records whether it is default-on; `readability` is the first
-default-off entry, so initialization lists it as available instead of enabling
-it, and `givn addons enable readability` is the only opt-in step.
+registry entry records whether it is default-on; `readability` and
+`architecture_principles` are default-off entries, so initialization lists them
+as available instead of enabling them, and `givn addons enable <name>` is the
+opt-in step.
 
 For Arc42 specifically, `givn addons enable arc42`:
 

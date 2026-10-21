@@ -671,6 +671,21 @@ artifacts:
     }
 
     #[test]
+    fn addons_architecture_principles_flag_is_set_on_effective_manifest() {
+        let base = Manifest::load_embedded().unwrap();
+        assert!(
+            !base.addons.architecture_principles,
+            "must be disabled by default"
+        );
+
+        let result = apply(base, "addons:\n  architecture_principles: true").unwrap();
+        assert!(
+            result.addons.architecture_principles,
+            "addons.architecture_principles must be true after overlay enables it"
+        );
+    }
+
+    #[test]
     fn addons_absolute_mode_and_arc42_can_both_be_enabled() {
         let base = Manifest::load_embedded().unwrap();
         let result = apply(base, "addons:\n  arc42: true\n  absolute_mode: true").unwrap();

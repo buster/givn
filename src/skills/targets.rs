@@ -319,6 +319,10 @@ fn addon_flags(manifest: &crate::config::manifest::Manifest) -> Vec<(&'static st
         ("arc42", manifest.addons.arc42),
         ("domain_modeling", manifest.addons.domain_modeling),
         ("dev_principles", manifest.addons.dev_principles),
+        (
+            "architecture_principles",
+            manifest.addons.architecture_principles,
+        ),
         ("grill_me", manifest.addons.grill_me),
         ("grill_with_docs", manifest.addons.grill_with_docs),
         ("absolute_mode", manifest.addons.absolute_mode),

@@ -152,6 +152,7 @@ givn_config_version: "{{GIVN_VERSION}}"
 #   coverage: true          # set to false to disable the coverage lifecycle artifact
 #   domain_modeling: true   # project-level skill; see below
 #   dev_principles: true    # project-level skill; see below
+#   architecture_principles: false # opt-in architecture guidance; see below
 #   grill_me: true          # project-level command; see below
 #   grill_with_docs: true   # project-level command; see below
 #   readability: false      # opt-in readability report; default off
@@ -178,6 +179,13 @@ givn_config_version: "{{GIVN_VERSION}}"
 # Skill — apply the team's engineering principles during implementation.
 # Generates the givn-dev-principles skill file on `givn skills sync`.
 # Toggle with: givn addons enable|disable dev_principles.
+#
+
+# --- Addon: architecture_principles -------------------------------------------
+# Opt-in architecture guidance: design the consumer's contract now, defer the
+# implementation split. Gates the `architecture-principles` instruction and its
+# proposal, design, design-review, dialog, review, and tasks references.
+# Toggle with: givn addons enable|disable architecture_principles.
 #
 
 # --- Addon: grill_me ----------------------------------------------------------
