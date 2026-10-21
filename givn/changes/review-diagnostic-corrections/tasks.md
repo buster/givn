@@ -326,7 +326,7 @@ Evidence:
   givn lint --change review-diagnostic-corrections: clean, exit 0
   ```
 - Production files: `src/gherkin/usecase_md.rs` (regression test `valid_title_emits_no_schema_diagnostic`; no production behavior change), delta feature `@wip` removed.
-- [ ] COMMIT: `COMMIT:`
+- [x] COMMIT: `ef8c9851e47f872b758417007980b60f1146e811`
 
 ## Final verification
 
