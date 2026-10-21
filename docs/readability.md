@@ -34,6 +34,21 @@ and no comments. `givn readability report` prints the outline for every unit;
 `--json` emits the full outline under `units[].outline`, including
 call-resolution labels.
 
+An example, abridged from the report:
+
+```text
+OUTLINE type:src/engine.rs::Engine
+  field data [private] Vec<String>
+  method [public] fn build(&self) -> Engine
+    calls: validate -> compile
+  method [private] fn validate(&self) -> Result<()>
+  method [private] fn compile(&self) -> Engine
+  metrics (supporting): code lines 120; methods 3; public methods 1; fields 1
+```
+
+The names and call order state the unit's job: build an `Engine` by validating,
+then compiling. The metric line is support, not the point.
+
 The outline is the semantic layer. The automated classifications (size,
 cohesion, method length) find candidates; the outline is what a reviewer reads
 to decide whether the names and call order communicate the unit's meaning. The
