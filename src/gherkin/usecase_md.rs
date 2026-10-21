@@ -238,7 +238,16 @@ pub fn parse_usecase_md_diagnostics(content: &str) -> (Option<UsecaseDoc>, Useca
         "capability",
         &mut diagnostics,
     );
-    let interactions = interaction_section(&sections, &capabilities, &mut diagnostics);
+    let interactions = if seen.contains(HEADING_INTERACTIONS) || root_valid {
+        interaction_section(
+            &sections,
+            &capabilities,
+            root_valid && seen.contains(HEADING_CAPABILITIES),
+            &mut diagnostics,
+        )
+    } else {
+        Vec::new()
+    };
 
     if root_valid
         && level == Some(GoalLevel::Leaf)
@@ -353,7 +362,7 @@ pub fn parse_fragment_md_diagnostics(content: &str) -> (Option<FragmentDoc>, Use
             "fragment '{id}' must declare at least one capability"
         )));
     }
-    let interactions = interaction_section(&sections, &capabilities, &mut diagnostics);
+    let interactions = interaction_section(&sections, &capabilities, true, &mut diagnostics);
 
     let doc = if title_seen
         && title.is_some()
@@ -746,6 +755,7 @@ fn relationship_section(
 fn interaction_section(
     sections: &SectionLines,
     capabilities: &[String],
+    report_undeclared: bool,
     diagnostics: &mut UsecaseDiagnostics,
 ) -> Vec<Interaction> {
     let lines = sections.get(HEADING_INTERACTIONS).expect("known heading");
@@ -812,9 +822,10 @@ fn interaction_section(
             ));
             continue;
         }
-        if !capabilities
-            .iter()
-            .any(|capability| capability == &cells[0])
+        if report_undeclared
+            && !capabilities
+                .iter()
+                .any(|capability| capability == &cells[0])
         {
             diagnostics.push(UsecaseDiagnostic::at(
                 *line_number,
@@ -1153,5 +1164,263 @@ flowchart LR
             .replace("<fragment-id>", "example-fragment")
             .replace("<capability-id>", "example-capability");
         assert!(parse_fragment_md(&fragment).is_ok());
+    }
+    #[test]
+    fn invalid_human_title_is_not_recovered_and_suggests_the_canonical_id() {
+        let text = VALID_LEAF.replace("# Use case: start-project", "# Use Case: Lending Register");
+        let (doc, diagnostics) = parse_usecase_md_diagnostics(&text);
+        assert!(
+            doc.is_none(),
+            "the invalid human title must not be accepted"
+        );
+        let rendered = diagnostics.to_string();
+        assert!(
+            rendered.contains("headings are case-sensitive"),
+            "{rendered}"
+        );
+        assert!(rendered.contains("and IDs are kebab-case"), "{rendered}");
+        assert!(
+            rendered.contains("did you mean '# Use case: lending-register'?"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn invalid_human_title_does_not_report_missing_headings() {
+        let text = VALID_LEAF
+            .replace("# Use case: start-project", "# Use Case: Lending Register")
+            .replace("## Rules\n\n- A run has one authority.\n\n", "");
+        let (doc, diagnostics) = parse_usecase_md_diagnostics(&text);
+        assert!(doc.is_none());
+        let rendered = diagnostics.to_string();
+        assert!(
+            rendered.contains("headings are case-sensitive"),
+            "{rendered}"
+        );
+        assert!(
+            !rendered.contains("document schema does not recognise '## Rules'"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn invalid_level_does_not_report_missing_headings_or_leaf_capability() {
+        let text = VALID_LEAF
+            .replace(
+                "\n!\n",
+                "\n`+` — summary use case. Its five capabilities decompose the lending-desk activity into the goals below.\n",
+            )
+            .replace("- run-project\n", "- none\n")
+            .replace(
+                "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| run-project | start a project run | Consumer starts a project run |",
+                "- none",
+            )
+            .replace(
+                "## Examples\n\n- A clean project starts successfully.\n\n",
+                "",
+            );
+        let (doc, diagnostics) = parse_usecase_md_diagnostics(&text);
+        assert!(doc.is_none());
+        let rendered = diagnostics.to_string();
+        assert!(
+            rendered.contains("use-case Level must be '!' or '+'"),
+            "{rendered}"
+        );
+        assert!(
+            !rendered.contains("document schema does not recognise '## Examples'"),
+            "{rendered}"
+        );
+        assert!(
+            !rendered.contains("must declare at least one capability"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn genuinely_unknown_heading_still_reports_with_invalid_title() {
+        let text = VALID_LEAF
+            .replace("# Use case: start-project", "# Use Case: Lending Register")
+            .replace(
+                "## Level",
+                "## Guarantees\n\nnot part of the schema\n\n## Level",
+            );
+        let (doc, diagnostics) = parse_usecase_md_diagnostics(&text);
+        assert!(doc.is_none());
+        let rendered = diagnostics.to_string();
+        assert!(
+            rendered.contains("unknown heading '## Guarantees'"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn valid_kebab_case_title_still_parses() {
+        let doc = parse_usecase_md(VALID_LEAF).unwrap();
+        assert_eq!(doc.id, "start-project");
+    }
+
+    #[test]
+    fn exact_invalid_id_is_not_recovered_and_suggests_the_canonical_id() {
+        let text = VALID_LEAF.replace("# Use case: start-project", "# Use case: Start Project");
+        let (doc, diagnostics) = parse_usecase_md_diagnostics(&text);
+        assert!(doc.is_none());
+        let rendered = diagnostics.to_string();
+        assert!(
+            rendered.contains("must be a stable kebab-case identifier"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("did you mean '# Use case: start-project'?"),
+            "{rendered}"
+        );
+        assert!(
+            !rendered.contains("document is missing '# Use case:"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn canonical_title_id_collapses_separators_and_drops_punctuation() {
+        assert_eq!(
+            canonical_title_id("Lending Register").as_deref(),
+            Some("lending-register")
+        );
+        assert_eq!(
+            canonical_title_id("lending--register").as_deref(),
+            Some("lending-register")
+        );
+        assert_eq!(
+            canonical_title_id("Lending.Register").as_deref(),
+            Some("lending-register")
+        );
+        assert_eq!(
+            canonical_title_id("review-diagnostics-demo").as_deref(),
+            Some("review-diagnostics-demo")
+        );
+        assert_eq!(canonical_title_id("!!!"), None);
+    }
+
+    #[test]
+    fn fragment_missing_headings_still_report() {
+        let text = r#"# Fragment: transport
+
+## Capabilities
+
+- send-message
+
+## Interactions
+
+- none
+"#;
+        let (_, diagnostics) = parse_fragment_md_diagnostics(text);
+        let rendered = diagnostics.to_string();
+        assert!(
+            rendered.contains("document schema does not recognise '## Diagram'"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn invalid_root_still_reports_local_shape_findings() {
+        let text = VALID_LEAF
+            .replace("# Use case: start-project", "# Use Case: Lending Register")
+            .replace("- run-project\n", "this is not a bullet\n")
+            .replace(
+                "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| run-project | start a project run | Consumer starts a project run |",
+                "| Capability | Consumer action | E2E scenario |\n| --- |\n| run-project | start a project run | Consumer starts a project run |",
+            );
+        let (doc, diagnostics) = parse_usecase_md_diagnostics(&text);
+        assert!(doc.is_none());
+        let rendered = diagnostics.to_string();
+        assert!(
+            rendered.contains("section '## Capabilities' must contain one capability per bullet"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("has a malformed separator row"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn invalid_level_suppresses_empty_required_section() {
+        let text = VALID_LEAF
+            .replace(
+                "\n!\n",
+                "\n`+` — summary use case. Its five capabilities decompose the lending-desk activity into the goals below.\n",
+            )
+            .replace("Start a project run.", "");
+        let (doc, diagnostics) = parse_usecase_md_diagnostics(&text);
+        assert!(doc.is_none());
+        let rendered = diagnostics.to_string();
+        assert!(
+            rendered.contains("use-case Level must be '!' or '+'"),
+            "{rendered}"
+        );
+        assert!(
+            !rendered.contains("section '## Goal' must not be empty"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn invalid_title_still_reports_duplicate_title_and_outside_content() {
+        let text = "# Use Case: Lending Register\n\n# Another title\n\noutside content\n";
+        let (doc, diagnostics) = parse_usecase_md_diagnostics(text);
+        assert!(doc.is_none());
+        let rendered = diagnostics.to_string();
+        assert!(rendered.contains("duplicate document title"), "{rendered}");
+        assert!(
+            rendered.contains("content is outside a recognised section"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn both_roots_invalid_report_both() {
+        let text = VALID_LEAF
+            .replace("# Use case: start-project", "# Use Case: Lending Register")
+            .replace(
+                "\n!\n",
+                "\n`+` — summary use case. Its five capabilities decompose the lending-desk activity into the goals below.\n",
+            )
+            .replace("- run-project\n", "- none\n");
+        let (doc, diagnostics) = parse_usecase_md_diagnostics(&text);
+        assert!(doc.is_none());
+        let rendered = diagnostics.to_string();
+        assert!(
+            rendered.contains("headings are case-sensitive"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("use-case Level must be '!' or '+'"),
+            "{rendered}"
+        );
+        assert!(
+            !rendered.contains("must declare at least one capability"),
+            "{rendered}"
+        );
+        assert!(
+            !rendered.contains("document schema does not recognise"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn valid_title_with_valid_level_still_reports_missing_section() {
+        let text = VALID_LEAF
+            .replace("## Rules\n\n- A run has one authority.\n\n", "")
+            .replace("Scheduling future runs.", "");
+        let (doc, diagnostics) = parse_usecase_md_diagnostics(&text);
+        assert!(doc.is_some());
+        let rendered = diagnostics.to_string();
+        assert!(
+            rendered.contains("document schema does not recognise '## Rules'"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("section '## Out of scope' must not be empty"),
+            "{rendered}"
+        );
     }
 }

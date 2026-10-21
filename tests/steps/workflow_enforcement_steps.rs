@@ -1858,3 +1858,29 @@ fn review_fixture_malformed_level(world: &mut GivnWorld) {
         &[("alpha-capability", "NEW in review-diagnostics-demo")],
     );
 }
+
+#[given(
+    "a clean committed change whose use-case contract starts with \"# Use Case: Lending Register\", has a rule line that is not a bullet, and has an interaction that names an undeclared capability"
+)]
+fn review_fixture_independent_local_findings(world: &mut GivnWorld) {
+    let contract = review_contract(
+        "review-diagnostics-demo",
+        Some("# Use Case: Lending Register"),
+        "- alpha-capability",
+        "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| register-readiness | do it | Consumer does it |",
+        "- A valid example.",
+        "",
+    )
+    .replace(
+        "- Structural failures outrank other findings.",
+        "This rule is prose, not a bullet.",
+    );
+    write_review_fixture(
+        world,
+        "review-diagnostics-demo",
+        "review-diagnostics-demo",
+        &contract,
+        &["alpha-capability"],
+        &[("alpha-capability", "NEW in review-diagnostics-demo")],
+    );
+}

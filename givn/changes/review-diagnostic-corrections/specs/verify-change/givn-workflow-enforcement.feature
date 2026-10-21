@@ -48,13 +48,13 @@ Feature: Review use-case diagnostic corrections
     And stderr does not contain "document schema does not recognise '## Examples'"
     And stderr does not contain "must declare at least one capability"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Independent local findings are still reported with a malformed title
-    Given a clean committed change whose use-case contract starts with "# Use Case: Lending Register", has a rule line that is not a bullet, and has a malformed interaction table
+    Given a clean committed change whose use-case contract starts with "# Use Case: Lending Register", has a rule line that is not a bullet, and has an interaction that names an undeclared capability
     When the developer runs `givn check review --change review-diagnostics-demo`
     Then the command exits non-zero
     And stderr contains "section '## Rules' must contain one rule per bullet"
-    And stderr contains "malformed separator row"
+    And stderr does not contain "interaction references undeclared capability"
     And stderr suggests exactly "# Use case: lending-register"
 
   @givn.added @wip

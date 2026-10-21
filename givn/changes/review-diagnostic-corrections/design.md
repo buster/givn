@@ -454,7 +454,7 @@ The only new Given steps are the fixture builders:
 - `a clean committed change whose use-case contract starts with "# Use case: Lending Register"`
 - `a clean committed change whose use-case contract starts with "# Use Case: Lending Register", omits "## Rules", and leaves "## Examples" empty`
 - `a clean committed change whose use-case contract has a malformed Level and omits "## Examples"`
-- `a clean committed change whose use-case contract starts with "# Use Case: Lending Register", has a rule line that is not a bullet, and has a malformed interaction table`
+- `a clean committed change whose use-case contract starts with "# Use Case: Lending Register", has a rule line that is not a bullet, and has an interaction that names an undeclared capability`
 
 The valid-title scenario reuses the existing
 `a clean committed change with a green change verification receipt recorded at
@@ -581,7 +581,7 @@ step definitions assert:
 | Review corrects an exact-prefix non-kebab-case title with the canonical identifier | `stable kebab-case identifier`; suggestion exactly `# Use case: lending-register`; no missing-title diagnostic |
 | A malformed title does not fabricate missing-section or empty-section diagnostics | canonical suggestion present; `document schema does not recognise '## Rules'` and `section '## Examples' must not be empty` absent |
 | A malformed Level does not fabricate missing-section or leaf-capability diagnostics | Level rule present; `document schema does not recognise '## Examples'` and `must declare at least one capability` absent |
-| Independent local findings are still reported with a malformed title | `section '## Rules' must contain one rule per bullet` and `malformed separator row` present; canonical suggestion present |
+| Independent local findings are still reported with a malformed title | `section '## Rules' must contain one rule per bullet` present; `interaction references undeclared capability` absent; canonical suggestion present |
 | A valid kebab-case use-case title remains accepted (guard) | exit 0; no title or missing-heading diagnostic; green at baseline, no fabricated RED |
 
 ### Black-box-first
