@@ -24,6 +24,56 @@ runs:
    considers only the units the change touched. Dirty production paths fail
    closed before analysis.
 
+## Workflow
+
+The report and the gate share the same analyzer but have different contracts:
+the report is advisory, the gate is change-relative and blocking.
+
+```mermaid
+flowchart TD
+    A["Enable the readability addon"] -->|"givn readability report"| C
+    A -->|"givn check review --change id"| H
+
+    subgraph REPORT["Advisory report"]
+        C["Scan project-root src/ or --path roots"] --> D["Parse through the neutral SourceAnalyzer port"]
+        D --> E["Compute metrics and classify each unit"]
+        E --> F["Findings-only output: human text or JSON schema 2"]
+    end
+
+    subgraph GATE["Review gate"]
+        H["Resolve base: parent of the first commit touching changes/id"] --> I{"Base reachable and production tree clean?"}
+        I -->|"no"| X["FAIL closed"]
+        I -->|"yes"| J["Analyze base and committed HEAD"]
+        J --> K["Select touched units"]
+        K --> L{"Finding at HEAD?"}
+        L -->|"no"| M["No readability decision"]
+        L -->|"yes"| N{"Decision in review.md"}
+        N -->|"FIXED"| O{"Under threshold at HEAD?"}
+        N -->|"JUSTIFIED"| P{"Rationale and independent reviewer accept?"}
+        N -->|"missing, conflicting, or FAIL"| X
+        O -->|"no"| X
+        O -->|"yes"| Q["Accounted"]
+        P -->|"no"| X
+        P -->|"yes"| Q
+        Q --> R{"Every finding accounted?"}
+        R -->|"no"| X
+        R -->|"yes"| S["READABILITY: PASS"]
+        S --> T["Review proceeds to archive"]
+        M --> T
+    end
+
+    F --> U["Use the evidence for a refactor or a decision"]
+
+    classDef fail fill:#ffe6e6,stroke:#b00020,color:#7a0014;
+    classDef pass fill:#e8f5e9,stroke:#1b5e20,color:#1b5e20;
+    class X fail;
+    class S pass;
+```
+
+The report never blocks a change and never stores a baseline. The gate never
+analyzes untouched code; it only accounts for touched units at committed
+`HEAD`.
+
 ## Where it applies
 
 | Phase | Effect when enabled |
