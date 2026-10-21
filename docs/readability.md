@@ -1,12 +1,15 @@
 # Readability addon
 
 **TL;DR:** The `readability` addon is an optional, default-off experiment for
-production Rust. It produces an advisory report of structural debt and, when
-enabled, a change-relative review gate: every type or module the change
-touches, including its methods, must be fixed or justified, and a justification
-needs a reviewer who did not write it. It stores no baseline, ignores non-Rust
-code, and is not a product guarantee: the schema, thresholds, classifications,
-and gate rules may change.
+production Rust. Its core idea is outline comprehension: read the outline of a
+type or module — declarations, signatures, and calls, without bodies — and
+check that it explains the unit's responsibility and call order. It also
+produces an advisory report of structural debt and, when enabled, a
+change-relative review gate: every type or module the change touches, including
+its methods, must be fixed or justified, and a justification needs a reviewer
+who did not write it. It stores no baseline, ignores non-Rust code, and is not a
+product guarantee: the schema, thresholds, classifications, and gate rules may
+change.
 
 ## What it does
 
@@ -18,6 +21,29 @@ and gate rules may change.
   checks the types and modules the change touched, including their methods.
   Every touched finding must be fixed or justified. A justified finding needs a
   rationale accepted by a reviewer who did not write it.
+
+## Outline comprehension — the core idea
+
+The addon is not only a size counter. Its central rule is R1: a reader given
+only a unit's outline should be able to state (a) what the unit is responsible
+for and (b) why its internal calls happen in that order.
+
+The outline lists the unit's declarations, field and method signatures, their
+order, and the calls each method makes. It contains no method bodies and no
+comments. `givn readability report --json` emits it under `units[].outline`;
+the human report does not.
+
+The outline is the semantic layer. The automated classifications (size,
+cohesion, method length) find candidates; the outline is what a reviewer reads
+to decide whether the names and call order communicate the unit's meaning. The
+independent reviewer for a `JUSTIFIED` finding reads only the outline and must
+be able to explain the responsibility and call order.
+
+**Current limit.** Outline comprehension is not yet an automated finding rule:
+a unit whose outline is hard to follow, but which is under the size and method
+thresholds, does not create a finding by itself. The automated gate is
+size/method-based; the outline is available in the JSON and is used by the
+reviewer. Treat that as an open experiment gap, not a completed rule.
 
 ## Workflow
 
@@ -131,6 +157,9 @@ review, and fixes that change structure rather than only the measurement.
 Feedback on these signals is wanted. This is an experiment; if you see them,
 say so.
 
+- **The outline is ignored.** If reviews cite only line counts and never use
+  the outline to explain responsibility and call order, the experiment has
+  collapsed into a size gate.
 - **Justify rate stays high.** A growing set of `JUSTIFIED` units means the
   gate is recording debt, not reducing it.
 - **Rationales reject an alternative that a later change implements.** The
