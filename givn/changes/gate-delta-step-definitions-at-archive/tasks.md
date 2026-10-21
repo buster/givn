@@ -104,7 +104,7 @@ scenario 1, the production gate and guidance).
 
 ## Setup task
 
-- [ ] **Setup: runner, strict mode, and step skeleton.**
+- [x] **Setup: runner, strict mode, and step skeleton.**
 
   Runner already configured in `givn/commands.yaml`:
   `verify.command = ./run-tests.sh --non-e2e`,
@@ -151,6 +151,8 @@ scenario 1, the production gate and guidance).
   ```
 
 ## Scenario 1 — Archive is blocked when a delta step definition is missing from the permanent test tree
+
+- [x] Scenario: Archive is blocked when a delta step definition is missing from the permanent test tree
 
 `@givn.added` (non-`@e2e`).
 
@@ -212,6 +214,8 @@ scenario 1, the production gate and guidance).
 
 ## Scenario 2 — The refusal lists a bounded number of missing step phrases and a remainder count
 
+- [x] Scenario: The refusal lists a bounded number of missing step phrases and a remainder count
+
 `@givn.added` (non-`@e2e`).
 
 - Files: `tests/steps/require_merged_step_definitions_steps.rs` (the
@@ -251,6 +255,8 @@ scenario 1, the production gate and guidance).
 - [x] COMMIT: `b27ff3cf0e0f946f3ae8802e04e05692eb5f3a05` — The refusal lists a bounded number of missing step phrases and a remainder count
 
 ## Scenario 3 — An unproven archive candidate with a missing step definition is not verified again
+
+- [x] Scenario: An unproven archive candidate with a missing step definition is not verified again
 
 `@givn.added` (non-`@e2e`).
 
@@ -297,6 +303,8 @@ scenario 1, the production gate and guidance).
 
 ## Scenario 4 — Consumer archives a change whose delta step definitions are already in the permanent test tree
 
+- [x] Scenario: Consumer archives a change whose delta step definitions are already in the permanent test tree
+
 `@givn.added @e2e`.
 
 - Files: `tests/steps/require_merged_step_definitions_steps.rs` (success
@@ -338,7 +346,7 @@ scenario 1, the production gate and guidance).
   ```
 - COMMIT: one commit containing the e2e fixture and regression coverage.
   Body: the scenario title.
-- [ ] COMMIT: `<!-- hash -->` — Consumer archives a change whose delta step definitions are already in the permanent test tree
+- [x] COMMIT: `da81ffa5afcd0ca6428668ec51d7e2d225d05feb` — Consumer archives a change whose delta step definitions are already in the permanent test tree
 
 ## Final verification (no scenario commit)
 
