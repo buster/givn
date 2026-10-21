@@ -386,7 +386,7 @@ impl is excluded; the production method count stays correct.
   - [x] Evidence:   Scenario: An impl-level test method is excluded from the unit's lines | 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
   - [x] Evidence:   Scenario: An impl-level test method is excluded from the unit's lines | 1 scenario (1 passed) | 5 steps (5 passed)
-- [ ] COMMIT:
+- [x] COMMIT: ee1f69dabc247c37c8e86c383ca64ae067b434df
 
 ## 19. A name-only guess does not connect methods for cohesion
 
@@ -397,11 +397,11 @@ individual unit's classification.
 
 - RED: remove `@wip`; add `write_name_only_cohesion` and bindings; targeted
   run; paste non-zero.
-  - [ ] Evidence:
+  - [x] Evidence: baseline: ✘  Given a production source unit over the readable size whose only call edges are name-only guesses | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:141:5 | Step doesn't match any function
 - GREEN: filter LCOM4 edges by resolution; targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A name-only guess does not connect methods for cohesion | 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A name-only guess does not connect methods for cohesion | 1 scenario (1 passed) | 5 steps (5 passed)
 - [ ] COMMIT:
 
 ## 20. A method signature keeps arrays, qualified paths, and its full type detail

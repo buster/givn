@@ -137,7 +137,7 @@ Feature: Outline report
     And the JSON report records the unit "type:src/guarded.rs::Guarded" metric "physical_lines" as 9
     And the JSON report records 1 method for the unit "type:src/guarded.rs::Guarded"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A name-only guess does not connect methods for cohesion
     Given a production source unit over the readable size whose only call edges are name-only guesses
     When the developer runs "givn outline report"
