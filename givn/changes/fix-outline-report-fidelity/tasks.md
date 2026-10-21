@@ -333,11 +333,11 @@ name-only never nests.
 
 - RED: remove `@wip`; add `write_resolution_report` and bindings; targeted
   run; paste non-zero.
-  - [ ] Evidence:
+  - [x] Evidence: baseline: ✘  And a production source unit whose method calls its own method, a cross-file module function, and a receiver of unknown type | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:109:5 | Step doesn't match any function
 - GREEN: render the resolution label; targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A developer reads each call's resolution in the human report | 1 scenario (1 passed) | 7 steps (7 passed)
 - REFACTOR: targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A developer reads each call's resolution in the human report | 1 scenario (1 passed) | 7 steps (7 passed)
 - [ ] COMMIT:
 
 ## 16. A file's code lines exclude inline test modules

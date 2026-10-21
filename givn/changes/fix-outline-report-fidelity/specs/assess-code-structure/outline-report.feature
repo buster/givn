@@ -104,7 +104,7 @@ Feature: Outline report
     And the call "validate" is expanded into a deeper-indented call line
     And the report records "LCOM4 1" for the unit "type:src/engine_core.rs::Engine"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A developer reads each call's resolution in the human report
     Given a Givn project with the outline experiment enabled
     And a production source unit whose method calls its own method, a cross-file module function, and a receiver of unknown type

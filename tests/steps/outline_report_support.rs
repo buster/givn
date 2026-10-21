@@ -510,3 +510,16 @@ pub fn write_cross_file_impl(env: &TestEnv) {
     );
 }
 
+pub fn write_resolution_report(env: &TestEnv) {
+    write_source(
+        env,
+        "src/engine_view.rs",
+        "pub struct Engine;\n\nimpl Engine {\n    pub fn build(&self, value: &ExternalValue) -> bool {\n        self.validate();\n        normalize();\n        value.is_empty()\n    }\n\n    pub fn validate(&self) -> bool {\n        true\n    }\n\n    pub fn is_empty(&self) -> bool {\n        false\n    }\n}\n",
+    );
+    write_source(
+        env,
+        "src/normalizer.rs",
+        "pub fn normalize() -> bool {\n    true\n}\n",
+    );
+}
+
