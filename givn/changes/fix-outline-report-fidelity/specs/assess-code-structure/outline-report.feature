@@ -48,7 +48,7 @@ Feature: Outline report
     Then the JSON report records the call "from" as "external"
     And the JSON call "from" names no target
 
-  @givn.added @wip
+  @givn.added
   Scenario: A god type found through cohesion reports only the cohesion evidence
     Given a production source unit over the readable size whose methods are connected only by calls
     When the outline report assesses the unit

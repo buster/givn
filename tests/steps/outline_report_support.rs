@@ -438,3 +438,19 @@ pub fn write_contradictory_qualifier(env: &TestEnv) {
     );
 }
 
+pub fn write_tcc_god_type(env: &TestEnv) {
+    let mut source = String::from("pub struct Cohesion {\n    a: u64,\n    b: u64,\n}\n\nimpl Cohesion {\n");
+    for (method, field, other) in [("first", "a", "second"), ("second", "b", "first")] {
+        source.push_str(&format!("    pub fn {method}(&self) -> u64 {{\n"));
+        for _ in 0..255 {
+            source.push_str(&format!("        let _ = self.{field};\n"));
+        }
+        if method == "first" {
+            source.push_str(&format!("        self.{other}();\n"));
+        }
+        source.push_str(&format!("        self.{field}\n    }}\n"));
+    }
+    source.push_str("}\n");
+    write_source(env, "src/cohesion_evidence.rs", &source);
+}
+

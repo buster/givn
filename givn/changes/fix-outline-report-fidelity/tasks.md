@@ -201,7 +201,7 @@ Design constraints: explicit qualifier `Line` cannot match candidate owner
   - [x] Evidence:   Scenario: An associated-function call whose qualifier contradicts the target is external |    ✔  Given a production source unit that calls "Line::from" while the project declares "Error::from" | 1 scenario (1 passed) | 4 steps (4 passed)
 - REFACTOR: targeted run; paste zero.
   - [x] Evidence:   Scenario: An associated-function call whose qualifier contradicts the target is external |    ✔  Given a production source unit that calls "Line::from" while the project declares "Error::from" | 1 scenario (1 passed) | 4 steps (4 passed)
-- [ ] COMMIT:
+- [x] COMMIT: 43cee9c62e34c3169f98c34d7ac4cb779f2f21eb
 
 ## 7. A god type found through cohesion reports only the cohesion evidence
 
@@ -211,11 +211,11 @@ fired. A fixture with LCOM4 <= 2 and TCC < 500 must emit no LCOM4 line.
 
 - RED: remove `@wip`; add `write_tcc_god_type` and bindings; targeted run;
   paste non-zero.
-  - [ ] Evidence:
+  - [x] Evidence: baseline: ✘  Given a production source unit over the readable size whose methods are connected only by calls | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:52:5 | Step doesn't match any function
 - GREEN: rewrite the god-type evidence branch; targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A god type found through cohesion reports only the cohesion evidence | 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A god type found through cohesion reports only the cohesion evidence | 1 scenario (1 passed) | 5 steps (5 passed)
 - [ ] COMMIT:
 
 ## 8. An interface found through its public methods reports only public-method evidence
