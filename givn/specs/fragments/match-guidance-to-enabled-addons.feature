@@ -24,6 +24,11 @@ Feature: Match guidance to enabled addons
     Then  the served design instruction contains the Contracts and components section
     And  the served design-review instruction contains the Contracts and components branch
 
+  Scenario: The architecture-principles instruction keeps the decision-timing rule
+    Given  a Givn project with the architecture-principles addon enabled and the skills synchronized
+    Then  the served architecture-principles instruction contains "last responsible moment"
+    And  the served architecture-principles instruction contains "Out of scope"
+
   Scenario: An unknown addon name in a conditional fails the synchronization and names the template
     Given a Givn project with a project skill template that contains a conditional on an unknown addon
     When a consumer synchronizes skills through the Givn CLI
