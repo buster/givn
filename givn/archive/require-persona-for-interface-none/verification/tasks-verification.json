@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "require-persona-for-interface-none",
+  "status": "passed",
+  "head": "063aef2aa4acca08bcbe385b0e08a0fc0208edee",
+  "features_path": "givn/changes/require-persona-for-interface-none/specs",
+  "features_digest": "41423e1940f3d621d8a223eddf8f9e2c30596551bbeba3b3ea393ad0ba2097b4",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "94255bf6f4acd1421ce4aa0594b7308dadc46bcbd60fa56883cc688de15cddd2",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1792580132
+}
