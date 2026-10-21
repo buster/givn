@@ -27,7 +27,7 @@ Feature: Require Merged Step Definitions
     And  stderr says "+1 more"
     And  stderr names "specs/steps/catalog_steps.py"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unproven archive candidate with a missing step definition is not verified again
     Given  an unproven archive candidate "pending-steps" whose full suite failed
     And  the candidate's spec tree binds "an imported catalog" in "steps/catalog_steps.py"
