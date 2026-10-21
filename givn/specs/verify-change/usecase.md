@@ -44,7 +44,7 @@ The developer requests verification of a change.
 - The README-impact decision is reported before review and remains a blocking review requirement.
 - The receipt binds the tested revision, the selected delta features, the verify command, and the tested content.
 - A revision that changes only documentation or evidence keeps the receipt current; any change to tested content makes it stale.
-- A review report names every use-case schema and capability-routing problem in one pass; the schema stays strict and semantic validation is not weakened.
+- A review report names the root cause of an invalid use-case document first and then names all actionable use-case schema and capability-routing problems in one pass; the schema stays strict and semantic validation is not weakened.
 - Every blocking overlap has an explicit disposition.
 - Migration coverage cannot regress without an explicit retirement record.
 

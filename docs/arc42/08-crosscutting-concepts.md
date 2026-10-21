@@ -508,7 +508,8 @@ runs mandatory checks:
 - `tasks`: change-delta WIP protection and `verify.command`;
 - `review`: `integrity`, the run-declaration check, the named-change overlap
   and retirement gates, the use-case/capability-routing gate (which reports
-  every schema and routing diagnostic in one pass), the shared change
+  every schema and routing diagnostic in one pass, with dependent completeness
+  findings withheld while the title or Level is invalid), the shared change
   verification receipt freshness check, and — for a named change with
   `addons.readability` enabled — the readability review gate. Review does not
   execute the test suite; scenario execution is proven by the archive

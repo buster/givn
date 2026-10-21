@@ -1723,3 +1723,32 @@ pub(crate) fn change_suite_invocation_count(world: &GivnWorld) -> usize {
         })
         .unwrap_or(0)
 }
+
+#[given(
+    "a clean committed change whose use-case contract starts with \"# Use Case: Lending Register\" and has an unknown \"## Guarantees\" heading"
+)]
+fn review_fixture_canonical_correction(world: &mut GivnWorld) {
+    let contract = review_contract(
+        "review-diagnostics-demo",
+        Some("# Use Case: Lending Register"),
+        "- alpha-capability",
+        &valid_interactions(&["alpha-capability"]),
+        "- A valid example.",
+        "## Guarantees\n\nThis heading is not part of the schema.\n\n",
+    );
+    write_review_fixture(
+        world,
+        "review-diagnostics-demo",
+        "review-diagnostics-demo",
+        &contract,
+        &["alpha-capability"],
+        &[("alpha-capability", "NEW in review-diagnostics-demo")],
+    );
+}
+
+#[then(regex = r#"^stderr suggests exactly "([^"]+)"$"#)]
+fn stderr_suggests_exactly(world: &mut GivnWorld, suggestion: String) {
+    let text = stderr(world);
+    let needle = format!("did you mean '{suggestion}'?");
+    assert!(text.contains(&needle), "stderr missing {needle:?}: {text}");
+}
