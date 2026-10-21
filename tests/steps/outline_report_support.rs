@@ -540,3 +540,11 @@ pub fn write_span_scoped_unit(env: &TestEnv) {
     write_source(env, "src/scoped.rs", &source);
 }
 
+pub fn write_impl_test_method(env: &TestEnv) {
+    write_source(
+        env,
+        "src/guarded.rs",
+        "pub struct Guarded {\n    value: u64,\n}\n\nimpl Guarded {\n    pub fn value(&self) -> u64 {\n        self.value\n    }\n\n    #[cfg(test)]\n    fn test_value(&self) -> u64 {\n        self.value\n    }\n}\n",
+    );
+}
+

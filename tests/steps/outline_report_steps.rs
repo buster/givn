@@ -1370,3 +1370,18 @@ fn unit_json<'a>(value: &'a serde_json::Value, id: &str) -> &'a serde_json::Valu
         .unwrap_or_else(|| panic!("no unit {id}: {value}"))
 }
 
+#[given("a production source unit with an impl-level test method")]
+fn impl_test_method(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_impl_test_method(&env);
+    world.env = Some(env);
+}
+
+#[then(regex = r#"^the JSON report records (\d+) method[s]? for the unit "([^"]+)"$"#)]
+fn json_unit_methods(world: &mut GivnWorld, expected: u64, id: String) {
+    let value = json_output(world);
+    let unit = unit_json(&value, &id);
+    assert_eq!(unit["metrics"]["methods"].as_u64(), Some(expected), "{unit}");
+}
+
