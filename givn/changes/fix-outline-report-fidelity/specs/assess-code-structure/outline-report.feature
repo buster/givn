@@ -145,7 +145,7 @@ Feature: Outline report
     And the report classifies the unit as a god type
     And the report records the evidence "type-lcom4 > 2"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A method signature keeps arrays, qualified paths, and its full type detail
     Given a production source unit with a method whose types use paths, generics, references, slices, tuples, arrays, pointers, and fully qualified paths
     When the developer runs "givn outline report --json"

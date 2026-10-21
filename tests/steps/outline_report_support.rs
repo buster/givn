@@ -569,3 +569,11 @@ pub fn write_name_only_cohesion(env: &TestEnv) {
     write_source(env, "src/cohesion.rs", &source);
 }
 
+pub fn write_signature_shapes(env: &TestEnv) {
+    write_source(
+        env,
+        "src/signature.rs",
+        "pub struct Config;\n\npub struct Signature;\n\nimpl Signature {\n    pub fn shapes(\n        &self,\n        raw: &[u8],\n        pair: (u32, String),\n        config: *const Config,\n        bytes: [u8; 4],\n        path: crate::config::Config,\n    ) -> Result<Self, Error> {\n        let _ = (raw, pair, config, bytes, path);\n        todo!()\n    }\n}\n",
+    );
+}
+
