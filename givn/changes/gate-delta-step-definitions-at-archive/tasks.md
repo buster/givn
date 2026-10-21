@@ -208,7 +208,7 @@ scenario 1, the production gate and guidance).
   ```
 - COMMIT: one commit containing the gate, fixtures, guidance, and arc42
   docs. Body: the scenario title. Record exactly one checked COMMIT line.
-- [ ] COMMIT: `<!-- hash -->` — Archive is blocked when a delta step definition is missing from the permanent test tree
+- [x] COMMIT: `3563290000cd0785493d9156d7c3a234d9a296b8` — Archive is blocked when a delta step definition is missing from the permanent test tree
 
 ## Scenario 2 — The refusal lists a bounded number of missing step phrases and a remainder count
 
@@ -222,7 +222,10 @@ scenario 1, the production gate and guidance).
 - RED (captured before scenario 1's GREEN, while the function is a `todo!()`
   stub):
   ```
-  <!-- paste the targeted RED output captured during setup -->
+  1 feature
+  1 scenario (1 failed)
+  2 steps (1 passed, 1 failed)
+  Step panicked. Captured output: not yet implemented: TODO: write 21 delta step phrases
   ```
 - GREEN: fill the bounded-list step functions with real assertions. Run
   targeting this scenario; must exit 0.
@@ -233,11 +236,15 @@ scenario 1, the production gate and guidance).
     --exact --nocapture
   ```
   ```
-  <!-- paste GREEN output, exit 0 -->
+  1 feature
+  1 scenario (1 passed)
+  9 steps (9 passed)
   ```
 - REFACTOR: format/clippy; re-run targeted scenario.
   ```
-  <!-- paste refactor output, exit 0 -->
+  1 feature
+  1 scenario (1 passed)
+  9 steps (9 passed)
   ```
 - COMMIT: one commit containing this scenario's regression test. Body: the
   scenario title.

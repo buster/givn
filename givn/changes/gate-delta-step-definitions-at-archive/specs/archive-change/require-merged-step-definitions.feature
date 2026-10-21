@@ -15,7 +15,7 @@ Feature: Require Merged Step Definitions
     And  the change directory still exists under givn/changes/
     And  no archive candidate exists for "unmerged-steps"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The refusal lists a bounded number of missing step phrases and a remainder count
     Given  a givn project with a completed change "many-unmerged-steps" ready to archive
     And  the change's spec tree binds 21 distinct step phrases in "steps/catalog_steps.py"
