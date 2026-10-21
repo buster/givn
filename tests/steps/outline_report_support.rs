@@ -548,3 +548,24 @@ pub fn write_impl_test_method(env: &TestEnv) {
     );
 }
 
+pub fn write_name_only_cohesion(env: &TestEnv) {
+    let mut source = String::from("pub struct Engine;\n\nimpl Engine {\n");
+    for method in ["first", "second", "third", "fourth"] {
+        source.push_str(&format!(
+            "    pub fn {method}(&self, value: &ExternalValue) {{\n"
+        ));
+        for _ in 0..130 {
+            source.push_str(&format!("        let _ = value.{method}_target();\n"));
+        }
+        source.push_str("    }\n");
+    }
+    source.push_str("}\n\npub struct Helper;\n\nimpl Helper {\n");
+    for method in ["first", "second", "third", "fourth"] {
+        source.push_str(&format!(
+            "    pub fn {method}_target(&self) -> u64 {{\n        1\n    }}\n"
+        ));
+    }
+    source.push_str("}\n");
+    write_source(env, "src/cohesion.rs", &source);
+}
+

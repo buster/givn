@@ -1385,3 +1385,11 @@ fn json_unit_methods(world: &mut GivnWorld, expected: u64, id: String) {
     assert_eq!(unit["metrics"]["methods"].as_u64(), Some(expected), "{unit}");
 }
 
+#[given("a production source unit over the readable size whose only call edges are name-only guesses")]
+fn name_only_cohesion(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_name_only_cohesion(&env);
+    world.env = Some(env);
+}
+
