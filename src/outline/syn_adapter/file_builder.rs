@@ -2,7 +2,7 @@
 
 use super::super::model::{
     Analysis, AnalysisDiagnostic, AnalyzedFile, Construct, DiagnosticKind, Field, FileStatus,
-    Method, OutlineItem, OutlineKind, RepoPath, SourceSpan, SourceUnit, TypeKind, TypeRelation,
+    Language, Method, OutlineItem, RepoPath, SourceSpan, SourceUnit, TypeKind, TypeRelation,
     UnitId, UnitKind, UnitOrigin, UnsupportedNote, Visibility,
 };
 use super::facts::{method_from_fn, method_without_body, outline_method};
@@ -27,6 +27,7 @@ pub(super) fn analyze_file(
         Ok(parsed) => parsed,
         Err(error) => {
             analysis.files.push(AnalyzedFile {
+                language: Language::Rust,
                 path: path.clone(),
                 physical_lines,
                 lines: source.lines,
@@ -65,6 +66,7 @@ pub(super) fn analyze_file(
     let mut unit_ids: Vec<UnitId> = file.units.iter().map(|unit| unit.id.clone()).collect();
     unit_ids.push(UnitId(format!("module:{}", path)));
     analysis.files.push(AnalyzedFile {
+        language: Language::Rust,
         path: path.clone(),
         physical_lines,
         lines: source.lines,
@@ -75,6 +77,7 @@ pub(super) fn analyze_file(
     analysis.diagnostics.extend(file.diagnostics);
 
     let mut module = SourceUnit {
+        language: Language::Rust,
         id: UnitId(format!("module:{}", path)),
         kind: UnitKind::Module,
         name: path.to_string(),
@@ -140,7 +143,7 @@ impl FileBuilder {
                         &item.sig,
                         &item.block,
                         &self.path,
-                        &self.module_path,
+                        module_path,
                         false,
                         visibility(&item.vis),
                         &self.content,
@@ -191,6 +194,7 @@ impl FileBuilder {
         // file is still one unit (see `attach_impls`).
         let id = UnitId(format!("type:{}::{name}", self.path));
         let mut unit = SourceUnit {
+            language: Language::Rust,
             id: id.clone(),
             kind: UnitKind::Type(type_kind),
             name: name.clone(),
@@ -237,18 +241,6 @@ impl FileBuilder {
                 origin: UnitOrigin::Production,
             })
             .collect::<Vec<_>>();
-        let outline = fields
-            .iter()
-            .enumerate()
-            .map(|(index, field)| OutlineItem {
-                kind: OutlineKind::Field,
-                name: field.name.clone(),
-                visibility: field.visibility,
-                signature: field.type_label.clone(),
-                order: index as u32,
-                calls: Vec::new(),
-            })
-            .collect();
         let span = span_for_ident(&item.ident, &self.content, &self.path);
         self.spans.push(span.clone());
         self.push_type(
@@ -258,26 +250,13 @@ impl FileBuilder {
             span,
             fields,
             Vec::new(),
-            outline,
+            Vec::new(),
         );
     }
 
     fn push_enum(&mut self, item: &ItemEnum, _module_path: &str) {
         let span = span_for_ident(&item.ident, &self.content, &self.path);
         self.spans.push(span.clone());
-        let outline = item
-            .variants
-            .iter()
-            .enumerate()
-            .map(|(index, variant)| OutlineItem {
-                kind: OutlineKind::Field,
-                name: variant.ident.to_string(),
-                visibility: Visibility::Public,
-                signature: String::new(),
-                order: index as u32,
-                calls: Vec::new(),
-            })
-            .collect();
         self.push_type(
             item.ident.to_string(),
             TypeKind::Enum,
@@ -285,7 +264,7 @@ impl FileBuilder {
             span,
             Vec::new(),
             Vec::new(),
-            outline,
+            Vec::new(),
         );
     }
 
@@ -325,9 +304,10 @@ impl FileBuilder {
         );
     }
 
-    fn push_trait(&mut self, item: &ItemTrait, _module_path: &str) {
+    fn push_trait(&mut self, item: &ItemTrait, module_path: &str) {
         let span = span_for_ident(&item.ident, &self.content, &self.path);
         self.spans.push(span.clone());
+        let method_path = format!("{module_path}::{}", item.ident);
         let mut methods = Vec::new();
         let mut outline = Vec::new();
         for trait_item in &item.items {
@@ -337,7 +317,7 @@ impl FileBuilder {
                         &function.sig,
                         default,
                         &self.path,
-                        &self.module_path,
+                        &method_path,
                         true,
                         Visibility::Public,
                         &self.content,
@@ -346,7 +326,7 @@ impl FileBuilder {
                     method_without_body(
                         &function.sig,
                         &self.path,
-                        &self.module_path,
+                        &method_path,
                         Visibility::Public,
                         &self.content,
                     )
@@ -391,6 +371,7 @@ impl FileBuilder {
         });
         let impl_span = impl_span_of(item, &self.content, &self.path);
         self.spans.push(impl_span.clone());
+        let method_path = format!("{module_path}::{name}");
         let mut methods = Vec::new();
         let mut outline = Vec::new();
         for impl_item in &item.items {
@@ -402,7 +383,7 @@ impl FileBuilder {
                     &function.sig,
                     &function.block,
                     &self.path,
-                    &self.module_path,
+                    &method_path,
                     false,
                     visibility(&function.vis),
                     &self.content,

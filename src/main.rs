@@ -8,9 +8,9 @@ mod git;
 mod history;
 mod hooks;
 mod integrity_hook;
+mod outline;
 mod overlap;
 mod proof;
-mod readability;
 mod scm;
 mod skills;
 mod spec;
@@ -204,9 +204,9 @@ enum Commands {
     /// Re-render managed config scaffold, preserve user overrides, bump version.
     Upgrade,
     /// Read the opt-in, advisory code-structure report.
-    Readability {
+    Outline {
         #[command(subcommand)]
-        command: ReadabilityCommands,
+        command: OutlineCommands,
     },
     /// Start the product declared in the run block of givn/commands.yaml.
     Run {
@@ -312,10 +312,10 @@ enum HistoryCommands {
 }
 
 #[derive(Subcommand)]
-enum ReadabilityCommands {
+enum OutlineCommands {
     /// Analyse production sources and print the advisory report.
     Report {
-        /// Emit the schema-v1 JSON document instead of human text.
+        /// Emit the schema-v3 JSON document instead of human text.
         #[arg(long)]
         json: bool,
         /// Write the report to this path and print nothing on stdout.
@@ -567,9 +567,9 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             }
         },
         Commands::Upgrade => cli::upgrade::run(),
-        Commands::Readability { command } => match command {
-            ReadabilityCommands::Report { json, out, paths } => {
-                cli::readability::run_report(json, out, paths)
+        Commands::Outline { command } => match command {
+            OutlineCommands::Report { json, out, paths } => {
+                cli::outline::run_report(json, out, paths)
             }
         },
         Commands::Run { port, print } => std::process::exit(cli::run::execute(port, print)),

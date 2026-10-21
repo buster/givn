@@ -35,11 +35,21 @@ impl fmt::Display for RepoPath {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Language {
     Rust,
+    Python,
+}
+
+impl Language {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Rust => "rust",
+            Self::Python => "python",
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SourceScope {
-    pub language: Language,
+    pub languages: Vec<Language>,
     pub roots: Vec<PathBuf>,
     pub include_test_sources: bool,
 }
@@ -62,6 +72,8 @@ pub enum Construct {
     InlineModule,
     FileModule,
     FreeFunction,
+    Class,
+    Function,
     ItemMacro,
 }
 
@@ -78,6 +90,8 @@ impl Construct {
             Self::InlineModule => "inline_module",
             Self::FileModule => "file_module",
             Self::FreeFunction => "free_function",
+            Self::Class => "class",
+            Self::Function => "function",
             Self::ItemMacro => "item-macros",
         }
     }
@@ -88,6 +102,8 @@ pub enum Limitation {
     ItemMacros,
     IncludeMacro,
     NonUtf8File,
+    PythonDynamicCalls,
+    PythonTypeInference,
 }
 
 impl Limitation {
@@ -96,13 +112,15 @@ impl Limitation {
             Self::ItemMacros => "item-macros",
             Self::IncludeMacro => "include-macro",
             Self::NonUtf8File => "non-utf8-file",
+            Self::PythonDynamicCalls => "python-dynamic-calls",
+            Self::PythonTypeInference => "python-type-inference",
         }
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AnalyzerCapabilities {
-    pub language: Language,
+    pub languages: Vec<Language>,
     pub supported_constructs: Vec<Construct>,
     pub limitations: Vec<Limitation>,
     pub resolution_labels: Vec<Resolution>,
@@ -147,6 +165,7 @@ pub enum FileStatus {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AnalyzedFile {
     pub path: RepoPath,
+    pub language: Language,
     pub physical_lines: u32,
     pub lines: Vec<LineKind>,
     pub status: FileStatus,
@@ -159,6 +178,7 @@ pub enum DiagnosticKind {
     ParseFailed,
     UnsupportedConstruct,
     AmbiguousType,
+    AnalyzerUnavailable,
 }
 
 impl DiagnosticKind {
@@ -168,6 +188,7 @@ impl DiagnosticKind {
             Self::ParseFailed => "parse-failed",
             Self::UnsupportedConstruct => "unsupported-construct",
             Self::AmbiguousType => "ambiguous-type",
+            Self::AnalyzerUnavailable => "analyzer-unavailable",
         }
     }
 }
@@ -207,6 +228,7 @@ pub enum TypeKind {
     Trait,
     Union,
     TypeAlias,
+    Class,
 }
 
 impl TypeKind {
@@ -217,6 +239,7 @@ impl TypeKind {
             Self::Trait => "trait",
             Self::Union => "union",
             Self::TypeAlias => "type_alias",
+            Self::Class => "class",
         }
     }
 }
@@ -265,6 +288,7 @@ pub struct SourceSpan {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SourceUnit {
     pub id: UnitId,
+    pub language: Language,
     pub kind: UnitKind,
     pub name: String,
     pub module_path: String,
@@ -321,13 +345,13 @@ pub struct Call {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum OutlineKind {
     Type,
-    Field,
     Method,
     TraitMethod,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OutlineItem {
+    pub id: MethodId,
     pub kind: OutlineKind,
     pub name: String,
     pub visibility: Visibility,

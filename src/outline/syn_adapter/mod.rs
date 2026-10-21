@@ -27,7 +27,7 @@ pub struct SynAnalyzer;
 impl SourceAnalyzer for SynAnalyzer {
     fn capabilities(&self) -> AnalyzerCapabilities {
         AnalyzerCapabilities {
-            language: Language::Rust,
+            languages: vec![Language::Rust],
             supported_constructs: vec![
                 Construct::Struct,
                 Construct::Enum,
@@ -57,7 +57,14 @@ impl SourceAnalyzer for SynAnalyzer {
     }
 
     fn analyze(&self, request: &AnalysisRequest) -> Result<Analysis> {
-        let sources = scan::discover(&request.project_root, &request.scope.roots)?;
+        if !request.scope.languages.contains(&Language::Rust) {
+            return Ok(Analysis::default());
+        }
+        let sources = scan::discover(
+            &request.project_root,
+            &request.scope.roots,
+            &[Language::Rust],
+        )?;
         let mut analysis = Analysis::default();
         let mut impls = ImplCollector::default();
 
@@ -88,7 +95,7 @@ mod tests {
     use super::super::model::SourceScope;
     use super::SynAnalyzer;
     use super::*;
-    use crate::readability::model::{
+    use crate::outline::model::{
         Analysis, AnalysisRequest, DiagnosticKind, Language, RepoPath, TypeRelation, UnitId,
         UnitKind,
     };
@@ -103,7 +110,7 @@ mod tests {
         let request = AnalysisRequest {
             project_root: root.path().to_path_buf(),
             scope: SourceScope {
-                language: Language::Rust,
+                languages: vec![Language::Rust],
                 roots: vec![std::path::PathBuf::from("src")],
                 include_test_sources: false,
             },

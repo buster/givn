@@ -127,22 +127,23 @@ Its consequences are carried by R-104 through R-108 in chapter 11.
 The `add-readability-review-gate` change consumes ADR-074 rather than deciding a
 new analyzer boundary: the gate calls the same public analysis pipeline, imports
 no parser, and adds no second metric or classification. Its own decision —
-change-relative fix-or-justify review, the fixed `READABILITY: FIXED` /
-`READABILITY: JUSTIFIED` / `READABILITY: PASS` / `FAIL <reason>` vocabulary,
-unit-level change-scoped rationales, committed-`HEAD` analysis, and the absence
-of a stored baseline or ledger — is observable review behavior owned by the
-`readability-review-gate` Gherkin capability, the `verify-change` use case, and
-the change design; it is `NOT_QUALIFIED` and routed as `CANONICAL_ARTIFACT`. No
-new ADR file is created.
+change-relative outline review, the `OUTLINE: AUTHOR` / `OUTLINE: REVIEWER` /
+`OUTLINE: PASS <unit> | <explanation>` / `OUTLINE: FAIL <unit> | <reason>` /
+`OUTLINE: PASS` vocabulary, per-unit outline verdicts, committed-`HEAD`
+analysis, and the absence of a stored baseline or ledger — is observable review
+behavior owned by the `outline-review-gate` Gherkin capability, the
+`verify-change` use case, and the change design; it is `NOT_QUALIFIED` and
+routed as `CANONICAL_ARTIFACT`. No new ADR file is created.
 
 That change qualified three candidates and routed them separately on 2026-10-20:
 the gate behavior to the canonical capability artifact, and two amendments to
 existing records. ADR-028 is amended a
-fifth time: the mandatory review check gains a conditional readability member
-that refuses while a gate finding has neither a `FIXED` nor a `JUSTIFIED`
-decision, and the member cannot be removed by a `post` entry once the addon is
-enabled. ADR-071 is amended a second time: the SCM seam gains five
-history/revision operations (`first_touching_revision`, `parent_revision`,
+fifth time: the mandatory review check gains a conditional outline member
+that refuses while any printed outline lacks a `PASS` with a responsibility and
+call-order explanation or carries a `FAIL`, and the member cannot be removed by
+a `post` entry once the addon is enabled. ADR-071 is amended a second time: the
+SCM seam gains five history/revision operations (`first_touching_revision`,
+`parent_revision`,
 `revision_files`, `revision_blobs`, and `changed_paths`), with entry kinds,
 non-UTF-8 and line-break refusal, `dirty_entries` plus the revision diff for
 changed paths, Git shallow refusal, and Fossil `timeline --reverse -r ancestors

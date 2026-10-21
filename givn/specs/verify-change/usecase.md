@@ -39,7 +39,7 @@ The developer requests verification of a change.
 
 - Structural failures outrank other findings.
 - A review PASS requires a current green change-scoped verification receipt, including one reused across a documentation-only revision.
-- When the readability experiment is enabled, a review PASS requires every gate finding (a touched unit that is a readability finding at the change base or the committed head) to be either fixed at head or justified by a change-scoped, owner-approved rationale; a data-only size classification without a long method is exempt, and a `FAIL` marker always blocks.
+- When the outline experiment is enabled, the gate prints each touched unit as a per-component call tree: same-unit calls nest, and calls to another component are leaves tagged with the target. A review PASS requires an outline verdict for every touched unit with methods: `OUTLINE: PASS <unit> | <responsibility; call order>` from a fresh-context reviewer, or `OUTLINE: FAIL <unit> | <reason>`. A missing verdict, an empty PASS explanation, or a FAIL blocks; there is no justification path for an unreadable outline. Metric hints do not require a decision.
 - Each checked scenario records one real, unique revision whose message names the scenario; the task check refuses a missing, duplicate, unreachable, or unnamed revision.
 - The README-impact decision is reported before review and remains a blocking review requirement.
 - The receipt binds the tested revision, the selected delta features, the verify command, and the tested content.
@@ -76,7 +76,7 @@ The developer receives a complete verification result.
 - givn-workflow-enforcement
 - check-specification-health
 - visual-review-gate
-- readability-review-gate
+- outline-review-gate
 
 ## Interactions
 
@@ -94,7 +94,7 @@ The developer receives a complete verification result.
 | givn-workflow-enforcement | run the change-scoped checks | Consumer runs check tasks and receives a change verification receipt |
 | givn-workflow-enforcement | write a runner result | The result helper writes four counts without a scope |
 | givn-workflow-enforcement | run the review check on a change with use-case schema errors | Consumer runs review and receives every use-case schema problem in one pass |
-| readability-review-gate | run the readability review during check review | A developer runs the review with accounted readability findings and it passes |
+| outline-review-gate | run the outline review during check review | A developer runs the review with accounted outline findings and it passes |
 
 ## Includes
 

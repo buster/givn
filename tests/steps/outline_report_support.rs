@@ -1,21 +1,21 @@
-//! Fixture helpers for the readability report scenarios.
+//! Fixture helpers for the outline report scenarios.
 //!
 //! Helpers here write production Rust sources into a temporary project and
-//! enable the `readability` addon; they contain no step bindings.
+//! enable the `outline` addon; they contain no step bindings.
 
 use crate::common::{self, TestEnv};
-use givn::readability::model::{
+use givn::outline::model::{
     Analysis, AnalyzedFile, FileStatus, LineKind, RepoPath, SourceSpan, SourceUnit, TypeKind,
     TypeRelation, UnitId, UnitKind, UnitOrigin, Visibility,
 };
-use givn::readability::{self, AnalysisRequest, SourceAnalyzer, SourceScope, model::Language};
+use givn::outline::{self, AnalysisRequest, SourceAnalyzer, SourceScope, model::Language};
 use std::path::PathBuf;
 
-pub fn enable_readability(env: &TestEnv) {
-    let out = common::run_givn(env, &["addons", "enable", "readability"]);
+pub fn enable_outline(env: &TestEnv) {
+    let out = common::run_givn(env, &["addons", "enable", "outline"]);
     assert!(
         out.status.success(),
-        "givn addons enable readability failed: {}",
+        "givn addons enable outline failed: {}",
         String::from_utf8_lossy(&out.stderr)
     );
 }
@@ -76,15 +76,15 @@ pub fn assessment_counts(env: &TestEnv) -> (usize, usize, usize) {
     let request = AnalysisRequest {
         project_root: env.root(),
         scope: SourceScope {
-            language: Language::Rust,
+            languages: vec![Language::Rust],
             roots: vec![PathBuf::from("src")],
             include_test_sources: false,
         },
     };
-    let analyzer = readability::rust_analyzer();
+    let analyzer = outline::analyzer::rust_analyzer();
     let capabilities = analyzer.capabilities();
-    let analysis = readability::analyze(&request, analyzer.as_ref()).expect("analyze corpus");
-    let assessment = readability::assess(&analysis, capabilities);
+    let analysis = outline::analyze(&request, analyzer.as_ref()).expect("analyze corpus");
+    let assessment = outline::assess(&analysis, capabilities);
     (
         assessment.units.len(),
         assessment
@@ -214,32 +214,32 @@ pub fn assess_json(env: &TestEnv) -> String {
     let request = AnalysisRequest {
         project_root: env.root(),
         scope: SourceScope {
-            language: Language::Rust,
+            languages: vec![Language::Rust],
             roots: vec![PathBuf::from("src")],
             include_test_sources: false,
         },
     };
-    let analyzer = readability::rust_analyzer();
+    let analyzer = outline::analyzer::rust_analyzer();
     let capabilities = analyzer.capabilities();
-    let analysis = readability::analyze(&request, analyzer.as_ref()).expect("analyze fixture");
-    let assessment = readability::assess(&analysis, capabilities);
-    readability::report::render_json(&assessment, &request.scope)
+    let analysis = outline::analyze(&request, analyzer.as_ref()).expect("analyze fixture");
+    let assessment = outline::assess(&analysis, capabilities);
+    outline::report::render_json(&assessment, &request.scope)
 }
 
 pub fn assess_report(env: &TestEnv) -> String {
     let request = AnalysisRequest {
         project_root: env.root(),
         scope: SourceScope {
-            language: Language::Rust,
+            languages: vec![Language::Rust],
             roots: vec![PathBuf::from("src")],
             include_test_sources: false,
         },
     };
-    let analyzer = readability::rust_analyzer();
+    let analyzer = outline::analyzer::rust_analyzer();
     let capabilities = analyzer.capabilities();
-    let analysis = readability::analyze(&request, analyzer.as_ref()).expect("analyze fixture");
-    let assessment = readability::assess(&analysis, capabilities);
-    readability::report::render_human(&assessment)
+    let analysis = outline::analyze(&request, analyzer.as_ref()).expect("analyze fixture");
+    let assessment = outline::assess(&analysis, capabilities);
+    outline::report::render_human(&assessment)
 }
 
 pub fn write_source(env: &TestEnv, relative: &str, source: &str) {
@@ -252,11 +252,11 @@ pub fn write_source(env: &TestEnv, relative: &str, source: &str) {
 
 struct FakeAnalyzer {
     analysis: Analysis,
-    capabilities: givn::readability::model::AnalyzerCapabilities,
+    capabilities: givn::outline::model::AnalyzerCapabilities,
 }
 
 impl SourceAnalyzer for FakeAnalyzer {
-    fn capabilities(&self) -> givn::readability::model::AnalyzerCapabilities {
+    fn capabilities(&self) -> givn::outline::model::AnalyzerCapabilities {
         self.capabilities.clone()
     }
 
@@ -275,6 +275,7 @@ fn fake_analysis() -> Analysis {
     let module_id = UnitId("module:src/small.rs".to_string());
     let type_id = UnitId("type:src/small.rs::Small".to_string());
     let file = AnalyzedFile {
+        language: Language::Rust,
         path: path.clone(),
         physical_lines: 1,
         lines: vec![LineKind::Code],
@@ -282,6 +283,7 @@ fn fake_analysis() -> Analysis {
         unit_ids: vec![type_id.clone(), module_id.clone()],
     };
     let type_unit = SourceUnit {
+        language: Language::Rust,
         id: type_id,
         kind: UnitKind::Type(TypeKind::Struct),
         name: "Small".to_string(),
@@ -299,6 +301,7 @@ fn fake_analysis() -> Analysis {
         unsupported: Vec::new(),
     };
     let module = SourceUnit {
+        language: Language::Rust,
         id: module_id,
         kind: UnitKind::Module,
         name: "src/small.rs".to_string(),
@@ -326,28 +329,71 @@ pub fn engine_reports(env: &TestEnv) -> (String, String) {
     let request = AnalysisRequest {
         project_root: env.root(),
         scope: SourceScope {
-            language: Language::Rust,
+            languages: vec![Language::Rust],
             roots: vec![PathBuf::from("src")],
             include_test_sources: false,
         },
     };
-    let syn = readability::rust_analyzer();
+    let syn = outline::analyzer::rust_analyzer();
     let capabilities = syn.capabilities();
-    let syn_analysis = readability::analyze(&request, syn.as_ref()).expect("syn analysis");
+    let syn_analysis = outline::analyze(&request, syn.as_ref()).expect("syn analysis");
     let fake = FakeAnalyzer {
         analysis: fake_analysis(),
         capabilities: capabilities.clone(),
     };
-    let fake_analysis = readability::analyze(&request, &fake).expect("fake analysis");
+    let fake_analysis = outline::analyze(&request, &fake).expect("fake analysis");
     assert_eq!(
         syn_analysis, fake_analysis,
         "the fake and syn analyses must be the same neutral model"
     );
-    let syn_report = readability::report::render_human(&readability::assess(
-        &syn_analysis,
-        capabilities.clone(),
-    ));
-    let fake_report =
-        readability::report::render_human(&readability::assess(&fake_analysis, capabilities));
+    let syn_report =
+        outline::report::render_human(&outline::assess(&syn_analysis, capabilities.clone()));
+    let fake_report = outline::report::render_human(&outline::assess(&fake_analysis, capabilities));
     (syn_report, fake_report)
+}
+
+pub fn write_python_class(env: &TestEnv) {
+    write_source(
+        env,
+        "src/tracker.py",
+        "class OrderBook:\n    \"\"\"Track incoming orders.\"\"\"\n\n    def __init__(self) -> None:\n        self.orders: list[str] = []\n\n    def add(self, order: str) -> int:\n        self.orders.append(order)\n        return len(self.orders)\n\n    def fill(self, order: str) -> int:\n        return self.add(order)\n",
+    );
+}
+
+pub fn write_cross_component_calls(env: &TestEnv) {
+    write_source(
+        env,
+        "src/component.rs",
+        "pub fn normalize() -> u64 {\n    helper()\n}\n\nfn helper() -> u64 {\n    1\n}\n\npub struct Engine {}\n\nimpl Engine {\n    pub fn build(&self) -> u64 {\n        normalize()\n    }\n}\n",
+    );
+}
+
+pub fn write_python_module(env: &TestEnv) {
+    write_source(
+        env,
+        "src/store.py",
+        "def load(path: str) -> str:\n    return path\n\n\ndef save(path: str, value: str) -> int:\n    return len(value)\n",
+    );
+}
+
+pub fn write_python3_stub(env: &TestEnv) {
+    let stub_dir = env.path(".python3-stub");
+    std::fs::create_dir_all(&stub_dir).expect("create python3 stub dir");
+    let marker = stub_dir.join("invoked");
+    let script = format!(
+        "#!/bin/sh\nprintf invoked > '{}'\nexit 1\n",
+        marker.display()
+    );
+    let path = stub_dir.join("python3");
+    std::fs::write(&path, script).expect("write python3 stub");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755))
+            .expect("make python3 stub executable");
+    }
+}
+
+pub fn python3_stub_invoked(env: &TestEnv) -> bool {
+    env.path(".python3-stub/invoked").exists()
 }

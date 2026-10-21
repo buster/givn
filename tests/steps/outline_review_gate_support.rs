@@ -1,4 +1,4 @@
-//! Fixture builders for the readability review gate scenarios.
+//! Fixture builders for the outline review gate scenarios.
 //!
 //! Every fixture is a real temporary Git or Fossil repository: a production
 //! base commit, a change-directory commit (the gate's first touch), and head
@@ -227,7 +227,7 @@ impl<'a> GateFixture<'a> {
 
     pub(crate) fn write_rationale(&self, finding_unit: &str, spec: &RationaleSpec) {
         let relative = self.change_path(&format!(
-            "readability/rationales/{}.md",
+            "outline/rationales/{}.md",
             rationale_slug(finding_unit)
         ));
         self.write(&relative, &spec.render());
@@ -640,7 +640,7 @@ pub(crate) fn write_review_preconditions(env: &TestEnv, change_id: &str, task_co
          ## Step Definitions\n\n\
          | Capability | Step definition file |\n\
          |---|---|\n\
-         | fixture-capability | tests/steps/readability_review_gate_fixture_steps.rs |\n\n\
+         | fixture-capability | tests/steps/outline_review_gate_fixture_steps.rs |\n\n\
          ## Visual Design Contract\n\n\
          ```text\n\
          - Interface: none\n\
@@ -660,13 +660,13 @@ pub(crate) fn write_review_preconditions(env: &TestEnv, change_id: &str, task_co
     );
     write_file(
         env,
-        "tests/steps/readability_review_gate_fixture_steps.rs",
+        "tests/steps/outline_review_gate_fixture_steps.rs",
         "//! Fixture step file promised by the review-ready change's design.\n",
     );
     let mod_path = env.path("tests/steps/mod.rs");
     let mut registration = fs::read_to_string(&mod_path).unwrap_or_default();
-    if !registration.contains("readability_review_gate_fixture_steps") {
-        registration.push_str("pub mod readability_review_gate_fixture_steps;\n");
+    if !registration.contains("outline_review_gate_fixture_steps") {
+        registration.push_str("pub mod outline_review_gate_fixture_steps;\n");
     }
     write_file(env, "tests/steps/mod.rs", &registration);
     write_file(

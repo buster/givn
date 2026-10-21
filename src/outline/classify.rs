@@ -4,8 +4,8 @@
 
 use super::metrics::{self, MethodFinding, MethodMetrics, UnitMetrics};
 use super::model::{
-    Analysis, AnalysisDiagnostic, AnalyzedFile, AnalyzerCapabilities, OutlineItem, RepoPath,
-    SourceUnit, TypeKind, UnitId, UnitKind, UnsupportedNote,
+    Analysis, AnalysisDiagnostic, AnalyzedFile, AnalyzerCapabilities, Language, OutlineItem,
+    RepoPath, SourceUnit, TypeKind, UnitId, UnitKind, UnsupportedNote,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -85,6 +85,7 @@ pub struct Evidence {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClassifiedUnit {
     pub unit_id: UnitId,
+    pub language: Language,
     pub kind: UnitKind,
     pub name: String,
     pub path: RepoPath,
@@ -151,6 +152,7 @@ fn classify_unit(unit: &SourceUnit, metrics: &UnitMetrics, analysis: &Analysis) 
     let (classification, evidence) = decide(unit, metrics);
     ClassifiedUnit {
         unit_id: unit.id.clone(),
+        language: unit.language,
         kind: unit.kind,
         name: unit.name.clone(),
         path: unit.declaration_file.clone(),

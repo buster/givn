@@ -1,0 +1,64 @@
+direction: right
+
+
+implement: |md
+  # 1. Implement
+
+  **Produces (optional)**
+
+  - `givn outline report` (Rust and Python)
+  - **Outline** — per-component call tree
+  - Same-unit calls nest; other components are leaves
+  - Supporting metrics
+
+  **Checks**
+
+  - Nothing; the report never blocks
+| {
+  style.fill: "#eef2ff"
+  style.stroke: "#4f46e5"
+  style.border-radius: 10
+  style.font-size: 20
+}
+
+review: |md
+  # 2. Review
+
+  **Produces**
+
+  - `OUTLINE: PASS` or `FAIL` per touched unit
+  - `AUTHOR`, `REVIEWER`, `OUTLINE: PASS`
+
+  **Checks**
+
+  - Every printed outline has a verdict
+  - `PASS` explains responsibility and call order
+  - `FAIL` blocks; no justification path
+  - The reviewer differs from the author
+| {
+  style.fill: "#fff7ed"
+  style.stroke: "#ea580c"
+  style.border-radius: 10
+  style.font-size: 20
+}
+
+archive: |md
+  # 3. Archive
+
+  **Produces**
+
+  - Nothing new
+
+  **Checks**
+
+  - The review record is complete
+  - An outlined unit without a verdict blocks archive
+| {
+  style.fill: "#f0fdf4"
+  style.stroke: "#16a34a"
+  style.border-radius: 10
+  style.font-size: 20
+}
+
+implement -> review: "next phase"
+review -> archive: "next phase"

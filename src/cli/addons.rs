@@ -59,8 +59,8 @@ pub const KNOWN_ADDONS: &[AddonSpec] = &[
         default_enabled: false,
     },
     AddonSpec {
-        id: "readability",
-        description: "Opt-in readability report — default off; enable with `givn addons enable readability`",
+        id: "outline",
+        description: "Opt-in outline report — default off; enable with `givn addons enable outline`",
         default_enabled: false,
     },
 ];
