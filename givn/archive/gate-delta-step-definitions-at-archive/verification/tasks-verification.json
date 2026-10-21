@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "gate-delta-step-definitions-at-archive",
+  "status": "passed",
+  "head": "8612577832fcf901ef2a64eac0178f5209345b61",
+  "features_path": "givn/changes/gate-delta-step-definitions-at-archive/specs",
+  "features_digest": "1387cee9dbc6be33c7eec91b5a0171cc0f89f76bc31ee91cb770efa546545f92",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "756f187cb812d714a5c557678e6faad1adbb36ebc3ba8f8ea402d6333c479b0c",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1792594237
+}
