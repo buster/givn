@@ -337,7 +337,7 @@ pub struct GateOutcome {
     pub base: Option<ChangeBase>,
     pub analyzed: bool,
     pub touched: usize,
-    pub supporting: Vec<GateFinding>,
+    pub hints: Vec<GateFinding>,
     pub outlines: Vec<OutlineEntry>,
     #[allow(dead_code)]
     pub markers: ReviewMarkers,
@@ -350,7 +350,7 @@ impl GateOutcome {
             base,
             analyzed: false,
             touched: 0,
-            supporting: Vec::new(),
+            hints: Vec::new(),
             outlines: Vec::new(),
             markers: ReviewMarkers::default(),
             failures: vec![failure],
@@ -374,10 +374,10 @@ impl GateOutcome {
             if self.analyzed {
                 let _ = writeln!(
                     out,
-                    "  touched {} unit(s), {} outline(s), {} supporting metric finding(s)",
+                    "  touched {} unit(s), {} outline(s), {} metric hint(s)",
                     self.touched,
                     self.outlines.len(),
-                    self.supporting.len()
+                    self.hints.len()
                 );
             }
         }
@@ -406,10 +406,10 @@ impl GateOutcome {
             let _ = writeln!(out, "  CHECK     {check}");
         }
 
-        for finding in &self.supporting {
+        for finding in &self.hints {
             let _ = writeln!(
                 out,
-                "  SUPPORTING {}  {}",
+                "  HINT      {}  {}",
                 finding.unit_id,
                 finding.message()
             );
@@ -555,7 +555,7 @@ fn review(request: &GateRequest) -> Result<GateOutcome> {
     }
 
     let touched = touched::select(&head_analysis, &base_assessment, &changed);
-    let supporting = findings::collect(&touched.units, &base_assessment, &head_assessment);
+    let hints = findings::collect(&touched.units, &base_assessment, &head_assessment);
     let outlines: Vec<OutlineEntry> = touched
         .units
         .iter()
@@ -575,7 +575,7 @@ fn review(request: &GateRequest) -> Result<GateOutcome> {
         request,
         base,
         touched.units.len(),
-        supporting,
+        hints,
         outlines,
         failures,
     )
@@ -585,7 +585,7 @@ fn outline_outcome(
     request: &GateRequest,
     base: ChangeBase,
     touched: usize,
-    supporting: Vec<GateFinding>,
+    hints: Vec<GateFinding>,
     outlines: Vec<OutlineEntry>,
     mut failures: Vec<GateFailure>,
 ) -> Result<GateOutcome> {
@@ -660,7 +660,7 @@ fn outline_outcome(
         base: Some(base),
         analyzed: true,
         touched,
-        supporting,
+        hints,
         outlines,
         markers,
         failures,
@@ -704,7 +704,7 @@ mod tests {
             base: None,
             analyzed: false,
             touched: 0,
-            supporting: Vec::new(),
+            hints: Vec::new(),
             outlines: Vec::new(),
             markers: ReviewMarkers::default(),
             failures,

@@ -5,7 +5,7 @@ production Rust. Its core idea is outline comprehension: read the outline of a
 type or module — method declarations, signatures, and internal calls, without
 bodies or data — and check that it explains the unit's responsibility and call
 order. When the addon is enabled, every touched unit with methods needs an
-outline verdict from a fresh-context reviewer. Metrics are supporting evidence,
+outline verdict from a fresh-context reviewer. Metrics are hints,
 not the gate. An unreadable outline has no justification path. The addon stores
 no baseline, ignores non-Rust code, and is not a product guarantee: the schema,
 thresholds, classifications, and gate rules may change.
@@ -13,8 +13,8 @@ thresholds, classifications, and gate rules may change.
 ## What it does
 
 - **Report.** `givn readability report` prints each unit's outline first —
-  method declarations, signatures, and internal calls — then the supporting
-  metrics, as human text or JSON. It never blocks a change and stores no
+  method declarations, signatures, and internal calls — then the metric
+  hints, as human text or JSON. It never blocks a change and stores no
   baseline.
 - **Review gate.** With the addon enabled, `givn check review --change <id>`
   prints the outline of every touched unit that has methods. The review record
@@ -42,7 +42,7 @@ OUTLINE type:src/engine.rs::Engine
     calls: validate -> compile
   method [private] fn validate(&self) -> Result<()>
   method [private] fn compile(&self) -> Engine
-  metrics (supporting): code lines 120; methods 3; public methods 1
+  metrics (hint): code lines 120; methods 3; public methods 1
 ```
 
 The names and call order state the unit's job: build an `Engine` by validating,
@@ -54,9 +54,9 @@ but they do not decide. Both directions are valid:
 | Outline | Metrics | Result |
 |---|---|---|
 | Readable | clean | pass |
-| Readable | flag | pass; the metric is supporting evidence |
+| Readable | flag | pass; the metric is a hint |
 | Unreadable | clean | fail; the outline is the finding |
-| Unreadable | flag | fail; the metric supports the finding |
+| Unreadable | flag | fail; the metric is a hint |
 
 An unreadable outline is not justified. Fix the code and re-review.
 
@@ -75,7 +75,7 @@ baseline; the gate only looks at the units the change touched.
 | Phase | Produced by the addon | Checked by the addon |
 |---|---|---|
 | Proposal / design | Nothing automatic. You may run the report as evidence. | Nothing. |
-| Implement | An optional report with each unit's outline first, then the supporting metrics, as human text or JSON. | Nothing. The report never blocks a change. |
+| Implement | An optional report with each unit's outline first, then the metric hints, as human text or JSON. | Nothing. The report never blocks a change. |
 | Review | Per-unit `READABILITY: OUTLINE PASS` or `FAIL`, `READABILITY: AUTHOR` and `REVIEWER`, and `READABILITY: PASS` when every outline passes. | Every printed outline has a verdict. A `PASS` has a responsibility and call-order explanation; a `FAIL` blocks. The reviewer differs from the author. |
 | Archive | Nothing new. | The review record is complete. An outlined unit without a verdict blocks archive. |
 
@@ -160,7 +160,7 @@ to understand other syntax.
   reviewer.
 - An unreadable outline blocks even when every metric is clean.
 - A readable outline passes even when a metric flags the code; the metric stays
-  visible as supporting evidence.
+  visible as a hint.
 - The reviewer explains responsibility and call order in the record, so the
   judgment is inspectable.
 - The report remains useful for untouched code without blocking unrelated
