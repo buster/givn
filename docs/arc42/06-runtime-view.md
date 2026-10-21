@@ -43,7 +43,7 @@ The embedded default manifest has addon flags disabled, but initialized projects
 normally receive enabled addon settings because the current `init` command
 enables the default-on set. When a registered addon is default-off, `givn init`
 prints a separate line naming it and the enabling command instead of writing its
-flag; the first such addon is `readability`. Existing Arc42 files are not
+flag; the first such addon is `outline`. Existing Arc42 files are not
 overwritten by addon scaffolding.
 
 ## 6.1a Commit attribution
@@ -230,8 +230,8 @@ For `givn check review`, it runs:
 2. The deterministic run-declaration check.
 3. For a named change, the overlap disposition gate.
 4. The change-scoped verification receipt, so a stale receipt is reported before
-   any change-relative readability analysis runs.
-5. For a named change with `addons.readability` enabled, the readability review
+   any change-relative outline analysis runs.
+5. For a named change with `addons.outline` enabled, the outline review
    gate (6.20).
 
 The visual gate reads the `## Visual Design Contract` section from
@@ -454,8 +454,8 @@ registered addon, marking a default-off entry whose flag is absent or false as
 `[disabled]`. `enable arc42` sets the flag, scaffolds missing fixed-path chapter
 files, and expands the effective graph; `disable arc42` leaves existing docs in
 place. The same commands manage other registered addon flags. `enable
-readability` sets its flag, prints the report command, and generates no skill or
-command file; `disable readability` makes the report exit 1 with the named
+outline` sets its flag, prints the report command, and generates no skill or
+command file; `disable outline` makes the report exit 1 with the named
 disabled reason.
 
 `givn skills sync` resolves the selected targets, writes generated skills and
@@ -727,7 +727,7 @@ A scope whose model holds no entries — including a record that holds only the
 recorder's own command entries — renders the empty state rather than an empty
 workflow.
 
-## 6.19 `givn readability report`
+## 6.19 `givn outline report`
 
 The command is registered unconditionally and gated at runtime so that a
 disabled experiment can explain itself:
@@ -735,32 +735,32 @@ disabled experiment can explain itself:
 ```mermaid
 sequenceDiagram
   actor Developer
-  participant CLI as givn readability report
+  participant CLI as givn outline report
   participant CFG as config::overlay
-  participant ORCH as readability orchestration
+  participant ORCH as outline orchestration
   participant AN as SourceAnalyzer
   participant MET as metrics
   participant CLS as classify
   participant RPT as report
   Developer->>CLI: run report [--json] [--out]
   CLI->>CFG: load_effective()
-  alt readability disabled
+  alt outline disabled
     CLI-->>Developer: exit 1, stderr names the disabled experiment
   else enabled
     CLI->>ORCH: report(project root, production src scope)
     ORCH->>AN: analyze(request)
     AN-->>ORCH: neutral Analysis plus per-file diagnostics
     ORCH->>MET: compute(analysis)
-    MET-->>ORCH: per-unit metrics
+    MET-->>ORCH: per-unit metric hints
     ORCH->>CLS: classify(metrics)
     CLS-->>ORCH: classification, evidence
     ORCH->>RPT: render(classified units)
-    RPT-->>Developer: stdout or --out, exit 0
+    RPT-->>Developer: outline first, then hints; stdout or --out, exit 0
   end
 ```
 
-1. `clap` dispatches `readability report`; the handler loads the effective
-   configuration. An absent or false `addons.readability` stops with exit 1 and
+1. `clap` dispatches `outline report`; the handler loads the effective
+   configuration. An absent or false `addons.outline` stops with exit 1 and
    a stderr message naming the enabling command.
 2. With the addon enabled, the orchestration scans the project-root `src/`
    tree, excludes test, benchmark, example, and target directories and
@@ -769,31 +769,32 @@ sequenceDiagram
 3. The adapter returns one neutral `Analysis`. A read or parse failure is a
    diagnostic for that file, not an abort; the report continues with the
    analyzable files and names every failure.
-4. Shared metrics and classification run above the port. Every analyzed unit
-   receives exactly one classification and its evidence; no action or
-   recommendation is produced, and wholly unsupported units are not classified
-   and are named.
-5. The selected renderer writes human text or schema-v2 findings-only JSON.
-   Findings never change the exit code; the only write is the explicit `--out`
-   path. The command appends no development-record entry and stores no baseline,
-   cache, or classification history.
+4. The report prints each unit's method outline first: declarations, signatures,
+   order, and internal calls, with no data, method bodies, or comments. Shared
+   metrics and classification follow as hints. Every analyzed unit receives
+   exactly one classification and its evidence; no action or recommendation is
+   produced, and wholly unsupported units are not classified and are named.
+5. The selected renderer writes human text or schema-v2 JSON. Hints never change
+   the exit code; the only write is the explicit `--out` path. The command
+   appends no development-record entry and stores no baseline, cache, or
+   classification history.
 
-## 6.20 `givn check review` readability gate
+## 6.20 `givn check review` outline gate
 
 The gate is an additional member of the existing review check, not a command:
 `src/cli/check.rs` calls it after the verification receipt and before the
 review returns success, and only for a named change whose effective
-configuration enables `addons.readability`. With the addon absent or false the
+configuration enables `addons.outline`. With the addon absent or false the
 gate emits nothing and no marker is required.
 
 ```mermaid
 sequenceDiagram
   actor Developer
   participant CHECK as givn check review
-  participant GATE as readability gate
+  participant GATE as outline gate
   participant SCM as scm::Backend
-  participant AN as readability analysis
-  participant REVIEW as review.md + rationales
+  participant AN as outline analysis
+  participant REVIEW as review.md outline verdicts
   Developer->>CHECK: check review --change <id>
   CHECK->>CHECK: integrity, run declaration, overlap, receipt
   CHECK->>GATE: review(project root, change id, roots = src)
@@ -808,9 +809,9 @@ sequenceDiagram
     SCM-->>GATE: two revision trees
     GATE->>AN: analyze base tree, analyze HEAD tree
     AN-->>GATE: two assessments and diagnostics
-    GATE->>GATE: touched units, unit-level findings, post-analysis guard
-    GATE->>REVIEW: markers and rationales
-    REVIEW-->>GATE: FIXED/JUSTIFIED/PASS/FAIL
+    GATE->>GATE: touched units, outlines, metric hints, post-analysis guard
+    GATE->>REVIEW: outlines and metric hints
+    REVIEW-->>GATE: AUTHOR/REVIEWER, OUTLINE PASS/FAIL, PASS
     GATE-->>CHECK: PASS, or named failures
   end
   CHECK-->>Developer: exit 0, or non-zero with the exact failure
@@ -828,8 +829,7 @@ sequenceDiagram
 2. **Dirty guard.** The head is the committed `HEAD`. A tracked, untracked, or
    extra production path in the working tree fails before analysis with
    `production paths are dirty; commit or discard before review: <paths>`.
-   Non-production paths such as `review.md` and the rationales may stay
-   uncommitted.
+   Non-production paths such as `review.md` may stay uncommitted.
 3. **Revision trees.** The backend's files under the production roots are
    materialized into two temporary directories outside the project and analyzed
    with the same request scope. Entry kinds are regular, symlink, and submodule;
@@ -838,43 +838,35 @@ sequenceDiagram
    it fails closed. Git paths and blobs are read with NUL delimiters
    (`ls-tree -r -z`, `cat-file --batch -z`). The temporary paths never enter the
    output and are removed before the command returns.
-4. **Touched units.** A changed path marks the units that declare in it, every
-   unit whose files include it, and the file's module; a touched trait also
-   marks its implementors. Base and head units are matched by unit id. A base
-   unit with no head counterpart is a removal that needs `FIXED`; a move to a
-   new module path closes the old unit and makes the new one new debt.
-5. **Gate findings.** A touched unit is a gate finding when it is a report
-   finding at the base or at the head, excluding a data-only size classification
-   without a method finding. A data-only unit with a long method is a
-   method-length gate finding; a new interface under 500 with more than 50
-   public methods is a gate finding; a module at exactly 1,000 is a gate
-   finding. A changed `.rs` file present at head that the analyzer never saw
-   fails the post-analysis guard; a deleted file is proven by the base unit's
-   `Removed` finding. The printed size is the measured value, never a claim of
-   exactness (R-108).
-6. **Decisions.** Each gate finding needs exactly one decision. `READABILITY: FIXED
-   <unit>` is accepted only when the unit has no finding at head;
-   `READABILITY: JUSTIFIED <unit>` is accepted only when the unit remains a
-   finding at head and `rationales/<unit-slug>.md` validates: matching `Unit:`
-   and `Classification:`, the `Finding:` reason, `Evidence:` with a concrete
-   metric or finding path, `Why this shape is right:` naming the unit's
-   responsibility, `Alternatives considered:` naming at least one alternative
-   and why it was rejected (empty, `none`, and `n/a` fail), a confirmed `Owner:`
-   (`givn-maintainer--owner` in this project), no banned whole-word phrase, and
-   the `Follow-up:`/`Expiry:` pair when temporary. A gate finding with neither
-   decision fails; a `FIXED` marker for a still-over unit, a `JUSTIFIED` marker
-   without a rationale or on a unit that is not a finding at head, an unknown
-   marker, and a rationale slug collision all fail.
-7. **Verdict.** `review.md` must carry `READABILITY: PASS` when any gate
-   finding exists; `FAIL <reason>` always fails, and fenced examples are
-   ignored. The gate prints the base revision, the head, the touched-unit and
-   gate-finding counts, each gate finding with its exact unit id and message,
-   each decision, and either `readability review: PASS` or
-   `readability review: FAIL (<reason>)`; several failures print one
-   `FAILURE` line each and an aggregate final line. The CLI exit contract stays `0`/`1`;
-   a missing base, a dirty production path, an unreadable file, a parse failure,
-   or an unanalyzed changed `.rs` file fails closed with the path and
-   diagnostic. The only writes are the two temporary trees; no project file,
+4. **Touched units and outlines.** A changed path marks the units that declare
+   in it, every unit whose files include it, and the file's module; a touched
+   trait also marks its implementors. Base and head units are matched by unit
+   id. The gate prints the method outline of every touched head unit with
+   methods. A unit with no methods has no outline and needs no verdict; a base
+   unit with no head counterpart is removed and also needs no verdict.
+5. **Metric hints.** The report's classification and method findings are
+   recomputed for the touched units and printed as `HINT` lines with their
+   base/head evidence. They are advisory. They never create, satisfy, or block
+   an outline verdict. A changed `.rs` file present at head that the analyzer
+   never saw fails the post-analysis guard; a deleted file is proven by the base
+   unit's removal.
+6. **Outline verdicts.** Every printed outline needs exactly one verdict from a
+   fresh-context reviewer. `OUTLINE: PASS <unit> | <responsibility; call order>`
+   needs a non-empty responsibility and call-order explanation; `OUTLINE: FAIL
+   <unit> | <reason>` blocks. `OUTLINE: AUTHOR <id>` and `OUTLINE: REVIEWER <id>`
+   are required when any verdict exists and must differ. A missing verdict, an
+   empty PASS explanation, a FAIL, conflicting verdicts, a missing reviewer, or
+   a self-review fails. There is no justification path for an unreadable
+   outline.
+7. **Verdict.** `review.md` must carry `OUTLINE: PASS` when any outline exists;
+   `FAIL <reason>` always fails, and fenced examples are ignored. The gate prints
+   the base revision, the head, the touched-unit, outline, and hint counts, each
+   outline with its `CHECK` verdict, each metric hint, and either `outline
+   review: PASS` or `outline review: FAIL (<reason>)`; several failures print
+   one `FAILURE` line each and an aggregate final line. The CLI exit contract
+   stays `0`/`1`; a missing base, a dirty production path, an unreadable file, a
+   parse failure, or an unanalyzed changed `.rs` file fails closed with the path
+   and diagnostic. The only writes are the two temporary trees; no project file,
    baseline, watchlist, or ledger is written.
 
 *[Architecture documentation index](README.md)*
