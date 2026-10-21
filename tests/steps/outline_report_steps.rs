@@ -399,9 +399,10 @@ fn report_recommends_no_action(world: &mut GivnWorld) {
 
 fn unit_block(world: &GivnWorld, name: &str) -> String {
     let report = report_text(world);
+    let marker = format!("::{name}");
     report
         .split("\n\n")
-        .find(|block| block.contains(name))
+        .find(|block| block.contains(&marker))
         .unwrap_or(&report)
         .to_string()
 }
@@ -974,7 +975,7 @@ fn outline_class_shows_call(world: &mut GivnWorld, class: String, caller: String
     let section = stdout.split(&marker).nth(1).expect("class component");
     let caller_marker = format!("def {caller}(");
     let caller_offset = section.find(&caller_marker).expect("caller method");
-    let call_marker = format!("-> [public, {class}] {callee}");
+    let call_marker = format!("-> [same_file, public, {class}] {callee}");
     assert!(
         section[caller_offset..].contains(&call_marker),
         "expected {caller} to call {callee} in {class}: {section}"
@@ -983,11 +984,16 @@ fn outline_class_shows_call(world: &mut GivnWorld, class: String, caller: String
 
 #[given("a production source unit whose method calls a module function")]
 fn cross_component_source(world: &mut GivnWorld) {
-    let env = world
-        .env
-        .as_ref()
-        .expect("a project root is required first");
-    crate::steps::outline_report_support::write_cross_component_calls(env);
+    let env = match world.env.take() {
+        Some(env) => env,
+        None => {
+            let env = common::make_init_root();
+            crate::steps::outline_report_support::enable_outline(&env);
+            env
+        }
+    };
+    crate::steps::outline_report_support::write_cross_component_calls(&env);
+    world.env = Some(env);
 }
 
 #[then("the type outline calls the module function without expanding it")]
@@ -999,7 +1005,7 @@ fn type_outline_keeps_cross_component_calls_leaf(world: &mut GivnWorld) {
         .nth(1)
         .expect("Engine component");
     assert!(
-        engine.contains("-> [public, module] normalize"),
+        engine.contains("-> [same_file, public, module] normalize"),
         "expected the Engine outline to call normalize: {engine}"
     );
     assert!(
@@ -1011,7 +1017,439 @@ fn type_outline_keeps_cross_component_calls_leaf(world: &mut GivnWorld) {
         .nth(1)
         .expect("module component");
     assert!(
-        module.contains("-> [private, module] helper"),
+        module.contains("-> [same_file, private, module] helper"),
         "expected normalize to call helper in the module component: {module}"
+    );
+}
+#[given("a production source unit whose method calls a receiver of unknown type")]
+fn unknown_receiver_call(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_unknown_receiver_call(&env);
+    world.env = Some(env);
+}
+
+fn all_calls(value: &serde_json::Value) -> Vec<&serde_json::Value> {
+    value["units"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .flat_map(|unit| unit["outline"].as_array().into_iter().flatten())
+        .flat_map(|item| item["calls"].as_array().into_iter().flatten())
+        .collect()
+}
+
+fn call_named<'a>(value: &'a serde_json::Value, callee: &str) -> &'a serde_json::Value {
+    all_calls(value)
+        .into_iter()
+        .find(|call| call["callee"].as_str() == Some(callee))
+        .unwrap_or_else(|| panic!("no call {callee} in {value}"))
+}
+
+#[then(regex = r#"^the JSON report records the call "([^"]+)" as "([^"]+)"$"#)]
+fn json_call_resolution(world: &mut GivnWorld, callee: String, resolution: String) {
+    let value = json_output(world);
+    let call = call_named(&value, &callee);
+    assert_eq!(
+        call["resolution"].as_str(),
+        Some(resolution.as_str()),
+        "unexpected resolution for {callee}: {call}"
+    );
+}
+
+#[then(regex = r#"^the JSON call names "([^"]+)" as its target$"#)]
+fn json_call_names_target(world: &mut GivnWorld, target: String) {
+    let value = json_output(world);
+    assert!(
+        all_calls(&value)
+            .iter()
+            .any(|call| call["target"].as_str() == Some(target.as_str())),
+        "no call targets {target}: {value}"
+    );
+}
+
+#[then(regex = r#"^the JSON call names "([^"]+)" as its candidate target$"#)]
+fn json_call_names_candidate(world: &mut GivnWorld, target: String) {
+    json_call_names_target(world, target);
+}
+
+#[then(regex = r#"^the JSON call "([^"]+)" names no target$"#)]
+fn json_call_has_no_target(world: &mut GivnWorld, callee: String) {
+    let value = json_output(world);
+    let call = call_named(&value, &callee);
+    assert!(call["target"].is_null(), "{callee} has a target: {call}");
+}
+
+#[then(regex = r#"^the report prints the call "([^"]+)" as "([^"]+)"$"#)]
+fn human_call_label(world: &mut GivnWorld, callee: String, tag: String) {
+    let report = report_text(world);
+    assert!(
+        report.contains(&tag),
+        "missing {tag} for {callee}: {report}"
+    );
+}
+
+fn indent(line: &str) -> usize {
+    line.len() - line.trim_start().len()
+}
+
+#[then(
+    regex = r#"^the name-only call "([^"]+)" is not expanded into a deeper-indented call line$"#
+)]
+fn name_only_not_expanded(world: &mut GivnWorld, callee: String) {
+    let report = report_text(world);
+    let lines: Vec<&str> = report.lines().collect();
+    let index = lines
+        .iter()
+        .position(|line| line.contains("-> [name_only") && line.trim_end().ends_with(&callee))
+        .unwrap_or_else(|| panic!("no name-only call {callee}: {report}"));
+    let next = lines[index + 1..]
+        .iter()
+        .find(|line| !line.trim().is_empty())
+        .expect("a line after the name-only call");
+    assert!(
+        indent(next) <= indent(lines[index]),
+        "{callee} was expanded: {report}"
+    );
+}
+
+fn report_block(world: &GivnWorld, id: &str) -> String {
+    let report = report_text(world);
+    report
+        .split("\n\n")
+        .find(|block| block.contains(id))
+        .unwrap_or_else(|| panic!("no report block for {id}: {report}"))
+        .to_string()
+}
+
+#[then(regex = r#"^the report records "(LCOM4 \d+)" for the unit "([^"]+)"$"#)]
+fn report_records_lcom4(world: &mut GivnWorld, expected: String, unit: String) {
+    let block = report_block(world, &unit);
+    assert!(block.contains(&expected), "missing {expected}: {block}");
+}
+
+#[given("a production source unit whose method calls another method on itself")]
+fn self_receiver_call(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_self_receiver_call(&env);
+    world.env = Some(env);
+}
+
+#[given("a production source unit whose method calls an associated function on a project type")]
+fn named_receiver_call(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_named_receiver_call(&env);
+    world.env = Some(env);
+}
+
+#[given(
+    "a production source unit whose method calls an unknown receiver whose name two project types declare"
+)]
+fn ambiguous_call(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_ambiguous_call(&env);
+    world.env = Some(env);
+}
+
+#[given(
+    "a production source unit that calls \"Line::from\" while the project declares \"Error::from\""
+)]
+fn contradictory_qualifier(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_contradictory_qualifier(&env);
+    world.env = Some(env);
+}
+
+#[given(
+    "a production source unit over the readable size whose methods are connected only by calls"
+)]
+fn tcc_god_type(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    crate::steps::outline_report_support::write_tcc_god_type(&env);
+    world.env = Some(env);
+}
+
+#[then(regex = r#"^the report records the evidence "([^"]+)"$"#)]
+fn report_records_evidence(world: &mut GivnWorld, expected: String) {
+    let block = report_block(world, &latest_unit_id(world, &expected));
+    let (rule, rest) = expected.split_once(' ').unwrap_or((expected.as_str(), ""));
+    assert!(block.contains(rule), "missing evidence {rule}: {block}");
+    if !rest.is_empty() {
+        assert!(block.contains(rest), "missing evidence {rest}: {block}");
+    }
+}
+
+#[then(regex = r#"^the report records no "([^"]+)" evidence$"#)]
+fn report_records_no_evidence(world: &mut GivnWorld, rule: String) {
+    let block = report_block(world, &latest_unit_id(world, &rule));
+    assert!(
+        !block.contains(&rule),
+        "unexpected evidence {rule}: {block}"
+    );
+}
+
+fn latest_unit_id(world: &GivnWorld, _hint: &str) -> String {
+    // Evidence scenarios write exactly one unit under test; use the report's
+    // first HINT/WITHIN-LIMITS header so the assertion stays fixture-driven.
+    let report = report_text(world);
+    report
+        .lines()
+        .find(|line| line.starts_with("HINT") || line.starts_with("WITHIN-LIMITS"))
+        .and_then(|line| line.split_whitespace().nth(3))
+        .unwrap_or_else(|| panic!("no unit header: {report}"))
+        .to_string()
+}
+
+#[given(
+    "a production source unit with a method over the complexity limit but within the length limit"
+)]
+fn complexity_method(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    crate::steps::outline_report_support::write_complexity_method(&env);
+    world.env = Some(env);
+}
+
+#[given("a production Rust module with three declared types and one free function")]
+fn module_with_types(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_module_with_types(&env);
+    world.env = Some(env);
+}
+
+#[then(regex = r#"^the JSON module outline lists the types "([^"]+)", "([^"]+)", and "([^"]+)"$"#)]
+fn json_module_lists_types(world: &mut GivnWorld, first: String, second: String, third: String) {
+    let value = json_output(world);
+    let names = module_outline_names(&value);
+    for name in [first, second, third] {
+        assert!(
+            names.contains(&name),
+            "module outline lacks {name}: {names:?}"
+        );
+    }
+}
+
+fn module_outline_names(value: &serde_json::Value) -> Vec<String> {
+    value["units"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .find(|unit| unit["kind"].as_str() == Some("module"))
+        .and_then(|unit| unit["outline"].as_array())
+        .into_iter()
+        .flatten()
+        .filter(|item| item["kind"].as_str() == Some("type"))
+        .filter_map(|item| item["name"].as_str().map(ToString::to_string))
+        .collect()
+}
+
+#[given(
+    "a production Rust module with a free function, a type, a free function, and a type in that order"
+)]
+fn interleaved_module(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_interleaved_module(&env);
+    world.env = Some(env);
+}
+
+#[then(
+    regex = r#"^the JSON module outline lists "([^"]+)", "([^"]+)", "([^"]+)", and "([^"]+)" in source order$"#
+)]
+fn json_module_lists_in_order(
+    world: &mut GivnWorld,
+    first: String,
+    second: String,
+    third: String,
+    fourth: String,
+) {
+    let value = json_output(world);
+    let names = module_outline_all_names(&value);
+    assert_eq!(names, vec![first, second, third, fourth], "{value}");
+}
+
+fn module_outline_all_names(value: &serde_json::Value) -> Vec<String> {
+    value["units"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .find(|unit| unit["kind"].as_str() == Some("module"))
+        .and_then(|unit| unit["outline"].as_array())
+        .into_iter()
+        .flatten()
+        .filter_map(|item| item["name"].as_str().map(ToString::to_string))
+        .collect()
+}
+
+#[given("a Python module with two classes and one function")]
+fn python_classes_module(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_python_classes_module(&env);
+    world.env = Some(env);
+}
+
+#[then(regex = r#"^the JSON module outline lists the classes "([^"]+)" and "([^"]+)"$"#)]
+fn json_module_lists_classes(world: &mut GivnWorld, first: String, second: String) {
+    let value = json_output(world);
+    let names = module_outline_names(&value);
+    for name in [first, second] {
+        assert!(
+            names.contains(&name),
+            "module outline lacks {name}: {names:?}"
+        );
+    }
+}
+
+#[then(regex = r#"^the JSON call "([^"]+)" names the target "([^"]+)"$"#)]
+fn json_call_named_target(world: &mut GivnWorld, callee: String, target: String) {
+    let value = json_output(world);
+    let call = call_named(&value, &callee);
+    assert_eq!(call["target"].as_str(), Some(target.as_str()), "{call}");
+}
+
+#[given("a production source unit declared in one file and implemented in another")]
+fn cross_file_impl(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_cross_file_impl(&env);
+    world.env = Some(env);
+}
+
+#[then(regex = r#"^the call "([^"]+)" is expanded into a deeper-indented call line$"#)]
+fn call_is_expanded(world: &mut GivnWorld, callee: String) {
+    let report = report_text(world);
+    let lines: Vec<&str> = report.lines().collect();
+    let index = lines
+        .iter()
+        .position(|line| line.trim_end().ends_with(&callee) && line.contains("-> ["))
+        .unwrap_or_else(|| panic!("no call {callee}: {report}"));
+    let next = lines[index + 1..]
+        .iter()
+        .find(|line| !line.trim().is_empty())
+        .expect("a line after the call");
+    assert!(
+        indent(next) > indent(lines[index]),
+        "{callee} was not expanded: {report}"
+    );
+}
+
+#[given(
+    "a production source unit whose method calls its own method, a cross-file module function, and a receiver of unknown type"
+)]
+fn resolution_report(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::outline_report_support::write_resolution_report(env);
+}
+
+#[given("a production source file with an inline test module")]
+fn inline_test_module(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_inline_test_module(&env);
+    world.env = Some(env);
+}
+
+#[then(regex = r#"^the JSON report records the file "([^"]+)" metric "([^"]+)" as (\d+)$"#)]
+fn json_file_metric(world: &mut GivnWorld, path: String, metric: String, expected: u64) {
+    let value = json_output(world);
+    let file = value["files"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .find(|file| file["path"].as_str() == Some(path.as_str()))
+        .unwrap_or_else(|| panic!("no file {path}: {value}"));
+    assert_eq!(file[metric.as_str()].as_u64(), Some(expected), "{file}");
+}
+
+#[given("a production source file with a small type and a large unrelated function")]
+fn span_scoped_unit(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_span_scoped_unit(&env);
+    world.env = Some(env);
+}
+
+#[then(regex = r#"^the JSON report records the unit "([^"]+)" metric "([^"]+)" as (\d+)$"#)]
+fn json_unit_metric(world: &mut GivnWorld, id: String, metric: String, expected: u64) {
+    let value = json_output(world);
+    let unit = unit_json(&value, &id);
+    assert_eq!(
+        unit["metrics"][metric.as_str()].as_u64(),
+        Some(expected),
+        "{unit}"
+    );
+}
+
+fn unit_json<'a>(value: &'a serde_json::Value, id: &str) -> &'a serde_json::Value {
+    value["units"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .find(|unit| unit["id"].as_str() == Some(id))
+        .unwrap_or_else(|| panic!("no unit {id}: {value}"))
+}
+
+#[given("a production source unit with an impl-level test method")]
+fn impl_test_method(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_impl_test_method(&env);
+    world.env = Some(env);
+}
+
+#[then(regex = r#"^the JSON report records (\d+) method[s]? for the unit "([^"]+)"$"#)]
+fn json_unit_methods(world: &mut GivnWorld, expected: u64, id: String) {
+    let value = json_output(world);
+    let unit = unit_json(&value, &id);
+    assert_eq!(
+        unit["metrics"]["methods"].as_u64(),
+        Some(expected),
+        "{unit}"
+    );
+}
+
+#[given(
+    "a production source unit over the readable size whose only call edges are name-only guesses"
+)]
+fn name_only_cohesion(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_name_only_cohesion(&env);
+    world.env = Some(env);
+}
+
+#[given(
+    "a production source unit with a method whose types use paths, generics, references, slices, tuples, arrays, pointers, and fully qualified paths"
+)]
+fn signature_shapes(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_signature_shapes(&env);
+    world.env = Some(env);
+}
+
+#[then(regex = r#"^the JSON method signature contains "([^"]+)"$"#)]
+fn json_signature_contains(world: &mut GivnWorld, expected: String) {
+    let value = json_output(world);
+    let signatures: Vec<&str> = value["units"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .flat_map(|unit| unit["outline"].as_array().into_iter().flatten())
+        .filter_map(|item| item["signature"].as_str())
+        .collect();
+    assert!(
+        signatures
+            .iter()
+            .any(|signature| signature.contains(&expected)),
+        "no signature contains {expected}: {signatures:?}"
     );
 }

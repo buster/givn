@@ -6,9 +6,9 @@
 use super::analyzer::SourceAnalyzer;
 use super::model::{
     Analysis, AnalysisDiagnostic, AnalysisRequest, AnalyzedFile, AnalyzerCapabilities, Call,
-    Construct, DiagnosticKind, Field, FileStatus, Flow, Language, Limitation, Method, OutlineItem,
-    OutlineKind, RepoPath, Resolution, Signature, SourceSpan, SourceUnit, TypeKind, TypeRelation,
-    UnitId, UnitKind, UnitOrigin, Visibility,
+    CallShape, Construct, DiagnosticKind, Field, FileStatus, Flow, Language, Limitation, Method,
+    OutlineItem, OutlineKind, ReceiverEvidence, RepoPath, Resolution, Signature, SourceSpan,
+    SourceUnit, TypeKind, TypeRelation, UnitId, UnitKind, UnitOrigin, Visibility,
 };
 use super::scan;
 use anyhow::{Context, Result};
@@ -37,6 +37,7 @@ impl SourceAnalyzer for PythonAnalyzer {
             resolution_labels: vec![
                 Resolution::SameFile,
                 Resolution::ProjectOtherFile,
+                Resolution::NameOnly,
                 Resolution::Ambiguous,
                 Resolution::External,
             ],
@@ -139,6 +140,7 @@ fn analyze_sources(sources: &[scan::ScannedSource]) -> Result<Analysis> {
                 lines: source.lines.clone(),
                 status: FileStatus::Failed,
                 unit_ids: Vec::new(),
+                excluded_spans: Vec::new(),
             });
             continue;
         };
@@ -159,6 +161,7 @@ fn analyze_sources(sources: &[scan::ScannedSource]) -> Result<Analysis> {
                 lines: source.lines.clone(),
                 status: FileStatus::Failed,
                 unit_ids: Vec::new(),
+                excluded_spans: Vec::new(),
             });
             continue;
         }
@@ -187,6 +190,7 @@ fn analyze_sources(sources: &[scan::ScannedSource]) -> Result<Analysis> {
             .collect();
         let module_id = UnitId(format!("module:{}", source.path));
         let mut unit_ids = Vec::new();
+        let mut type_items = Vec::new();
         for unit in result["units"].as_array().into_iter().flatten() {
             let Some(id) = unit["id"].as_str() else {
                 continue;
@@ -213,6 +217,15 @@ fn analyze_sources(sources: &[scan::ScannedSource]) -> Result<Analysis> {
             let relations = if matches!(kind, UnitKind::Module) {
                 Vec::new()
             } else {
+                type_items.push(OutlineItem {
+                    id: id.to_string(),
+                    kind: OutlineKind::Type,
+                    name: unit["name"].as_str().unwrap_or(id).to_string(),
+                    visibility: visibility(unit["visibility"].as_str()),
+                    signature: String::new(),
+                    order: line(unit, "start_line"),
+                    calls: Vec::new(),
+                });
                 vec![TypeRelation::ContainedIn(module_id.clone())]
             };
             unit_ids.push(UnitId(id.to_string()));
@@ -239,6 +252,14 @@ fn analyze_sources(sources: &[scan::ScannedSource]) -> Result<Analysis> {
                 unsupported: Vec::new(),
             });
         }
+        if let Some(module) = analysis.units.iter_mut().find(|unit| unit.id == module_id) {
+            module.outline.extend(type_items);
+            module.outline.sort_by(|left, right| {
+                left.order
+                    .cmp(&right.order)
+                    .then_with(|| left.name.cmp(&right.name))
+            });
+        }
         analysis.files.push(AnalyzedFile {
             path: source.path.clone(),
             language: Language::Python,
@@ -246,6 +267,7 @@ fn analyze_sources(sources: &[scan::ScannedSource]) -> Result<Analysis> {
             lines,
             status: FileStatus::Analyzed,
             unit_ids,
+            excluded_spans: Vec::new(),
         });
     }
     analysis.units.sort_by(|left, right| left.id.cmp(&right.id));
@@ -269,10 +291,28 @@ fn methods_from(unit: &Value, path: RepoPath) -> Vec<Method> {
                 .flatten()
                 .enumerate()
                 .filter_map(|(order, call)| {
-                    let callee = call.as_str()?.to_string();
+                    let callee = call["callee"]
+                        .as_str()
+                        .or_else(|| call.as_str())
+                        .map(ToString::to_string)?;
+                    let shape = match call["kind"].as_str() {
+                        Some("function") => CallShape::Function {
+                            qualifier: call["qualifier"].as_str().map(ToString::to_string),
+                        },
+                        _ => CallShape::Method {
+                            receiver: match call["receiver"].as_str() {
+                                Some("self") => ReceiverEvidence::SelfUnit,
+                                Some("qualifier") => ReceiverEvidence::Qualifier(
+                                    call["qualifier"].as_str().unwrap_or_default().to_string(),
+                                ),
+                                _ => ReceiverEvidence::Unknown,
+                            },
+                        },
+                    };
                     Some(Call {
                         order: order as u32,
                         callee,
+                        shape,
                         resolution: Resolution::External,
                         target: None,
                     })
@@ -338,6 +378,7 @@ fn failed_analysis(sources: &[scan::ScannedSource], message: String) -> Analysis
             lines: source.lines.clone(),
             status: FileStatus::Failed,
             unit_ids: Vec::new(),
+            excluded_spans: Vec::new(),
         });
         analysis.diagnostics.push(AnalysisDiagnostic {
             kind: DiagnosticKind::AnalyzerUnavailable,
@@ -368,4 +409,38 @@ fn visibility(value: Option<&str>) -> Visibility {
 
 fn python_module_path(path: &str) -> String {
     path.trim_end_matches(".py").replace('/', ".")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn a_computed_callee_is_not_invented() {
+        let root = tempfile::tempdir().expect("temp project");
+        let source = root.path().join("src/app.py");
+        std::fs::create_dir_all(source.parent().unwrap()).unwrap();
+        std::fs::write(
+            &source,
+            "def make():\n    return lambda: None\n\ndef caller():\n    return make()()\n",
+        )
+        .unwrap();
+        let sources = scan::discover(root.path(), &[PathBuf::from("src")], &[Language::Python])
+            .expect("discover");
+        let analysis = analyze_sources(&sources).expect("analyze");
+        let calls: Vec<&str> = analysis
+            .units
+            .iter()
+            .flat_map(|unit| unit.methods.iter())
+            .flat_map(|method| method.calls.iter())
+            .map(|call| call.callee.as_str())
+            .collect();
+        assert!(
+            calls
+                .iter()
+                .all(|callee| *callee != "make()" && *callee != "<call>"),
+            "computed callee was invented: {calls:?}"
+        );
+    }
 }

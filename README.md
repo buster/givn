@@ -53,9 +53,10 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   `outline` addon adds `givn outline report`: an advisory snapshot of
   production Rust and Python units that prints each unit's outline as a
   per-component call tree — method declarations, signatures, and calls, with
-  same-component calls nested and other components as tagged leaves — first,
-  then size, public surface, cohesion/coupling, and method-complexity metrics
-  as hints. When the addon is enabled, `givn check review` prints the outline
+  same-component calls nested and other components as tagged leaves carrying
+  their resolution — first, then size, public surface, cohesion/coupling, and
+  method-complexity metrics as hints. JSON calls name their resolved target;
+  an unknown receiver stays a visible `name_only` guess. When the addon is enabled, `givn check review` prints the outline
   of every touched unit with methods and requires a fresh-context reviewer's
   per-unit `OUTLINE: PASS`, with a responsibility and call-order explanation,
   or `FAIL`. Metrics are hints; an unreadable outline has no justification
@@ -195,7 +196,7 @@ to the conditions of this license.
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 83% (15955/19268)
+Line coverage: 83% (16111/19410)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:
