@@ -127,7 +127,7 @@ unique candidate target. JSON calls gain `target`.
   - [x] Evidence:   Scenario: A method call on an unknown receiver is a name-only guess | 1 scenario (1 passed) | 4 steps (4 passed)
 - REFACTOR: clean up, re-run the targeted command, paste the zero output.
   - [x] Evidence:   Scenario: A method call on an unknown receiver is a name-only guess | 1 scenario (1 passed) | 4 steps (4 passed)
-- [ ] COMMIT:
+- [x] COMMIT: b1fffc9e26fd686eaa1164837179b592871893e3
 
 ## 2. A name-only guess is not expanded as a same-unit call
 
@@ -138,11 +138,11 @@ would wrongly expand it.
 
 - RED: remove `@wip`; add the fixture and bindings (stubs); run the targeted
   command; paste non-zero.
-  - [ ] Evidence:
+  - [x] Evidence: baseline: ✘  Given a production source unit whose method calls a receiver of unknown type | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:14:5 | Step doesn't match any function
 - GREEN: update `render_calls`, `metrics::cohesion`; run targeted; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A name-only guess is not expanded as a same-unit call | 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: re-run targeted; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A name-only guess is not expanded as a same-unit call | 1 scenario (1 passed) | 5 steps (5 passed)
 - [ ] COMMIT:
 
 ## 3. A call on the unit's own receiver resolves within the unit

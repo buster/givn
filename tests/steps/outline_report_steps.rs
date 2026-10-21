@@ -1074,3 +1074,49 @@ fn json_call_has_no_target(world: &mut GivnWorld, callee: String) {
     assert!(call["target"].is_null(), "{callee} has a target: {call}");
 }
 
+#[then(regex = r#"^the report prints the call "([^"]+)" as "([^"]+)"$"#)]
+fn human_call_label(world: &mut GivnWorld, callee: String, tag: String) {
+    let report = report_text(world);
+    assert!(
+        report.contains(&tag),
+        "missing {tag} for {callee}: {report}"
+    );
+}
+
+fn indent(line: &str) -> usize {
+    line.len() - line.trim_start().len()
+}
+
+#[then(regex = r#"^the name-only call "([^"]+)" is not expanded into a deeper-indented call line$"#)]
+fn name_only_not_expanded(world: &mut GivnWorld, callee: String) {
+    let report = report_text(world);
+    let lines: Vec<&str> = report.lines().collect();
+    let index = lines
+        .iter()
+        .position(|line| line.contains("-> [name_only") && line.trim_end().ends_with(&callee))
+        .unwrap_or_else(|| panic!("no name-only call {callee}: {report}"));
+    let next = lines[index + 1..]
+        .iter()
+        .find(|line| !line.trim().is_empty())
+        .expect("a line after the name-only call");
+    assert!(
+        indent(next) <= indent(lines[index]),
+        "{callee} was expanded: {report}"
+    );
+}
+
+fn report_block(world: &GivnWorld, id: &str) -> String {
+    let report = report_text(world);
+    report
+        .split("\n\n")
+        .find(|block| block.contains(id))
+        .unwrap_or_else(|| panic!("no report block for {id}: {report}"))
+        .to_string()
+}
+
+#[then(regex = r#"^the report records "(LCOM4 \d+)" for the unit "([^"]+)"$"#)]
+fn report_records_lcom4(world: &mut GivnWorld, expected: String, unit: String) {
+    let block = report_block(world, &unit);
+    assert!(block.contains(&expected), "missing {expected}: {block}");
+}
+
