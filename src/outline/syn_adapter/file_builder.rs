@@ -2,13 +2,15 @@
 
 use super::super::model::{
     Analysis, AnalysisDiagnostic, AnalyzedFile, Construct, DiagnosticKind, Field, FileStatus,
-    Language, Method, OutlineItem, RepoPath, SourceSpan, SourceUnit, TypeKind, TypeRelation,
-    UnitId, UnitKind, UnitOrigin, UnsupportedNote, Visibility,
+    Language, Method, OutlineItem, OutlineKind, RepoPath, SourceSpan, SourceUnit, TypeKind,
+    TypeRelation, UnitId, UnitKind, UnitOrigin, UnsupportedNote, Visibility,
 };
 use super::facts::{method_from_fn, method_without_body, outline_method};
 use super::impl_index::{ImplCollector, ImplRecord, PendingImpl};
 use super::scan::ScannedSource;
-use super::spans::{field_span, impl_span_of, line_span, macro_line, span_for_ident};
+use super::spans::{
+    field_span, impl_span_of, item_span, line_span, macro_line, span_for_ident, span_with_attrs,
+};
 use super::syntax::{attrs, has_cfg_test, impl_target_name, type_label, visibility};
 use std::collections::BTreeMap;
 use syn::{
@@ -33,6 +35,7 @@ pub(super) fn analyze_file(
                 lines: source.lines,
                 status: FileStatus::Failed,
                 unit_ids: Vec::new(),
+                excluded_spans: Vec::new(),
             });
             analysis.diagnostics.push(AnalysisDiagnostic {
                 kind: DiagnosticKind::ParseFailed,
@@ -58,8 +61,14 @@ pub(super) fn analyze_file(
         unsupported: Vec::new(),
         pending_impls: Vec::new(),
         impl_records: Vec::new(),
+        excluded_spans: Vec::new(),
     };
     file.walk_items(&parsed.items, &module_path);
+    file.outline.sort_by(|left, right| {
+        left.order
+            .cmp(&right.order)
+            .then_with(|| left.name.cmp(&right.name))
+    });
     impls.pending.append(&mut file.pending_impls);
     impls.records.append(&mut file.impl_records);
 
@@ -72,6 +81,7 @@ pub(super) fn analyze_file(
         lines: source.lines,
         status: FileStatus::Analyzed,
         unit_ids: unit_ids.clone(),
+        excluded_spans: file.excluded_spans,
     });
     analysis.units.extend(file.units);
     analysis.diagnostics.extend(file.diagnostics);
@@ -111,12 +121,15 @@ struct FileBuilder {
     unsupported: Vec<UnsupportedNote>,
     pending_impls: Vec<PendingImpl>,
     impl_records: Vec<ImplRecord>,
+    excluded_spans: Vec<SourceSpan>,
 }
 
 impl FileBuilder {
     fn walk_items(&mut self, items: &[Item], module_path: &str) {
         for item in items {
             if has_cfg_test(attrs(item)) {
+                self.excluded_spans
+                    .push(item_span(item, &self.content, &self.path));
                 continue;
             }
             match item {
@@ -193,6 +206,15 @@ impl FileBuilder {
         // it is not part of the public identity: a type implemented in another
         // file is still one unit (see `attach_impls`).
         let id = UnitId(format!("type:{}::{name}", self.path));
+        self.outline.push(OutlineItem {
+            id: id.to_string(),
+            kind: OutlineKind::Type,
+            name: name.clone(),
+            visibility,
+            signature: String::new(),
+            order: span.start_line,
+            calls: Vec::new(),
+        });
         let mut unit = SourceUnit {
             language: Language::Rust,
             id: id.clone(),
@@ -377,6 +399,12 @@ impl FileBuilder {
         for impl_item in &item.items {
             if let ImplItem::Fn(function) = impl_item {
                 if has_cfg_test(&function.attrs) {
+                    self.excluded_spans.push(span_with_attrs(
+                        &function.attrs,
+                        &function.sig.ident,
+                        &self.content,
+                        &self.path,
+                    ));
                     continue;
                 }
                 let method = method_from_fn(

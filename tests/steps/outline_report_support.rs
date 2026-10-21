@@ -281,6 +281,7 @@ fn fake_analysis() -> Analysis {
         lines: vec![LineKind::Code],
         status: FileStatus::Analyzed,
         unit_ids: vec![type_id.clone(), module_id.clone()],
+        excluded_spans: Vec::new(),
     };
     let type_unit = SourceUnit {
         language: Language::Rust,
@@ -397,3 +398,11 @@ pub fn write_python3_stub(env: &TestEnv) {
 pub fn python3_stub_invoked(env: &TestEnv) -> bool {
     env.path(".python3-stub/invoked").exists()
 }
+pub fn write_unknown_receiver_call(env: &TestEnv) {
+    write_source(
+        env,
+        "src/tier.rs",
+        "pub struct TierReasoning;\n\nimpl TierReasoning {\n    pub fn check(&self, value: &ExternalValue) -> bool {\n        value.is_empty()\n    }\n\n    pub fn is_empty(&self) -> bool {\n        self.missing()\n    }\n}\n\npub struct First;\n\nimpl First {\n    pub fn missing(&self) {}\n}\n\npub struct Second;\n\nimpl Second {\n    pub fn missing(&self) {}\n}\n",
+    );
+}
+

@@ -188,15 +188,24 @@ fn decide(unit: &SourceUnit, metrics: &UnitMetrics) -> (Classification, Vec<Evid
     }
 
     if over_method_limit(metrics) {
-        return (
-            Classification::MethodLength,
-            vec![evidence(
+        let mut items = Vec::new();
+        if metrics.max_method_code_lines > 100 {
+            items.push(evidence(
                 "method-code-lines",
                 MetricValue::Count(metrics.max_method_code_lines as u64),
                 MetricValue::Count(100),
                 Comparison::GreaterThan,
-            )],
-        );
+            ));
+        }
+        if metrics.max_method_complexity > 50 {
+            items.push(evidence(
+                "method-complexity",
+                MetricValue::Count(metrics.max_method_complexity as u64),
+                MetricValue::Count(50),
+                Comparison::GreaterThan,
+            ));
+        }
+        return (Classification::MethodLength, items);
     }
 
     (Classification::WithinLimits, Vec::new())
@@ -208,16 +217,33 @@ fn classify_type(
     code_lines: MetricValue,
     over_type_limit: bool,
 ) -> Option<(Classification, Vec<Evidence>)> {
-    if (type_kind == TypeKind::Trait && over_type_limit) || metrics.public_methods > 50 {
-        return Some((
-            Classification::Interface,
-            vec![evidence(
+    let trait_over_limit = type_kind == TypeKind::Trait && over_type_limit;
+    let many_public_methods = metrics.public_methods > 50;
+    if trait_over_limit || many_public_methods {
+        let mut items = Vec::new();
+        if trait_over_limit {
+            items.push(evidence(
                 "type-kind-trait",
                 MetricValue::Count(1),
                 MetricValue::Count(1),
                 Comparison::Equal,
-            )],
-        ));
+            ));
+            items.push(evidence(
+                "type-code-lines",
+                code_lines,
+                MetricValue::Count(500),
+                Comparison::GreaterThan,
+            ));
+        }
+        if many_public_methods {
+            items.push(evidence(
+                "type-public-methods",
+                MetricValue::Count(metrics.public_methods as u64),
+                MetricValue::Count(50),
+                Comparison::GreaterThan,
+            ));
+        }
+        return Some((Classification::Interface, items));
     }
     if matches!(type_kind, TypeKind::Struct | TypeKind::Enum)
         && metrics.methods <= 1
@@ -241,24 +267,32 @@ fn classify_type(
             ],
         ));
     }
-    if over_type_limit && (metrics.lcom4 > 2 || metrics.tcc_permille.is_some_and(|tcc| tcc < 500)) {
-        return Some((
-            Classification::GodType,
-            vec![
-                evidence(
-                    "type-code-lines",
-                    code_lines,
-                    MetricValue::Count(500),
-                    Comparison::GreaterThan,
-                ),
-                evidence(
-                    "type-lcom4",
-                    MetricValue::Count(metrics.lcom4 as u64),
-                    MetricValue::Count(2),
-                    Comparison::GreaterThan,
-                ),
-            ],
-        ));
+    let low_cohesion_lcom4 = metrics.lcom4 > 2;
+    let low_cohesion_tcc = metrics.tcc_permille.is_some_and(|tcc| tcc < 500);
+    if over_type_limit && (low_cohesion_lcom4 || low_cohesion_tcc) {
+        let mut items = vec![evidence(
+            "type-code-lines",
+            code_lines,
+            MetricValue::Count(500),
+            Comparison::GreaterThan,
+        )];
+        if low_cohesion_lcom4 {
+            items.push(evidence(
+                "type-lcom4",
+                MetricValue::Count(metrics.lcom4 as u64),
+                MetricValue::Count(2),
+                Comparison::GreaterThan,
+            ));
+        }
+        if let Some(tcc) = metrics.tcc_permille.filter(|tcc| *tcc < 500) {
+            items.push(evidence(
+                "type-tcc",
+                MetricValue::Permille(tcc),
+                MetricValue::Permille(500),
+                Comparison::LessThan,
+            ));
+        }
+        return Some((Classification::GodType, items));
     }
     if over_type_limit {
         return Some((
