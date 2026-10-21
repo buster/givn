@@ -9,7 +9,7 @@ Feature: Outline report
     Then the JSON report records the call "is_empty" as "name_only"
     And the JSON call names "tier::TierReasoning::is_empty" as its candidate target
 
-  @givn.added @wip
+  @givn.added
   Scenario: A name-only guess is not expanded as a same-unit call
     Given a production source unit whose method calls a receiver of unknown type
     When the developer runs "givn outline report"
