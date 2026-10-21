@@ -34,7 +34,12 @@ impl SourceAnalyzer for PythonAnalyzer {
                 Limitation::PythonTypeInference,
                 Limitation::NonUtf8File,
             ],
-            resolution_labels: vec![Resolution::SameFile, Resolution::External],
+            resolution_labels: vec![
+                Resolution::SameFile,
+                Resolution::ProjectOtherFile,
+                Resolution::Ambiguous,
+                Resolution::External,
+            ],
         }
     }
 
@@ -196,6 +201,7 @@ fn analyze_sources(sources: &[scan::ScannedSource]) -> Result<Analysis> {
             let outline = methods
                 .iter()
                 .map(|method| OutlineItem {
+                    id: method.id.clone(),
                     kind: OutlineKind::Method,
                     name: method.name.clone(),
                     visibility: method.visibility,
@@ -251,19 +257,6 @@ fn analyze_sources(sources: &[scan::ScannedSource]) -> Result<Analysis> {
 
 fn methods_from(unit: &Value, path: RepoPath) -> Vec<Method> {
     let unit_id = unit["id"].as_str().unwrap_or_default();
-    let internal: std::collections::BTreeSet<&str> = unit["methods"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .filter_map(|method| method["name"].as_str())
-        .chain(
-            unit["file_functions"]
-                .as_array()
-                .into_iter()
-                .flatten()
-                .filter_map(|name| name.as_str()),
-        )
-        .collect();
     unit["methods"]
         .as_array()
         .into_iter()
@@ -277,15 +270,10 @@ fn methods_from(unit: &Value, path: RepoPath) -> Vec<Method> {
                 .enumerate()
                 .filter_map(|(order, call)| {
                     let callee = call.as_str()?.to_string();
-                    let resolution = if internal.contains(callee.as_str()) {
-                        Resolution::SameFile
-                    } else {
-                        Resolution::External
-                    };
                     Some(Call {
                         order: order as u32,
                         callee,
-                        resolution,
+                        resolution: Resolution::External,
                         target: None,
                     })
                 })

@@ -143,7 +143,7 @@ impl FileBuilder {
                         &item.sig,
                         &item.block,
                         &self.path,
-                        &self.module_path,
+                        module_path,
                         false,
                         visibility(&item.vis),
                         &self.content,
@@ -304,9 +304,10 @@ impl FileBuilder {
         );
     }
 
-    fn push_trait(&mut self, item: &ItemTrait, _module_path: &str) {
+    fn push_trait(&mut self, item: &ItemTrait, module_path: &str) {
         let span = span_for_ident(&item.ident, &self.content, &self.path);
         self.spans.push(span.clone());
+        let method_path = format!("{module_path}::{}", item.ident);
         let mut methods = Vec::new();
         let mut outline = Vec::new();
         for trait_item in &item.items {
@@ -316,7 +317,7 @@ impl FileBuilder {
                         &function.sig,
                         default,
                         &self.path,
-                        &self.module_path,
+                        &method_path,
                         true,
                         Visibility::Public,
                         &self.content,
@@ -325,7 +326,7 @@ impl FileBuilder {
                     method_without_body(
                         &function.sig,
                         &self.path,
-                        &self.module_path,
+                        &method_path,
                         Visibility::Public,
                         &self.content,
                     )
@@ -370,6 +371,7 @@ impl FileBuilder {
         });
         let impl_span = impl_span_of(item, &self.content, &self.path);
         self.spans.push(impl_span.clone());
+        let method_path = format!("{module_path}::{name}");
         let mut methods = Vec::new();
         let mut outline = Vec::new();
         for impl_item in &item.items {
@@ -381,7 +383,7 @@ impl FileBuilder {
                     &function.sig,
                     &function.block,
                     &self.path,
-                    &self.module_path,
+                    &method_path,
                     false,
                     visibility(&function.vis),
                     &self.content,

@@ -965,3 +965,53 @@ fn report_names_only_rust(world: &mut GivnWorld) {
         "the header must not name python: {header}"
     );
 }
+
+#[then(regex = r#"^the outline of the class "([^"]+)" shows "([^"]+)" calling "([^"]+)"$"#)]
+fn outline_class_shows_call(world: &mut GivnWorld, class: String, caller: String, callee: String) {
+    let out = world.last_output.as_ref().expect("report output");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let marker = format!("::{class}");
+    let section = stdout.split(&marker).nth(1).expect("class component");
+    let caller_marker = format!("def {caller}(");
+    let caller_offset = section.find(&caller_marker).expect("caller method");
+    let call_marker = format!("-> [public, {class}] {callee}");
+    assert!(
+        section[caller_offset..].contains(&call_marker),
+        "expected {caller} to call {callee} in {class}: {section}"
+    );
+}
+
+#[given("a production source unit whose method calls a module function")]
+fn cross_component_source(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::outline_report_support::write_cross_component_calls(env);
+}
+
+#[then("the type outline calls the module function without expanding it")]
+fn type_outline_keeps_cross_component_calls_leaf(world: &mut GivnWorld) {
+    let out = world.last_output.as_ref().expect("report output");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let engine = stdout
+        .split("type:src/component.rs::Engine")
+        .nth(1)
+        .expect("Engine component");
+    assert!(
+        engine.contains("-> [public, module] normalize"),
+        "expected the Engine outline to call normalize: {engine}"
+    );
+    assert!(
+        !engine.contains("helper"),
+        "a cross-component call must not expand the target's calls: {engine}"
+    );
+    let module = stdout
+        .split("module:src/component.rs")
+        .nth(1)
+        .expect("module component");
+    assert!(
+        module.contains("-> [private, module] helper"),
+        "expected normalize to call helper in the module component: {module}"
+    );
+}

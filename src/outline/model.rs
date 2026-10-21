@@ -351,6 +351,7 @@ pub enum OutlineKind {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OutlineItem {
+    pub id: MethodId,
     pub kind: OutlineKind,
     pub name: String,
     pub visibility: Visibility,

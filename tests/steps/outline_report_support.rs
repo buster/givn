@@ -360,6 +360,14 @@ pub fn write_python_class(env: &TestEnv) {
     );
 }
 
+pub fn write_cross_component_calls(env: &TestEnv) {
+    write_source(
+        env,
+        "src/component.rs",
+        "pub fn normalize() -> u64 {\n    helper()\n}\n\nfn helper() -> u64 {\n    1\n}\n\npub struct Engine {}\n\nimpl Engine {\n    pub fn build(&self) -> u64 {\n        normalize()\n    }\n}\n",
+    );
+}
+
 pub fn write_python_module(env: &TestEnv) {
     write_source(
         env,

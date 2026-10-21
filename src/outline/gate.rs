@@ -556,6 +556,7 @@ fn review(request: &GateRequest) -> Result<GateOutcome> {
 
     let touched = touched::select(&head_analysis, &base_assessment, &changed);
     let hints = findings::collect(&touched.units, &base_assessment, &head_assessment);
+    let index = crate::outline::report::MethodIndex::from_assessment(&head_assessment);
     let outlines: Vec<OutlineEntry> = touched
         .units
         .iter()
@@ -568,7 +569,7 @@ fn review(request: &GateRequest) -> Result<GateOutcome> {
         .filter(|unit| !unit.outline.is_empty())
         .map(|unit| OutlineEntry {
             unit_id: unit.unit_id.clone(),
-            text: crate::outline::report::render_outline(unit),
+            text: crate::outline::report::render_outline(unit, &index),
         })
         .collect();
     outline_outcome(

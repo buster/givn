@@ -202,6 +202,18 @@ Feature: Outline report
     And  the JSON outline records the call from "fill" to "add"
     And  the JSON report records the file language "python"
 
+  Scenario: A component outline is a call tree
+    Given  a Givn project with the outline experiment enabled
+    And  a Python module with a class and methods
+    When  the developer runs "givn outline report"
+    Then  the outline of the class "OrderBook" shows "fill" calling "add"
+
+  Scenario: A call to another component is a leaf
+    Given  a Givn project with the outline experiment enabled
+    And  a production source unit whose method calls a module function
+    When  the developer runs "givn outline report"
+    Then  the type outline calls the module function without expanding it
+
   Scenario: A Python module without classes is a module unit
     Given  a Givn project with the outline experiment enabled
     And  a Python module with top-level functions
