@@ -21,7 +21,7 @@ Feature: Review use-case diagnostic corrections
     And stderr does not contain "does not declare capability"
     And stderr does not contain "has no interaction for capability"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review corrects an exact-prefix non-kebab-case title with the canonical identifier
     Given a clean committed change whose use-case contract starts with "# Use case: Lending Register"
     When the developer runs `givn check review --change review-diagnostics-demo`
