@@ -76,7 +76,7 @@ Required branches — cover every one (or explicitly record "no issue found"):
   component with a named responsibility and a consumer outside itself but no
   contract is a finding; an internal helper with no contract is correct.
 - **Decision timing** — apply `givn instructions architecture-principles` to
-  business and technology questions. A foundational question answered by usage
+  the change's open questions. A foundational question answered by usage
   is a finding. A carried question without default, trigger, switch cost, and
   owner is a finding. A scenario that depends on a carried answer is a finding.
   A speculative abstraction built for a carried or out-of-scope question is a

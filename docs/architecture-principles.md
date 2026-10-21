@@ -1,8 +1,9 @@
 # Architecture Principles addon
 
-**TL;DR:** Treat each consumer use case as a contract now. Let one component
-implement several contracts. Defer splitting the component until its
-responsibilities diverge.
+**TL;DR:** Answer questions at their last responsible moment — late enough for
+evidence, early enough to stay cheap. Treat each consumer use case as a contract
+now; let one component implement several contracts; defer splitting the
+component until its responsibilities diverge.
 
 Canonical rule: `givn instructions architecture-principles`.
 
@@ -28,10 +29,27 @@ gate check without deleting project content.
   exist, so no consumer changes.
 - Consumers use only the contract. The contract never imports the
   implementation; only the composition root names implementations.
-- A contract is not deferred. The last responsible moment applies to the
-  component split, technology choices, and business rules.
+- A contract is not deferred. It is the current consumer use case.
 - YAGNI and KISS apply to the contract's content: no future-use-case methods,
   no generic `lendMedia`, no second implementation now.
+
+## Decision timing
+
+The rule is not "decide everything now." It is:
+
+- **Foundational — answer now.** Language/runtime, internationalization,
+  multi-tenancy, legal constraints, the differentiators, or a decision whose
+  reversal needs a migration or a broken contract. Example: how the library
+  handles overdue notices is a business rule, not a screen detail.
+- **Carried — answer on a trigger.** The change needs a default, but usage will
+  supply the real answer. Example: the overdue-notice layout; choose a simple
+  layout now, change it when usability evidence arrives.
+- **Out of scope — do not decide it here.** The feature was not requested.
+  Example: a deputy rule or digital-media support; record it as future scope,
+  do not design for it.
+
+A contract is not carried; it is the current use case. A component split is the
+canonical carried decision.
 
 ## Example
 
@@ -68,7 +86,7 @@ without making the code harder to read. Concretely:
   modules or files. One component may implement several contracts; internal
   helpers stay internal.
 - **Correct timing.** Foundational business and technology questions are
-  answered early. Carried decisions name a default, trigger, switch cost, and
+  answered now. Carried decisions name a default, trigger, switch cost, and
   owner. Component splits are deferred until responsibilities diverge.
 - **No readability tax.** The contract table and review branches are used only
   where a component exists. Contracts reduce the surface a consumer must

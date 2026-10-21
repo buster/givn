@@ -1,6 +1,7 @@
 # Instruction: architecture-principles
 
-Design the consumer's contract now. Defer the component split.
+Answer questions at their last responsible moment. Design the consumer's
+contract now; defer the component split.
 
 **Opt-in.** This guidance applies only while `addons.architecture_principles`
 is enabled in `givn/config.yaml`. The workflow pointers and gate checks are
@@ -16,6 +17,35 @@ replaceable unit of implementation behind one or more contracts, and
 *implementation* for the code inside it. "Cell-based architecture" is an
 informal name for the same pattern.
 
+## Decision timing
+
+Answer a question at its last responsible moment: late enough that use has
+supplied the evidence, early enough that the answer is still cheap or possible.
+Not the earliest moment someone is willing to choose, and not never.
+
+- **Foundational — answer now.** A business or enterprise rule, a
+  differentiator, a feasibility constraint, a reversal that needs a migration or
+  a broken contract, or anything a scenario in this change depends on. Do not
+  carry it and let usage decide by accident.
+- **Carried — answer on a trigger.** The change needs a default, but usage will
+  supply the real answer. Name the default, the trigger that forces the answer,
+  why switching is cheap, and the owner. A carried decision is not an unowned
+  question. If a scenario depends on the answer, it is foundational.
+- **Out of scope — do not decide it here.** The change does not need it. Record
+  it as future scope and do not design for it.
+
+A component split is the canonical carried decision: defer it until the
+component's responsibilities actually diverge. The contracts already exist, so
+the split changes no consumer.
+
+Technology choices and business rules follow the same test: answer now when
+reversal needs a migration, a broken contract, or a rewrite; carry them when
+usage supplies the answer.
+
+A contract is not a deferred decision. It is the current consumer use case.
+Decide narrowly: keep the commitment local and named once. A later change of
+direction must not become a rewrite, but do not build the alternative now.
+
 ## Contracts are current requirements
 
 A contract is the consumer's use case, expressed as the narrowest callable
@@ -30,11 +60,10 @@ over it. Design it from the consumer's side:
 - The implementation adapts to the contract. The contract does not mirror the
   implementation's internal methods.
 
-A contract is not deferred. It is the answer to the current use case, not a
-question about the future. The consumer's use case is known now. If the use
-case changes later, the contract and the consumer change; that cost is the same
-as without a contract. The contract protects against changing implementations,
-not against changing requirements.
+The consumer's use case is known now. If the use case changes later, the
+contract and the consumer change; that cost is the same as without a contract.
+The contract protects against changing implementations, not against changing
+requirements.
 
 ## Components: one unit, many contracts
 
@@ -67,24 +96,6 @@ component may implement several contracts.
 A unit is a component when it has a named responsibility and a consumer outside
 itself. Internal helpers inside a component are not separate components and
 need no contract.
-
-## What is deferred
-
-The last responsible moment applies to component structure, technology, and
-business rules — never to the consumer contract.
-
-- **Component split** — defer until the component's responsibilities actually
-  diverge. The contracts already exist, so the split changes no consumer.
-- **Technology choice** — answer now when reversal needs a migration, a broken
-  contract, or a rewrite; carry it when switching is cheap and usage supplies
-  the answer.
-- **Business rule** — answer now when it defines the product, a differentiator,
-  or an enterprise rule; carry it when usage supplies the answer.
-
-A carried decision names its default, the trigger that forces the answer, why
-switching is cheap, and its owner. A carried decision is not an unowned
-question. If a scenario in the current change needs the answer, it is not
-carried; answer it now.
 
 ## Recording
 
