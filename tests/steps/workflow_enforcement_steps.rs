@@ -1774,3 +1774,25 @@ fn review_fixture_non_kebab_title_table_capabilities(world: &mut GivnWorld) {
         &[("alpha-capability", "NEW in review-diagnostics-demo")],
     );
 }
+
+#[given(
+    "a clean committed change whose use-case contract starts with \"# Use case: Lending Register\""
+)]
+fn review_fixture_exact_prefix_non_kebab_title(world: &mut GivnWorld) {
+    let contract = review_contract(
+        "review-diagnostics-demo",
+        Some("# Use case: Lending Register"),
+        "- alpha-capability",
+        &valid_interactions(&["alpha-capability"]),
+        "- A valid example.",
+        "",
+    );
+    write_review_fixture(
+        world,
+        "review-diagnostics-demo",
+        "review-diagnostics-demo",
+        &contract,
+        &["alpha-capability"],
+        &[("alpha-capability", "NEW in review-diagnostics-demo")],
+    );
+}

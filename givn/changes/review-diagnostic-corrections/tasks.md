@@ -131,15 +131,15 @@ Evidence:
   cargo test --locked --lib usecase_md: 7 passed, 326 filtered out
   ```
 - Production files: `src/gherkin/usecase_md.rs` (`root_valid` gate for the leaf requirement, `## Capabilities` heading guard, document construction gate), `tests/steps/workflow_enforcement_steps.rs` (capability-table fixture).
-- [ ] COMMIT: `COMMIT:`
+- [x] COMMIT: `369f258f223a7c1a08765201c1e09f3725f4d1ef`
 
 ## Scenario 3 — Review corrects an exact-prefix non-kebab-case title with the canonical identifier
 
-- [ ] Scenario: `Review corrects an exact-prefix non-kebab-case title with the canonical identifier`
+- [x] Scenario: `Review corrects an exact-prefix non-kebab-case title with the canonical identifier`
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
+- [x] RED
+- [x] GREEN
+- [x] REFACTOR
 - [ ] COMMIT
 
 Design constraints:
@@ -155,14 +155,20 @@ Evidence:
 
 - RED output:
   ```
+  1 scenario (1 failed), 1 step (1 failed)
+  ✘ Given a clean committed change whose use-case contract starts with "# Use case: Lending Register"
+    Step panicked. Captured output: not implemented: exact-prefix non-kebab-case title fixture
   ```
 - GREEN output:
   ```
+  1 scenario (1 passed), 6 steps (6 passed)
   ```
 - REFACTOR output:
   ```
+  cargo fmt --all; 1 scenario (1 passed), 6 steps (6 passed)
+  cargo test --locked --lib usecase_md: 7 passed, 326 filtered out
   ```
-- Production files:
+- Production files: `src/gherkin/usecase_md.rs` (canonical suggestion on the exact-prefix `validate_id` path, `title_seen` suppresses the spurious missing-title diagnostic), `tests/steps/workflow_enforcement_steps.rs` (exact-prefix fixture).
 - [ ] COMMIT: `COMMIT:`
 
 ## Scenario 4 — A malformed title does not fabricate missing-section or empty-section diagnostics

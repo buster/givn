@@ -355,6 +355,7 @@ fn parse_document(
 ) {
     let expected_title = format!("# {kind}: ");
     let mut title: Option<String> = None;
+    let mut title_seen = false;
     let mut current: Option<&'static str> = None;
     let mut seen_headings = std::collections::BTreeSet::new();
     let mut sections: SectionLines = headings
@@ -394,6 +395,7 @@ fn parse_document(
             current = None;
             ignoring_section = false;
             outside_block_reported = false;
+            title_seen = true;
             if title.is_some() {
                 diagnostics.push(UsecaseDiagnostic::at(number, "duplicate document title"));
                 continue;
@@ -401,9 +403,13 @@ fn parse_document(
             if trimmed.starts_with(&expected_title) {
                 let id = trimmed[expected_title.len()..].trim().to_string();
                 if let Err(error) = validate_id(&id, kind) {
-                    diagnostics.push(UsecaseDiagnostic::at(number, error.to_string()));
+                    let mut diagnostic = UsecaseDiagnostic::at(number, error.to_string());
+                    diagnostic.suggestion = canonical_title_id(&id)
+                        .map(|candidate| format!("{expected_title}{candidate}"));
+                    diagnostics.push(diagnostic);
+                } else {
+                    title = Some(id);
                 }
-                title = Some(id);
             } else if let Some(recovery) = recover_title(&expected_title, trimmed) {
                 let mut message = format!(
                     "expected '{}<kebab-case-id>', got '{}'; headings are case-sensitive",
@@ -487,7 +493,7 @@ fn parse_document(
         }
     }
 
-    if title.is_none() {
+    if !title_seen {
         diagnostics.push(UsecaseDiagnostic::document(format!(
             "document is missing '# {kind}: <id>'"
         )));
