@@ -90,7 +90,7 @@ Feature: Outline report
     When the developer runs "givn outline report --json"
     Then the JSON module outline lists the classes "OrderBook" and "Ledger"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The JSON report names each call's resolved target
     Given a production source unit whose method calls a module function
     When the developer runs "givn outline report --json"

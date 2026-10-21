@@ -984,11 +984,16 @@ fn outline_class_shows_call(world: &mut GivnWorld, class: String, caller: String
 
 #[given("a production source unit whose method calls a module function")]
 fn cross_component_source(world: &mut GivnWorld) {
-    let env = world
-        .env
-        .as_ref()
-        .expect("a project root is required first");
-    crate::steps::outline_report_support::write_cross_component_calls(env);
+    let env = match world.env.take() {
+        Some(env) => env,
+        None => {
+            let env = common::make_init_root();
+            crate::steps::outline_report_support::enable_outline(&env);
+            env
+        }
+    };
+    crate::steps::outline_report_support::write_cross_component_calls(&env);
+    world.env = Some(env);
 }
 
 #[then("the type outline calls the module function without expanding it")]
@@ -1277,5 +1282,12 @@ fn json_module_lists_classes(world: &mut GivnWorld, first: String, second: Strin
     for name in [first, second] {
         assert!(names.contains(&name), "module outline lacks {name}: {names:?}");
     }
+}
+
+#[then(regex = r#"^the JSON call "([^"]+)" names the target "([^"]+)"$"#)]
+fn json_call_named_target(world: &mut GivnWorld, callee: String, target: String) {
+    let value = json_output(world);
+    let call = call_named(&value, &callee);
+    assert_eq!(call["target"].as_str(), Some(target.as_str()), "{call}");
 }
 
