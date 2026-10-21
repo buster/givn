@@ -250,11 +250,13 @@ Feature: givn Workflow Enforcement
     Then  the command exits 0
     And  stdout contains "change verification receipt passed"
 
+  @e2e
   Scenario: The result helper writes four counts without a scope
     Given  a givn project with a result file path
     When  the user runs the result helper for 3 total and 3 passed
     Then  the command exits 0
     And  the result file contains total 3, passed 3, failed 0 and skipped 0 without a scope
+
   Scenario: A checked scenario without a commit fails the task check
     Given  a clean committed givn project with a change whose delta specs pass
     And  the change's tasks.md checks a scenario without a commit
