@@ -121,7 +121,7 @@ Feature: Outline report
     Then the JSON report records the file "src/counted.rs" metric "code_lines" as 8
     And the JSON report records the file "src/counted.rs" metric "physical_lines" as 18
 
-  @givn.added @wip
+  @givn.added
   Scenario: A unit's physical lines cover only its own spans
     Given a production source file with a small type and a large unrelated function
     When the developer runs "givn outline report --json"

@@ -1346,3 +1346,27 @@ fn json_file_metric(world: &mut GivnWorld, path: String, metric: String, expecte
     assert_eq!(file[metric.as_str()].as_u64(), Some(expected), "{file}");
 }
 
+#[given("a production source file with a small type and a large unrelated function")]
+fn span_scoped_unit(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_span_scoped_unit(&env);
+    world.env = Some(env);
+}
+
+#[then(regex = r#"^the JSON report records the unit "([^"]+)" metric "([^"]+)" as (\d+)$"#)]
+fn json_unit_metric(world: &mut GivnWorld, id: String, metric: String, expected: u64) {
+    let value = json_output(world);
+    let unit = unit_json(&value, &id);
+    assert_eq!(unit["metrics"][metric.as_str()].as_u64(), Some(expected), "{unit}");
+}
+
+fn unit_json<'a>(value: &'a serde_json::Value, id: &str) -> &'a serde_json::Value {
+    value["units"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .find(|unit| unit["id"].as_str() == Some(id))
+        .unwrap_or_else(|| panic!("no unit {id}: {value}"))
+}
+
