@@ -630,3 +630,24 @@ fn a_module_with_only_type_items_needs_no_verdict() {
         "a module with only type items must not print an outline:\n{text}"
     );
 }
+
+#[test]
+fn a_module_with_free_functions_still_needs_a_verdict() {
+    let repo = small_project();
+    repo.write("src/free.rs", "pub fn load() -> u64 {\n    1\n}\n");
+    repo.commit("feat(test-change): add a module with a free function");
+    repo.write(
+        "givn/changes/test-change/review.md",
+        "OUTLINE: AUTHOR agent\n\
+         OUTLINE: REVIEWER fresh-context-reviewer\n\
+         OUTLINE: PASS\n",
+    );
+
+    let (passed, text) =
+        givn::outline::gate::evaluate(repo.root(), "test-change").expect("gate run");
+    assert!(!passed, "a free-function module needs a verdict:\n{text}");
+    assert!(
+        text.contains("MISSING outline module:src/free.rs"),
+        "the free-function module must require a verdict:\n{text}"
+    );
+}
