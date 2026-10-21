@@ -5,6 +5,13 @@ the consumer's contract now, defer the implementation split.**
 
 Canonical rule: `givn instructions architecture-principles`.
 
+## Status
+
+Feature-gated opt-in experiment. It is default-off, adds no archive gate and no
+generated skill, and its rules are provisional until the expected outcome below
+is observed in real changes. Disabling it removes every workflow pointer and
+gate check without deleting project content.
+
 ## What it does
 
 - A **contract** is the consumer's use case, expressed as the narrowest callable
@@ -43,6 +50,61 @@ CdLendingDesk   implements CdLending
 
 A cell is a replacement boundary, not a failure-isolation boundary. Do not add
 retries, circuit breakers, process isolation, or messaging in its name.
+
+## Expected outcome
+
+The experiment succeeds if it makes replacing or splitting a component cheaper
+without making the code harder to read. Concretely:
+
+- **Cheaper replacement.** Replacing or splitting a cell changes the
+  implementation and the composition root; consumer code and consumer tests do
+  not change.
+- **Consumer-shaped contracts.** Contracts are smaller than the implementation
+  surface, use the consumer's language, and contain no implementation or
+  framework types. A consumer can work against the contract without reading the
+  implementation.
+- **Right granularity.** Contracts correspond to consumer use cases, not to
+  modules or files. One cell may implement several contracts; internal helpers
+  stay internal.
+- **Correct timing.** Foundational business and technology questions are
+  answered early. Carried decisions name a default, trigger, switch cost, and
+  owner. Implementation splits are deferred until responsibilities diverge.
+- **No readability tax.** The contract table and review branches are used only
+  where a cell exists. Contracts reduce the surface a consumer must understand;
+  they do not add a layer to helpers.
+- **Real use.** Design tables are filled, review branches produce findings, and
+  the findings are resolved. At least one change shows a replacement or split
+  that stayed inside the implementation.
+
+## Signals that the rules need revision
+
+- **Contract sprawl.** A contract per module or helper, many one-method
+  contracts with one consumer and no replacement trigger, or readers jumping
+  through files for no benefit.
+- **Implementation-shaped contracts.** Contracts mirror internal methods, expose
+  framework, database, AST, or HTTP types, or change whenever the implementation
+  changes. Consumers still need implementation knowledge.
+- **Speculative design.** Methods for future use cases, a generic `lendMedia`,
+  or a second implementation built now. YAGNI and KISS are being violated.
+- **Decorative contracts.** The table is filled but consumers still import
+  implementations, the composition-root exception is used everywhere, or tests
+  bypass the contract.
+- **SRP erosion.** One cell implements several contracts whose policies diverge,
+  but no split trigger is recorded or acted on.
+- **Deferred foundation.** A business or enterprise rule is carried without a
+  trigger or owner, or a scenario depends on a carried answer.
+- **No cheaper change.** When an implementation was actually replaced or split,
+  consumers still had to change. The core promise failed.
+- **Process overhead.** Design reviews take longer without finding real boundary
+  problems, the table becomes boilerplate, or teams disable the addon.
+- **Duplicate record.** Contracts duplicate arc42 or ADR content and drift.
+- **Scope creep.** Cells are used to justify retries, circuit breakers, process
+  isolation, or to force premature decisions on layout and product scope.
+- **Readability regression.** More indirection, longer design documents, or a
+  larger surface for the consumer to understand.
+
+Any of these is evidence to narrow, revise, or retire the rule — not a reason
+to add more abstraction.
 
 ## Where it applies
 
