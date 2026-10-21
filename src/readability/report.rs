@@ -5,6 +5,7 @@ use super::model::{
     AnalyzedFile, LineKind, OutlineKind, SourceScope, TypeKind, UnitKind, Visibility,
 };
 use serde_json::{Value, json};
+use std::collections::BTreeSet;
 
 pub const SCHEMA_VERSION: u32 = 2;
 pub const RULES_VERSION: u32 = 1;
@@ -24,6 +25,9 @@ pub fn render_human(assessment: &Assessment) -> String {
         assessment.files.len(),
         assessment.units.len(),
         findings
+    );
+    out.push_str(
+        "outline first: declarations, signatures, and calls; metrics are supporting evidence\n",
     );
     out.push_str("findings only: this report does not block review or archive\n\n");
 
@@ -50,8 +54,9 @@ pub fn render_human(assessment: &Assessment) -> String {
             unit.unit_id,
             unit.classification.label()
         ));
+        out.push_str(&render_outline(unit));
         out.push_str(&format!(
-            "            code lines {}; methods {}; public methods {}; fields {}; LCOM4 {}; TCC {}\n",
+            "  metrics (supporting): code lines {}; methods {}; public methods {}; fields {}; LCOM4 {}; TCC {}\n",
             unit.metrics.code_lines,
             unit.metrics.methods,
             unit.metrics.public_methods,
@@ -62,19 +67,23 @@ pub fn render_human(assessment: &Assessment) -> String {
                 .map(|value| format!("{:.3}", value as f64 / 1000.0))
                 .unwrap_or_else(|| "undefined".to_string()),
         ));
-        for evidence in &unit.evidence {
-            if let (Some(observed), Some(threshold)) =
-                (evidence.observed.number(), evidence.threshold.number())
-            {
-                out.push_str(&format!(
-                    "            {} {} {} {}\n",
-                    evidence.rule,
-                    observed,
-                    evidence.comparison.label(),
-                    threshold
-                ));
+        if !unit.evidence.is_empty() {
+            out.push_str("  evidence:\n");
+            for evidence in &unit.evidence {
+                if let (Some(observed), Some(threshold)) =
+                    (evidence.observed.number(), evidence.threshold.number())
+                {
+                    out.push_str(&format!(
+                        "    {} {} {} {}\n",
+                        evidence.rule,
+                        observed,
+                        evidence.comparison.label(),
+                        threshold
+                    ));
+                }
             }
         }
+        out.push('\n');
     }
 
     if !assessment.diagnostics.is_empty() {
@@ -105,6 +114,50 @@ pub fn render_human(assessment: &Assessment) -> String {
         }
     }
     out
+}
+
+fn render_outline(unit: &ClassifiedUnit) -> String {
+    let mut out = String::from("  outline:\n");
+    if unit.outline.is_empty() {
+        out.push_str("    (none)\n");
+        return out;
+    }
+    let internal: BTreeSet<&str> = unit.method_names.iter().map(String::as_str).collect();
+    for item in &unit.outline {
+        let kind = outline_kind_label(item.kind);
+        let visibility = visibility_label(item.visibility);
+        match item.kind {
+            OutlineKind::Field => out.push_str(&format!(
+                "    {kind} {} [{}] {}\n",
+                item.name, visibility, item.signature
+            )),
+            OutlineKind::Type => {
+                out.push_str(&format!("    {kind} {} [{}]\n", item.name, visibility));
+            }
+            OutlineKind::Method | OutlineKind::TraitMethod => {
+                out.push_str(&format!("    {kind} [{}] {}\n", visibility, item.signature))
+            }
+        }
+        let calls: Vec<&str> = item
+            .calls
+            .iter()
+            .map(|call| call.callee.as_str())
+            .filter(|callee| internal.contains(callee))
+            .collect();
+        if !calls.is_empty() {
+            out.push_str(&format!("      calls: {}\n", calls.join(" -> ")));
+        }
+    }
+    out
+}
+
+fn outline_kind_label(kind: OutlineKind) -> &'static str {
+    match kind {
+        OutlineKind::Type => "type",
+        OutlineKind::Field => "field",
+        OutlineKind::Method => "method",
+        OutlineKind::TraitMethod => "trait method",
+    }
 }
 
 pub fn render_json(assessment: &Assessment, scope: &SourceScope) -> String {
@@ -313,3 +366,108 @@ fn visibility_label(visibility: Visibility) -> &'static str {
 
 #[allow(dead_code)]
 fn _comparison(_comparison: Comparison) {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::readability::classify::Classification;
+    use crate::readability::metrics::UnitMetrics;
+    use crate::readability::model::{
+        AnalyzerCapabilities, Call, FileStatus, Language, OutlineItem, RepoPath, Resolution, UnitId,
+    };
+
+    fn call(callee: &str, resolution: Resolution) -> Call {
+        Call {
+            order: 0,
+            callee: callee.to_string(),
+            resolution,
+            target: None,
+        }
+    }
+
+    #[test]
+    fn the_human_report_leads_with_the_outline() {
+        let path = RepoPath::new("src/engine.rs");
+        let unit_id = UnitId("type:src/engine.rs::Engine".to_string());
+        let unit = ClassifiedUnit {
+            unit_id: unit_id.clone(),
+            kind: UnitKind::Type(TypeKind::Struct),
+            name: "Engine".to_string(),
+            path: path.clone(),
+            files: vec![path.clone()],
+            classification: Classification::GodType,
+            metrics: UnitMetrics {
+                physical_lines: 700,
+                code_lines: 620,
+                methods: 1,
+                public_methods: 1,
+                fields: 1,
+                declared_types: 1,
+                public_surface: 2,
+                lcom4: 1,
+                tcc_permille: Some(1000),
+                lcc_permille: Some(1000),
+                max_method_code_lines: 20,
+                max_method_complexity: 3,
+                files: 1,
+            },
+            method_findings: vec![],
+            method_names: vec!["build".to_string()],
+            methods: vec![],
+            outline: vec![
+                OutlineItem {
+                    kind: OutlineKind::Field,
+                    name: "data".to_string(),
+                    visibility: Visibility::Private,
+                    signature: "Vec<String>".to_string(),
+                    order: 1,
+                    calls: vec![],
+                },
+                OutlineItem {
+                    kind: OutlineKind::Method,
+                    name: "build".to_string(),
+                    visibility: Visibility::Public,
+                    signature: "fn build(&self) -> Engine".to_string(),
+                    order: 2,
+                    calls: vec![
+                        call("new", Resolution::External),
+                        call("build", Resolution::SameFile),
+                    ],
+                },
+            ],
+            evidence: vec![],
+        };
+        let assessment = Assessment {
+            capabilities: AnalyzerCapabilities {
+                language: Language::Rust,
+                supported_constructs: vec![],
+                limitations: vec![],
+                resolution_labels: vec![],
+            },
+            files: vec![AnalyzedFile {
+                path,
+                physical_lines: 700,
+                lines: vec![],
+                status: FileStatus::Analyzed,
+                unit_ids: vec![unit_id],
+            }],
+            units: vec![unit],
+            diagnostics: vec![],
+            unsupported: vec![],
+        };
+
+        let text = render_human(&assessment);
+        let outline = text.find("outline:").expect("outline section");
+        let metrics = text
+            .find("metrics (supporting):")
+            .expect("supporting metrics");
+        assert!(outline < metrics, "outline must come before metrics");
+        assert!(text.contains("field data [private] Vec<String>"));
+        assert!(text.contains("method [public] fn build(&self) -> Engine"));
+        assert!(text.contains("calls: build"));
+        assert!(
+            !text.contains("calls: new"),
+            "calls outside the unit are not part of its outline"
+        );
+    }
+}

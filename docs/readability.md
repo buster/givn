@@ -13,9 +13,9 @@ change.
 
 ## What it does
 
-- **Report.** `givn readability report` gives an advisory snapshot of the
-  production Rust code. It classifies each type and module and lists its method
-  findings with evidence, as human text or JSON. It never blocks a change and
+- **Report.** `givn readability report` prints each unit's outline first —
+  declarations, signatures, and internal calls — then the finding and the
+  supporting metrics, as human text or JSON. It never blocks a change and
   stores no baseline.
 - **Review gate.** With the addon enabled, `givn check review --change <id>`
   checks the types and modules the change touched, including their methods.
@@ -29,9 +29,10 @@ only a unit's outline should be able to state (a) what the unit is responsible
 for and (b) why its internal calls happen in that order.
 
 The outline lists the unit's declarations, field and method signatures, their
-order, and the calls each method makes. It contains no method bodies and no
-comments. `givn readability report --json` emits it under `units[].outline`;
-the human report does not.
+order, and the internal calls each method makes. It contains no method bodies
+and no comments. `givn readability report` prints the outline for every unit;
+`--json` emits the full outline under `units[].outline`, including
+call-resolution labels.
 
 The outline is the semantic layer. The automated classifications (size,
 cohesion, method length) find candidates; the outline is what a reviewer reads
@@ -42,8 +43,8 @@ be able to explain the responsibility and call order.
 **Current limit.** Outline comprehension is not yet an automated finding rule:
 a unit whose outline is hard to follow, but which is under the size and method
 thresholds, does not create a finding by itself. The automated gate is
-size/method-based; the outline is available in the JSON and is used by the
-reviewer. Treat that as an open experiment gap, not a completed rule.
+size/method-based; the outline is the primary review artifact and is used by
+the reviewer. Treat that as an open experiment gap, not a completed rule.
 
 ## Workflow
 
@@ -60,7 +61,7 @@ baseline; the gate only looks at the units the change touched.
 | Phase | Produced by the addon | Checked by the addon |
 |---|---|---|
 | Proposal / design | Nothing automatic. You may run the report as evidence. | Nothing. |
-| Implement | An optional report with findings and evidence, as human text or JSON. | Nothing. The report never blocks a change. |
+| Implement | An optional report with each unit's outline first, then the finding and supporting metrics, as human text or JSON. | Nothing. The report never blocks a change. |
 | Review | `READABILITY: FIXED` or `READABILITY: JUSTIFIED` for every touched finding; a rationale for each justified finding; `READABILITY: PASS` when findings exist. | Every touched finding has a decision. A justified finding's rationale names the finding and its evidence and has an independent reviewer's accept. |
 | Archive | Nothing new. | The review record is complete. An unaccounted finding blocks archive. |
 
