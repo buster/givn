@@ -2,7 +2,7 @@
 
 use super::classify::{Assessment, Classification, ClassifiedUnit, Comparison, MetricValue};
 use super::model::{
-    AnalyzedFile, LineKind, MethodId, OutlineItem, OutlineKind, Resolution, SourceScope, TypeKind,
+    AnalyzedFile, MethodId, OutlineItem, OutlineKind, Resolution, SourceScope, TypeKind,
     UnitId, UnitKind, Visibility,
 };
 use serde_json::{Value, json};
@@ -217,9 +217,14 @@ fn render_calls(
         let Some(target) = index.get(target_id) else {
             continue;
         };
-        let tag = format!("{}, {}", visibility_label(target.visibility), target.label);
+        let tag = format!(
+            "{}, {}, {}",
+            call.resolution.label(),
+            visibility_label(target.visibility),
+            target.label
+        );
         out.push_str(&format!("{indent}-> [{tag}] {}\n", call.callee));
-        if target.unit_id != unit.unit_id {
+        if call.resolution == Resolution::NameOnly || target.unit_id != unit.unit_id {
             continue;
         }
         let Some(target_item) = local.get(target_id) else {
@@ -269,10 +274,20 @@ pub fn render_json(assessment: &Assessment, scope: &SourceScope) -> String {
 }
 
 fn files_json(assessment: &Assessment) -> Vec<Value> {
-    assessment.files.iter().map(file_json).collect()
+    assessment
+        .files
+        .iter()
+        .map(|file| file_json(file, assessment))
+        .collect()
 }
 
-fn file_json(file: &AnalyzedFile) -> Value {
+fn file_json(file: &AnalyzedFile, assessment: &Assessment) -> Value {
+    let excluded: Vec<_> = assessment
+        .files
+        .iter()
+        .filter(|candidate| candidate.path == file.path)
+        .flat_map(|candidate| candidate.excluded_spans.iter().cloned())
+        .collect();
     json!({
         "path": file.path.as_str(),
         "language": file.language.label(),
@@ -281,7 +296,7 @@ fn file_json(file: &AnalyzedFile) -> Value {
             super::model::FileStatus::Failed => "failed",
         },
         "physical_lines": file.physical_lines,
-        "code_lines": file.lines.iter().filter(|line| **line == LineKind::Code).count(),
+        "code_lines": super::scan::production_code_lines(&file.lines, &excluded, &file.path),
         "units": file.unit_ids.iter().map(|id| id.to_string()).collect::<Vec<_>>(),
     })
 }
@@ -361,6 +376,7 @@ fn outline_json(unit: &ClassifiedUnit) -> Vec<Value> {
                 "calls": item.calls.iter().map(|call| json!({
                     "callee": call.callee,
                     "resolution": call.resolution.label(),
+                    "target": call.target,
                 })).collect::<Vec<_>>(),
             })
         })
@@ -469,13 +485,27 @@ mod tests {
     use crate::outline::classify::Classification;
     use crate::outline::metrics::UnitMetrics;
     use crate::outline::model::{
-        AnalyzerCapabilities, Call, FileStatus, Language, OutlineItem, RepoPath, Resolution, UnitId,
+        AnalyzerCapabilities, Call, CallShape, FileStatus, Language, OutlineItem, ReceiverEvidence,
+        RepoPath, Resolution, UnitId,
     };
 
     fn call(callee: &str, resolution: Resolution, target: Option<&str>) -> Call {
         Call {
             order: 0,
             callee: callee.to_string(),
+            shape: CallShape::Function { qualifier: None },
+            resolution,
+            target: target.map(ToString::to_string),
+        }
+    }
+
+    fn method_call(callee: &str, resolution: Resolution, target: Option<&str>) -> Call {
+        Call {
+            order: 0,
+            callee: callee.to_string(),
+            shape: CallShape::Method {
+                receiver: ReceiverEvidence::SelfUnit,
+            },
             resolution,
             target: target.map(ToString::to_string),
         }
@@ -520,7 +550,7 @@ mod tests {
                 order: 2,
                 calls: vec![
                     call("new", Resolution::External, None),
-                    call(
+                    method_call(
                         "build",
                         Resolution::SameFile,
                         Some("type:src/engine.rs::Engine::build"),
@@ -543,6 +573,7 @@ mod tests {
                 lines: vec![],
                 status: FileStatus::Analyzed,
                 unit_ids: vec![unit_id],
+                excluded_spans: vec![],
             }],
             units: vec![unit],
             diagnostics: vec![],
@@ -558,7 +589,7 @@ mod tests {
             !text.contains("field data"),
             "data is not part of the outline"
         );
-        assert!(text.contains("-> [public, Engine] build"));
+        assert!(text.contains("-> [same_file, public, Engine] build"));
         assert!(text.contains("[cycle]"));
         assert!(
             !text.contains("-> new"),
@@ -703,6 +734,7 @@ mod tests {
                     UnitId(change_id.to_string()),
                     UnitId(tasks_id.to_string()),
                 ],
+                excluded_spans: vec![],
             }],
             units: vec![module, change, tasks],
             diagnostics: vec![],
@@ -717,10 +749,10 @@ mod tests {
             .split(change_id)
             .next()
             .expect("module section");
-        assert!(module_section.contains("-> [public, module] is_skipped"));
-        assert!(module_section.contains("-> [public, TasksProgress] is_complete"));
+        assert!(module_section.contains("-> [same_file, public, module] is_skipped"));
+        assert!(module_section.contains("-> [same_file, public, TasksProgress] is_complete"));
         assert!(
-            !module_section.contains("-> [public, module] is_complete"),
+            !module_section.contains("-> [same_file, public, module] is_complete"),
             "a cross-component call keeps its own component label"
         );
 
@@ -731,9 +763,9 @@ mod tests {
             .split(tasks_id)
             .next()
             .expect("change section");
-        assert!(change_section.contains("-> [private, module] artifact_status"));
+        assert!(change_section.contains("-> [same_file, private, module] artifact_status"));
         assert!(
-            !change_section.contains("-> [public, module] is_skipped"),
+            !change_section.contains("-> [same_file, public, module] is_skipped"),
             "a cross-component call is a leaf; its callee's calls stay in its own component"
         );
     }

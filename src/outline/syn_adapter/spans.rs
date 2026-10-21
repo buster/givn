@@ -1,10 +1,47 @@
 //! Source span mapping for the syn adapter.
 
 use super::super::model::{RepoPath, SourceSpan};
-use syn::{ImplItem, ItemImpl};
+use super::syntax::attrs;
+use syn::{ImplItem, Item, ItemImpl};
 
 pub(super) fn span_for_ident(ident: &syn::Ident, content: &str, file: &RepoPath) -> SourceSpan {
     line_span(content, file, ident.span().start().line as u32)
+}
+
+pub(super) fn item_span(item: &Item, content: &str, file: &RepoPath) -> SourceSpan {
+    let mut line = match item {
+        Item::Struct(item) => item.ident.span().start().line,
+        Item::Enum(item) => item.ident.span().start().line,
+        Item::Union(item) => item.ident.span().start().line,
+        Item::Trait(item) => item.ident.span().start().line,
+        Item::Type(item) => item.ident.span().start().line,
+        Item::Fn(item) => item.sig.ident.span().start().line,
+        Item::Mod(item) => item.mod_token.span.start().line,
+        Item::Impl(item) => item.impl_token.span.start().line,
+        Item::Macro(item) => macro_line(item) as usize,
+        _ => 1,
+    };
+    if let Some(attribute) = attrs(item).first()
+        && let Some(segment) = attribute.path().segments.first()
+    {
+        line = line.min(segment.ident.span().start().line);
+    }
+    line_span(content, file, line as u32)
+}
+
+pub(super) fn span_with_attrs(
+    attributes: &[syn::Attribute],
+    ident: &syn::Ident,
+    content: &str,
+    file: &RepoPath,
+) -> SourceSpan {
+    let mut line = ident.span().start().line;
+    if let Some(attribute) = attributes.first()
+        && let Some(segment) = attribute.path().segments.first()
+    {
+        line = line.min(segment.ident.span().start().line);
+    }
+    line_span(content, file, line as u32)
 }
 
 pub(super) fn field_span(field: &syn::Field, file: &RepoPath) -> SourceSpan {

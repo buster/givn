@@ -1,13 +1,16 @@
-//! Resolve call names against the neutral method inventory.
+//! Resolve calls against the neutral method inventory and the call's shape.
 //!
-//! An adapter supplies callee names. This pass decides which declared method a
-//! call belongs to, preferring the same unit, then the same file, then a
-//! unique project method. The renderer uses the target to nest same-unit calls
-//! and to label calls that leave the component.
+//! An adapter supplies callee names and whether the call is a free function
+//! or a method, plus any receiver evidence. This pass only claims
+//! `same_file`/`project_other_file` when the candidate's owner matches that
+//! evidence. A method call on an unknown receiver stays `name_only`.
 
 use std::collections::BTreeMap;
 
-use super::model::{Analysis, Call, Language, MethodId, RepoPath, Resolution, UnitOrigin};
+use super::model::{
+    Analysis, Call, CallShape, Language, MethodId, ReceiverEvidence, RepoPath, Resolution,
+    TypeKind, UnitKind, UnitOrigin,
+};
 
 #[derive(Clone)]
 struct Target {
@@ -15,6 +18,9 @@ struct Target {
     method_id: MethodId,
     file: RepoPath,
     language: Language,
+    unit_kind: UnitKind,
+    unit_name: String,
+    module_path: String,
 }
 
 pub(crate) fn resolve_calls(analysis: &mut Analysis) {
@@ -32,6 +38,9 @@ pub(crate) fn resolve_calls(analysis: &mut Analysis) {
                     method_id: method.id.clone(),
                     file: method.span.file.clone(),
                     language: unit.language,
+                    unit_kind: unit.kind,
+                    unit_name: unit.name.clone(),
+                    module_path: unit.module_path.clone(),
                 });
         }
     }
@@ -41,7 +50,7 @@ pub(crate) fn resolve_calls(analysis: &mut Analysis) {
         for (method_index, method) in unit.methods.iter().enumerate() {
             for (call_index, call) in method.calls.iter().enumerate() {
                 let (resolution, target) = resolve(
-                    &call.callee,
+                    call,
                     unit_index,
                     unit.language,
                     &method.span.file,
@@ -74,13 +83,13 @@ pub(crate) fn resolve_calls(analysis: &mut Analysis) {
 }
 
 fn resolve(
-    callee: &str,
+    call: &Call,
     unit_index: usize,
     language: Language,
     file: &RepoPath,
     by_name: &BTreeMap<String, Vec<Target>>,
 ) -> (Resolution, Option<MethodId>) {
-    let Some(candidates) = by_name.get(callee) else {
+    let Some(candidates) = by_name.get(&call.callee) else {
         return (Resolution::External, None);
     };
     let candidates: Vec<&Target> = candidates
@@ -91,37 +100,135 @@ fn resolve(
         return (Resolution::External, None);
     }
 
-    let same_unit: Vec<&Target> = candidates
+    let compatible: Vec<&Target> = match &call.shape {
+        CallShape::Function { qualifier: None } => candidates
+            .iter()
+            .copied()
+            .filter(|target| matches!(target.unit_kind, UnitKind::Module))
+            .collect(),
+        CallShape::Function {
+            qualifier: Some(qualifier),
+        } => candidates
+            .iter()
+            .copied()
+            .filter(|target| function_qualifier_matches(qualifier, unit_index, target))
+            .collect(),
+        CallShape::Method {
+            receiver: ReceiverEvidence::SelfUnit,
+        } => {
+            let matching: Vec<&Target> = candidates
+                .iter()
+                .copied()
+                .filter(|target| target.unit_index == unit_index)
+                .collect();
+            if matching.is_empty() {
+                return name_only_or_ambiguous(&candidates);
+            }
+            matching
+        }
+        CallShape::Method {
+            receiver: ReceiverEvidence::Qualifier(qualifier),
+        } => candidates
+            .iter()
+            .copied()
+            .filter(|target| {
+                matches!(target.unit_kind, UnitKind::Type(_))
+                    && (target.unit_name == *qualifier
+                        || (qualifier == "Self" && target.unit_index == unit_index))
+            })
+            .collect(),
+        CallShape::Method {
+            receiver: ReceiverEvidence::Unknown,
+        } => return name_only_or_ambiguous(&candidates),
+    };
+
+    if compatible.is_empty() {
+        // A named receiver that only matches a trait may still be implemented
+        // by that owner; the relation is not proven, so it is a name-only
+        // guess rather than an external call.
+        if matches!(
+            &call.shape,
+            CallShape::Method {
+                receiver: ReceiverEvidence::Qualifier(_)
+            }
+        ) && candidates
+            .iter()
+            .any(|target| matches!(target.unit_kind, UnitKind::Type(TypeKind::Trait)))
+        {
+            return name_only_or_ambiguous(&candidates);
+        }
+        return (Resolution::External, None);
+    }
+
+    let same_unit: Vec<&Target> = compatible
         .iter()
         .copied()
         .filter(|target| target.unit_index == unit_index)
         .collect();
-    if same_unit.len() == 1 {
-        return (Resolution::SameFile, Some(same_unit[0].method_id.clone()));
-    }
-    if same_unit.len() > 1 {
-        return (Resolution::Ambiguous, None);
+    if !same_unit.is_empty() {
+        return one_target(same_unit.as_slice(), file);
     }
 
-    let same_file: Vec<&Target> = candidates
+    let same_file: Vec<&Target> = compatible
         .iter()
         .copied()
         .filter(|target| &target.file == file)
         .collect();
-    if same_file.len() == 1 {
-        return (Resolution::SameFile, Some(same_file[0].method_id.clone()));
-    }
-    if same_file.len() > 1 {
-        return (Resolution::Ambiguous, None);
+    if !same_file.is_empty() {
+        return one_target(same_file.as_slice(), file);
     }
 
-    if candidates.len() == 1 {
-        return (
-            Resolution::ProjectOtherFile,
-            Some(candidates[0].method_id.clone()),
-        );
+    one_target(compatible.as_slice(), file)
+}
+
+fn one_target(candidates: &[&Target], caller_file: &RepoPath) -> (Resolution, Option<MethodId>) {
+    match candidates {
+        [target] => (
+            if &target.file == caller_file {
+                Resolution::SameFile
+            } else {
+                Resolution::ProjectOtherFile
+            },
+            Some(target.method_id.clone()),
+        ),
+        _ => (Resolution::Ambiguous, None),
     }
-    (Resolution::Ambiguous, None)
+}
+
+fn name_only_or_ambiguous(candidates: &[&Target]) -> (Resolution, Option<MethodId>) {
+    match candidates {
+        [target] => (
+            Resolution::NameOnly,
+            Some(target.method_id.clone()),
+        ),
+        _ => (Resolution::Ambiguous, None),
+    }
+}
+
+fn function_qualifier_matches(qualifier: &str, unit_index: usize, target: &Target) -> bool {
+    if qualifier == "Self" {
+        return target.unit_index == unit_index;
+    }
+    let Some(owner) = qualifier.rsplit("::").next() else {
+        return false;
+    };
+    match target.unit_kind {
+        UnitKind::Type(_) => target.unit_name == owner,
+        UnitKind::Module => {
+            module_name_matches(&target.unit_name, owner)
+                || target
+                    .module_path
+                    .rsplit("::")
+                    .next()
+                    .is_some_and(|name| name == owner)
+        }
+    }
+}
+
+fn module_name_matches(path: &str, owner: &str) -> bool {
+    let stem = path.trim_end_matches(".rs");
+    let stem = stem.strip_suffix("/mod").unwrap_or(stem);
+    stem.rsplit('/').next().is_some_and(|name| name == owner)
 }
 
 #[cfg(test)]
@@ -204,6 +311,19 @@ mod tests {
         Call {
             order: 0,
             callee: callee.to_string(),
+            shape: CallShape::Function { qualifier: None },
+            resolution: Resolution::External,
+            target: None,
+        }
+    }
+
+    fn method_call(callee: &str, receiver: &str) -> Call {
+        Call {
+            order: 0,
+            callee: callee.to_string(),
+            shape: CallShape::Method {
+                receiver: ReceiverEvidence::Qualifier(receiver.to_string()),
+            },
             resolution: Resolution::External,
             target: None,
         }
@@ -219,7 +339,7 @@ mod tests {
                 method(
                     "state::artifact_status",
                     "artifact_status",
-                    vec![call("is_skipped"), call("is_complete")],
+                    vec![call("is_skipped"), method_call("is_complete", "TasksProgress")],
                 ),
                 method("state::is_skipped", "is_skipped", Vec::new()),
             ],
@@ -227,7 +347,7 @@ mod tests {
                 outline(
                     "state::artifact_status",
                     "artifact_status",
-                    vec![call("is_skipped"), call("is_complete")],
+                    vec![call("is_skipped"), method_call("is_complete", "TasksProgress")],
                 ),
                 outline("state::is_skipped", "is_skipped", Vec::new()),
             ],

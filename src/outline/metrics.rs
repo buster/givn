@@ -1,7 +1,7 @@
 //! Shared metric computation above the analyzer port.
 
 use super::model::{
-    Analysis, AnalyzedFile, Flow, Method, SourceUnit, UnitId, UnitKind, Visibility,
+    Analysis, AnalyzedFile, Flow, Method, Resolution, SourceUnit, UnitId, UnitKind, Visibility,
 };
 use super::scan;
 use std::collections::{HashMap, HashSet};
@@ -71,7 +71,14 @@ pub fn compute_unit(unit: &SourceUnit, analysis: &Analysis) -> UnitMetrics {
                 .files
                 .iter()
                 .find(|analyzed| &analyzed.path == file)
-                .map(|analyzed| scan::code_lines(&analyzed.lines, &unit.spans, file))
+                .map(|analyzed| {
+                    scan::code_lines_excluding(
+                        &analyzed.lines,
+                        &unit.spans,
+                        &analyzed.excluded_spans,
+                        file,
+                    )
+                })
                 .unwrap_or(0)
         })
         .sum::<u32>();
@@ -83,7 +90,14 @@ pub fn compute_unit(unit: &SourceUnit, analysis: &Analysis) -> UnitMetrics {
                 .files
                 .iter()
                 .find(|analyzed| &analyzed.path == file)
-                .map(|analyzed| analyzed.physical_lines)
+                .map(|analyzed| {
+                    scan::span_lines_excluding(
+                        analyzed.lines.len(),
+                        &unit.spans,
+                        &analyzed.excluded_spans,
+                        file,
+                    )
+                })
                 .unwrap_or(0)
         })
         .sum::<u32>();
@@ -150,9 +164,10 @@ fn method_metrics(method: &Method, analysis: &Analysis) -> MethodMetrics {
         .iter()
         .find(|analyzed: &&AnalyzedFile| analyzed.path == method.span.file)
         .map(|analyzed| {
-            scan::code_lines(
+            scan::code_lines_excluding(
                 &analyzed.lines,
                 std::slice::from_ref(&method.span),
+                &analyzed.excluded_spans,
                 &method.span.file,
             )
         })
@@ -211,6 +226,12 @@ fn cohesion(unit: &SourceUnit) -> (u32, Option<u32>, Option<u32>) {
     }
     for (index, method) in unit.methods.iter().enumerate() {
         for call in &method.calls {
+            if !matches!(
+                call.resolution,
+                Resolution::SameFile | Resolution::ProjectOtherFile
+            ) {
+                continue;
+            }
             if let Some(target_index) = call
                 .target
                 .as_ref()

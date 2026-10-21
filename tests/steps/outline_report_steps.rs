@@ -1015,3 +1015,62 @@ fn type_outline_keeps_cross_component_calls_leaf(world: &mut GivnWorld) {
         "expected normalize to call helper in the module component: {module}"
     );
 }
+#[given("a production source unit whose method calls a receiver of unknown type")]
+fn unknown_receiver_call(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_unknown_receiver_call(&env);
+    world.env = Some(env);
+}
+
+fn all_calls(value: &serde_json::Value) -> Vec<&serde_json::Value> {
+    value["units"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .flat_map(|unit| unit["outline"].as_array().into_iter().flatten())
+        .flat_map(|item| item["calls"].as_array().into_iter().flatten())
+        .collect()
+}
+
+fn call_named<'a>(value: &'a serde_json::Value, callee: &str) -> &'a serde_json::Value {
+    all_calls(value)
+        .into_iter()
+        .find(|call| call["callee"].as_str() == Some(callee))
+        .unwrap_or_else(|| panic!("no call {callee} in {value}"))
+}
+
+#[then(regex = r#"^the JSON report records the call "([^"]+)" as "([^"]+)"$"#)]
+fn json_call_resolution(world: &mut GivnWorld, callee: String, resolution: String) {
+    let value = json_output(world);
+    let call = call_named(&value, &callee);
+    assert_eq!(
+        call["resolution"].as_str(),
+        Some(resolution.as_str()),
+        "unexpected resolution for {callee}: {call}"
+    );
+}
+
+#[then(regex = r#"^the JSON call names "([^"]+)" as its target$"#)]
+fn json_call_names_target(world: &mut GivnWorld, target: String) {
+    let value = json_output(world);
+    assert!(
+        all_calls(&value)
+            .iter()
+            .any(|call| call["target"].as_str() == Some(target.as_str())),
+        "no call targets {target}: {value}"
+    );
+}
+
+#[then(regex = r#"^the JSON call names "([^"]+)" as its candidate target$"#)]
+fn json_call_names_candidate(world: &mut GivnWorld, target: String) {
+    json_call_names_target(world, target);
+}
+
+#[then(regex = r#"^the JSON call "([^"]+)" names no target$"#)]
+fn json_call_has_no_target(world: &mut GivnWorld, callee: String) {
+    let value = json_output(world);
+    let call = call_named(&value, &callee);
+    assert!(call["target"].is_null(), "{callee} has a target: {call}");
+}
+

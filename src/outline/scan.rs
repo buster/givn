@@ -188,25 +188,77 @@ fn classify_line(line: &str, language: Language) -> LineKind {
     }
 }
 
-/// Count code lines in a span union.
-pub fn code_lines(lines: &[LineKind], spans: &[super::model::SourceSpan], file: &RepoPath) -> u32 {
-    let mut marked = vec![false; lines.len()];
+/// Count code lines in a span union, excluding recorded non-production spans.
+pub fn code_lines_excluding(
+    lines: &[LineKind],
+    spans: &[super::model::SourceSpan],
+    excluded: &[super::model::SourceSpan],
+    file: &RepoPath,
+) -> u32 {
+    marked_lines(lines.len(), spans, excluded, file)
+        .iter()
+        .enumerate()
+        .filter(|(index, marked)| **marked && lines.get(*index) == Some(&LineKind::Code))
+        .count() as u32
+}
+
+/// Count lines in a span union, excluding recorded non-production spans.
+pub fn span_lines_excluding(
+    line_count: usize,
+    spans: &[super::model::SourceSpan],
+    excluded: &[super::model::SourceSpan],
+    file: &RepoPath,
+) -> u32 {
+    marked_lines(line_count, spans, excluded, file)
+        .iter()
+        .filter(|marked| **marked)
+        .count() as u32
+}
+
+/// Count code lines outside recorded non-production spans.
+pub fn production_code_lines(
+    lines: &[LineKind],
+    excluded: &[super::model::SourceSpan],
+    file: &RepoPath,
+) -> u32 {
+    let all = [super::model::SourceSpan {
+        file: file.clone(),
+        start_line: 1,
+        end_line: lines.len().max(1) as u32,
+    }];
+    code_lines_excluding(lines, &all, excluded, file)
+}
+
+fn marked_lines(
+    line_count: usize,
+    spans: &[super::model::SourceSpan],
+    excluded: &[super::model::SourceSpan],
+    file: &RepoPath,
+) -> Vec<bool> {
+    let mut marked = vec![false; line_count];
     for span in spans.iter().filter(|span| &span.file == file) {
         let start = span.start_line.saturating_sub(1) as usize;
         let end = span.end_line.saturating_sub(1) as usize;
         for marked_line in marked
             .iter_mut()
-            .take(end.min(lines.len().saturating_sub(1)) + 1)
+            .take(end.min(line_count.saturating_sub(1)) + 1)
             .skip(start)
         {
             *marked_line = true;
         }
     }
+    for span in excluded.iter().filter(|span| &span.file == file) {
+        let start = span.start_line.saturating_sub(1) as usize;
+        let end = span.end_line.saturating_sub(1) as usize;
+        for marked_line in marked
+            .iter_mut()
+            .take(end.min(line_count.saturating_sub(1)) + 1)
+            .skip(start)
+        {
+            *marked_line = false;
+        }
+    }
     marked
-        .iter()
-        .enumerate()
-        .filter(|(index, marked)| **marked && lines.get(*index) == Some(&LineKind::Code))
-        .count() as u32
 }
 
 #[cfg(test)]

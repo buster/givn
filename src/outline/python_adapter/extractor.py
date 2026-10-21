@@ -16,25 +16,39 @@ def visibility(name: str) -> str:
     return "private" if name.startswith("_") else "public"
 
 
-def callee_name(node: ast.AST) -> str:
+def call_fact(node: ast.Call):
     func = node.func
     if isinstance(func, ast.Name):
-        return func.id
+        return {"callee": func.id, "kind": "function", "qualifier": None}
     if isinstance(func, ast.Attribute):
-        return func.attr
+        receiver = "unknown"
+        qualifier = None
+        if isinstance(func.value, ast.Name):
+            if func.value.id in ("self", "cls"):
+                receiver = "self"
+            elif func.value.id[:1].isupper():
+                receiver = "qualifier"
+                qualifier = func.value.id
+        return {
+            "callee": func.attr,
+            "kind": "method",
+            "receiver": receiver,
+            "qualifier": qualifier,
+        }
     try:
-        return ast.unparse(func)
+        callee = ast.unparse(func)
     except Exception:
-        return "<call>"
+        callee = "<call>"
+    return {"callee": callee, "kind": "method", "receiver": "unknown", "qualifier": None}
 
 
 def calls_in(node: ast.AST):
     calls = []
     for child in ast.walk(node):
         if isinstance(child, ast.Call):
-            calls.append((child.lineno, child.col_offset, callee_name(child)))
+            calls.append((child.lineno, child.col_offset, call_fact(child)))
     calls.sort(key=lambda item: (item[0], item[1]))
-    return [name for _, _, name in calls]
+    return [fact for _, _, fact in calls]
 
 
 def field_accesses(node: ast.AST):

@@ -170,6 +170,9 @@ pub struct AnalyzedFile {
     pub lines: Vec<LineKind>,
     pub status: FileStatus,
     pub unit_ids: Vec<UnitId>,
+    /// Spans excluded from production accounting, such as `#[cfg(test)]`
+    /// items in an otherwise production file.
+    pub excluded_spans: Vec<SourceSpan>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -338,8 +341,30 @@ pub struct Field {
 pub struct Call {
     pub order: u32,
     pub callee: String,
+    pub shape: CallShape,
     pub resolution: Resolution,
     pub target: Option<MethodId>,
+}
+
+/// How a call was written, independent of any language's syntax.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum CallShape {
+    /// `foo(...)` with an optional path before the callee (`Type::foo`,
+    /// `crate::module::foo`).
+    Function { qualifier: Option<String> },
+    /// `receiver.foo(...)` with the receiver evidence the adapter can prove.
+    Method { receiver: ReceiverEvidence },
+}
+
+/// What an adapter knows about a method call's receiver.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ReceiverEvidence {
+    /// `self` or `cls`; the receiver is the current unit.
+    SelfUnit,
+    /// A named type or owner in the receiver position.
+    Qualifier(String),
+    /// An arbitrary expression, field chain, or inferred value.
+    Unknown,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

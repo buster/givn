@@ -566,7 +566,7 @@ fn review(request: &GateRequest) -> Result<GateOutcome> {
                 .iter()
                 .find(|unit| &unit.unit_id == id)
         })
-        .filter(|unit| !unit.outline.is_empty())
+        .filter(|unit| !unit.method_names.is_empty())
         .map(|unit| OutlineEntry {
             unit_id: unit.unit_id.clone(),
             text: crate::outline::report::render_outline(unit, &index),
