@@ -1,17 +1,17 @@
-//! `givn readability report`: the opt-in, advisory code-structure report.
+//! `givn outline report`: the opt-in, advisory code-structure report.
 //!
 //! The command is always registered and gated at runtime so the disabled path
 //! can name the reason. Findings never change the exit code.
 
-use crate::readability::{self, AnalysisRequest, SourceScope, model::Language};
+use crate::outline::{self, AnalysisRequest, SourceScope, model::Language};
 use anyhow::{Context, Result, bail};
 use std::path::{Path, PathBuf};
 
-/// Run the readability report. The `readability` addon must be enabled.
+/// Run the outline report. The `outline` addon must be enabled.
 pub fn run_report(json: bool, out: Option<PathBuf>, paths: Vec<PathBuf>) -> Result<()> {
     let manifest = crate::config::overlay::load_effective()?;
-    if !manifest.addons.readability {
-        bail!("readability experiment is disabled; enable it with givn addons enable readability");
+    if !manifest.addons.outline {
+        bail!("outline experiment is disabled; enable it with givn addons enable outline");
     }
 
     let project_root = std::env::current_dir().context("resolve the project root")?;
@@ -40,15 +40,15 @@ pub fn run_report(json: bool, out: Option<PathBuf>, paths: Vec<PathBuf>) -> Resu
             include_test_sources: false,
         },
     };
-    let analyzer = readability::rust_analyzer();
+    let analyzer = outline::rust_analyzer();
     let capabilities = analyzer.capabilities();
-    let analysis = readability::analyze(&request, analyzer.as_ref())?;
-    let assessment = readability::assess(&analysis, capabilities);
+    let analysis = outline::analyze(&request, analyzer.as_ref())?;
+    let assessment = outline::assess(&analysis, capabilities);
 
     let document = if json {
-        readability::report::render_json(&assessment, &request.scope)
+        outline::report::render_json(&assessment, &request.scope)
     } else {
-        readability::report::render_human(&assessment)
+        outline::report::render_human(&assessment)
     };
 
     match out {

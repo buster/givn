@@ -12,7 +12,7 @@ pub const RULES_VERSION: u32 = 1;
 
 pub fn render_human(assessment: &Assessment) -> String {
     if assessment.files.is_empty() {
-        return "readability report — rust, 0 files, 0 units, 0 findings\nNo production sources found in the requested scope.\n"
+        return "outline report — rust, 0 files, 0 units, 0 hints\nNo production sources found in the requested scope.\n"
             .to_string();
     }
     let findings = assessment
@@ -21,7 +21,7 @@ pub fn render_human(assessment: &Assessment) -> String {
         .filter(|unit| unit.classification != Classification::WithinLimits)
         .count();
     let mut out = format!(
-        "readability report — rust, {} files, {} units, {} findings\n",
+        "outline report — rust, {} files, {} units, {} hints\n",
         assessment.files.len(),
         assessment.units.len(),
         findings
@@ -44,7 +44,7 @@ pub fn render_human(assessment: &Assessment) -> String {
         let label = if unit.classification == Classification::WithinLimits {
             "WITHIN-LIMITS"
         } else {
-            "FINDING"
+            "HINT"
         };
         out.push_str(&format!(
             "{:<13} {:<7} {:<36} {:<44} {}\n",
@@ -157,7 +157,7 @@ fn outline_kind_label(kind: OutlineKind) -> &'static str {
 
 pub fn render_json(assessment: &Assessment, scope: &SourceScope) -> String {
     let document = json!({
-        "report": "readability",
+        "report": "outline",
         "schema_version": SCHEMA_VERSION,
         "rules_version": RULES_VERSION,
         "scope": {
@@ -364,9 +364,9 @@ fn _comparison(_comparison: Comparison) {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::readability::classify::Classification;
-    use crate::readability::metrics::UnitMetrics;
-    use crate::readability::model::{
+    use crate::outline::classify::Classification;
+    use crate::outline::metrics::UnitMetrics;
+    use crate::outline::model::{
         AnalyzerCapabilities, Call, FileStatus, Language, OutlineItem, RepoPath, Resolution, UnitId,
     };
 

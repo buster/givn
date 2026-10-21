@@ -122,23 +122,23 @@ Feature: enable-optional-addons
     And  the file ".opencode/skills/givn-dev-principles/SKILL.md" exists
     And  the file ".opencode/commands/grill-me.md" exists
     And  the file ".opencode/commands/grill-with-docs.md" exists
-    And  the readability addon is disabled
+    And  the outline addon is disabled
 
   Scenario: givn init lists default-off addons and how to enable them
     Given  a project root without a givn/ directory
     When  the user runs "givn init --agents opencode"
     Then  the command exits 0
-    And  stdout contains "addons available (default off): architecture_principles, readability"
+    And  stdout contains "addons available (default off): architecture_principles, outline"
     When  the user runs "givn addons list"
-    Then  stdout contains "[disabled]  readability"
+    Then  stdout contains "[disabled]  outline"
     And  stdout contains "givn addons enable"
 
   @e2e
-  Scenario: Consumer enables the readability addon and it is listed as enabled
+  Scenario: Consumer enables the outline addon and it is listed as enabled
     Given  a project root with givn/ initialised without addons
-    And  the readability addon is disabled
-    When  the user runs "givn addons enable readability"
+    And  the outline addon is disabled
+    When  the user runs "givn addons enable outline"
     Then  the command exits 0
-    And  stdout contains "enabled addon 'readability'"
+    And  stdout contains "enabled addon 'outline'"
     When  the user runs "givn addons list"
-    Then  stdout contains "[enabled ]  readability"
+    Then  stdout contains "[enabled ]  outline"

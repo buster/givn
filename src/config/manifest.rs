@@ -305,9 +305,9 @@ pub struct Addons {
     /// docs for every challenge.
     #[serde(default)]
     pub grill_with_docs: bool,
-    /// Opt-in readability report. Default off; `givn init` never enables it.
+    /// Opt-in outline report. Default off; `givn init` never enables it.
     #[serde(default)]
-    pub readability: bool,
+    pub outline: bool,
 }
 
 impl Manifest {

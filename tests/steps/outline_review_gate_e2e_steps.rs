@@ -1,7 +1,7 @@
-//! End-to-end step for the `@e2e` readability review gate scenario.
+//! End-to-end step for the `@e2e` outline review gate scenario.
 //!
 //! The fixture is assembled by the `Given` steps in
-//! `readability_review_gate_steps.rs`; this file owns the single user action
+//! `outline_review_gate_steps.rs`; this file owns the single user action
 //! and drives the real `givn check review --change test-change` subprocess
 //! through `common::run_givn`.
 
@@ -22,7 +22,7 @@ fn the_developer_runs_the_review(world: &mut GivnWorld) {
         .as_ref()
         .expect("the review subprocess ran");
     let stdout = String::from_utf8_lossy(&output.stdout);
-    if world.readability_gate.expect_pass_line {
+    if world.outline_gate.expect_pass_line {
         assert!(
             output.status.success(),
             "givn check review failed: exit={:?}\nstdout={stdout}\nstderr={}",
@@ -35,7 +35,7 @@ fn the_developer_runs_the_review(world: &mut GivnWorld) {
         );
         assert_eq!(
             stdout.lines().last().unwrap_or_default(),
-            "readability review: PASS",
+            "outline review: PASS",
             "the last stdout line is not the exact pass line:\n{stdout}"
         );
     }

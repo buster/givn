@@ -1,13 +1,13 @@
-//! Step definitions for the `readability-review-gate` capability.
+//! Step definitions for the `outline-review-gate` capability.
 //!
 //! Every Given builds a real temporary Git or Fossil repository through
-//! `readability_review_gate_support`; the When runs the public gate API in
+//! `outline_review_gate_support`; the When runs the public gate API in
 //! process; every Then asserts on the rendered report or the repository
 //! state. The single `@e2e` scenario drives the real CLI from
-//! `readability_review_gate_e2e_steps.rs`.
+//! `outline_review_gate_e2e_steps.rs`.
 
 use crate::steps::GivnWorld;
-use crate::steps::readability_review_gate_support as support;
+use crate::steps::outline_review_gate_support as support;
 use cucumber::{given, then, when};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -74,7 +74,7 @@ fn gate<'a>(env: &'a TestEnv) -> support::GateFixture<'a> {
 }
 
 fn remember(world: &mut GivnWorld, unit: &str, classification: &str, finding: &str) {
-    world.readability_gate.rationales.insert(
+    world.outline_gate.rationales.insert(
         unit.to_string(),
         (classification.to_string(), finding.to_string()),
     );
@@ -90,10 +90,10 @@ fn spec_for(state: &GateState, unit: &str) -> support::RationaleSpec {
 }
 
 fn gate_report(world: &GivnWorld) -> &str {
-    let state = &world.readability_gate;
+    let state = &world.outline_gate;
     assert!(
         state.passed.is_some(),
-        "the readability review has not assessed the change yet"
+        "the outline review has not assessed the change yet"
     );
     &state.report
 }
@@ -103,7 +103,7 @@ fn collapse(text: &str) -> String {
 }
 
 fn report_root(world: &GivnWorld) -> PathBuf {
-    let state = &world.readability_gate;
+    let state = &world.outline_gate;
     state
         .root_override
         .clone()
@@ -137,12 +137,12 @@ fn diff_paths(before: &[(String, Vec<u8>)], after: &[(String, Vec<u8>)]) -> Vec<
 fn run_gate(world: &mut GivnWorld) {
     let root = report_root(world);
     let before = support::snapshot(&root);
-    let change_id = world.readability_gate.change_id.clone();
-    let (passed, text) = givn::readability::gate::evaluate(&root, &change_id)
+    let change_id = world.outline_gate.change_id.clone();
+    let (passed, text) = givn::outline::gate::evaluate(&root, &change_id)
         .unwrap_or_else(|error| panic!("gate evaluation failed: {error:#}"));
     let after = support::snapshot(&root);
     let changed = diff_paths(&before, &after);
-    let state = &mut world.readability_gate;
+    let state = &mut world.outline_gate;
     state.passed = Some(passed);
     state.report = text.clone();
     state.reports.push(text);
@@ -151,11 +151,11 @@ fn run_gate(world: &mut GivnWorld) {
 
 // --- Given: project and history fixtures ----------------------------------
 
-#[given("a Fossil project with the readability experiment enabled")]
+#[given("a Fossil project with the outline experiment enabled")]
 fn fossil_project(world: &mut GivnWorld) {
     let env = crate::common::make_fossil_root();
     world.env = Some(env);
-    world.readability_gate.change_id = support::CHANGE_ID.to_string();
+    world.outline_gate.change_id = support::CHANGE_ID.to_string();
 }
 
 #[given(
@@ -172,13 +172,13 @@ fn committed_base_god_type(world: &mut GivnWorld, total: u32, declaration: Strin
         "god-type",
         "existing-grown",
     );
-    world.readability_gate.expect_pass_line = true;
+    world.outline_gate.expect_pass_line = true;
 }
 
 #[given(regex = r#"^a committed change directory for "([^"]+)"$"#)]
 fn committed_change_directory(world: &mut GivnWorld, change_id: String) {
     gate(env(world)).change_dir_commit();
-    world.readability_gate.change_id = change_id;
+    world.outline_gate.change_id = change_id;
 }
 
 #[given(
@@ -257,7 +257,7 @@ fn disabled_ready_change(world: &mut GivnWorld) {
     );
     support::commit_review_record(env);
     support::run_check_tasks(env, support::CHANGE_ID);
-    world.readability_gate.change_id = support::CHANGE_ID.to_string();
+    world.outline_gate.change_id = support::CHANGE_ID.to_string();
 }
 
 #[given(
@@ -399,7 +399,7 @@ fn change_directory_commit_grows_type(world: &mut GivnWorld, base: u32, head: u3
     fixture.write("src/engine/parts.rs", &parts);
     fixture.commit("feat(test-change): add the change directory and grow the type");
     let ancestor = support::git_stdout(env, &["rev-parse", "HEAD~1"]);
-    let state = &mut world.readability_gate;
+    let state = &mut world.outline_gate;
     state.main_branch = main;
     state.feature_branch = "feature".to_string();
     state.ancestor = Some(ancestor);
@@ -442,7 +442,7 @@ fn shallow_clone_fixture(world: &mut GivnWorld) {
         fixture.resize_type(480, "src/engine.rs");
     }
     let clone = support::shallow_clone(env);
-    let state = &mut world.readability_gate;
+    let state = &mut world.outline_gate;
     state.root_override = Some(clone.path().to_path_buf());
     state.clone = Some(clone);
 }
@@ -461,7 +461,7 @@ fn fossil_sibling_timeline(world: &mut GivnWorld) {
     support::commit(env, "docs(test-change): sibling timeline change directory");
     let sibling = support::fossil_current_hash(env);
     support::fossil(env, &["update", "trunk"]);
-    let state = &mut world.readability_gate;
+    let state = &mut world.outline_gate;
     state.ancestor = Some(ancestor);
     state.forbidden_hashes.push(sibling[..12].to_string());
 }
@@ -493,7 +493,7 @@ fn fossil_ancestor_commit(world: &mut GivnWorld) {
         ],
     );
     let first_touch = output.lines().next().unwrap_or_default().trim().to_string();
-    let state = &mut world.readability_gate;
+    let state = &mut world.outline_gate;
     state.required_hashes.push(first_touch.clone());
     state.first_touch = Some(first_touch);
 }
@@ -524,7 +524,7 @@ fn fossil_branch_check_in_grows_type(world: &mut GivnWorld, base: u32, head: u32
         fixture.write("src/engine/parts.rs", &parts);
         fixture.commit("change(feature): add the change directory and grow the type");
     }
-    let state = &mut world.readability_gate;
+    let state = &mut world.outline_gate;
     state.ancestor = Some(ancestor);
     state.feature_branch = "feature".to_string();
 }
@@ -535,11 +535,11 @@ fn fossil_branch_check_in_grows_type(world: &mut GivnWorld, base: u32, head: u32
 fn fossil_merged_in_check_in(world: &mut GivnWorld, total: u32) {
     let env = env(world);
     let ancestor = world
-        .readability_gate
+        .outline_gate
         .ancestor
         .clone()
         .expect("the branch fixture records its ancestor");
-    let feature = world.readability_gate.feature_branch.clone();
+    let feature = world.outline_gate.feature_branch.clone();
     support::fossil(env, &["branch", "new", "merged", &ancestor]);
     support::fossil(env, &["update", "merged"]);
     {
@@ -755,14 +755,14 @@ fn head_shrink_and_add_cohesive(
         "feat(test-change): reshape the types",
         support::READY_TASK_TITLE,
     );
-    world.readability_gate.task_commit = support::revision(env);
+    world.outline_gate.task_commit = support::revision(env);
     remember(
         world,
         &format!("type:{declaration}::Cohesive"),
         "cohesive-large-type",
         "new-type",
     );
-    world.readability_gate.expect_pass_line = true;
+    world.outline_gate.expect_pass_line = true;
 }
 
 #[given(regex = r#"^the enum has a method of (\d+) code lines$"#)]
@@ -824,8 +824,8 @@ fn replace_with_symlink(world: &mut GivnWorld, path: String) {
 #[given("the branch is merged from main with a merge commit")]
 fn merge_branch(world: &mut GivnWorld) {
     let env = env(world);
-    let main = world.readability_gate.main_branch.clone();
-    let feature = world.readability_gate.feature_branch.clone();
+    let main = world.outline_gate.main_branch.clone();
+    let feature = world.outline_gate.feature_branch.clone();
     support::git(env, &["checkout", "-q", &main]);
     support::write_file(env, "src/unrelated.rs", "pub struct Unrelated;\n");
     support::commit(env, "chore: unrelated main change");
@@ -836,8 +836,8 @@ fn merge_branch(world: &mut GivnWorld) {
 #[given(regex = r#"^the branch is rebased onto a commit that grows the type to (\d+) code lines$"#)]
 fn rebase_branch(world: &mut GivnWorld, total: u32) {
     let env = env(world);
-    let main = world.readability_gate.main_branch.clone();
-    let feature = world.readability_gate.feature_branch.clone();
+    let main = world.outline_gate.main_branch.clone();
+    let feature = world.outline_gate.feature_branch.clone();
     support::git(env, &["checkout", "-q", &main]);
     {
         let fixture = gate(env);
@@ -856,10 +856,10 @@ fn rebase_branch(world: &mut GivnWorld, total: u32) {
 #[given("the change has complete step files, design, tasks, README, and routing preconditions")]
 fn complete_preconditions(world: &mut GivnWorld) {
     let env = env(world);
-    let task_commit = if world.readability_gate.task_commit.is_empty() {
+    let task_commit = if world.outline_gate.task_commit.is_empty() {
         support::revision(env)
     } else {
-        world.readability_gate.task_commit.clone()
+        world.outline_gate.task_commit.clone()
     };
     support::write_review_preconditions(env, support::CHANGE_ID, &task_commit);
     support::commit(env, "docs(test-change): complete the change preconditions");
@@ -877,40 +877,40 @@ fn review_record_line(world: &mut GivnWorld, line: String) {
 
 #[given(regex = r#"^a rationale for "([^"]+)" has every required section$"#)]
 fn rationale_complete(world: &mut GivnWorld, unit: String) {
-    let spec = spec_for(&world.readability_gate, &unit);
+    let spec = spec_for(&world.outline_gate, &unit);
     gate(env(world)).write_rationale(&unit, &spec);
 }
 
 #[given(regex = r#"^a rationale for "([^"]+)" has an independent reviewer$"#)]
 fn rationale_independent(world: &mut GivnWorld, unit: String) {
-    let spec = spec_for(&world.readability_gate, &unit);
+    let spec = spec_for(&world.outline_gate, &unit);
     gate(env(world)).write_rationale(&unit, &spec);
 }
 
 #[given(regex = r#"^a rationale for "([^"]+)" omits "Reviewed-by:"$"#)]
 fn rationale_omits_reviewer(world: &mut GivnWorld, unit: String) {
-    let mut spec = spec_for(&world.readability_gate, &unit);
+    let mut spec = spec_for(&world.outline_gate, &unit);
     spec.reviewed_by = None;
     gate(env(world)).write_rationale(&unit, &spec);
 }
 
 #[given(regex = r#"^a rationale for "([^"]+)" records "Reviewed-by: agent"$"#)]
 fn rationale_self_review(world: &mut GivnWorld, unit: String) {
-    let mut spec = spec_for(&world.readability_gate, &unit);
+    let mut spec = spec_for(&world.outline_gate, &unit);
     spec.reviewed_by = Some("agent".to_string());
     gate(env(world)).write_rationale(&unit, &spec);
 }
 
 #[given(regex = r#"^a rationale for "([^"]+)" records "Review verdict: reject"$"#)]
 fn rationale_reject(world: &mut GivnWorld, unit: String) {
-    let mut spec = spec_for(&world.readability_gate, &unit);
+    let mut spec = spec_for(&world.outline_gate, &unit);
     spec.review_verdict = Some("reject".to_string());
     gate(env(world)).write_rationale(&unit, &spec);
 }
 
 #[given(regex = r#"^a rationale for "([^"]+)" carries "Follow-up:" and "Expiry:"$"#)]
 fn rationale_temporary(world: &mut GivnWorld, unit: String) {
-    let mut spec = spec_for(&world.readability_gate, &unit);
+    let mut spec = spec_for(&world.outline_gate, &unit);
     spec.follow_up = Some("Split the renderer and the state machine".to_string());
     spec.expiry = Some("2026-12-01".to_string());
     gate(env(world)).write_rationale(&unit, &spec);
@@ -918,7 +918,7 @@ fn rationale_temporary(world: &mut GivnWorld, unit: String) {
 
 #[given(regex = r#"^a temporary rationale for "([^"]+)" omits "Follow-up:"$"#)]
 fn rationale_missing_follow_up(world: &mut GivnWorld, unit: String) {
-    let mut spec = spec_for(&world.readability_gate, &unit);
+    let mut spec = spec_for(&world.outline_gate, &unit);
     spec.expiry = Some("2026-12-01".to_string());
     gate(env(world)).write_rationale(&unit, &spec);
 }
@@ -932,7 +932,7 @@ fn rationale_named_alternative(
     alternative: String,
     evidence: String,
 ) {
-    let mut spec = spec_for(&world.readability_gate, &unit);
+    let mut spec = spec_for(&world.outline_gate, &unit);
     spec.alternatives = format!(
         "{alternative} into a separate module. Rejected: the extraction adds indirection without removing a responsibility."
     );
@@ -943,42 +943,42 @@ fn rationale_named_alternative(
 
 #[given(regex = r#"^a rationale for "([^"]+)" names the unit "([^"]+)"$"#)]
 fn rationale_wrong_unit(world: &mut GivnWorld, unit: String, named: String) {
-    let mut spec = spec_for(&world.readability_gate, &unit);
+    let mut spec = spec_for(&world.outline_gate, &unit);
     spec.unit = named;
     gate(env(world)).write_rationale(&unit, &spec);
 }
 
 #[given(regex = r#"^a rationale for "([^"]+)" omits the owner$"#)]
 fn rationale_without_owner(world: &mut GivnWorld, unit: String) {
-    let mut spec = spec_for(&world.readability_gate, &unit);
+    let mut spec = spec_for(&world.outline_gate, &unit);
     spec.owner = None;
     gate(env(world)).write_rationale(&unit, &spec);
 }
 
 #[given(regex = r#"^a rationale for "([^"]+)" records "([^"]+)" as its alternative$"#)]
 fn rationale_boilerplate_alternative(world: &mut GivnWorld, unit: String, alternative: String) {
-    let mut spec = spec_for(&world.readability_gate, &unit);
+    let mut spec = spec_for(&world.outline_gate, &unit);
     spec.alternatives = alternative;
     gate(env(world)).write_rationale(&unit, &spec);
 }
 
 #[given(regex = r#"^a rationale for "([^"]+)" records "([^"]+)" as its owner$"#)]
 fn rationale_unconfirmed_owner(world: &mut GivnWorld, unit: String, owner: String) {
-    let mut spec = spec_for(&world.readability_gate, &unit);
+    let mut spec = spec_for(&world.outline_gate, &unit);
     spec.owner = Some(owner);
     gate(env(world)).write_rationale(&unit, &spec);
 }
 
 #[given(regex = r#"^a rationale for "([^"]+)" records the classification "([^"]+)"$"#)]
 fn rationale_wrong_classification(world: &mut GivnWorld, unit: String, classification: String) {
-    let mut spec = spec_for(&world.readability_gate, &unit);
+    let mut spec = spec_for(&world.outline_gate, &unit);
     spec.classification = classification;
     gate(env(world)).write_rationale(&unit, &spec);
 }
 
 #[given(regex = r#"^a rationale for "([^"]+)" says "([^"]+)" as its reason$"#)]
 fn rationale_banned_reason(world: &mut GivnWorld, unit: String, reason: String) {
-    let mut spec = spec_for(&world.readability_gate, &unit);
+    let mut spec = spec_for(&world.outline_gate, &unit);
     spec.why =
         format!("This is {reason} for the Engine unit, and the responsibility sits elsewhere.");
     gate(env(world)).write_rationale(&unit, &spec);
@@ -989,7 +989,7 @@ fn current_verification_receipt(world: &mut GivnWorld) {
     let env = env(world);
     support::commit_review_record(env);
     support::run_check_tasks(env, support::CHANGE_ID);
-    world.readability_gate.change_id = support::CHANGE_ID.to_string();
+    world.outline_gate.change_id = support::CHANGE_ID.to_string();
 }
 
 #[given(regex = r#"^the working tree has an uncommitted change in "([^"]+)"$"#)]
@@ -1003,12 +1003,12 @@ fn dirty_working_tree(world: &mut GivnWorld, path: String) {
 
 // --- When ------------------------------------------------------------------
 
-#[when("the readability review assesses the change")]
+#[when("the outline review assesses the change")]
 fn assess_change(world: &mut GivnWorld) {
     run_gate(world);
 }
 
-#[when("the readability review assesses the change twice")]
+#[when("the outline review assesses the change twice")]
 fn assess_change_twice(world: &mut GivnWorld) {
     run_gate(world);
     run_gate(world);
@@ -1038,7 +1038,7 @@ fn read_review_guidance(world: &mut GivnWorld) {
 
 #[then("the review fails")]
 fn review_fails(world: &mut GivnWorld) {
-    let state = &world.readability_gate;
+    let state = &world.outline_gate;
     assert_eq!(
         state.passed,
         Some(false),
@@ -1049,7 +1049,7 @@ fn review_fails(world: &mut GivnWorld) {
 
 #[then("the review passes")]
 fn review_passes(world: &mut GivnWorld) {
-    let state = &world.readability_gate;
+    let state = &world.outline_gate;
     assert_eq!(
         state.passed,
         Some(true),
@@ -1174,7 +1174,7 @@ fn review_reports_head_size(world: &mut GivnWorld, size: u32) {
 #[then("the review uses the ancestor commit as the first touch")]
 fn review_uses_ancestor(world: &mut GivnWorld) {
     let report = gate_report(world);
-    let state = &world.readability_gate;
+    let state = &world.outline_gate;
     let ancestor = state
         .ancestor
         .as_ref()
@@ -1196,7 +1196,7 @@ fn review_uses_ancestor(world: &mut GivnWorld) {
 #[then("the review ignores the sibling timeline")]
 fn review_ignores_sibling(world: &mut GivnWorld) {
     let report = gate_report(world);
-    for forbidden in &world.readability_gate.forbidden_hashes {
+    for forbidden in &world.outline_gate.forbidden_hashes {
         assert!(
             !report.contains(forbidden),
             "the review used the sibling check-in {forbidden}:\n{report}"
@@ -1204,9 +1204,9 @@ fn review_ignores_sibling(world: &mut GivnWorld) {
     }
 }
 
-#[then("the review writes no readability baseline file")]
+#[then("the review writes no outline baseline file")]
 fn no_baseline(world: &mut GivnWorld) {
-    let state = &world.readability_gate;
+    let state = &world.outline_gate;
     assert!(
         state.changed_files.is_empty(),
         "the gate wrote project files: {:?}",
@@ -1219,23 +1219,23 @@ fn no_baseline(world: &mut GivnWorld) {
         .filter(|path| {
             let lower = path.to_lowercase();
             lower.contains("baseline")
-                || lower.ends_with("readability.json")
-                || lower.ends_with("readability-baseline")
+                || lower.ends_with("outline.json")
+                || lower.ends_with("outline-baseline")
         })
         .collect();
     assert!(
         baselines.is_empty(),
-        "unexpected readability baseline files: {baselines:?}"
+        "unexpected outline baseline files: {baselines:?}"
     );
     assert!(
-        !Path::new(&root).join("givn/readability.json").exists(),
-        "unexpected givn/readability.json"
+        !Path::new(&root).join("givn/outline.json").exists(),
+        "unexpected givn/outline.json"
     );
 }
 
 #[then("both results are identical")]
 fn both_results_identical(world: &mut GivnWorld) {
-    let reports = &world.readability_gate.reports;
+    let reports = &world.outline_gate.reports;
     assert_eq!(reports.len(), 2, "expected two gate runs");
     assert_eq!(
         reports[0], reports[1],

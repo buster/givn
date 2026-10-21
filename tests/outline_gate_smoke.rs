@@ -1,7 +1,7 @@
-//! Smoke tests for the change-relative readability review gate.
+//! Smoke tests for the change-relative outline review gate.
 //!
 //! The gate is outline-first: every touched unit with methods needs a
-//! `READABILITY: OUTLINE PASS|FAIL` verdict from a fresh-context reviewer.
+//! `OUTLINE: PASS|FAIL` verdict from a fresh-context reviewer.
 //! Metrics are hints and do not decide the gate.
 
 use std::fs;
@@ -115,10 +115,10 @@ fn last_line(text: &str) -> &str {
 
 fn outline_review(unit: &str) -> String {
     format!(
-        "READABILITY: AUTHOR agent\n\
-         READABILITY: REVIEWER fresh-context-reviewer\n\
-         READABILITY: OUTLINE PASS {unit} | one responsibility; the methods call in a clear order\n\
-         READABILITY: PASS\n"
+        "OUTLINE: AUTHOR agent\n\
+         OUTLINE: REVIEWER fresh-context-reviewer\n\
+         OUTLINE: PASS {unit} | one responsibility; the methods call in a clear order\n\
+         OUTLINE: PASS\n"
     )
 }
 
@@ -166,10 +166,10 @@ fn a_readable_outline_passes_and_metrics_are_hints() {
     );
 
     let (passed, text) =
-        givn::readability::gate::evaluate(repo.root(), "test-change").expect("gate run");
+        givn::outline::gate::evaluate(repo.root(), "test-change").expect("gate run");
     println!("--- READABLE OUTLINE ---\n{text}");
     assert!(passed, "expected PASS, got:\n{text}");
-    assert_eq!(last_line(&text), "readability review: PASS");
+    assert_eq!(last_line(&text), "outline review: PASS");
     assert!(
         text.contains("touched 3 unit(s), 1 outline(s), 1 metric hint(s)"),
         "the header must separate outlines from metric hints:\n{text}"
@@ -198,14 +198,14 @@ fn an_unreadable_outline_fails_when_metrics_are_clean() {
     add_small_type(&repo);
     repo.write(
         "givn/changes/test-change/review.md",
-        "READABILITY: AUTHOR agent\n\
-         READABILITY: REVIEWER fresh-context-reviewer\n\
-         READABILITY: OUTLINE FAIL type:src/small.rs::Small | the call order is not explainable\n\
-         READABILITY: PASS\n",
+        "OUTLINE: AUTHOR agent\n\
+         OUTLINE: REVIEWER fresh-context-reviewer\n\
+         OUTLINE: FAIL type:src/small.rs::Small | the call order is not explainable\n\
+         OUTLINE: PASS\n",
     );
 
     let (passed, text) =
-        givn::readability::gate::evaluate(repo.root(), "test-change").expect("gate run");
+        givn::outline::gate::evaluate(repo.root(), "test-change").expect("gate run");
     println!("--- UNREADABLE OUTLINE ---\n{text}");
     assert!(!passed, "expected FAIL, got:\n{text}");
     assert!(
@@ -226,13 +226,13 @@ fn a_missing_outline_verdict_fails() {
     add_small_type(&repo);
     repo.write(
         "givn/changes/test-change/review.md",
-        "READABILITY: AUTHOR agent\n\
-         READABILITY: REVIEWER fresh-context-reviewer\n\
-         READABILITY: PASS\n",
+        "OUTLINE: AUTHOR agent\n\
+         OUTLINE: REVIEWER fresh-context-reviewer\n\
+         OUTLINE: PASS\n",
     );
 
     let (passed, text) =
-        givn::readability::gate::evaluate(repo.root(), "test-change").expect("gate run");
+        givn::outline::gate::evaluate(repo.root(), "test-change").expect("gate run");
     assert!(!passed);
     assert!(
         text.contains("MISSING outline type:src/small.rs::Small"),
@@ -240,7 +240,7 @@ fn a_missing_outline_verdict_fails() {
     );
     assert_eq!(
         last_line(&text),
-        "readability review: FAIL (1 outline without a verdict)"
+        "outline review: FAIL (1 outline without a verdict)"
     );
 }
 
@@ -250,14 +250,14 @@ fn an_empty_pass_explanation_fails() {
     add_small_type(&repo);
     repo.write(
         "givn/changes/test-change/review.md",
-        "READABILITY: AUTHOR agent\n\
-         READABILITY: REVIEWER fresh-context-reviewer\n\
-         READABILITY: OUTLINE PASS type:src/small.rs::Small | \n\
-         READABILITY: PASS\n",
+        "OUTLINE: AUTHOR agent\n\
+         OUTLINE: REVIEWER fresh-context-reviewer\n\
+         OUTLINE: PASS type:src/small.rs::Small | \n\
+         OUTLINE: PASS\n",
     );
 
     let (passed, text) =
-        givn::readability::gate::evaluate(repo.root(), "test-change").expect("gate run");
+        givn::outline::gate::evaluate(repo.root(), "test-change").expect("gate run");
     assert!(!passed);
     assert!(
         text.contains(
@@ -273,16 +273,16 @@ fn a_missing_reviewer_fails() {
     add_small_type(&repo);
     repo.write(
         "givn/changes/test-change/review.md",
-        "READABILITY: AUTHOR agent\n\
-         READABILITY: OUTLINE PASS type:src/small.rs::Small | one responsibility; the calls are clear\n\
-         READABILITY: PASS\n",
+        "OUTLINE: AUTHOR agent\n\
+         OUTLINE: PASS type:src/small.rs::Small | one responsibility; the calls are clear\n\
+         OUTLINE: PASS\n",
     );
 
     let (passed, text) =
-        givn::readability::gate::evaluate(repo.root(), "test-change").expect("gate run");
+        givn::outline::gate::evaluate(repo.root(), "test-change").expect("gate run");
     assert!(!passed);
     assert!(
-        text.contains("missing 'READABILITY: REVIEWER <id>'"),
+        text.contains("missing 'OUTLINE: REVIEWER <id>'"),
         "a reviewer is required:\n{text}"
     );
 }
@@ -293,14 +293,14 @@ fn the_reviewer_must_differ_from_the_author() {
     add_small_type(&repo);
     repo.write(
         "givn/changes/test-change/review.md",
-        "READABILITY: AUTHOR agent\n\
-         READABILITY: REVIEWER agent\n\
-         READABILITY: OUTLINE PASS type:src/small.rs::Small | one responsibility; the calls are clear\n\
-         READABILITY: PASS\n",
+        "OUTLINE: AUTHOR agent\n\
+         OUTLINE: REVIEWER agent\n\
+         OUTLINE: PASS type:src/small.rs::Small | one responsibility; the calls are clear\n\
+         OUTLINE: PASS\n",
     );
 
     let (passed, text) =
-        givn::readability::gate::evaluate(repo.root(), "test-change").expect("gate run");
+        givn::outline::gate::evaluate(repo.root(), "test-change").expect("gate run");
     assert!(!passed);
     assert!(
         text.contains("outline reviewer 'agent' must differ from the author 'agent'"),
@@ -314,15 +314,15 @@ fn conflicting_outline_verdicts_fail() {
     add_small_type(&repo);
     repo.write(
         "givn/changes/test-change/review.md",
-        "READABILITY: AUTHOR agent\n\
-         READABILITY: REVIEWER fresh-context-reviewer\n\
-         READABILITY: OUTLINE PASS type:src/small.rs::Small | one responsibility; the calls are clear\n\
-         READABILITY: OUTLINE FAIL type:src/small.rs::Small | the calls are not clear\n\
-         READABILITY: PASS\n",
+        "OUTLINE: AUTHOR agent\n\
+         OUTLINE: REVIEWER fresh-context-reviewer\n\
+         OUTLINE: PASS type:src/small.rs::Small | one responsibility; the calls are clear\n\
+         OUTLINE: FAIL type:src/small.rs::Small | the calls are not clear\n\
+         OUTLINE: PASS\n",
     );
 
     let (passed, text) =
-        givn::readability::gate::evaluate(repo.root(), "test-change").expect("gate run");
+        givn::outline::gate::evaluate(repo.root(), "test-change").expect("gate run");
     assert!(!passed);
     assert!(
         text.contains("conflicting outline verdicts for type:src/small.rs::Small"),
@@ -344,7 +344,7 @@ fn a_root_change_commit_has_an_empty_base() {
     );
 
     let (passed, text) =
-        givn::readability::gate::evaluate(repo.root(), "test-change").expect("gate run");
+        givn::outline::gate::evaluate(repo.root(), "test-change").expect("gate run");
     assert!(passed, "expected PASS, got:\n{text}");
     assert!(
         text.contains("base none (root change commit; empty base tree)"),
@@ -364,11 +364,11 @@ fn a_change_directory_without_a_reachable_commit_fails_closed() {
     write_change_dir(&repo);
 
     let (passed, text) =
-        givn::readability::gate::evaluate(repo.root(), "test-change").expect("gate run");
+        givn::outline::gate::evaluate(repo.root(), "test-change").expect("gate run");
     assert!(!passed);
     assert_eq!(
         last_line(&text),
-        "readability review: FAIL (change directory 'givn/changes/test-change/' has no reachable commit; commit the change directory before review)"
+        "outline review: FAIL (change directory 'givn/changes/test-change/' has no reachable commit; commit the change directory before review)"
     );
 }
 
@@ -379,7 +379,7 @@ fn dirty_production_paths_fail_before_analysis() {
     repo.write("src/engine.rs", &format!("{current}\n// uncommitted\n"));
 
     let (passed, text) =
-        givn::readability::gate::evaluate(repo.root(), "test-change").expect("gate run");
+        givn::outline::gate::evaluate(repo.root(), "test-change").expect("gate run");
     assert!(!passed);
     assert!(
         text.contains("production paths are dirty; commit or discard before review: src/engine.rs"),
@@ -408,11 +408,11 @@ fn a_shallow_clone_fails_closed() {
     );
 
     let (passed, text) =
-        givn::readability::gate::evaluate(clone.path(), "test-change").expect("gate run");
+        givn::outline::gate::evaluate(clone.path(), "test-change").expect("gate run");
     assert!(!passed);
     assert_eq!(
         last_line(&text),
-        "readability review: FAIL (cannot resolve change base: repository is shallow; fetch the full history before review)"
+        "outline review: FAIL (cannot resolve change base: repository is shallow; fetch the full history before review)"
     );
 }
 
@@ -422,22 +422,22 @@ fn a_parse_failure_and_an_unanalyzed_file_fail_closed() {
     parse.write("src/broken.rs", "pub struct Broken {\n");
     parse.commit("feat(test-change): malformed source");
     let (passed, text) =
-        givn::readability::gate::evaluate(parse.root(), "test-change").expect("gate run");
+        givn::outline::gate::evaluate(parse.root(), "test-change").expect("gate run");
     assert!(!passed);
     assert_eq!(
         last_line(&text),
-        "readability review: FAIL (cannot analyze src/broken.rs at head)"
+        "outline review: FAIL (cannot analyze src/broken.rs at head)"
     );
 
     let skipped = small_project();
     skipped.write("src/tests/support.rs", "pub fn helper() -> u64 { 1 }\n");
     skipped.commit("feat(test-change): analyzer-excluded source");
     let (passed, text) =
-        givn::readability::gate::evaluate(skipped.root(), "test-change").expect("gate run");
+        givn::outline::gate::evaluate(skipped.root(), "test-change").expect("gate run");
     assert!(!passed);
     assert_eq!(
         last_line(&text),
-        "readability review: FAIL (changed production file 'src/tests/support.rs' was not analyzed; the analyzer scope or extension filter is wrong)"
+        "outline review: FAIL (changed production file 'src/tests/support.rs' was not analyzed; the analyzer scope or extension filter is wrong)"
     );
 }
 
@@ -451,11 +451,11 @@ fn a_touched_symlink_fails_closed() {
     repo.commit("feat(test-change): replace source with a symlink");
 
     let (passed, text) =
-        givn::readability::gate::evaluate(repo.root(), "test-change").expect("gate run");
+        givn::outline::gate::evaluate(repo.root(), "test-change").expect("gate run");
     assert!(!passed);
     assert_eq!(
         last_line(&text),
-        "readability review: FAIL (cannot analyze src/engine.rs at head: symlink)"
+        "outline review: FAIL (cannot analyze src/engine.rs at head: symlink)"
     );
 }
 
@@ -490,7 +490,7 @@ fn a_merge_commit_uses_the_first_parent_of_the_first_touch() {
     );
 
     let (passed, text) =
-        givn::readability::gate::evaluate(repo.root(), "test-change").expect("gate run");
+        givn::outline::gate::evaluate(repo.root(), "test-change").expect("gate run");
     assert!(passed, "expected PASS, got:\n{text}");
     assert!(
         text.contains("existing finding grew: 620 -> 700 code lines"),
@@ -599,7 +599,7 @@ fn a_fossil_checkout_runs_the_gate_against_current() {
     );
 
     let (passed, text) =
-        givn::readability::gate::evaluate(repo.root(), "test-change").expect("gate run");
+        givn::outline::gate::evaluate(repo.root(), "test-change").expect("gate run");
     assert!(passed, "expected PASS, got:\n{text}");
     assert!(
         text.contains("existing finding grew: 620 -> 700 code lines"),

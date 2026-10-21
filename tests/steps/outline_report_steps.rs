@@ -1,18 +1,18 @@
-//! Non-E2E step definitions for the readability report capability.
+//! Non-E2E step definitions for the outline report capability.
 //!
 //! CLI scenarios drive the real `givn` binary; pipeline scenarios call the
-//! public `givn::readability` API in process.
+//! public `givn::outline` API in process.
 
 use crate::common;
 use crate::steps::GivnWorld;
 use cucumber::{given, then, when};
 
-#[given("a Givn project with the readability experiment disabled")]
-fn readability_disabled_project(world: &mut GivnWorld) {
+#[given("a Givn project with the outline experiment disabled")]
+fn outline_disabled_project(world: &mut GivnWorld) {
     world.env = Some(common::make_init_root());
 }
 
-#[when(regex = r#"^the developer runs "(givn readability report[^"]*)"$"#)]
+#[when(regex = r#"^the developer runs "(givn outline report[^"]*)"$"#)]
 fn developer_runs(world: &mut GivnWorld, cmd: String) {
     crate::steps::user_runs_quoted(world, cmd);
 }
@@ -22,9 +22,9 @@ fn developer_runs_addons_list(world: &mut GivnWorld, cmd: String) {
     crate::steps::user_runs_quoted(world, cmd);
 }
 
-#[then("the readability addon is listed as disabled")]
-fn readability_addon_is_listed_as_disabled(world: &mut GivnWorld) {
-    readability_addon_is_disabled(world);
+#[then("the outline addon is listed as disabled")]
+fn outline_addon_is_listed_as_disabled(world: &mut GivnWorld) {
+    outline_addon_is_disabled(world);
 }
 
 #[given("a well-formed production source unit")]
@@ -33,7 +33,7 @@ fn well_formed_unit(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_small_unit(env);
+    crate::steps::outline_report_support::write_small_unit(env);
 }
 
 #[given("a malformed production source file")]
@@ -42,7 +42,7 @@ fn malformed_source(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_source(
+    crate::steps::outline_report_support::write_source(
         env,
         "src/malformed.rs",
         "pub struct Broken {\n",
@@ -94,22 +94,21 @@ fn command_exits_with_code_0(world: &mut GivnWorld) {
     assert_eq!(status, Some(0), "stderr: {}", crate::steps::stderr(world));
 }
 
-#[given("the readability fixture corpus")]
+#[given("the outline fixture corpus")]
 fn fixture_corpus(world: &mut GivnWorld) {
     let env = common::make_init_root();
-    crate::steps::readability_report_support::enable_readability(&env);
-    crate::steps::readability_report_support::write_fixture_corpus(&env);
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_fixture_corpus(&env);
     world.env = Some(env);
 }
 
-#[when("the readability report assesses every unit")]
+#[when("the outline report assesses every unit")]
 fn assess_every_unit(world: &mut GivnWorld) {
     let env = world
         .env
         .as_ref()
         .expect("a project root is required first");
-    let (units, classified, actions) =
-        crate::steps::readability_report_support::assessment_counts(env);
+    let (units, classified, actions) = crate::steps::outline_report_support::assessment_counts(env);
     world.additional_output = Some(format!("{units},{classified},{actions}"));
 }
 
@@ -129,10 +128,10 @@ fn every_unit_has_one(world: &mut GivnWorld) {
     assert_eq!(values[2], values[0], "some unit has no action");
 }
 
-#[given("a Givn project with the readability experiment enabled")]
-fn readability_enabled_project(world: &mut GivnWorld) {
+#[given("a Givn project with the outline experiment enabled")]
+fn outline_enabled_project(world: &mut GivnWorld) {
     let env = common::make_init_root();
-    crate::steps::readability_report_support::enable_readability(&env);
+    crate::steps::outline_report_support::enable_outline(&env);
     world.env = Some(env);
 }
 
@@ -142,7 +141,7 @@ fn data_only_enum(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_data_only_enum(env, "BigEnum", 520);
+    crate::steps::outline_report_support::write_data_only_enum(env, "BigEnum", 520);
 }
 
 #[given("a production source unit with a trait over the readable size")]
@@ -151,7 +150,7 @@ fn large_trait(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_large_trait(env, "BigTrait", 520);
+    crate::steps::outline_report_support::write_large_trait(env, "BigTrait", 520);
 }
 
 #[then("the command exits with code 1")]
@@ -169,7 +168,7 @@ fn report_written_to_file(world: &mut GivnWorld, relative: String) {
     let content = std::fs::read_to_string(env.path(&relative))
         .unwrap_or_else(|error| panic!("read {relative}: {error}"));
     assert!(
-        content.contains("readability report"),
+        content.contains("outline report"),
         "written report missing header: {content}"
     );
 }
@@ -186,7 +185,7 @@ fn over_readable_size(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_god_type(env, "GodType");
+    crate::steps::outline_report_support::write_god_type(env, "GodType");
 }
 
 #[then("the JSON report classifies the unit")]
@@ -203,28 +202,28 @@ fn json_report_classifies(world: &mut GivnWorld) {
 #[given("a production source unit supported by two analysis engines")]
 fn two_engines_fixture(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    crate::steps::readability_report_support::write_small_unit(&env);
+    crate::steps::outline_report_support::write_small_unit(&env);
     world.env = Some(env);
 }
 
-#[when("the readability report is produced twice")]
+#[when("the outline report is produced twice")]
 fn report_produced_twice(world: &mut GivnWorld) {
     let env = world
         .env
         .as_ref()
         .expect("a project root is required first");
-    let first = crate::steps::readability_report_support::assess_report(env);
-    let second = crate::steps::readability_report_support::assess_report(env);
+    let first = crate::steps::outline_report_support::assess_report(env);
+    let second = crate::steps::outline_report_support::assess_report(env);
     world.additional_output = Some(format!("{first}\u{0}{second}"));
 }
 
-#[when("the readability report is rendered from each engine")]
+#[when("the outline report is rendered from each engine")]
 fn render_from_each_engine(world: &mut GivnWorld) {
     let env = world
         .env
         .as_ref()
         .expect("a project root is required first");
-    let (syn, fake) = crate::steps::readability_report_support::engine_reports(env);
+    let (syn, fake) = crate::steps::outline_report_support::engine_reports(env);
     world.additional_output = Some(format!("{syn}\u{0}{fake}"));
 }
 
@@ -247,7 +246,7 @@ fn workspace_member(world: &mut GivnWorld, member: String) {
         .as_ref()
         .expect("a project root is required first");
     let relative = format!("{member}/src/engine.rs");
-    crate::steps::readability_report_support::write_god_type_at(env, "Engine", &relative);
+    crate::steps::outline_report_support::write_god_type_at(env, "Engine", &relative);
 }
 
 #[then("the report classifies the unit as a god type")]
@@ -274,8 +273,8 @@ fn production_and_test_sources(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_small_unit(env);
-    crate::steps::readability_report_support::write_god_type_at(env, "TestGod", "tests/big.rs");
+    crate::steps::outline_report_support::write_small_unit(env);
+    crate::steps::outline_report_support::write_god_type_at(env, "TestGod", "tests/big.rs");
 }
 
 #[then("the report does not name the test source")]
@@ -290,7 +289,7 @@ fn report_does_not_name_test_source(world: &mut GivnWorld) {
 #[given("a production source unit with a long method")]
 fn long_method(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    crate::steps::readability_report_support::write_long_method(&env);
+    crate::steps::outline_report_support::write_long_method(&env);
     world.env = Some(env);
 }
 
@@ -312,7 +311,7 @@ fn report_recommends_watch(world: &mut GivnWorld) {
 #[given("a production source unit with a module over the plan limit")]
 fn module_over_limit(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    crate::steps::readability_report_support::write_large_module(&env);
+    crate::steps::outline_report_support::write_large_module(&env);
     world.env = Some(env);
 }
 
@@ -328,7 +327,7 @@ fn report_classifies_module(world: &mut GivnWorld) {
 #[given("a production source unit with a large type in the inspect band")]
 fn inspect_band_type(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    crate::steps::readability_report_support::write_inspect_band_type(&env);
+    crate::steps::outline_report_support::write_inspect_band_type(&env);
     world.env = Some(env);
 }
 
@@ -344,14 +343,14 @@ fn report_recommends_exception(world: &mut GivnWorld) {
 #[given("a production source unit with more than 50 public methods")]
 fn many_public_methods(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    crate::steps::readability_report_support::write_many_public_methods(&env);
+    crate::steps::outline_report_support::write_many_public_methods(&env);
     world.env = Some(env);
 }
 
 #[given("a production source unit with platform-conditional methods")]
 fn platform_conditional(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    crate::steps::readability_report_support::write_conditional_unit(&env);
+    crate::steps::outline_report_support::write_conditional_unit(&env);
     world.env = Some(env);
 }
 
@@ -367,17 +366,17 @@ fn report_counts_both_variants(world: &mut GivnWorld) {
 #[given("a production source unit with exactly 500 code lines and cohesive methods")]
 fn boundary_500(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    crate::steps::readability_report_support::write_boundary_type(&env, 500);
+    crate::steps::outline_report_support::write_boundary_type(&env, 500);
     world.env = Some(env);
 }
 
-#[when("the readability report assesses the unit")]
+#[when("the outline report assesses the unit")]
 fn assess_unit_in_process(world: &mut GivnWorld) {
     let env = world
         .env
         .as_ref()
         .expect("a project root is required first");
-    world.additional_output = Some(crate::steps::readability_report_support::assess_report(env));
+    world.additional_output = Some(crate::steps::outline_report_support::assess_report(env));
 }
 
 #[then("the report classifies the unit as within-limits")]
@@ -410,7 +409,7 @@ fn unit_block(world: &GivnWorld, name: &str) -> String {
 #[given("a production source unit with 501 code lines and cohesive methods")]
 fn boundary_501(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    crate::steps::readability_report_support::write_boundary_type(&env, 501);
+    crate::steps::outline_report_support::write_boundary_type(&env, 501);
     world.env = Some(env);
 }
 
@@ -445,7 +444,7 @@ fn cohesive_type(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_cohesive_type(env, "Cohesive", 260);
+    crate::steps::outline_report_support::write_cohesive_type(env, "Cohesive", 260);
 }
 
 #[then("the report classifies the unit as a cohesive-large-type")]
@@ -463,16 +462,13 @@ fn within_readable_size(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_small_unit(env);
+    crate::steps::outline_report_support::write_small_unit(env);
 }
 
-#[then("the report labels the unit as a finding")]
-fn report_labels_finding(world: &mut GivnWorld) {
+#[then("the report labels the unit as a hint")]
+fn report_labels_hint(world: &mut GivnWorld) {
     let report = report_text(world);
-    assert!(
-        report.contains("FINDING"),
-        "expected a FINDING label: {report}"
-    );
+    assert!(report.contains("HINT"), "expected a HINT label: {report}");
 }
 
 #[then("the report records no recommendation")]
@@ -560,7 +556,7 @@ fn no_unit_carries_action(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    let json = crate::steps::readability_report_support::assess_json(env);
+    let json = crate::steps::outline_report_support::assess_json(env);
     let value: serde_json::Value = serde_json::from_str(&json).expect("valid JSON");
     let text = value["units"].to_string();
     assert!(!text.contains("\"action\""), "action remains: {text}");
@@ -576,7 +572,7 @@ fn report_sorted_by_classification(world: &mut GivnWorld) {
     let mut keys = Vec::new();
     for line in report.lines() {
         let parts: Vec<&str> = line.split_whitespace().collect();
-        if parts.len() >= 5 && (parts[0] == "FINDING" || parts[0] == "WITHIN-LIMITS") {
+        if parts.len() >= 5 && (parts[0] == "HINT" || parts[0] == "WITHIN-LIMITS") {
             keys.push((
                 parts[4].to_string(),
                 parts[2].to_string(),
@@ -605,7 +601,7 @@ fn production_source_unit(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_small_unit(env);
+    crate::steps::outline_report_support::write_small_unit(env);
 }
 
 #[then("the JSON report names the supported constructs")]
@@ -652,7 +648,7 @@ fn item_position_macro(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_item_macro(env);
+    crate::steps::outline_report_support::write_item_macro(env);
 }
 
 #[then("the report names the unsupported construct")]
@@ -724,17 +720,17 @@ fn report_recommends_no_plan(world: &mut GivnWorld) {
     );
 }
 
-#[given("the readability addon is disabled")]
-fn readability_addon_is_disabled_given(world: &mut GivnWorld) {
-    readability_addon_is_disabled(world);
+#[given("the outline addon is disabled")]
+fn outline_addon_is_disabled_given(world: &mut GivnWorld) {
+    outline_addon_is_disabled(world);
 }
 
-#[then("the readability addon is disabled")]
-fn readability_addon_is_disabled_then(world: &mut GivnWorld) {
-    readability_addon_is_disabled(world);
+#[then("the outline addon is disabled")]
+fn outline_addon_is_disabled_then(world: &mut GivnWorld) {
+    outline_addon_is_disabled(world);
 }
 
-fn readability_addon_is_disabled(world: &mut GivnWorld) {
+fn outline_addon_is_disabled(world: &mut GivnWorld) {
     let env = world
         .env
         .as_ref()
@@ -747,7 +743,7 @@ fn readability_addon_is_disabled(world: &mut GivnWorld) {
     );
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(
-        stdout.contains("[disabled]  readability"),
-        "readability should be disabled, got: {stdout}"
+        stdout.contains("[disabled]  outline"),
+        "outline should be disabled, got: {stdout}"
     );
 }

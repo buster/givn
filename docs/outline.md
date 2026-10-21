@@ -1,6 +1,6 @@
-# Readability addon
+# Outline addon
 
-**TL;DR:** The `readability` addon is an optional, default-off experiment for
+**TL;DR:** The `outline` addon is an optional, default-off experiment for
 production Rust. Its core idea is outline comprehension: read the outline of a
 type or module — method declarations, signatures, and internal calls, without
 bodies or data — and check that it explains the unit's responsibility and call
@@ -12,7 +12,7 @@ thresholds, classifications, and gate rules may change.
 
 ## What it does
 
-- **Report.** `givn readability report` prints each unit's outline first —
+- **Report.** `givn outline report` prints each unit's outline first —
   method declarations, signatures, and internal calls — then the metric
   hints, as human text or JSON. It never blocks a change and stores no
   baseline.
@@ -31,7 +31,7 @@ unit's outline should be able to state (a) what the unit is responsible for and
 The outline lists the unit's method declarations and signatures, their order,
 and the internal calls each method makes. Data — fields and enum variants — is
 not part of the outline. It contains no method bodies and no comments.
-`givn readability report` prints the outline for every unit; `--json` emits the
+`givn outline report` prints the outline for every unit; `--json` emits the
 full outline under `units[].outline`, including call-resolution labels.
 
 An example, abridged from the report:
@@ -62,10 +62,10 @@ An unreadable outline is not justified. Fix the code and re-review.
 
 ## Workflow
 
-![Readability addon workflow: implement produces an optional advisory report with the outline; review produces outline verdicts and a PASS and checks every touched outline; archive checks the review record](readability-workflow.svg)
+![Outline addon workflow: implement produces an optional advisory report with the outline; review produces outline verdicts and a PASS and checks every touched outline; archive checks the review record](outline-workflow.svg)
 
-Source: [`readability-workflow.d2`](readability-workflow.d2). Regenerate with
-`d2 docs/readability-workflow.d2 docs/readability-workflow.svg`.
+Source: [`outline-workflow.d2`](outline-workflow.d2). Regenerate with
+`d2 docs/outline-workflow.d2 docs/outline-workflow.svg`.
 
 The report is advisory. The review gate is blocking. The report never stores a
 baseline; the gate only looks at the units the change touched.
@@ -76,17 +76,17 @@ baseline; the gate only looks at the units the change touched.
 |---|---|---|
 | Proposal / design | Nothing automatic. You may run the report as evidence. | Nothing. |
 | Implement | An optional report with each unit's outline first, then the metric hints, as human text or JSON. | Nothing. The report never blocks a change. |
-| Review | Per-unit `READABILITY: OUTLINE PASS` or `FAIL`, `READABILITY: AUTHOR` and `REVIEWER`, and `READABILITY: PASS` when every outline passes. | Every printed outline has a verdict. A `PASS` has a responsibility and call-order explanation; a `FAIL` blocks. The reviewer differs from the author. |
+| Review | Per-unit `OUTLINE: PASS` or `FAIL`, `OUTLINE: AUTHOR` and `REVIEWER`, and `OUTLINE: PASS` when every outline passes. | Every printed outline has a verdict. A `PASS` has a responsibility and call-order explanation; a `FAIL` blocks. The reviewer differs from the author. |
 | Archive | Nothing new. | The review record is complete. An outlined unit without a verdict blocks archive. |
 
 The review record markers:
 
 ```text
-READABILITY: AUTHOR <id>
-READABILITY: REVIEWER <id>
-READABILITY: OUTLINE PASS <unit> | <responsibility; why the calls happen in that order>
-READABILITY: OUTLINE FAIL <unit> | <reason>
-READABILITY: PASS
+OUTLINE: AUTHOR <id>
+OUTLINE: REVIEWER <id>
+OUTLINE: PASS <unit> | <responsibility; why the calls happen in that order>
+OUTLINE: FAIL <unit> | <reason>
+OUTLINE: PASS
 ```
 
 `REVIEWER` must differ from `AUTHOR`. An empty `PASS` explanation fails. Unknown
@@ -118,8 +118,8 @@ The report and the gate share the same analysis:
 - **Supporting method metrics.** A method over 100 code lines or over 50 flow
   complexity is a `method-length` finding.
 - **Supporting findings are not decisions.** The gate prints them as
-  `SUPPORTING` and never requires a `FIXED` or `JUSTIFIED` decision for them.
-- **Reviewer identity.** `READABILITY: AUTHOR` and `READABILITY: REVIEWER` are
+  `HINT` and never requires a decision for them.
+- **Reviewer identity.** `OUTLINE: AUTHOR` and `OUTLINE: REVIEWER` are
   required when any outline verdict is present, and must differ.
 - **Fail-closed guards.** No reachable change commit, a shallow clone, dirty
   production paths, a non-UTF8 or line-break path, a symlink, a submodule, an
@@ -200,22 +200,22 @@ say so.
 ## Enable and disable
 
 ```sh
-givn addons enable readability
-givn readability report
-givn readability report --json --out readability.json
+givn addons enable outline
+givn outline report
+givn outline report --json --out outline.json
 givn check review --change <id>
-givn addons disable readability
+givn addons disable outline
 ```
 
 `givn init` never enables it. When disabled, the report refuses with the named
-reason, the review gate does not run, and the readability section is omitted
+reason, the review gate does not run, and the outline section is omitted
 from the served review guidance.
 
 ## References
 
-- Report specification: [`givn/specs/assess-code-structure/readability-report.feature`](../givn/specs/assess-code-structure/readability-report.feature)
-- Gate specification: [`givn/specs/verify-change/readability-review-gate.feature`](../givn/specs/verify-change/readability-review-gate.feature)
+- Report specification: [`givn/specs/assess-code-structure/outline-report.feature`](../givn/specs/assess-code-structure/outline-report.feature)
+- Gate specification: [`givn/specs/verify-change/outline-review-gate.feature`](../givn/specs/verify-change/outline-review-gate.feature)
 - Applied independent review (historical): [`givn/archive/apply-readability-independent-review/review.md`](../givn/archive/apply-readability-independent-review/review.md)
 - Neutral analyzer port: [`docs/arc42/adr/ADR-074-neutral-source-analyzer-port.md`](arc42/adr/ADR-074-neutral-source-analyzer-port.md)
 - Known risks: [`docs/arc42/11-risks-and-technical-debt.md`](arc42/11-risks-and-technical-debt.md) (R-105 to R-109, D-24)
-- Reviewer rules: [`assets/instructions/review.md`](../assets/instructions/review.md) (`Readability review gate`)
+- Reviewer rules: [`assets/instructions/review.md`](../assets/instructions/review.md) (`Outline review gate`)

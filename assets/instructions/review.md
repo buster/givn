@@ -400,28 +400,28 @@ rather than trusting the subagent's report:
 9. Any contradiction: reject `REVIEW: PASS` and re-run the review subagent
    with the discrepancy named.
 
-{{#if addons.readability}}
-## Readability review gate
+{{#if addons.outline}}
+## Outline review gate
 
-When the `readability` addon is enabled, `givn check review --change <id>`
-runs the readability gate after the verification receipt. The gate prints the
+When the `outline` addon is enabled, `givn check review --change <id>`
+runs the outline gate after the verification receipt. The gate prints the
 outline of every touched unit that has methods: declarations, signatures, and
 the internal calls each method makes, without method bodies or data.
 
 The review record must name the author and a fresh-context reviewer, and give
 every printed outline a verdict:
 
-- `READABILITY: AUTHOR <id>`
-- `READABILITY: REVIEWER <id>`
-- `READABILITY: OUTLINE PASS <unit> | <what the unit is responsible for; why its internal calls happen in that order>`
-- `READABILITY: OUTLINE FAIL <unit> | <reason>`
-- `READABILITY: PASS` when every outline passes.
+- `OUTLINE: AUTHOR <id>`
+- `OUTLINE: REVIEWER <id>`
+- `OUTLINE: PASS <unit> | <what the unit is responsible for; why its internal calls happen in that order>`
+- `OUTLINE: FAIL <unit> | <reason>`
+- `OUTLINE: PASS` when every outline passes.
 
 `REVIEWER` must differ from `AUTHOR`. A `PASS` needs a responsibility and
 call-order explanation; an empty explanation fails. A `FAIL` blocks review, and
 there is no justification path for an unreadable outline: fix the code and
 re-review. Every touched unit with an outline needs a verdict; a missing
-verdict fails. Unknown or conflicting `READABILITY:` markers fail.
+verdict fails. Unknown or conflicting `OUTLINE:` markers fail.
 
 The gate's metrics are hints, not the gate. A unit can be
 readable while a metric flags it, and a unit can be unreadable while every

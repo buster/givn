@@ -15,17 +15,17 @@ See the structure of an existing codebase and the units that are findings.
 
 ## Trigger
 
-The developer asks for a readability report.
+The developer asks for a outline report.
 
 ## Preconditions
 
 - The project is a Givn project.
-- The readability experiment is enabled.
+- The outline experiment is enabled.
 - Production sources are available.
 
 ## Main flow
 
-1. The developer requests a readability report; the system reads the production
+1. The developer requests a outline report; the system reads the production
    sources in the requested scope (the project-root `src/` by default, or the
    named `--path` roots).
 2. The system analyzes each source unit and reports its outline first — method
@@ -41,7 +41,7 @@ The developer asks for a readability report.
 
 ## Extensions
 
-- 1: the readability experiment is disabled → the command reports that the experiment is disabled and exits non-zero; protects the preconditions.
+- 1: the outline experiment is disabled → the command reports that the experiment is disabled and exits non-zero; protects the preconditions.
 - 1: no production sources exist in the requested scope → the report says there are no production sources; protects the success guarantee.
 - 1: the requested scope does not exist → the command names the path and exits non-zero; protects the success guarantee.
 - 2: a source file cannot be analyzed → the report names the file and continues with the remaining units; protects the minimal guarantee.
@@ -75,7 +75,7 @@ verification behaviour is unchanged.
 
 ## Success guarantee
 
-The developer receives a complete readability report for the production
+The developer receives a complete outline report for the production
 sources, with one classification and no recommendation for every analyzed
 unit.
 
@@ -87,13 +87,13 @@ unit.
 
 ## Capabilities
 
-- readability-report
+- outline-report
 
 ## Interactions
 
 | Capability | Consumer action | E2E scenario |
 |---|---|---|
-| readability-report | run a readability report | A developer runs a readability report and sees the classified units |
+| outline-report | run a outline report | A developer runs a outline report and sees the classified units |
 
 ## Includes
 
@@ -105,7 +105,7 @@ unit.
 
 ## Out of scope
 
-- Review enforcement; that is the `readability-review-gate` capability under `verify-change`.
+- Review enforcement; that is the `outline-review-gate` capability under `verify-change`.
 - A stored baseline or watchlist.
 - Languages other than Rust.
 - Automatic refactoring.
@@ -119,7 +119,7 @@ unit.
 
 ```mermaid
 flowchart LR
-  Developer((Developer)) --> Report[[Request readability report]]
+  Developer((Developer)) --> Report[[Request outline report]]
   Report --> Analyze[[Analyze production sources]]
   Analyze --> Classify[[Classify units and report findings]]
   Classify --> View[[Read the report]]
