@@ -975,7 +975,7 @@ fn outline_class_shows_call(world: &mut GivnWorld, class: String, caller: String
     let section = stdout.split(&marker).nth(1).expect("class component");
     let caller_marker = format!("def {caller}(");
     let caller_offset = section.find(&caller_marker).expect("caller method");
-    let call_marker = format!("-> [public, {class}] {callee}");
+    let call_marker = format!("-> [same_file, public, {class}] {callee}");
     assert!(
         section[caller_offset..].contains(&call_marker),
         "expected {caller} to call {callee} in {class}: {section}"
@@ -1005,7 +1005,7 @@ fn type_outline_keeps_cross_component_calls_leaf(world: &mut GivnWorld) {
         .nth(1)
         .expect("Engine component");
     assert!(
-        engine.contains("-> [public, module] normalize"),
+        engine.contains("-> [same_file, public, module] normalize"),
         "expected the Engine outline to call normalize: {engine}"
     );
     assert!(
@@ -1017,7 +1017,7 @@ fn type_outline_keeps_cross_component_calls_leaf(world: &mut GivnWorld) {
         .nth(1)
         .expect("module component");
     assert!(
-        module.contains("-> [private, module] helper"),
+        module.contains("-> [same_file, private, module] helper"),
         "expected normalize to call helper in the module component: {module}"
     );
 }
@@ -1315,5 +1315,14 @@ fn call_is_expanded(world: &mut GivnWorld, callee: String) {
         indent(next) > indent(lines[index]),
         "{callee} was not expanded: {report}"
     );
+}
+
+#[given("a production source unit whose method calls its own method, a cross-file module function, and a receiver of unknown type")]
+fn resolution_report(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::outline_report_support::write_resolution_report(env);
 }
 
