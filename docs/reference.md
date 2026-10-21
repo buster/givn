@@ -70,6 +70,7 @@ in `givn/config.yaml`:
 | `domain_modeling` | Project-level skill: model a change's domain before designing — ubiquitous language, aggregates, invariants. |
 | `dev_principles` | Project-level skill: engineering principles while implementing — correctness first, boring when called for, no unnecessary abstractions. |
 | [`architecture_principles`](architecture-principles.md) | Default-off architecture-principles experiment: last-responsible-moment decision timing, consumer contracts now, component splits later; gates proposal, design, design-review, dialog, review, and tasks guidance. |
+| [`readability`](readability.md) | Default-off experiment: advisory findings-only report plus a change-relative review gate requiring every touched finding to be fixed or independently justified. |
 | `grill_me` | Project-level command: socratically grill the current plan or design, one hard question at a time. |
 | `grill_with_docs` | Project-level command: grill the plan or design against the project's own docs and specs, citing sources. |
 
