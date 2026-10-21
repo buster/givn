@@ -661,12 +661,16 @@ HTML, CSS, or JavaScript in a browser is a Web UI even when it needs only a
 page request and exposes no controls; the browser driver rule then applies and
 an HTTP client is not a valid driver. A change that introduces or visibly
 changes a screen records a `## Visual Design Contract` section in its
-`design.md`; the contract is style-level, never pixel-level.
+`design.md`; the contract is style-level, never pixel-level. The section's
+presence is the Persona boundary; its `Interface:` value is the evidence
+boundary.
 
 The contract declares, in machine-readable lines before its prose:
 
-- `- Interface: web | terminal | none` — `none` or an absent section means no
-  visual contract and the review gate is exempt;
+- `- Interface: web | terminal | none` — a present section is a declared
+  contract. `none` means the change renders no screen: it still requires the
+  persona disposition, but no visual verdict and no visual evidence. Only an
+  absent section is exempt;
 - `- Viewports: mobile (360x780), desktop (1920x1080)` for web — the default
   pair is the Samsung S24 class and Full HD;
 - `- States: empty, loading, error` for web — optional; when present, each
@@ -691,16 +695,19 @@ artifacts under `reports/` and are not review evidence.
 Review records `VISUAL-REVIEW: PASS` only after the evidence is complete, the
 baseline holds, and a fresh-context vision review per confirmed Persona has
 been dispositioned; the disposition is recorded as a `PERSONAS:` line naming
-at least one confirmed Persona for a declared visual interface.
+at least one confirmed Persona for every declared contract, including
+`Interface: none`, which needs no verdict and no evidence. Only a change that
+declares no contract may record a reasoned `none`.
 `VISUAL-REVIEW: UNVERIFIED` records that the active harness cannot process
 images; it blocks until a human signs off. A `DEFERRAL:` line in `review.md`
 requires a matching `OPERATOR-DECISION:` record, so a project constraint
 never silently defers a mandatory check. A style improvement that stays
 within the contract updates the contract instead of failing review. The
-binary enforces the verdict marker, the persona disposition, the deferral
-pair, and the final-state plus per-state evidence completeness in the
-integrity hook; the persona judgment, the classification reasoning, and the
-baseline assertion quality remain review guidance, not runtime inference.
+binary enforces the persona disposition for every declared contract, the
+verdict marker and the final-state plus per-state evidence completeness for
+`web` and `terminal`, and the deferral pair in the integrity hook; the persona
+judgment, the classification reasoning, and the baseline assertion quality
+remain review guidance, not runtime inference.
 
 ## 8.18 SCM Backend Selection
 
@@ -837,11 +844,12 @@ record; the biography lives in one place.
 Reference validation is deliberately asymmetric: `givn lint` reports an
 advisory `[PERS ]` finding when a `## Personas` entry in an active change
 use-case document or an ideation use case resolves to no project or topic
-persona file, while `givn check review` enforces the resolution for a
-declared visual interface's `PERSONAS:` line. The reasoned
-`none — <reason + operator confirmation>` path stays valid for a change
-without a user-visible surface. User confirmation before use, the review
-duty, the cap (at most three segments per stakeholder type, about ten total),
+persona file, while `givn check review` enforces the resolution for every
+declared visual design contract's `PERSONAS:` line, including
+`Interface: none`. The reasoned `none — <reason + operator confirmation>` path
+stays valid only for a change that declares no contract. User confirmation
+before use, the review duty, the cap (at most three segments per stakeholder
+type, about ten total),
 advisory findings with user arbitration, and no auto-promotion are unchanged.
 
 ## 8.23 Guarantee Qualifiers and the Decision Ledger

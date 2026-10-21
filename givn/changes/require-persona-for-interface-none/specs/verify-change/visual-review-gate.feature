@@ -33,7 +33,7 @@ Feature: Visual Review Gate
     Then the command exits non-zero
     And stderr contains "none — operator confirmed"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review guidance requires a persona for a declared interface none contract
     Given a givn project
     When the user runs `givn instructions review --change visual-review-gate`

@@ -52,7 +52,7 @@ language that a non-technical stakeholder can read and validate.
   Capability Routing table. When it reports no signal, omit the
   recommendation column and record the decision with its rationale directly.
   The recorded decision stays mandatory either way.
-- **Persona confirmation.** A change with a user-visible surface (a browser interface, a terminal interface, or CLI text output) names at least one confirmed Persona, or records `none` with the reason and the operator confirmation.
+- **Persona confirmation.** A change that declares a visual design contract, including `Interface: none`, names at least one confirmed Persona; only a change that declares no visual design contract may record `none` with the reason and the operator confirmation. A user-visible surface (a browser interface, a terminal interface, or CLI text output) names at least one confirmed Persona.
 
 **Structure:**
 1. Release note — one complete, user-facing sentence naming what the change does.

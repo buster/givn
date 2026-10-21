@@ -235,16 +235,31 @@ For `givn check review`, it runs:
    gate (6.20).
 
 The visual gate reads the `## Visual Design Contract` section from
-`design.md`; an absent section or `Interface: none` exempts the change. For a
-declared `web` interface it requires a committed final-state screenshot for
-every delta `@e2e` scenario at each declared viewport, plus one
-`<viewport>--<state>.png` for every state the contract declares; for
-`terminal` it requires a committed transcript per scenario. A declared visual
-interface also requires a `PERSONAS:` line in `review.md` naming at least one
-confirmed Persona whose value resolves to `givn/personas/<id>.md`; a reasoned
-`none` is valid only for a change without a user-visible surface. `review.md` must carry `VISUAL-REVIEW: PASS`;
-`VISUAL-REVIEW: UNVERIFIED` fails until a human resolves it. A `DEFERRAL:`
-line anywhere in `review.md` requires a matching `OPERATOR-DECISION:` record.
+`design.md`. An absent section fully exempts the change from the Persona
+disposition, the visual verdict, and visual evidence. A declared contract
+always requires a `PERSONAS:` line in `review.md` naming at least one confirmed
+Persona whose value resolves to `givn/personas/<id>.md` — including
+`Interface: none`, where that line is the only visual-review requirement and a
+`none`, reasoned `none`, or empty value fails. For a declared `web` interface the gate
+also requires a committed final-state screenshot for every delta `@e2e`
+scenario at each declared viewport, plus one `<viewport>--<state>.png` for
+every state the contract declares; for `terminal` it requires a committed
+transcript per scenario. A `web` or `terminal` contract must carry
+`VISUAL-REVIEW: PASS`; `VISUAL-REVIEW: UNVERIFIED` fails until a human resolves
+it. For those interfaces the verdict check runs before the Persona check, so a
+missing verdict is reported first; `Interface: none` has no verdict check, so
+its first failure is the Persona disposition. A `DEFERRAL:` line anywhere in
+`review.md` requires a matching `OPERATOR-DECISION:` record.
+
+```mermaid
+flowchart TD
+    D[design.md] --> S{Visual Design Contract section?}
+    S -- no --> X[Exempt: persona, verdict, evidence]
+    S -- yes --> V{Interface}
+    V -- none --> P[Require PERSONAS: confirmed Persona] --> Y[Pass: no verdict, no evidence]
+    V -- web --> W[Require verdict, Persona, viewport and state evidence]
+    V -- terminal --> T[Require verdict, Persona, transcript]
+```
 
 Review does not execute `verify.command` or `verify.e2e_command`. Scenario
 execution is proven once per archive by the verification receipt; review

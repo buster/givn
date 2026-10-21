@@ -253,7 +253,7 @@ fn disabled_ready_change(world: &mut GivnWorld) {
     support::write_file(
         env,
         &format!("givn/changes/{}/review.md", support::CHANGE_ID),
-        "# Review\n\nREADME-IMPACT: none\n",
+        "# Review\n\nREADME-IMPACT: none\n\nPERSONAS: fixture-persona\n",
     );
     support::commit_review_record(env);
     support::run_check_tasks(env, support::CHANGE_ID);

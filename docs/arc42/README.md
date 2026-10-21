@@ -117,6 +117,15 @@ The review routing gate also reports every use-case schema and
 capability-routing diagnostic in one pass. Durable facts live in chapters 2
 (TC-39), 4, 5, 6.7.1, 10 (Q-105, Q-118), 11 (R-116, R-117), and the glossary.
 
+The `require-persona-for-interface-none` change makes the Persona disposition
+follow the presence of a declared `## Visual Design Contract` rather than the
+rendered interface: `Interface: none` requires at least one confirmed Persona,
+the visual verdict and visual evidence stay conditional on `web` and
+`terminal`, and a change that declares no contract remains exempt. The rule is
+observable review behavior owned by the `visual-review-gate` capability, so no
+ADR is introduced. Durable facts live in chapters 5, 6, 8, 10, 11, and the
+glossary.
+
 Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
 register](adr/README.md) for status, relationships, evidence, reserved IDs, and
 historical records.

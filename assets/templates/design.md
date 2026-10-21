@@ -6,9 +6,12 @@
 
 ## Visual Design Contract
 
-> Include this section only when the change introduces or visibly changes a
-> screen. Delete it otherwise; a change without this section is exempt from
-> the visual review gate.
+> Include this section when the change introduces or visibly changes a screen,
+> and also when the change deliberately records `- Interface: none` for a
+> non-visual software surface. Delete it only when the change has no visual
+> design contract at all; a change without this section is exempt from the
+> visual review gate. A declared contract, including `Interface: none`, still
+> requires a confirmed Persona in `review.md`.
 >
 > ```
 > - Interface: web | terminal | none

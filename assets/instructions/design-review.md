@@ -91,7 +91,7 @@ Required branches — cover every one (or explicitly record "no issue found"):
   direction is recorded in `design.md`. Without an approved contract,
   design-review does not sign off.
 - **Deferrals** — a mandatory check may be deferred only after an operator question; record the operator's decision, otherwise do not sign off.
-- **Persona disposition** — record, per persona, the relevance and evidence; when no persona is confirmed, record the reason and the operator confirmation. A user-visible surface requires at least one confirmed Persona.
+- **Persona disposition** — record, per persona, the relevance and evidence; a declared visual design contract, including `Interface: none`, requires at least one confirmed Persona, and when no persona is confirmed record the reason and the operator confirmation only for a change that declares no visual design contract. A user-visible surface requires at least one confirmed Persona.
 - **Interface classification** — test the opposite classification before accepting a non-browser interface: a screen rendered in a browser is a Web UI, so a design that declares no browser driver must say why the opposite does not hold.
 - **ADR qualification** — delegate the complete qualification procedure to the
   canonical Arc42 addon instruction by running `givn instructions arc42-docs

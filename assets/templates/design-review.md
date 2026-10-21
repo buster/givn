@@ -53,8 +53,11 @@ Questions that could not be resolved and were flagged explicitly.
 
 ### Persona disposition
 
-One row per confirmed persona, recording the relevance and the evidence; when
-no persona is confirmed, record the reason and the operator confirmation.
+One row per confirmed persona, recording the relevance and the evidence. A
+declared visual design contract, including `Interface: none`, requires at
+least one confirmed Persona; when no persona is confirmed, record the reason
+and the operator confirmation only for a change that declares no visual design
+contract.
 
 | Persona | Relevance | Evidence |
 |---|---|---|
