@@ -40,6 +40,10 @@ language that a non-technical stakeholder can read and validate.
   structure is advisory without an ideation source. "Resolved in `design.md`"
   alone is not a disposition. A statement qualified `(open: Q<N>)` names a
   question that must be dispositioned here.
+{{#if addons.architecture_principles}}
+  Classify each open question with `givn instructions architecture-principles`;
+  a contract is not an open question — it follows the consumer use case.
+{{/if}}
 - **Question IDs.** Open questions carry stable IDs `D1`, `D2`, … (`D<n>` in
   the templates) with the full question and its option treatment; the
   design's ledger resolves each ID.

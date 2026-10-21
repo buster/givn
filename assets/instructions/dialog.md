@@ -56,8 +56,14 @@ meaning exists nowhere.
 
 ## Rule 5 — Disclose material later-change costs
 
-Prefer revisable choices where suitable. If a decision changes stored
-information, public expectations, access, or substantial downstream work,
+Prefer revisable choices where suitable.
+{{#if addons.architecture_principles}}
+For an architecture or design question, `givn instructions
+architecture-principles` owns the contract and cell rules and the
+decision-timing classification; this policy owns how the question is presented.
+{{/if}}
+If a decision changes stored information, public expectations, access, or
+substantial downstream work,
 explain the constraints and the work involved in changing it later, and name
 the benefit purchased by the hard-to-change commitment. Establish unknown
 recovery or compatibility facts before consent; never invent rollback

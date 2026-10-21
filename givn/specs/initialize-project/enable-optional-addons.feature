@@ -9,6 +9,14 @@ Feature: enable-optional-addons
     And  the file ".opencode/commands/grill-me.md" does not exist
     And  the file ".opencode/commands/grill-with-docs.md" does not exist
 
+  Scenario: givn addons exposes architecture principles as opt-in
+    Given a project root with givn/ initialised without addons
+    When the user runs `givn addons list`
+    Then stdout contains "[disabled]  architecture_principles"
+    When the user runs `givn addons enable architecture_principles`
+    Then the command exits 0
+    And givn addon "architecture_principles" is "true"
+
   Scenario: givn addons enable generates skill and command files
     Given a project root with givn/ initialised without addons
     And givn addon "domain_modeling" is "false"
@@ -120,7 +128,7 @@ Feature: enable-optional-addons
     Given  a project root without a givn/ directory
     When  the user runs "givn init --agents opencode"
     Then  the command exits 0
-    And  stdout contains "addons available (default off): readability"
+    And  stdout contains "addons available (default off): architecture_principles, readability"
     When  the user runs "givn addons list"
     Then  stdout contains "[disabled]  readability"
     And  stdout contains "givn addons enable"

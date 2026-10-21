@@ -13,6 +13,17 @@ Feature: Match guidance to enabled addons
     And  the generated design-review skill carries no Architecture documentation (arc42) branch
     And  the generated design-review command carries no Architecture documentation (arc42) check
 
+  Scenario: Architecture principles guidance is off by default
+    Given  a Givn project with the architecture-principles addon disabled and the skills synchronized
+    Then  the served design instruction omits the Contracts and cells section
+    And  the served design-review instruction omits the Contracts and cells branch
+
+  Scenario: Architecture principles guidance follows the opt-in addon
+    Given  a Givn project with the architecture-principles addon disabled and the skills synchronized
+    When  a consumer enables the architecture-principles addon through the Givn CLI
+    Then  the served design instruction contains the Contracts and cells section
+    And  the served design-review instruction contains the Contracts and cells branch
+
   Scenario: An unknown addon name in a conditional fails the synchronization and names the template
     Given a Givn project with a project skill template that contains a conditional on an unknown addon
     When a consumer synchronizes skills through the Givn CLI

@@ -218,6 +218,10 @@ this.
 - Every scenario task carries a populated **Design constraints** block copied
   from `design.md` — the implementer may not read design.md, so the task must
   carry every decision it needs. Never leave the block empty or generic.
+{{#if addons.architecture_principles}}
+  When the scenario touches a cell, the block names the contract it uses; the
+  implementer never imports the implementing cell.
+{{/if}}
 - Each RED/GREEN/REFACTOR line has a field for pasted runner output.
 - Each scenario has a field for the commit hash.
 - Non-@e2e scenarios first, @e2e last.

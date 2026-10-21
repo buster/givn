@@ -65,5 +65,6 @@ addons:
   coverage: false
   domain_modeling: false
   dev_principles: false
+  architecture_principles: false
   grill_me: false
   grill_with_docs: false

@@ -2297,8 +2297,13 @@ fn configured_skill_content(world: &GivnWorld, skill: &str) -> Vec<(std::path::P
 
 #[when("the author requests every instruction Givn prints")]
 fn author_requests_every_printed_instruction(world: &mut GivnWorld) {
-    const EXTRA_INSTRUCTIONS: &[&str] =
-        &["review-reverse", "specs-reverse", "tasks-reverse", "dialog"];
+    const EXTRA_INSTRUCTIONS: &[&str] = &[
+        "review-reverse",
+        "specs-reverse",
+        "tasks-reverse",
+        "dialog",
+        "architecture-principles",
+    ];
     let env = env(world);
     let graph = crate::common::run_givn(env, &["graph", "--json"]);
     assert!(

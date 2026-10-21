@@ -35,6 +35,12 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
 3. Cross-check every component design.md promised (class/service/
    controller/module) exists in the tree. List anything missing —
    incomplete implementation, not a "hard to test" gap.
+{{#if addons.architecture_principles}}
+   Also check that every declared contract is the only surface its consumers
+   use; an import of the implementing cell is a finding. Apply `givn
+   instructions architecture-principles` when the design declares contracts.
+   The composition root and the implementation's own tests are the exceptions.
+{{/if}}
 4. Confirm the runner's strict-mode proof is present with output in
    tasks.md. Missing = every PASS in this change is unverified.
 5. **Read every `@e2e` scenario's Then steps.** If a scenario's Then steps
@@ -326,6 +332,9 @@ blocks the archive gate regardless of this line.
 - Fabrication audit: clean (or all findings remediated).
 - Every checked task has a verified commit touching production code.
 - Every promised component exists.
+{{#if addons.architecture_principles}}
+- Every consumer uses only its declared contract.
+{{/if}}
 - Strict-mode proof present and passing.
 - Scenario execution evidence is recorded per scope in the archive
   verification receipt; review does not re-run the suite.
