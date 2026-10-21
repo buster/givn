@@ -85,7 +85,7 @@ parser: it must cover Behave, Cucumber-JVM, Cucumber-JS, Cucumber-Ruby, and Rust
 bindings with one code path, and the failure it prevents is a missing phrase,
 not a malformed body. It scans binding *expressions*, not lines, so a
 multi-line binding and a raw-string regex are read whole. The remaining cost is
-recorded as risk R-122: a binding whose phrase is produced dynamically (a
+recorded as risk R-123: a binding whose phrase is produced dynamically (a
 variable, a table-driven loop, a computed string) yields no phrase and is
 skipped, and the comparison is literal after whitespace normalization, so two
 different spellings of the same step are not equated.
@@ -104,7 +104,7 @@ different spellings of the same step are not equated.
   joined; internal whitespace normalized) — realized in
   `is_step_definition_path`, `step_binding_expressions`, and
   `collect_step_phrases`. Limitations (unresolvable/dynamic bindings skipped;
-  literal phrase comparison) are recorded as risk R-122.
+  literal phrase comparison) are recorded as risk R-123.
 
 ## Step Definitions
 
@@ -153,7 +153,7 @@ GIVN_FEATURES=givn/changes/gate-delta-step-definitions-at-archive/specs \
 | `is_step_definition_path` | `fn(&Path) -> bool` | One path rule everywhere: a file whose name ends in `_steps.<ext>` (or is exactly `_steps`), or a file with any ancestor directory component named `steps` or ending in `_steps`. |
 | `step_binding_expressions` | `fn(&str) -> Vec<Range<usize>>` | Finds the supported binding tokens at identifier boundaries, returns each token's expression span from `(` to the matching `)`. |
 | `binding_phrase` | `fn(&str) -> Option<String>` | Extracts the first resolvable phrase literal from one expression; returns `None` when the expression binds no resolvable literal. |
-| `collect_step_phrases` | `fn(&Path) -> BTreeSet<String>` | Reads one file, yields every phrase bound by its step bindings with internal whitespace normalized. A non-UTF-8 or unreadable file yields an empty set (skipped, documented as R-122). A file with zero phrases is skipped by callers. |
+| `collect_step_phrases` | `fn(&Path) -> BTreeSet<String>` | Reads one file, yields every phrase bound by its step bindings with internal whitespace normalized. A non-UTF-8 or unreadable file yields an empty set (skipped, documented as R-123). A file with zero phrases is skipped by callers. |
 | `collect_step_phrases_in_tree` | `fn(&Path, &PruneRules) -> BTreeSet<String>` | Recursive walker over a tree, pruning by component name and by project-relative prefix. |
 | `PruneRules` | `struct { components: &'static [&'static str], prefixes: &'static [&'static str] }` | Two prune sets: the component-name set shared by both walks, and the project-relative prefixes used only on the permanent walk. |
 | `StepDefinitionGap` | `struct { delta_file: PathBuf, phrases: Vec<String> }` | One delta file (project-relative) and the phrases it binds that the permanent tree does not. |
@@ -397,7 +397,7 @@ unchanged; the gate adds no persisted state.
   features and narratives only, and record the path rule, the binding-expression
   scanner, the two prune sets, the unreadable-file behaviour, and the bounded
   refusal.
-- `docs/arc42/11-risks-and-technical-debt.md`: update R-122 for the scanner and
+- `docs/arc42/11-risks-and-technical-debt.md`: update R-123 for the scanner and
   its remaining limits (unresolvable/dynamic bindings skipped; literal phrase
   comparison; unreadable files skipped).
 - `docs/arc42/12-glossary.md`: add **Step phrase** and reconcile the
