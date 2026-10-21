@@ -792,24 +792,32 @@ sequenceDiagram
    `SourceAnalyzer`. The Python adapter starts `python3` only after `.py`
    discovery, so a Rust-only scope never invokes it; a missing interpreter
    becomes a per-file `analyzer-unavailable` diagnostic, not an abort.
-3. The adapter returns one neutral `Analysis`. A shared resolution pass maps
-   every call name to a declared method — same unit first, then the same file,
-   then a unique project method; otherwise ambiguous or external — and syncs
-   the resolved calls into the outline items. A read or parse failure is a
+3. The adapter returns one neutral `Analysis`. A shared resolution pass matches
+   every call's shape — free function with an optional qualifier, or method
+   with `self`/named/unknown receiver evidence — against candidate owners. It
+   claims `same_file`/`project_other_file` only when the owner agrees; an
+   unknown receiver stays `name_only`, several compatible candidates are
+   `ambiguous`, and a contradictory qualifier is `external`. The pass syncs the
+   resolved calls into the outline items. A read or parse failure is a
    diagnostic for that file, not an abort; the report continues with the
    analyzable files and names every failure.
 4. The report prints each unit as a per-component call tree first: declarations,
-   signatures, order, and calls. Same-unit calls nest under the caller; calls
-   to another component are leaves tagged with the target component and
-   visibility. The tree is forward-only and omits calls outside the analyzed
-   sources. It contains no data, method bodies, or comments. Shared metrics and
-   classification follow as hints. Every analyzed unit receives exactly one
-   classification and its evidence; no action or recommendation is produced,
-   and wholly unsupported units are not classified and are named.
-5. The selected renderer writes human text or schema-v3 JSON. Hints never change
-   the exit code; the only write is the explicit `--out` path. The command
-   appends no development-record entry and stores no baseline, cache, or
-   classification history.
+   signatures, order, and calls. Module outlines list their declared member
+   types as type items beside their free functions. Same-unit calls nest under
+   the caller; calls to another component are leaves tagged with resolution,
+   visibility, and owner. A `name_only` edge is a leaf and is never expanded.
+   The tree is forward-only and omits calls outside the analyzed sources. It
+   contains no data, method bodies, or comments. Shared metrics and
+   classification follow as hints. File code lines exclude recorded
+   `#[cfg(test)]` spans, and unit physical lines cover the unit's own spans.
+   Every analyzed unit receives exactly one classification and its evidence;
+   no action or recommendation is produced, and wholly unsupported units are
+   not classified and are named.
+5. The selected renderer writes human text or schema-v3 JSON. JSON call objects
+   carry `callee`, `resolution`, and `target`; human tags lead with the
+   resolution label. Hints never change the exit code; the only write is the
+   explicit `--out` path. The command appends no development-record entry and
+   stores no baseline, cache, or classification history.
 
 ## 6.20 `givn check review` outline gate
 

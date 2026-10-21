@@ -1,7 +1,7 @@
 //! Shared metric computation above the analyzer port.
 
 use super::model::{
-    Analysis, AnalyzedFile, Flow, Method, SourceUnit, UnitId, UnitKind, Visibility,
+    Analysis, AnalyzedFile, Flow, Method, Resolution, SourceUnit, UnitId, UnitKind, Visibility,
 };
 use super::scan;
 use std::collections::{HashMap, HashSet};
@@ -71,7 +71,14 @@ pub fn compute_unit(unit: &SourceUnit, analysis: &Analysis) -> UnitMetrics {
                 .files
                 .iter()
                 .find(|analyzed| &analyzed.path == file)
-                .map(|analyzed| scan::code_lines(&analyzed.lines, &unit.spans, file))
+                .map(|analyzed| {
+                    scan::code_lines_excluding(
+                        &analyzed.lines,
+                        &unit.spans,
+                        &analyzed.excluded_spans,
+                        file,
+                    )
+                })
                 .unwrap_or(0)
         })
         .sum::<u32>();
@@ -83,7 +90,14 @@ pub fn compute_unit(unit: &SourceUnit, analysis: &Analysis) -> UnitMetrics {
                 .files
                 .iter()
                 .find(|analyzed| &analyzed.path == file)
-                .map(|analyzed| analyzed.physical_lines)
+                .map(|analyzed| {
+                    scan::span_lines_excluding(
+                        analyzed.lines.len(),
+                        &unit.spans,
+                        &analyzed.excluded_spans,
+                        file,
+                    )
+                })
                 .unwrap_or(0)
         })
         .sum::<u32>();
@@ -150,9 +164,10 @@ fn method_metrics(method: &Method, analysis: &Analysis) -> MethodMetrics {
         .iter()
         .find(|analyzed: &&AnalyzedFile| analyzed.path == method.span.file)
         .map(|analyzed| {
-            scan::code_lines(
+            scan::code_lines_excluding(
                 &analyzed.lines,
                 std::slice::from_ref(&method.span),
+                &analyzed.excluded_spans,
                 &method.span.file,
             )
         })
@@ -211,6 +226,12 @@ fn cohesion(unit: &SourceUnit) -> (u32, Option<u32>, Option<u32>) {
     }
     for (index, method) in unit.methods.iter().enumerate() {
         for call in &method.calls {
+            if !matches!(
+                call.resolution,
+                Resolution::SameFile | Resolution::ProjectOtherFile
+            ) {
+                continue;
+            }
             if let Some(target_index) = call
                 .target
                 .as_ref()
@@ -292,5 +313,65 @@ pub fn flow_nesting(flow: &Flow) -> u32 {
         Flow::ShortCircuit(left, right) => 1 + flow_nesting(left).max(flow_nesting(right)),
         Flow::Return(inner) => inner.as_deref().map(flow_nesting).unwrap_or(0),
         Flow::Call(_) => 0,
+    }
+}
+
+#[cfg(test)]
+mod fidelity_tests {
+    use super::*;
+    use crate::outline::model::{CallShape, ReceiverEvidence};
+
+    #[test]
+    fn name_only_edges_do_not_join_methods_for_cohesion() {
+        let path = crate::outline::model::RepoPath::new("src/cohesion.rs");
+        let span = crate::outline::model::SourceSpan {
+            file: path.clone(),
+            start_line: 1,
+            end_line: 1,
+        };
+        let method =
+            |id: &str, calls: Vec<crate::outline::model::Call>| crate::outline::model::Method {
+                id: id.to_string(),
+                name: id.to_string(),
+                visibility: crate::outline::model::Visibility::Public,
+                signature: crate::outline::model::Signature {
+                    text: String::new(),
+                },
+                span: span.clone(),
+                flow: crate::outline::model::Flow::Block(Vec::new()),
+                field_accesses: Vec::new(),
+                calls,
+                is_trait_default: false,
+                origin: crate::outline::model::UnitOrigin::Production,
+            };
+        let call = crate::outline::model::Call {
+            order: 0,
+            callee: "second".to_string(),
+            shape: CallShape::Method {
+                receiver: ReceiverEvidence::Unknown,
+            },
+            resolution: crate::outline::model::Resolution::NameOnly,
+            target: Some("second".to_string()),
+        };
+        let unit = SourceUnit {
+            language: crate::outline::model::Language::Rust,
+            id: crate::outline::model::UnitId("type:src/cohesion.rs::Engine".to_string()),
+            kind: UnitKind::Type(crate::outline::model::TypeKind::Struct),
+            name: "Engine".to_string(),
+            module_path: "cohesion".to_string(),
+            declaration_file: path.clone(),
+            files: vec![path.clone()],
+            spans: vec![span.clone()],
+            visibility: crate::outline::model::Visibility::Public,
+            origin: crate::outline::model::UnitOrigin::Production,
+            methods: vec![method("first", vec![call]), method("second", Vec::new())],
+            fields: Vec::new(),
+            relations: Vec::new(),
+            outline: Vec::new(),
+            complete: true,
+            unsupported: Vec::new(),
+        };
+        let (lcom4, _, _) = cohesion(&unit);
+        assert_eq!(lcom4, 2);
     }
 }

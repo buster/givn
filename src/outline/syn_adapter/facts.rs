@@ -1,8 +1,8 @@
 //! AST visitor and method facts for the syn adapter.
 
 use super::super::model::{
-    Call, Flow, Method, OutlineItem, OutlineKind, RepoPath, Resolution, Signature, UnitOrigin,
-    Visibility,
+    Call, CallShape, Flow, Method, OutlineItem, OutlineKind, ReceiverEvidence, RepoPath,
+    Resolution, Signature, UnitOrigin, Visibility,
 };
 use super::spans::span_for_ident;
 use super::syntax::type_label;
@@ -37,9 +37,10 @@ pub(super) fn method_from_fn(
             .calls
             .into_iter()
             .enumerate()
-            .map(|(index, callee)| Call {
+            .map(|(index, fact)| Call {
                 order: index as u32,
-                callee,
+                callee: fact.callee,
+                shape: fact.shape,
                 resolution: Resolution::External,
                 target: None,
             })
@@ -86,10 +87,15 @@ pub(super) fn outline_method(method: &Method, default: bool) -> OutlineItem {
         calls: method.calls.clone(),
     }
 }
+struct CallFact {
+    callee: String,
+    shape: CallShape,
+}
+
 #[derive(Default)]
 struct FactsVisitor {
     fields: std::collections::BTreeSet<String>,
-    calls: Vec<String>,
+    calls: Vec<CallFact>,
     flow: Vec<Flow>,
 }
 
@@ -109,7 +115,12 @@ impl<'ast> Visit<'ast> for FactsVisitor {
     }
 
     fn visit_expr_method_call(&mut self, node: &'ast ExprMethodCall) {
-        self.calls.push(node.method.to_string());
+        self.calls.push(CallFact {
+            callee: node.method.to_string(),
+            shape: CallShape::Method {
+                receiver: receiver_evidence(&node.receiver),
+            },
+        });
         syn::visit::visit_expr_method_call(self, node);
     }
 
@@ -117,7 +128,36 @@ impl<'ast> Visit<'ast> for FactsVisitor {
         if let Expr::Path(path) = &*node.func
             && let Some(segment) = path.path.segments.last()
         {
-            self.calls.push(segment.ident.to_string());
+            let qualifier = if let Some(qself) = &path.qself {
+                let position = qself.position.min(path.path.segments.len());
+                if position > 0 {
+                    path.path
+                        .segments
+                        .iter()
+                        .take(position)
+                        .next_back()
+                        .map(|segment| segment.ident.to_string())
+                } else {
+                    Some(type_owner(&qself.ty))
+                }
+            } else {
+                let prefix: Vec<String> = path
+                    .path
+                    .segments
+                    .iter()
+                    .take(path.path.segments.len().saturating_sub(1))
+                    .map(|segment| segment.ident.to_string())
+                    .collect();
+                if prefix.is_empty() {
+                    None
+                } else {
+                    Some(prefix.join("::"))
+                }
+            };
+            self.calls.push(CallFact {
+                callee: segment.ident.to_string(),
+                shape: CallShape::Function { qualifier },
+            });
         }
         syn::visit::visit_expr_call(self, node);
     }
@@ -186,6 +226,31 @@ impl<'ast> Visit<'ast> for FactsVisitor {
 fn is_self(expr: &Expr) -> bool {
     matches!(expr, Expr::Path(path) if path.path.is_ident("self"))
 }
+
+fn receiver_evidence(expr: &Expr) -> ReceiverEvidence {
+    let Expr::Path(path) = expr else {
+        return ReceiverEvidence::Unknown;
+    };
+    if path.path.is_ident("self") || path.path.is_ident("Self") {
+        ReceiverEvidence::SelfUnit
+    } else {
+        // A Rust method receiver is a value, not a type path. Without type
+        // inference, any other path expression is unknown evidence.
+        ReceiverEvidence::Unknown
+    }
+}
+
+fn type_owner(ty: &syn::Type) -> String {
+    match ty {
+        syn::Type::Path(path) => path
+            .path
+            .segments
+            .last()
+            .map(|segment| segment.ident.to_string())
+            .unwrap_or_else(|| "type".to_string()),
+        _ => "type".to_string(),
+    }
+}
 fn signature(sig: &syn::Signature) -> Signature {
     let mut text = String::new();
     if sig.constness.is_some() {
@@ -249,7 +314,28 @@ fn signature(sig: &syn::Signature) -> Signature {
 #[cfg(test)]
 mod tests {
     use super::FactsVisitor;
+    use crate::outline::model::CallShape;
     use syn::visit::Visit;
+
+    #[test]
+    fn qself_uses_the_trait_owner() {
+        let block: syn::Block =
+            syn::parse_str("{ <Widget as Store>::make(); <Widget>::run(); }").unwrap();
+        let mut visitor = FactsVisitor::default();
+        visitor.visit_block(&block);
+        assert_eq!(
+            visitor.calls[0].shape,
+            CallShape::Function {
+                qualifier: Some("Store".to_string())
+            }
+        );
+        assert_eq!(
+            visitor.calls[1].shape,
+            CallShape::Function {
+                qualifier: Some("Widget".to_string())
+            }
+        );
+    }
 
     #[test]
     fn macro_arguments_contribute_calls() {
@@ -257,6 +343,11 @@ mod tests {
             syn::parse_str("{ let _ = format!(\"{}\", self.last_done_id()); }").unwrap();
         let mut visitor = FactsVisitor::default();
         visitor.visit_block(&block);
-        assert_eq!(visitor.calls, vec!["last_done_id".to_string()]);
+        let names: Vec<&str> = visitor
+            .calls
+            .iter()
+            .map(|call| call.callee.as_str())
+            .collect();
+        assert_eq!(names, vec!["last_done_id"]);
     }
 }

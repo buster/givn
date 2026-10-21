@@ -5,8 +5,8 @@
 
 use crate::common::{self, TestEnv};
 use givn::outline::model::{
-    Analysis, AnalyzedFile, FileStatus, LineKind, RepoPath, SourceSpan, SourceUnit, TypeKind,
-    TypeRelation, UnitId, UnitKind, UnitOrigin, Visibility,
+    Analysis, AnalyzedFile, FileStatus, LineKind, OutlineItem, OutlineKind, RepoPath, SourceSpan,
+    SourceUnit, TypeKind, TypeRelation, UnitId, UnitKind, UnitOrigin, Visibility,
 };
 use givn::outline::{self, AnalysisRequest, SourceAnalyzer, SourceScope, model::Language};
 use std::path::PathBuf;
@@ -281,10 +281,11 @@ fn fake_analysis() -> Analysis {
         lines: vec![LineKind::Code],
         status: FileStatus::Analyzed,
         unit_ids: vec![type_id.clone(), module_id.clone()],
+        excluded_spans: Vec::new(),
     };
     let type_unit = SourceUnit {
         language: Language::Rust,
-        id: type_id,
+        id: type_id.clone(),
         kind: UnitKind::Type(TypeKind::Struct),
         name: "Small".to_string(),
         module_path: "small".to_string(),
@@ -314,7 +315,15 @@ fn fake_analysis() -> Analysis {
         methods: Vec::new(),
         fields: Vec::new(),
         relations: Vec::new(),
-        outline: Vec::new(),
+        outline: vec![OutlineItem {
+            id: type_id.to_string(),
+            kind: OutlineKind::Type,
+            name: "Small".to_string(),
+            visibility: Visibility::Public,
+            signature: String::new(),
+            order: 1,
+            calls: Vec::new(),
+        }],
         complete: true,
         unsupported: Vec::new(),
     };
@@ -396,4 +405,179 @@ pub fn write_python3_stub(env: &TestEnv) {
 
 pub fn python3_stub_invoked(env: &TestEnv) -> bool {
     env.path(".python3-stub/invoked").exists()
+}
+pub fn write_unknown_receiver_call(env: &TestEnv) {
+    write_source(
+        env,
+        "src/tier.rs",
+        "pub struct TierReasoning;\n\nimpl TierReasoning {\n    pub fn check(&self, value: &ExternalValue) -> bool {\n        value.is_empty()\n    }\n\n    pub fn is_empty(&self) -> bool {\n        self.missing()\n    }\n}\n\npub struct First;\n\nimpl First {\n    pub fn missing(&self) {}\n}\n\npub struct Second;\n\nimpl Second {\n    pub fn missing(&self) {}\n}\n",
+    );
+}
+
+pub fn write_self_receiver_call(env: &TestEnv) {
+    write_source(
+        env,
+        "src/engine.rs",
+        "pub struct Engine {\n    value: u64,\n}\n\nimpl Engine {\n    pub fn build(&self) -> u64 {\n        self.validate();\n        self.check()\n    }\n\n    pub fn validate(&self) -> u64 {\n        self.value\n    }\n\n    pub fn check(&self) -> u64 {\n        self.value\n    }\n}\n",
+    );
+}
+
+pub fn write_named_receiver_call(env: &TestEnv) {
+    write_source(
+        env,
+        "src/line.rs",
+        "pub struct Line;\n\npub struct Consumer;\n\nimpl Line {\n    pub fn from(value: u64) -> Self {\n        let _ = value;\n        Self\n    }\n\n    pub fn other(&self) {}\n}\n\nimpl Consumer {\n    pub fn make(&self) -> Line {\n        Line::from(1)\n    }\n}\n",
+    );
+}
+
+pub fn write_ambiguous_call(env: &TestEnv) {
+    write_source(
+        env,
+        "src/refresh.rs",
+        "pub struct First;\n\nimpl First {\n    pub fn refresh(&self) {}\n}\n\npub struct Second;\n\nimpl Second {\n    pub fn refresh(&self) {}\n}\n\npub struct Caller;\n\nimpl Caller {\n    pub fn poll(&self, value: &ExternalValue) {\n        value.refresh();\n    }\n}\n",
+    );
+}
+
+pub fn write_contradictory_qualifier(env: &TestEnv) {
+    write_source(
+        env,
+        "src/external.rs",
+        "pub struct Error;\n\nimpl Error {\n    pub fn from(value: u64) -> Self {\n        let _ = value;\n        Self\n    }\n}\n\npub struct Caller;\n\nimpl Caller {\n    pub fn make(&self) -> Error {\n        Line::from(1)\n    }\n}\n",
+    );
+}
+
+pub fn write_tcc_god_type(env: &TestEnv) {
+    let mut source =
+        String::from("pub struct Cohesion {\n    a: u64,\n    b: u64,\n}\n\nimpl Cohesion {\n");
+    for (method, field, other) in [("first", "a", "second"), ("second", "b", "first")] {
+        source.push_str(&format!("    pub fn {method}(&self) -> u64 {{\n"));
+        for _ in 0..255 {
+            source.push_str(&format!("        let _ = self.{field};\n"));
+        }
+        if method == "first" {
+            source.push_str(&format!("        self.{other}();\n"));
+        }
+        source.push_str(&format!("        self.{field}\n    }}\n"));
+    }
+    source.push_str("}\n");
+    write_source(env, "src/cohesion_evidence.rs", &source);
+}
+
+pub fn write_complexity_method(env: &TestEnv) {
+    let mut source = String::from(
+        "pub struct Long;\n\nimpl Long {\n    pub fn branchy(&self, value: u64) -> u64 {\n",
+    );
+    for index in 0..60 {
+        source.push_str(&format!(
+            "        if value == {index} {{ return {index}; }}\n"
+        ));
+    }
+    source.push_str("        value\n    }\n}\n");
+    write_source(env, "src/complex.rs", &source);
+}
+
+pub fn write_module_with_types(env: &TestEnv) {
+    write_source(
+        env,
+        "src/module.rs",
+        "pub struct First;\npub struct Second;\npub struct Third;\n\npub fn load() -> u64 {\n    1\n}\n",
+    );
+}
+
+pub fn write_interleaved_module(env: &TestEnv) {
+    write_source(
+        env,
+        "src/interleave.rs",
+        "pub fn alpha() -> u64 {\n    1\n}\n\npub struct Beta;\n\npub fn gamma() -> u64 {\n    2\n}\n\npub struct Delta;\n",
+    );
+}
+
+pub fn write_python_classes_module(env: &TestEnv) {
+    write_source(
+        env,
+        "src/ledger.py",
+        "class OrderBook:\n    def add(self, order: str) -> int:\n        return len(order)\n\n\nclass Ledger:\n    def record(self, value: str) -> int:\n        return len(value)\n\n\ndef load(path: str) -> str:\n    return path\n",
+    );
+}
+
+pub fn write_cross_file_impl(env: &TestEnv) {
+    write_source(
+        env,
+        "src/engine_core.rs",
+        "pub struct Engine;\n\nimpl Engine {\n    pub fn check(&self) -> bool {\n        self.validate()\n    }\n}\n",
+    );
+    write_source(
+        env,
+        "src/engine_parts.rs",
+        "impl Engine {\n    pub fn validate(&self) -> bool {\n        self.extra();\n        true\n    }\n\n    pub fn extra(&self) {}\n}\n",
+    );
+}
+
+pub fn write_resolution_report(env: &TestEnv) {
+    write_source(
+        env,
+        "src/engine_view.rs",
+        "pub struct Engine;\n\nimpl Engine {\n    pub fn build(&self, value: &ExternalValue) -> bool {\n        self.validate();\n        normalize();\n        value.is_empty()\n    }\n\n    pub fn validate(&self) -> bool {\n        true\n    }\n\n    pub fn is_empty(&self) -> bool {\n        false\n    }\n}\n",
+    );
+    write_source(
+        env,
+        "src/normalizer.rs",
+        "pub fn normalize() -> bool {\n    true\n}\n",
+    );
+}
+
+pub fn write_inline_test_module(env: &TestEnv) {
+    write_source(
+        env,
+        "src/counted.rs",
+        "pub struct Counted {\n    value: u64,\n}\n\nimpl Counted {\n    pub fn value(&self) -> u64 {\n        self.value\n    }\n}\n#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n    fn reads_value() {\n        assert_eq!(Counted { value: 1 }.value(), 1);\n    }\n}\n",
+    );
+}
+
+pub fn write_span_scoped_unit(env: &TestEnv) {
+    let mut source = String::from(
+        "pub struct Scoped {\n    value: u64,\n}\n\nimpl Scoped {\n    pub fn value(&self) -> u64 {\n        self.value\n    }\n}\n\npub fn unrelated() -> u64 {\n",
+    );
+    for _ in 0..20 {
+        source.push_str("    let _value = 1;\n");
+    }
+    source.push_str("}\n");
+    write_source(env, "src/scoped.rs", &source);
+}
+
+pub fn write_impl_test_method(env: &TestEnv) {
+    write_source(
+        env,
+        "src/guarded.rs",
+        "pub struct Guarded {\n    value: u64,\n}\n\nimpl Guarded {\n    pub fn value(&self) -> u64 {\n        self.value\n    }\n\n    #[cfg(test)]\n    fn test_value(&self) -> u64 {\n        self.value\n    }\n}\n",
+    );
+}
+
+pub fn write_name_only_cohesion(env: &TestEnv) {
+    let mut source = String::from("pub struct Engine;\n\nimpl Engine {\n");
+    for method in ["first", "second", "third", "fourth"] {
+        source.push_str(&format!(
+            "    pub fn {method}(&self, value: &ExternalValue) {{\n"
+        ));
+        for _ in 0..130 {
+            source.push_str(&format!("        let _ = value.{method}_target();\n"));
+        }
+        source.push_str("    }\n");
+    }
+    source.push_str("}\n\npub struct Helper;\n\nimpl Helper {\n");
+    for method in ["first", "second", "third", "fourth"] {
+        source.push_str(&format!(
+            "    pub fn {method}_target(&self) -> u64 {{\n        1\n    }}\n"
+        ));
+    }
+    source.push_str("}\n");
+    write_source(env, "src/cohesion.rs", &source);
+}
+
+pub fn write_signature_shapes(env: &TestEnv) {
+    write_source(
+        env,
+        "src/signature.rs",
+        "pub struct Config;\n\npub struct Signature;\n\nimpl Signature {\n    pub fn shapes(\n        &self,\n        raw: &[u8],\n        pair: (u32, String),\n        config: *const Config,\n        bytes: [u8; 4],\n        path: crate::config::Config,\n    ) -> Result<Self, Error> {\n        let _ = (raw, pair, config, bytes, path);\n        todo!()\n    }\n}\n",
+    );
 }
