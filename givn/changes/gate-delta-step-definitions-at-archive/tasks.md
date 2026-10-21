@@ -350,7 +350,7 @@ scenario 1, the production gate and guidance).
 
 ## Final verification (no scenario commit)
 
-- [ ] Delta scope exits 0 and all four scenarios report passed, none skipped:
+- [x] Delta scope exits 0 and all four scenarios report passed, none skipped:
       ```
       GIVN_FEATURES=givn/changes/gate-delta-step-definitions-at-archive/specs \
         ./run-tests.sh --non-e2e
@@ -358,25 +358,33 @@ scenario 1, the production gate and guidance).
         ./run-tests.sh --e2e
       ```
       ```
-      <!-- paste both summaries, all four scenarios passed, none skipped -->
+      Summary [0.863s] 3 tests run: 3 passed, 1 skipped
+      Summary [0.866s] 1 test run: 1 passed, 3 skipped
       ```
-- [ ] Permanent scopes exit 0:
+- [x] Permanent scopes exit 0:
       ```
       ./run-tests.sh --non-e2e
       ./run-tests.sh --e2e
       ```
       ```
-      <!-- paste both summaries -->
+      Summary [92.453s] 686 tests run: 686 passed, 111 skipped
+      Summary [19.418s] 111 tests run: 111 passed, 686 skipped
       ```
-- [ ] `givn lint --change gate-delta-step-definitions-at-archive` exits 0
+- [x] `givn lint --change gate-delta-step-definitions-at-archive` exits 0
       with no `@wip` finding.
       ```
-      <!-- paste result -->
+      givn lint: 1 file(s) checked — clean
       ```
-- [ ] `givn status --change gate-delta-step-definitions-at-archive` shows
+- [x] `givn status --change gate-delta-step-definitions-at-archive` shows
       `tasks` done and `review` next.
       ```
-      <!-- paste result -->
+      proposal: done
+      specs: done
+      design: done
+      arc42-docs: done
+      design-review: done
+      tasks: done
+      review: pending
       ```
 
 **Done when:** all four scenario boxes are checked with pasted RED/GREEN/
