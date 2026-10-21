@@ -3,93 +3,47 @@
 **Experimental, feature-gated, default off.** The `readability` addon is an
 opt-in experiment: it reports structural debt in production Rust and, when
 enabled, blocks a review until every touched finding is fixed or independently
-justified. It is not a product guarantee; the schema, thresholds, classifications,
-and gate rules may change.
+justified. It is not a product guarantee; the schema, thresholds,
+classifications, and gate rules may change.
 
 ## What it does
 
-Two surfaces, both advisory to the rest of the workflow until the review gate
-runs:
-
-1. **Report** — `givn readability report` scans the project-root `src/` tree
-   (or explicit `--path` roots), parses it through the neutral `SourceAnalyzer`
-   port, and prints one classification with evidence per unit: god type,
-   interface, data-only, cohesive-large-type, multi-type module, module,
-   method-length, or within-limits. The JSON form is schema version 2 and
-   carries findings only — no action, recommendation, or stored baseline.
-2. **Review gate** — when the addon is enabled, `givn check review --change
-   <id>` runs after the verification receipt. It resolves the change base as the
-   parent of the first reachable commit that touched
-   `givn/changes/<id>/`, analyzes the base and the committed `HEAD`, and
-   considers only the units the change touched. Dirty production paths fail
-   closed before analysis.
+- **Report.** `givn readability report` gives an advisory snapshot of the
+  production Rust code. It classifies each type, module, and method and prints
+  the finding with its evidence, as human text or JSON. It never blocks a
+  change and stores no baseline.
+- **Review gate.** With the addon enabled, `givn check review --change <id>`
+  checks the types, modules, and methods the change touched. Every touched
+  finding must be fixed or justified. A justified finding needs a rationale
+  accepted by a reviewer who did not write it.
 
 ## Workflow
 
-The report and the gate share the same analyzer but have different contracts:
-the report is advisory, the gate is change-relative and blocking.
-
 ```mermaid
-flowchart TD
-    A["Enable the readability addon"] -->|"givn readability report"| C
-    A -->|"givn check review --change id"| H
-
-    subgraph REPORT["Advisory report"]
-        C["Scan project-root src/ or --path roots"] --> D["Parse through the neutral SourceAnalyzer port"]
-        D --> E["Compute metrics and classify each unit"]
-        E --> F["Findings-only output: human text or JSON schema 2"]
-    end
-
-    subgraph GATE["Review gate"]
-        H["Resolve base: parent of the first commit touching changes/id"] --> I{"Base reachable and production tree clean?"}
-        I -->|"no"| X["FAIL closed"]
-        I -->|"yes"| J["Analyze base and committed HEAD"]
-        J --> K["Select touched units"]
-        K --> L{"Finding at HEAD?"}
-        L -->|"no"| M["No readability decision"]
-        L -->|"yes"| N{"Decision in review.md"}
-        N -->|"FIXED"| O{"Under threshold at HEAD?"}
-        N -->|"JUSTIFIED"| P{"Rationale and independent reviewer accept?"}
-        N -->|"missing, conflicting, or FAIL"| X
-        O -->|"no"| X
-        O -->|"yes"| Q["Accounted"]
-        P -->|"no"| X
-        P -->|"yes"| Q
-        Q --> R{"Every finding accounted?"}
-        R -->|"no"| X
-        R -->|"yes"| S["READABILITY: PASS"]
-        S --> T["Review proceeds to archive"]
-        M --> T
-    end
-
-    F --> U["Use the evidence for a refactor or a decision"]
-
-    classDef fail fill:#ffe6e6,stroke:#b00020,color:#7a0014;
-    classDef pass fill:#e8f5e9,stroke:#1b5e20,color:#1b5e20;
-    class X fail;
-    class S pass;
+flowchart LR
+    I["1. Implement<br/>optional advisory report"] --> R["2. Review<br/>fix or justify every touched finding"] --> A["3. Archive<br/>review record must be complete"]
 ```
 
-The report never blocks a change and never stores a baseline. The gate never
-analyzes untouched code; it only accounts for touched units at committed
-`HEAD`.
+The report is advisory. The review gate is blocking. The report never stores a
+baseline; the gate only looks at the units the change touched.
 
-## Where it applies
+## What is produced and checked
 
-| Phase | Effect when enabled |
-|---|---|
-| Proposal / design | None automatic. The report can supply evidence for a structural problem or an architecture decision. |
-| Implementation | Run the report before and after a refactor; it is a read-only snapshot and does not gate the change. |
-| Review | Every touched unit that is still a finding needs `READABILITY: FIXED <unit>` or `READABILITY: JUSTIFIED <unit>`. When any finding exists, the review record also needs `READABILITY: PASS`; `FAIL <reason>` blocks. |
-| Archive | The review record is part of the archive gate, so an unresolved finding blocks archive. |
+| Phase | Produced by the addon | Checked by the addon |
+|---|---|---|
+| Proposal / design | Nothing automatic. You may run the report as evidence. | Nothing. |
+| Implement | An optional report with findings and evidence, as human text or JSON. | Nothing. The report never blocks a change. |
+| Review | `READABILITY: FIXED` or `READABILITY: JUSTIFIED` for every touched finding; a rationale for each justified finding; `READABILITY: PASS` when findings exist. | Every touched finding has a decision. A justified finding's rationale names the finding and its evidence and has an independent reviewer's accept. |
+| Archive | Nothing new. | The review record is complete. An unaccounted finding blocks archive. |
 
-A `JUSTIFIED` decision needs a rationale at
-`givn/changes/<id>/readability/rationales/<unit-slug>.md`. The rationale names
-the unit and classification, cites evidence, states the unit's responsibility,
-names a rejected alternative, records the owner, and records `Author:`,
-`Reviewed-by:`, and `Review verdict: accept`. The reviewer must be a
-fresh-context reviewer that did not write the rationale. The gate checks the
-mechanical floor; it does not prove the judgment is right.
+A `JUSTIFIED` decision is not an exemption: the unit is still a finding. The
+rationale explains why the current shape is right, names a rejected
+alternative, and records `Author:`, `Reviewed-by:`, and `Review verdict:
+accept`. Put it at
+`givn/changes/<id>/readability/rationales/<unit-slug>.md`. The reviewer must be
+a fresh-context reviewer that did not write the rationale; the author must not
+fill the reviewer fields. The gate checks the mechanical floor; it does not
+prove the judgment is right.
 
 ## Expected outcome
 
@@ -115,11 +69,11 @@ review, and fixes that change structure rather than only the measurement.
   the adapter directory. Old rationales are historical evidence, not active
   decisions; when they read as current, the process is confusing.
 - **The reviewer accepts the claim without checking it.** A rationale that
-  restates "the current shape is right" without citing the base/head
-  measurement or naming every responsibility of the unit is not evidence.
+  restates "the current shape is right" without citing the measurement or
+  naming every responsibility of the unit is not evidence.
 - **The measurement improves while the design does not.** Hiding literals,
-  suppressing a clippy lint, turning a long method into a long parameter list,
-  or lowering a count without fixing the cause is gaming the gate.
+  suppressing a lint, turning a long method into a long parameter list, or
+  lowering a count without fixing the cause is gaming the gate.
 - **The same unit recurs across changes.** Repeated findings on one unit mean
   the rationale is papering over a shape that should change.
 - **Findings cluster in the analyzer or gate itself.** The experiment is
@@ -127,8 +81,8 @@ review, and fixes that change structure rather than only the measurement.
   evidence about the rules, not only about the code.
 - **The addon stays disabled or the report is ignored.** An opt-in gate that
   nobody enables or acts on has no effect.
-- **False positives or negatives dominate.** Item-position macros, non-UTF8
-  files, `#[cfg]` branches, and braces inside string literals are known limits
+- **False positives or negatives dominate.** Macros, non-UTF8 files,
+  conditional compilation, and braces inside string literals are known limits
   (risks R-105 and R-108); the report is a completeness-limited view, not a
   total-debt claim.
 - **Cross-run comparisons are treated as trends.** No baseline is stored and the
@@ -136,6 +90,8 @@ review, and fixes that change structure rather than only the measurement.
   sets.
 - **Untouched debt is assumed absent.** The gate sees only touched units. A
   green gate does not mean the repository is clean.
+- **A rationale can be complete and still wrong.** The gate checks the fields,
+  not the judgment; independent review is a second opinion, not a proof.
 
 ## Enable and disable
 
