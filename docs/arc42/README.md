@@ -160,3 +160,11 @@ historical records.
 2. Read chapter 8 for cross-cutting mechanics and chapter 6 for runtime order.
 3. Read the [ADR register](adr/README.md) and only then individual decisions.
 4. Treat proposed, deprecated, and superseded records as historical or pending evidence, not as accepted architecture.
+
+The `fix-outline-report-fidelity` change corrects the outline report's evidence
+without changing its goal: call resolution now follows the call's shape,
+unknown receivers are visible `name_only` leaves, JSON calls carry their
+target, module outlines list member types, evidence names only fired
+predicates, production line counts exclude recorded test spans, and signatures
+keep their full type detail. Durable facts live in chapters 1 (FR-46), 3, 4, 5,
+6.19, 8, 10 (Q-119), 11 (R-106, R-115, R-121, R-122), and 12.

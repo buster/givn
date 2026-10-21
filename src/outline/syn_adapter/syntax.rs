@@ -42,11 +42,7 @@ pub(super) fn type_label(ty: &Type) -> String {
             }
         }
         Type::Slice(slice) => format!("[{}]", type_label(&slice.elem)),
-        Type::Array(array) => format!(
-            "[{}; {}]",
-            type_label(&array.elem),
-            expr_label(&array.len)
-        ),
+        Type::Array(array) => format!("[{}; {}]", type_label(&array.elem), expr_label(&array.len)),
         Type::Paren(paren) => format!("({})", type_label(&paren.elem)),
         Type::Group(group) => type_label(&group.elem),
         Type::Never(_) => "!".to_string(),
@@ -58,7 +54,11 @@ pub(super) fn type_label(ty: &Type) -> String {
             format!("impl {}", bounds_label(&implemented.bounds))
         }
         Type::FnPtr(function) => {
-            let inputs: Vec<String> = function.inputs.iter().map(|arg| type_label(&arg.ty)).collect();
+            let inputs: Vec<String> = function
+                .inputs
+                .iter()
+                .map(|arg| type_label(&arg.ty))
+                .collect();
             let mut text = format!("fn({})", inputs.join(", "));
             if let ReturnType::Type(_, ty) = &function.output {
                 text.push_str(" -> ");
@@ -66,11 +66,7 @@ pub(super) fn type_label(ty: &Type) -> String {
             }
             text
         }
-        Type::Macro(mac) => format!(
-            "{}!({})",
-            path_label(&mac.mac.path),
-            mac.mac.tokens
-        ),
+        Type::Macro(mac) => format!("{}!({})", path_label(&mac.mac.path), mac.mac.tokens),
         Type::Verbatim(tokens) => tokens.to_string(),
         _ => "type".to_string(),
     }
@@ -113,11 +109,7 @@ fn path_arguments_label(arguments: &PathArguments) -> String {
     match arguments {
         PathArguments::None => String::new(),
         PathArguments::AngleBracketed(arguments) => {
-            let items: Vec<String> = arguments
-                .args
-                .iter()
-                .map(generic_argument_label)
-                .collect();
+            let items: Vec<String> = arguments.args.iter().map(generic_argument_label).collect();
             format!("<{}>", items.join(", "))
         }
         PathArguments::Parenthesized(arguments) => {
@@ -146,11 +138,8 @@ fn generic_argument_label(argument: &GenericArgument) -> String {
                 .generics
                 .as_ref()
                 .map(|generics| {
-                    let items: Vec<String> = generics
-                        .args
-                        .iter()
-                        .map(generic_argument_label)
-                        .collect();
+                    let items: Vec<String> =
+                        generics.args.iter().map(generic_argument_label).collect();
                     format!("<{}>", items.join(", "))
                 })
                 .unwrap_or_default();
@@ -161,26 +150,24 @@ fn generic_argument_label(argument: &GenericArgument) -> String {
                 .generics
                 .as_ref()
                 .map(|generics| {
-                    let items: Vec<String> = generics
-                        .args
-                        .iter()
-                        .map(generic_argument_label)
-                        .collect();
+                    let items: Vec<String> =
+                        generics.args.iter().map(generic_argument_label).collect();
                     format!("<{}>", items.join(", "))
                 })
                 .unwrap_or_default();
-            format!("{}{generics} = {}", binding.ident, expr_label(&binding.value))
+            format!(
+                "{}{generics} = {}",
+                binding.ident,
+                expr_label(&binding.value)
+            )
         }
         GenericArgument::Constraint(constraint) => {
             let generics = constraint
                 .generics
                 .as_ref()
                 .map(|generics| {
-                    let items: Vec<String> = generics
-                        .args
-                        .iter()
-                        .map(generic_argument_label)
-                        .collect();
+                    let items: Vec<String> =
+                        generics.args.iter().map(generic_argument_label).collect();
                     format!("<{}>", items.join(", "))
                 })
                 .unwrap_or_default();

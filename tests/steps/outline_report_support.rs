@@ -447,7 +447,8 @@ pub fn write_contradictory_qualifier(env: &TestEnv) {
 }
 
 pub fn write_tcc_god_type(env: &TestEnv) {
-    let mut source = String::from("pub struct Cohesion {\n    a: u64,\n    b: u64,\n}\n\nimpl Cohesion {\n");
+    let mut source =
+        String::from("pub struct Cohesion {\n    a: u64,\n    b: u64,\n}\n\nimpl Cohesion {\n");
     for (method, field, other) in [("first", "a", "second"), ("second", "b", "first")] {
         source.push_str(&format!("    pub fn {method}(&self) -> u64 {{\n"));
         for _ in 0..255 {
@@ -463,7 +464,9 @@ pub fn write_tcc_god_type(env: &TestEnv) {
 }
 
 pub fn write_complexity_method(env: &TestEnv) {
-    let mut source = String::from("pub struct Long;\n\nimpl Long {\n    pub fn branchy(&self, value: u64) -> u64 {\n");
+    let mut source = String::from(
+        "pub struct Long;\n\nimpl Long {\n    pub fn branchy(&self, value: u64) -> u64 {\n",
+    );
     for index in 0..60 {
         source.push_str(&format!(
             "        if value == {index} {{ return {index}; }}\n"
@@ -532,7 +535,9 @@ pub fn write_inline_test_module(env: &TestEnv) {
 }
 
 pub fn write_span_scoped_unit(env: &TestEnv) {
-    let mut source = String::from("pub struct Scoped {\n    value: u64,\n}\n\nimpl Scoped {\n    pub fn value(&self) -> u64 {\n        self.value\n    }\n}\n\npub fn unrelated() -> u64 {\n");
+    let mut source = String::from(
+        "pub struct Scoped {\n    value: u64,\n}\n\nimpl Scoped {\n    pub fn value(&self) -> u64 {\n        self.value\n    }\n}\n\npub fn unrelated() -> u64 {\n",
+    );
     for _ in 0..20 {
         source.push_str("    let _value = 1;\n");
     }
@@ -576,4 +581,3 @@ pub fn write_signature_shapes(env: &TestEnv) {
         "pub struct Config;\n\npub struct Signature;\n\nimpl Signature {\n    pub fn shapes(\n        &self,\n        raw: &[u8],\n        pair: (u32, String),\n        config: *const Config,\n        bytes: [u8; 4],\n        path: crate::config::Config,\n    ) -> Result<Self, Error> {\n        let _ = (raw, pair, config, bytes, path);\n        todo!()\n    }\n}\n",
     );
 }
-

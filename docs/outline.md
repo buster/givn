@@ -46,9 +46,9 @@ An example, abridged from the report:
 WITHIN-LIMITS type  src/engine.rs  type:src/engine.rs::Engine within-limits
   outline:
     method [public] fn build(&self) -> Engine
-      -> [private, Engine] validate
-      -> [private, Engine] compile
-      -> [public, module] normalize
+      -> [same_file, private, Engine] validate
+      -> [same_file, private, Engine] compile
+      -> [same_file, public, module] normalize
     method [private] fn validate(&self) -> Result<()>
     method [private] fn compile(&self) -> Engine
   metrics (hint): code lines 120; methods 3; public methods 1
@@ -63,22 +63,35 @@ then compiling, with normalization delegated to the module component
 - The unit is the root. Every method is a first-level branch, in the outline's
   order.
 - A same-unit call nests under its caller. A call to another component is a
-  leaf tagged with the target's visibility and component, for example
-  `-> [public, module] normalize`. Its own calls are in the target component's
-  outline, not here.
+  leaf tagged with its resolution, the target's visibility, and its component,
+  for example `-> [same_file, public, module] normalize`. A same-unit method
+  implemented in another file is labelled `project_other_file` and still
+  nests, because nesting follows unit membership, not the file label. Its own
+  calls are in the target component's outline, not here.
 - The tree is forward-only. It never prints callers; there is no reverse index.
   To answer “who calls this private method?”, read the caller's component.
 - A method's calls are deduplicated and kept in source order. A recursive edge
   prints `[cycle]` instead of expanding without end.
-- `[ambiguous]` means the name matched more than one method, so the edge is not
-  expanded. Calls to functions outside the analyzed sources are omitted.
+- `[ambiguous]` means the name matched more than one compatible method, so the
+  edge is not expanded. Calls to functions outside the analyzed sources are
+  omitted.
+- `[name_only]` means a unique project method has this name, but the receiver
+  type is unknown, so the report does not claim the call is resolved. It keeps
+  the candidate target for inspection and is always a leaf; it never nests and
+  never joins methods for cohesion.
 
-Calls are resolved by name for Rust and Python alike: same unit first, then the
-same file, then a unique project method. Anything else is `ambiguous` or
-`external`. Rust also visits expression-list macro arguments (`format!`,
-`println!`, `vec!`), so a call inside `format!` belongs to the enclosing method.
-The JSON labels are `same_file`, `project_other_file`, `ambiguous`, and
-`external`.
+Calls are resolved by call shape, not name alone, for Rust and Python alike. A
+free function call with no qualifier can target a module function; a qualified
+call (`Type::method`, `crate::module::function`) must match that owner; a method
+call must match `self`/`cls` or a named receiver. A method call on an unknown
+receiver stays `name_only`; several compatible candidates are `ambiguous`; an
+explicit qualifier that contradicts the only candidate is `external`. `same_file`
+means the target is declared in the caller's file, not necessarily the same
+unit. Rust also visits expression-list macro arguments (`format!`, `println!`,
+`vec!`), so a call inside `format!` belongs to the enclosing method. The JSON
+labels are `same_file`, `project_other_file`, `name_only`, `ambiguous`,
+`dynamic`, and `external`; each JSON call also names its `target` when one is
+resolved or is the unique name-only candidate.
 
 The outline is the gate. Metrics find candidates for a reviewer's attention,
 but they do not decide. Both directions are valid:
@@ -147,12 +160,22 @@ The report and the gate share the same analysis:
   method is `data-only`; LCOM4 over 2 or TCC below 50% is a `god-type`;
   otherwise it is a `cohesive-large-type`. LCOM4 counts shared fields and
   resolved same-unit call edges; a cross-component call does not connect
-  methods in the caller's unit.
+  methods in the caller's unit, and a `name_only` edge never connects methods.
+  Evidence lists only the predicates that actually fired.
 - **Supporting module metrics.** Over 1,000 code lines is a `module`; 500–1,000
   with at least two declared types is a `multi-type-module`; 500–1,000
-  otherwise is a `module`.
+  otherwise is a `module`. A module outline lists its declared member types as
+  type items, interleaved with its free functions in source order.
 - **Supporting method metrics.** A method over 100 code lines or over 50 flow
-  complexity is a `method-length` finding.
+  complexity is a `method-length` finding; each evidence line names the
+  predicate that fired.
+- **Production line accounting.** A file's `code_lines` excludes inline
+  `#[cfg(test)]` spans; a unit's `physical_lines` covers the union of its own
+  spans, not its containing files. Unit `code_lines` also excludes recorded
+  test spans.
+- **Signatures.** Method signatures keep path segments, generic arguments,
+  references, tuples, slices, arrays, and pointers; they are not reduced to the
+  final path segment or a bare `Result`.
 - **Supporting findings are not decisions.** The gate prints them as
   `HINT` and never requires a decision for them.
 - **Reviewer identity.** `OUTLINE: AUTHOR` and `OUTLINE: REVIEWER` are
@@ -195,9 +218,10 @@ production scope.
 | Source file under `tests/`, `benches/`, `examples/`, `target/`, or a Python cache/virtualenv directory | Excluded | Not production scope |
 
 Python's dynamic nature limits the outline: a call through a dynamic attribute
-or an inferred type is not resolved precisely, so it can appear as
-`ambiguous` or `external`. Both analyzers use the same neutral resolver and the
-same tree renderer. The report names these limits as analyzer limitations. An unsupported construct is named in the report's
+or an inferred type is not resolved precisely, so it appears as `name_only`
+when one project method has the name, and as `ambiguous` or `external`
+otherwise. Both analyzers use the same neutral resolver and the same tree
+renderer. The report names these limits as analyzer limitations. An unsupported construct is named in the report's
 `unsupported` list; it is not automatically a gate failure. Supporting another
 language needs another adapter behind the neutral `SourceAnalyzer` port
 (ADR-074); no adapter pretends to understand another language's syntax.

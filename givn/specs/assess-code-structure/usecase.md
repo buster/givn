@@ -58,9 +58,11 @@ The developer asks for a outline report.
 - The report format is independent of the analysis engine.
 - Every analyzed unit has exactly one classification.
 - The report leads with each unit's per-component call tree: declarations,
-  signatures, and calls, without data. Same-unit calls nest under the caller;
-  calls to another component are leaves tagged with the target. The metrics
-  hint at potential problems; they do not decide.
+  signatures, and calls, without data. A module outline also lists its
+  declared member types as type items. Same-unit calls nest under the caller;
+  calls to another component are leaves tagged with the target and their
+  resolution. An unknown-receiver call stays a visible `name_only` leaf. The
+  metrics hint at potential problems; they do not decide.
 - The report attaches no action or recommendation to a unit; a finding states the classification, the measured metrics, and the evidence.
 
 ## Examples

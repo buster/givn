@@ -1093,7 +1093,9 @@ fn indent(line: &str) -> usize {
     line.len() - line.trim_start().len()
 }
 
-#[then(regex = r#"^the name-only call "([^"]+)" is not expanded into a deeper-indented call line$"#)]
+#[then(
+    regex = r#"^the name-only call "([^"]+)" is not expanded into a deeper-indented call line$"#
+)]
 fn name_only_not_expanded(world: &mut GivnWorld, callee: String) {
     let report = report_text(world);
     let lines: Vec<&str> = report.lines().collect();
@@ -1142,7 +1144,9 @@ fn named_receiver_call(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
-#[given("a production source unit whose method calls an unknown receiver whose name two project types declare")]
+#[given(
+    "a production source unit whose method calls an unknown receiver whose name two project types declare"
+)]
 fn ambiguous_call(world: &mut GivnWorld) {
     let env = common::make_init_root();
     crate::steps::outline_report_support::enable_outline(&env);
@@ -1150,7 +1154,9 @@ fn ambiguous_call(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
-#[given("a production source unit that calls \"Line::from\" while the project declares \"Error::from\"")]
+#[given(
+    "a production source unit that calls \"Line::from\" while the project declares \"Error::from\""
+)]
 fn contradictory_qualifier(world: &mut GivnWorld) {
     let env = common::make_init_root();
     crate::steps::outline_report_support::enable_outline(&env);
@@ -1158,7 +1164,9 @@ fn contradictory_qualifier(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
-#[given("a production source unit over the readable size whose methods are connected only by calls")]
+#[given(
+    "a production source unit over the readable size whose methods are connected only by calls"
+)]
 fn tcc_god_type(world: &mut GivnWorld) {
     let env = common::make_bare_root();
     crate::steps::outline_report_support::write_tcc_god_type(&env);
@@ -1168,9 +1176,7 @@ fn tcc_god_type(world: &mut GivnWorld) {
 #[then(regex = r#"^the report records the evidence "([^"]+)"$"#)]
 fn report_records_evidence(world: &mut GivnWorld, expected: String) {
     let block = report_block(world, &latest_unit_id(world, &expected));
-    let (rule, rest) = expected
-        .split_once(' ')
-        .unwrap_or((expected.as_str(), ""));
+    let (rule, rest) = expected.split_once(' ').unwrap_or((expected.as_str(), ""));
     assert!(block.contains(rule), "missing evidence {rule}: {block}");
     if !rest.is_empty() {
         assert!(block.contains(rest), "missing evidence {rest}: {block}");
@@ -1180,7 +1186,10 @@ fn report_records_evidence(world: &mut GivnWorld, expected: String) {
 #[then(regex = r#"^the report records no "([^"]+)" evidence$"#)]
 fn report_records_no_evidence(world: &mut GivnWorld, rule: String) {
     let block = report_block(world, &latest_unit_id(world, &rule));
-    assert!(!block.contains(&rule), "unexpected evidence {rule}: {block}");
+    assert!(
+        !block.contains(&rule),
+        "unexpected evidence {rule}: {block}"
+    );
 }
 
 fn latest_unit_id(world: &GivnWorld, _hint: &str) -> String {
@@ -1195,7 +1204,9 @@ fn latest_unit_id(world: &GivnWorld, _hint: &str) -> String {
         .to_string()
 }
 
-#[given("a production source unit with a method over the complexity limit but within the length limit")]
+#[given(
+    "a production source unit with a method over the complexity limit but within the length limit"
+)]
 fn complexity_method(world: &mut GivnWorld) {
     let env = common::make_bare_root();
     crate::steps::outline_report_support::write_complexity_method(&env);
@@ -1215,7 +1226,10 @@ fn json_module_lists_types(world: &mut GivnWorld, first: String, second: String,
     let value = json_output(world);
     let names = module_outline_names(&value);
     for name in [first, second, third] {
-        assert!(names.contains(&name), "module outline lacks {name}: {names:?}");
+        assert!(
+            names.contains(&name),
+            "module outline lacks {name}: {names:?}"
+        );
     }
 }
 
@@ -1233,7 +1247,9 @@ fn module_outline_names(value: &serde_json::Value) -> Vec<String> {
         .collect()
 }
 
-#[given("a production Rust module with a free function, a type, a free function, and a type in that order")]
+#[given(
+    "a production Rust module with a free function, a type, a free function, and a type in that order"
+)]
 fn interleaved_module(world: &mut GivnWorld) {
     let env = common::make_init_root();
     crate::steps::outline_report_support::enable_outline(&env);
@@ -1241,7 +1257,9 @@ fn interleaved_module(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
-#[then(regex = r#"^the JSON module outline lists "([^"]+)", "([^"]+)", "([^"]+)", and "([^"]+)" in source order$"#)]
+#[then(
+    regex = r#"^the JSON module outline lists "([^"]+)", "([^"]+)", "([^"]+)", and "([^"]+)" in source order$"#
+)]
 fn json_module_lists_in_order(
     world: &mut GivnWorld,
     first: String,
@@ -1280,7 +1298,10 @@ fn json_module_lists_classes(world: &mut GivnWorld, first: String, second: Strin
     let value = json_output(world);
     let names = module_outline_names(&value);
     for name in [first, second] {
-        assert!(names.contains(&name), "module outline lacks {name}: {names:?}");
+        assert!(
+            names.contains(&name),
+            "module outline lacks {name}: {names:?}"
+        );
     }
 }
 
@@ -1317,7 +1338,9 @@ fn call_is_expanded(world: &mut GivnWorld, callee: String) {
     );
 }
 
-#[given("a production source unit whose method calls its own method, a cross-file module function, and a receiver of unknown type")]
+#[given(
+    "a production source unit whose method calls its own method, a cross-file module function, and a receiver of unknown type"
+)]
 fn resolution_report(world: &mut GivnWorld) {
     let env = world
         .env
@@ -1358,7 +1381,11 @@ fn span_scoped_unit(world: &mut GivnWorld) {
 fn json_unit_metric(world: &mut GivnWorld, id: String, metric: String, expected: u64) {
     let value = json_output(world);
     let unit = unit_json(&value, &id);
-    assert_eq!(unit["metrics"][metric.as_str()].as_u64(), Some(expected), "{unit}");
+    assert_eq!(
+        unit["metrics"][metric.as_str()].as_u64(),
+        Some(expected),
+        "{unit}"
+    );
 }
 
 fn unit_json<'a>(value: &'a serde_json::Value, id: &str) -> &'a serde_json::Value {
@@ -1382,10 +1409,16 @@ fn impl_test_method(world: &mut GivnWorld) {
 fn json_unit_methods(world: &mut GivnWorld, expected: u64, id: String) {
     let value = json_output(world);
     let unit = unit_json(&value, &id);
-    assert_eq!(unit["metrics"]["methods"].as_u64(), Some(expected), "{unit}");
+    assert_eq!(
+        unit["metrics"]["methods"].as_u64(),
+        Some(expected),
+        "{unit}"
+    );
 }
 
-#[given("a production source unit over the readable size whose only call edges are name-only guesses")]
+#[given(
+    "a production source unit over the readable size whose only call edges are name-only guesses"
+)]
 fn name_only_cohesion(world: &mut GivnWorld) {
     let env = common::make_init_root();
     crate::steps::outline_report_support::enable_outline(&env);
@@ -1393,7 +1426,9 @@ fn name_only_cohesion(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
-#[given("a production source unit with a method whose types use paths, generics, references, slices, tuples, arrays, pointers, and fully qualified paths")]
+#[given(
+    "a production source unit with a method whose types use paths, generics, references, slices, tuples, arrays, pointers, and fully qualified paths"
+)]
 fn signature_shapes(world: &mut GivnWorld) {
     let env = common::make_init_root();
     crate::steps::outline_report_support::enable_outline(&env);
@@ -1412,8 +1447,9 @@ fn json_signature_contains(world: &mut GivnWorld, expected: String) {
         .filter_map(|item| item["signature"].as_str())
         .collect();
     assert!(
-        signatures.iter().any(|signature| signature.contains(&expected)),
+        signatures
+            .iter()
+            .any(|signature| signature.contains(&expected)),
         "no signature contains {expected}: {signatures:?}"
     );
 }
-

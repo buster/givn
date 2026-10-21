@@ -2,8 +2,8 @@
 
 use super::classify::{Assessment, Classification, ClassifiedUnit, Comparison, MetricValue};
 use super::model::{
-    AnalyzedFile, MethodId, OutlineItem, OutlineKind, Resolution, SourceScope, TypeKind,
-    UnitId, UnitKind, Visibility,
+    AnalyzedFile, MethodId, OutlineItem, OutlineKind, Resolution, SourceScope, TypeKind, UnitId,
+    UnitKind, Visibility,
 };
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
