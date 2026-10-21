@@ -150,6 +150,9 @@ Missing context never blocks a human commit.
   quality.
 - [`docs/reference.md`](docs/reference.md) — full CLI reference, agent skills,
   addons, configuration keys, project layout, dev scripts.
+- [`docs/architecture-principles.md`](docs/architecture-principles.md) — the
+  optional architecture-principles addon: consumer contracts now, implementation
+  splits later, and the phases it affects.
 - [`docs/development-report.md`](docs/development-report.md) — the record
   settings (mode, default, privacy), the report screens, and analytics over the
   JSONL store with jq, SQLite, and DuckDB.
