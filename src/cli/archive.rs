@@ -558,6 +558,9 @@ fn skip_comment(text: &str, index: usize) -> Option<usize> {
             .find("*/")
             .map(|offset| index + 2 + offset + 2);
     }
+    if bytes.get(index) == Some(&b'#') {
+        return text[index..].find('\n').map(|offset| index + offset + 1);
+    }
     None
 }
 
@@ -2166,7 +2169,7 @@ Feature: Dead capability
 #[given(regex = r#"^a givn project with a completed change "([^"]+)" ready to archive$"#)]
 @when(
     "a multi-line "
-    "phrase"
+    "phrase"  # a comment with ) and (
 )
 @then("plain phrase")
 Given(/^a regex step$/, () => {})
