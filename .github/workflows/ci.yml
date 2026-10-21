@@ -51,10 +51,20 @@ jobs:
       - name: Run library tests
         run: cargo nextest run --locked --lib --no-tests=warn
 
-      - name: Install acceptance prerequisites
+      - name: Install the pinned Fossil build
+        shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends fossil
+          set -euo pipefail
+          # Ubuntu 24.04 ships Fossil 2.23; pin the official static build so CI
+          # exercises current Fossil and the merge-base scenarios stay stable.
+          curl -fsSL -o /tmp/fossil.tar.gz \
+            https://fossil-scm.org/home/uv/fossil-linux-x64-20260801193352.tar.gz
+          echo "d649e406cd1cdc2ce72369d50e0fad86289c7858f546f449cfb2aa1ad8940e44  /tmp/fossil.tar.gz" \
+            | sha256sum -c -
+          mkdir -p /tmp/fossil
+          tar -xzf /tmp/fossil.tar.gz -C /tmp/fossil
+          sudo install -m 0755 /tmp/fossil/fossil /usr/local/bin/fossil
+          fossil version
 
       - name: Cache pinned test tools
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
