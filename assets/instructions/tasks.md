@@ -219,8 +219,8 @@ this.
   from `design.md` — the implementer may not read design.md, so the task must
   carry every decision it needs. Never leave the block empty or generic.
 {{#if addons.architecture_principles}}
-  When the scenario touches a cell, the block names the contract it uses; the
-  implementer never imports the implementing cell.
+  When the scenario touches a component, the block names the contract it uses;
+  the implementer never imports the component's implementation.
 {{/if}}
 - Each RED/GREEN/REFACTOR line has a field for pasted runner output.
 - Each scenario has a field for the commit hash.

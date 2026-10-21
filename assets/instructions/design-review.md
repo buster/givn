@@ -61,20 +61,20 @@ Required branches — cover every one (or explicitly record "no issue found"):
   with a named owner, and that a seed-sourced question keeps its seed
   reference (`D2 (seed Q5)`). An unresolved, unrecorded item is a finding.
 {{#if addons.architecture_principles}}
-- **Contracts and cells** — apply `givn instructions architecture-principles`
-  and check the design's `Contracts and Cells` table. Every consumer use case
-  touched by this change has a contract; every contract names its consumers and
-  implementing cell today. One cell may implement several contracts; a forced
-  one-contract-per-cell mapping is a finding. The contract is consumer-shaped:
-  no implementation or framework types, no methods the consumer does not use,
-  no future-use-case methods. A cell with two current responsibilities is split
-  now; a cell with one responsibility may implement several contracts. Every
-  contract can be replaced by a separate implementing cell later without
-  changing its consumers. No consumer is planned to import an implementing
-  cell; the composition root and implementation tests are the only exceptions.
-  A component with a named responsibility used from outside its own
-  implementation but no contract is a finding; an internal helper with no
-  contract is correct.
+- **Contracts and components** — apply `givn instructions
+  architecture-principles` and check the design's `Contracts and Components`
+  table. Every consumer use case touched by this change has a contract; every
+  contract names its consumers and implementing component today. One component
+  may implement several contracts; a forced one-contract-per-component mapping
+  is a finding. The contract is consumer-shaped: no implementation or framework
+  types, no methods the consumer does not use, no future-use-case methods. A
+  component with two current responsibilities is split now; a component with
+  one responsibility may implement several contracts. Every contract can be
+  replaced by a separate implementing component later without changing its
+  consumers. No consumer is planned to import a component's implementation;
+  the composition root and implementation tests are the only exceptions. A
+  component with a named responsibility and a consumer outside itself but no
+  contract is a finding; an internal helper with no contract is correct.
 - **Decision timing** — apply `givn instructions architecture-principles` to
   business and technology questions. A foundational question answered by usage
   is a finding. A carried question without default, trigger, switch cost, and
@@ -179,9 +179,9 @@ After all questions are answered, a hardening subagent applies decisions:
 {{#if addons.architecture_principles}}
   With this addon enabled, also require every carried decision to record its
   default, trigger, switch cost, and owner, and every declared contract to pass
-  the cell checks. Write `DESIGN-REVIEW: FAIL` if any grilling question remains
-  unresolved, any carried decision is unrecorded, or any contract fails the
-  cell checks.
+  the component checks. Write `DESIGN-REVIEW: FAIL` if any grilling question
+  remains unresolved, any carried decision is unrecorded, or any contract fails
+  the component checks.
 {{else}}
   Write `DESIGN-REVIEW: FAIL` if any grilling question remains unresolved.
 {{/if}}

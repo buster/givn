@@ -1,7 +1,7 @@
 # Architecture Principles addon
 
 Optional, default-off guidance for designing replaceable components: **design
-the consumer's contract now, defer the implementation split.**
+the consumer's contract now, defer the component split.**
 
 Canonical rule: `givn instructions architecture-principles`.
 
@@ -17,18 +17,18 @@ gate check without deleting project content.
 - A **contract** is the consumer's use case, expressed as the narrowest callable
   surface. It uses the consumer's language, parameters, and return values and
   contains only what the current use case needs.
-- A **cell** is the implementation behind one or more contracts. Its internal
-  methods are free.
+- A **component** is the replaceable unit of implementation behind one or more
+  contracts. Its internal methods are free.
 - **Interface Segregation splits contracts now.** `BookLending` and `CdLending`
   are separate contracts even when one `LendingDesk` implements both. A consumer
   never depends on a method it does not use.
-- **Single Responsibility governs the cell.** If book and CD policies later
-  diverge, split `LendingDesk` into separate cells. The contracts already exist,
-  so no consumer changes.
+- **Single Responsibility governs the component.** If book and CD policies later
+  diverge, split `LendingDesk` into separate components. The contracts already
+  exist, so no consumer changes.
 - Consumers use only the contract. The contract never imports the
   implementation; only the composition root names implementations.
 - A contract is not deferred. The last responsible moment applies to the
-  implementation split, technology choices, and business rules.
+  component split, technology choices, and business rules.
 - YAGNI and KISS apply to the contract's content: no future-use-case methods,
   no generic `lendMedia`, no second implementation now.
 
@@ -48,15 +48,15 @@ CdLendingDesk   implements CdLending
 
 `BookDesk` and `CdDesk` do not change.
 
-A cell is a replacement boundary, not a failure-isolation boundary. Do not add
-retries, circuit breakers, process isolation, or messaging in its name.
+A component is a replacement boundary, not a failure-isolation boundary. Do not
+add retries, circuit breakers, process isolation, or messaging in its name.
 
 ## Expected outcome
 
 The experiment succeeds if it makes replacing or splitting a component cheaper
 without making the code harder to read. Concretely:
 
-- **Cheaper replacement.** Replacing or splitting a cell changes the
+- **Cheaper replacement.** Replacing or splitting a component changes the
   implementation and the composition root; consumer code and consumer tests do
   not change.
 - **Consumer-shaped contracts.** Contracts are smaller than the implementation
@@ -64,14 +64,14 @@ without making the code harder to read. Concretely:
   framework types. A consumer can work against the contract without reading the
   implementation.
 - **Right granularity.** Contracts correspond to consumer use cases, not to
-  modules or files. One cell may implement several contracts; internal helpers
-  stay internal.
+  modules or files. One component may implement several contracts; internal
+  helpers stay internal.
 - **Correct timing.** Foundational business and technology questions are
   answered early. Carried decisions name a default, trigger, switch cost, and
-  owner. Implementation splits are deferred until responsibilities diverge.
+  owner. Component splits are deferred until responsibilities diverge.
 - **No readability tax.** The contract table and review branches are used only
-  where a cell exists. Contracts reduce the surface a consumer must understand;
-  they do not add a layer to helpers.
+  where a component exists. Contracts reduce the surface a consumer must
+  understand; they do not add a layer to helpers.
 - **Real use.** Design tables are filled, review branches produce findings, and
   the findings are resolved. At least one change shows a replacement or split
   that stayed inside the implementation.
@@ -89,17 +89,18 @@ without making the code harder to read. Concretely:
 - **Decorative contracts.** The table is filled but consumers still import
   implementations, the composition-root exception is used everywhere, or tests
   bypass the contract.
-- **SRP erosion.** One cell implements several contracts whose policies diverge,
-  but no split trigger is recorded or acted on.
+- **SRP erosion.** One component implements several contracts whose policies
+  diverge, but no split trigger is recorded or acted on.
 - **Deferred foundation.** A business or enterprise rule is carried without a
   trigger or owner, or a scenario depends on a carried answer.
-- **No cheaper change.** When an implementation was actually replaced or split,
+- **No cheaper change.** When a component was actually replaced or split,
   consumers still had to change. The core promise failed.
 - **Process overhead.** Design reviews take longer without finding real boundary
   problems, the table becomes boilerplate, or teams disable the addon.
 - **Duplicate record.** Contracts duplicate arc42 or ADR content and drift.
-- **Scope creep.** Cells are used to justify retries, circuit breakers, process
-  isolation, or to force premature decisions on layout and product scope.
+- **Scope creep.** The component boundary is used to justify retries, circuit
+  breakers, process isolation, or to force premature decisions on layout and
+  product scope.
 - **Readability regression.** More indirection, longer design documents, or a
   larger surface for the consumer to understand.
 
@@ -111,9 +112,9 @@ to add more abstraction.
 | Phase | Effect when enabled |
 |---|---|
 | Proposal | Classifies open questions; a contract is not an open question — it follows the consumer use case. |
-| Design | Adds the `### Contracts and Cells` table under Architecture Impact and the carried-decision fields. |
-| Design review | Adds the “Contracts and cells” and “Decision timing” branches. |
-| Tasks / implementation | A scenario touching a cell names the contract it uses; the implementer never imports the implementing cell. |
+| Design | Adds the `### Contracts and Components` table under Architecture Impact and the carried-decision fields. |
+| Design review | Adds the “Contracts and components” and “Decision timing” branches. |
+| Tasks / implementation | A scenario touching a component names the contract it uses; the implementer never imports the component's implementation. |
 | Review | Checks that every consumer uses only its declared contract. |
 | Dialog | Points architecture questions at the canonical instruction. |
 

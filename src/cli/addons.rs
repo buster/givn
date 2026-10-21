@@ -55,7 +55,7 @@ pub const KNOWN_ADDONS: &[AddonSpec] = &[
     },
     AddonSpec {
         id: "architecture_principles",
-        description: "Opt-in architecture-principles experiment — consumer contracts now, implementation splits later; default off",
+        description: "Opt-in architecture-principles experiment — consumer contracts now, component splits later; default off",
         default_enabled: false,
     },
     AddonSpec {

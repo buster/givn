@@ -37,7 +37,7 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
    incomplete implementation, not a "hard to test" gap.
 {{#if addons.architecture_principles}}
    Also check that every declared contract is the only surface its consumers
-   use; an import of the implementing cell is a finding. Apply `givn
+   use; an import of the component's implementation is a finding. Apply `givn
    instructions architecture-principles` when the design declares contracts.
    The composition root and the implementation's own tests are the exceptions.
 {{/if}}
