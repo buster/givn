@@ -497,3 +497,16 @@ pub fn write_python_classes_module(env: &TestEnv) {
     );
 }
 
+pub fn write_cross_file_impl(env: &TestEnv) {
+    write_source(
+        env,
+        "src/engine_core.rs",
+        "pub struct Engine;\n\nimpl Engine {\n    pub fn check(&self) -> bool {\n        self.validate()\n    }\n}\n",
+    );
+    write_source(
+        env,
+        "src/engine_parts.rs",
+        "impl Engine {\n    pub fn validate(&self) -> bool {\n        self.extra();\n        true\n    }\n\n    pub fn extra(&self) {}\n}\n",
+    );
+}
+

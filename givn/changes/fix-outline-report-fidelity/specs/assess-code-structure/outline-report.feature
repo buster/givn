@@ -96,7 +96,7 @@ Feature: Outline report
     When the developer runs "givn outline report --json"
     Then the JSON call "normalize" names the target "component::normalize"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A same-unit method implemented in another file is project_other_file
     Given a production source unit declared in one file and implemented in another
     When the developer runs "givn outline report"

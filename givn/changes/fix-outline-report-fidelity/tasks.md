@@ -305,7 +305,7 @@ module free functions keep their module method id.
   - [x] Evidence:   Scenario: The JSON report names each call's resolved target | 1 scenario (1 passed) | 3 steps (3 passed)
 - REFACTOR: targeted run; paste zero.
   - [x] Evidence:   Scenario: The JSON report names each call's resolved target | 1 scenario (1 passed) | 3 steps (3 passed)
-- [ ] COMMIT:
+- [x] COMMIT: 631f483d011cce928f6b1bea61d0bf2ff9135cfb
 
 ## 14. A same-unit method implemented in another file is project_other_file
 
@@ -316,12 +316,12 @@ label; LCOM4 uses same-unit membership. A cross-file impl method is labelled
 
 - RED: remove `@wip`; add the cross-file impl fixture and bindings; targeted
   run; paste non-zero.
-  - [ ] Evidence:
+  - [x] Evidence: baseline: ✘  Given a production source unit declared in one file and implemented in another | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:100:5 | Step doesn't match any function
 - GREEN: compare files for the label and decouple nesting/LCOM4 from the
   label; targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A same-unit method implemented in another file is project_other_file | 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A same-unit method implemented in another file is project_other_file | 1 scenario (1 passed) | 5 steps (5 passed)
 - [ ] COMMIT:
 
 ## 15. A developer reads each call's resolution in the human report
