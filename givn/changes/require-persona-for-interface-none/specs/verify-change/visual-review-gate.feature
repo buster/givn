@@ -23,7 +23,7 @@ Feature: Visual Review Gate
     Then the command exits non-zero
     And stderr contains "PERSONAS"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A change that declares the interface none with a reasoned none fails review
     Given a givn project with a change that has passed design-review
     And the change's design.md declares the visual interface "none"
