@@ -8,6 +8,9 @@ informed: none
 
 # Analyze source code behind a neutral SourceAnalyzer port with a syn adapter
 
+> Naming note (2026-10-21): the capability and its Rust module were renamed from
+> `readability` to `outline`. The decision and the analysis boundary are unchanged.
+
 ## Qualification
 
 ADR-QUALIFICATION: PASS

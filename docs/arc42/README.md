@@ -93,17 +93,17 @@ advisory experiment with no stored baseline. Durable facts live in chapters 1
 11 (R-104 to R-108, D-24, D-25), and 12.
 
 The `add-readability-review-gate` change adds the same experiment's review stage
-and revises the report. The report becomes findings-only at schema version 2:
-each unit carries one classification and evidence, never an action or a
-recommendation. `givn check review --change <id>` compares the production units
-the change touched at the change base and at the committed head and fails while
-any gate finding has neither `READABILITY: FIXED` nor `READABILITY: JUSTIFIED`
-with a validated, owner-approved rationale. A dirty production path, a missing
-change-directory commit, and a shallow clone fail closed. The change reuses
-ADR-074's pipeline and amends two existing records: ADR-028 (the conditional
-mandatory review member) and ADR-071 (the five SCM history/revision operations).
-Its observable rules, markers, and rationale artifacts are owned by the
-`readability-review-gate` Gherkin capability, the `verify-change` use case, and
+and revises the report. The report becomes outline-first at schema version 2:
+each unit prints its method outline, then one classification and its evidence as
+hints, never an action or a recommendation. `givn check review --change <id>`
+prints the outline of every touched unit with methods at the change base and at
+the committed head and fails while any outline lacks a fresh-context `PASS` with
+a responsibility and call-order explanation, or carries a `FAIL`. A dirty
+production path, a missing change-directory commit, and a shallow clone fail
+closed. The change reuses ADR-074's pipeline and amends two existing records:
+ADR-028 (the conditional mandatory review member) and ADR-071 (the five SCM
+history/revision operations). Its observable rules and markers are owned by the
+`outline-review-gate` Gherkin capability, the `verify-change` use case, and
 the change design. Durable facts live in chapters 1 (FR-46, FR-47), 2 (TC-42,
 TC-43), 3, 4, 5, 6.20, 8.12/8.26a, 10 (Q-112 to Q-117), 11 (R-108 to R-115,
 D-24 to D-26), and 12.

@@ -20,7 +20,7 @@ configuration overlay.
 
 `givn init` currently enables every default-on registered addon, including the
 `arc42` addon, unless `--no-addons` is supplied. A registry entry may be marked
-default-off; the `readability` experiment is the first such entry. The embedded
+default-off; the `outline` experiment is the first such entry. The embedded
 default manifest itself has addons disabled; initialization is the operation
 that writes the enabled addon settings and scaffolds durable Arc42 chapters.
 
@@ -62,8 +62,8 @@ that writes the enabled addon settings and scaffolds durable Arc42 chapters.
 | FR-43 | Start the declared product with `givn run`: readiness probe against the declared path, one greppable ready line, `--port` and `--print` forms, forwarded child exit codes, and SIGINT/SIGTERM forwarding on unix. |
 | FR-44 | Never derive the product type or start command from repository content; the declaration is the single source of truth. |
 | FR-45 | Record every development step — commands, phases, hooks, verification runs, and the agent activity every supported harness reports through one intake — in an append-only, scope-tagged, best-effort local record, and render one scope's record as a self-contained interactive report. |
-| FR-46 | Offer an opt-in readability report over production sources: per-unit size, public surface, cohesion and coupling indicators, method complexity, one classification, its evidence, and human or JSON output, with no action, recommendation, or stored baseline. |
-| FR-47 | Enforce the opt-in readability review inside `givn check review --change <id>`: derive the change base from version-control history, analyze the source units the change touched at that base and at the committed head, report every gate finding per unit with its base and head size, and fail while any finding has neither a `FIXED` nor a `JUSTIFIED` decision. |
+| FR-46 | Offer an opt-in outline report over production sources: every unit's method outline first, then size, public surface, cohesion and coupling indicators, and method complexity as hints, one classification and its evidence per unit, and human or JSON output, with no action, recommendation, or stored baseline. |
+| FR-47 | Enforce the opt-in outline review inside `givn check review --change <id>`: derive the change base from version-control history, print the outline of every touched unit with methods at that base and at the committed head, and fail while any outline lacks a fresh-context reviewer's `PASS` with a responsibility and call-order explanation, or carries a `FAIL`. Metric hints never block. |
 
 ### Non-functional requirements
 
@@ -86,15 +86,14 @@ that writes the enabled addon settings and scaffolds durable Arc42 chapters.
 Secondary goals are merge correctness, agent ergonomics, interface-fidelity in
 E2E evidence, and non-redundant architecture documentation.
 
-The opt-in readability experiment adds a structural-visibility goal and, in its
-second stage, a structural review goal for the Givn maintainer: see where an
-existing codebase has outgrown a readable unit, and require every such finding
-the change touched to be either under its threshold at the committed head or
-justified by a change-scoped, owner-approved rationale before review passes.
-The report is findings-only; the gate is disabled by default with the same
-addon, stores no classification baseline, and changes no archive gate. A finding
-with no decision fails review; a project that has not opted in reviews exactly
-as before.
+The opt-in outline experiment adds a structural-comprehension goal and, in its
+second stage, a review goal for the Givn maintainer: see every touched unit's
+method outline, and require a fresh-context reviewer to explain the unit's
+responsibility and call order for each one. The report prints the outline first
+and the metrics as hints; the gate is disabled by default with the same addon,
+stores no classification baseline, and changes no archive gate. A missing
+outline verdict, an empty explanation, or a `FAIL` fails review; metrics never
+block. A project that has not opted in reviews exactly as before.
 
 The approved `make-user-questions-decision-ready` target, pending implementation
 and behavioral review, refines agent ergonomics: a project-familiar Developer
