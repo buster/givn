@@ -1122,13 +1122,13 @@ fn review_reports_outline_check(world: &mut GivnWorld, check: String, unit: Stri
     );
 }
 
-#[then(regex = r#"^the review reports a supporting metric finding for "([^"]+)"$"#)]
-fn review_reports_supporting_finding(world: &mut GivnWorld, unit: String) {
+#[then(regex = r#"^the review reports a metric hint for "([^"]+)"$"#)]
+fn review_reports_metric_hint(world: &mut GivnWorld, unit: String) {
     let report = gate_report(world);
     let found = report
         .lines()
-        .any(|line| line.trim_start().starts_with("SUPPORTING") && line.contains(&unit));
-    assert!(found, "no SUPPORTING line reports {unit}:\n{report}");
+        .any(|line| line.trim_start().starts_with("HINT") && line.contains(&unit));
+    assert!(found, "no HINT line reports {unit}:\n{report}");
 }
 
 #[then(regex = r#"^the review reports no finding for "([^"]+)"$"#)]

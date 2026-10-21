@@ -27,7 +27,7 @@ pub fn render_human(assessment: &Assessment) -> String {
         findings
     );
     out.push_str(
-        "outline first: method declarations, signatures, and internal calls; metrics are supporting evidence\n",
+        "outline first: method declarations, signatures, and internal calls; metrics are hints\n",
     );
     out.push_str("advisory report: this report does not block review or archive\n\n");
 
@@ -56,7 +56,7 @@ pub fn render_human(assessment: &Assessment) -> String {
         ));
         out.push_str(&render_outline(unit));
         out.push_str(&format!(
-            "  metrics (supporting): code lines {}; methods {}; public methods {}; fields {}; LCOM4 {}; TCC {}\n",
+            "  metrics (hint): code lines {}; methods {}; public methods {}; fields {}; LCOM4 {}; TCC {}\n",
             unit.metrics.code_lines,
             unit.metrics.methods,
             unit.metrics.public_methods,
@@ -442,9 +442,7 @@ mod tests {
 
         let text = render_human(&assessment);
         let outline = text.find("outline:").expect("outline section");
-        let metrics = text
-            .find("metrics (supporting):")
-            .expect("supporting metrics");
+        let metrics = text.find("metrics (hint):").expect("metric hints");
         assert!(outline < metrics, "outline must come before metrics");
         assert!(text.contains("method [public] fn build(&self) -> Engine"));
         assert!(

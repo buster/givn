@@ -423,7 +423,7 @@ there is no justification path for an unreadable outline: fix the code and
 re-review. Every touched unit with an outline needs a verdict; a missing
 verdict fails. Unknown or conflicting `READABILITY:` markers fail.
 
-The gate's metrics are supporting evidence, not the gate. A unit can be
+The gate's metrics are hints, not the gate. A unit can be
 readable while a metric flags it, and a unit can be unreadable while every
 metric is clean; the outline verdict decides. `READABILITY: FIXED` and
 `READABILITY: JUSTIFIED` are retired. Historical rationales are evidence only;

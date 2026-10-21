@@ -49,12 +49,12 @@ A single-binary, Gherkin-first spec-driven workflow tool.
 - **An opt-in readability report and review gate.** The default-off
   `readability` addon adds `givn readability report`: an advisory snapshot of
   production Rust units that prints each unit's outline — method declarations,
-  signatures, and internal calls — first, then supporting size, public surface,
+  signatures, and internal calls — first, then hint-level size, public surface,
   cohesion/coupling, and method-complexity metrics. When the addon is enabled,
   `givn check review` prints the outline of every touched unit with methods and
   requires a fresh-context reviewer's per-unit `OUTLINE PASS`, with a
-  responsibility and call-order explanation, or `FAIL`. Metrics are supporting
-  evidence; an unreadable outline has no justification path. No baseline is
+  responsibility and call-order explanation, or `FAIL`. Metrics are hints;
+  an unreadable outline has no justification path. No baseline is
   stored. See [the readability addon guide](docs/readability.md#outline-comprehension--the-core-idea)
   for an example outline, the phases, expected outcome, and warning signs.
 - **Scenario-by-scenario TDD with proof.** Each scenario runs RED (targeted,

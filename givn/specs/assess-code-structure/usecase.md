@@ -57,7 +57,7 @@ The developer asks for a readability report.
 - The report format is independent of the analysis engine.
 - Every analyzed unit has exactly one classification.
 - The report leads with each unit's method outline: declarations, signatures,
-  and internal calls, without data. The metrics support the outline.
+  and internal calls, without data. The metrics hint at potential problems; they do not decide.
 - The report attaches no action or recommendation to a unit; a finding states the classification, the measured metrics, and the evidence.
 
 ## Examples

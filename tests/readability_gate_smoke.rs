@@ -2,7 +2,7 @@
 //!
 //! The gate is outline-first: every touched unit with methods needs a
 //! `READABILITY: OUTLINE PASS|FAIL` verdict from a fresh-context reviewer.
-//! Metrics are supporting evidence and do not decide the gate.
+//! Metrics are hints and do not decide the gate.
 
 use std::fs;
 use std::path::Path;
@@ -158,7 +158,7 @@ fn add_small_type(repo: &Repo) {
 }
 
 #[test]
-fn a_readable_outline_passes_and_metrics_are_supporting() {
+fn a_readable_outline_passes_and_metrics_are_hints() {
     let repo = project(620, 700);
     repo.write(
         "givn/changes/test-change/review.md",
@@ -171,8 +171,8 @@ fn a_readable_outline_passes_and_metrics_are_supporting() {
     assert!(passed, "expected PASS, got:\n{text}");
     assert_eq!(last_line(&text), "readability review: PASS");
     assert!(
-        text.contains("touched 3 unit(s), 1 outline(s), 1 supporting metric finding(s)"),
-        "the header must separate outlines from supporting findings:\n{text}"
+        text.contains("touched 3 unit(s), 1 outline(s), 1 metric hint(s)"),
+        "the header must separate outlines from metric hints:\n{text}"
     );
     assert!(
         text.contains("OUTLINE   type:src/engine.rs::Engine"),
@@ -183,8 +183,8 @@ fn a_readable_outline_passes_and_metrics_are_supporting() {
         "the outline verdict must be printed:\n{text}"
     );
     assert!(
-        text.contains("SUPPORTING type:src/engine.rs::Engine"),
-        "the metric finding must be supporting:\n{text}"
+        text.contains("HINT      type:src/engine.rs::Engine"),
+        "the metric must be reported as a hint:\n{text}"
     );
     assert!(
         !text.contains("FINDING"),
@@ -215,7 +215,7 @@ fn an_unreadable_outline_fails_when_metrics_are_clean() {
         "the outline failure must be explicit:\n{text}"
     );
     assert!(
-        !text.contains("SUPPORTING"),
+        !text.contains("HINT"),
         "the fixture has no metric finding:\n{text}"
     );
 }

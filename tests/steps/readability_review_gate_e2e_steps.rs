@@ -30,8 +30,8 @@ fn the_developer_runs_the_review(world: &mut GivnWorld) {
             String::from_utf8_lossy(&output.stderr),
         );
         assert!(
-            stdout.contains("touched 6 unit(s), 2 outline(s), 2 supporting metric finding(s)"),
-            "the review did not report the expected touched units, outlines, and supporting findings:\n{stdout}"
+            stdout.contains("touched 6 unit(s), 2 outline(s), 2 metric hint(s)"),
+            "the review did not report the expected touched units, outlines, and metric hints:\n{stdout}"
         );
         assert_eq!(
             stdout.lines().last().unwrap_or_default(),

@@ -36,7 +36,7 @@ Feature: Readability review gate
     Then  the review passes
     And  the review reports an outline for "type:src/engine.rs::Engine"
     And  the review reports the outline check "PASS" for "type:src/engine.rs::Engine"
-    And  the review reports a supporting metric finding for "type:src/engine.rs::Engine"
+    And  the review reports a metric hint for "type:src/engine.rs::Engine"
 
   Scenario: An unreadable outline fails while the metrics are clean
     Given  a Givn project with the readability experiment enabled
