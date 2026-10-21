@@ -182,6 +182,13 @@ fn review_md_persona_disposition(world: &mut GivnWorld, value: String) {
     std::fs::write(change_dir(world).join("review.md"), review).expect("write review.md");
 }
 
+#[given("the change's review.md names a confirmed persona without a visual verdict")]
+fn review_md_persona_without_verdict(world: &mut GivnWorld) {
+    let review =
+        "# Review: fixture\n\nREADME-IMPACT: none\n\nREVIEW: PASS\n\nPERSONAS: fixture-persona\n";
+    std::fs::write(change_dir(world).join("review.md"), review).expect("write review.md");
+}
+
 #[given("the change's review.md declares no persona disposition")]
 fn review_md_no_persona_disposition(world: &mut GivnWorld) {
     let review =

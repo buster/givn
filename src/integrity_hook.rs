@@ -200,7 +200,16 @@ fn check_visual_review(change_dir: &Path) -> Result<()> {
     let Some(contract) = parse_visual_contract(&design) else {
         return Ok(());
     };
+    let review_path = change_dir.join("review.md");
     if contract.interface == VisualInterface::None {
+        if !review_path.exists() {
+            bail!(
+                "review.md is missing the persona disposition — add \
+                 'PERSONAS: <confirmed persona>' to review.md"
+            );
+        }
+        let review = std::fs::read_to_string(&review_path)?;
+        check_persona_disposition(&review, change_dir)?;
         return Ok(());
     }
     if contract.interface == VisualInterface::Web && contract.viewports.is_empty() {
@@ -238,21 +247,22 @@ fn check_visual_review(change_dir: &Path) -> Result<()> {
     check_visual_evidence(change_dir, &contract)
 }
 
-/// A declared visual interface requires a `PERSONAS:` line naming at least
-/// one confirmed Persona, and the value must resolve to a persona file in
-/// the project collection. Fenced examples in the review template do not
-/// satisfy the check.
+/// A declared visual design contract requires a `PERSONAS:` line naming at
+/// least one confirmed Persona, and the value must resolve to a persona file
+/// in the project collection. The contract's presence, not the rendered
+/// interface, is the boundary: `Interface: none` still requires a Persona.
+/// Fenced examples in the review template do not satisfy the check.
 fn check_persona_disposition(review: &str, change_dir: &Path) -> Result<()> {
     let stripped = strip_fenced_blocks(review);
     let Some(value) = persona_disposition(&stripped) else {
         bail!(
-            "visual review is missing the persona disposition — add \
+            "review.md is missing the persona disposition — add \
              'PERSONAS: <confirmed persona>' to review.md"
         );
     };
     if value.is_empty() || value.eq_ignore_ascii_case("none") {
         bail!(
-            "a declared visual interface requires at least one confirmed Persona — \
+            "a declared visual design contract requires at least one confirmed Persona — \
              'PERSONAS: {value}' is not a confirmed persona"
         );
     }
@@ -268,8 +278,8 @@ fn check_persona_disposition(review: &str, change_dir: &Path) -> Result<()> {
     if !resolved {
         bail!(
             "the persona disposition '{value}' matches no file in givn/personas/ — \
-             name a confirmed persona or record a reasoned none for a change \
-             without a user-visible surface"
+             name a confirmed Persona; a reasoned none is valid only when the design \
+             declares no visual design contract"
         );
     }
     Ok(())
@@ -1138,5 +1148,85 @@ mod tests {
         )
         .unwrap();
         check_visual_review(dir.path()).unwrap();
+    }
+
+    #[test]
+    fn no_visual_contract_remains_exempt() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("design.md"), "# Design\n").unwrap();
+        check_visual_review(dir.path()).unwrap();
+    }
+
+    fn write_none_contract(change: &std::path::Path) {
+        std::fs::write(
+            change.join("design.md"),
+            "## Visual Design Contract\n\n- Interface: none\n",
+        )
+        .unwrap();
+    }
+
+    fn write_persona(root: &std::path::Path, id: &str) {
+        let personas = root.join("givn/personas");
+        std::fs::create_dir_all(&personas).unwrap();
+        std::fs::write(personas.join(format!("{id}.md")), "# Persona\n").unwrap();
+    }
+
+    #[test]
+    fn interface_none_does_not_require_visual_evidence() {
+        let (dir, change) = make_change_dir();
+        write_none_contract(&change);
+        write_delta_e2e(&change, "Consumer opens the dashboard");
+        write_persona(dir.path(), "shopper-anna");
+        std::fs::write(change.join("review.md"), "PERSONAS: shopper-anna\n").unwrap();
+        check_visual_review(&change).unwrap();
+    }
+
+    #[test]
+    fn interface_none_requires_confirmed_persona() {
+        let (dir, change) = make_change_dir();
+        write_none_contract(&change);
+        write_persona(dir.path(), "shopper-anna");
+
+        let error = check_visual_review(&change).unwrap_err().to_string();
+        assert!(
+            error.contains("review.md is missing the persona disposition"),
+            "{error}"
+        );
+
+        std::fs::write(change.join("review.md"), "PERSONAS: none\n").unwrap();
+        let error = check_visual_review(&change).unwrap_err().to_string();
+        assert!(error.contains("PERSONAS: none"), "{error}");
+
+        std::fs::write(
+            change.join("review.md"),
+            "PERSONAS: none — operator confirmed\n",
+        )
+        .unwrap();
+        let error = check_visual_review(&change).unwrap_err().to_string();
+        assert!(error.contains("none — operator confirmed"), "{error}");
+        assert!(
+            error.contains(
+                "a reasoned none is valid only when the design declares no visual design contract"
+            ),
+            "{error}"
+        );
+
+        std::fs::write(change.join("review.md"), "PERSONAS: shopper-anna\n").unwrap();
+        check_visual_review(&change).unwrap();
+    }
+
+    #[test]
+    fn interface_none_default_requires_persona() {
+        let (_dir, change) = make_change_dir();
+        std::fs::write(
+            change.join("design.md"),
+            "## Visual Design Contract\n\nNo interface line.\n",
+        )
+        .unwrap();
+        let error = check_visual_review(&change).unwrap_err().to_string();
+        assert!(
+            error.contains("review.md is missing the persona disposition"),
+            "{error}"
+        );
     }
 }
