@@ -338,7 +338,7 @@ name-only never nests.
   - [x] Evidence:   Scenario: A developer reads each call's resolution in the human report | 1 scenario (1 passed) | 7 steps (7 passed)
 - REFACTOR: targeted run; paste zero.
   - [x] Evidence:   Scenario: A developer reads each call's resolution in the human report | 1 scenario (1 passed) | 7 steps (7 passed)
-- [ ] COMMIT:
+- [x] COMMIT: 240bdaadd0ade475b6ce74962c3d5f2b5f40d17e
 
 ## 16. A file's code lines exclude inline test modules
 
@@ -348,13 +348,13 @@ outside those spans; file `physical_lines` stays the whole file.
 
 - RED: remove `@wip`; add `write_inline_test_module` with exact counts and
   bindings; targeted run; paste non-zero.
-  - [ ] Evidence:
+  - [x] Evidence: baseline: ✘  Given a production source file with an inline test module | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:118:5 | Step doesn't match any function
 - GREEN: add `excluded_spans`, record Rust test spans, add
   `scan::production_code_lines`, use it in `file_json`; targeted run; paste
   zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A file's code lines exclude inline test modules | 1 scenario (1 passed) | 4 steps (4 passed)
 - REFACTOR: targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A file's code lines exclude inline test modules | 1 scenario (1 passed) | 4 steps (4 passed)
 - [ ] COMMIT:
 
 ## 17. A unit's physical lines cover only its own spans

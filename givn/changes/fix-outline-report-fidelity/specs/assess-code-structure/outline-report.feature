@@ -114,7 +114,7 @@ Feature: Outline report
     And the report prints the call "is_empty" as "-> [name_only, public, Engine] is_empty"
     And the name-only call "is_empty" is not expanded into a deeper-indented call line
 
-  @givn.added @wip
+  @givn.added
   Scenario: A file's code lines exclude inline test modules
     Given a production source file with an inline test module
     When the developer runs "givn outline report --json"
