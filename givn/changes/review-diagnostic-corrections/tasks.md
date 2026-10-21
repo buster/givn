@@ -289,15 +289,15 @@ Evidence:
   cargo test --locked --lib usecase_md: 20 passed, 313 filtered out
   ```
 - Production files: `src/gherkin/usecase_md.rs` (`interaction_section` `report_undeclared` flag, absent-section skip for an invalid root, fragment path passes `true`, 13 new parser regression tests), `tests/steps/workflow_enforcement_steps.rs` (undeclared-interaction and prose-Rule fixture).
-- [ ] COMMIT: `COMMIT:`
+- [x] COMMIT: `9d36570e22c0a4551e367b675c47d7bfaf16b25f`
 
 ## Scenario 7 — A valid kebab-case use-case title remains accepted (regression guard)
 
-- [ ] Scenario: `A valid kebab-case use-case title remains accepted`
+- [x] Scenario: `A valid kebab-case use-case title remains accepted`
 
-- [ ] RED (green at baseline — guard, no fabricated RED)
-- [ ] GREEN
-- [ ] REFACTOR
+- [x] RED (green at baseline — guard, no fabricated RED)
+- [x] GREEN
+- [x] REFACTOR
 - [ ] COMMIT
 
 Design constraints:
@@ -312,14 +312,20 @@ Evidence:
 
 - RED output (baseline green, guard):
   ```
+  Pre-implementation delta run: 7 scenarios (1 passed, 6 failed), 11 steps (5 passed, 6 failed)
+  The one pass was this scenario. No failing run was fabricated.
   ```
 - GREEN output:
   ```
+  1 scenario (1 passed), 5 steps (5 passed)
+  cargo test --locked --lib usecase_md: 21 passed, 313 filtered out
   ```
 - REFACTOR output:
   ```
+  cargo fmt --all; full delta suite: 7 scenarios (7 passed), 42 steps (42 passed)
+  givn lint --change review-diagnostic-corrections: clean, exit 0
   ```
-- Production files:
+- Production files: `src/gherkin/usecase_md.rs` (regression test `valid_title_emits_no_schema_diagnostic`; no production behavior change), delta feature `@wip` removed.
 - [ ] COMMIT: `COMMIT:`
 
 ## Final verification

@@ -57,7 +57,7 @@ Feature: Review use-case diagnostic corrections
     And stderr does not contain "interaction references undeclared capability"
     And stderr suggests exactly "# Use case: lending-register"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A valid kebab-case use-case title remains accepted
     Given a clean committed change with a green change verification receipt recorded at one revision
     When the developer runs `givn check review --change review-proof-demo`

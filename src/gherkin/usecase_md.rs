@@ -1423,4 +1423,10 @@ flowchart LR
             "{rendered}"
         );
     }
+    #[test]
+    fn valid_title_emits_no_schema_diagnostic() {
+        let (doc, diagnostics) = parse_usecase_md_diagnostics(VALID_LEAF);
+        assert!(doc.is_some());
+        assert!(diagnostics.0.is_empty(), "{diagnostics}");
+    }
 }
