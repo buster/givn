@@ -291,7 +291,7 @@ line; no calls/signature.
   - [x] Evidence:   Scenario: A Python module outline lists its classes | 1 scenario (1 passed) | 3 steps (3 passed)
 - REFACTOR: targeted run; paste zero.
   - [x] Evidence:   Scenario: A Python module outline lists its classes | 1 scenario (1 passed) | 3 steps (3 passed)
-- [ ] COMMIT:
+- [x] COMMIT: b8ede9d98bf499b19601f5ced21b71ed085cafaa
 
 ## 13. The JSON report names each call's resolved target
 
@@ -300,11 +300,11 @@ module free functions keep their module method id.
 
 - RED: remove `@wip`; extend the cross-component fixture and bindings;
   targeted run; paste non-zero.
-  - [ ] Evidence:
+  - [x] Evidence: baseline: ✘  Given a production source unit whose method calls a module function | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:94:5 | Matched: tests/steps/outline_report_steps.rs:984:1
 - GREEN: include `target` in `outline_json`; targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: The JSON report names each call's resolved target | 1 scenario (1 passed) | 3 steps (3 passed)
 - REFACTOR: targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: The JSON report names each call's resolved target | 1 scenario (1 passed) | 3 steps (3 passed)
 - [ ] COMMIT:
 
 ## 14. A same-unit method implemented in another file is project_other_file
