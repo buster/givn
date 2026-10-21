@@ -1262,3 +1262,20 @@ fn module_outline_all_names(value: &serde_json::Value) -> Vec<String> {
         .collect()
 }
 
+#[given("a Python module with two classes and one function")]
+fn python_classes_module(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_python_classes_module(&env);
+    world.env = Some(env);
+}
+
+#[then(regex = r#"^the JSON module outline lists the classes "([^"]+)" and "([^"]+)"$"#)]
+fn json_module_lists_classes(world: &mut GivnWorld, first: String, second: String) {
+    let value = json_output(world);
+    let names = module_outline_names(&value);
+    for name in [first, second] {
+        assert!(names.contains(&name), "module outline lacks {name}: {names:?}");
+    }
+}
+
