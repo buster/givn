@@ -1,14 +1,15 @@
 # Outline addon
 
 **TL;DR:** The `outline` addon is an optional, default-off experiment for
-production Rust. Its core idea is outline comprehension: read the outline of a
-type or module — method declarations, signatures, and internal calls, without
-bodies or data — and check that it explains the unit's responsibility and call
-order. When the addon is enabled, every touched unit with methods needs an
-outline verdict from a fresh-context reviewer. Metrics are hints,
-not the gate. An unreadable outline has no justification path. The addon stores
-no baseline, ignores non-Rust code, and is not a product guarantee: the schema,
-thresholds, classifications, and gate rules may change.
+production Rust and Python. Its core idea is outline comprehension: read the
+outline of a type or module — method declarations, signatures, and internal
+calls, without bodies or data — and check that it explains the unit's
+responsibility and call order. When the addon is enabled, every touched unit
+with methods needs an outline verdict from a fresh-context reviewer. Metrics
+are hints, not the gate. An unreadable outline has no justification path. The
+addon stores no baseline, analyzes only production Rust and Python, and is not
+a product guarantee: the schema, thresholds, classifications, and gate rules
+may change.
 
 ## What it does
 
@@ -129,30 +130,43 @@ The report and the gate share the same analysis:
   verdict.
 - **Accounting is unit-level.** Every outline verdict names exactly one unit.
 
-## Non-Rust code
+## Language scope
 
-The addon is Rust-only. The report discovers only `.rs` files; non-Rust files
-under `src/` are ignored. The review gate applies the same scope and ignores
-changed paths that do not end in `.rs`.
+The addon analyzes production Rust and Python.
 
-Non-Rust code is not “unsupported”: it is out of scope. A change that only
-touches non-Rust files has nothing for the gate to check. A mixed-language
-`src/` tree gets a Rust-only structural view.
+- **Rust** is parsed in-process by `syn`.
+- **Python** is parsed by a `python3` subprocess that runs a bundled
+  standard-library `ast` extractor. The subprocess starts only when the report
+  scope contains at least one `.py` file, so a Rust-only project never invokes
+  `python3` and does not need Python installed. The extractor parses source
+  text; it never imports or executes project code and needs no third-party
+  package. Python 3.10 or newer is required for Python projects.
+
+Discovery covers `.rs` and `.py` files under the production roots. Python test
+modules (`test_*.py`, `*_test.py`) are excluded, and cache, virtualenv, build,
+and dependency directories (`__pycache__`, `.venv`, `venv`, `.tox`,
+`.mypy_cache`, `.pytest_cache`, `build`, `dist`, `node_modules`) are skipped.
+The review gate applies the same scope: a changed Python test module is not
+production scope.
 
 | Input | Report | Review gate |
 |---|---|---|
-| Non-Rust file under `src/` | Ignored | Ignored |
-| Changed non-Rust file | Not analyzed | No effect |
-| Rust file with an unsupported construct | Named in `unsupported` | Reported; not a failure by itself |
-| Rust file that cannot be parsed | Named as a parse failure | Fails closed if changed |
-| Rust file the analyzer skips under a production root | Not analyzed | Fails closed if changed |
-| Rust file under `tests/`, `benches/`, `examples/`, `target/` | Excluded | Not production scope |
+| Rust or Python file with an unsupported construct | Named in `unsupported` | Reported; not a failure by itself |
+| Rust or Python file that cannot be parsed | Named as a parse failure | Fails closed if changed |
+| Production source file the analyzer skips | Not analyzed | Fails closed if changed |
+| Python file when `python3` is unavailable | Named `analyzer-unavailable`; the report continues | Fails closed if changed |
+| Non-source file under production roots | Ignored | Ignored |
+| Python test module (`test_*.py`, `*_test.py`) | Ignored | Not production scope |
+| Source file under `tests/`, `benches/`, `examples/`, `target/`, or a Python cache/virtualenv directory | Excluded | Not production scope |
 
-A Rust file the analyzer cannot parse fails closed if changed. An unsupported
-construct is named in the report's `unsupported` list; it is not automatically a
-gate failure. Supporting another language would need a second adapter behind
-the neutral `SourceAnalyzer` port (ADR-074); the Rust adapter does not pretend
-to understand other syntax.
+Python's dynamic nature limits the outline: a call through a dynamic attribute
+or an inferred type is not resolved precisely, and every Python call is
+resolved only as `same_file` when the callee is a method or top-level function
+in the same file, otherwise as `external`. The report names these limits as
+analyzer limitations. An unsupported construct is named in the report's
+`unsupported` list; it is not automatically a gate failure. Supporting another
+language needs another adapter behind the neutral `SourceAnalyzer` port
+(ADR-074); no adapter pretends to understand another language's syntax.
 
 ## Expected outcome
 
@@ -189,9 +203,9 @@ say so.
 - **The addon stays disabled or the report is ignored.** An opt-in gate that
   nobody enables or acts on has no effect.
 - **False positives or negatives dominate.** Macros, non-UTF8 files,
-  conditional compilation, and braces inside string literals are known limits
-  (risks R-105 and R-108); the report is a completeness-limited view, not a
-  total-debt claim.
+  conditional compilation, braces inside string literals, Python dynamic
+  calls, and Python type inference are known limits (risks R-105 and R-108);
+  the report is a completeness-limited view, not a total-debt claim.
 - **A verdict is complete and still wrong.** The gate checks presence and
   shape, not the judgment; independent review is a second opinion, not a proof.
 - **Untouched code is assumed clean.** The gate sees only touched units. A green
