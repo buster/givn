@@ -247,9 +247,9 @@ schemas are refused.
   and every other tested path still stale the receipt, and the refusal names
   every changed boundary.
 - Bad, because a change already in flight with a schema 1 receipt needs one
-  rerun (R-105).
+  rerun (R-117).
 - Bad, because the documentation allowlist is a trust boundary: a future test
-  that reads an allowlisted path would need a new scope (R-104).
+  that reads an allowlisted path would need a new scope (R-116).
 
 ### Confirmation
 

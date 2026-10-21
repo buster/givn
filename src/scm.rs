@@ -9,6 +9,14 @@ use std::process::Command;
 
 use anyhow::{Context, Result, bail};
 
+/// How a path is represented in a revision tree.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EntryKind {
+    Regular,
+    Symlink,
+    Submodule,
+}
+
 /// One content path plus its backend-specific identity. `gitlink` carries a
 /// submodule's recorded object id; other paths leave it empty.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -152,6 +160,52 @@ impl Backend {
         match self {
             Self::Git(worktree) => worktree.revision_contains(path),
             Self::Fossil(checkout) => checkout.revision_contains(path),
+        }
+    }
+
+    /// The oldest reachable revision that touched `path`.
+    pub fn first_touching_revision(&self, path: &str) -> Result<Option<String>> {
+        match self {
+            Self::Git(worktree) => worktree.first_touching_revision(path),
+            Self::Fossil(checkout) => checkout.first_touching_revision(path),
+        }
+    }
+
+    /// The first parent of `revision`, or `None` for a root revision.
+    pub fn parent_revision(&self, revision: &str) -> Result<Option<String>> {
+        match self {
+            Self::Git(worktree) => worktree.parent_revision(revision),
+            Self::Fossil(checkout) => checkout.parent_revision(revision),
+        }
+    }
+
+    /// Regular files under `root` in `revision`, with their entry kind.
+    pub fn revision_files(&self, revision: &str, root: &str) -> Result<Vec<(String, EntryKind)>> {
+        match self {
+            Self::Git(worktree) => worktree.revision_files(revision, root),
+            Self::Fossil(checkout) => checkout.revision_files(revision, root),
+        }
+    }
+
+    /// Read the named blobs from `revision`.
+    pub fn revision_blobs(
+        &self,
+        revision: &str,
+        paths: &[String],
+    ) -> Result<Vec<(String, Vec<u8>)>> {
+        match self {
+            Self::Git(worktree) => worktree.revision_blobs(revision, paths),
+            Self::Fossil(checkout) => checkout.revision_blobs(revision, paths),
+        }
+    }
+
+    /// Changed paths under `root` from `base` to the current revision, plus
+    /// untracked non-ignored paths. With no base, every tracked path is
+    /// returned.
+    pub fn changed_paths(&self, base: Option<&str>, root: &str) -> Result<Vec<String>> {
+        match self {
+            Self::Git(worktree) => worktree.changed_paths(base, root),
+            Self::Fossil(checkout) => checkout.changed_paths(base, root),
         }
     }
 }

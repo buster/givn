@@ -62,7 +62,7 @@ handoff and the confirmed proposal constraints.
   3. **Leave the false promise.** Meaning: keep "reachable" wording. Gain: no
      edit. Cost: the refusal can never fire on Fossil, and the docs claim
      behavior the tool does not have.
-- Resolution: option 1, recorded as R-106. Rejected: option 2 expands scope
+- Resolution: option 1, recorded as R-118. Rejected: option 2 expands scope
   without evidence that Fossil ancestry is needed; option 3 is dishonest.
 
 ## Q3 — Fix the pre-existing full-lint mismatch here?
@@ -150,7 +150,7 @@ handoff and the confirmed proposal constraints.
    including a narrative-only delta, and keeps the routing-table advisory for
    routing decisions only.
 4. **Fossil ancestry was claimed but unavailable.** The freshness result now
-   says "available" (Git ancestry, Fossil existence), records R-106, and the
+   says "available" (Git ancestry, Fossil existence), records R-118, and the
    runtime view and glossary no longer claim ancestry on both backends.
 5. **Fossil `content_paths` had no test.** The test strategy now requires
    `content_paths` unit coverage on both backends and a digest round trip.
@@ -169,7 +169,7 @@ handoff and the confirmed proposal constraints.
 
 ### Non-blocking findings dispositioned
 
-- Near-miss heading suggestions now have their own scenario; Q-108 is accurate.
+- Near-miss heading suggestions now have their own scenario; Q-118 is accurate.
 - Missing required sections and a malformed interaction table now have a
   scenario and unit-test coverage.
 - The `is_documentation_or_evidence_path` signature now takes the manifest,
@@ -188,7 +188,7 @@ handoff and the confirmed proposal constraints.
   decision, and committed tested-content changes in the outline.
 - Chapter 5 now has `spec::routing_table`; chapter 6 has the batched review
   flow; chapter 8 §8.12 names the complete review check order; chapter 10 has
-  Q-108 in order; chapter 11 has R-104 through R-106.
+  Q-118 in order; chapter 11 has R-116 through R-118.
 - The docs-only archive `@e2e` is retained per Q1, with the normalization
   rationale recorded in the design.
 

@@ -14,7 +14,7 @@
 | 8 | 08 crosscutting-concepts | Yes | The mandatory review-check inventory gains the batched routing diagnostics and the receipt-freshness gate. | §8.12 names the complete review check order and the single-pass routing report. |
 | 9 | 09 architecture-decisions | Yes | The durable receipt contract is refined. | ADR-070 is amended with the tested-content receipt binding and the schema-1 compatibility rule; the register records the amendment. |
 | 10 | 10 quality-requirements | Yes | The change-verification quality scenario changes. | Q-105 now treats an unchanged tested content under a documentation-only revision as reusable and tested-content changes as stale. |
-| 11 | 11 risks-and-technical-debt | Yes | The documentation allowlist is a new trust boundary, and the digest adds review-time I/O plus a schema-1 rerun. | R-104 and R-105 record the boundary and compatibility costs with their mitigations. |
+| 11 | 11 risks-and-technical-debt | Yes | The documentation allowlist is a new trust boundary, and the digest adds review-time I/O plus a schema-1 rerun. | R-116 and R-117 record the boundary and compatibility costs with their mitigations. |
 | 12 | 12 glossary | Yes | A new revision category and a refined receipt definition enter the domain vocabulary. | The change verification receipt definition gains the tested-content digest and scope; "Documentation-only revision" is defined. |
 
 ## Notes

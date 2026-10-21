@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "change": "apply-readability-independent-review",
+  "status": "passed",
+  "head": "9fab5f758bcd41d6559b8d3724218a90020904ee",
+  "features_path": "givn/changes/apply-readability-independent-review/specs",
+  "features_digest": "6730ae7a8b614e4b40b73f55b8e178916446686da5d1032bb03043460690961d",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1792531053
+}

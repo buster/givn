@@ -290,6 +290,166 @@ impl Worktree {
             .map_err(|error| anyhow::anyhow!("archive blocked: {error}"))?;
         self.head()
     }
+
+    /// The oldest reachable revision that touched `path`.
+    pub fn first_touching_revision(&self, path: &str) -> Result<Option<String>> {
+        let shallow = run_git(&self.root, &["rev-parse", "--is-shallow-repository"])?;
+        if shallow.status.success() && String::from_utf8_lossy(&shallow.stdout).trim() == "true" {
+            bail!(
+                "cannot resolve change base: repository is shallow; fetch the full history before review"
+            );
+        }
+        let output = run_git(
+            &self.root,
+            &[
+                "rev-list",
+                "--reverse",
+                "--full-history",
+                "HEAD",
+                "--",
+                path,
+            ],
+        )?;
+        Ok(String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .next()
+            .map(ToString::to_string))
+    }
+
+    /// The first parent of `revision`, or `None` for a root revision.
+    pub fn parent_revision(&self, revision: &str) -> Result<Option<String>> {
+        let output = run_git(
+            &self.root,
+            &["rev-parse", "--verify", &format!("{revision}^1")],
+        )?;
+        if !output.status.success() {
+            return Ok(None);
+        }
+        Ok(Some(
+            String::from_utf8_lossy(&output.stdout).trim().to_string(),
+        ))
+    }
+
+    /// Regular files under `root` in `revision`, with their entry kind.
+    pub fn revision_files(
+        &self,
+        revision: &str,
+        root: &str,
+    ) -> Result<Vec<(String, crate::scm::EntryKind)>> {
+        let output = run_git(&self.root, &["ls-tree", "-r", "-z", revision, "--", root])?;
+        if !output.status.success() {
+            bail!(
+                "`git ls-tree` failed in '{}': {}",
+                self.root.display(),
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
+        }
+        let mut files = Vec::new();
+        for entry in output.stdout.split(|byte| *byte == 0) {
+            if entry.is_empty() {
+                continue;
+            }
+            let Some(tab) = entry.iter().position(|byte| *byte == b'\t') else {
+                continue;
+            };
+            let meta = String::from_utf8_lossy(&entry[..tab]);
+            let path = revision_path(&entry[tab + 1..])?;
+            let mut parts = meta.split_whitespace();
+            let mode = parts.next().unwrap_or("");
+            let kind = parts.next().unwrap_or("");
+            let entry_kind = if kind == "commit" {
+                crate::scm::EntryKind::Submodule
+            } else if mode == "120000" {
+                crate::scm::EntryKind::Symlink
+            } else {
+                crate::scm::EntryKind::Regular
+            };
+            files.push((path, entry_kind));
+        }
+        Ok(files)
+    }
+
+    /// Read the named blobs from `revision`.
+    pub fn revision_blobs(
+        &self,
+        revision: &str,
+        paths: &[String],
+    ) -> Result<Vec<(String, Vec<u8>)>> {
+        let mut blobs = Vec::new();
+        for path in paths {
+            let output = run_git(&self.root, &["show", &format!("{revision}:{path}")])?;
+            if output.status.success() {
+                blobs.push((path.clone(), output.stdout));
+            }
+        }
+        Ok(blobs)
+    }
+
+    /// Changed paths under `root` from `base` to the current revision.
+    pub fn changed_paths(&self, base: Option<&str>, root: &str) -> Result<Vec<String>> {
+        let range = base.map(|base| format!("{base}..HEAD"));
+        let args: Vec<&str> = match range.as_deref() {
+            Some(range) => vec![
+                "diff",
+                "--name-only",
+                "--no-renames",
+                "-z",
+                range,
+                "--",
+                root,
+            ],
+            None => vec!["ls-files", "-z", "--", root],
+        };
+        let output = run_git(&self.root, &args)?;
+        if !output.status.success() {
+            bail!(
+                "`git {}` failed in '{}': {}",
+                args.join(" "),
+                self.root.display(),
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
+        }
+        let mut paths = parse_nul_paths(&output.stdout)?;
+        let untracked = run_git(
+            &self.root,
+            &[
+                "ls-files",
+                "--others",
+                "--exclude-standard",
+                "-z",
+                "--",
+                root,
+            ],
+        )?;
+        paths.extend(parse_nul_paths(&untracked.stdout)?);
+        paths.sort();
+        paths.dedup();
+        Ok(paths)
+    }
+}
+
+fn revision_path(bytes: &[u8]) -> Result<String> {
+    let path = std::str::from_utf8(bytes).with_context(|| {
+        format!(
+            "revision path is not valid UTF-8: {}",
+            String::from_utf8_lossy(bytes)
+        )
+    })?;
+    if path.contains('\n') || path.contains('\r') {
+        bail!(
+            "revision path contains a line break: {}",
+            path.escape_debug()
+        );
+    }
+    Ok(path.to_string())
+}
+
+fn parse_nul_paths(bytes: &[u8]) -> Result<Vec<String>> {
+    bytes
+        .split(|byte| *byte == 0)
+        .filter(|field| !field.is_empty())
+        .map(revision_path)
+        .collect()
 }
 
 fn run_git(root: &Path, args: &[&str]) -> Result<Output> {
@@ -334,6 +494,23 @@ mod tests {
         assert_eq!(
             paths,
             vec![PathBuf::from("src/lib.rs"), PathBuf::from("notes.txt")]
+        );
+    }
+
+    #[test]
+    fn rejects_invalid_utf8_and_line_break_revision_paths() {
+        assert_eq!(revision_path(b"src/engine.rs").unwrap(), "src/engine.rs");
+        let line_break = revision_path(b"src/a\nb.rs").unwrap_err().to_string();
+        assert!(line_break.contains("revision path contains a line break"));
+        let invalid = revision_path(&[0xff, 0xfe]).unwrap_err().to_string();
+        assert!(invalid.contains("revision path is not valid UTF-8"));
+    }
+
+    #[test]
+    fn parses_nul_separated_paths() {
+        assert_eq!(
+            parse_nul_paths(b"src/a.rs\0src/b.rs\0").unwrap(),
+            vec!["src/a.rs".to_string(), "src/b.rs".to_string()]
         );
     }
 

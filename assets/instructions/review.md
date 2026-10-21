@@ -391,6 +391,52 @@ rather than trusting the subagent's report:
 9. Any contradiction: reject `REVIEW: PASS` and re-run the review subagent
    with the discrepancy named.
 
+{{#if addons.readability}}
+## Readability review gate
+
+When the `readability` addon is enabled, `givn check review --change <id>`
+runs the readability gate after the verification receipt. It analyzes every
+unit the change touched at the change base and at committed `HEAD` and reports
+each finding with its base/head size and classification.
+
+Every finding needs one of two decisions, at unit level:
+
+- `READABILITY: FIXED <unit>` — the unit is under its threshold at head.
+- `READABILITY: JUSTIFIED <unit>` — the unit remains a finding and a rationale
+  exists at `givn/changes/<id>/readability/rationales/<slug>.md`.
+
+A rationale names the unit and classification, cites the evidence, states why
+the current shape is the right one and what the unit is responsible for, names
+at least one rejected alternative, and records the owner. It also records
+`Author:`, `Reviewed-by:`, and `Review verdict: accept`. The reviewer is a
+fresh-context subagent that did not write the rationale; `Reviewed-by` must
+differ from `Author`, and the author must not fill the reviewer fields. A
+temporary decision also records a follow-up and expiry. Truth and quality are the owner's
+judgment; the gate checks the mechanical floor only. A justification cannot
+use ownership or scope as a reason. Code is owned by everyone working on the
+project; leaving debt because it is not your code is not acceptable. The
+banned reasons include "not my code", "not this change", "legacy", "out of
+scope", "too risky", "no time", and "later".
+
+The reviewer verifies the rationale rather than trusting it:
+
+- Verify every `Evidence:` and `Why this shape is right:` claim against the
+  actual base/head measurements and the unit's full responsibility set, and
+  reject a rationale that describes only part of the unit.
+- Reject an extraction that merely relocates a smell — a long method becoming
+  a long parameter list, a measured size lowered by hiding the literals, or a
+  suppression added to silence the symptom.
+- When a rationale claims a replaceable module boundary, require a consumer or
+  test that uses it through the neutral contract; reject a private
+  implementation split that only the current adapter can reach.
+
+When any finding exists, record `READABILITY: PASS` after a fresh reviewer
+context reads only the deterministic outline and can explain the unit's
+responsibility and call order. If it cannot, record `FAIL <reason>`; a `FAIL`
+always blocks review. A migration plan may be part of a rationale, but a plan
+alone is not an escape from fixing or justifying the current shape.
+{{/if}}
+
 ## Result
 
 End the file with `REVIEW: PASS` or `REVIEW: FAIL`. The archive gate reads
