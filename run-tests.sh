@@ -69,13 +69,13 @@ cargo build --locked --test ready_fixture
 
 case "${1:-}" in
     --e2e)
-        GIVN_FEATURES="$FEATURES_PATH" run_cucumber '@e2e'
+        GIVN_FEATURES="$FEATURES_PATH" run_cucumber '@e2e and not @givn.removed'
         ;;
     --non-e2e)
-        GIVN_FEATURES="$FEATURES_PATH" run_cucumber 'not @e2e'
+        GIVN_FEATURES="$FEATURES_PATH" run_cucumber 'not @e2e and not @givn.removed'
         ;;
     "")
-        GIVN_FEATURES="$FEATURES_PATH" run_cucumber ''
+        GIVN_FEATURES="$FEATURES_PATH" run_cucumber 'not @givn.removed'
         ;;
     *)
         printf 'usage: %s [--e2e|--non-e2e]\n' "$0" >&2

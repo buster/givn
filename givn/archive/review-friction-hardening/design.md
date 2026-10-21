@@ -392,7 +392,7 @@ changes tested content and then reverts it therefore reuses the proof, which is
 sound because the tested bytes are identical. On Git a history rewrite that
 makes the tested revision unreachable is refused even when the tree content
 matches; Fossil's seam proves revision existence, not ancestry, and that
-limitation is recorded in R-106.
+limitation is recorded in R-118.
 
 ## Test strategy
 
@@ -644,7 +644,7 @@ measurement path, and the archive still measures coverage once.
 - Fossil's seam proves that the tested revision exists, not that it is an
   ancestor of `HEAD`; a rewritten revision that still exists could be reused.
   The tested-content digest is the actual proof, the Git backend uses real
-  ancestry, and R-106 records the limitation. A consumer repository with a
+  ancestry, and R-118 records the limitation. A consumer repository with a
   gitlink, symlink, or unreadable path is handled by the named digest rules
   above rather than a silently shorter digest.
 - Existing schema 1 receipts require one rerun after the upgrade. This is

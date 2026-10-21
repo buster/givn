@@ -76,8 +76,8 @@ PERSONAS: developer--primary-user
 | Archive/review receipt flow | `06-runtime-view.md` §6.7.1 | Affected | `Current` / `DocumentationOnly` / `Stale` | Scenarios 6-10 | `src/cli/check.rs`, `src/cli/archive.rs` | yes |
 | Review check order | `08-crosscutting-concepts.md` §8.12 | Affected | Integrity, run, overlap, retirement, routing, receipt | Scenarios 1-8 | `src/cli/check.rs` `run_mandatory_checks` | yes |
 | ADR-070 amendment | `09-architecture-decisions.md`, `adr/README.md` | Affected | Receipt tested-content binding | Scenario 6 | `docs/arc42/adr/ADR-070-forward-only-archive-proof.md` | yes |
-| Quality scenarios Q-105/Q-108 | `10-quality-requirements.md` | Affected | Reuse and complete diagnosis | Scenarios 1-10 | Gherkin scenarios and transcripts | yes |
-| Risks R-104/R-105/R-106 | `11-risks-and-technical-debt.md` | Affected | Allowlist, hashing, Fossil existence | Scenarios 6-8 | `src/proof.rs`, `src/fossil.rs` | yes |
+| Quality scenarios Q-105/Q-118 | `10-quality-requirements.md` | Affected | Reuse and complete diagnosis | Scenarios 1-10 | Gherkin scenarios and transcripts | yes |
+| Risks R-116/R-117/R-118 | `11-risks-and-technical-debt.md` | Affected | Allowlist, hashing, Fossil existence | Scenarios 6-8 | `src/proof.rs`, `src/fossil.rs` | yes |
 | Glossary terms | `12-glossary.md` | Affected | Receipt, documentation-only revision, tested content | All | Same terms in specs and code | yes |
 
 ARC42 CONFORMANCE: CLEAN

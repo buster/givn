@@ -10,6 +10,7 @@ mod hooks;
 mod integrity_hook;
 mod overlap;
 mod proof;
+mod readability;
 mod scm;
 mod skills;
 mod spec;
@@ -202,6 +203,11 @@ enum Commands {
     },
     /// Re-render managed config scaffold, preserve user overrides, bump version.
     Upgrade,
+    /// Read the opt-in, advisory code-structure report.
+    Readability {
+        #[command(subcommand)]
+        command: ReadabilityCommands,
+    },
     /// Start the product declared in the run block of givn/commands.yaml.
     Run {
         /// Caller-provided port, handed to the product through run.port_env.
@@ -302,6 +308,23 @@ enum HistoryCommands {
         /// Emit the machine-readable payload.
         #[arg(long)]
         json: bool,
+    },
+}
+
+#[derive(Subcommand)]
+enum ReadabilityCommands {
+    /// Analyse production sources and print the advisory report.
+    Report {
+        /// Emit the schema-v1 JSON document instead of human text.
+        #[arg(long)]
+        json: bool,
+        /// Write the report to this path and print nothing on stdout.
+        #[arg(long)]
+        out: Option<PathBuf>,
+        /// Analyse this project-root-relative directory tree (repeatable);
+        /// defaults to `src/`.
+        #[arg(long = "path")]
+        paths: Vec<PathBuf>,
     },
 }
 
@@ -544,6 +567,11 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             }
         },
         Commands::Upgrade => cli::upgrade::run(),
+        Commands::Readability { command } => match command {
+            ReadabilityCommands::Report { json, out, paths } => {
+                cli::readability::run_report(json, out, paths)
+            }
+        },
         Commands::Run { port, print } => std::process::exit(cli::run::execute(port, print)),
         Commands::MissingTestrunner => cli::missing_testrunner::run(),
         Commands::TestResult {

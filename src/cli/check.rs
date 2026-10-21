@@ -168,6 +168,9 @@ fn run_mandatory_checks(
                 check_retirement_disclosed(project_root, id)?;
                 crate::spec::routing_table::check_routing_consistency(project_root, id)?;
                 check_change_receipt(manifest, project_root, id)?;
+                if manifest.addons.readability {
+                    crate::readability::gate::enforce(project_root, id)?;
+                }
             } else {
                 println!(
                     "  ⚠ no --change given — overlap, retirement, routing, and receipt checks were skipped \

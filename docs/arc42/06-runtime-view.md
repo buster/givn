@@ -23,10 +23,11 @@ The sequence is:
 5. Write `givn/commands.yaml` from the embedded project command template unless
    it already exists and `--force` is absent. The current template contains
    `./run-tests.sh`, `./run-tests.sh --e2e`, and coverage script/path entries.
-6. Unless `--no-addons` is set, enable every registered addon. In the current
-   registry this scaffolds Arc42, manages the Absolute Mode fenced block, may
-   scaffold README content, enables the archive coverage gate, and toggles
-   the four project-level skills and commands.
+6. Unless `--no-addons` is set, enable every default-on registered addon. In the
+   current registry this scaffolds Arc42, manages the Absolute Mode fenced
+   block, may scaffold README content, enables the archive coverage gate, and
+   toggles the four project-level skills and commands. A default-off addon is
+   registered but not enabled.
 7. Synchronize skills, commands, and attribution integrations to the selected
    targets. The sync
    updates only givn-owned fenced blocks in `AGENTS.md` and leaves all other
@@ -40,7 +41,10 @@ The sequence is:
 
 The embedded default manifest has addon flags disabled, but initialized projects
 normally receive enabled addon settings because the current `init` command
-enables them. Existing Arc42 files are not overwritten by addon scaffolding.
+enables the default-on set. When a registered addon is default-off, `givn init`
+prints a separate line naming it and the enabling command instead of writing its
+flag; the first such addon is `readability`. Existing Arc42 files are not
+overwritten by addon scaffolding.
 
 ## 6.1a Commit attribution
 
@@ -225,6 +229,10 @@ For `givn check review`, it runs:
    evidence, and the operator decision for any recorded deferral.
 2. The deterministic run-declaration check.
 3. For a named change, the overlap disposition gate.
+4. The change-scoped verification receipt, so a stale receipt is reported before
+   any change-relative readability analysis runs.
+5. For a named change with `addons.readability` enabled, the readability review
+   gate (6.20).
 
 The visual gate reads the `## Visual Design Contract` section from
 `design.md`; an absent section or `Interface: none` exempts the change. For a
@@ -434,16 +442,21 @@ model, and variant are recorded where known; unavailable usage stays explicit.
 
 ## 6.12 Addons, Upgrade, and Completion Commands
 
-`givn addons list` reads enabled flags from `givn/config.yaml`. `enable arc42`
-sets the flag, scaffolds missing fixed-path chapter files, and expands the
-effective graph; `disable arc42` leaves existing docs in place. The same
-commands manage other registered addon flags.
+`givn addons list` reads enabled flags from `givn/config.yaml` and lists every
+registered addon, marking a default-off entry whose flag is absent or false as
+`[disabled]`. `enable arc42` sets the flag, scaffolds missing fixed-path chapter
+files, and expands the effective graph; `disable arc42` leaves existing docs in
+place. The same commands manage other registered addon flags. `enable
+readability` sets its flag, prints the report command, and generates no skill or
+command file; `disable readability` makes the report exit 1 with the named
+disabled reason.
 
 `givn skills sync` resolves the selected targets, writes generated skills and
 the commands of the command-owning targets, refreshes the `givn-project` block, and applies/removes the
 Absolute Mode block according to its addon flag. `givn upgrade` rewrites the
 managed config scaffold, preserves uncommented user blocks, and auto-enables
-newly known addons not represented in the old config.
+newly known default-on addons not represented in the old config; a default-off
+addon is never enabled by upgrade.
 
 `givn completions <shell>` writes no project files and prints a shell completion
 script to stdout.
@@ -706,5 +719,155 @@ the rest `content omitted; see the record`, while the store keeps every byte.
 A scope whose model holds no entries — including a record that holds only the
 recorder's own command entries — renders the empty state rather than an empty
 workflow.
+
+## 6.19 `givn readability report`
+
+The command is registered unconditionally and gated at runtime so that a
+disabled experiment can explain itself:
+
+```mermaid
+sequenceDiagram
+  actor Developer
+  participant CLI as givn readability report
+  participant CFG as config::overlay
+  participant ORCH as readability orchestration
+  participant AN as SourceAnalyzer
+  participant MET as metrics
+  participant CLS as classify
+  participant RPT as report
+  Developer->>CLI: run report [--json] [--out]
+  CLI->>CFG: load_effective()
+  alt readability disabled
+    CLI-->>Developer: exit 1, stderr names the disabled experiment
+  else enabled
+    CLI->>ORCH: report(project root, production src scope)
+    ORCH->>AN: analyze(request)
+    AN-->>ORCH: neutral Analysis plus per-file diagnostics
+    ORCH->>MET: compute(analysis)
+    MET-->>ORCH: per-unit metrics
+    ORCH->>CLS: classify(metrics)
+    CLS-->>ORCH: classification, evidence
+    ORCH->>RPT: render(classified units)
+    RPT-->>Developer: stdout or --out, exit 0
+  end
+```
+
+1. `clap` dispatches `readability report`; the handler loads the effective
+   configuration. An absent or false `addons.readability` stops with exit 1 and
+   a stderr message naming the enabling command.
+2. With the addon enabled, the orchestration scans the project-root `src/`
+   tree, excludes test, benchmark, example, and target directories and
+   `#[cfg(test)]` items, and presents a deterministic request to the
+   `SourceAnalyzer`.
+3. The adapter returns one neutral `Analysis`. A read or parse failure is a
+   diagnostic for that file, not an abort; the report continues with the
+   analyzable files and names every failure.
+4. Shared metrics and classification run above the port. Every analyzed unit
+   receives exactly one classification and its evidence; no action or
+   recommendation is produced, and wholly unsupported units are not classified
+   and are named.
+5. The selected renderer writes human text or schema-v2 findings-only JSON.
+   Findings never change the exit code; the only write is the explicit `--out`
+   path. The command appends no development-record entry and stores no baseline,
+   cache, or classification history.
+
+## 6.20 `givn check review` readability gate
+
+The gate is an additional member of the existing review check, not a command:
+`src/cli/check.rs` calls it after the verification receipt and before the
+review returns success, and only for a named change whose effective
+configuration enables `addons.readability`. With the addon absent or false the
+gate emits nothing and no marker is required.
+
+```mermaid
+sequenceDiagram
+  actor Developer
+  participant CHECK as givn check review
+  participant GATE as readability gate
+  participant SCM as scm::Backend
+  participant AN as readability analysis
+  participant REVIEW as review.md + rationales
+  Developer->>CHECK: check review --change <id>
+  CHECK->>CHECK: integrity, run declaration, overlap, receipt
+  CHECK->>GATE: review(project root, change id, roots = src)
+  alt addon disabled or no change id
+    GATE-->>CHECK: skipped
+  else addon enabled
+    GATE->>SCM: first touching revision of givn/changes/<id>/ and its parent
+    SCM-->>GATE: first touch and first parent, or root
+    GATE->>SCM: changed paths base..HEAD and HEAD..worktree
+    SCM-->>GATE: changed set, or dirty production paths
+    GATE->>SCM: revision files and bytes at base and HEAD
+    SCM-->>GATE: two revision trees
+    GATE->>AN: analyze base tree, analyze HEAD tree
+    AN-->>GATE: two assessments and diagnostics
+    GATE->>GATE: touched units, unit-level findings, post-analysis guard
+    GATE->>REVIEW: markers and rationales
+    REVIEW-->>GATE: FIXED/JUSTIFIED/PASS/FAIL
+    GATE-->>CHECK: PASS, or named failures
+  end
+  CHECK-->>Developer: exit 0, or non-zero with the exact failure
+```
+
+1. **Change base.** The base is the first revision reachable from `HEAD` that
+   touched `givn/changes/<id>/`, then its first parent. Git uses
+   `rev-list --reverse --full-history --parents` and the first parent; Fossil
+   uses `timeline ... --reverse -r ancestors current`, takes the first (oldest)
+   line, and reads the recorded `parent:` (never `merged-from:`). A merge uses
+   its first parent, a rebase recomputes the first touch, a root commit yields
+   an empty base tree, and a shallow clone fails closed. No reachable touch fails with a
+   named error; there is no fallback to `HEAD`, the working tree, or a
+   merge-base.
+2. **Dirty guard.** The head is the committed `HEAD`. A tracked, untracked, or
+   extra production path in the working tree fails before analysis with
+   `production paths are dirty; commit or discard before review: <paths>`.
+   Non-production paths such as `review.md` and the rationales may stay
+   uncommitted.
+3. **Revision trees.** The backend's files under the production roots are
+   materialized into two temporary directories outside the project and analyzed
+   with the same request scope. Entry kinds are regular, symlink, and submodule;
+   a non-UTF-8 path, a path containing a line break, a symlink, a submodule, or
+   an unreadable blob is a named diagnostic, and a touched unit that depends on
+   it fails closed. Git paths and blobs are read with NUL delimiters
+   (`ls-tree -r -z`, `cat-file --batch -z`). The temporary paths never enter the
+   output and are removed before the command returns.
+4. **Touched units.** A changed path marks the units that declare in it, every
+   unit whose files include it, and the file's module; a touched trait also
+   marks its implementors. Base and head units are matched by unit id. A base
+   unit with no head counterpart is a removal that needs `FIXED`; a move to a
+   new module path closes the old unit and makes the new one new debt.
+5. **Gate findings.** A touched unit is a gate finding when it is a report
+   finding at the base or at the head, excluding a data-only size classification
+   without a method finding. A data-only unit with a long method is a
+   method-length gate finding; a new interface under 500 with more than 50
+   public methods is a gate finding; a module at exactly 1,000 is a gate
+   finding. A changed `.rs` file present at head that the analyzer never saw
+   fails the post-analysis guard; a deleted file is proven by the base unit's
+   `Removed` finding. The printed size is the measured value, never a claim of
+   exactness (R-108).
+6. **Decisions.** Each gate finding needs exactly one decision. `READABILITY: FIXED
+   <unit>` is accepted only when the unit has no finding at head;
+   `READABILITY: JUSTIFIED <unit>` is accepted only when the unit remains a
+   finding at head and `rationales/<unit-slug>.md` validates: matching `Unit:`
+   and `Classification:`, the `Finding:` reason, `Evidence:` with a concrete
+   metric or finding path, `Why this shape is right:` naming the unit's
+   responsibility, `Alternatives considered:` naming at least one alternative
+   and why it was rejected (empty, `none`, and `n/a` fail), a confirmed `Owner:`
+   (`givn-maintainer--owner` in this project), no banned whole-word phrase, and
+   the `Follow-up:`/`Expiry:` pair when temporary. A gate finding with neither
+   decision fails; a `FIXED` marker for a still-over unit, a `JUSTIFIED` marker
+   without a rationale or on a unit that is not a finding at head, an unknown
+   marker, and a rationale slug collision all fail.
+7. **Verdict.** `review.md` must carry `READABILITY: PASS` when any gate
+   finding exists; `FAIL <reason>` always fails, and fenced examples are
+   ignored. The gate prints the base revision, the head, the touched-unit and
+   gate-finding counts, each gate finding with its exact unit id and message,
+   each decision, and either `readability review: PASS` or
+   `readability review: FAIL (<reason>)`; several failures print one
+   `FAILURE` line each and an aggregate final line. The CLI exit contract stays `0`/`1`;
+   a missing base, a dirty production path, an unreadable file, a parse failure,
+   or an unanalyzed changed `.rs` file fails closed with the path and
+   diagnostic. The only writes are the two temporary trees; no project file,
+   baseline, watchlist, or ledger is written.
 
 *[Architecture documentation index](README.md)*

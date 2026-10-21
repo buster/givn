@@ -93,7 +93,10 @@ pub fn delta_scenarios(feature: &Feature) -> Vec<DeltaScenario<'_>> {
 /// Returns true if the scenario is a `@givn.removed` placeholder.
 /// These should not trigger @wip warnings in lint.
 pub fn is_removed_placeholder(scenario: &Scenario) -> bool {
-    scenario.tags.iter().any(|t| t == "givn.removed")
+    scenario
+        .tags
+        .iter()
+        .any(|t| t == "givn.removed" || t == "@givn.removed")
 }
 
 /// Returns Some(message) if the feature contains any non-removed @wip scenarios.

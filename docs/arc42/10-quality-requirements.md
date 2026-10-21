@@ -29,6 +29,10 @@ graph TD
     MIGRATE --> BEHAVIOR[Behavior hash preservation]
     MIGRATE --> E2E[Interaction and E2E preservation]
     MIGRATE --> SOURCE[Line and branch non-regression]
+    Q --> STRUCT[Structural review]
+    STRUCT --> FIXORJUSTIFY[Change-relative fix or justify]
+    STRUCT --> ACCOUNT[Every gate finding decided]
+    STRUCT --> OFFLINE[Deterministic and offline verdict]
 ```
 
 ## 10.2 Quality Scenarios
@@ -106,7 +110,19 @@ graph TD
 | Q-105 | Change verification | A review or archive runs without a current green change-scoped receipt, the delta specs, verify command, or other tested content changed after the receipt, or only documentation or evidence changed. | Review and archive refuse a stale receipt, name every changed boundary, and route to `givn check tasks`; a documentation-only revision reuses the green proof and runs no change-scoped tests, and archive still runs the merged suite once when the receipt is current. |
 | Q-106 | Review preflight | A change has a checked scenario without a commit, a duplicate revision, an unreachable revision, or a commit message that omits the scenario title. | Check tasks and review block with every finding at once; a valid per-scenario list passes. A machine-only CLI passes without visual sign-off. |
 | Q-107 | Record quality | A request produces duplicate usage, an unattributed answer, a failed command without error text, or usage/model data without identity. | The record carries one derived-marked linked usage, selected/source/time on answers, a bounded first error line, and provider/model/variant where known; absent values stay explicit. |
-| Q-108 | Review diagnosis completeness | A change's use-case contract has several schema and capability-routing defects at once. | One `givn check review` run reports every distinct defect, grouped by document and line, including the exact accepted spelling for a near-miss title or heading; the schema stays strict and the command exits non-zero. |
+| Q-118 | Review diagnosis completeness | A change's use-case contract has several schema and capability-routing defects at once. | One `givn check review` run reports every distinct defect, grouped by document and line, including the exact accepted spelling for a near-miss title or heading; the schema stays strict and the command exits non-zero. |
+
+| Q-108 | Determinism | A maintainer runs the readability report twice over the same source tree and toolchain. | Human text and JSON output are byte-identical: traversal is sorted, paths are project-relative, and no timestamp, host value, absolute path, or analyzer identity appears. |
+| Q-109 | Gate safety | A readability report contains god-type, interface, module, data-only, method-length, and within-limits units. | The command exits 0 and review and archive behavior is unchanged; each unit carries one classification and no action or recommendation, and no baseline, watchlist, or classification file is written. |
+| Q-110 | Diagnosability | One production file is malformed while another is well formed. | The report names the failed file and its diagnostic, still classifies the well-formed unit, and exits 0. |
+| Q-111 | Replaceability | A second analyzer implementation is proposed for the same report. | It is accepted only through the existing `SourceAnalyzer` contract: the shared metrics, classification, and both renderers are unchanged, the report carries no analyzer identity, and `syn` does not appear outside the first adapter. |
+
+| Q-112 | Determinism | The readability review gate assesses the same change base, committed head, rules version, and review record twice. | Both verdicts are byte-identical: units, gate findings, and decisions are sorted by path then unit id, metrics are integers, paths are project-relative, and no timestamp, temp path, host value, or analyzer identity is rendered. |
+| Q-113 | Gate safety | A change touched a source unit and left at least one readability finding with neither `READABILITY: FIXED` nor `READABILITY: JUSTIFIED`. | `givn check review` exits non-zero and names every undecided unit id with the exact marker and rationale path; a `FIXED` marker for a still-over unit, a `JUSTIFIED` marker without a valid rationale or on a non-finding, an unknown `READABILITY:` marker, a rationale slug collision, a `FAIL <reason>` marker, and a missing `READABILITY: PASS` verdict all block. |
+| Q-114 | Change relativity | A unit was already over its threshold before the change directory existed, and the change does not grow it. | The gate reports it as existing debt, requires a `JUSTIFIED` rationale for the current shape, and never treats it as new debt; the base is the parent of the first reachable change-directory commit, not `HEAD` or a merge-base. |
+| Q-115 | Diagnosability | No reachable commit touched the change directory, the clone is shallow, a production path is dirty, or a touched file cannot be read or parsed. | Review fails closed with the offending revision state, path, or dirty set and its diagnostic; the gate invents no base and no size, a changed `.rs` path present at head that the analyzer never saw is named, a line-break or non-UTF-8 path is refused, and a partially unsupported unit is classified only from its visible syntax. |
+| Q-116 | Isolation | A project has not enabled the readability addon. | `givn check review` behaves exactly as before: no analysis runs, no readability text appears, and no marker is required. |
+| Q-117 | Report compatibility | A consumer reads a readability JSON report expecting schema 1. | The document carries `schema_version: 2`; `action` and `recommendation` are absent, every other key is unchanged, and the consumer can branch on the version instead of guessing from a missing field. |
 
 ## 10.3 Verification Signals
 
