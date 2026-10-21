@@ -18,7 +18,7 @@ Every row was checked against `proposal.md`,
 | 8 | 08 crosscutting-concepts | Yes | The Gherkin delta model must state that step definitions are never merged and how the preflight compares phrase sets. | Section 8.3 adds the durable-source rule, the one path rule, the binding-expression scanner and its tokens, the two prune sets (component names and project-relative prefixes), the unreadable-file rule, the bounded refusal with the project-relative delta path, and the repair instruction. `docs/arc42/08-crosscutting-concepts.md` |
 | 9 | 09 architecture-decisions | No | The decision "step definitions are durable source, not archive-merged code" fails the lower-level-artifact and product-behaviour dimensions: it is workflow behaviour owned by the archive-change use case, its Gherkin scenarios, design.md, and chapter 8.3. It moves no component, authority, or deployment boundary, so it is routed to that canonical artifact rather than an ADR. | None |
 | 10 | 10 quality-requirements | No | No new quality scenario: the archive's existing proven-publication requirement now holds one step earlier. The scenarios in the capability are functional behaviour, not new quality goals. | None |
-| 11 | 11 risks-and-technical-debt | Yes | The binding scanner skips a dynamically computed phrase, compares phrases literally after whitespace normalization, and skips an unreadable or non-UTF-8 file under a step directory. | R-122 records the remaining limits and their mitigation. `docs/arc42/11-risks-and-technical-debt.md` |
+| 11 | 11 risks-and-technical-debt | Yes | The binding scanner skips a dynamically computed phrase, compares phrases literally after whitespace normalization, and skips an unreadable or non-UTF-8 file under a step directory. | R-123 records the remaining limits and their mitigation. `docs/arc42/11-risks-and-technical-debt.md` |
 | 12 | 12 glossary | Yes | "Step definition" becomes durable project vocabulary with a boundary that archive enforces, and "step phrase" names the comparison unit. | The Step definition entry states durable source, the one path rule, the archive-history role of the delta copy, and the permanent binding requirement; the Step phrase entry names the literal bound by a binding. `docs/arc42/12-glossary.md` |
 
 ## ADR qualification verdict
@@ -81,7 +81,7 @@ phrase is unbound permanently."
   lists the two prune sets, records that unreadable/non-UTF-8 files are skipped
   in both walks, and records the bounded phrase list and the repair
   instruction.
-- **11 risks-and-technical-debt.** R-122 records the scanner's remaining limits
+- **11 risks-and-technical-debt.** R-123 records the scanner's remaining limits
   (dynamic bindings skipped, literal phrase comparison, unreadable files
   skipped) and names the documentation and scenario coverage that keep them
   inspectable.

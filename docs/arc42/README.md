@@ -133,7 +133,7 @@ change, archive, history, version-control, build, and cache trees). The
 refusal is user-visible archive behavior owned by the `archive-change` use
 case, the `require-merged-step-definitions` capability, and the change design,
 so no ADR is introduced. Durable facts live in chapters 5, 6, 8 (§8.3), 11
-(R-122), and 12 (Step definition, Step phrase).
+(R-123), and 12 (Step definition, Step phrase).
 
 Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
 register](adr/README.md) for status, relationships, evidence, reserved IDs, and

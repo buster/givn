@@ -97,7 +97,7 @@ names the project-relative delta file, the missing phrases (capped at 20, then
 `+N more`), and the repair: merge each definition into its permanent
 per-capability step file and rerun the archive. The heuristic is text-level by
 design; its skipped-binding and literal-comparison limits are recorded in
-chapter 11 (R-122).
+chapter 11 (R-123).
 
 The merge implementation is text-level for scenario blocks. It preserves the
 existing permanent feature header and surrounding text, while a replaced or

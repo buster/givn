@@ -21,7 +21,7 @@ evidence is the basis for the disposition.
 | S4 | Testability | The bounded phrase list (`MAX_REPORTED_PHRASES = 20`, `+N more`) had no executable coverage. | Added a fourth `@givn.added @wip` scenario: 21 distinct missing phrases; stderr names the alphabetically first 20, does not name the 21st, says `+1 more`, and still names the delta file. Proposal, design, and usecase changed to "bounded with a remainder count". |
 | S5 | arc42 | `docs/arc42/README.md` was missing from the planned documentation updates. | A paragraph is added naming the change, the canonical artifacts, the no-ADR disposition, and chapters 5, 6, 8, 11, 12; `design.md` and `arc42.md` list it. |
 | S6 | Contracts and components / Testability | The design-instruction addition conflicted with `src/integrity_hook.rs`, which validates column 1 only and resolves it as one path. | The `## Step Definitions` table keeps column 1 as the hook-validated `Step definition file` and adds a third `Permanent merge target` column. `assets/templates/design.md` and `assets/instructions/design.md` are updated together. This change's table uses two files for the capability (non-e2e and e2e) with `n/a` in column 3 because both step files are repository tests, not a delta mirror. |
-| Q1 | Risk | `__pycache__/*.pyc` under a `steps` directory is classified as a step file and aborts `read_to_string` with a UTF-8 error. | Both walks prune the `__pycache__` component and skip unreadable/non-UTF-8 files without failing. Recorded in `design.md` §Internal Primitives, arc42 §8.3, and R-122. |
+| Q1 | Risk | `__pycache__/*.pyc` under a `steps` directory is classified as a step file and aborts `read_to_string` with a UTF-8 error. | Both walks prune the `__pycache__` component and skip unreadable/non-UTF-8 files without failing. Recorded in `design.md` §Internal Primitives, arc42 §8.3, and R-123. |
 | Q2 | Scope | The printed delta path had no defined base; the feature expects `specs/steps/catalog_steps.py`, the usecase said the same, but existing archive errors print absolute paths. | `delta_file` is project-relative (`givn/changes/<id>/specs/steps/catalog_steps.py` or the archive equivalent), which always contains the asserted `specs/steps/catalog_steps.py` suffix. Stated in `design.md`; feature asserts the substring. |
 | Q3 | Scope | The release note promised "every unmerged step phrase" while the design caps the list at 20. | Release note now says "the missing step phrases (bounded with a remainder count)". |
 | Q4 | Testability | The Mermaid routed pending/all-present through the fresh write-receipt-and-move box. | Diagram split: fresh/all-present → write receipt and move → merge and publish; pending/all-present → merge-if-needed and publish-if-needed; both reach verification. |
@@ -69,7 +69,7 @@ opening `arc42.md`, then diffed.
 | 8 | 08 crosscutting-concepts | Yes | Yes | Yes | Yes — §8.3 records the path rule, scanner, tokens, prune sets, unreadable files, bound, and repair |
 | 9 | 09 architecture-decisions | No | No | Yes | Yes — verdict routes to the canonical artifact; no MADR |
 | 10 | 10 quality-requirements | No | No | Yes | N/A |
-| 11 | 11 risks-and-technical-debt | Yes | Yes | Yes | Yes — R-122 matches the scanner and its remaining limits |
+| 11 | 11 risks-and-technical-debt | Yes | Yes | Yes | Yes — R-123 matches the scanner and its remaining limits |
 | 12 | 12 glossary | Yes | Yes | Yes | Yes — Step definition and Step phrase match the artifacts |
 
 - [x] All 12 chapter rows independently assessed before reading `arc42.md`.
@@ -88,7 +88,7 @@ opening `arc42.md`, then diffed.
 | `design.md` | Overview/diagram, call-site contract, scanner primitives, two prune sets, unreadable-file rule, acceptance expectations, Step Definitions table with a permanent-merge-target column, no-contract statement, Local Runnability two-phase fixture, instruction/doc list. |
 | `arc42.md` | Chapter-8, chapter-11, and chapter-12 summaries and affected-chapter evidence reflect the scanner, prune sets, and index paragraph. |
 | `docs/arc42/README.md` | Change paragraph added (no ADR; chapters 5, 6, 8, 11, 12). |
-| `docs/arc42/05`, `06`, `08`, `11`, `12` | Archive row, stage 3, §8.3, R-122, and the Step definition/Step phrase entries updated. |
+| `docs/arc42/05`, `06`, `08`, `11`, `12` | Archive row, stage 3, §8.3, R-123, and the Step definition/Step phrase entries updated. |
 | `assets/instructions/steps.md` | Durable-source rule, permanent-tree definition, bounded refusal, binding tokens, literal-phrase limitation. |
 | `assets/instructions/archive.md` | Gate item 5 and the resume rule. |
 | `assets/instructions/design.md` | Step-definition bullet requires the three-column table; durable-source section added. |
