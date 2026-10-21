@@ -137,8 +137,10 @@ fn candidate_spec_tree_binds(world: &mut GivnWorld, phrase: String, relative: St
 }
 
 #[given(regex = r#"^a permanent step-definition file "([^"]+)" binds "([^"]+)"$"#)]
-fn permanent_step_binds(_world: &mut GivnWorld, _relative: String, _phrase: String) {
-    todo!("TODO: write the permanent step-definition file");
+fn permanent_step_binds(world: &mut GivnWorld, relative: String, phrase: String) {
+    let path = project_root(world).join(relative);
+    write_binding(&path, &phrase);
+    assert!(path.exists(), "permanent step file was not written");
 }
 
 #[then("stderr says the definition must be merged into the permanent per-capability step file")]
