@@ -109,7 +109,7 @@ Feature: Outline report
     Given  a Givn project with the outline experiment enabled
     And  a production source unit
     When  the developer runs "givn outline report --json"
-    Then  the JSON report has schema version 2
+    Then  the JSON report has schema version 3
     And  the JSON report has rules version 1
 
   Scenario: The JSON report carries analyzer capabilities and limitations
@@ -173,13 +173,13 @@ Feature: Outline report
     And  the report labels the unit as a hint
     And  the report records no recommendation
 
-  Scenario: The JSON findings count counts every non-within-limits unit
+  Scenario: The JSON hints count counts every non-within-limits unit
     Given  a Givn project with the outline experiment enabled
     And  a production source unit that is over the readable size
     And  a production source unit with a data-only enum over the readable size
     And  a production source unit within the readable size
     When  the developer runs "givn outline report --json"
-    Then  the JSON findings count matches the non-within-limits units
+    Then  the JSON hints count matches the non-within-limits units
     And  the JSON report classifies the data-only unit
 
   Scenario: Every analyzed unit has exactly one classification
@@ -192,3 +192,37 @@ Feature: Outline report
     Given  the outline fixture corpus
     When  the developer runs "givn outline report"
     Then  the report lists units by classification, then path, then unit id
+
+  Scenario: A Python class is outlined with its methods and calls
+    Given  a Givn project with the outline experiment enabled
+    And  a Python module with a class and methods
+    When  the developer runs "givn outline report --json"
+    Then  the JSON report names the Python class "OrderBook"
+    And  the JSON report lists the class methods "add" and "fill"
+    And  the JSON outline records the call from "fill" to "add"
+    And  the JSON report records the file language "python"
+
+  Scenario: A Python module without classes is a module unit
+    Given  a Givn project with the outline experiment enabled
+    And  a Python module with top-level functions
+    When  the developer runs "givn outline report --json"
+    Then  the JSON report names one Python module unit
+    And  the JSON report lists the module functions "load" and "save"
+
+  Scenario: A Python project whose analyzer is unavailable still reports
+    Given  a Givn project with the outline experiment enabled
+    And  a Python module with a class and methods
+    And  python3 is not on the PATH
+    When  the developer runs the outline report
+    Then  the command exits with code 0
+    And  the report names the file "src/tracker.py"
+    And  the report names the analyzer as unavailable
+
+  Scenario: A Rust-only project never invokes python3
+    Given  a Givn project with the outline experiment enabled
+    And  a production source unit within the readable size
+    And  a python3 recorder that records every invocation
+    When  the developer runs the outline report with the recorder on the PATH
+    Then  the command exits with code 0
+    And  the python3 recorder records no invocation
+    And  the report names only the rust language

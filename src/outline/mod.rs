@@ -8,11 +8,12 @@ pub mod model;
 pub mod report;
 pub mod scan;
 
+mod python_adapter;
 mod syn_adapter;
 
 use anyhow::Result;
 
-pub use analyzer::{SourceAnalyzer, rust_analyzer};
+pub use analyzer::{SourceAnalyzer, outline_analyzer};
 pub use classify::assess;
 pub use model::{Analysis, AnalysisRequest, SourceScope};
 

@@ -7,24 +7,25 @@ use super::model::{
 use serde_json::{Value, json};
 use std::collections::BTreeSet;
 
-pub const SCHEMA_VERSION: u32 = 2;
+pub const SCHEMA_VERSION: u32 = 3;
 pub const RULES_VERSION: u32 = 1;
 
 pub fn render_human(assessment: &Assessment) -> String {
     if assessment.files.is_empty() {
-        return "outline report — rust, 0 files, 0 units, 0 hints\nNo production sources found in the requested scope.\n"
+        return "outline report — no production sources, 0 files, 0 units, 0 hints\nNo production sources found in the requested scope.\n"
             .to_string();
     }
-    let findings = assessment
+    let hints = assessment
         .units
         .iter()
         .filter(|unit| unit.classification != Classification::WithinLimits)
         .count();
+    let languages = languages_label(assessment);
     let mut out = format!(
-        "outline report — rust, {} files, {} units, {} hints\n",
+        "outline report — {languages}, {} files, {} units, {} hints\n",
         assessment.files.len(),
         assessment.units.len(),
-        findings
+        hints
     );
     out.push_str(
         "outline first: method declarations, signatures, and internal calls; metrics are hints\n",
@@ -161,12 +162,12 @@ pub fn render_json(assessment: &Assessment, scope: &SourceScope) -> String {
         "schema_version": SCHEMA_VERSION,
         "rules_version": RULES_VERSION,
         "scope": {
-            "language": "rust",
+            "languages": scope.languages.iter().map(|language| language.label()).collect::<Vec<_>>(),
             "roots": scope.roots.iter().map(|root| root.to_string_lossy().replace('\\', "/")).collect::<Vec<_>>(),
             "production_only": true,
         },
         "capabilities": {
-            "language": "rust",
+            "languages": assessment.capabilities.languages.iter().map(|language| language.label()).collect::<Vec<_>>(),
             "supported_constructs": assessment.capabilities.supported_constructs.iter().map(|construct| construct.label()).collect::<Vec<_>>(),
             "limitations": assessment.capabilities.limitations.iter().map(|limitation| limitation.label()).collect::<Vec<_>>(),
             "resolution_labels": assessment.capabilities.resolution_labels.iter().map(|resolution| resolution.label()).collect::<Vec<_>>(),
@@ -187,6 +188,7 @@ fn files_json(assessment: &Assessment) -> Vec<Value> {
 fn file_json(file: &AnalyzedFile) -> Value {
     json!({
         "path": file.path.as_str(),
+        "language": file.language.label(),
         "status": match file.status {
             super::model::FileStatus::Analyzed => "analyzed",
             super::model::FileStatus::Failed => "failed",
@@ -204,6 +206,7 @@ fn units_json(assessment: &Assessment) -> Vec<Value> {
 fn unit_json(unit: &ClassifiedUnit) -> Value {
     json!({
         "id": unit.unit_id.to_string(),
+        "language": unit.language.label(),
         "kind": match unit.kind {
             UnitKind::Type(_) => "type",
             UnitKind::Module => "module",
@@ -315,7 +318,7 @@ fn summary_json(assessment: &Assessment) -> Value {
         "units": assessment.units.len(),
         "units_classified": assessment.units.len(),
         "units_unsupported": assessment.unsupported.len(),
-        "findings": assessment.units.iter().filter(|unit| unit.classification != Classification::WithinLimits).count(),
+        "hints": assessment.units.iter().filter(|unit| unit.classification != Classification::WithinLimits).count(),
         "unsupported": assessment.unsupported.len(),
     })
 }
@@ -335,6 +338,18 @@ fn metric_json(value: MetricValue) -> Value {
         MetricValue::Count(value) => json!(value),
         MetricValue::Permille(value) => json!(value),
         MetricValue::Undefined => Value::Null,
+    }
+}
+
+fn languages_label(assessment: &Assessment) -> String {
+    let mut languages = std::collections::BTreeSet::new();
+    for file in &assessment.files {
+        languages.insert(file.language.label());
+    }
+    if languages.is_empty() {
+        "no sources".to_string()
+    } else {
+        languages.into_iter().collect::<Vec<_>>().join("+")
     }
 }
 
@@ -385,6 +400,7 @@ mod tests {
         let unit_id = UnitId("type:src/engine.rs::Engine".to_string());
         let unit = ClassifiedUnit {
             unit_id: unit_id.clone(),
+            language: Language::Rust,
             kind: UnitKind::Type(TypeKind::Struct),
             name: "Engine".to_string(),
             path: path.clone(),
@@ -423,12 +439,13 @@ mod tests {
         };
         let assessment = Assessment {
             capabilities: AnalyzerCapabilities {
-                language: Language::Rust,
+                languages: vec![Language::Rust],
                 supported_constructs: vec![],
                 limitations: vec![],
                 resolution_labels: vec![],
             },
             files: vec![AnalyzedFile {
+                language: Language::Rust,
                 path,
                 physical_lines: 700,
                 lines: vec![],

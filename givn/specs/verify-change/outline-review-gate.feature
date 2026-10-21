@@ -143,3 +143,21 @@ Feature: Outline review gate
     And  the guidance names "OUTLINE: PASS"
     And  the guidance names "no justification path for an unreadable outline"
     And  the guidance says to run "givn check review"
+
+  Scenario: A change to a Python class requires an outline verdict
+    Given  a Givn project with the outline experiment enabled
+    And  a committed change that adds a Python class
+    And  the change's review record records "OUTLINE: AUTHOR agent"
+    And  the change's review record records "OUTLINE: REVIEWER fresh-context-reviewer"
+    And  the change's review record records "OUTLINE: PASS type:src/tracker.py::OrderBook | tracks orders; add then fill"
+    And  the change's review record records "OUTLINE: PASS"
+    When  the outline review assesses the change
+    Then  the review passes
+    And  the review reports an outline for "type:src/tracker.py::OrderBook"
+
+  Scenario: A changed Python test module is not production scope
+    Given  a Givn project with the outline experiment enabled
+    And  a committed change that only adds a Python test module
+    And  the change's review record records "OUTLINE: PASS"
+    When  the outline review assesses the change
+    Then  the review passes

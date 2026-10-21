@@ -1,10 +1,25 @@
 //! Deterministic production-source discovery.
 
-use super::model::{LineKind, RepoPath};
+use super::model::{Language, LineKind, RepoPath};
 use anyhow::{Context, Result};
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
-const EXCLUDED_DIRS: &[&str] = &["tests", "benches", "examples", "target"];
+/// Test and tooling directories excluded for every language.
+const EXCLUDED_DIRS: &[&str] = &["tests", "benches", "examples", "target", ".git"];
+
+/// Python-only tooling directories; a Rust source tree may legitimately use
+/// names such as `build/`, so the exclusion is language-specific.
+const PYTHON_EXCLUDED_DIRS: &[&str] = &[
+    "__pycache__",
+    ".venv",
+    "venv",
+    ".tox",
+    ".mypy_cache",
+    ".pytest_cache",
+    "build",
+    "dist",
+    "node_modules",
+];
 
 #[derive(Clone, Debug)]
 pub struct ScannedSource {
@@ -13,12 +28,16 @@ pub struct ScannedSource {
     pub lines: Vec<LineKind>,
 }
 
-/// Discover production `.rs` files under the requested roots.
+/// Discover production sources for the requested languages under the roots.
 ///
 /// Roots are project-root-relative (already validated by the CLI). Test and
 /// tooling directories are excluded wherever they occur. Paths are sorted and
 /// deduplicated, so overlapping roots analyze each file once.
-pub fn discover(project_root: &Path, roots: &[PathBuf]) -> Result<Vec<ScannedSource>> {
+pub fn discover(
+    project_root: &Path,
+    roots: &[PathBuf],
+    languages: &[Language],
+) -> Result<Vec<ScannedSource>> {
     let canonical_root = project_root
         .canonicalize()
         .with_context(|| format!("resolve project root {}", project_root.display()))?;
@@ -29,7 +48,7 @@ pub fn discover(project_root: &Path, roots: &[PathBuf]) -> Result<Vec<ScannedSou
         if !path.exists() {
             continue;
         }
-        walk(&canonical_root, &path, &mut files)?;
+        walk(&canonical_root, &path, languages, &mut files)?;
     }
 
     files.sort_by(|a, b| a.absolute.cmp(&b.absolute));
@@ -41,7 +60,10 @@ pub fn discover(project_root: &Path, roots: &[PathBuf]) -> Result<Vec<ScannedSou
             Ok(content) => content,
             Err(_) => continue,
         };
-        let lines = content.lines().map(classify_line).collect();
+        let lines = content
+            .lines()
+            .map(|line| classify_line(line, path.language))
+            .collect();
         let relative = path
             .absolute
             .strip_prefix(&canonical_root)
@@ -55,7 +77,12 @@ pub fn discover(project_root: &Path, roots: &[PathBuf]) -> Result<Vec<ScannedSou
     Ok(sources)
 }
 
-fn walk(project_root: &Path, dir: &Path, out: &mut Vec<ScannedSourcePath>) -> Result<()> {
+fn walk(
+    project_root: &Path,
+    dir: &Path,
+    languages: &[Language],
+    out: &mut Vec<ScannedSourcePath>,
+) -> Result<()> {
     let canonical = match dir.canonicalize() {
         Ok(path) => path,
         Err(_) => return Ok(()),
@@ -64,9 +91,10 @@ fn walk(project_root: &Path, dir: &Path, out: &mut Vec<ScannedSourcePath>) -> Re
         return Ok(());
     }
     if canonical.is_file() {
-        if canonical.extension().is_some_and(|ext| ext == "rs") {
+        if let Some(language) = language_for_path(&canonical, languages) {
             out.push(ScannedSourcePath {
                 absolute: canonical,
+                language,
             });
         }
         return Ok(());
@@ -82,12 +110,15 @@ fn walk(project_root: &Path, dir: &Path, out: &mut Vec<ScannedSourcePath>) -> Re
         let name = entry.file_name();
         let name = name.to_string_lossy();
         if path.is_dir() {
-            if EXCLUDED_DIRS.contains(&name.as_ref()) {
+            if languages
+                .iter()
+                .all(|language| excluded_dir(&name, *language))
+            {
                 continue;
             }
-            walk(project_root, &path, out)?;
-        } else if path.extension().is_some_and(|ext| ext == "rs") {
-            walk(project_root, &path, out)?;
+            walk(project_root, &path, languages, out)?;
+        } else if language_for_path(&path, languages).is_some() {
+            walk(project_root, &path, languages, out)?;
         }
     }
     Ok(())
@@ -96,16 +127,64 @@ fn walk(project_root: &Path, dir: &Path, out: &mut Vec<ScannedSourcePath>) -> Re
 #[derive(Clone, Debug)]
 struct ScannedSourcePath {
     absolute: PathBuf,
+    language: Language,
 }
 
-fn classify_line(line: &str) -> LineKind {
+/// Whether a repo path is a production source file for one of the languages.
+///
+/// Mirrors discovery: excluded directories and Python test modules never count
+/// as production scope, so the review gate does not fail on them.
+pub fn is_production_source(path: &str, languages: &[Language]) -> bool {
+    language_for_path(Path::new(path), languages).is_some()
+}
+
+fn excluded_dir(name: &str, language: Language) -> bool {
+    EXCLUDED_DIRS.contains(&name)
+        || (language == Language::Python && PYTHON_EXCLUDED_DIRS.contains(&name))
+}
+
+fn language_for_path(path: &Path, languages: &[Language]) -> Option<Language> {
+    let extension = path.extension()?.to_str()?;
+    let name = path.file_name()?.to_str()?;
+    let language = match extension {
+        "rs" if languages.contains(&Language::Rust) => Language::Rust,
+        "py" if languages.contains(&Language::Python) => {
+            if name.starts_with("test_") || name.ends_with("_test.py") {
+                return None;
+            }
+            Language::Python
+        }
+        _ => return None,
+    };
+    if path.components().any(|component| match component {
+        Component::Normal(name) => excluded_dir(&name.to_string_lossy(), language),
+        _ => false,
+    }) {
+        return None;
+    }
+    Some(language)
+}
+
+fn classify_line(line: &str, language: Language) -> LineKind {
     let trimmed = line.trim();
     if trimmed.is_empty() {
-        LineKind::Blank
-    } else if trimmed.starts_with("//") || trimmed.starts_with("/*") || trimmed.starts_with('*') {
-        LineKind::Comment
-    } else {
-        LineKind::Code
+        return LineKind::Blank;
+    }
+    match language {
+        Language::Rust => {
+            if trimmed.starts_with("//") || trimmed.starts_with("/*") || trimmed.starts_with('*') {
+                LineKind::Comment
+            } else {
+                LineKind::Code
+            }
+        }
+        Language::Python => {
+            if trimmed.starts_with('#') {
+                LineKind::Comment
+            } else {
+                LineKind::Code
+            }
+        }
     }
 }
 
@@ -128,4 +207,35 @@ pub fn code_lines(lines: &[LineKind], spans: &[super::model::SourceSpan], file: 
         .enumerate()
         .filter(|(index, marked)| **marked && lines.get(*index) == Some(&LineKind::Code))
         .count() as u32
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn production_scope_is_language_specific() {
+        assert!(is_production_source(
+            "src/build/engine.rs",
+            &[Language::Rust]
+        ));
+        assert!(!is_production_source(
+            "src/build/engine.py",
+            &[Language::Python]
+        ));
+        assert!(!is_production_source(
+            "src/.venv/lib/helper.py",
+            &[Language::Python]
+        ));
+        assert!(!is_production_source(
+            "src/test_helper.py",
+            &[Language::Python]
+        ));
+        assert!(!is_production_source(
+            "src/helper_test.py",
+            &[Language::Python]
+        ));
+        assert!(is_production_source("src/helper.py", &[Language::Python]));
+        assert!(!is_production_source("tests/helper.rs", &[Language::Rust]));
+    }
 }

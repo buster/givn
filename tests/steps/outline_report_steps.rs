@@ -500,17 +500,17 @@ fn json_has_no_action_fields(world: &mut GivnWorld) {
     );
 }
 
-#[then("the JSON report reports 2 findings")]
-fn json_reports_two_findings(world: &mut GivnWorld) {
+#[then("the JSON report reports 2 hints")]
+fn json_reports_two_hints(world: &mut GivnWorld) {
     let value = json_output(world);
     assert_eq!(
-        value["summary"]["findings"], 2,
-        "unexpected findings count: {value}"
+        value["summary"]["hints"], 2,
+        "unexpected hints count: {value}"
     );
 }
 
-#[then("the JSON findings count matches the non-within-limits units")]
-fn json_findings_count_matches(world: &mut GivnWorld) {
+#[then("the JSON hints count matches the non-within-limits units")]
+fn json_hints_count_matches(world: &mut GivnWorld) {
     let value = json_output(world);
     let units = value["units"].as_array().expect("units");
     let expected = units
@@ -518,9 +518,9 @@ fn json_findings_count_matches(world: &mut GivnWorld) {
         .filter(|unit| unit["classification"] != "within-limits")
         .count();
     assert_eq!(
-        value["summary"]["findings"].as_u64(),
+        value["summary"]["hints"].as_u64(),
         Some(expected as u64),
-        "findings count does not match classifications: {value}"
+        "hints count does not match classifications: {value}"
     );
 }
 
@@ -625,10 +625,10 @@ fn json_analyzer_limitations(world: &mut GivnWorld) {
     );
 }
 
-#[then("the JSON report has schema version 2")]
+#[then("the JSON report has schema version 3")]
 fn json_schema_version(world: &mut GivnWorld) {
     let value = json_output(world);
-    assert_eq!(value["schema_version"], 2, "unexpected schema version");
+    assert_eq!(value["schema_version"], 3, "unexpected schema version");
 }
 
 #[then("the JSON report has rules version 1")]
@@ -745,5 +745,223 @@ fn outline_addon_is_disabled(world: &mut GivnWorld) {
     assert!(
         stdout.contains("[disabled]  outline"),
         "outline should be disabled, got: {stdout}"
+    );
+}
+
+#[given("a Python module with a class and methods")]
+fn python_class_module(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::outline_report_support::write_python_class(env);
+}
+
+#[given("a Python module with top-level functions")]
+fn python_function_module(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::outline_report_support::write_python_module(env);
+}
+
+#[given("python3 is not on the PATH")]
+fn python3_absent(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    std::fs::create_dir_all(env.path(".empty-path")).expect("create empty PATH dir");
+}
+
+#[given("a python3 recorder that records every invocation")]
+fn python3_recorder(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::outline_report_support::write_python3_stub(env);
+}
+
+#[when("the developer runs the outline report")]
+fn developer_runs_report_without_python3(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let empty = env.path(".empty-path");
+    let empty_path = empty.to_string_lossy().into_owned();
+    let out = common::run_givn_with_envs(
+        env,
+        &["outline", "report"],
+        &[("PATH", empty_path.as_str())],
+    );
+    world.last_output = Some(out);
+}
+
+#[when("the developer runs the outline report with the recorder on the PATH")]
+fn developer_runs_report_with_recorder(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let recorder = env.path(".python3-stub");
+    let existing = std::env::var("PATH").unwrap_or_default();
+    let value = format!("{}:{existing}", recorder.display());
+    let out = common::run_givn_with_envs(env, &["outline", "report"], &[("PATH", value.as_str())]);
+    world.last_output = Some(out);
+}
+
+#[then(regex = r#"^the JSON report names the Python class "([^"]+)"$"#)]
+fn json_names_python_class(world: &mut GivnWorld, name: String) {
+    let value = json_output(world);
+    let units = value["units"].as_array().expect("units");
+    assert!(
+        units.iter().any(|unit| {
+            unit["name"].as_str() == Some(name.as_str())
+                && unit["language"].as_str() == Some("python")
+                && unit["kind"].as_str() == Some("type")
+                && unit["type_kind"].as_str() == Some("class")
+        }),
+        "no Python class {name}: {value}"
+    );
+}
+
+#[then(regex = r#"^the JSON report lists the class methods "([^"]+)" and "([^"]+)"$"#)]
+fn json_lists_class_methods(world: &mut GivnWorld, first: String, second: String) {
+    let value = json_output(world);
+    let unit = value["units"]
+        .as_array()
+        .expect("units")
+        .iter()
+        .find(|unit| {
+            unit["language"].as_str() == Some("python") && unit["kind"].as_str() == Some("type")
+        })
+        .unwrap_or_else(|| panic!("no Python class unit: {value}"));
+    let names: Vec<&str> = unit["methods"]
+        .as_array()
+        .expect("methods")
+        .iter()
+        .filter_map(|method| method["name"].as_str())
+        .collect();
+    assert!(
+        names.contains(&first.as_str()) && names.contains(&second.as_str()),
+        "expected methods {first} and {second}, got: {names:?}"
+    );
+}
+
+#[then(regex = r#"^the JSON outline records the call from "([^"]+)" to "([^"]+)"$"#)]
+fn json_outline_records_call(world: &mut GivnWorld, caller: String, callee: String) {
+    let value = json_output(world);
+    let items = value["units"]
+        .as_array()
+        .expect("units")
+        .iter()
+        .flat_map(|unit| unit["outline"].as_array().into_iter().flatten())
+        .collect::<Vec<_>>();
+    let item = items
+        .iter()
+        .find(|item| item["name"].as_str() == Some(caller.as_str()))
+        .unwrap_or_else(|| panic!("no outline item {caller}: {value}"));
+    let calls: Vec<&str> = item["calls"]
+        .as_array()
+        .expect("calls")
+        .iter()
+        .filter_map(|call| call["callee"].as_str())
+        .collect();
+    assert!(
+        calls.contains(&callee.as_str()),
+        "expected {caller} to call {callee}, got: {calls:?}"
+    );
+}
+
+#[then(regex = r#"^the JSON report records the file language "([^"]+)"$"#)]
+fn json_records_file_language(world: &mut GivnWorld, language: String) {
+    let value = json_output(world);
+    let files = value["files"].as_array().expect("files");
+    assert!(
+        files.iter().any(|file| {
+            file["path"].as_str() == Some("src/tracker.py")
+                && file["language"].as_str() == Some(language.as_str())
+        }),
+        "expected src/tracker.py to be {language}: {value}"
+    );
+}
+
+#[then("the JSON report names one Python module unit")]
+fn json_names_python_module(world: &mut GivnWorld) {
+    let value = json_output(world);
+    let modules: Vec<_> = value["units"]
+        .as_array()
+        .expect("units")
+        .iter()
+        .filter(|unit| {
+            unit["language"].as_str() == Some("python") && unit["kind"].as_str() == Some("module")
+        })
+        .collect();
+    assert_eq!(modules.len(), 1, "expected one Python module unit: {value}");
+    assert_eq!(
+        modules[0]["name"].as_str(),
+        Some("src/store.py"),
+        "unexpected module name: {value}"
+    );
+}
+
+#[then(regex = r#"^the JSON report lists the module functions "([^"]+)" and "([^"]+)"$"#)]
+fn json_lists_module_functions(world: &mut GivnWorld, first: String, second: String) {
+    let value = json_output(world);
+    let unit = value["units"]
+        .as_array()
+        .expect("units")
+        .iter()
+        .find(|unit| {
+            unit["language"].as_str() == Some("python") && unit["kind"].as_str() == Some("module")
+        })
+        .unwrap_or_else(|| panic!("no Python module unit: {value}"));
+    let names: Vec<&str> = unit["methods"]
+        .as_array()
+        .expect("methods")
+        .iter()
+        .filter_map(|method| method["name"].as_str())
+        .collect();
+    assert!(
+        names.contains(&first.as_str()) && names.contains(&second.as_str()),
+        "expected functions {first} and {second}, got: {names:?}"
+    );
+}
+
+#[then("the report names the analyzer as unavailable")]
+fn report_names_analyzer_unavailable(world: &mut GivnWorld) {
+    let report = report_text(world);
+    assert!(
+        report.contains("analyzer-unavailable"),
+        "expected an unavailable analyzer diagnostic, got: {report}"
+    );
+}
+
+#[then("the python3 recorder records no invocation")]
+fn recorder_records_no_invocation(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    assert!(
+        !crate::steps::outline_report_support::python3_stub_invoked(env),
+        "a Rust-only project must not invoke python3"
+    );
+}
+
+#[then("the report names only the rust language")]
+fn report_names_only_rust(world: &mut GivnWorld) {
+    let report = report_text(world);
+    let header = report.lines().next().unwrap_or_default();
+    assert!(
+        header.contains("outline report — rust,"),
+        "expected a rust-only header, got: {header}"
+    );
+    assert!(
+        !header.contains("python"),
+        "the header must not name python: {header}"
     );
 }
