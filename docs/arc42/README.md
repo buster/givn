@@ -93,7 +93,7 @@ advisory experiment with no stored baseline. Durable facts live in chapters 1
 11 (R-104 to R-108, D-24, D-25), and 12.
 
 The `add-readability-review-gate` change adds the same experiment's review stage
-and revises the report. The report becomes outline-first at schema version 2:
+and revises the report. The report becomes outline-first at schema version 3:
 each unit prints its method outline, then one classification and its evidence as
 hints, never an action or a recommendation. `givn check review --change <id>`
 prints the outline of every touched unit with methods at the change base and at

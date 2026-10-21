@@ -763,9 +763,12 @@ sequenceDiagram
    configuration. An absent or false `addons.outline` stops with exit 1 and
    a stderr message naming the enabling command.
 2. With the addon enabled, the orchestration scans the project-root `src/`
-   tree, excludes test, benchmark, example, and target directories and
-   `#[cfg(test)]` items, and presents a deterministic request to the
-   `SourceAnalyzer`.
+   tree, excludes test, benchmark, example, target, and Python cache/virtualenv
+   directories, Python test modules, and `#[cfg(test)]` items, discovers `.rs`
+   and `.py` files, and presents a deterministic request to the
+   `SourceAnalyzer`. The Python adapter starts `python3` only after `.py`
+   discovery, so a Rust-only scope never invokes it; a missing interpreter
+   becomes a per-file `analyzer-unavailable` diagnostic, not an abort.
 3. The adapter returns one neutral `Analysis`. A read or parse failure is a
    diagnostic for that file, not an abort; the report continues with the
    analyzable files and names every failure.
@@ -774,7 +777,7 @@ sequenceDiagram
    metrics and classification follow as hints. Every analyzed unit receives
    exactly one classification and its evidence; no action or recommendation is
    produced, and wholly unsupported units are not classified and are named.
-5. The selected renderer writes human text or schema-v2 JSON. Hints never change
+5. The selected renderer writes human text or schema-v3 JSON. Hints never change
    the exit code; the only write is the explicit `--out` path. The command
    appends no development-record entry and stores no baseline, cache, or
    classification history.
@@ -847,8 +850,8 @@ sequenceDiagram
 5. **Metric hints.** The report's classification and method findings are
    recomputed for the touched units and printed as `HINT` lines with their
    base/head evidence. They are advisory. They never create, satisfy, or block
-   an outline verdict. A changed `.rs` file present at head that the analyzer
-   never saw fails the post-analysis guard; a deleted file is proven by the base
+   an outline verdict. A changed production source path present at head that
+   the analyzer never saw fails the post-analysis guard; a deleted file is proven by the base
    unit's removal.
 6. **Outline verdicts.** Every printed outline needs exactly one verdict from a
    fresh-context reviewer. `OUTLINE: PASS <unit> | <responsibility; call order>`
@@ -865,7 +868,7 @@ sequenceDiagram
    review: PASS` or `outline review: FAIL (<reason>)`; several failures print
    one `FAILURE` line each and an aggregate final line. The CLI exit contract
    stays `0`/`1`; a missing base, a dirty production path, an unreadable file, a
-   parse failure, or an unanalyzed changed `.rs` file fails closed with the path
+   parse failure, or an unanalyzed changed production source file fails closed with the path
    and diagnostic. The only writes are the two temporary trees; no project file,
    baseline, watchlist, or ledger is written.
 
