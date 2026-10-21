@@ -422,3 +422,11 @@ pub fn write_named_receiver_call(env: &TestEnv) {
     );
 }
 
+pub fn write_ambiguous_call(env: &TestEnv) {
+    write_source(
+        env,
+        "src/refresh.rs",
+        "pub struct First;\n\nimpl First {\n    pub fn refresh(&self) {}\n}\n\npub struct Second;\n\nimpl Second {\n    pub fn refresh(&self) {}\n}\n\npub struct Caller;\n\nimpl Caller {\n    pub fn poll(&self, value: &ExternalValue) {\n        value.refresh();\n    }\n}\n",
+    );
+}
+

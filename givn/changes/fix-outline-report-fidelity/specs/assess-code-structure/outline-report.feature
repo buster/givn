@@ -34,7 +34,7 @@ Feature: Outline report
     And the JSON call names "line::Line::from" as its target
     And the JSON report records 2 methods for the unit "type:src/line.rs::Line"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An ambiguous method name has no resolved target
     Given a production source unit whose method calls an unknown receiver whose name two project types declare
     When the developer runs "givn outline report --json"

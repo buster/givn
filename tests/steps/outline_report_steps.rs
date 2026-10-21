@@ -1136,3 +1136,11 @@ fn named_receiver_call(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
+#[given("a production source unit whose method calls an unknown receiver whose name two project types declare")]
+fn ambiguous_call(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_ambiguous_call(&env);
+    world.env = Some(env);
+}
+
