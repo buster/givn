@@ -399,18 +399,26 @@ fn parse_document(
                     diagnostics.push(UsecaseDiagnostic::at(number, error.to_string()));
                 }
                 title = Some(id);
-            } else {
-                let suggestion = recover_title(&expected_title, trimmed);
-                let message = format!(
+            } else if let Some(recovery) = recover_title(&expected_title, trimmed) {
+                let mut message = format!(
                     "expected '{}<kebab-case-id>', got '{}'; headings are case-sensitive",
                     expected_title, trimmed
                 );
-                let mut diagnostic = UsecaseDiagnostic::at(number, message);
-                if let Some(recovered) = suggestion.clone() {
-                    diagnostic.suggestion = Some(recovered);
-                    title = Some(trimmed[expected_title.len()..].trim().to_string());
+                if recovery.recovered_id.is_none() {
+                    message.push_str(" and IDs are kebab-case");
                 }
+                let mut diagnostic = UsecaseDiagnostic::at(number, message);
+                diagnostic.suggestion = recovery.suggestion;
+                title = recovery.recovered_id;
                 diagnostics.push(diagnostic);
+            } else {
+                diagnostics.push(UsecaseDiagnostic::at(
+                    number,
+                    format!(
+                        "expected '{}<kebab-case-id>', got '{}'; headings are case-sensitive",
+                        expected_title, trimmed
+                    ),
+                ));
             }
             continue;
         }
@@ -490,15 +498,47 @@ fn parse_document(
     (title, sections, seen_headings, diagnostics)
 }
 
-fn recover_title(expected_title: &str, line: &str) -> Option<String> {
-    if line.len() >= expected_title.len()
-        && line[..expected_title.len()].eq_ignore_ascii_case(expected_title)
+struct TitleRecovery {
+    suggestion: Option<String>,
+    recovered_id: Option<String>,
+}
+
+fn recover_title(expected_title: &str, line: &str) -> Option<TitleRecovery> {
+    if line.len() < expected_title.len()
+        || !line[..expected_title.len()].eq_ignore_ascii_case(expected_title)
     {
-        let id = line[expected_title.len()..].trim();
-        Some(format!("{expected_title}{id}"))
-    } else {
-        None
+        return None;
     }
+    let remainder = line[expected_title.len()..].trim();
+    if validate_id(remainder, "Use case").is_ok() {
+        Some(TitleRecovery {
+            suggestion: Some(format!("{expected_title}{remainder}")),
+            recovered_id: Some(remainder.to_string()),
+        })
+    } else {
+        Some(TitleRecovery {
+            suggestion: canonical_title_id(remainder)
+                .map(|candidate| format!("{expected_title}{candidate}")),
+            recovered_id: None,
+        })
+    }
+}
+
+fn canonical_title_id(raw: &str) -> Option<String> {
+    let mut candidate = String::new();
+    let mut separator = false;
+    for character in raw.chars() {
+        if character.is_ascii_alphanumeric() {
+            if separator && !candidate.is_empty() {
+                candidate.push('-');
+            }
+            separator = false;
+            candidate.push(character.to_ascii_lowercase());
+        } else {
+            separator = true;
+        }
+    }
+    validate_id(&candidate, "Use case").ok().map(|()| candidate)
 }
 
 fn suggest_heading(unknown: &str, headings: &[&'static str]) -> Option<String> {

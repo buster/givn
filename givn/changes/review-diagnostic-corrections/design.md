@@ -64,10 +64,10 @@ The arc42-docs step records these terms in
 | `givn/changes/review-diagnostic-corrections/specs/verify-change/givn-workflow-enforcement.feature` | New delta scenarios under the existing capability. |
 
 Unchanged consumers: `src/gherkin/interaction.rs`, `src/spec/coverage.rs`,
-`src/spec/tree.rs`, and `src/cli/archive.rs`. They call the same
-`parse_usecase_md` / `parse_usecase_md_diagnostics` surface and receive the
-same strict `Result` / `Option` contract. A root-invalid document remains
-unparseable; it simply no longer emits dependent noise.
+`src/spec/tree.rs`, `src/overlap/analysis.rs`, and `src/cli/archive.rs`. They
+call the same `parse_usecase_md` / `parse_usecase_md_diagnostics` surface and
+receive the same strict `Result` / `Option` contract. A root-invalid document
+remains unparseable; it simply no longer emits dependent noise.
 
 The parser has no data-model change. `UsecaseDoc`, `FragmentDoc`,
 `UsecaseDiagnostic`, and `UsecaseDiagnostics` keep their public shapes.
@@ -160,8 +160,8 @@ suggestion from the recovered identifier:
 
 ```rust
 struct TitleRecovery {
-    /// The exact accepted title line to suggest.
-    suggestion: String,
+    /// The exact accepted title line to suggest, when a valid candidate exists.
+    suggestion: Option<String>,
     /// Some only when the remainder is already a valid kebab-case ID.
     recovered_id: Option<String>,
 }
@@ -178,7 +178,7 @@ Title handling becomes:
 | `# Use case: lending-register` | none | none | `lending-register` |
 | `# Use Case: lending-register` | title diagnostic | `# Use case: lending-register` | `lending-register` (recovered: the ID is already valid) |
 | `# Use Case: Lending Register` | title diagnostic with the kebab-case note | `# Use case: lending-register` | none; document is not parsed further as a usable document |
-| `# Use case: Lending Register` | identifier diagnostic (`must be a stable kebab-case identifier`) | none | none |
+| `# Use case: Lending Register` | identifier diagnostic with the kebab-case note and canonical suggestion | `# Use case: lending-register` | none |
 | `# Use Case: !!!` | title diagnostic | none | none |
 | `# Fragment: send-message` | none | none | `send-message` |
 
@@ -216,9 +216,10 @@ spelling. The extra `and IDs are kebab-case` clause appears only when the
 remainder is not already a valid ID.
 
 The exact-prefix invalid-ID path (`# Use case: Lending Register`) reports the
-existing `validate_id` error and does not set the title. This closes the same
-acceptance hole for an exact heading with a bad identifier, not only for the
-case-mismatched heading.
+existing `validate_id` error with the same canonical suggestion and does not
+set the title. This closes the same acceptance hole for an exact heading with a
+bad identifier, not only for the case-mismatched heading; the suggestion
+remains advisory and is never used as the identifier.
 
 ### Level validation and root validity
 
@@ -235,15 +236,17 @@ let level: Option<GoalLevel> = match GoalLevel::parse(&level_text) {
 let root_valid = scan.title.is_some() && level.is_some();
 ```
 
-- A missing or empty `## Level` is reported by the Level rule violation. The
-  generic `section '## Level' must not be empty` diagnostic is not emitted, so
-  the root cause appears once.
+- A missing or empty `## Level` (after the section text is trimmed) is reported
+  by the Level rule violation. The generic `section '## Level' must not be
+  empty` diagnostic is not emitted, so the root cause appears once.
 - `root_valid` is the single gate for dependent findings and for returning a
   `UsecaseDoc`.
 - The leaf-use-case capability requirement runs only when the root is valid,
   the Level is `Leaf`, the `## Capabilities` heading is present, and the parsed
   capability list is empty. Gating on the heading prevents a second complaint
-  when the section is simply missing.
+  when the section is simply missing. `interaction_section` receives
+  `report_undeclared = root_valid && seen.contains(HEADING_CAPABILITIES)` for
+  the same reason.
 - A `Summary` Level with no capabilities remains valid, as today. A `Leaf` with
   a present but empty `## Capabilities` section still reports
   `leaf use case '<id>' must declare at least one capability`.
@@ -301,9 +304,11 @@ fn interaction_section(
 - The Markdown table header, separator, and row-shape checks still run for a
   present `## Interactions` section, even when the root is invalid.
 - The `interaction references undeclared capability` check runs only when
-  `report_undeclared` is true, which is `root_valid`. A root-invalid document
-  can have an unreadable capability section, so cross-checking it would produce
-  dependent noise.
+  `report_undeclared` is true, which is
+  `root_valid && scan.seen.contains(HEADING_CAPABILITIES)`. A root-invalid
+  document can have an unreadable capability section, so cross-checking it
+  would produce dependent noise. The fragment path passes `true` and keeps its
+  current behavior.
 - When the `## Interactions` heading is absent and the root is invalid, skip
   the section reader entirely; the root diagnostic is the actionable finding.
   When the root is valid, the missing-heading diagnostic is the actionable
@@ -323,8 +328,12 @@ let doc = if root_valid
 };
 ```
 
-All section values are still computed so local diagnostics are emitted in the
-same pass. The `UsecaseDoc` is withheld only when it cannot be trusted.
+All section values are computed into locals before this conditional; the
+conditional only decides whether to wrap the locals in a `UsecaseDoc`. Moving a
+section reader into the conditional would drop malformed-bullet, relationship,
+and malformed-table findings for an invalid root, which would defeat the
+independent-findings promise. The `UsecaseDoc` is withheld only when it cannot
+be trusted.
 
 ### Behavior matrix
 
@@ -337,10 +346,12 @@ same pass. The `UsecaseDoc` is withheld only when it cannot be trusted.
 | Case-mismatched but valid ID | title diagnostic with exact suggestion; all independent section findings | `Some` (recovered) |
 | Case-mismatched invalid ID with canonical slug | title diagnostic with canonical suggestion; unknown headings and local shape findings | `None` |
 | Case-mismatched invalid ID with no slug | title diagnostic, no suggestion | `None` |
-| Exact-prefix invalid ID | `validate_id` diagnostic | `None` |
+| Exact-prefix invalid ID | `validate_id` diagnostic with the canonical suggestion; unknown headings and local shape findings | `None` |
 | Invalid Level | Level rule diagnostic; unknown headings and local shape findings | `None` |
+| Invalid title and invalid Level | both root diagnostics; unknown headings and local shape findings | `None` |
 | Valid root, missing required heading | missing-heading diagnostic; empty-section diagnostic for required text | `Some` only if Capabilities and Interactions are present; otherwise `None` |
 | Invalid root, missing required heading | no missing-heading or empty-section diagnostic | `None` |
+| Invalid root, present but empty required section | no empty-section diagnostic | `None` |
 | Invalid root, unknown heading | unknown-heading diagnostic | `None` |
 | Valid root, unknown heading | unknown-heading diagnostic | `Some` |
 | Invalid root, malformed bullet or table row | local shape diagnostic | `None` |
@@ -382,7 +393,7 @@ Private helpers introduced or changed:
 
 ```rust
 struct DocumentScan { /* title, title_seen, sections, seen, diagnostics */ }
-struct TitleRecovery { suggestion: String, recovered_id: Option<String> }
+struct TitleRecovery { suggestion: Option<String>, recovered_id: Option<String> }
 
 fn parse_document(content: &str, kind: &str, headings: &[&'static str]) -> DocumentScan;
 fn report_missing_headings(
@@ -413,7 +424,7 @@ fn interaction_section(
 | Primitive | Type | Purpose |
 |---|---|---|
 | `DocumentScan` | private struct | Carries the title decision, section lines, seen headings, and scan diagnostics without deciding dependent findings. |
-| `TitleRecovery` | private struct | Separates the suggested exact title line from the optional recovered identifier; only a valid kebab-case remainder populates the identifier. |
+| `TitleRecovery` | private struct | Separates the optional exact title-line suggestion from the optional recovered identifier; only a valid kebab-case remainder populates the identifier. |
 | `canonical_title_id` | private function | Produces a validated kebab-case candidate from a human-readable remainder; used only for the suggestion. |
 | `root_valid` | local boolean | Single gate for dependent schema diagnostics, capability-routing-dependent findings, and `UsecaseDoc` construction. |
 
@@ -425,17 +436,25 @@ One file per capability, as required:
 |---|---|---|
 | `givn-workflow-enforcement` | `tests/steps/workflow_enforcement_steps.rs` | `tests/steps/workflow_enforcement_e2e_steps.rs` (unchanged; no new `@e2e` scenario) |
 
+The delta carries seven scenarios: six error variants and one green-at-baseline
+regression guard. The guard (valid kebab-case title) cannot fail in RED on
+today's code; it is recorded as a guard and is never given a fabricated RED.
+The other six scenarios each fail in RED against the current parser.
+
 The new Gherkin scenarios reuse the existing step definitions for running the
 real CLI (`the developer runs ...`), exit-code assertions (`the command exits 0`
 / `non-zero`), and stderr assertions (`stderr contains ...`, `stderr does not
 contain ...`, `stderr says headings are case-sensitive`, `stderr suggests
-...`). The only new Given steps are the fixture builders:
+exactly ...`). The exact-suggestion step asserts the whole
+`did you mean '<suggestion>'?` fragment, not just the presence of both words.
+The only new Given steps are the fixture builders:
 
-- `a clean committed change whose use-case contract starts with "# Use Case: Lending Register"`
-- `a clean committed change whose use-case contract starts with "# Use Case: Lending Register" and whose capability list is a table`
-- `a clean committed change whose use-case contract starts with "# Use Case: Lending Register" and omits "## Rules"`
-- `a clean committed change whose use-case contract has a malformed Level and omits "## Examples"`
 - `a clean committed change whose use-case contract starts with "# Use Case: Lending Register" and has an unknown "## Guarantees" heading`
+- `a clean committed change whose use-case contract starts with "# Use Case: Lending Register" and whose capability list is a table`
+- `a clean committed change whose use-case contract starts with "# Use case: Lending Register"`
+- `a clean committed change whose use-case contract starts with "# Use Case: Lending Register", omits "## Rules", and leaves "## Examples" empty`
+- `a clean committed change whose use-case contract has a malformed Level and omits "## Examples"`
+- `a clean committed change whose use-case contract starts with "# Use Case: Lending Register", has a rule line that is not a bullet, and has a malformed interaction table`
 
 The valid-title scenario reuses the existing
 `a clean committed change with a green change verification receipt recorded at
@@ -461,7 +480,9 @@ The malformed Level fixture uses the C3 text:
 activity into the goals below.`` The omitted-section fixtures remove the whole
 section with the same string replacement style already used by
 `review_fixture_missing_sections`. The table-capabilities fixture passes a
-Markdown table into the capabilities slot.
+Markdown table into the capabilities slot. During RED, each new Given whose
+fixture is not yet written uses `unimplemented!()`; an empty body is never
+acceptable.
 
 No step calls the parser directly for a CLI scenario. Parser behavior is
 proven by the unit tests below; the Gherkin scenarios prove the developer-visible
@@ -520,6 +541,23 @@ Keep the existing tests and add:
 8. `fragment_missing_headings_still_report` — a fragment with a missing
    heading keeps the existing diagnostic, proving the use-case suppression did
    not leak into the fragment path.
+9. `exact_invalid_id_suggests_the_canonical_id` — `# Use case: Start Project`
+   yields no document, the `stable kebab-case` diagnostic, the exact suggestion
+   `# Use case: start-project`, and no missing-title diagnostic.
+10. `invalid_root_still_reports_local_shape_findings` — with an invalid title,
+    a non-bullet capability line and a malformed interaction separator row both
+    remain in the report.
+11. `invalid_level_suppresses_empty_required_section` — with the C3 malformed
+    Level and an empty `## Examples`, the Level rule is present while
+    `section '## Examples' must not be empty` is absent.
+12. `invalid_title_still_reports_duplicate_title_and_outside_content` — an
+    invalid first title followed by a second title and content outside a
+    section still reports both independent findings once.
+13. `both_roots_invalid_report_both` — an invalid title plus malformed Level
+    reports both roots and no missing-heading or leaf-capability finding.
+14. `valid_title_with_valid_level_still_reports_missing_section` — a valid
+    root with a missing `## Rules` still reports the missing-heading and the
+    empty-section diagnostics; this is the non-suppression guard.
 
 Existing tests that must remain green:
 
@@ -532,17 +570,19 @@ Existing tests that must remain green:
 
 ### CLI scenarios in `tests/steps/workflow_enforcement_steps.rs`
 
-The delta feature's six scenarios drive the real binary. The step definitions
-assert:
+The delta feature's seven scenarios drive the real binary. Six are
+error-case variants and one is the green-at-baseline valid-title guard. The
+step definitions assert:
 
 | Scenario | Primary assertion |
 |---|---|
-| Review corrects a non-kebab-case use-case title to its canonical identifier | exit non-zero; `headings are case-sensitive`; suggestion exactly `# Use case: lending-register` |
-| Review does not accept a non-kebab-case title as the use-case identifier | no `leaf use case 'Lending Register'`; no raw-title suggestion |
-| A malformed title does not fabricate missing-section diagnostics | canonical suggestion present; `document schema does not recognise '## Rules'` absent |
-| A malformed Level does not fabricate missing-section diagnostics | Level rule present; `document schema does not recognise '## Examples'` absent |
-| A genuinely unknown heading is still reported with a malformed title | unknown heading present; canonical suggestion present |
-| A valid kebab-case use-case title remains accepted | exit 0; no title or missing-heading diagnostic |
+| Review corrects a non-kebab-case use-case title to its canonical identifier | exit non-zero; `headings are case-sensitive`; suggestion exactly `# Use case: lending-register`; unknown heading still reported |
+| Review does not accept a non-kebab-case title as the use-case identifier | no `leaf use case 'Lending Register'`; no raw-title suggestion; no `does not declare capability` and no `has no interaction for capability` routing complaint |
+| Review corrects an exact-prefix non-kebab-case title with the canonical identifier | `stable kebab-case identifier`; suggestion exactly `# Use case: lending-register`; no missing-title diagnostic |
+| A malformed title does not fabricate missing-section or empty-section diagnostics | canonical suggestion present; `document schema does not recognise '## Rules'` and `section '## Examples' must not be empty` absent |
+| A malformed Level does not fabricate missing-section or leaf-capability diagnostics | Level rule present; `document schema does not recognise '## Examples'` and `must declare at least one capability` absent |
+| Independent local findings are still reported with a malformed title | `section '## Rules' must contain one rule per bullet` and `malformed separator row` present; canonical suggestion present |
+| A valid kebab-case use-case title remains accepted (guard) | exit 0; no title or missing-heading diagnostic; green at baseline, no fabricated RED |
 
 ### Black-box-first
 
@@ -568,7 +608,19 @@ error-case variants of the same action.
 
 | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
-| `givn-workflow-enforcement`: run the review check on a change with use-case schema errors | Consumer runs review and receives every use-case schema problem in one pass (existing, unchanged) | CLI | Real `givn check review --change <id>` subprocess in a committed fixture; assert exit code and the grouped stderr report. The six new scenarios use the same CLI subprocess as regular scenarios. |
+| `validate-artifact-ids`: check an unknown artifact | Consumer invokes givn check with an unknown artifact and gets a helpful error | CLI | Existing `givn check` subprocess; unchanged by this change. |
+| `visual-review-gate`: run the review check on a visual change | A visual change with complete evidence passes review | CLI | Existing review subprocess and evidence fixtures; unchanged. |
+| `visual-review-gate`: read the visual review guidance | Review guidance requires the visual verdict and persona lenses | CLI | Existing instruction output; unchanged. |
+| `spec-overlap-gates`: detect a duplicate title | A duplicate title across two permanent spec files is a hard error | CLI | Existing lint/review subprocess; unchanged. |
+| `spec-overlap-gates`: inspect duplicate JSON | The json output reports duplicate-title findings machine-readably | CLI | Existing JSON output; unchanged. |
+| `review-disposition-gates`: pass a disposed review | Review passes when every shape match is disposed and reports the net-delta receipt | CLI | Existing review subprocess; unchanged. |
+| `resolve-change-directories`: run integrity in a change | Consumer runs the integrity check on a change inside givn/changes and the correct directory is detected | CLI | Existing integrity subprocess; unchanged. |
+| `resolve-change-directories`: reject placeholder commit evidence | Integrity check detects a placeholder COMMIT hash in tasks.md and fails | CLI | Existing integrity subprocess; unchanged. |
+| `givn-workflow-enforcement`: run migration coverage check | Consumer runs migration coverage check and sees passed evidence | CLI | Existing migration subprocess; unchanged. |
+| `givn-workflow-enforcement`: run the change-scoped checks | Consumer runs check tasks and receives a change verification receipt | CLI | Existing check subprocess; unchanged. |
+| `givn-workflow-enforcement`: write a runner result | The result helper writes four counts without a scope | CLI | Existing runner-result fixture; unchanged. |
+| `givn-workflow-enforcement`: run the review check on a change with use-case schema errors | Consumer runs review and receives every use-case schema problem in one pass (existing, unchanged) | CLI | Real `givn check review --change <id>` subprocess in a committed fixture; assert exit code and the grouped stderr report. The seven new scenarios use the same CLI subprocess as regular scenarios. |
+| `readability-review-gate`: run the readability review during check review | A developer runs the review with accounted readability findings and it passes | CLI | Existing review subprocess; unchanged. |
 
 ## Visual Design Contract
 
@@ -581,8 +633,13 @@ error-case variants of the same action.
 - Design system: not applicable; existing plain CLI output, no color or layout
   contract is added.
 - Screens covered: the `givn check review` use-case diagnostic report.
-- Rendered reference: the existing terminal transcript at
-  `givn/archive/review-friction-hardening/evidence/visual/consumer-runs-review-and-receives-every-use-case-schema-problem-in-one-pass/transcript.txt`.
+- Rendered reference: the archived terminal transcript at
+  `givn/archive/review-friction-hardening/evidence/visual/consumer-runs-review-and-receives-every-use-case-schema-problem-in-one-pass/transcript.txt`
+  is a historical reference. It shows the pre-correction output (the invalid
+  raw-title suggestion and the derived leaf complaint), so it is not the
+  current expected output. No fresh transcript is added: this delta has no
+  `@e2e` scenario, and the corrected ordinary-CLI output is asserted by the
+  six error-case scenarios through the real subprocess.
 - Evidence kind: no new transcript. The integrity check collects visual
   evidence per delta `@e2e` scenario; this delta adds none, so the evidence set
   is empty and the existing action evidence remains the reference for the same
@@ -600,9 +657,9 @@ error-case variants of the same action.
 
 | Contract element | Design decision / evidence |
 |---|---|
-| `verify-change` success guarantee: the developer receives a complete verification result | Root causes and independent local findings are reported together; dependent completeness findings wait for a valid root. Scenarios “Review corrects a non-kebab-case use-case title to its canonical identifier” and “A genuinely unknown heading is still reported with a malformed title”. |
+| `verify-change` success guarantee: the developer receives a complete verification result | Root causes and independent local findings are reported together; dependent completeness findings wait for a valid root. Scenario “Review corrects a non-kebab-case use-case title to its canonical identifier” carries the unknown-heading assertion, and “Independent local findings are still reported with a malformed title” carries the local-shape assertion. |
 | `verify-change` minimal guarantee: an invalid change cannot pass | No title or Level variant is accepted; a root-invalid parse returns no `UsecaseDoc` and the command exits non-zero. Scenarios “Review does not accept a non-kebab-case title as the use-case identifier” and “A malformed Level does not fabricate missing-section diagnostics”. |
-| `verify-change` rule: a review report names every use-case schema and capability-routing problem in one pass; the schema stays strict and semantic validation is not weakened | Valid-root documents keep the full batched report; only dependent findings are withheld for an invalid root. Unit test `invalid_human_title_does_not_report_missing_headings`, `invalid_level_does_not_report_missing_headings_or_leaf_capability`; existing archived batch scenario stays green. |
+| `verify-change` rule: a review report names every actionable use-case schema and capability-routing problem in one pass; the schema stays strict and semantic validation is not weakened | Valid-root documents keep the full batched report; only dependent findings are withheld for an invalid root. Unit test `invalid_human_title_does_not_report_missing_headings`, `invalid_level_does_not_report_missing_headings_or_leaf_capability`; existing archived batch scenario stays green. |
 | `verify-change` rule: structural failures outrank other findings | Gate order is unchanged; title and Level diagnostics are structural roots and are emitted before dependent findings. |
 | `verify-change` capability ownership and interaction inventory | The existing `givn-workflow-enforcement` capability and its existing interaction row remain the owner; no new capability or interaction. |
 | `verify-change` Personas | Developer, agent, and maintainer review lenses are affected as recorded below; no Persona is invented. |
@@ -625,12 +682,14 @@ required; `PERSONAS: none` is not added.
 
 - **Decides D1:** Derive the canonical suggestion by slugifying the title
   remainder, validating it, and using it only as a suggestion; never accept the
-  derived identifier as the title. A case-mismatched title whose remainder is
-  already a valid kebab-case ID remains recoverable. Rejected: echoing the raw
-  remainder (the current defect), accepting the canonical slug automatically
-  (weakens the strict schema), and threading the enclosing document/change ID
-  into every parser caller (unnecessary context plumbing for a diagnostic).
-  Realized in `canonical_title_id`, `TitleRecovery`, and `recover_title`.
+  derived identifier as the title. Apply the same suggestion to a case-mismatched
+  heading and to an exact-prefix heading with an invalid identifier. A
+  case-mismatched title whose remainder is already a valid kebab-case ID remains
+  recoverable. Rejected: echoing the raw remainder (the current defect),
+  accepting the canonical slug automatically (weakens the strict schema), and
+  threading the enclosing document/change ID into every parser caller
+  (unnecessary context plumbing for a diagnostic). Realized in
+  `canonical_title_id`, `TitleRecovery`, and `recover_title`.
 - **Decides D2:** When the title or Level is invalid, suppress dependent
   schema-completeness findings (missing required headings, empty required
   sections, leaf-capability requirement) and capability-routing findings that
@@ -698,27 +757,46 @@ required; `PERSONAS: none` is not added.
   document. This is a strictness correction, but any caller that relied on the
   invalid document would change. No such caller is known; `parse_usecase_md`
   already returned an error because of the `validate_id` diagnostic.
+- **A section reader moved into the document conditional drops independent
+  findings.** If actors, goals, rules, examples, relationships, or a present
+  interaction table are only parsed while constructing `UsecaseDoc`, an
+  invalid-root document loses its malformed-bullet and malformed-table
+  findings. Mitigation: every section value is computed into a local before the
+  conditional, and unit test
+  `invalid_root_still_reports_local_shape_findings` guards it.
+- **An invalid title could hide duplicate-title or outside-content findings.**
+  The old logic keyed those checks on `title.is_some()`. Mitigation: both checks
+  key on `title_seen`, and unit test
+  `invalid_title_still_reports_duplicate_title_and_outside_content` guards it.
 - **The archived batch scenario could regress if recovery is tightened too
   far.** The scenario uses `# Use Case: review-diagnostics-demo`, whose
   remainder is a valid kebab-case ID. The design keeps that recovery path and
   the exact suggestion. The existing unit test and permanent scenario are the
   guards.
-- **The new canonical-correction scenario shares a shape with the existing
+- **The new canonical-correction scenarios share a shape with the existing
   case-mismatch scenario.** They are distinct variants: the existing scenario
   has a valid kebab-case ID and asserts the exact case correction; the new
-  scenario has an invalid human title and asserts the canonical slug plus
-  non-acceptance. The review step must record a `variant` overlap disposition
-  for the shape advisory.
+  case-mismatched and exact-prefix scenarios have an invalid human title and
+  assert the canonical slug plus non-acceptance. The review step must record a
+  `variant` overlap disposition for the shape advisories.
 
 ## Documentation impact
 
-- `README.md`: no planned change. The README describes the review gate and the
-  one-pass diagnostics, not the exact suggestion text. If the review step finds
-  a stale diagnostic example, it updates that example there.
-- `docs/arc42/12-glossary.md`: the arc42-docs step records the terms **root
-  diagnostic**, **dependent diagnostic**, **title line**, and **section
-  schema** if they are not already present. The runtime view does not change;
-  only the diagnostic decision flow inside the parser changes.
+- `README.md`: update the "One change lifecycle" bullet so review "names the
+  root cause of an invalid use-case document first and every actionable
+  schema and capability-routing problem in one pass". The review step records
+  `README-IMPACT: updated - One change lifecycle`.
+- `givn/specs/verify-change/usecase.md`: amend the rule to "A review report
+  names the root cause of an invalid use-case document first and every
+  actionable use-case schema and capability-routing problem in one pass; the
+  schema stays strict and semantic validation is not weakened." This is the
+  owning contract for the observable behavior.
+- `docs/arc42/12-glossary.md`: the arc42-docs step records **root diagnostic**,
+  **dependent diagnostic**, **title line**, and **section schema**.
+- `docs/arc42/06-runtime-view.md` and
+  `docs/arc42/08-crosscutting-concepts.md`: describe the root-first diagnostic
+  flow. `docs/arc42/11-risks-and-technical-debt.md`: records the residual
+  advisory-slug and exact-prefix behavior-change risks.
 - The archived `review-friction-hardening` artifacts are historical and are not
   edited.
 
@@ -751,5 +829,5 @@ measurement path.
 No language, runtime, framework, library, browser, database, or container
 image version is introduced or changed. Existing dependencies are taken from
 the repository's `Cargo.lock` on 2026-10-21 (`anyhow` 1.0.104, `gherkin`
-0.16.0, `serde_json` 1.0.151). The Rust toolchain is the flake-pinned
-`rustc`/`cargo`; no version change is proposed.
+0.16.0, `serde_json` 1.0.151, `cucumber` 0.23.0). The Rust toolchain is the
+flake-pinned `rustc`/`cargo`; no version change is proposed.

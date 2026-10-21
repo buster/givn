@@ -31,8 +31,9 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   implement → review → archive. Archive is forward-only and SCM-backed (Git or Fossil): it
   commits the merged archive candidate, runs each verification scope once
   against that commit, and records a verification receipt; a failed candidate
-  stays in place and is repaired forward. Review reports the complete use-case
-  schema and capability-routing diagnosis in one pass, and review/archive reuse
+  stays in place and is repaired forward. Review names the root cause of an
+  invalid use-case document first and then all actionable schema and
+  capability-routing problems in one pass, and review/archive reuse
   a green change verification receipt when a later revision leaves the tested
   content unchanged; the merged archive suite still runs once. Tagged delta
   scenarios merge into the permanent specs and the tags are stripped. Optionally preceded by

@@ -411,10 +411,17 @@ to `givn check tasks --change <id>`.
 problem in one pass. The routing gate parses each referenced document and every
 active delta narrative once, collects parser diagnostics and independent
 routing checks, deduplicates the exact messages, and prints them grouped under
-the document path. The schema stays strict: a near-miss title or heading is
-refused with the exact accepted spelling. A non-recoverable parse failure
-suppresses only the routing checks that need the missing document structure;
-the parser's own diagnostics remain the complete report. Integrity, the run
+the document path. Root diagnostics — an invalid title line or an invalid
+`## Level` — are reported first and make the document unusable for routing, so
+dependent schema-completeness findings (missing or empty required sections and
+the leaf-use-case capability requirement) are withheld until the root is
+corrected; genuinely unknown headings and local shape findings are still
+reported in the same pass. The schema stays strict: a near-miss title or
+heading is refused, a non-kebab-case human title is corrected only by
+suggesting its canonical kebab-case identifier, and the suggestion is never
+accepted in place of an edit. A non-recoverable parse failure suppresses only
+the routing checks that need the missing document structure; the parser's own
+diagnostics remain the complete report. Integrity, the run
 declaration, overlap, retirement, routing, and the receipt keep this order, so
 a structural failure still outranks routing findings.
 
