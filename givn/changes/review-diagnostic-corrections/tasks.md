@@ -61,7 +61,7 @@ GIVN_FEATURES="$scratch" cargo test --locked --test features_runner -- --name "U
 - [x] RED
 - [x] GREEN
 - [x] REFACTOR
-- [ ] COMMIT
+- [x] COMMIT
 
 Design constraints:
 
@@ -101,7 +101,7 @@ Evidence:
 - [x] RED
 - [x] GREEN
 - [x] REFACTOR
-- [ ] COMMIT
+- [x] COMMIT
 
 Design constraints:
 
@@ -140,7 +140,7 @@ Evidence:
 - [x] RED
 - [x] GREEN
 - [x] REFACTOR
-- [ ] COMMIT
+- [x] COMMIT
 
 Design constraints:
 
@@ -178,7 +178,7 @@ Evidence:
 - [x] RED
 - [x] GREEN
 - [x] REFACTOR
-- [ ] COMMIT
+- [x] COMMIT
 
 Design constraints:
 
@@ -219,7 +219,7 @@ Evidence:
 - [x] RED
 - [x] GREEN
 - [x] REFACTOR
-- [ ] COMMIT
+- [x] COMMIT
 
 Design constraints:
 
@@ -259,7 +259,7 @@ Evidence:
 - [x] RED
 - [x] GREEN
 - [x] REFACTOR
-- [ ] COMMIT
+- [x] COMMIT
 
 Design constraints:
 
@@ -298,7 +298,7 @@ Evidence:
 - [x] RED (green at baseline — guard, no fabricated RED)
 - [x] GREEN
 - [x] REFACTOR
-- [ ] COMMIT
+- [x] COMMIT
 
 Design constraints:
 
@@ -330,9 +330,9 @@ Evidence:
 
 ## Final verification
 
-- [ ] `cargo fmt`
-- [ ] `cargo clippy --workspace --all-targets -- -D warnings`
-- [ ] `cargo test --locked --lib usecase_md`
-- [ ] `./run-tests.sh --non-e2e`
-- [ ] `./run-tests.sh --e2e`
-- [ ] `givn lint --change review-diagnostic-corrections` exits 0 after `@wip` removal
+- [x] `cargo fmt`
+- [x] `cargo clippy --workspace --all-targets -- -D warnings`
+- [x] `cargo test --locked --lib usecase_md` — 21 passed, 313 filtered
+- [x] `./run-tests.sh --non-e2e` — 713 passed, 111 skipped
+- [x] `./run-tests.sh --e2e` — 111 passed, 713 skipped
+- [x] `givn lint --change review-diagnostic-corrections` exits 0 after `@wip` removal — clean

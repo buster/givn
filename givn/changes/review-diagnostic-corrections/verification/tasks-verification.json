@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "review-diagnostic-corrections",
+  "status": "passed",
+  "head": "da2991e62ec8d86798526de30ba4a55a8d03eccf",
+  "features_path": "givn/changes/review-diagnostic-corrections/specs",
+  "features_digest": "0363fa953c0a572d156119209a07f156669be5fad80ae14bb20f68f17f67b52f",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "1d4cc77eb95ca305464721511c03d1f7586c82b72fc8088628d78abe6d47848b",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1792561284
+}
