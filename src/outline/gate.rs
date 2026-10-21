@@ -1,4 +1,4 @@
-//! Change-relative readability review gate.
+//! Change-relative outline review gate.
 //!
 //! The report is advisory; this gate turns its findings into a review
 //! requirement. Every touched gate finding at committed `HEAD` needs exactly
@@ -14,9 +14,9 @@ mod markers;
 mod revision;
 mod touched;
 
-use crate::readability::classify::Assessment;
-use crate::readability::model::{Analysis, Language, SourceScope, UnitId};
-use crate::readability::{self, AnalysisRequest};
+use crate::outline::classify::Assessment;
+use crate::outline::model::{Analysis, Language, SourceScope, UnitId};
+use crate::outline::{self, AnalysisRequest};
 use crate::scm;
 use anyhow::{Context, Result, bail};
 use std::fmt::Write as _;
@@ -228,14 +228,14 @@ impl GateFailure {
             Self::NonUtf8Path(path) => format!("revision path is not valid UTF-8: {path}"),
             Self::NewlinePath(path) => format!("revision path contains a line break: {path}"),
             Self::MissingRecord(change_id) => format!(
-                "readability record is missing; create givn/changes/{change_id}/review.md \
-                 and record 'READABILITY: PASS'"
+                "outline record is missing; create givn/changes/{change_id}/review.md \
+                 and record 'OUTLINE: PASS'"
             ),
-            Self::UnknownMarker(line) => format!("unknown readability marker: {line}"),
-            Self::MissingVerdict => "missing 'READABILITY: PASS'".to_string(),
+            Self::UnknownMarker(line) => format!("unknown outline marker: {line}"),
+            Self::MissingVerdict => "missing 'OUTLINE: PASS'".to_string(),
             Self::FailMarker(reason) => reason.clone(),
             Self::MissingOutline { unit } => format!(
-                "MISSING outline {unit}; add 'READABILITY: OUTLINE PASS {unit} | <responsibility; call order>'"
+                "MISSING outline {unit}; add 'OUTLINE: PASS {unit} | <responsibility; call order>'"
             ),
             Self::ConflictingOutline { unit } => format!("conflicting outline verdicts for {unit}"),
             Self::OutlineFailed { unit, reason } => {
@@ -249,11 +249,11 @@ impl GateFailure {
                 "outline PASS for {unit} has no responsibility/call-order explanation"
             ),
             Self::MissingOutlineAuthor => {
-                "missing 'READABILITY: AUTHOR <id>'; the outline review must name its author"
+                "missing 'OUTLINE: AUTHOR <id>'; the outline review must name its author"
                     .to_string()
             }
             Self::MissingOutlineReviewer => {
-                "missing 'READABILITY: REVIEWER <id>'; the outline review needs a fresh-context reviewer"
+                "missing 'OUTLINE: REVIEWER <id>'; the outline review needs a fresh-context reviewer"
                     .to_string()
             }
             Self::SelfOutlineReview { author, reviewer } => format!(
@@ -268,7 +268,7 @@ impl GateFailure {
             }
             Self::JustifiedWithoutFinding { unit } => format!(
                 "JUSTIFIED marker for {unit}, but {unit} is not a finding at head; \
-                 use READABILITY: FIXED {unit}"
+                 use OUTLINE: FIXED {unit}"
             ),
             Self::InvalidFixed {
                 unit,
@@ -362,7 +362,7 @@ impl GateOutcome {
     }
 
     pub fn render(&self, _request: &GateRequest) -> String {
-        let mut out = String::from("Readability review gate\n");
+        let mut out = String::from("Outline review gate\n");
         if let Some(base) = &self.base {
             match &base.parent {
                 Some(parent) => {
@@ -399,7 +399,7 @@ impl GateOutcome {
                     None => "MISSING".to_string(),
                 },
                 None => format!(
-                    "MISSING  add 'READABILITY: OUTLINE PASS {} | <responsibility; call order>'",
+                    "MISSING  add 'OUTLINE: PASS {} | <responsibility; call order>'",
                     outline.unit_id
                 ),
             };
@@ -424,7 +424,7 @@ impl GateOutcome {
 
     fn final_line(&self) -> String {
         if self.failures.is_empty() {
-            return "readability review: PASS".to_string();
+            return "outline review: PASS".to_string();
         }
         let fail_reasons: Vec<String> = self
             .failures
@@ -438,7 +438,7 @@ impl GateOutcome {
             })
             .collect();
         if !fail_reasons.is_empty() {
-            return format!("readability review: FAIL ({})", fail_reasons.join("; "));
+            return format!("outline review: FAIL ({})", fail_reasons.join("; "));
         }
         if self
             .failures
@@ -447,13 +447,13 @@ impl GateOutcome {
         {
             let count = self.failures.len();
             let noun = if count == 1 { "outline" } else { "outlines" };
-            return format!("readability review: FAIL ({count} {noun} without a verdict)");
+            return format!("outline review: FAIL ({count} {noun} without a verdict)");
         }
         if self.failures.len() == 1 {
-            return format!("readability review: FAIL ({})", self.failures[0].message());
+            return format!("outline review: FAIL ({})", self.failures[0].message());
         }
         format!(
-            "readability review: FAIL ({} failures; first: {})",
+            "outline review: FAIL ({} failures; first: {})",
             self.failures.len(),
             self.failures[0].message()
         )
@@ -475,7 +475,7 @@ pub fn enforce(project_root: &Path, change_id: &str) -> Result<()> {
     let (passed, text) = evaluate(project_root, change_id)?;
     println!("{text}");
     if !passed {
-        let last = text.lines().last().unwrap_or("readability review: FAIL");
+        let last = text.lines().last().unwrap_or("outline review: FAIL");
         bail!("{last}");
     }
     Ok(())
@@ -568,7 +568,7 @@ fn review(request: &GateRequest) -> Result<GateOutcome> {
         .filter(|unit| !unit.outline.is_empty())
         .map(|unit| OutlineEntry {
             unit_id: unit.unit_id.clone(),
-            text: crate::readability::report::render_outline(unit),
+            text: crate::outline::report::render_outline(unit),
         })
         .collect();
     outline_outcome(
@@ -681,16 +681,15 @@ fn analyze(tree: &revision::RevisionTree, request: &GateRequest) -> Result<(Anal
             include_test_sources: false,
         },
     };
-    let analyzer = readability::rust_analyzer();
+    let analyzer = outline::rust_analyzer();
     let capabilities = analyzer.capabilities();
-    let analysis =
-        readability::analyze(&analysis_request, analyzer.as_ref()).with_context(|| {
-            format!(
-                "analyze the revision tree at {}",
-                tree.root.path().display()
-            )
-        })?;
-    let assessment = readability::assess(&analysis, capabilities);
+    let analysis = outline::analyze(&analysis_request, analyzer.as_ref()).with_context(|| {
+        format!(
+            "analyze the revision tree at {}",
+            tree.root.path().display()
+        )
+    })?;
+    let assessment = outline::assess(&analysis, capabilities);
     Ok((analysis, assessment))
 }
 
@@ -718,7 +717,7 @@ mod tests {
         }]);
         assert_eq!(
             one.final_line(),
-            "readability review: FAIL (1 outline without a verdict)"
+            "outline review: FAIL (1 outline without a verdict)"
         );
         let two = outcome(vec![
             GateFailure::MissingOutline {
@@ -730,23 +729,23 @@ mod tests {
         ]);
         assert_eq!(
             two.final_line(),
-            "readability review: FAIL (2 outlines without a verdict)"
+            "outline review: FAIL (2 outlines without a verdict)"
         );
     }
 
     #[test]
     fn the_final_line_keeps_a_single_failure_message() {
         let unknown = outcome(vec![GateFailure::UnknownMarker(
-            "READABILITY: DEFERRED type:src/engine.rs::Engine".to_string(),
+            "OUTLINE: DEFERRED type:src/engine.rs::Engine".to_string(),
         )]);
         assert_eq!(
             unknown.final_line(),
-            "readability review: FAIL (unknown readability marker: READABILITY: DEFERRED type:src/engine.rs::Engine)"
+            "outline review: FAIL (unknown outline marker: OUTLINE: DEFERRED type:src/engine.rs::Engine)"
         );
         let verdict = outcome(vec![GateFailure::MissingVerdict]);
         assert_eq!(
             verdict.final_line(),
-            "readability review: FAIL (missing 'READABILITY: PASS')"
+            "outline review: FAIL (missing 'OUTLINE: PASS')"
         );
     }
 
@@ -762,7 +761,7 @@ mod tests {
         let aggregate = outcome(vec![empty, failed]);
         assert_eq!(
             aggregate.final_line(),
-            "readability review: FAIL (the call order is not explainable)"
+            "outline review: FAIL (the call order is not explainable)"
         );
         let marker = outcome(vec![
             GateFailure::MissingOutline {
@@ -772,13 +771,13 @@ mod tests {
         ]);
         assert_eq!(
             marker.final_line(),
-            "readability review: FAIL (the type has no single responsibility)"
+            "outline review: FAIL (the type has no single responsibility)"
         );
     }
 
     #[test]
     fn a_clean_outcome_ends_with_the_exact_pass_line() {
         let clean = outcome(Vec::new());
-        assert_eq!(clean.final_line(), "readability review: PASS");
+        assert_eq!(clean.final_line(), "outline review: PASS");
     }
 }

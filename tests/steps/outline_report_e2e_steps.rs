@@ -1,4 +1,4 @@
-//! E2E step definitions for the readability report capability.
+//! E2E step definitions for the outline report capability.
 //!
 //! Every step in this file drives the real `givn` binary through
 //! `common::run_givn`; no in-process pipeline call belongs here.
@@ -23,8 +23,8 @@ fn report_writes_no_baseline(world: &mut GivnWorld) {
         .as_ref()
         .expect("a project root is required first");
     assert!(
-        !env.path("givn/readability.json").exists(),
-        "unexpected readability state file; stderr: {}",
+        !env.path("givn/outline.json").exists(),
+        "unexpected outline state file; stderr: {}",
         stderr(world)
     );
     assert!(

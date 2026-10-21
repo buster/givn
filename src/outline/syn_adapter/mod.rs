@@ -88,7 +88,7 @@ mod tests {
     use super::super::model::SourceScope;
     use super::SynAnalyzer;
     use super::*;
-    use crate::readability::model::{
+    use crate::outline::model::{
         Analysis, AnalysisRequest, DiagnosticKind, Language, RepoPath, TypeRelation, UnitId,
         UnitKind,
     };

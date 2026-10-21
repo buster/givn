@@ -1,21 +1,21 @@
-//! Fixture helpers for the readability report scenarios.
+//! Fixture helpers for the outline report scenarios.
 //!
 //! Helpers here write production Rust sources into a temporary project and
-//! enable the `readability` addon; they contain no step bindings.
+//! enable the `outline` addon; they contain no step bindings.
 
 use crate::common::{self, TestEnv};
-use givn::readability::model::{
+use givn::outline::model::{
     Analysis, AnalyzedFile, FileStatus, LineKind, RepoPath, SourceSpan, SourceUnit, TypeKind,
     TypeRelation, UnitId, UnitKind, UnitOrigin, Visibility,
 };
-use givn::readability::{self, AnalysisRequest, SourceAnalyzer, SourceScope, model::Language};
+use givn::outline::{self, AnalysisRequest, SourceAnalyzer, SourceScope, model::Language};
 use std::path::PathBuf;
 
-pub fn enable_readability(env: &TestEnv) {
-    let out = common::run_givn(env, &["addons", "enable", "readability"]);
+pub fn enable_outline(env: &TestEnv) {
+    let out = common::run_givn(env, &["addons", "enable", "outline"]);
     assert!(
         out.status.success(),
-        "givn addons enable readability failed: {}",
+        "givn addons enable outline failed: {}",
         String::from_utf8_lossy(&out.stderr)
     );
 }
@@ -81,10 +81,10 @@ pub fn assessment_counts(env: &TestEnv) -> (usize, usize, usize) {
             include_test_sources: false,
         },
     };
-    let analyzer = readability::rust_analyzer();
+    let analyzer = outline::rust_analyzer();
     let capabilities = analyzer.capabilities();
-    let analysis = readability::analyze(&request, analyzer.as_ref()).expect("analyze corpus");
-    let assessment = readability::assess(&analysis, capabilities);
+    let analysis = outline::analyze(&request, analyzer.as_ref()).expect("analyze corpus");
+    let assessment = outline::assess(&analysis, capabilities);
     (
         assessment.units.len(),
         assessment
@@ -219,11 +219,11 @@ pub fn assess_json(env: &TestEnv) -> String {
             include_test_sources: false,
         },
     };
-    let analyzer = readability::rust_analyzer();
+    let analyzer = outline::rust_analyzer();
     let capabilities = analyzer.capabilities();
-    let analysis = readability::analyze(&request, analyzer.as_ref()).expect("analyze fixture");
-    let assessment = readability::assess(&analysis, capabilities);
-    readability::report::render_json(&assessment, &request.scope)
+    let analysis = outline::analyze(&request, analyzer.as_ref()).expect("analyze fixture");
+    let assessment = outline::assess(&analysis, capabilities);
+    outline::report::render_json(&assessment, &request.scope)
 }
 
 pub fn assess_report(env: &TestEnv) -> String {
@@ -235,11 +235,11 @@ pub fn assess_report(env: &TestEnv) -> String {
             include_test_sources: false,
         },
     };
-    let analyzer = readability::rust_analyzer();
+    let analyzer = outline::rust_analyzer();
     let capabilities = analyzer.capabilities();
-    let analysis = readability::analyze(&request, analyzer.as_ref()).expect("analyze fixture");
-    let assessment = readability::assess(&analysis, capabilities);
-    readability::report::render_human(&assessment)
+    let analysis = outline::analyze(&request, analyzer.as_ref()).expect("analyze fixture");
+    let assessment = outline::assess(&analysis, capabilities);
+    outline::report::render_human(&assessment)
 }
 
 pub fn write_source(env: &TestEnv, relative: &str, source: &str) {
@@ -252,11 +252,11 @@ pub fn write_source(env: &TestEnv, relative: &str, source: &str) {
 
 struct FakeAnalyzer {
     analysis: Analysis,
-    capabilities: givn::readability::model::AnalyzerCapabilities,
+    capabilities: givn::outline::model::AnalyzerCapabilities,
 }
 
 impl SourceAnalyzer for FakeAnalyzer {
-    fn capabilities(&self) -> givn::readability::model::AnalyzerCapabilities {
+    fn capabilities(&self) -> givn::outline::model::AnalyzerCapabilities {
         self.capabilities.clone()
     }
 
@@ -331,23 +331,20 @@ pub fn engine_reports(env: &TestEnv) -> (String, String) {
             include_test_sources: false,
         },
     };
-    let syn = readability::rust_analyzer();
+    let syn = outline::rust_analyzer();
     let capabilities = syn.capabilities();
-    let syn_analysis = readability::analyze(&request, syn.as_ref()).expect("syn analysis");
+    let syn_analysis = outline::analyze(&request, syn.as_ref()).expect("syn analysis");
     let fake = FakeAnalyzer {
         analysis: fake_analysis(),
         capabilities: capabilities.clone(),
     };
-    let fake_analysis = readability::analyze(&request, &fake).expect("fake analysis");
+    let fake_analysis = outline::analyze(&request, &fake).expect("fake analysis");
     assert_eq!(
         syn_analysis, fake_analysis,
         "the fake and syn analyses must be the same neutral model"
     );
-    let syn_report = readability::report::render_human(&readability::assess(
-        &syn_analysis,
-        capabilities.clone(),
-    ));
-    let fake_report =
-        readability::report::render_human(&readability::assess(&fake_analysis, capabilities));
+    let syn_report =
+        outline::report::render_human(&outline::assess(&syn_analysis, capabilities.clone()));
+    let fake_report = outline::report::render_human(&outline::assess(&fake_analysis, capabilities));
     (syn_report, fake_report)
 }

@@ -2,8 +2,8 @@
 
 use super::revision::RevisionTree;
 use super::{GateFailure, Side};
-use crate::readability::classify::{Assessment, Classification, ClassifiedUnit};
-use crate::readability::model::{Analysis, FileStatus, RepoPath, UnitId, UnitKind};
+use crate::outline::classify::{Assessment, Classification, ClassifiedUnit};
+use crate::outline::model::{Analysis, FileStatus, RepoPath, UnitId, UnitKind};
 use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -324,7 +324,7 @@ fn check_analyzed(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::readability::metrics::UnitMetrics;
+    use crate::outline::metrics::UnitMetrics;
 
     fn metrics(code_lines: u32, public_methods: u32) -> UnitMetrics {
         UnitMetrics {
@@ -347,7 +347,7 @@ mod tests {
     fn unit(id: &str, classification: Classification, code_lines: u32) -> ClassifiedUnit {
         ClassifiedUnit {
             unit_id: UnitId(id.to_string()),
-            kind: UnitKind::Type(crate::readability::model::TypeKind::Struct),
+            kind: UnitKind::Type(crate::outline::model::TypeKind::Struct),
             name: "Engine".to_string(),
             path: RepoPath::new("src/engine.rs"),
             files: vec![RepoPath::new("src/engine.rs")],
@@ -369,7 +369,7 @@ mod tests {
         let mut with_method = data_only.clone();
         with_method.method_findings.push((
             "long".to_string(),
-            crate::readability::metrics::MethodFinding::MethodLength,
+            crate::outline::metrics::MethodFinding::MethodLength,
         ));
         assert!(is_gate_finding(&with_method));
     }

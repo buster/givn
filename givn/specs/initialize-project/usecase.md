@@ -111,7 +111,7 @@ instructions for its step while carrying no duplicated built-in rules.
 | initialize-a-project | select agent targets in the interactive terminal | Consumer selects agent targets during interactive init |
 | initialize-a-project | initialize with an explicit noninteractive target selection (SCM backend and no-SCM are precondition variants) | Consumer runs init non-interactively and gets opencode skills |
 | initialize-a-project | resynchronize selected targets | Consumer re-syncs skills after init and the selection is honoured |
-| enable-optional-addons | enable the readability addon | Consumer enables the readability addon and it is listed as enabled |
+| enable-optional-addons | enable the outline addon | Consumer enables the outline addon and it is listed as enabled |
 
 ## Includes
 
