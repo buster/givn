@@ -402,7 +402,7 @@ individual unit's classification.
   - [x] Evidence:   Scenario: A name-only guess does not connect methods for cohesion | 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
   - [x] Evidence:   Scenario: A name-only guess does not connect methods for cohesion | 1 scenario (1 passed) | 5 steps (5 passed)
-- [ ] COMMIT:
+- [x] COMMIT: b5554de3388d74002162a48fe069ba3124eefa23
 
 ## 20. A method signature keeps arrays, qualified paths, and its full type detail
 
@@ -412,12 +412,12 @@ trait objects, impl trait, never, infer; no new dependency.
 
 - RED: remove `@wip`; add `write_signature_shapes` and bindings; targeted
   run; paste non-zero.
-  - [ ] Evidence:
+  - [x] Evidence: baseline: ✘  Given a production source unit with a method whose types use paths, generics, references, slices, tuples, arrays, pointers, and fully qualified paths | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:149:5 | Step doesn't match any function
 - GREEN: replace `type_label` with the recursive renderer; targeted run;
   paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A method signature keeps arrays, qualified paths, and its full type detail |    ✔  Then the JSON method signature contains "Result<Self, Error>" | 1 scenario (1 passed) | 8 steps (8 passed)
 - REFACTOR: targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A method signature keeps arrays, qualified paths, and its full type detail |    ✔  Then the JSON method signature contains "Result<Self, Error>" | 1 scenario (1 passed) | 8 steps (8 passed)
 - [ ] COMMIT:
 
 ---

@@ -1393,3 +1393,27 @@ fn name_only_cohesion(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
+#[given("a production source unit with a method whose types use paths, generics, references, slices, tuples, arrays, pointers, and fully qualified paths")]
+fn signature_shapes(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_signature_shapes(&env);
+    world.env = Some(env);
+}
+
+#[then(regex = r#"^the JSON method signature contains "([^"]+)"$"#)]
+fn json_signature_contains(world: &mut GivnWorld, expected: String) {
+    let value = json_output(world);
+    let signatures: Vec<&str> = value["units"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .flat_map(|unit| unit["outline"].as_array().into_iter().flatten())
+        .filter_map(|item| item["signature"].as_str())
+        .collect();
+    assert!(
+        signatures.iter().any(|signature| signature.contains(&expected)),
+        "no signature contains {expected}: {signatures:?}"
+    );
+}
+
