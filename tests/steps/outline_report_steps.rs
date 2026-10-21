@@ -1120,3 +1120,11 @@ fn report_records_lcom4(world: &mut GivnWorld, expected: String, unit: String) {
     assert!(block.contains(&expected), "missing {expected}: {block}");
 }
 
+#[given("a production source unit whose method calls another method on itself")]
+fn self_receiver_call(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_self_receiver_call(&env);
+    world.env = Some(env);
+}
+
