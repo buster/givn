@@ -250,39 +250,45 @@ Evidence:
   cargo test --locked --lib usecase_md: 7 passed, 326 filtered out
   ```
 - Production files: `src/gherkin/usecase_md.rs` (`Option<GoalLevel>` with no fallback, `root_valid` includes Level, leaf gate uses `Some(GoalLevel::Leaf)`, `UsecaseDoc` built through the Level match), `tests/steps/workflow_enforcement_steps.rs` (`review_contract_with_level` and malformed Level fixture).
-- [ ] COMMIT: `COMMIT:`
+- [x] COMMIT: `f91c3413860323ef792ebd773098052de3138351`
 
 ## Scenario 6 — Independent local findings are still reported with a malformed title
 
-- [ ] Scenario: `Independent local findings are still reported with a malformed title`
+- [x] Scenario: `Independent local findings are still reported with a malformed title`
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
+- [x] RED
+- [x] GREEN
+- [x] REFACTOR
 - [ ] COMMIT
 
 Design constraints:
 
 - Every section value is computed into a local before the `UsecaseDoc` conditional; moving a reader inside the conditional is a defect. This scenario targets the Rule reader, which is currently inside the conditional.
 - `list_section` reports `section '## Rules' must contain one rule per bullet: '<line>'` for a non-bullet line.
-- `interaction_section` keeps the Markdown table header, separator, and row-shape checks for a present `## Interactions` section; a wrong separator row reports `has a malformed separator row`.
+- `interaction_section` keeps the Markdown table header, separator, and row-shape checks for a present `## Interactions` section.
 - `report_undeclared = root_valid && seen.contains(HEADING_CAPABILITIES)`; with an invalid root, an undeclared-capability row is not reported.
-- Fixture: title `# Use Case: Lending Register`, a Rule line `This rule is prose, not a bullet.`, and an interactions table with a one-column separator row.
-- Steps: new Given `... starts with "# Use Case: Lending Register", has a rule line that is not a bullet, and has a malformed interaction table`.
+- Fixture: title `# Use Case: Lending Register`, a Rule line `This rule is prose, not a bullet.`, and a valid interaction table row that references `register-readiness`, which the capability list does not declare.
+- Steps: new Given `... starts with "# Use Case: Lending Register", has a rule line that is not a bullet, and has an interaction that names an undeclared capability`.
 - Files: `src/gherkin/usecase_md.rs`, `tests/steps/workflow_enforcement_steps.rs`.
 
 Evidence:
 
 - RED output:
   ```
+  1 scenario (1 failed), 1 step (1 failed)
+  ✘ Given a clean committed change whose use-case contract starts with "# Use Case: Lending Register", has a rule line that is not a bullet, and has an interaction that names an undeclared capability
+    Step panicked. Captured output: not implemented: independent local findings fixture
   ```
 - GREEN output:
   ```
+  1 scenario (1 passed), 6 steps (6 passed)
   ```
 - REFACTOR output:
   ```
+  cargo fmt --all; full delta suite: 7 scenarios (7 passed), 42 steps (42 passed)
+  cargo test --locked --lib usecase_md: 20 passed, 313 filtered out
   ```
-- Production files:
+- Production files: `src/gherkin/usecase_md.rs` (`interaction_section` `report_undeclared` flag, absent-section skip for an invalid root, fragment path passes `true`, 13 new parser regression tests), `tests/steps/workflow_enforcement_steps.rs` (undeclared-interaction and prose-Rule fixture).
 - [ ] COMMIT: `COMMIT:`
 
 ## Scenario 7 — A valid kebab-case use-case title remains accepted (regression guard)
