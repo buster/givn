@@ -14,10 +14,19 @@ pub enum Verdict {
     Fail,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum OutlineVerdict {
+    Pass(String),
+    Fail(String),
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ReviewMarkers {
     pub present: bool,
     pub verdict: Option<Verdict>,
+    pub outlines: BTreeMap<UnitId, Vec<OutlineVerdict>>,
+    pub author: Option<String>,
+    pub reviewer: Option<String>,
     pub fixed: BTreeMap<UnitId, usize>,
     pub justified: BTreeMap<UnitId, usize>,
     pub fail: Vec<String>,
@@ -80,6 +89,28 @@ fn parse_readability(rest: &str, original: &str, markers: &mut ReviewMarkers) {
         }
         return;
     }
+    if let Some(rest) = rest.strip_prefix("OUTLINE ") {
+        parse_outline(rest, original, markers);
+        return;
+    }
+    if let Some(value) = rest.strip_prefix("AUTHOR ") {
+        let value = value.trim();
+        if value.is_empty() {
+            markers.unknown.push(original.to_string());
+        } else {
+            markers.author = Some(value.to_string());
+        }
+        return;
+    }
+    if let Some(value) = rest.strip_prefix("REVIEWER ") {
+        let value = value.trim();
+        if value.is_empty() {
+            markers.unknown.push(original.to_string());
+        } else {
+            markers.reviewer = Some(value.to_string());
+        }
+        return;
+    }
     if let Some(unit) = rest.strip_prefix("FIXED ") {
         if let Some(unit) = clean_unit(unit) {
             *markers.fixed.entry(unit).or_insert(0) += 1;
@@ -97,6 +128,32 @@ fn parse_readability(rest: &str, original: &str, markers: &mut ReviewMarkers) {
         return;
     }
     markers.unknown.push(original.to_string());
+}
+
+fn parse_outline(rest: &str, original: &str, markers: &mut ReviewMarkers) {
+    let (pass, rest) = if let Some(rest) = rest.strip_prefix("PASS ") {
+        (true, rest)
+    } else if let Some(rest) = rest.strip_prefix("FAIL ") {
+        (false, rest)
+    } else {
+        markers.unknown.push(original.to_string());
+        return;
+    };
+    let Some((unit, explanation)) = rest.split_once('|') else {
+        markers.unknown.push(original.to_string());
+        return;
+    };
+    let Some(unit) = clean_unit(unit) else {
+        markers.unknown.push(original.to_string());
+        return;
+    };
+    let explanation = explanation.trim();
+    let verdict = if pass {
+        OutlineVerdict::Pass(explanation.to_string())
+    } else {
+        OutlineVerdict::Fail(explanation.to_string())
+    };
+    markers.outlines.entry(unit).or_default().push(verdict);
 }
 
 fn clean_unit(value: &str) -> Option<UnitId> {
@@ -196,5 +253,52 @@ mod tests {
         let markers = parse(dir.path());
         assert!(!markers.present);
         assert!(markers.fixed.is_empty());
+    }
+
+    #[test]
+    fn parses_outline_verdicts_and_reviewer_identity() {
+        let markers = parse_text(
+            "READABILITY: OUTLINE PASS type:src/engine.rs::Engine | builds an Engine; validate then compile\n\
+             READABILITY: OUTLINE FAIL module:src/history.rs | the call order is not explainable\n\
+             READABILITY: AUTHOR agent\n\
+             READABILITY: REVIEWER fresh-context-reviewer\n\
+             READABILITY: PASS\n",
+        );
+        assert_eq!(
+            markers
+                .outlines
+                .get(&UnitId("type:src/engine.rs::Engine".to_string())),
+            Some(&vec![OutlineVerdict::Pass(
+                "builds an Engine; validate then compile".to_string()
+            )])
+        );
+        assert_eq!(
+            markers
+                .outlines
+                .get(&UnitId("module:src/history.rs".to_string())),
+            Some(&vec![OutlineVerdict::Fail(
+                "the call order is not explainable".to_string()
+            )])
+        );
+        assert_eq!(markers.author.as_deref(), Some("agent"));
+        assert_eq!(markers.reviewer.as_deref(), Some("fresh-context-reviewer"));
+        assert_eq!(markers.verdict, Some(Verdict::Pass));
+        assert!(markers.unknown.is_empty());
+    }
+
+    #[test]
+    fn outline_lines_without_a_unit_are_unknown() {
+        let markers = parse_text(
+            "READABILITY: OUTLINE PASS type:src/engine.rs::Engine\n\
+             READABILITY: OUTLINE PASS type:src/engine.rs::Engine | \n\
+             READABILITY: OUTLINE MAYBE type:src/engine.rs::Engine | unclear\n",
+        );
+        assert_eq!(
+            markers
+                .outlines
+                .get(&UnitId("type:src/engine.rs::Engine".to_string())),
+            Some(&vec![OutlineVerdict::Pass(String::new())])
+        );
+        assert_eq!(markers.unknown.len(), 2);
     }
 }

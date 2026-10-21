@@ -26,7 +26,7 @@ Status values:
 - [Workflow Swimlane (HTML)](workflow.html) - `current`; self-contained HTML swimlane view with one lane per artifact, creating actions, checking processes, and chokepoint summary. No JavaScript, no external assets, dark-mode aware.
 - [Reference](reference.md) - `current`; CLI command table, agent skills, addons, configuration keys, generated project layout, repository development scripts.
 - [Architecture Principles addon](architecture-principles.md) - `reference`; the default-off architecture-principles experiment: last-responsible-moment decision timing, consumer contracts and replaceable components, the phases it affects, expected outcomes, and the signals that the rules need revision.
-- [Readability addon](readability.md) - `reference`; the default-off experiment: advisory findings-only report, change-relative review gate, expected outcome, and warning signs that the rules are not working.
+- [Readability addon](readability.md) - `reference`; the default-off experiment: outline-first report, per-unit outline verdicts in review, supporting metrics, expected outcome, and warning signs that the rules are not working.
 - [Use-Case Model](use-case-model.md) - `current`; the canonical use-case definition, scoping rules, authoring requirements, and review rejection criteria.
 - [Design System](design/design-system.md) - `current`; the development report's design system: tokens, component primitives and their states, breakpoints, accessibility rules, and the rendered reference views.
 - [Development Record and Report](development-report.md) - `current`; record settings (mode and default, privacy, bounds), the report at desktop and mobile, and analytics recipes (jq, SQLite, DuckDB) over the local JSONL store.

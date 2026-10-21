@@ -2,31 +2,31 @@
 
 **TL;DR:** The `readability` addon is an optional, default-off experiment for
 production Rust. Its core idea is outline comprehension: read the outline of a
-type or module — method declarations, signatures, and calls, without bodies — and
-check that it explains the unit's responsibility and call order. It also
-produces an advisory report of structural debt and, when enabled, a
-change-relative review gate: every type or module the change touches, including
-its methods, must be fixed or justified, and a justification needs a reviewer
-who did not write it. It stores no baseline, ignores non-Rust code, and is not a
-product guarantee: the schema, thresholds, classifications, and gate rules may
-change.
+type or module — method declarations, signatures, and internal calls, without
+bodies or data — and check that it explains the unit's responsibility and call
+order. When the addon is enabled, every touched unit with methods needs an
+outline verdict from a fresh-context reviewer. Metrics are supporting evidence,
+not the gate. An unreadable outline has no justification path. The addon stores
+no baseline, ignores non-Rust code, and is not a product guarantee: the schema,
+thresholds, classifications, and gate rules may change.
 
 ## What it does
 
 - **Report.** `givn readability report` prints each unit's outline first —
-  method declarations, signatures, and internal calls — then the finding and
-  the supporting metrics, as human text or JSON. It never blocks a change and
-  stores no baseline.
+  method declarations, signatures, and internal calls — then the supporting
+  metrics, as human text or JSON. It never blocks a change and stores no
+  baseline.
 - **Review gate.** With the addon enabled, `givn check review --change <id>`
-  checks the types and modules the change touched, including their methods.
-  Every touched finding must be fixed or justified. A justified finding needs a
-  rationale accepted by a reviewer who did not write it.
+  prints the outline of every touched unit that has methods. The review record
+  must give each outline a `PASS` with a responsibility and call-order
+  explanation, or a `FAIL`. A missing verdict and a `FAIL` both block. The
+  reviewer must be a fresh-context reviewer, not the author.
 
 ## Outline comprehension — the core idea
 
-The addon is not only a size counter. Its central rule is R1: a reader given
-only a unit's outline should be able to state (a) what the unit is responsible
-for and (b) why its internal calls happen in that order.
+The addon is not a size counter. Its central rule is R1: a reader given only a
+unit's outline should be able to state (a) what the unit is responsible for and
+(b) why its internal calls happen in that order.
 
 The outline lists the unit's method declarations and signatures, their order,
 and the internal calls each method makes. Data — fields and enum variants — is
@@ -48,21 +48,21 @@ OUTLINE type:src/engine.rs::Engine
 The names and call order state the unit's job: build an `Engine` by validating,
 then compiling. The metric line is support, not the point.
 
-The outline is the semantic layer. The automated classifications (size,
-cohesion, method length) find candidates; the outline is what a reviewer reads
-to decide whether the names and call order communicate the unit's meaning. The
-independent reviewer for a `JUSTIFIED` finding reads only the outline and must
-be able to explain the responsibility and call order.
+The outline is the gate. Metrics find candidates for a reviewer's attention,
+but they do not decide. Both directions are valid:
 
-**Current limit.** Outline comprehension is not yet an automated finding rule:
-a unit whose outline is hard to follow, but which is under the size and method
-thresholds, does not create a finding by itself. The automated gate is
-size/method-based; the outline is the primary review artifact and is used by
-the reviewer. Treat that as an open experiment gap, not a completed rule.
+| Outline | Metrics | Result |
+|---|---|---|
+| Readable | clean | pass |
+| Readable | flag | pass; the metric is supporting evidence |
+| Unreadable | clean | fail; the outline is the finding |
+| Unreadable | flag | fail; the metric supports the finding |
+
+An unreadable outline is not justified. Fix the code and re-review.
 
 ## Workflow
 
-![Readability addon workflow: implement produces an optional advisory report; review produces FIXED or JUSTIFIED decisions and a PASS and checks every touched finding; archive checks the review record](readability-workflow.svg)
+![Readability addon workflow: implement produces an optional advisory report with the outline; review produces outline verdicts and a PASS and checks every touched outline; archive checks the review record](readability-workflow.svg)
 
 Source: [`readability-workflow.d2`](readability-workflow.d2). Regenerate with
 `d2 docs/readability-workflow.d2 docs/readability-workflow.svg`.
@@ -75,9 +75,22 @@ baseline; the gate only looks at the units the change touched.
 | Phase | Produced by the addon | Checked by the addon |
 |---|---|---|
 | Proposal / design | Nothing automatic. You may run the report as evidence. | Nothing. |
-| Implement | An optional report with each unit's outline first, then the finding and supporting metrics, as human text or JSON. | Nothing. The report never blocks a change. |
-| Review | `READABILITY: FIXED` or `READABILITY: JUSTIFIED` for every touched finding; a rationale for each justified finding; `READABILITY: PASS` when findings exist. | Every touched finding has a decision. A justified finding's rationale names the finding and its evidence and has an independent reviewer's accept. |
-| Archive | Nothing new. | The review record is complete. An unaccounted finding blocks archive. |
+| Implement | An optional report with each unit's outline first, then the supporting metrics, as human text or JSON. | Nothing. The report never blocks a change. |
+| Review | Per-unit `READABILITY: OUTLINE PASS` or `FAIL`, `READABILITY: AUTHOR` and `REVIEWER`, and `READABILITY: PASS` when every outline passes. | Every printed outline has a verdict. A `PASS` has a responsibility and call-order explanation; a `FAIL` blocks. The reviewer differs from the author. |
+| Archive | Nothing new. | The review record is complete. An outlined unit without a verdict blocks archive. |
+
+The review record markers:
+
+```text
+READABILITY: AUTHOR <id>
+READABILITY: REVIEWER <id>
+READABILITY: OUTLINE PASS <unit> | <responsibility; why the calls happen in that order>
+READABILITY: OUTLINE FAIL <unit> | <reason>
+READABILITY: PASS
+```
+
+`REVIEWER` must differ from `AUTHOR`. An empty `PASS` explanation fails. Unknown
+or conflicting markers fail. A standalone `FAIL <reason>` still blocks.
 
 ## What is checked in the source code exactly
 
@@ -87,37 +100,34 @@ The report and the gate share the same analysis:
   roots). `tests/`, `benches/`, `examples/`, and `target/` are excluded;
   `#[cfg(test)]` items are excluded; `src/bin/**` is included.
 - **Units.** A unit is a type (struct, enum, trait, union, or type alias) or a
-  module. Its methods are checked with it.
-- **Type size.** Over 500 code lines:
-  - a trait or a type with more than 50 public methods is an `interface`;
-  - a struct or enum with at most one method is `data-only` (size-exempt);
-  - LCOM4 over 2 or TCC below 50% is a `god-type`;
-  - otherwise it is a `cohesive-large-type`.
-- **Module size.** Over 1,000 code lines is a `module`; 500–1,000 with at least
-  two declared types is a `multi-type-module`; 500–1,000 otherwise is a
-  `module`.
-- **Methods.** A method over 100 code lines or over 50 flow complexity is a
-  `method-length` finding.
-- **Gate finding.** A unit is a finding when its classification is not
-  `within-limits` and not `data-only`, or when it has a method finding.
-  Data-only size is exempt unless a method finding exists. The gate compares
-  the touched units at the change base and at committed `HEAD`: new, crossed,
-  grown, not grown, removed, or fixed.
-- **Decisions.** `FIXED` only if the unit is under threshold at head.
-  `JUSTIFIED` only with a rationale that matches the unit and classification
-  and passes the field checks: evidence, responsibility, a rejected
-  alternative, a confirmed owner, no banned reason, a `Follow-up:` and
-  `Expiry:` pair when temporary, and an independent reviewer's `accept`.
-- **Markers and record.** `READABILITY: FIXED`, `JUSTIFIED`, `PASS`, and
-  `FAIL`. Unknown or conflicting markers fail. A missing decision, a missing
-  review record, or a missing `PASS` when findings exist fails. `FAIL` blocks.
+  module. Its methods are checked with it. A unit with no methods has no
+  outline and needs no outline verdict.
+- **Outline.** Method declarations, signatures, order, and internal calls. Data
+  is excluded. The gate prints the outline for every touched unit with methods.
+- **Outline verdict.** Every printed outline needs one `OUTLINE PASS` with a
+  non-empty responsibility/call-order explanation, or one `OUTLINE FAIL`. A
+  missing verdict, an empty explanation, a `FAIL`, or conflicting verdicts for
+  one unit fails. There is no justification path for a `FAIL`.
+- **Supporting type metrics.** Over 500 code lines: a trait or a type with more
+  than 50 public methods is an `interface`; a struct or enum with at most one
+  method is `data-only`; LCOM4 over 2 or TCC below 50% is a `god-type`;
+  otherwise it is a `cohesive-large-type`.
+- **Supporting module metrics.** Over 1,000 code lines is a `module`; 500–1,000
+  with at least two declared types is a `multi-type-module`; 500–1,000
+  otherwise is a `module`.
+- **Supporting method metrics.** A method over 100 code lines or over 50 flow
+  complexity is a `method-length` finding.
+- **Supporting findings are not decisions.** The gate prints them as
+  `SUPPORTING` and never requires a `FIXED` or `JUSTIFIED` decision for them.
+- **Reviewer identity.** `READABILITY: AUTHOR` and `READABILITY: REVIEWER` are
+  required when any outline verdict is present, and must differ.
 - **Fail-closed guards.** No reachable change commit, a shallow clone, dirty
   production paths, a non-UTF8 or line-break path, a symlink, a submodule, an
   unreadable blob, or a changed `.rs` file the analyzer cannot analyze fails
   the gate.
-- **Removed units.** A removed unit that was a finding still needs `FIXED`.
-- **Accounting is unit-level.** A rationale for a type does not cover its
-  module.
+- **Removed units.** A removed unit has no head outline, so it needs no outline
+  verdict.
+- **Accounting is unit-level.** Every outline verdict names exactly one unit.
 
 ## Non-Rust code
 
@@ -144,68 +154,48 @@ gate failure. Supporting another language would need a second adapter behind
 the neutral `SourceAnalyzer` port (ADR-074); the Rust adapter does not pretend
 to understand other syntax.
 
-A `JUSTIFIED` decision is not an exemption: the unit is still a finding. The
-rationale explains why the current shape is right, names a rejected
-alternative, and records `Author:`, `Reviewed-by:`, and `Review verdict:
-accept`. Put it at
-`givn/changes/<id>/readability/rationales/<unit-slug>.md`. The reviewer must be
-a fresh-context reviewer that did not write the rationale; the author must not
-fill the reviewer fields. The gate checks the mechanical floor; it does not
-prove the judgment is right.
-
 ## Expected outcome
 
-- Structural debt in touched units becomes visible and is either fixed or
-  explicitly justified.
-- An independent reviewer checks the justification instead of accepting
-  self-attestation.
-- Refactors stay behavior-preserving; the report's evidence, not a score,
-  drives the decision.
+- Every touched unit with methods is read through its outline by an independent
+  reviewer.
+- An unreadable outline blocks even when every metric is clean.
+- A readable outline passes even when a metric flags the code; the metric stays
+  visible as supporting evidence.
+- The reviewer explains responsibility and call order in the record, so the
+  judgment is inspectable.
 - The report remains useful for untouched code without blocking unrelated
   changes.
 
-Success looks like fewer findings over time, rationales that survive independent
-review, and fixes that change structure rather than only the measurement.
+Success looks like outlines that a fresh reader can explain, verdicts that name
+the unit's job, and code changes that improve the outline rather than only the
+metrics.
 
 ## What may hint at a problem due to this addon
 
 Feedback on these signals is wanted. This is an experiment; if you see them,
 say so.
 
-- **The outline is ignored.** If reviews cite only line counts and never use
-  the outline to explain responsibility and call order, the experiment has
-  collapsed into a size gate.
-- **Justify rate stays high.** A growing set of `JUSTIFIED` units means the
-  gate is recording debt, not reducing it.
-- **Rationales reject an alternative that a later change implements.** The
-  archived rationales from the earlier gate change did exactly this: one said
-  splitting the adapter would weaken ADR-074, and the follow-up split it inside
-  the adapter directory. Old rationales are historical evidence, not active
-  decisions; when they read as current, the process is confusing.
-- **The reviewer accepts the claim without checking it.** A rationale that
-  restates "the current shape is right" without citing the measurement or
-  naming every responsibility of the unit is not evidence.
-- **The measurement improves while the design does not.** Hiding literals,
-  suppressing a lint, turning a long method into a long parameter list, or
-  lowering a count without fixing the cause is gaming the gate.
-- **The same unit recurs across changes.** Repeated findings on one unit mean
-  the rationale is papering over a shape that should change.
-- **Findings cluster in the analyzer or gate itself.** The experiment is
-  self-referential; its own machinery is a large Rust surface. Treat that as
-  evidence about the rules, not only about the code.
+- **`OUTLINE PASS` becomes a rubber stamp.** Short, generic explanations that
+  would fit any unit mean the reviewer is not reading the outline.
+- **One explanation covers several units.** Unit-level accounting is the point;
+  a single paragraph for a module and its types is not evidence.
+- **The reviewer names a responsibility but not the call order.** R1 has two
+  parts; a verdict that omits why the calls happen in that order is incomplete.
+- **The same unit recurs across changes.** Repeated outline failures on one unit
+  mean the shape should change, not the wording.
+- **The metric discussion dominates the review.** If the verdict explains the
+  line count and not the method names and calls, the secondary evidence has
+  become primary again.
 - **The addon stays disabled or the report is ignored.** An opt-in gate that
   nobody enables or acts on has no effect.
 - **False positives or negatives dominate.** Macros, non-UTF8 files,
   conditional compilation, and braces inside string literals are known limits
   (risks R-105 and R-108); the report is a completeness-limited view, not a
   total-debt claim.
-- **Cross-run comparisons are treated as trends.** No baseline is stored and the
-  rules version can change; comparing two runs can compare two different rule
-  sets.
-- **Untouched debt is assumed absent.** The gate sees only touched units. A
-  green gate does not mean the repository is clean.
-- **A rationale can be complete and still wrong.** The gate checks the fields,
-  not the judgment; independent review is a second opinion, not a proof.
+- **A verdict is complete and still wrong.** The gate checks presence and
+  shape, not the judgment; independent review is a second opinion, not a proof.
+- **Untouched code is assumed clean.** The gate sees only touched units. A green
+  gate does not mean the repository has no unreadable outlines.
 
 ## Enable and disable
 
@@ -225,7 +215,7 @@ from the served review guidance.
 
 - Report specification: [`givn/specs/assess-code-structure/readability-report.feature`](../givn/specs/assess-code-structure/readability-report.feature)
 - Gate specification: [`givn/specs/verify-change/readability-review-gate.feature`](../givn/specs/verify-change/readability-review-gate.feature)
-- Applied independent review: [`givn/archive/apply-readability-independent-review/review.md`](../givn/archive/apply-readability-independent-review/review.md)
+- Applied independent review (historical): [`givn/archive/apply-readability-independent-review/review.md`](../givn/archive/apply-readability-independent-review/review.md)
 - Neutral analyzer port: [`docs/arc42/adr/ADR-074-neutral-source-analyzer-port.md`](arc42/adr/ADR-074-neutral-source-analyzer-port.md)
 - Known risks: [`docs/arc42/11-risks-and-technical-debt.md`](arc42/11-risks-and-technical-debt.md) (R-105 to R-109, D-24)
 - Reviewer rules: [`assets/instructions/review.md`](../assets/instructions/review.md) (`Readability review gate`)
