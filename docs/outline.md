@@ -2,8 +2,7 @@
 
 **TL;DR:** The `outline` addon is an optional, default-off experiment for
 production Rust and Python. Its core idea is outline comprehension: read the
-outline of a type or module — method declarations, signatures, and internal
-calls, without bodies or data — and check that it explains the unit's
+outline of a type or module — method declarations, signatures, and calls, without bodies or data — and check that it explains the unit's
 responsibility and call order. When the addon is enabled, every touched unit
 with methods needs an outline verdict from a fresh-context reviewer. Metrics
 are hints, not the gate. An unreadable outline has no justification path. The
@@ -14,7 +13,7 @@ may change.
 ## What it does
 
 - **Report.** `givn outline report` prints each unit's outline first —
-  method declarations, signatures, and internal calls — then the metric
+  method declarations, signatures, and calls — then the metric
   hints, as human text or JSON. It never blocks a change and stores no
   baseline.
 - **Review gate.** With the addon enabled, `givn check review --change <id>`
@@ -27,27 +26,35 @@ may change.
 
 The addon is not a size counter. Its central rule is R1: a reader given only a
 unit's outline should be able to state (a) what the unit is responsible for and
-(b) why its internal calls happen in that order.
+(b) why its calls happen in that order.
 
 The outline lists the unit's method declarations and signatures, their order,
-and the internal calls each method makes. Data — fields and enum variants — is
-not part of the outline. It contains no method bodies and no comments.
-`givn outline report` prints the outline for every unit; `--json` emits the
-full outline under `units[].outline`, including call-resolution labels.
+and the calls each method makes. The unit is the root: every method is a
+first-level branch, and same-unit calls nest under their caller. A call to
+another component is a leaf tagged with the target component; its callee's
+calls stay in that component's outline. The report never prints reverse
+callers. Data — fields and enum variants — is not part of the outline. It
+contains no method bodies and no comments. `givn outline report` prints the
+outline for every unit; `--json` emits the full outline under
+`units[].outline`, including call-resolution labels.
 
 An example, abridged from the report:
 
 ```text
-OUTLINE type:src/engine.rs::Engine
-  method [public] fn build(&self) -> Engine
-    calls: validate -> compile
-  method [private] fn validate(&self) -> Result<()>
-  method [private] fn compile(&self) -> Engine
+WITHIN-LIMITS type  src/engine.rs  type:src/engine.rs::Engine within-limits
+  outline:
+    method [public] fn build(&self) -> Engine
+      -> [private, Engine] validate
+      -> [private, Engine] compile
+      -> [public, module] normalize
+    method [private] fn validate(&self) -> Result<()>
+    method [private] fn compile(&self) -> Engine
   metrics (hint): code lines 120; methods 3; public methods 1
 ```
 
 The names and call order state the unit's job: build an `Engine` by validating,
-then compiling. The metric line is support, not the point.
+then compiling, with normalization delegated to the module component
+`module:src/engine.rs`. The metric line is support, not the point.
 
 The outline is the gate. Metrics find candidates for a reviewer's attention,
 but they do not decide. Both directions are valid:
@@ -97,13 +104,13 @@ or conflicting markers fail. A standalone `FAIL <reason>` still blocks.
 
 The report and the gate share the same analysis:
 
-- **Scope.** Only production `.rs` files under `src/` (or explicit `--path`
-  roots). `tests/`, `benches/`, `examples/`, and `target/` are excluded;
-  `#[cfg(test)]` items are excluded; `src/bin/**` is included.
+- **Scope.** Only production `.rs` and `.py` files under `src/` (or explicit
+  `--path` roots). `tests/`, `benches/`, `examples/`, and `target/` are
+  excluded; `#[cfg(test)]` items are excluded; `src/bin/**` is included.
 - **Units.** A unit is a type (struct, enum, trait, union, or type alias) or a
   module. Its methods are checked with it. A unit with no methods has no
   outline and needs no outline verdict.
-- **Outline.** Method declarations, signatures, order, and internal calls. Data
+- **Outline.** Method declarations, signatures, order, and calls. Data
   is excluded. The gate prints the outline for every touched unit with methods.
 - **Outline verdict.** Every printed outline needs one `OUTLINE PASS` with a
   non-empty responsibility/call-order explanation, or one `OUTLINE FAIL`. A
@@ -160,9 +167,9 @@ production scope.
 | Source file under `tests/`, `benches/`, `examples/`, `target/`, or a Python cache/virtualenv directory | Excluded | Not production scope |
 
 Python's dynamic nature limits the outline: a call through a dynamic attribute
-or an inferred type is not resolved precisely, and every Python call is
-resolved only as `same_file` when the callee is a method or top-level function
-in the same file, otherwise as `external`. The report names these limits as
+or an inferred type is not resolved precisely. Calls are resolved by name:
+same unit first, then the same file, then a unique project method; otherwise
+the call is `ambiguous` or `external`. The report names these limits as
 analyzer limitations. An unsupported construct is named in the report's
 `unsupported` list; it is not automatically a gate failure. Supporting another
 language needs another adapter behind the neutral `SourceAnalyzer` port

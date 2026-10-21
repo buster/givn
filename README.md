@@ -49,7 +49,7 @@ A single-binary, Gherkin-first spec-driven workflow tool.
 - **An opt-in outline report and review gate.** The default-off
   `outline` addon adds `givn outline report`: an advisory snapshot of
   production Rust and Python units that prints each unit's outline — method
-  declarations, signatures, and internal calls — first, then size, public
+  declarations, signatures, and calls — first, then size, public
   surface, cohesion/coupling, and method-complexity metrics as hints. When the
   addon is enabled, `givn check review` prints the outline of every touched
   unit with methods and

@@ -9,6 +9,7 @@ pub mod report;
 pub mod scan;
 
 mod python_adapter;
+mod resolve;
 mod syn_adapter;
 
 use anyhow::Result;
@@ -19,5 +20,7 @@ pub use model::{Analysis, AnalysisRequest, SourceScope};
 
 /// Run the neutral analysis pipeline through the supplied analyzer.
 pub fn analyze(request: &AnalysisRequest, analyzer: &dyn SourceAnalyzer) -> Result<Analysis> {
-    analyzer.analyze(request)
+    let mut analysis = analyzer.analyze(request)?;
+    resolve::resolve_calls(&mut analysis);
+    Ok(analysis)
 }

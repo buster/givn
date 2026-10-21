@@ -29,9 +29,10 @@ The developer asks for a outline report.
    sources in the requested scope (the project-root `src/` by default, or the
    named `--path` roots).
 2. The system analyzes each source unit and reports its outline first — method
-   declarations, signatures, and internal calls — then its size, public
-   surface, cohesion and coupling indicators, and method complexity. Data is
-   not part of the outline.
+   declarations, signatures, and calls — then its size, public surface,
+   cohesion and coupling indicators, and method complexity. Same-unit calls
+   nest under their caller; calls to another component are leaves tagged with
+   the target component. Data is not part of the outline.
 3. The system classifies each unit and reports a finding for every unit above
    its threshold or carrying a long method; a within-limits unit is listed
    without a finding.
@@ -57,7 +58,9 @@ The developer asks for a outline report.
 - The report format is independent of the analysis engine.
 - Every analyzed unit has exactly one classification.
 - The report leads with each unit's method outline: declarations, signatures,
-  and internal calls, without data. The metrics hint at potential problems; they do not decide.
+  and calls, without data. Same-unit calls nest under the caller; calls to
+  another component are leaves tagged with the target. The metrics hint at
+  potential problems; they do not decide.
 - The report attaches no action or recommendation to a unit; a finding states the classification, the measured metrics, and the evidence.
 
 ## Examples
