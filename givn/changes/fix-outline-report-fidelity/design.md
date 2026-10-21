@@ -235,7 +235,7 @@ types, or a symbol table.
 | Rust | `Self::method()` | `Function { Some("Self") }` |
 | Rust | `Type::method()`, `crate::module::function()`, `super::module::function()`; the qualifier is every path segment before the callee, joined with `::` | `Function { Some(qualifier) }` |
 | Rust | Turbofish `Type::<T>::method()` | `Function { Some("Type") }`: generic arguments are stripped from every segment |
-| Rust | Qualified self `<T as Trait>::method()`; with `qself` the path segments before the callee are the trait path | `Function { Some("Trait") }` (the last segment before the callee); the qself type is not used as a qualifier |
+| Rust | Qualified self `<T as Trait>::method()`; with `qself` the path segments before the callee are the trait path | `Function { Some("Trait") }` (the last segment before the callee); for the inherent form `<T>::method()` the qself type `T` is the owner |
 | Rust | Bare `foo()` | `Function { None }` |
 | Rust | Method call whose receiver is any other expression: `Expr::Field` (`self.engine.start()`), `Expr::Call`, `Expr::Index`, `Expr::MethodCall`, `Expr::Paren`, `Expr::Reference`, `Expr::Unary`, `Expr::Macro`, `Expr::Await`, `Expr::Try` | `Method { Unknown }` |
 | Rust | A call recovered from an expression-list macro argument (`format!`, `println!`, `vec!`) | The same derivation as an ordinary call; it belongs to the enclosing method |

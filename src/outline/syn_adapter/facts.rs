@@ -314,7 +314,28 @@ fn signature(sig: &syn::Signature) -> Signature {
 #[cfg(test)]
 mod tests {
     use super::FactsVisitor;
+    use crate::outline::model::CallShape;
     use syn::visit::Visit;
+
+    #[test]
+    fn qself_uses_the_trait_owner() {
+        let block: syn::Block =
+            syn::parse_str("{ <Widget as Store>::make(); <Widget>::run(); }").unwrap();
+        let mut visitor = FactsVisitor::default();
+        visitor.visit_block(&block);
+        assert_eq!(
+            visitor.calls[0].shape,
+            CallShape::Function {
+                qualifier: Some("Store".to_string())
+            }
+        );
+        assert_eq!(
+            visitor.calls[1].shape,
+            CallShape::Function {
+                qualifier: Some("Widget".to_string())
+            }
+        );
+    }
 
     #[test]
     fn macro_arguments_contribute_calls() {
