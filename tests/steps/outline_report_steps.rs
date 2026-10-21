@@ -1291,3 +1291,29 @@ fn json_call_named_target(world: &mut GivnWorld, callee: String, target: String)
     assert_eq!(call["target"].as_str(), Some(target.as_str()), "{call}");
 }
 
+#[given("a production source unit declared in one file and implemented in another")]
+fn cross_file_impl(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_cross_file_impl(&env);
+    world.env = Some(env);
+}
+
+#[then(regex = r#"^the call "([^"]+)" is expanded into a deeper-indented call line$"#)]
+fn call_is_expanded(world: &mut GivnWorld, callee: String) {
+    let report = report_text(world);
+    let lines: Vec<&str> = report.lines().collect();
+    let index = lines
+        .iter()
+        .position(|line| line.trim_end().ends_with(&callee) && line.contains("-> ["))
+        .unwrap_or_else(|| panic!("no call {callee}: {report}"));
+    let next = lines[index + 1..]
+        .iter()
+        .find(|line| !line.trim().is_empty())
+        .expect("a line after the call");
+    assert!(
+        indent(next) > indent(lines[index]),
+        "{callee} was not expanded: {report}"
+    );
+}
+
