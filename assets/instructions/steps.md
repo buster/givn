@@ -34,6 +34,33 @@ capability rule. Read the canonical E2E policy with
 `givn instructions specs --change <id>`; do not restate its action scope or
 interface policy here.
 
+## Step definitions are durable project source
+
+Archive merges feature files and use-case documents only. It never copies,
+moves, or deletes a step definition: a delta step copy may sit beside the
+change's features, but the permanent per-capability step file is its home, and
+the delta copy travels into the archive as history.
+
+Before it mutates anything, archive compares the phrases bound by the change's
+delta step files with the phrases bound by the permanent test tree (the project
+root minus `givn/changes`, `givn/archive`, `givn/history`, version-control
+metadata, build, and cache directories). It refuses when one is missing,
+naming the project-relative delta file and the missing phrases (a bounded list
+followed by `+N more`). The repair is to merge each definition into its
+permanent per-capability step file and rerun the archive.
+
+A step-definition file is a file under a directory named `steps` or ending in
+`_steps`, or a file whose name ends in `_steps.<ext>`. Archive reads these
+binding tokens: `#[given(`, `#[when(`, `#[then(`; `@given(`, `@when(`,
+`@then(`, `@step(`, `@Given(`, `@When(`, `@Then(`, `@And(`, `@But(`,
+`@Step(`; `Given(`, `When(`, `Then(`, `And(`, `But(`, `Step(`; and
+`.Given(`, `.When(`, `.Then(`, `.Step(`. Each binding is read as one
+expression (multi-line decorators, adjacent literals, and raw-string or regex
+literals included), and phrases are compared literally with internal
+whitespace normalized. A binding whose phrase is computed dynamically is
+skipped, so give a step a literal phrase when the archive gate must recognise
+it.
+
 ## Rule: `@e2e` tags are immutable — never remove them
 
 Once a scenario is tagged `@e2e` in a delta `.feature` file, the tag MUST

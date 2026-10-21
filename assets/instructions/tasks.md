@@ -174,6 +174,16 @@ Before the first `@e2e` scenario:
 - Confirm the e2e runner can reach the running local environment (health
   check, or a trivial smoke request) before writing any scenario steps.
 
+## Closeout: merged step definitions
+
+Before declaring the change archive-ready, check that every step phrase bound by
+the delta step files is also bound in the permanent test tree. `givn archive`
+enforces the same condition before mutation and refuses with the
+project-relative delta file and the missing phrases (bounded, then `+N more`);
+the closeout check catches the gap while the tasks are still open, and it never
+replaces the archive gate. A delta step copy is history — the definitions are
+merged into the permanent per-capability step file, never moved by archive.
+
 ## Rule: never silently deviate from design.md
 
 Tasks execute what design.md decided — they do not re-decide it. If, while

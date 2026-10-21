@@ -66,6 +66,39 @@ parseable placeholder; lint suppresses WIP reporting for that removed
 placeholder. Archive validates all merge preconditions, applies the operations,
 and strips `@givn.*` tags from the permanent output.
 
+Archive merges feature files and use-case/fragment documents only. Step
+definitions are durable project source and are never merged, copied, or
+deleted: a delta step file may live beside the change's features, but the
+permanent per-capability step file is its home, and the delta copy travels into
+the archive as history. Before any mutation — and again before an unproven
+candidate is verified — archive compares the step phrases bound by the change's
+delta step-definition files with the phrases bound by the permanent test tree,
+and refuses when one is missing. A step-definition file is a file under a
+directory named `steps` or ending in `_steps`, or a file whose name ends in
+`_steps.<ext>`. A step phrase is the first resolvable literal bound by a step
+binding: the archive reader finds the supported binding tokens anywhere in the
+file (`#[given(`, `#[when(`, `#[then(`; `@given(`, `@when(`, `@then(`,
+`@step(`, `@Given(`, `@When(`, `@Then(`, `@And(`, `@But(`, `@Step(`;
+`Given(`, `When(`, `Then(`, `And(`, `But(`, `Step(`; `.Given(`, `.When(`,
+`.Then(`, `.Step(`), consumes each binding to its matching `)` with a
+string/raw-string/regex/comment-aware counter, and reads the first escaped
+string, raw string (any `#` delimiter), or `/regex/` literal; adjacent Python
+literals are joined and internal whitespace is normalized. A binding whose
+phrase is computed dynamically yields no phrase and is skipped.
+
+The permanent tree is the project root minus two prune sets: any directory
+component named `.git`, `.hg`, `.svn`, `target`, `node_modules`, `.venv`,
+`venv`, `coverage`, `dist`, `build`, `vendor`, or `__pycache__`, and any
+project-relative path starting with `givn/changes`, `givn/archive`, or
+`givn/history` (component-wise, so `.git` does not match `.github`). The delta
+walk prunes only the component names, so the change's own step files are read.
+Both walks skip unreadable and non-UTF-8 files without failing. The refusal
+names the project-relative delta file, the missing phrases (capped at 20, then
+`+N more`), and the repair: merge each definition into its permanent
+per-capability step file and rerun the archive. The heuristic is text-level by
+design; its skipped-binding and literal-comparison limits are recorded in
+chapter 11 (R-123).
+
 The merge implementation is text-level for scenario blocks. It preserves the
 existing permanent feature header and surrounding text, while a replaced or
 added scenario is rendered from the parsed AST. The `gherkin` AST does not
