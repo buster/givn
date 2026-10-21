@@ -53,7 +53,9 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   and its evidence per unit at schema version 2, and no recommendation. When
   the addon is enabled, `givn check review` also refuses any touched unit that
   is still a finding at the committed `HEAD` unless it is fixed or carries a
-  change-scoped, owner-approved rationale. No baseline is stored.
+  change-scoped, owner-approved rationale. No baseline is stored. See [the
+  readability addon guide](docs/readability.md) for the phases, expected
+  outcome, and warning signs.
 - **Scenario-by-scenario TDD with proof.** Each scenario runs RED (targeted,
   genuinely failing) → GREEN (minimum code) → REFACTOR → one atomic commit.
   The runner's strict mode is proven up front so an empty step definition can
@@ -154,6 +156,9 @@ Missing context never blocks a human commit.
   opt-in architecture-principles experiment: last-responsible-moment decision
   timing, consumer contracts now, component splits later, the phases it affects,
   and the signals that its rules need revision.
+- [`docs/readability.md`](docs/readability.md) — the experimental readability
+  addon: the advisory report, the change-relative review gate, its phases, and
+  the warning signs that the rules are not working.
 - [`docs/development-report.md`](docs/development-report.md) — the record
   settings (mode, default, privacy), the report screens, and analytics over the
   JSONL store with jq, SQLite, and DuckDB.
