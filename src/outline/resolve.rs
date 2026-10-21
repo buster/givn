@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 
 use super::model::{
     Analysis, Call, CallShape, Language, MethodId, ReceiverEvidence, RepoPath, Resolution,
-    TypeKind, UnitKind, UnitOrigin,
+    UnitKind, UnitOrigin,
 };
 
 #[derive(Clone)]
@@ -49,13 +49,8 @@ pub(crate) fn resolve_calls(analysis: &mut Analysis) {
     for (unit_index, unit) in analysis.units.iter().enumerate() {
         for (method_index, method) in unit.methods.iter().enumerate() {
             for (call_index, call) in method.calls.iter().enumerate() {
-                let (resolution, target) = resolve(
-                    call,
-                    unit_index,
-                    unit.language,
-                    &method.span.file,
-                    &by_name,
-                );
+                let (resolution, target) =
+                    resolve(call, unit_index, unit.language, &method.span.file, &by_name);
                 updates.push((unit_index, method_index, call_index, resolution, target));
             }
         }
@@ -143,18 +138,15 @@ fn resolve(
     };
 
     if compatible.is_empty() {
-        // A named receiver that only matches a trait may still be implemented
-        // by that owner; the relation is not proven, so it is a name-only
-        // guess rather than an external call.
+        // A named receiver may be a trait, a class, or another owner whose
+        // implementation relation is not proven. Keep a unique candidate as
+        // a name-only guess rather than claiming the call is external.
         if matches!(
             &call.shape,
             CallShape::Method {
                 receiver: ReceiverEvidence::Qualifier(_)
             }
-        ) && candidates
-            .iter()
-            .any(|target| matches!(target.unit_kind, UnitKind::Type(TypeKind::Trait)))
-        {
+        ) {
             return name_only_or_ambiguous(&candidates);
         }
         return (Resolution::External, None);
@@ -197,10 +189,7 @@ fn one_target(candidates: &[&Target], caller_file: &RepoPath) -> (Resolution, Op
 
 fn name_only_or_ambiguous(candidates: &[&Target]) -> (Resolution, Option<MethodId>) {
     match candidates {
-        [target] => (
-            Resolution::NameOnly,
-            Some(target.method_id.clone()),
-        ),
+        [target] => (Resolution::NameOnly, Some(target.method_id.clone())),
         _ => (Resolution::Ambiguous, None),
     }
 }
@@ -209,9 +198,16 @@ fn function_qualifier_matches(qualifier: &str, unit_index: usize, target: &Targe
     if qualifier == "Self" {
         return target.unit_index == unit_index;
     }
-    let Some(owner) = qualifier.rsplit("::").next() else {
+    let segments: Vec<&str> = qualifier.split("::").collect();
+    let Some(owner) = segments.last().copied() else {
         return false;
     };
+    // A multi-segment path is only project-owned when it is rooted at the
+    // crate/self/super namespace. `std::path::Path` must not match a project
+    // type merely named `Path`.
+    if segments.len() > 1 && !matches!(segments[0], "crate" | "self" | "super") {
+        return false;
+    }
     match target.unit_kind {
         UnitKind::Type(_) => target.unit_name == owner,
         UnitKind::Module => {
@@ -339,7 +335,10 @@ mod tests {
                 method(
                     "state::artifact_status",
                     "artifact_status",
-                    vec![call("is_skipped"), method_call("is_complete", "TasksProgress")],
+                    vec![
+                        call("is_skipped"),
+                        method_call("is_complete", "TasksProgress"),
+                    ],
                 ),
                 method("state::is_skipped", "is_skipped", Vec::new()),
             ],
@@ -347,7 +346,10 @@ mod tests {
                 outline(
                     "state::artifact_status",
                     "artifact_status",
-                    vec![call("is_skipped"), method_call("is_complete", "TasksProgress")],
+                    vec![
+                        call("is_skipped"),
+                        method_call("is_complete", "TasksProgress"),
+                    ],
                 ),
                 outline("state::is_skipped", "is_skipped", Vec::new()),
             ],
@@ -406,5 +408,111 @@ mod tests {
             analysis.units[0].outline[0].calls[1].target.as_deref(),
             Some("type:src/state.rs::TasksProgress::is_complete")
         );
+    }
+    fn function_call(callee: &str, qualifier: Option<&str>) -> Call {
+        Call {
+            order: 0,
+            callee: callee.to_string(),
+            shape: CallShape::Function {
+                qualifier: qualifier.map(ToString::to_string),
+            },
+            resolution: Resolution::External,
+            target: None,
+        }
+    }
+
+    fn unknown_method_call(callee: &str) -> Call {
+        Call {
+            order: 0,
+            callee: callee.to_string(),
+            shape: CallShape::Method {
+                receiver: ReceiverEvidence::Unknown,
+            },
+            resolution: Resolution::External,
+            target: None,
+        }
+    }
+
+    fn resolver_units() -> Vec<SourceUnit> {
+        vec![
+            unit(
+                "type:src/path.rs::Path",
+                UnitKind::Type(TypeKind::Struct),
+                "Path",
+                vec![method("path::Path::new", "new", Vec::new())],
+                vec![],
+            ),
+            unit(
+                "type:src/store.rs::Widget",
+                UnitKind::Type(TypeKind::Struct),
+                "Widget",
+                vec![method("store::Widget::run", "run", Vec::new())],
+                vec![],
+            ),
+            unit(
+                "type:src/caller.rs::Caller",
+                UnitKind::Type(TypeKind::Struct),
+                "Caller",
+                vec![method(
+                    "caller::Caller::make",
+                    "make",
+                    vec![
+                        function_call("new", Some("std::path::Path")),
+                        method_call("run", "Store"),
+                        unknown_method_call("run"),
+                    ],
+                )],
+                vec![],
+            ),
+        ]
+    }
+
+    #[test]
+    fn resolution_requires_shape_consistent_owners() {
+        let mut analysis = Analysis {
+            files: Vec::new(),
+            units: resolver_units(),
+            diagnostics: Vec::new(),
+        };
+        resolve_calls(&mut analysis);
+        let calls = &analysis.units[2].methods[0].calls;
+        assert_eq!(calls[0].resolution, Resolution::External);
+        assert_eq!(calls[0].target, None);
+        assert_eq!(calls[1].resolution, Resolution::NameOnly);
+        assert_eq!(calls[1].target.as_deref(), Some("store::Widget::run"));
+        assert_eq!(calls[2].resolution, Resolution::NameOnly);
+        assert_eq!(calls[2].target.as_deref(), Some("store::Widget::run"));
+    }
+
+    #[test]
+    fn a_crate_rooted_qualifier_can_match_a_project_type() {
+        let mut analysis = Analysis {
+            files: Vec::new(),
+            units: vec![
+                unit(
+                    "type:src/line.rs::Line",
+                    UnitKind::Type(TypeKind::Struct),
+                    "Line",
+                    vec![method("line::Line::from", "from", Vec::new())],
+                    vec![],
+                ),
+                unit(
+                    "type:src/caller.rs::Caller",
+                    UnitKind::Type(TypeKind::Struct),
+                    "Caller",
+                    vec![method(
+                        "caller::Caller::make",
+                        "make",
+                        vec![function_call("from", Some("crate::line::Line"))],
+                    )],
+                    vec![],
+                ),
+            ],
+            diagnostics: Vec::new(),
+        };
+        resolve_calls(&mut analysis);
+        let call = &analysis.units[1].methods[0].calls[0];
+        assert_eq!(call.resolution, Resolution::SameFile);
+        assert_eq!(call.target.as_deref(), Some("line::Line::from"));
     }
 }

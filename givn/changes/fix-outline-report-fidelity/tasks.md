@@ -106,6 +106,8 @@ scenario.
 
 ## 1. A method call on an unknown receiver is a name-only guess
 
+- [x] Scenario: A method call on an unknown receiver is a name-only guess
+
 Design constraints: `CallShape`/`ReceiverEvidence`; an `ExprMethodCall`
 whose receiver is not `self` and not a statically named owner is
 `ReceiverEvidence::Unknown`; the resolver returns `name_only` with the
@@ -124,12 +126,14 @@ unique candidate target. JSON calls gain `target`.
   `src/outline/syn_adapter/facts.rs`, `src/outline/python_adapter/mod.rs`,
   `src/outline/report.rs` (constructor/test updates as needed). Run the same
   targeted command; paste the zero output.
-  - [x] Evidence:   Scenario: A method call on an unknown receiver is a name-only guess | 1 scenario (1 passed) | 4 steps (4 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 4 steps (4 passed)
 - REFACTOR: clean up, re-run the targeted command, paste the zero output.
-  - [x] Evidence:   Scenario: A method call on an unknown receiver is a name-only guess | 1 scenario (1 passed) | 4 steps (4 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 4 steps (4 passed)
 - [x] COMMIT: b1fffc9e26fd686eaa1164837179b592871893e3
 
 ## 2. A name-only guess is not expanded as a same-unit call
+
+- [x] Scenario: A name-only guess is not expanded as a same-unit call
 
 Design constraints: render `name_only` as a leaf; never recurse into its
 target; LCOM4 unions only `same_file`/`project_other_file` same-unit edges.
@@ -140,12 +144,14 @@ would wrongly expand it.
   command; paste non-zero.
   - [x] Evidence: baseline: ✘  Given a production source unit whose method calls a receiver of unknown type | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:14:5 | Step doesn't match any function
 - GREEN: update `render_calls`, `metrics::cohesion`; run targeted; paste zero.
-  - [x] Evidence:   Scenario: A name-only guess is not expanded as a same-unit call | 1 scenario (1 passed) | 5 steps (5 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: re-run targeted; paste zero.
-  - [x] Evidence:   Scenario: A name-only guess is not expanded as a same-unit call | 1 scenario (1 passed) | 5 steps (5 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 5 steps (5 passed)
 - [x] COMMIT: 8144cca87d0a24175c92c68785b3d51c8085e6ef
 
 ## 3. A call on the unit's own receiver resolves within the unit
+
+- [x] Scenario: A call on the unit's own receiver resolves within the unit
 
 Design constraints: `self.method()` / `&self` is `SelfUnit`; the resolver
 selects the current unit's method; `same_file` keeps its target and nests.
@@ -154,12 +160,14 @@ selects the current unit's method; `same_file` keeps its target and nests.
   run; paste non-zero.
   - [x] Evidence: baseline: ✘  Given a production source unit whose method calls another method on itself | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:22:5 | Step doesn't match any function
 - GREEN: add `SelfUnit` extraction and resolution; targeted run; paste zero.
-  - [x] Evidence:   Scenario: A call on the unit's own receiver resolves within the unit | 1 scenario (1 passed) | 6 steps (6 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 6 steps (6 passed)
 - REFACTOR: targeted run; paste zero.
-  - [x] Evidence:   Scenario: A call on the unit's own receiver resolves within the unit | 1 scenario (1 passed) | 6 steps (6 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 6 steps (6 passed)
 - [x] COMMIT: 1b37904d21dac651b575bd18159164c2e061d385
 
 ## 4. A method call on a named receiver resolves to that owner
+
+- [x] Scenario: A method call on a named receiver resolves to that owner
 
 Design constraints: `Type::method()` is a function call with qualifier
 `Type`; a method call on a named receiver is `Qualifier("Type")`; the
@@ -170,12 +178,14 @@ resolver accepts candidates whose owner name equals the qualifier.
   - [x] Evidence: baseline: ✘  Given a production source unit whose method calls an associated function on a project type | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:31:5 | Step doesn't match any function
 - GREEN: add qualifier extraction and owner filtering; targeted run; paste
   zero.
-  - [x] Evidence:   Scenario: A method call on a named receiver resolves to that owner | 1 scenario (1 passed) | 5 steps (5 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
-  - [x] Evidence:   Scenario: A method call on a named receiver resolves to that owner | 1 scenario (1 passed) | 5 steps (5 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 5 steps (5 passed)
 - [x] COMMIT: d3b72a1353ea16aadb76cd184aaeb941a96911c9
 
 ## 5. An ambiguous method name has no resolved target
+
+- [x] Scenario: An ambiguous method name has no resolved target
 
 Design constraints: several compatible candidates produce `ambiguous` with
 no target; JSON emits `null`.
@@ -184,12 +194,14 @@ no target; JSON emits `null`.
   paste non-zero.
   - [x] Evidence: baseline: ✘  Given a production source unit whose method calls an unknown receiver whose name two project types declare | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:39:5 | Step doesn't match any function
 - GREEN: implement the ambiguous branch; targeted run; paste zero.
-  - [x] Evidence:   Scenario: An ambiguous method name has no resolved target | 1 scenario (1 passed) | 4 steps (4 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 4 steps (4 passed)
 - REFACTOR: targeted run; paste zero.
-  - [x] Evidence:   Scenario: An ambiguous method name has no resolved target | 1 scenario (1 passed) | 4 steps (4 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 4 steps (4 passed)
 - [x] COMMIT: ea3d014306923460a1423f0746cebd6e65c2f140
 
 ## 6. An associated-function call whose qualifier contradicts the target is external
+
+- [x] Scenario: An associated-function call whose qualifier contradicts the target is external
 
 Design constraints: explicit qualifier `Line` cannot match candidate owner
 `Error`; return `external` with no target; never fall back to a name guess.
@@ -198,12 +210,14 @@ Design constraints: explicit qualifier `Line` cannot match candidate owner
   targeted run; paste non-zero.
   - [x] Evidence: baseline: ✘  Given a production source unit that calls "Line::from" while the project declares "Error::from" | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:46:5 | Step doesn't match any function
 - GREEN: implement qualifier mismatch -> external; targeted run; paste zero.
-  - [x] Evidence:   Scenario: An associated-function call whose qualifier contradicts the target is external |    ✔  Given a production source unit that calls "Line::from" while the project declares "Error::from" | 1 scenario (1 passed) | 4 steps (4 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 4 steps (4 passed)
 - REFACTOR: targeted run; paste zero.
-  - [x] Evidence:   Scenario: An associated-function call whose qualifier contradicts the target is external |    ✔  Given a production source unit that calls "Line::from" while the project declares "Error::from" | 1 scenario (1 passed) | 4 steps (4 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 4 steps (4 passed)
 - [x] COMMIT: 43cee9c62e34c3169f98c34d7ac4cb779f2f21eb
 
 ## 7. A god type found through cohesion reports only the cohesion evidence
+
+- [x] Scenario: A god type found through cohesion reports only the cohesion evidence
 
 Design constraints: evidence is built per fired predicate. LCOM4 > 2 emits
 `type-lcom4 > 2`; TCC < 500 emits `type-tcc < 500`; both only when both
@@ -213,12 +227,14 @@ fired. A fixture with LCOM4 <= 2 and TCC < 500 must emit no LCOM4 line.
   paste non-zero.
   - [x] Evidence: baseline: ✘  Given a production source unit over the readable size whose methods are connected only by calls | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:52:5 | Step doesn't match any function
 - GREEN: rewrite the god-type evidence branch; targeted run; paste zero.
-  - [x] Evidence:   Scenario: A god type found through cohesion reports only the cohesion evidence | 1 scenario (1 passed) | 5 steps (5 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
-  - [x] Evidence:   Scenario: A god type found through cohesion reports only the cohesion evidence | 1 scenario (1 passed) | 5 steps (5 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 5 steps (5 passed)
 - [x] COMMIT: 9e3487b175791adcd43832e31ae457ad7171f3cc
 
 ## 8. An interface found through its public methods reports only public-method evidence
+
+- [x] Scenario: An interface found through its public methods reports only public-method evidence
 
 Design constraints: public-methods branch emits `type-public-methods > 50`;
 the trait predicate is emitted only when the trait-and-size predicate fired;
@@ -228,12 +244,14 @@ no `type-kind-trait` for a public-method-only interface.
   targeted run; paste non-zero.
   - [x] Evidence: baseline: ✘  And the report records the evidence "type-public-methods > 50" | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:63:5 | Step doesn't match any function
 - GREEN: rewrite the interface evidence branch; targeted run; paste zero.
-  - [x] Evidence:   Scenario: An interface found through its public methods reports only public-method evidence | 1 scenario (1 passed) | 5 steps (5 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
-  - [x] Evidence:   Scenario: An interface found through its public methods reports only public-method evidence | 1 scenario (1 passed) | 5 steps (5 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 5 steps (5 passed)
 - [x] COMMIT: 59b2188f78e430bde5625a39bc920609d94166b7
 
 ## 9. A long method found through complexity reports only complexity evidence
+
+- [x] Scenario: A long method found through complexity reports only complexity evidence
 
 Design constraints: `method-code-lines > 100` and `method-complexity > 50`
 are independent; emit only the predicate that fired.
@@ -243,12 +261,14 @@ are independent; emit only the predicate that fired.
   - [x] Evidence: baseline: ✘  Given a production source unit with a method over the complexity limit but within the length limit | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:68:5 | Step doesn't match any function
 - GREEN: rewrite the method-length evidence branch and emit separate
   complexity evidence; targeted run; paste zero.
-  - [x] Evidence:   Scenario: A long method found through complexity reports only complexity evidence | 1 scenario (1 passed) | 5 steps (5 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
-  - [x] Evidence:   Scenario: A long method found through complexity reports only complexity evidence | 1 scenario (1 passed) | 5 steps (5 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 5 steps (5 passed)
 - [x] COMMIT: 2a98d7fc7698b2e3fad028b017d85d42241f0709
 
 ## 10. A Rust module outline lists the types it declares
+
+- [x] Scenario: A Rust module outline lists the types it declares
 
 Design constraints: both adapters add `OutlineKind::Type` items to module
 outlines; Rust derives them from declared type units; type items carry an
@@ -258,12 +278,14 @@ empty signature and no calls and never enter `MethodIndex`.
   run; paste non-zero.
   - [x] Evidence: baseline: ✘  Given a production Rust module with three declared types and one free function | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:76:5 | Step doesn't match any function
 - GREEN: add Rust module type items; targeted run; paste zero.
-  - [x] Evidence:   Scenario: A Rust module outline lists the types it declares | 1 scenario (1 passed) | 3 steps (3 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 3 steps (3 passed)
 - REFACTOR: targeted run; paste zero.
-  - [x] Evidence:   Scenario: A Rust module outline lists the types it declares | 1 scenario (1 passed) | 3 steps (3 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 3 steps (3 passed)
 - [x] COMMIT: f7e7e526be5db6dd3ad554778f394f812990752a
 
 ## 11. A module outline interleaves member types and free functions in source order
+
+- [x] Scenario: A module outline interleaves member types and free functions in source order
 
 Design constraints: module outline items sort by `(order, name)`; free
 functions and type items interleave by declaration line.
@@ -273,12 +295,14 @@ functions and type items interleave by declaration line.
   - [x] Evidence: baseline: ✘  Given a production Rust module with a free function, a type, a free function, and a type in that order | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:82:5 | Step doesn't match any function
 - GREEN: sort module outlines and set type-item order; targeted run; paste
   zero.
-  - [x] Evidence:   Scenario: A module outline interleaves member types and free functions in source order | 1 scenario (1 passed) | 3 steps (3 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 3 steps (3 passed)
 - REFACTOR: targeted run; paste zero.
-  - [x] Evidence:   Scenario: A module outline interleaves member types and free functions in source order | 1 scenario (1 passed) | 3 steps (3 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 3 steps (3 passed)
 - [x] COMMIT: e5e08c8fe7e17ad60366687e9966c887e766d8e1
 
 ## 12. A Python module outline lists its classes
+
+- [x] Scenario: A Python module outline lists its classes
 
 Design constraints: the Python adapter adds type items for class units to
 the module outline, with the class unit id, visibility, and declaration
@@ -288,12 +312,14 @@ line; no calls/signature.
   targeted run; paste non-zero.
   - [x] Evidence: baseline: ✘  Given a Python module with two classes and one function | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:88:5 | Step doesn't match any function
 - GREEN: add Python module type items; targeted run; paste zero.
-  - [x] Evidence:   Scenario: A Python module outline lists its classes | 1 scenario (1 passed) | 3 steps (3 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 3 steps (3 passed)
 - REFACTOR: targeted run; paste zero.
-  - [x] Evidence:   Scenario: A Python module outline lists its classes | 1 scenario (1 passed) | 3 steps (3 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 3 steps (3 passed)
 - [x] COMMIT: b8ede9d98bf499b19601f5ced21b71ed085cafaa
 
 ## 13. The JSON report names each call's resolved target
+
+- [x] Scenario: The JSON report names each call's resolved target
 
 Design constraints: JSON call objects add `target` (method id or `null`);
 module free functions keep their module method id.
@@ -302,12 +328,14 @@ module free functions keep their module method id.
   targeted run; paste non-zero.
   - [x] Evidence: baseline: ✘  Given a production source unit whose method calls a module function | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:94:5 | Matched: tests/steps/outline_report_steps.rs:984:1
 - GREEN: include `target` in `outline_json`; targeted run; paste zero.
-  - [x] Evidence:   Scenario: The JSON report names each call's resolved target | 1 scenario (1 passed) | 3 steps (3 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 3 steps (3 passed)
 - REFACTOR: targeted run; paste zero.
-  - [x] Evidence:   Scenario: The JSON report names each call's resolved target | 1 scenario (1 passed) | 3 steps (3 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 3 steps (3 passed)
 - [x] COMMIT: 631f483d011cce928f6b1bea61d0bf2ff9135cfb
 
 ## 14. A same-unit method implemented in another file is project_other_file
+
+- [x] Scenario: A same-unit method implemented in another file is project_other_file
 
 Design constraints: `same_file` compares the caller's method span file with
 the target's span file; same-unit nesting uses unit membership, not the
@@ -319,12 +347,14 @@ label; LCOM4 uses same-unit membership. A cross-file impl method is labelled
   - [x] Evidence: baseline: ✘  Given a production source unit declared in one file and implemented in another | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:100:5 | Step doesn't match any function
 - GREEN: compare files for the label and decouple nesting/LCOM4 from the
   label; targeted run; paste zero.
-  - [x] Evidence:   Scenario: A same-unit method implemented in another file is project_other_file | 1 scenario (1 passed) | 5 steps (5 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
-  - [x] Evidence:   Scenario: A same-unit method implemented in another file is project_other_file | 1 scenario (1 passed) | 5 steps (5 passed)
-- [ ] COMMIT:
+  - [x] Evidence: 1 scenario (1 passed) | 5 steps (5 passed)
+- [x] COMMIT: 21b433b9390d0b2031781877803990280ca42b2e
 
 ## 15. A developer reads each call's resolution in the human report
+
+- [x] Scenario: A developer reads each call's resolution in the human report
 
 Design constraints: human tags lead with the resolution label:
 `[same_file, public, Engine]`, `[project_other_file, public, module]`,
@@ -335,12 +365,14 @@ name-only never nests.
   run; paste non-zero.
   - [x] Evidence: baseline: ✘  And a production source unit whose method calls its own method, a cross-file module function, and a receiver of unknown type | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:109:5 | Step doesn't match any function
 - GREEN: render the resolution label; targeted run; paste zero.
-  - [x] Evidence:   Scenario: A developer reads each call's resolution in the human report | 1 scenario (1 passed) | 7 steps (7 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 7 steps (7 passed)
 - REFACTOR: targeted run; paste zero.
-  - [x] Evidence:   Scenario: A developer reads each call's resolution in the human report | 1 scenario (1 passed) | 7 steps (7 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 7 steps (7 passed)
 - [x] COMMIT: 240bdaadd0ade475b6ce74962c3d5f2b5f40d17e
 
 ## 16. A file's code lines exclude inline test modules
+
+- [x] Scenario: A file's code lines exclude inline test modules
 
 Design constraints: `AnalyzedFile.excluded_spans` records every
 `#[cfg(test)]` item/impl-method span; `files[].code_lines` counts code lines
@@ -352,12 +384,14 @@ outside those spans; file `physical_lines` stays the whole file.
 - GREEN: add `excluded_spans`, record Rust test spans, add
   `scan::production_code_lines`, use it in `file_json`; targeted run; paste
   zero.
-  - [x] Evidence:   Scenario: A file's code lines exclude inline test modules | 1 scenario (1 passed) | 4 steps (4 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 4 steps (4 passed)
 - REFACTOR: targeted run; paste zero.
-  - [x] Evidence:   Scenario: A file's code lines exclude inline test modules | 1 scenario (1 passed) | 4 steps (4 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 4 steps (4 passed)
 - [x] COMMIT: 887b990d5c4cb1ea2209ae34ee2cd0c92601230a
 
 ## 17. A unit's physical lines cover only its own spans
+
+- [x] Scenario: A unit's physical lines cover only its own spans
 
 Design constraints: unit physical lines are the union of the unit's spans
 per file, regardless of line kind; unit code lines are unchanged except for
@@ -368,12 +402,14 @@ excluded spans.
   - [x] Evidence: baseline: ✘  Given a production source file with a small type and a large unrelated function | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:125:5 | Step doesn't match any function
 - GREEN: compute physical lines from span unions in `metrics.rs`; targeted
   run; paste zero.
-  - [x] Evidence:   Scenario: A unit's physical lines cover only its own spans | 1 scenario (1 passed) | 5 steps (5 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
-  - [x] Evidence:   Scenario: A unit's physical lines cover only its own spans | 1 scenario (1 passed) | 5 steps (5 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 5 steps (5 passed)
 - [x] COMMIT: bda7ebdc0a7cd254da6e350c20115a1a70e5329e
 
 ## 18. An impl-level test method is excluded from the unit's lines
+
+- [x] Scenario: An impl-level test method is excluded from the unit's lines
 
 Design constraints: subtract `AnalyzedFile.excluded_spans` from both unit
 code lines and physical lines; a `#[cfg(test)]` method inside a non-test
@@ -383,12 +419,14 @@ impl is excluded; the production method count stays correct.
   bindings; targeted run; paste non-zero.
   - [x] Evidence: baseline: ✘  Given a production source unit with an impl-level test method | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:133:5 | Step doesn't match any function
 - GREEN: apply exclusions in unit metrics; targeted run; paste zero.
-  - [x] Evidence:   Scenario: An impl-level test method is excluded from the unit's lines | 1 scenario (1 passed) | 5 steps (5 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
-  - [x] Evidence:   Scenario: An impl-level test method is excluded from the unit's lines | 1 scenario (1 passed) | 5 steps (5 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 5 steps (5 passed)
 - [x] COMMIT: ee1f69dabc247c37c8e86c383ca64ae067b434df
 
 ## 19. A name-only guess does not connect methods for cohesion
+
+- [x] Scenario: A name-only guess does not connect methods for cohesion
 
 Design constraints: LCOM4 unions only resolved same-file/project-other-file
 same-unit edges; name-only edges never connect methods. The classification
@@ -399,12 +437,14 @@ individual unit's classification.
   run; paste non-zero.
   - [x] Evidence: baseline: ✘  Given a production source unit over the readable size whose only call edges are name-only guesses | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:141:5 | Step doesn't match any function
 - GREEN: filter LCOM4 edges by resolution; targeted run; paste zero.
-  - [x] Evidence:   Scenario: A name-only guess does not connect methods for cohesion | 1 scenario (1 passed) | 5 steps (5 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
-  - [x] Evidence:   Scenario: A name-only guess does not connect methods for cohesion | 1 scenario (1 passed) | 5 steps (5 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 5 steps (5 passed)
 - [x] COMMIT: b5554de3388d74002162a48fe069ba3124eefa23
 
 ## 20. A method signature keeps arrays, qualified paths, and its full type detail
+
+- [x] Scenario: A method signature keeps arrays, qualified paths, and its full type detail
 
 Design constraints: recursive `syn::Type` rendering; paths with every
 segment and generic arguments; references, tuples, slices, arrays, pointers,
@@ -415,22 +455,29 @@ trait objects, impl trait, never, infer; no new dependency.
   - [x] Evidence: baseline: ✘  Given a production source unit with a method whose types use paths, generics, references, slices, tuples, arrays, pointers, and fully qualified paths | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:149:5 | Step doesn't match any function
 - GREEN: replace `type_label` with the recursive renderer; targeted run;
   paste zero.
-  - [x] Evidence:   Scenario: A method signature keeps arrays, qualified paths, and its full type detail |    ✔  Then the JSON method signature contains "Result<Self, Error>" | 1 scenario (1 passed) | 8 steps (8 passed)
+  - [x] Evidence: 1 scenario (1 passed) | 8 steps (8 passed)
 - REFACTOR: targeted run; paste zero.
-  - [x] Evidence:   Scenario: A method signature keeps arrays, qualified paths, and its full type detail |    ✔  Then the JSON method signature contains "Result<Self, Error>" | 1 scenario (1 passed) | 8 steps (8 passed)
-- [ ] COMMIT:
+  - [x] Evidence: 1 scenario (1 passed) | 8 steps (8 passed)
+- [x] COMMIT: db5b7e6dd9f0eabe99abf73c9c306b0b79cd5d95
 
 ---
 
 ## Final verification
 
-- [ ] `./run-tests.sh --non-e2e` exits 0.
-- [ ] `./run-tests.sh --e2e` exits 0.
-- [ ] `cargo fmt --all` clean.
-- [ ] `cargo clippy --locked --all-targets -- -D warnings` clean.
-- [ ] `givn lint --change fix-outline-report-fidelity` exits 0 after `@wip`
-      removal.
-- [ ] `docs/outline.md`, the arc42 chapters named in design.md, and
-      `docs/arc42/12-glossary.md` are updated.
-- [ ] `givn/specs/assess-code-structure/usecase.md` interaction inventory
-      still has exactly one entry and one `@e2e` scenario.
+- [x] `./run-tests.sh --non-e2e` exits 0. Evidence: `686 tests run: 686
+      passed, 111 skipped`; exit 0.
+- [x] `./run-tests.sh --e2e` exits 0. Evidence: `111 tests run: 111
+      passed, 686 skipped`; exit 0.
+- [x] `cargo fmt --all` clean. Evidence: `cargo fmt --all -- --check`
+      exits 0.
+- [x] `cargo clippy --locked --all-targets -- -D warnings` clean.
+      Evidence: `Finished dev profile`; exit 0.
+- [x] `givn lint --change fix-outline-report-fidelity` exits 0 after `@wip`
+      removal. Evidence: `1 file(s) checked — clean`; one advisory shape hint.
+- [x] `docs/outline.md`, the arc42 chapters named in design.md, and
+      `docs/arc42/12-glossary.md` are updated. Evidence: chapters 03, 04, 05,
+      06, 08, 10, 11, 12 and the outline guide changed; glossary adds Call
+      shape and Call resolution.
+- [x] `givn/specs/assess-code-structure/usecase.md` interaction inventory
+      still has exactly one entry and one `@e2e` scenario. Evidence: the
+      `outline-report — run a outline report` row is unchanged.

@@ -606,3 +606,27 @@ fn a_fossil_checkout_runs_the_gate_against_current() {
         "the gate must analyze the Fossil current check-in:\n{text}"
     );
 }
+
+#[test]
+fn a_module_with_only_type_items_needs_no_verdict() {
+    let repo = small_project();
+    repo.write("src/module.rs", "pub struct First;\n");
+    repo.commit("feat(test-change): add a module with only a type");
+    repo.write(
+        "givn/changes/test-change/review.md",
+        "OUTLINE: AUTHOR agent\n\
+         OUTLINE: REVIEWER fresh-context-reviewer\n\
+         OUTLINE: PASS\n",
+    );
+
+    let (passed, text) =
+        givn::outline::gate::evaluate(repo.root(), "test-change").expect("gate run");
+    assert!(
+        passed,
+        "a methodless module must not need a verdict:\n{text}"
+    );
+    assert!(
+        !text.contains("OUTLINE   module:src/module.rs"),
+        "a module with only type items must not print an outline:\n{text}"
+    );
+}

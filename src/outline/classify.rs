@@ -430,7 +430,11 @@ mod fidelity_tests {
         };
         let (classification, evidence) = decide(&unit, &metrics);
         assert_eq!(classification, Classification::Interface);
-        assert!(evidence.iter().any(|item| item.rule == "type-public-methods"));
+        assert!(
+            evidence
+                .iter()
+                .any(|item| item.rule == "type-public-methods")
+        );
         assert!(!evidence.iter().any(|item| item.rule == "type-kind-trait"));
     }
 }

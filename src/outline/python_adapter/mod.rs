@@ -303,10 +303,7 @@ fn methods_from(unit: &Value, path: RepoPath) -> Vec<Method> {
                             receiver: match call["receiver"].as_str() {
                                 Some("self") => ReceiverEvidence::SelfUnit,
                                 Some("qualifier") => ReceiverEvidence::Qualifier(
-                                    call["qualifier"]
-                                        .as_str()
-                                        .unwrap_or_default()
-                                        .to_string(),
+                                    call["qualifier"].as_str().unwrap_or_default().to_string(),
                                 ),
                                 _ => ReceiverEvidence::Unknown,
                             },
@@ -412,4 +409,38 @@ fn visibility(value: Option<&str>) -> Visibility {
 
 fn python_module_path(path: &str) -> String {
     path.trim_end_matches(".py").replace('/', ".")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn a_computed_callee_is_not_invented() {
+        let root = tempfile::tempdir().expect("temp project");
+        let source = root.path().join("src/app.py");
+        std::fs::create_dir_all(source.parent().unwrap()).unwrap();
+        std::fs::write(
+            &source,
+            "def make():\n    return lambda: None\n\ndef caller():\n    return make()()\n",
+        )
+        .unwrap();
+        let sources = scan::discover(root.path(), &[PathBuf::from("src")], &[Language::Python])
+            .expect("discover");
+        let analysis = analyze_sources(&sources).expect("analyze");
+        let calls: Vec<&str> = analysis
+            .units
+            .iter()
+            .flat_map(|unit| unit.methods.iter())
+            .flat_map(|method| method.calls.iter())
+            .map(|call| call.callee.as_str())
+            .collect();
+        assert!(
+            calls
+                .iter()
+                .all(|callee| *callee != "make()" && *callee != "<call>"),
+            "computed callee was invented: {calls:?}"
+        );
+    }
 }

@@ -35,18 +35,18 @@ def call_fact(node: ast.Call):
             "receiver": receiver,
             "qualifier": qualifier,
         }
-    try:
-        callee = ast.unparse(func)
-    except Exception:
-        callee = "<call>"
-    return {"callee": callee, "kind": "method", "receiver": "unknown", "qualifier": None}
+    # A call through a computed callee (for example `make()()`) has no stable
+    # name; drop it rather than inventing an `ast.unparse` identifier.
+    return None
 
 
 def calls_in(node: ast.AST):
     calls = []
     for child in ast.walk(node):
         if isinstance(child, ast.Call):
-            calls.append((child.lineno, child.col_offset, call_fact(child)))
+            fact = call_fact(child)
+            if fact is not None:
+                calls.append((child.lineno, child.col_offset, fact))
     calls.sort(key=lambda item: (item[0], item[1]))
     return [fact for _, _, fact in calls]
 

@@ -1090,20 +1090,28 @@ contract is:
   The command is still registered so the disabled path can name the experiment
   and the enabling command; that path exits 1.
 - **Outline first, hints second.** Every unit is printed as a per-component call
-  tree first: declarations, signatures, order, and calls. Same-unit calls nest
-  under the caller; calls to another component are leaves tagged with the
-  target component and visibility. The tree is forward-only and omits calls
-  outside the analyzed sources. It contains no data, method bodies, or comments.
-  Metrics and classification follow as hints. A report exits 0 regardless of
-  how many hints it contains. There is no `action`, no `recommendation`, and no
-  advice line. The JSON schema is version 3 and carries the flat per-unit
-  methods and their call-resolution labels under `units[].outline`; the nesting
-  is a human rendering, not a JSON field.
-- **Call resolution is neutral.** Both adapters share one name-based pass:
-  same unit, then the same file, then a unique project method; otherwise
-  `ambiguous` or `external`. Rust adds calls found in expression-list macro
-  arguments. The renderer and the cohesion metrics read the same resolved
-  targets.
+  tree first: declarations, signatures, order, and calls. Module outlines list
+  declared member types as type items. Same-unit calls nest under the caller;
+  calls to another component are leaves tagged with resolution, visibility, and
+  owner. A `name_only` edge is a leaf and is never expanded. The tree is
+  forward-only and omits calls outside the analyzed sources. It contains no
+  data, method bodies, or comments. Metrics and classification follow as
+  hints. A report exits 0 regardless of how many hints it contains. There is
+  no `action`, no `recommendation`, and no advice line. The JSON schema is
+  version 3 and carries the flat per-unit methods and their call-resolution
+  labels and `target` under `units[].outline`; the nesting is a human
+  rendering, not a JSON field.
+- **Call resolution is neutral and shape-aware.** Both adapters supply whether
+  a call is a free function or a method, plus a path qualifier or receiver
+  evidence when the syntax proves one. A candidate is accepted only when its
+  owner agrees with that evidence; an unknown method receiver is `name_only`,
+  several compatible methods are `ambiguous`, and a contradictory qualifier is
+  `external`. Rust adds calls found in expression-list macro arguments. The
+  renderer and the cohesion metrics read the same resolved targets; only
+  resolved same-unit edges join methods for LCOM4.
+- **Production-only accounting.** File `code_lines` excludes recorded inline
+  `#[cfg(test)]` spans. Unit `physical_lines` and `code_lines` cover the unit's
+  own spans and subtract the same exclusions.
 - **Hints never gate.** A report hint never enters a gate. The review gate
   prints its own change-relative hints as `HINT` and requires outline verdicts
   instead.

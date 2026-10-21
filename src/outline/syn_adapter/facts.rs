@@ -129,7 +129,17 @@ impl<'ast> Visit<'ast> for FactsVisitor {
             && let Some(segment) = path.path.segments.last()
         {
             let qualifier = if let Some(qself) = &path.qself {
-                Some(type_owner(&qself.ty))
+                let position = qself.position.min(path.path.segments.len());
+                if position > 0 {
+                    path.path
+                        .segments
+                        .iter()
+                        .take(position)
+                        .next_back()
+                        .map(|segment| segment.ident.to_string())
+                } else {
+                    Some(type_owner(&qself.ty))
+                }
             } else {
                 let prefix: Vec<String> = path
                     .path
@@ -222,19 +232,10 @@ fn receiver_evidence(expr: &Expr) -> ReceiverEvidence {
         return ReceiverEvidence::Unknown;
     };
     if path.path.is_ident("self") || path.path.is_ident("Self") {
-        return ReceiverEvidence::SelfUnit;
-    }
-    let Some(segment) = path.path.segments.last() else {
-        return ReceiverEvidence::Unknown;
-    };
-    let name = segment.ident.to_string();
-    if name
-        .chars()
-        .next()
-        .is_some_and(|first| first.is_uppercase())
-    {
-        ReceiverEvidence::Qualifier(name)
+        ReceiverEvidence::SelfUnit
     } else {
+        // A Rust method receiver is a value, not a type path. Without type
+        // inference, any other path expression is unknown evidence.
         ReceiverEvidence::Unknown
     }
 }
