@@ -216,7 +216,7 @@ fired. A fixture with LCOM4 <= 2 and TCC < 500 must emit no LCOM4 line.
   - [x] Evidence:   Scenario: A god type found through cohesion reports only the cohesion evidence | 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
   - [x] Evidence:   Scenario: A god type found through cohesion reports only the cohesion evidence | 1 scenario (1 passed) | 5 steps (5 passed)
-- [ ] COMMIT:
+- [x] COMMIT: 9e3487b175791adcd43832e31ae457ad7171f3cc
 
 ## 8. An interface found through its public methods reports only public-method evidence
 
@@ -226,11 +226,11 @@ no `type-kind-trait` for a public-method-only interface.
 
 - RED: remove `@wip`; extend the public-methods fixture and bindings;
   targeted run; paste non-zero.
-  - [ ] Evidence:
+  - [x] Evidence: baseline: ✘  And the report records the evidence "type-public-methods > 50" | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:63:5 | Step doesn't match any function
 - GREEN: rewrite the interface evidence branch; targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: An interface found through its public methods reports only public-method evidence | 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: An interface found through its public methods reports only public-method evidence | 1 scenario (1 passed) | 5 steps (5 passed)
 - [ ] COMMIT:
 
 ## 9. A long method found through complexity reports only complexity evidence
