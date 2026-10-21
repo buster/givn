@@ -100,13 +100,30 @@ fn no_permanent_step_binds(world: &mut GivnWorld, phrase: String) {
 }
 
 #[given(regex = r#"^the change's spec tree binds 21 distinct step phrases in "([^"]+)"$"#)]
-fn spec_tree_binds_21(_world: &mut GivnWorld, _relative: String) {
-    todo!("TODO: write 21 delta step phrases");
+fn spec_tree_binds_21(world: &mut GivnWorld, relative: String) {
+    let path = change_root(world).join("specs").join(relative);
+    let mut text = String::new();
+    for index in 1..=21 {
+        text.push_str(&format!(
+            "@given(\"catalog phrase {index:02}\")\ndef step_{index}():\n    raise NotImplementedError(\"TODO\")\n"
+        ));
+    }
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).expect("create step directory");
+    }
+    fs::write(path, text).expect("write 21 step phrases");
 }
 
 #[given("no permanent step-definition file binds any of those step phrases")]
-fn no_permanent_binds_any(_world: &mut GivnWorld) {
-    todo!("TODO: assert the permanent tree lacks the phrases");
+fn no_permanent_binds_any(world: &mut GivnWorld) {
+    let text = collect_permanent_step_text(&project_root(world));
+    for index in 1..=21 {
+        let phrase = format!("catalog phrase {index:02}");
+        assert!(
+            !text.contains(&phrase),
+            "fixture permanent step tree unexpectedly binds {phrase:?}: {text}"
+        );
+    }
 }
 
 #[given(regex = r#"^the candidate's spec tree binds "([^"]+)" in "([^"]+)"$"#)]
@@ -129,18 +146,30 @@ fn stderr_says_merge(world: &mut GivnWorld) {
 }
 
 #[then("stderr names the alphabetically first 20 missing step phrases")]
-fn stderr_names_first_20(_world: &mut GivnWorld) {
-    todo!("TODO: assert the first 20 phrases are named");
+fn stderr_names_first_20(world: &mut GivnWorld) {
+    let text = stderr(world);
+    for index in 1..=20 {
+        let phrase = format!("catalog phrase {index:02}");
+        assert!(text.contains(&phrase), "stderr omits {phrase:?}: {text}");
+    }
 }
 
 #[then("stderr does not name the twenty-first missing step phrase")]
-fn stderr_omits_21st(_world: &mut GivnWorld) {
-    todo!("TODO: assert the 21st phrase is omitted");
+fn stderr_omits_21st(world: &mut GivnWorld) {
+    let text = stderr(world);
+    assert!(
+        !text.contains("catalog phrase 21"),
+        "stderr names the twenty-first phrase: {text}"
+    );
 }
 
 #[then(regex = r#"^stderr says "([^"]+)"$"#)]
-fn stderr_says(_world: &mut GivnWorld, _text: String) {
-    todo!("TODO: assert the exact refusal fragment");
+fn stderr_says(world: &mut GivnWorld, text: String) {
+    let actual = stderr(world);
+    assert!(
+        actual.contains(&text),
+        "stderr does not say {text:?}: {actual}"
+    );
 }
 
 #[then("the candidate is still unproven")]
