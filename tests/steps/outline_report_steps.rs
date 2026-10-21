@@ -1152,3 +1152,40 @@ fn contradictory_qualifier(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
+#[given("a production source unit over the readable size whose methods are connected only by calls")]
+fn tcc_god_type(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    crate::steps::outline_report_support::write_tcc_god_type(&env);
+    world.env = Some(env);
+}
+
+#[then(regex = r#"^the report records the evidence "([^"]+)"$"#)]
+fn report_records_evidence(world: &mut GivnWorld, expected: String) {
+    let block = report_block(world, &latest_unit_id(world, &expected));
+    let (rule, rest) = expected
+        .split_once(' ')
+        .unwrap_or((expected.as_str(), ""));
+    assert!(block.contains(rule), "missing evidence {rule}: {block}");
+    if !rest.is_empty() {
+        assert!(block.contains(rest), "missing evidence {rest}: {block}");
+    }
+}
+
+#[then(regex = r#"^the report records no "([^"]+)" evidence$"#)]
+fn report_records_no_evidence(world: &mut GivnWorld, rule: String) {
+    let block = report_block(world, &latest_unit_id(world, &rule));
+    assert!(!block.contains(&rule), "unexpected evidence {rule}: {block}");
+}
+
+fn latest_unit_id(world: &GivnWorld, _hint: &str) -> String {
+    // Evidence scenarios write exactly one unit under test; use the report's
+    // first HINT/WITHIN-LIMITS header so the assertion stays fixture-driven.
+    let report = report_text(world);
+    report
+        .lines()
+        .find(|line| line.starts_with("HINT") || line.starts_with("WITHIN-LIMITS"))
+        .and_then(|line| line.split_whitespace().nth(3))
+        .unwrap_or_else(|| panic!("no unit header: {report}"))
+        .to_string()
+}
+
