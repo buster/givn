@@ -12,7 +12,11 @@ Write the technical design (the HOW layer). Implementation detail belongs here.
 - Data model changes: schema, structs, database changes.
 - Step definition locations, **one file per capability** (e.g.
   `CompanyOnboardingSteps`) — never one file for the whole change. Name the
-  exact file(s) and package/module path.
+  exact file(s) and package/module path. When a delta step copy needs a
+  permanent home, the `## Step Definitions` table keeps column 1
+  (`Step definition file`) as the single path the integrity hook resolves and
+  adds a third `Permanent merge target` column; never put two paths in one
+  cell.
 - Test runner: exact command (e.g. `cargo test --test features_runner`). It
   MUST execute the `.feature` files under `givn/specs/` and the change's
   `specs/` — a bare unit-test runner is not sufficient. If `verify.command`
@@ -26,6 +30,19 @@ Write the technical design (the HOW layer). Implementation detail belongs here.
 {{#if addons.architecture_principles}}
   A carried decision still names the default the implementer uses.
 {{/if}}
+
+## Step definitions are durable project source
+
+Step definitions are durable project source: archive merges features and
+use-case documents only, and never copies, moves, or deletes a step
+definition. A delta step copy under the change's `specs/steps/` is history;
+the permanent per-capability step file is its home.
+
+Archive refuses before mutation when a phrase bound by a delta step file has no
+permanent binding, so the design names where every delta phrase will be merged.
+The permanent test tree is the project root minus the change, archive, history,
+version-control, build, and cache directories; a durable definition outside
+`givn/specs` (for example `tests/steps/`) counts.
 
 ## Decisions ledger (mandatory)
 

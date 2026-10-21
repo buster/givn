@@ -126,6 +126,15 @@ observable review behavior owned by the `visual-review-gate` capability, so no
 ADR is introduced. Durable facts live in chapters 5, 6, 8, 10, 11, and the
 glossary.
 
+The `gate-delta-step-definitions-at-archive` change adds a pre-mutation archive
+comparison between the step phrases bound by a change's delta step files and
+the phrases bound by the permanent test tree (the project root minus the
+change, archive, history, version-control, build, and cache trees). The
+refusal is user-visible archive behavior owned by the `archive-change` use
+case, the `require-merged-step-definitions` capability, and the change design,
+so no ADR is introduced. Durable facts live in chapters 5, 6, 8 (§8.3), 11
+(R-123), and 12 (Step definition, Step phrase).
+
 Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
 register](adr/README.md) for status, relationships, evidence, reserved IDs, and
 historical records.

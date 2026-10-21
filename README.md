@@ -36,7 +36,10 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   capability-routing problems in one pass, and review/archive reuse
   a green change verification receipt when a later revision leaves the tested
   content unchanged; the merged archive suite still runs once. Tagged delta
-  scenarios merge into the permanent specs and the tags are stripped. Optionally preceded by
+  scenarios merge into the permanent specs and the tags are stripped. Archive
+  also refuses before mutation when a delta step-definition phrase has no
+  binding in the permanent test tree: step definitions are durable project
+  source, not merged code. Optionally preceded by
   `/givn-ideation` — a domain-driven event storming flow that turns a vague
   idea into change-ready use cases.
 - **A development record and report.** Givn records the steps it runs and the

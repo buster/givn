@@ -308,7 +308,7 @@ sequenceDiagram
     D->>A: givn archive --change id
     A->>S: select backend + clean-state witness
     alt fresh archive
-        A->>A: structural gates (artifacts, hooks, run declaration, README, merge preconditions)
+        A->>A: structural gates (artifacts, step-definition comparison, hooks, run declaration, README, merge preconditions)
         A->>A: write pending verification.json (merge_completed: false)
         A->>A: move givn/changes/id to givn/archive/id with one rename
         A->>A: merge use-case docs and deltas from the archived candidate
@@ -316,6 +316,7 @@ sequenceDiagram
         A->>S: publish candidate revision (givn/specs, givn/archive/id, givn/changes/id)
     else interrupted transition or merge
         A->>A: finish the rename, or merge only when merge_completed is false
+        A->>A: repeat the step-definition comparison before verification
         A->>S: republish when the pending receipt is not in the current revision
     else resume, pending receipt not in the current revision (a rejected publication)
         A->>S: publish the on-disk candidate revision again
@@ -344,13 +345,20 @@ Stages:
    `evidence/**`, and `verification/**`, `README.md`, and the configured
    coverage paths), which keep a failed attempt resumable.
 3. Fresh or interrupted-move only — structural gates before any mutation:
-   `apply.requires` completeness, configured archive hooks, the run-declaration
-   gate, the README completeness gate, use-case and delta prevalidation, the
-   e2e-runner configuration check, and the shared change-receipt freshness check
-   (section 6.7.1). A resumed-move run repeats these gates before retrying the
-   rename; a pending candidate re-checks the e2e configuration. An `@e2e` merge
-   with an unconfigured `verify.e2e_command` blocks here, leaving the change
-   active.
+   `apply.requires` completeness, the delta step-definition comparison,
+   configured archive hooks, the run-declaration gate, the README completeness
+   gate, use-case and delta prevalidation, the e2e-runner configuration check,
+   and the shared change-receipt freshness check (section 6.7.1). The
+   step-definition comparison reads the change's `specs/**` step files, collects
+   the phrases bound by their binding expressions, compares them with the
+   permanent test tree (the project root minus the change, archive, history,
+   version-control, build, and cache trees), and refuses when any phrase is
+   missing, naming the project-relative delta file and the bounded phrase list
+   (section 8.3).
+   A resumed-move run repeats these gates before retrying the rename; a pending
+   candidate repeats the step-definition comparison and re-checks the e2e
+   configuration before its verification scopes run. An `@e2e` merge with an
+   unconfigured `verify.e2e_command` blocks here, leaving the change active.
 4. Fresh only — move and publish the candidate: write the pending receipt into
    the active change, then move the directory to `givn/archive/<id>/` with one
    rename. Both paths are under the project root; a failed rename leaves the

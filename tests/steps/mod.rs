@@ -66,6 +66,8 @@ pub mod release_steps;
 pub mod remove_dead_skip_list_code_steps;
 pub mod repository_ownership_fixtures_steps;
 pub mod repository_ownership_fixtures_support;
+pub mod require_merged_step_definitions_e2e_steps;
+pub mod require_merged_step_definitions_steps;
 pub mod review_disposition_gates_steps;
 pub mod run_command_e2e_steps;
 pub mod run_command_steps;
