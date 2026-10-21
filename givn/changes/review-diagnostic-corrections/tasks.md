@@ -210,15 +210,15 @@ Evidence:
   cargo test --locked --lib usecase_md: 7 passed, 326 filtered out
   ```
 - Production files: `src/gherkin/usecase_md.rs` (`DocumentScan`, `report_missing_headings`, `title_seen` for duplicate/outside checks, `required_text` with `report_empty`), `tests/steps/workflow_enforcement_steps.rs` (missing/empty fixture).
-- [ ] COMMIT: `COMMIT:`
+- [x] COMMIT: `64b25a9f4c99863b2e777c13384de4073a59c865`
 
 ## Scenario 5 — A malformed Level does not fabricate missing-section or leaf-capability diagnostics
 
-- [ ] Scenario: `A malformed Level does not fabricate missing-section or leaf-capability diagnostics`
+- [x] Scenario: `A malformed Level does not fabricate missing-section or leaf-capability diagnostics`
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
+- [x] RED
+- [x] GREEN
+- [x] REFACTOR
 - [ ] COMMIT
 
 Design constraints:
@@ -235,14 +235,21 @@ Evidence:
 
 - RED output:
   ```
+  1 scenario (1 failed), 1 step (1 failed)
+  ✘ Given a clean committed change whose use-case contract has a malformed Level and omits "## Examples"
+    Step panicked. Captured output: not implemented: malformed Level fixture
   ```
 - GREEN output:
   ```
+  1 scenario (1 passed), 6 steps (6 passed)
   ```
 - REFACTOR output:
   ```
+  cargo fmt --all; 1 scenario (1 passed), 6 steps (6 passed)
+  regression run for scenarios 1-5: 5 scenarios (5 passed), 31 steps (31 passed)
+  cargo test --locked --lib usecase_md: 7 passed, 326 filtered out
   ```
-- Production files:
+- Production files: `src/gherkin/usecase_md.rs` (`Option<GoalLevel>` with no fallback, `root_valid` includes Level, leaf gate uses `Some(GoalLevel::Leaf)`, `UsecaseDoc` built through the Level match), `tests/steps/workflow_enforcement_steps.rs` (`review_contract_with_level` and malformed Level fixture).
 - [ ] COMMIT: `COMMIT:`
 
 ## Scenario 6 — Independent local findings are still reported with a malformed title

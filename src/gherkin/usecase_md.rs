@@ -220,15 +220,15 @@ pub fn parse_usecase_md_diagnostics(content: &str) -> (Option<UsecaseDoc>, Useca
     } = parse_document(content, "Use case", USECASE_HEADINGS);
 
     let id = title.clone().unwrap_or_default();
-    let root_valid = title.is_some() && title_seen;
     let level_text = required_text(&sections, HEADING_LEVEL, false, &mut diagnostics);
     let level = match GoalLevel::parse(&level_text) {
-        Ok(level) => level,
+        Ok(level) => Some(level),
         Err(error) => {
             diagnostics.push(UsecaseDiagnostic::document(error.to_string()));
-            GoalLevel::Leaf
+            None
         }
     };
+    let root_valid = title.is_some() && title_seen && level.is_some();
     if root_valid {
         report_missing_headings(&seen, USECASE_HEADINGS, &mut diagnostics);
     }
@@ -241,7 +241,7 @@ pub fn parse_usecase_md_diagnostics(content: &str) -> (Option<UsecaseDoc>, Useca
     let interactions = interaction_section(&sections, &capabilities, &mut diagnostics);
 
     if root_valid
-        && level == GoalLevel::Leaf
+        && level == Some(GoalLevel::Leaf)
         && seen.contains(HEADING_CAPABILITIES)
         && capabilities.is_empty()
     {
@@ -286,8 +286,11 @@ pub fn parse_usecase_md_diagnostics(content: &str) -> (Option<UsecaseDoc>, Useca
     );
     let diagram = required_text(&sections, HEADING_DIAGRAM, root_valid, &mut diagnostics);
 
-    let doc =
-        if root_valid && seen.contains(HEADING_CAPABILITIES) && seen.contains(HEADING_INTERACTIONS)
+    let doc = match level {
+        Some(level)
+            if root_valid
+                && seen.contains(HEADING_CAPABILITIES)
+                && seen.contains(HEADING_INTERACTIONS) =>
         {
             Some(UsecaseDoc {
                 id,
@@ -310,9 +313,9 @@ pub fn parse_usecase_md_diagnostics(content: &str) -> (Option<UsecaseDoc>, Useca
                 out_of_scope,
                 diagram,
             })
-        } else {
-            None
-        };
+        }
+        _ => None,
+    };
 
     diagnostics.sort();
     (doc, diagnostics)
