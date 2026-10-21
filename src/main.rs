@@ -315,7 +315,7 @@ enum HistoryCommands {
 enum OutlineCommands {
     /// Analyse production sources and print the advisory report.
     Report {
-        /// Emit the schema-v2 JSON document instead of human text.
+        /// Emit the schema-v3 JSON document instead of human text.
         #[arg(long)]
         json: bool,
         /// Write the report to this path and print nothing on stdout.

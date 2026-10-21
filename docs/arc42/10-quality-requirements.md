@@ -122,6 +122,7 @@ graph TD
 | Q-115 | Diagnosability | No reachable commit touched the change directory, the clone is shallow, a production path is dirty, or a touched file cannot be read or parsed. | Review fails closed with the offending revision state, path, or dirty set and its diagnostic; the gate invents no base and no size, a changed production source path present at head that the analyzer never saw is named, a line-break or non-UTF-8 path is refused, and a partially unsupported unit is classified only from its visible syntax. |
 | Q-116 | Isolation | A project has not enabled the outline addon. | `givn check review` behaves exactly as before: no analysis runs, no outline text appears, and no marker is required. |
 | Q-117 | Report compatibility | A consumer reads an outline JSON report expecting schema 1 or 2. | The document carries `schema_version: 3`; `scope.language` and `capabilities.language` became `languages`, every file and unit carries `language`, `summary.findings` became `summary.hints`, `action` and `recommendation` stay absent, and the consumer can branch on the version instead of guessing from a missing field. |
+| Q-119 | Call-tree fidelity | A touched unit calls a method in the same unit and a method in another component; one call name is ambiguous. | The same-unit call nests under the caller, the other-component call is a leaf tagged with the target component and visibility and is not expanded, the ambiguous call is marked `[ambiguous]`, and the target component's own outline contains the callee's calls. |
 
 ## 10.3 Verification Signals
 

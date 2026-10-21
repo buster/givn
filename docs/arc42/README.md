@@ -89,15 +89,16 @@ a neutral `SourceAnalyzer` port, `SynAnalyzer` is the first adapter, metrics and
 classification run above the port, and a later tree-sitter adapter must pass the
 same contract without changing the report. The report is an opt-in, default-off,
 advisory experiment with no stored baseline. Durable facts live in chapters 1
-(FR-46), 2 (TC-42, 2.3), 3, 4, 5, 6.1/6.12/6.19, 8.11/8.26, 10 (Q-108 to Q-111),
-11 (R-104 to R-108, D-24, D-25), and 12.
+(FR-46), 2 (TC-42, 2.3), 3, 4, 5, 6.1/6.12/6.19, 8.11/8.26,
+10 (Q-108 to Q-111, Q-119), 11 (R-104 to R-108, R-121, D-24, D-25,
+D-27), and 12.
 
 The `add-readability-review-gate` change adds the same experiment's review stage
 and revises the report. The report becomes outline-first at schema version 3:
-each unit prints its method outline, then one classification and its evidence as
-hints, never an action or a recommendation. `givn check review --change <id>`
-prints the outline of every touched unit with methods at the change base and at
-the committed head and fails while any outline lacks a fresh-context `PASS` with
+each unit prints its per-component call tree, then one classification and its
+evidence as hints, never an action or a recommendation. `givn check review --change <id>`
+prints the per-component call tree of every touched unit with methods at the
+change base and at the committed head and fails while any outline lacks a fresh-context `PASS` with
 a responsibility and call-order explanation, or carries a `FAIL`. A dirty
 production path, a missing change-directory commit, and a shallow clone fail
 closed. The change reuses ADR-074's pipeline and amends two existing records:

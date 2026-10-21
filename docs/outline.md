@@ -2,25 +2,26 @@
 
 **TL;DR:** The `outline` addon is an optional, default-off experiment for
 production Rust and Python. Its core idea is outline comprehension: read the
-outline of a type or module — method declarations, signatures, and calls, without bodies or data — and check that it explains the unit's
-responsibility and call order. When the addon is enabled, every touched unit
-with methods needs an outline verdict from a fresh-context reviewer. Metrics
-are hints, not the gate. An unreadable outline has no justification path. The
-addon stores no baseline, analyzes only production Rust and Python, and is not
-a product guarantee: the schema, thresholds, classifications, and gate rules
+outline of a type or module — a per-component call tree of method
+declarations, signatures, and calls, without bodies or data — and check that
+it explains the unit's responsibility and call order. When the addon is
+enabled, every touched unit with methods needs an outline verdict from a
+fresh-context reviewer. Metrics are hints, not the gate. An unreadable outline
+has no justification path. The addon stores no baseline, analyzes only
+production Rust and Python, and is not a product guarantee: the schema, thresholds, classifications, and gate rules
 may change.
 
 ## What it does
 
-- **Report.** `givn outline report` prints each unit's outline first —
-  method declarations, signatures, and calls — then the metric
-  hints, as human text or JSON. It never blocks a change and stores no
-  baseline.
+- **Report.** `givn outline report` prints each unit's per-component call tree
+  first — method declarations, signatures, and calls, with same-unit calls
+  nested and other components as tagged leaves — then the metric hints, as
+  human text or JSON. It never blocks a change and stores no baseline.
 - **Review gate.** With the addon enabled, `givn check review --change <id>`
-  prints the outline of every touched unit that has methods. The review record
-  must give each outline a `PASS` with a responsibility and call-order
-  explanation, or a `FAIL`. A missing verdict and a `FAIL` both block. The
-  reviewer must be a fresh-context reviewer, not the author.
+  prints the per-component call tree of every touched unit that has methods.
+  The review record must give each outline a `PASS` with a responsibility and
+  call-order explanation, or a `FAIL`. A missing verdict and a `FAIL` both block.
+  The reviewer must be a fresh-context reviewer, not the author.
 
 ## Outline comprehension — the core idea
 
@@ -35,8 +36,9 @@ another component is a leaf tagged with the target component; its callee's
 calls stay in that component's outline. The report never prints reverse
 callers. Data — fields and enum variants — is not part of the outline. It
 contains no method bodies and no comments. `givn outline report` prints the
-outline for every unit; `--json` emits the full outline under
-`units[].outline`, including call-resolution labels.
+outline for every unit; `--json` keeps the flat per-unit methods and their
+call-resolution labels under `units[].outline`. The nested tree is the human
+rendering, not the JSON shape.
 
 An example, abridged from the report:
 
@@ -56,6 +58,28 @@ The names and call order state the unit's job: build an `Engine` by validating,
 then compiling, with normalization delegated to the module component
 `module:src/engine.rs`. The metric line is support, not the point.
 
+### Reading the call tree
+
+- The unit is the root. Every method is a first-level branch, in the outline's
+  order.
+- A same-unit call nests under its caller. A call to another component is a
+  leaf tagged with the target's visibility and component, for example
+  `-> [public, module] normalize`. Its own calls are in the target component's
+  outline, not here.
+- The tree is forward-only. It never prints callers; there is no reverse index.
+  To answer “who calls this private method?”, read the caller's component.
+- A method's calls are deduplicated and kept in source order. A recursive edge
+  prints `[cycle]` instead of expanding without end.
+- `[ambiguous]` means the name matched more than one method, so the edge is not
+  expanded. Calls to functions outside the analyzed sources are omitted.
+
+Calls are resolved by name for Rust and Python alike: same unit first, then the
+same file, then a unique project method. Anything else is `ambiguous` or
+`external`. Rust also visits expression-list macro arguments (`format!`,
+`println!`, `vec!`), so a call inside `format!` belongs to the enclosing method.
+The JSON labels are `same_file`, `project_other_file`, `ambiguous`, and
+`external`.
+
 The outline is the gate. Metrics find candidates for a reviewer's attention,
 but they do not decide. Both directions are valid:
 
@@ -70,7 +94,7 @@ An unreadable outline is not justified. Fix the code and re-review.
 
 ## Workflow
 
-![Outline addon workflow: implement produces an optional advisory report with the outline; review produces outline verdicts and a PASS and checks every touched outline; archive checks the review record](outline-workflow.svg)
+![Outline addon workflow: implement produces an optional advisory per-component call-tree report; review produces outline verdicts and a PASS and checks every touched outline; archive checks the review record](outline-workflow.svg)
 
 Source: [`outline-workflow.d2`](outline-workflow.d2). Regenerate with
 `d2 docs/outline-workflow.d2 docs/outline-workflow.svg`.
@@ -83,7 +107,7 @@ baseline; the gate only looks at the units the change touched.
 | Phase | Produced by the addon | Checked by the addon |
 |---|---|---|
 | Proposal / design | Nothing automatic. You may run the report as evidence. | Nothing. |
-| Implement | An optional report with each unit's outline first, then the metric hints, as human text or JSON. | Nothing. The report never blocks a change. |
+| Implement | An optional report with each unit's per-component call tree first, then the metric hints, as human text or JSON. | Nothing. The report never blocks a change. |
 | Review | Per-unit `OUTLINE: PASS` or `FAIL`, `OUTLINE: AUTHOR` and `REVIEWER`, and `OUTLINE: PASS` when every outline passes. | Every printed outline has a verdict. A `PASS` has a responsibility and call-order explanation; a `FAIL` blocks. The reviewer differs from the author. |
 | Archive | Nothing new. | The review record is complete. An outlined unit without a verdict blocks archive. |
 
@@ -110,8 +134,10 @@ The report and the gate share the same analysis:
 - **Units.** A unit is a type (struct, enum, trait, union, or type alias) or a
   module. Its methods are checked with it. A unit with no methods has no
   outline and needs no outline verdict.
-- **Outline.** Method declarations, signatures, order, and calls. Data
-  is excluded. The gate prints the outline for every touched unit with methods.
+- **Outline.** Method declarations, signatures, order, and calls, rendered as a
+  per-component call tree: same-unit calls nest, and calls to another component
+  are leaves tagged with the target. Data is excluded. The gate prints the
+  outline for every touched unit with methods.
 - **Outline verdict.** Every printed outline needs one `OUTLINE PASS` with a
   non-empty responsibility/call-order explanation, or one `OUTLINE FAIL`. A
   missing verdict, an empty explanation, a `FAIL`, or conflicting verdicts for
@@ -119,7 +145,9 @@ The report and the gate share the same analysis:
 - **Supporting type metrics.** Over 500 code lines: a trait or a type with more
   than 50 public methods is an `interface`; a struct or enum with at most one
   method is `data-only`; LCOM4 over 2 or TCC below 50% is a `god-type`;
-  otherwise it is a `cohesive-large-type`.
+  otherwise it is a `cohesive-large-type`. LCOM4 counts shared fields and
+  resolved same-unit call edges; a cross-component call does not connect
+  methods in the caller's unit.
 - **Supporting module metrics.** Over 1,000 code lines is a `module`; 500–1,000
   with at least two declared types is a `multi-type-module`; 500–1,000
   otherwise is a `module`.
@@ -131,7 +159,7 @@ The report and the gate share the same analysis:
   required when any outline verdict is present, and must differ.
 - **Fail-closed guards.** No reachable change commit, a shallow clone, dirty
   production paths, a non-UTF8 or line-break path, a symlink, a submodule, an
-  unreadable blob, or a changed `.rs` file the analyzer cannot analyze fails
+  unreadable blob, or a changed source file the analyzer cannot analyze fails
   the gate.
 - **Removed units.** A removed unit has no head outline, so it needs no outline
   verdict.
@@ -167,10 +195,9 @@ production scope.
 | Source file under `tests/`, `benches/`, `examples/`, `target/`, or a Python cache/virtualenv directory | Excluded | Not production scope |
 
 Python's dynamic nature limits the outline: a call through a dynamic attribute
-or an inferred type is not resolved precisely. Calls are resolved by name:
-same unit first, then the same file, then a unique project method; otherwise
-the call is `ambiguous` or `external`. The report names these limits as
-analyzer limitations. An unsupported construct is named in the report's
+or an inferred type is not resolved precisely, so it can appear as
+`ambiguous` or `external`. Both analyzers use the same neutral resolver and the
+same tree renderer. The report names these limits as analyzer limitations. An unsupported construct is named in the report's
 `unsupported` list; it is not automatically a gate failure. Supporting another
 language needs another adapter behind the neutral `SourceAnalyzer` port
 (ADR-074); no adapter pretends to understand another language's syntax.
@@ -183,7 +210,8 @@ language needs another adapter behind the neutral `SourceAnalyzer` port
 - A readable outline passes even when a metric flags the code; the metric stays
   visible as a hint.
 - The reviewer explains responsibility and call order in the record, so the
-  judgment is inspectable.
+  judgment is inspectable, and follows a cross-component leaf into the target
+  component when the callee's calls matter.
 - The report remains useful for untouched code without blocking unrelated
   changes.
 
@@ -202,6 +230,13 @@ say so.
   a single paragraph for a module and its types is not evidence.
 - **The reviewer names a responsibility but not the call order.** R1 has two
   parts; a verdict that omits why the calls happen in that order is incomplete.
+- **A cross-component leaf is treated as the callee's body.** The leaf only
+  points at another component; that component's outline contains the callee's
+  calls.
+- **The tree is read as a call graph.** It has no reverse index; “who calls this
+  private method?” is answered by reading the caller's component.
+- **`[ambiguous]` edges are ignored.** The name matched more than one method, so
+  the edge is not expanded; the reviewer should say so or inspect the code.
 - **The same unit recurs across changes.** Repeated outline failures on one unit
   mean the shape should change, not the wording.
 - **The metric discussion dominates the review.** If the verdict explains the

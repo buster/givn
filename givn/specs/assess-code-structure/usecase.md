@@ -57,10 +57,10 @@ The developer asks for a outline report.
 - Conditional code is counted as written: non-test `#[cfg(...)]` branches are not evaluated, and a parent-module `#[cfg(test)]` is not propagated.
 - The report format is independent of the analysis engine.
 - Every analyzed unit has exactly one classification.
-- The report leads with each unit's method outline: declarations, signatures,
-  and calls, without data. Same-unit calls nest under the caller; calls to
-  another component are leaves tagged with the target. The metrics hint at
-  potential problems; they do not decide.
+- The report leads with each unit's per-component call tree: declarations,
+  signatures, and calls, without data. Same-unit calls nest under the caller;
+  calls to another component are leaves tagged with the target. The metrics
+  hint at potential problems; they do not decide.
 - The report attaches no action or recommendation to a unit; a finding states the classification, the measured metrics, and the evidence.
 
 ## Examples
