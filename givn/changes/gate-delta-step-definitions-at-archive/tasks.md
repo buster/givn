@@ -210,7 +210,7 @@ scenario 1, the production gate and guidance).
   ```
 - COMMIT: one commit containing the gate, fixtures, guidance, and arc42
   docs. Body: the scenario title. Record exactly one checked COMMIT line.
-- [x] COMMIT: `3563290000cd0785493d9156d7c3a234d9a296b8` — Archive is blocked when a delta step definition is missing from the permanent test tree
+- [x] COMMIT: `3563290000cd0785493d9156d7c3a234d9a296b8` -- Archive is blocked when a delta step definition is missing from the permanent test tree
 
 ## Scenario 2 — The refusal lists a bounded number of missing step phrases and a remainder count
 
@@ -252,7 +252,7 @@ scenario 1, the production gate and guidance).
   ```
 - COMMIT: one commit containing this scenario's regression test. Body: the
   scenario title.
-- [x] COMMIT: `b27ff3cf0e0f946f3ae8802e04e05692eb5f3a05` — The refusal lists a bounded number of missing step phrases and a remainder count
+- [x] COMMIT: `b27ff3cf0e0f946f3ae8802e04e05692eb5f3a05` -- The refusal lists a bounded number of missing step phrases and a remainder count
 
 ## Scenario 3 — An unproven archive candidate with a missing step definition is not verified again
 
@@ -299,7 +299,7 @@ scenario 1, the production gate and guidance).
   ```
 - COMMIT: one commit containing the resume call site and this scenario's
   regression test. Body: the scenario title.
-- [x] COMMIT: `90a3b4bf8eeb90d1d1e66cbeb35927bc24ff28e9` — An unproven archive candidate with a missing step definition is not verified again
+- [x] COMMIT: `90a3b4bf8eeb90d1d1e66cbeb35927bc24ff28e9` -- An unproven archive candidate with a missing step definition is not verified again
 
 ## Scenario 4 — Consumer archives a change whose delta step definitions are already in the permanent test tree
 
@@ -346,7 +346,7 @@ scenario 1, the production gate and guidance).
   ```
 - COMMIT: one commit containing the e2e fixture and regression coverage.
   Body: the scenario title.
-- [x] COMMIT: `da81ffa5afcd0ca6428668ec51d7e2d225d05feb` — Consumer archives a change whose delta step definitions are already in the permanent test tree
+- [x] COMMIT: `da81ffa5afcd0ca6428668ec51d7e2d225d05feb` -- Consumer archives a change whose delta step definitions are already in the permanent test tree
 
 ## Final verification (no scenario commit)
 
