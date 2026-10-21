@@ -48,15 +48,16 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   session lanes and lane log, the longest steps, and where the time went.
 - **An opt-in outline report and review gate.** The default-off
   `outline` addon adds `givn outline report`: an advisory snapshot of
-  production Rust and Python units that prints each unit's outline — method
-  declarations, signatures, and calls — first, then size, public
-  surface, cohesion/coupling, and method-complexity metrics as hints. When the
-  addon is enabled, `givn check review` prints the outline of every touched
-  unit with methods and
-  requires a fresh-context reviewer's per-unit `OUTLINE: PASS`, with a
-  responsibility and call-order explanation, or `FAIL`. Metrics are hints;
-  an unreadable outline has no justification path. No baseline is
-  stored. See [the outline addon guide](docs/outline.md#outline-comprehension--the-core-idea)
+  production Rust and Python units that prints each unit's outline as a
+  per-component call tree — method declarations, signatures, and calls, with
+  same-component calls nested and other components as tagged leaves — first,
+  then size, public surface, cohesion/coupling, and method-complexity metrics
+  as hints. When the addon is enabled, `givn check review` prints the outline
+  of every touched unit with methods and requires a fresh-context reviewer's
+  per-unit `OUTLINE: PASS`, with a responsibility and call-order explanation,
+  or `FAIL`. Metrics are hints; an unreadable outline has no justification
+  path. No baseline is stored. See
+  [the outline addon guide](docs/outline.md#outline-comprehension--the-core-idea)
   for an example outline, the phases, expected outcome, and warning signs.
 - **Scenario-by-scenario TDD with proof.** Each scenario runs RED (targeted,
   genuinely failing) → GREEN (minimum code) → REFACTOR → one atomic commit.

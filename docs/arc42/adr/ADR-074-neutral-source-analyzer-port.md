@@ -133,7 +133,9 @@ review gate can consume the same neutral analysis without a format change.
 - Bad, because the shared metrics are syntactic: LCOM4 and TCC/LCC use visible
   calls and field accesses that the neutral model can represent, so dynamic or
   ambiguous dispatch is under-counted and a threshold verdict can misdirect a
-  plan as well as reveal debt (R-106).
+  plan as well as reveal debt (R-106). Adapters supply callee names; the shared
+  resolution pass maps them to declared methods and never resolves a receiver
+  type.
 
 ### Confirmation
 

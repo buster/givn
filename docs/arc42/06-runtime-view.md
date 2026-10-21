@@ -769,14 +769,20 @@ sequenceDiagram
    `SourceAnalyzer`. The Python adapter starts `python3` only after `.py`
    discovery, so a Rust-only scope never invokes it; a missing interpreter
    becomes a per-file `analyzer-unavailable` diagnostic, not an abort.
-3. The adapter returns one neutral `Analysis`. A read or parse failure is a
+3. The adapter returns one neutral `Analysis`. A shared resolution pass maps
+   every call name to a declared method — same unit first, then the same file,
+   then a unique project method; otherwise ambiguous or external — and syncs
+   the resolved calls into the outline items. A read or parse failure is a
    diagnostic for that file, not an abort; the report continues with the
    analyzable files and names every failure.
-4. The report prints each unit's method outline first: declarations, signatures,
-   order, and internal calls, with no data, method bodies, or comments. Shared
-   metrics and classification follow as hints. Every analyzed unit receives
-   exactly one classification and its evidence; no action or recommendation is
-   produced, and wholly unsupported units are not classified and are named.
+4. The report prints each unit as a per-component call tree first: declarations,
+   signatures, order, and calls. Same-unit calls nest under the caller; calls
+   to another component are leaves tagged with the target component and
+   visibility. The tree is forward-only and omits calls outside the analyzed
+   sources. It contains no data, method bodies, or comments. Shared metrics and
+   classification follow as hints. Every analyzed unit receives exactly one
+   classification and its evidence; no action or recommendation is produced,
+   and wholly unsupported units are not classified and are named.
 5. The selected renderer writes human text or schema-v3 JSON. Hints never change
    the exit code; the only write is the explicit `--out` path. The command
    appends no development-record entry and stores no baseline, cache, or
@@ -844,7 +850,7 @@ sequenceDiagram
 4. **Touched units and outlines.** A changed path marks the units that declare
    in it, every unit whose files include it, and the file's module; a touched
    trait also marks its implementors. Base and head units are matched by unit
-   id. The gate prints the method outline of every touched head unit with
+   id. The gate prints the per-component call tree of every touched head unit with
    methods. A unit with no methods has no outline and needs no verdict; a base
    unit with no head counterpart is removed and also needs no verdict.
 5. **Metric hints.** The report's classification and method findings are

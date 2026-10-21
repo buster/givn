@@ -407,8 +407,10 @@ When the `outline` addon is enabled, `givn check review --change <id>`
 runs the outline gate after the verification receipt. The gate prints the
 outline of every touched unit that has methods: declarations, signatures, and
 the calls each method makes. Same-unit calls nest under the caller; calls to
-another component are leaves tagged with the target. The outline contains no
-method bodies or data.
+another component are leaves tagged with the target. The tree is forward-only:
+it never lists callers, and a cross-component leaf points at that component's
+own outline. An `[ambiguous]` edge means the analyzer could not choose a target;
+it is not the callee. The outline contains no method bodies or data.
 
 The review record must name the author and a fresh-context reviewer, and give
 every printed outline a verdict:

@@ -62,8 +62,8 @@ that writes the enabled addon settings and scaffolds durable Arc42 chapters.
 | FR-43 | Start the declared product with `givn run`: readiness probe against the declared path, one greppable ready line, `--port` and `--print` forms, forwarded child exit codes, and SIGINT/SIGTERM forwarding on unix. |
 | FR-44 | Never derive the product type or start command from repository content; the declaration is the single source of truth. |
 | FR-45 | Record every development step — commands, phases, hooks, verification runs, and the agent activity every supported harness reports through one intake — in an append-only, scope-tagged, best-effort local record, and render one scope's record as a self-contained interactive report. |
-| FR-46 | Offer an opt-in outline report over production sources: every unit's method outline first, then size, public surface, cohesion and coupling indicators, and method complexity as hints, one classification and its evidence per unit, and human or JSON output, with no action, recommendation, or stored baseline. |
-| FR-47 | Enforce the opt-in outline review inside `givn check review --change <id>`: derive the change base from version-control history, print the outline of every touched unit with methods at that base and at the committed head, and fail while any outline lacks a fresh-context reviewer's `PASS` with a responsibility and call-order explanation, or carries a `FAIL`. Metric hints never block. |
+| FR-46 | Offer an opt-in outline report over production sources: every unit's per-component call tree first, then size, public surface, cohesion and coupling indicators, and method complexity as hints, one classification and its evidence per unit, and human or JSON output, with no action, recommendation, or stored baseline. |
+| FR-47 | Enforce the opt-in outline review inside `givn check review --change <id>`: derive the change base from version-control history, print the per-component call tree of every touched unit with methods at that base and at the committed head, and fail while any outline lacks a fresh-context reviewer's `PASS` with a responsibility and call-order explanation, or carries a `FAIL`. Metric hints never block. |
 
 ### Non-functional requirements
 
@@ -87,9 +87,10 @@ Secondary goals are merge correctness, agent ergonomics, interface-fidelity in
 E2E evidence, and non-redundant architecture documentation.
 
 The opt-in outline experiment adds a structural-comprehension goal and, in its
-second stage, a review goal for the Givn maintainer: see every touched unit's
-method outline, and require a fresh-context reviewer to explain the unit's
-responsibility and call order for each one. The report prints the outline first
+second stage, a review goal for the Givn maintainer: see every touched unit as
+a per-component call tree, and require a fresh-context reviewer to explain the
+unit's responsibility and call order for each one. The report prints the tree
+first — same-unit calls nest, calls to another component are tagged leaves —
 and the metrics as hints; the gate is disabled by default with the same addon,
 stores no classification baseline, and changes no archive gate. A missing
 outline verdict, an empty explanation, or a `FAIL` fails review; metrics never

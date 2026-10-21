@@ -39,7 +39,7 @@ The developer requests verification of a change.
 
 - Structural failures outrank other findings.
 - A review PASS requires a current green change-scoped verification receipt, including one reused across a documentation-only revision.
-- When the outline experiment is enabled, a review PASS requires an outline verdict for every touched unit with methods: `OUTLINE: PASS <unit> | <responsibility; call order>` from a fresh-context reviewer, or `OUTLINE: FAIL <unit> | <reason>`. A missing verdict, an empty PASS explanation, or a FAIL blocks; there is no justification path for an unreadable outline. Metric hints do not require a decision.
+- When the outline experiment is enabled, the gate prints each touched unit as a per-component call tree: same-unit calls nest, and calls to another component are leaves tagged with the target. A review PASS requires an outline verdict for every touched unit with methods: `OUTLINE: PASS <unit> | <responsibility; call order>` from a fresh-context reviewer, or `OUTLINE: FAIL <unit> | <reason>`. A missing verdict, an empty PASS explanation, or a FAIL blocks; there is no justification path for an unreadable outline. Metric hints do not require a decision.
 - Each checked scenario records one real, unique revision whose message names the scenario; the task check refuses a missing, duplicate, unreachable, or unnamed revision.
 - The README-impact decision is reported before review and remains a blocking review requirement.
 - The receipt binds the tested revision, the selected delta features, the verify command, and the tested content.

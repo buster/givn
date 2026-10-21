@@ -1081,12 +1081,21 @@ contract is:
 - **Opt-in only.** `addons.outline` is absent or false in an ordinary project.
   The command is still registered so the disabled path can name the experiment
   and the enabling command; that path exits 1.
-- **Outline first, hints second.** Every unit is printed with its method
-  outline first: declarations, signatures, order, and internal calls, with no
-  data, method bodies, or comments. Metrics and classification follow as hints.
-  A report exits 0 regardless of how many hints it contains. There is no
-  `action`, no `recommendation`, and no advice line. The JSON schema is version
-  2 and carries the full outline under `units[].outline`.
+- **Outline first, hints second.** Every unit is printed as a per-component call
+  tree first: declarations, signatures, order, and calls. Same-unit calls nest
+  under the caller; calls to another component are leaves tagged with the
+  target component and visibility. The tree is forward-only and omits calls
+  outside the analyzed sources. It contains no data, method bodies, or comments.
+  Metrics and classification follow as hints. A report exits 0 regardless of
+  how many hints it contains. There is no `action`, no `recommendation`, and no
+  advice line. The JSON schema is version 3 and carries the flat per-unit
+  methods and their call-resolution labels under `units[].outline`; the nesting
+  is a human rendering, not a JSON field.
+- **Call resolution is neutral.** Both adapters share one name-based pass:
+  same unit, then the same file, then a unique project method; otherwise
+  `ambiguous` or `external`. Rust adds calls found in expression-list macro
+  arguments. The renderer and the cohesion metrics read the same resolved
+  targets.
 - **Hints never gate.** A report hint never enters a gate. The review gate
   prints its own change-relative hints as `HINT` and requires outline verdicts
   instead.
@@ -1128,8 +1137,9 @@ becoming a second classification authority. Four concepts carry it.
 watchlist. The base is the parent of the first reachable commit that touched the
 change directory; the head is the committed `HEAD`, and a dirty production path
 fails before analysis. Only the units the change touched are evaluated. The gate
-prints the method outline of every touched head unit with methods; a unit with
-no methods or no head counterpart has no outline and needs no verdict.
+prints the per-component call tree of every touched head unit with methods; a
+unit with no methods or no head counterpart has no outline and needs no
+verdict.
 
 **The outline verdict vocabulary.** `review.md` is the durable record. The
 marker names and unit ids are case-sensitive; a marker names the report's exact
@@ -1139,7 +1149,7 @@ unit id (`type:<path>::<Name>` or `module:<path>`), never a file alias:
 |---|---|
 | `OUTLINE: AUTHOR <id>` | Names the author of the review record. Required when any outline verdict exists. |
 | `OUTLINE: REVIEWER <id>` | Names the fresh-context reviewer. Required when any outline verdict exists; it must differ from the author. |
-| `OUTLINE: PASS <unit> \| <responsibility; call order>` | The reviewer can explain the unit's responsibility and why its internal calls happen in that order. The explanation must be non-empty. |
+| `OUTLINE: PASS <unit> \| <responsibility; call order>` | The reviewer can explain the unit's responsibility and why its calls happen in that order. Same-unit calls are nested in the tree; calls to another component are leaves the reviewer follows into that component's outline. The explanation must be non-empty. |
 | `OUTLINE: FAIL <unit> \| <reason>` | The outline is not explainable. Review is blocked; there is no justification path. |
 | `OUTLINE: PASS` | Overall verdict. Required when at least one outline exists. |
 | `FAIL <reason>` | General review failure; review must not pass. |
