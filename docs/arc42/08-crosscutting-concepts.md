@@ -506,11 +506,13 @@ When an explicit artifact is passed to `givn check`, `src/cli/check.rs` first
 runs mandatory checks:
 
 - `tasks`: change-delta WIP protection and `verify.command`;
-- `review`: `integrity`, the run-declaration check, the named-change
-  overlap gate, the change-scoped verification receipt, and — for a named
-  change with `addons.readability` enabled — the readability review gate.
-  Review does not execute the test suite; scenario execution is
-  proven by the archive verification receipt.
+- `review`: `integrity`, the run-declaration check, the named-change overlap
+  and retirement gates, the use-case/capability-routing gate (which reports
+  every schema and routing diagnostic in one pass), the shared change
+  verification receipt freshness check, and — for a named change with
+  `addons.readability` enabled — the readability review gate. Review does not
+  execute the test suite; scenario execution is proven by the archive
+  verification receipt.
 
 These checks are not controlled by `post` and cannot be disabled by merely
 removing a hook entry. Removing the `tasks` or `review` artifact changes the

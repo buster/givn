@@ -108,6 +108,14 @@ the change design. Durable facts live in chapters 1 (FR-46, FR-47), 2 (TC-42,
 TC-43), 3, 4, 5, 6.20, 8.12/8.26a, 10 (Q-112 to Q-117), 11 (R-108 to R-115,
 D-24 to D-26), and 12.
 
+The `review-friction-hardening` change amends ADR-070: the change
+verification receipt binds the tested content through a SHA-256 digest and the
+`change-proof/v1` scope, so review and archive reuse a green proof across a
+documentation-only revision while any tested-content change still stales it.
+The review routing gate also reports every use-case schema and
+capability-routing diagnostic in one pass. Durable facts live in chapters 2
+(TC-39), 4, 5, 6.7.1, 10 (Q-105, Q-118), 11 (R-116, R-117), and the glossary.
+
 Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
 register](adr/README.md) for status, relationships, evidence, reserved IDs, and
 historical records.

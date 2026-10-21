@@ -17,6 +17,14 @@ pub enum EntryKind {
     Submodule,
 }
 
+/// One content path plus its backend-specific identity. `gitlink` carries a
+/// submodule's recorded object id; other paths leave it empty.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ContentEntry {
+    pub path: PathBuf,
+    pub gitlink: Option<String>,
+}
+
 /// The selected version-control backend.
 #[derive(Debug, Clone)]
 pub enum Backend {
@@ -40,6 +48,15 @@ impl Backend {
         match self {
             Self::Git(worktree) => worktree.revision_file(path),
             Self::Fossil(checkout) => checkout.revision_file(path),
+        }
+    }
+
+    /// Tracked paths plus untracked non-ignored paths, relative to the
+    /// project root. Gitlinks carry their recorded object id.
+    pub fn content_paths(&self) -> Result<Vec<ContentEntry>> {
+        match self {
+            Self::Git(worktree) => worktree.content_paths(),
+            Self::Fossil(checkout) => checkout.content_paths(),
         }
     }
 

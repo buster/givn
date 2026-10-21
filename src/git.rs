@@ -49,6 +49,56 @@ impl Worktree {
         }
     }
 
+    /// Tracked paths plus untracked non-ignored paths, relative to the
+    /// worktree root. A gitlink carries its recorded object id.
+    pub fn content_paths(&self) -> Result<Vec<crate::scm::ContentEntry>> {
+        let listed = run_git(
+            &self.root,
+            &[
+                "ls-files",
+                "-z",
+                "--cached",
+                "--others",
+                "--exclude-standard",
+            ],
+        )?;
+        if !listed.status.success() {
+            bail!(
+                "`git ls-files` failed in '{}': {}",
+                self.root.display(),
+                String::from_utf8_lossy(&listed.stderr).trim()
+            );
+        }
+        let staged = run_git(&self.root, &["ls-files", "-s", "-z"])?;
+        let mut gitlinks = std::collections::BTreeMap::new();
+        if staged.status.success() {
+            for record in String::from_utf8_lossy(&staged.stdout).split('\0') {
+                let mut fields = record.split_whitespace();
+                let mode = fields.next().unwrap_or_default();
+                let object = fields.next().unwrap_or_default();
+                let path = fields.next().unwrap_or_default();
+                if mode == "160000" && !path.is_empty() {
+                    gitlinks.insert(PathBuf::from(path), object.to_string());
+                }
+            }
+        }
+        let mut entries = Vec::new();
+        for path in String::from_utf8_lossy(&listed.stdout).split('\0') {
+            if path.is_empty() {
+                continue;
+            }
+            let relative = PathBuf::from(path);
+            let gitlink = gitlinks.get(&relative).cloned();
+            entries.push(crate::scm::ContentEntry {
+                path: relative,
+                gitlink,
+            });
+        }
+        entries.sort_by(|left, right| left.path.cmp(&right.path));
+        entries.dedup_by(|left, right| left.path == right.path);
+        Ok(entries)
+    }
+
     /// Whether `revision` names a commit in this repository.
     pub fn commit_exists(&self, revision: &str) -> Result<bool> {
         let output = run_git(

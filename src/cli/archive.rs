@@ -121,7 +121,7 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
 
     if fresh {
         ensure_clean(&backend, &project_root, change, &manifest, Witness::Project)?;
-        ensure_change_receipt(&backend, &manifest, &change_dir, change)?;
+        ensure_change_receipt(&backend, &manifest, &project_root, &change_dir, change)?;
         println!(
             "[{}] Archiving change '{change}'...",
             crate::subprocess::local_timestamp()
@@ -887,6 +887,7 @@ fn rejection_state(backend: &crate::scm::Backend) -> &'static str {
 fn ensure_change_receipt(
     backend: &crate::scm::Backend,
     manifest: &crate::config::manifest::Manifest,
+    project_root: &Path,
     change_dir: &Path,
     change: &str,
 ) -> Result<()> {
@@ -895,24 +896,37 @@ fn ensure_change_receipt(
             "archive blocked: {error}. Run `givn check tasks --change {change}` before archiving."
         )
     })?;
-    let head = backend.revision()?;
-    if !receipt.is_current(change_dir, &head, &manifest.verify.command)? {
-        let features = crate::proof::digest_features(&change_dir.join("specs"))?;
-        bail!(
-            "archive blocked: the change verification receipt is stale for '{change}'. \
-             receipt head {}, current head {head}; receipt features {}, current features {features}; \
-             receipt command {}, current command {}. Run `givn check tasks --change {change}` again.",
-            receipt.head,
-            receipt.features_digest,
-            receipt.command_digest,
-            crate::proof::digest_text(&manifest.verify.command)
-        );
+    match receipt.freshness(manifest, change_dir, backend, project_root)? {
+        crate::proof::ProofStatus::Current => {
+            println!(
+                "[{}] ✓ change verification receipt passed ({} scenario(s))",
+                crate::subprocess::local_timestamp(),
+                receipt.result.total
+            );
+        }
+        crate::proof::ProofStatus::DocumentationOnly {
+            tested_revision,
+            current_revision,
+        } => {
+            println!(
+                "[{}] ✓ change verification receipt reused across documentation-only revision \
+                 {current_revision} (tested at {tested_revision}, {} scenario(s))",
+                crate::subprocess::local_timestamp(),
+                receipt.result.total
+            );
+        }
+        crate::proof::ProofStatus::Stale(reasons) => {
+            let details = reasons
+                .iter()
+                .map(|reason| format!("  - {}", reason.render()))
+                .collect::<Vec<_>>()
+                .join("\n");
+            bail!(
+                "archive blocked: the change verification receipt is stale for '{change}':\n\
+                 {details}\nRun `givn check tasks --change {change}` again."
+            );
+        }
     }
-    println!(
-        "[{}] ✓ change verification receipt passed ({} scenario(s))",
-        crate::subprocess::local_timestamp(),
-        receipt.result.total
-    );
     Ok(())
 }
 

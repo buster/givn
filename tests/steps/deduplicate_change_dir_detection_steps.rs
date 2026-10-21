@@ -71,12 +71,18 @@ addons:
     let head = String::from_utf8_lossy(&common::git(env, &["rev-parse", "HEAD"]).stdout)
         .trim()
         .to_string();
+    let backend = givn::scm::select(&env.root()).expect("select backend for receipt");
+    let manifest = givn::config::manifest::Manifest::load_embedded().expect("embedded manifest");
+    let tested_content_digest =
+        givn::proof::digest_tested_content(&env.root(), &backend, &id, &manifest)
+            .expect("digest tested content");
     givn::proof::write_change_receipt(
         &env.root(),
         &change_dir,
         &id,
         &head,
         "true",
+        &tested_content_digest,
         givn::proof::RunnerResult {
             scope: None,
             total: 2,
