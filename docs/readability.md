@@ -19,10 +19,10 @@ classifications, and gate rules may change.
 
 ## Workflow
 
-```mermaid
-flowchart LR
-    I["1. Implement<br/>optional advisory report"] --> R["2. Review<br/>fix or justify every touched finding"] --> A["3. Archive<br/>review record must be complete"]
-```
+![Readability addon workflow: implement produces an optional advisory report; review produces FIXED or JUSTIFIED decisions and a PASS and checks every touched finding; archive checks the review record](readability-workflow.svg)
+
+Source: [`readability-workflow.d2`](readability-workflow.d2). Regenerate with
+`d2 docs/readability-workflow.d2 docs/readability-workflow.svg`.
 
 The report is advisory. The review gate is blocking. The report never stores a
 baseline; the gate only looks at the units the change touched.
