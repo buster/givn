@@ -157,7 +157,7 @@ selects the current unit's method; `same_file` keeps its target and nests.
   - [x] Evidence:   Scenario: A call on the unit's own receiver resolves within the unit | 1 scenario (1 passed) | 6 steps (6 passed)
 - REFACTOR: targeted run; paste zero.
   - [x] Evidence:   Scenario: A call on the unit's own receiver resolves within the unit | 1 scenario (1 passed) | 6 steps (6 passed)
-- [ ] COMMIT:
+- [x] COMMIT: 1b37904d21dac651b575bd18159164c2e061d385
 
 ## 4. A method call on a named receiver resolves to that owner
 
@@ -167,12 +167,12 @@ resolver accepts candidates whose owner name equals the qualifier.
 
 - RED: remove `@wip`; add `write_named_receiver_call` and bindings; targeted
   run; paste non-zero.
-  - [ ] Evidence:
+  - [x] Evidence: baseline: ✘  Given a production source unit whose method calls an associated function on a project type | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:31:5 | Step doesn't match any function
 - GREEN: add qualifier extraction and owner filtering; targeted run; paste
   zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A method call on a named receiver resolves to that owner | 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A method call on a named receiver resolves to that owner | 1 scenario (1 passed) | 5 steps (5 passed)
 - [ ] COMMIT:
 
 ## 5. An ambiguous method name has no resolved target
