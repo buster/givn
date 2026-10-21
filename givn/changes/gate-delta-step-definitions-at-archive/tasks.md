@@ -248,7 +248,7 @@ scenario 1, the production gate and guidance).
   ```
 - COMMIT: one commit containing this scenario's regression test. Body: the
   scenario title.
-- [ ] COMMIT: `<!-- hash -->` — The refusal lists a bounded number of missing step phrases and a remainder count
+- [x] COMMIT: `b27ff3cf0e0f946f3ae8802e04e05692eb5f3a05` — The refusal lists a bounded number of missing step phrases and a remainder count
 
 ## Scenario 3 — An unproven archive candidate with a missing step definition is not verified again
 
@@ -265,7 +265,10 @@ scenario 1, the production gate and guidance).
 - RED (captured before scenario 1's GREEN, while the functions are `todo!()`
   stubs):
   ```
-  <!-- paste the targeted RED output captured during setup -->
+  1 feature
+  1 scenario (1 failed)
+  2 steps (1 passed, 1 failed)
+  Step panicked. Captured output: not yet implemented: TODO: write the candidate's delta step file
   ```
 - GREEN: add the pending call site and fill the step functions. Run targeting
   this scenario; must exit 0.
@@ -276,7 +279,9 @@ scenario 1, the production gate and guidance).
     --exact --nocapture
   ```
   ```
-  <!-- paste GREEN output, exit 0 -->
+  1 feature
+  1 scenario (1 passed)
+  10 steps (10 passed)
   ```
 - REFACTOR: format/clippy; re-run targeted scenario and the delta scope.
   ```
@@ -284,7 +289,7 @@ scenario 1, the production gate and guidance).
     ./run-tests.sh --non-e2e
   ```
   ```
-  <!-- paste output, exit 0 -->
+  Summary [0.859s] 3 tests run: 3 passed, 1 skipped
   ```
 - COMMIT: one commit containing the resume call site and this scenario's
   regression test. Body: the scenario title.

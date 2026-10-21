@@ -20,6 +20,11 @@ fn change_root(world: &GivnWorld) -> PathBuf {
     project_root(world).join("givn/changes").join(id)
 }
 
+fn candidate_root(world: &GivnWorld) -> PathBuf {
+    let id = world.last_change_id.clone().expect("a change id");
+    project_root(world).join("givn/archive").join(id)
+}
+
 fn write_binding(path: &Path, phrase: &str) {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).expect("create step directory");
@@ -127,8 +132,8 @@ fn no_permanent_binds_any(world: &mut GivnWorld) {
 }
 
 #[given(regex = r#"^the candidate's spec tree binds "([^"]+)" in "([^"]+)"$"#)]
-fn candidate_spec_tree_binds(_world: &mut GivnWorld, _phrase: String, _relative: String) {
-    todo!("TODO: write the candidate's delta step file");
+fn candidate_spec_tree_binds(world: &mut GivnWorld, phrase: String, relative: String) {
+    write_binding(&candidate_root(world).join("specs").join(relative), &phrase);
 }
 
 #[given(regex = r#"^a permanent step-definition file "([^"]+)" binds "([^"]+)"$"#)]
@@ -173,11 +178,25 @@ fn stderr_says(world: &mut GivnWorld, text: String) {
 }
 
 #[then("the candidate is still unproven")]
-fn candidate_still_unproven(_world: &mut GivnWorld) {
-    todo!("TODO: assert the candidate stays unproven");
+fn candidate_still_unproven(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let receipt = support::receipt(world, &id);
+    assert_eq!(
+        receipt["status"], "pending",
+        "the candidate is not unproven: {receipt}"
+    );
 }
 
 #[then("no regular scope result exists for the candidate")]
-fn no_regular_result(_world: &mut GivnWorld) {
-    todo!("TODO: assert the record runner did not run");
+fn no_regular_result(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let path = project_root(world)
+        .join("givn/archive")
+        .join(id)
+        .join("results/regular.json");
+    assert!(
+        !path.exists(),
+        "the regular scope ran and wrote a result: {}",
+        path.display()
+    );
 }
