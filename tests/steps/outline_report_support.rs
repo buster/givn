@@ -406,3 +406,11 @@ pub fn write_unknown_receiver_call(env: &TestEnv) {
     );
 }
 
+pub fn write_self_receiver_call(env: &TestEnv) {
+    write_source(
+        env,
+        "src/engine.rs",
+        "pub struct Engine {\n    value: u64,\n}\n\nimpl Engine {\n    pub fn build(&self) -> u64 {\n        self.validate();\n        self.check()\n    }\n\n    pub fn validate(&self) -> u64 {\n        self.value\n    }\n\n    pub fn check(&self) -> u64 {\n        self.value\n    }\n}\n",
+    );
+}
+

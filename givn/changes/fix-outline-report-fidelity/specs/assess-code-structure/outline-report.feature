@@ -17,7 +17,7 @@ Feature: Outline report
     And the name-only call "is_empty" is not expanded into a deeper-indented call line
     And the report records "LCOM4 2" for the unit "type:src/tier.rs::TierReasoning"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A call on the unit's own receiver resolves within the unit
     Given a production source unit whose method calls another method on itself
     When the developer runs "givn outline report --json"

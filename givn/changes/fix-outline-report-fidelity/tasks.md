@@ -143,7 +143,7 @@ would wrongly expand it.
   - [x] Evidence:   Scenario: A name-only guess is not expanded as a same-unit call | 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: re-run targeted; paste zero.
   - [x] Evidence:   Scenario: A name-only guess is not expanded as a same-unit call | 1 scenario (1 passed) | 5 steps (5 passed)
-- [ ] COMMIT:
+- [x] COMMIT: 8144cca87d0a24175c92c68785b3d51c8085e6ef
 
 ## 3. A call on the unit's own receiver resolves within the unit
 
@@ -152,11 +152,11 @@ selects the current unit's method; `same_file` keeps its target and nests.
 
 - RED: remove `@wip`; add `write_self_receiver_call` and bindings; targeted
   run; paste non-zero.
-  - [ ] Evidence:
+  - [x] Evidence: baseline: ✘  Given a production source unit whose method calls another method on itself | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:22:5 | Step doesn't match any function
 - GREEN: add `SelfUnit` extraction and resolution; targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A call on the unit's own receiver resolves within the unit | 1 scenario (1 passed) | 6 steps (6 passed)
 - REFACTOR: targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A call on the unit's own receiver resolves within the unit | 1 scenario (1 passed) | 6 steps (6 passed)
 - [ ] COMMIT:
 
 ## 4. A method call on a named receiver resolves to that owner
