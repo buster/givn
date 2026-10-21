@@ -489,3 +489,11 @@ pub fn write_interleaved_module(env: &TestEnv) {
     );
 }
 
+pub fn write_python_classes_module(env: &TestEnv) {
+    write_source(
+        env,
+        "src/ledger.py",
+        "class OrderBook:\n    def add(self, order: str) -> int:\n        return len(order)\n\n\nclass Ledger:\n    def record(self, value: str) -> int:\n        return len(value)\n\n\ndef load(path: str) -> str:\n    return path\n",
+    );
+}
+

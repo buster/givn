@@ -276,7 +276,7 @@ functions and type items interleave by declaration line.
   - [x] Evidence:   Scenario: A module outline interleaves member types and free functions in source order | 1 scenario (1 passed) | 3 steps (3 passed)
 - REFACTOR: targeted run; paste zero.
   - [x] Evidence:   Scenario: A module outline interleaves member types and free functions in source order | 1 scenario (1 passed) | 3 steps (3 passed)
-- [ ] COMMIT:
+- [x] COMMIT: e5e08c8fe7e17ad60366687e9966c887e766d8e1
 
 ## 12. A Python module outline lists its classes
 
@@ -286,11 +286,11 @@ line; no calls/signature.
 
 - RED: remove `@wip`; add `write_python_classes_module` and bindings;
   targeted run; paste non-zero.
-  - [ ] Evidence:
+  - [x] Evidence: baseline: ✘  Given a Python module with two classes and one function | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:88:5 | Step doesn't match any function
 - GREEN: add Python module type items; targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A Python module outline lists its classes | 1 scenario (1 passed) | 3 steps (3 passed)
 - REFACTOR: targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A Python module outline lists its classes | 1 scenario (1 passed) | 3 steps (3 passed)
 - [ ] COMMIT:
 
 ## 13. The JSON report names each call's resolved target

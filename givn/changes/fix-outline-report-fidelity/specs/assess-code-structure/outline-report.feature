@@ -84,7 +84,7 @@ Feature: Outline report
     When the developer runs "givn outline report --json"
     Then the JSON module outline lists "alpha", "Beta", "gamma", and "Delta" in source order
 
-  @givn.added @wip
+  @givn.added
   Scenario: A Python module outline lists its classes
     Given a Python module with two classes and one function
     When the developer runs "givn outline report --json"
