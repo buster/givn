@@ -54,8 +54,8 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   the addon is enabled, `givn check review` also refuses any touched unit that
   is still a finding at the committed `HEAD` unless it is fixed or carries a
   change-scoped, owner-approved rationale. No baseline is stored. See [the
-  readability addon guide](docs/readability.md) for the phases, expected
-  outcome, and warning signs.
+  readability addon guide](docs/readability.md#outline-comprehension--the-core-idea)
+  for an example outline, the phases, expected outcome, and warning signs.
 - **Scenario-by-scenario TDD with proof.** Each scenario runs RED (targeted,
   genuinely failing) → GREEN (minimum code) → REFACTOR → one atomic commit.
   The runner's strict mode is proven up front so an empty step definition can
