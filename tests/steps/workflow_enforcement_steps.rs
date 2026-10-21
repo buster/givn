@@ -1230,11 +1230,23 @@ fn review_contract(
     examples: &str,
     extra: &str,
 ) -> String {
+    review_contract_with_level(id, title, "!", capabilities, interactions, examples, extra)
+}
+
+fn review_contract_with_level(
+    id: &str,
+    title: Option<&str>,
+    level: &str,
+    capabilities: &str,
+    interactions: &str,
+    examples: &str,
+    extra: &str,
+) -> String {
     let default_title = format!("# Use case: {id}");
     let title = title.unwrap_or(&default_title);
     format!(
         "{title}\n\n\
-         ## Level\n\n!\n\n\
+         ## Level\n\n{level}\n\n\
          ## Actors\n\n- Developer\n\n\
          ## Goal\n\nCheck a change.\n\n\
          ## Trigger\n\nThe developer requests verification.\n\n\
@@ -1813,6 +1825,30 @@ fn review_fixture_malformed_title_missing_and_empty_sections(world: &mut GivnWor
         "## Rules\n\n- Structural failures outrank other findings.\n\n",
         "",
     );
+    write_review_fixture(
+        world,
+        "review-diagnostics-demo",
+        "review-diagnostics-demo",
+        &contract,
+        &["alpha-capability"],
+        &[("alpha-capability", "NEW in review-diagnostics-demo")],
+    );
+}
+
+#[given(
+    "a clean committed change whose use-case contract has a malformed Level and omits \"## Examples\""
+)]
+fn review_fixture_malformed_level(world: &mut GivnWorld) {
+    let contract = review_contract_with_level(
+        "review-diagnostics-demo",
+        None,
+        "`+` — summary use case. Its five capabilities decompose the lending-desk activity into the goals below.",
+        "- none",
+        "- none",
+        "- A valid example.",
+        "",
+    )
+    .replace("## Examples\n\n- A valid example.\n\n", "");
     write_review_fixture(
         world,
         "review-diagnostics-demo",

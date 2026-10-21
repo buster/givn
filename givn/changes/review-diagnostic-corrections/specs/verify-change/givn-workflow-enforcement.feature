@@ -39,7 +39,7 @@ Feature: Review use-case diagnostic corrections
     And stderr does not contain "document schema does not recognise '## Rules'"
     And stderr does not contain "section '## Examples' must not be empty"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A malformed Level does not fabricate missing-section or leaf-capability diagnostics
     Given a clean committed change whose use-case contract has a malformed Level and omits "## Examples"
     When the developer runs `givn check review --change review-diagnostics-demo`
