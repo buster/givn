@@ -162,13 +162,13 @@
 | **Handoff** | The ideation step that publishes the topic document under the project docs, proposes glossary and persona merges, and writes change seeds. |
 | **Visual interface** | A consumer interface whose evidence is what the consumer sees (web UI) or reads (terminal); API-only and library interfaces are not visual. |
 | **Web UI classification** | The fail-closed rule that a capability whose interface renders HTML, CSS, or JavaScript in a browser is a Web UI — even without controls or server state; a browser driver is then mandatory and an HTTP client is not a valid driver. Anti-term: static document. |
-| **Visual Design Contract** | The style-level contract a design records when a change introduces or visibly changes a screen: tokens, component states, viewports, and the durable design system it follows. Anti-terms: mockup, pixel spec. |
+| **Visual Design Contract** | The style-level contract a design records in its `## Visual Design Contract` section, including an explicit `Interface: none` declaration for a change with no rendered screen: tokens, component states, viewports, and the durable design system it follows. The section's presence triggers the Persona disposition; its `Interface:` value decides the visual verdict and evidence. Anti-terms: mockup, pixel spec. |
 | **Design system** | The durable project style source under `docs/design/` that visual contracts reference and improve. Anti-term: style guide (reserved for prose advice). |
 | **Visual evidence** | The committed final-state screenshots per end-to-end scenario and viewport — or captured transcripts for a terminal interface — that review inspects. Anti-term: screenshot dump. |
 | **UI state evidence** | The committed `<viewport>--<state>.png` screenshots for each UI state a contract declares (empty, loading, error), in addition to the final-state screenshot. Anti-term: state dump. |
 | **Visual baseline** | The mechanical checks asserted at every visual interaction: labeled controls, no internal identifiers in visible text, a real page title and heading, no duplicated visible content, a designed error state, the configured language, and reduced-motion. Anti-term: UI checklist. |
 | **Visual verdict** | The review's explicit machine-checkable outcome for a visual change: `VISUAL-REVIEW: PASS` or `VISUAL-REVIEW: UNVERIFIED`. Anti-term: visual review note. |
-| **Persona disposition** | The review's record, as a `PERSONAS:` line, of the confirmed Persona that reviewed the rendered evidence; a declared visual interface requires at least one. Anti-term: persona note. |
+| **Persona disposition** | The review's record, as a `PERSONAS:` line, of the confirmed Persona that reviewed the change; every declared visual design contract requires at least one confirmed Persona whether or not a screen is rendered, and only a change that declares no contract may record a reasoned none. Anti-term: persona note. |
 | **Deferral decision** | The operator's recorded approval (`OPERATOR-DECISION:`) that allows a mandatory check to be deferred when a project constraint conflicts with it; a `DEFERRAL:` without it fails review. Anti-term: waiver. |
 | **Style tile** | One rendered, concrete design option proposed to the user when no approved design exists. Anti-term: mockup (rejected as pixel-precise). |
 | **SCM backend** | The concrete version-control system givn talks to in a project: Git or Fossil. Selected per project, never per command. Anti-terms: provider, driver. |
@@ -239,8 +239,8 @@ commit path all run on Git and Fossil.
 
 ### Visual-review invariants
 
-- A change with a visual contract cannot pass review without a visual
-  verdict (enforcement site: `check review`).
+- A change with a `web` or `terminal` visual contract cannot pass review
+  without a visual verdict (enforcement site: `check review`).
 - Every Web UI end-to-end scenario has one committed final-state screenshot
   per contract viewport; missing evidence blocks review (enforcement site:
   `check review` evidence completeness). A terminal end-to-end scenario commits
@@ -249,9 +249,10 @@ commit path all run on Git and Fossil.
 - Every declared Web UI state has committed per-viewport evidence (enforcement
   site: `check review` state-evidence check); terminal contracts name the
   covered textual states and preserve their transcripts.
-- A declared visual interface cannot pass review without a `PERSONAS:`
-  disposition naming a confirmed Persona (enforcement site: `check review`
-  persona check).
+- A declared visual design contract — including `Interface: none` — cannot
+  pass review without a `PERSONAS:` disposition naming a confirmed Persona; a
+  change that declares no contract remains exempt (enforcement site:
+  `check review` persona check).
 - A recorded deferral cannot pass review without an operator decision
   (enforcement site: `check review` deferral pair).
 - A browser-rendered capability is classified as a Web UI and driven by a

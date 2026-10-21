@@ -44,6 +44,15 @@ reasoned `none` is valid only for a change without a user-visible surface.
 The identity criteria and the reuse protocol stay guidance-level. This
 remains an extension of the same boundary, not a new record.
 
+The current Persona trigger is broader than the fourth amendment. The
+`require-persona-for-interface-none` change makes every declared
+`## Visual Design Contract`, including `Interface: none`, require a confirmed
+Persona. The qualification gate returns `NOT_QUALIFIED`/`CANONICAL_ARTIFACT`:
+ADR-028's non-deactivatable member and its requirement are unchanged, and only
+the trigger that selects changes for it is observable review behavior owned by
+the `visual-review-gate` capability. The current facts live in chapters 6, 8,
+10, and 12; no ADR file is added or amended.
+
 ADR-013 is amended by the `require-agent-target` change; its interaction
 wording is refined by `keep-agent-prompt-open`. Its target-selection contract
 no longer accepts an empty selection at initialization: the interactive

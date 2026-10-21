@@ -88,13 +88,15 @@ receipt (`givn/archive/<id>/verification.json`):
 | Migration ledger and coverage evidence complete, if applicable | | |
 
 Record the persona disposition as a real `PERSONAS:` line outside any code
-fence — a declared visual interface needs at least one confirmed Persona:
+fence — a declared visual design contract, including `Interface: none`, needs
+at least one confirmed Persona:
 
 ```
 PERSONAS: <confirmed persona id>
 ```
 
-A change without a user-visible surface records the reason instead:
+Only a change that declares no visual design contract at all records the
+reason instead:
 
 ```
 PERSONAS: none — <reason + operator confirmation>

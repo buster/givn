@@ -240,7 +240,7 @@ outcomes. Actors remain interaction roles; Persona biographies remain review
 context. Record migration-ledger evidence where applicable. Do not sign off
 invented or silently promoted Personas.
 
-Record the disposition for every confirmed Persona; when none is confirmed, record the reason. A user-visible surface requires at least one confirmed Persona.
+Record the disposition for every confirmed Persona; when none is confirmed, record the reason. A declared visual design contract — including `Interface: none` — requires at least one confirmed Persona; only a change that declares no visual design contract may record a reasoned `none`. A user-visible surface still requires at least one confirmed Persona.
 
 ### Use-case scope rejection criteria
 

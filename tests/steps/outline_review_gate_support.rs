@@ -676,8 +676,13 @@ pub(crate) fn write_review_preconditions(env: &TestEnv, change_id: &str, task_co
     );
     write_file(
         env,
+        "givn/personas/fixture-persona.md",
+        "# Persona: fixture\n",
+    );
+    write_file(
+        env,
         &format!("{change}/review.md"),
-        "# Review\n\nREADME-IMPACT: none\n",
+        "# Review\n\nREADME-IMPACT: none\n\nPERSONAS: fixture-persona\n",
     );
     write_file(
         env,
