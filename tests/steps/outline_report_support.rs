@@ -5,8 +5,8 @@
 
 use crate::common::{self, TestEnv};
 use givn::outline::model::{
-    Analysis, AnalyzedFile, FileStatus, LineKind, RepoPath, SourceSpan, SourceUnit, TypeKind,
-    TypeRelation, UnitId, UnitKind, UnitOrigin, Visibility,
+    Analysis, AnalyzedFile, FileStatus, LineKind, OutlineItem, OutlineKind, RepoPath, SourceSpan,
+    SourceUnit, TypeKind, TypeRelation, UnitId, UnitKind, UnitOrigin, Visibility,
 };
 use givn::outline::{self, AnalysisRequest, SourceAnalyzer, SourceScope, model::Language};
 use std::path::PathBuf;
@@ -285,7 +285,7 @@ fn fake_analysis() -> Analysis {
     };
     let type_unit = SourceUnit {
         language: Language::Rust,
-        id: type_id,
+        id: type_id.clone(),
         kind: UnitKind::Type(TypeKind::Struct),
         name: "Small".to_string(),
         module_path: "small".to_string(),
@@ -315,7 +315,15 @@ fn fake_analysis() -> Analysis {
         methods: Vec::new(),
         fields: Vec::new(),
         relations: Vec::new(),
-        outline: Vec::new(),
+        outline: vec![OutlineItem {
+            id: type_id.to_string(),
+            kind: OutlineKind::Type,
+            name: "Small".to_string(),
+            visibility: Visibility::Public,
+            signature: String::new(),
+            order: 1,
+            calls: Vec::new(),
+        }],
         complete: true,
         unsupported: Vec::new(),
     };
@@ -463,5 +471,13 @@ pub fn write_complexity_method(env: &TestEnv) {
     }
     source.push_str("        value\n    }\n}\n");
     write_source(env, "src/complex.rs", &source);
+}
+
+pub fn write_module_with_types(env: &TestEnv) {
+    write_source(
+        env,
+        "src/module.rs",
+        "pub struct First;\npub struct Second;\npub struct Third;\n\npub fn load() -> u64 {\n    1\n}\n",
+    );
 }
 
