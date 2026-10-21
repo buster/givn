@@ -6,10 +6,10 @@ use super::super::model::{
 };
 use super::spans::span_for_ident;
 use super::syntax::type_label;
-use syn::visit::Visit;
+use syn::parse::Parser;
 use syn::{
-    Expr, ExprBinary, ExprCall, ExprField, ExprIf, ExprLoop, ExprMatch, ExprMethodCall, ExprTry,
-    FnArg, Member, Pat, ReturnType,
+    Expr, ExprBinary, ExprCall, ExprField, ExprIf, ExprLoop, ExprMacro, ExprMatch, ExprMethodCall,
+    ExprTry, FnArg, Member, Pat, ReturnType, visit::Visit,
 };
 
 pub(super) fn method_from_fn(
@@ -40,7 +40,7 @@ pub(super) fn method_from_fn(
             .map(|(index, callee)| Call {
                 order: index as u32,
                 callee,
-                resolution: Resolution::SameFile,
+                resolution: Resolution::External,
                 target: None,
             })
             .collect(),
@@ -73,6 +73,7 @@ pub(super) fn method_without_body(
 
 pub(super) fn outline_method(method: &Method, default: bool) -> OutlineItem {
     OutlineItem {
+        id: method.id.clone(),
         kind: if default {
             OutlineKind::TraitMethod
         } else {
@@ -119,6 +120,19 @@ impl<'ast> Visit<'ast> for FactsVisitor {
             self.calls.push(segment.ident.to_string());
         }
         syn::visit::visit_expr_call(self, node);
+    }
+
+    fn visit_expr_macro(&mut self, node: &'ast ExprMacro) {
+        // `syn` does not parse macro tokens. Expression-list macros such as
+        // `format!`, `println!`, and `vec!` contain calls that belong to the
+        // enclosing method; visit the arguments when they parse as expressions.
+        let parser = syn::punctuated::Punctuated::<Expr, syn::Token![,]>::parse_terminated;
+        if let Ok(expressions) = parser.parse2(node.mac.tokens.clone()) {
+            for expression in expressions {
+                self.visit_expr(&expression);
+            }
+        }
+        syn::visit::visit_expr_macro(self, node);
     }
 
     fn visit_expr_if(&mut self, node: &'ast ExprIf) {
@@ -230,4 +244,19 @@ fn signature(sig: &syn::Signature) -> Signature {
         text.push_str(&type_label(ty));
     }
     Signature { text }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::FactsVisitor;
+    use syn::visit::Visit;
+
+    #[test]
+    fn macro_arguments_contribute_calls() {
+        let block: syn::Block =
+            syn::parse_str("{ let _ = format!(\"{}\", self.last_done_id()); }").unwrap();
+        let mut visitor = FactsVisitor::default();
+        visitor.visit_block(&block);
+        assert_eq!(visitor.calls, vec!["last_done_id".to_string()]);
+    }
 }

@@ -1,0 +1,241 @@
+//! Deterministic production-source discovery.
+
+use super::model::{Language, LineKind, RepoPath};
+use anyhow::{Context, Result};
+use std::path::{Component, Path, PathBuf};
+
+/// Test and tooling directories excluded for every language.
+const EXCLUDED_DIRS: &[&str] = &["tests", "benches", "examples", "target", ".git"];
+
+/// Python-only tooling directories; a Rust source tree may legitimately use
+/// names such as `build/`, so the exclusion is language-specific.
+const PYTHON_EXCLUDED_DIRS: &[&str] = &[
+    "__pycache__",
+    ".venv",
+    "venv",
+    ".tox",
+    ".mypy_cache",
+    ".pytest_cache",
+    "build",
+    "dist",
+    "node_modules",
+];
+
+#[derive(Clone, Debug)]
+pub struct ScannedSource {
+    pub path: RepoPath,
+    pub content: String,
+    pub lines: Vec<LineKind>,
+}
+
+/// Discover production sources for the requested languages under the roots.
+///
+/// Roots are project-root-relative (already validated by the CLI). Test and
+/// tooling directories are excluded wherever they occur. Paths are sorted and
+/// deduplicated, so overlapping roots analyze each file once.
+pub fn discover(
+    project_root: &Path,
+    roots: &[PathBuf],
+    languages: &[Language],
+) -> Result<Vec<ScannedSource>> {
+    let canonical_root = project_root
+        .canonicalize()
+        .with_context(|| format!("resolve project root {}", project_root.display()))?;
+    let mut files = Vec::new();
+
+    for root in roots {
+        let path = project_root.join(root);
+        if !path.exists() {
+            continue;
+        }
+        walk(&canonical_root, &path, languages, &mut files)?;
+    }
+
+    files.sort_by(|a, b| a.absolute.cmp(&b.absolute));
+    files.dedup_by(|a, b| a.absolute == b.absolute);
+
+    let mut sources = Vec::with_capacity(files.len());
+    for path in files {
+        let content = match std::fs::read_to_string(&path.absolute) {
+            Ok(content) => content,
+            Err(_) => continue,
+        };
+        let lines = content
+            .lines()
+            .map(|line| classify_line(line, path.language))
+            .collect();
+        let relative = path
+            .absolute
+            .strip_prefix(&canonical_root)
+            .unwrap_or(&path.absolute);
+        sources.push(ScannedSource {
+            path: RepoPath::new(relative.to_string_lossy().into_owned()),
+            content,
+            lines,
+        });
+    }
+    Ok(sources)
+}
+
+fn walk(
+    project_root: &Path,
+    dir: &Path,
+    languages: &[Language],
+    out: &mut Vec<ScannedSourcePath>,
+) -> Result<()> {
+    let canonical = match dir.canonicalize() {
+        Ok(path) => path,
+        Err(_) => return Ok(()),
+    };
+    if !canonical.starts_with(project_root) {
+        return Ok(());
+    }
+    if canonical.is_file() {
+        if let Some(language) = language_for_path(&canonical, languages) {
+            out.push(ScannedSourcePath {
+                absolute: canonical,
+                language,
+            });
+        }
+        return Ok(());
+    }
+
+    let mut entries: Vec<_> = std::fs::read_dir(&canonical)?
+        .filter_map(Result::ok)
+        .collect();
+    entries.sort_by_key(|entry| entry.file_name());
+
+    for entry in entries {
+        let path = entry.path();
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if path.is_dir() {
+            if languages
+                .iter()
+                .all(|language| excluded_dir(&name, *language))
+            {
+                continue;
+            }
+            walk(project_root, &path, languages, out)?;
+        } else if language_for_path(&path, languages).is_some() {
+            walk(project_root, &path, languages, out)?;
+        }
+    }
+    Ok(())
+}
+
+#[derive(Clone, Debug)]
+struct ScannedSourcePath {
+    absolute: PathBuf,
+    language: Language,
+}
+
+/// Whether a repo path is a production source file for one of the languages.
+///
+/// Mirrors discovery: excluded directories and Python test modules never count
+/// as production scope, so the review gate does not fail on them.
+pub fn is_production_source(path: &str, languages: &[Language]) -> bool {
+    language_for_path(Path::new(path), languages).is_some()
+}
+
+fn excluded_dir(name: &str, language: Language) -> bool {
+    EXCLUDED_DIRS.contains(&name)
+        || (language == Language::Python && PYTHON_EXCLUDED_DIRS.contains(&name))
+}
+
+fn language_for_path(path: &Path, languages: &[Language]) -> Option<Language> {
+    let extension = path.extension()?.to_str()?;
+    let name = path.file_name()?.to_str()?;
+    let language = match extension {
+        "rs" if languages.contains(&Language::Rust) => Language::Rust,
+        "py" if languages.contains(&Language::Python) => {
+            if name.starts_with("test_") || name.ends_with("_test.py") {
+                return None;
+            }
+            Language::Python
+        }
+        _ => return None,
+    };
+    if path.components().any(|component| match component {
+        Component::Normal(name) => excluded_dir(&name.to_string_lossy(), language),
+        _ => false,
+    }) {
+        return None;
+    }
+    Some(language)
+}
+
+fn classify_line(line: &str, language: Language) -> LineKind {
+    let trimmed = line.trim();
+    if trimmed.is_empty() {
+        return LineKind::Blank;
+    }
+    match language {
+        Language::Rust => {
+            if trimmed.starts_with("//") || trimmed.starts_with("/*") || trimmed.starts_with('*') {
+                LineKind::Comment
+            } else {
+                LineKind::Code
+            }
+        }
+        Language::Python => {
+            if trimmed.starts_with('#') {
+                LineKind::Comment
+            } else {
+                LineKind::Code
+            }
+        }
+    }
+}
+
+/// Count code lines in a span union.
+pub fn code_lines(lines: &[LineKind], spans: &[super::model::SourceSpan], file: &RepoPath) -> u32 {
+    let mut marked = vec![false; lines.len()];
+    for span in spans.iter().filter(|span| &span.file == file) {
+        let start = span.start_line.saturating_sub(1) as usize;
+        let end = span.end_line.saturating_sub(1) as usize;
+        for marked_line in marked
+            .iter_mut()
+            .take(end.min(lines.len().saturating_sub(1)) + 1)
+            .skip(start)
+        {
+            *marked_line = true;
+        }
+    }
+    marked
+        .iter()
+        .enumerate()
+        .filter(|(index, marked)| **marked && lines.get(*index) == Some(&LineKind::Code))
+        .count() as u32
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn production_scope_is_language_specific() {
+        assert!(is_production_source(
+            "src/build/engine.rs",
+            &[Language::Rust]
+        ));
+        assert!(!is_production_source(
+            "src/build/engine.py",
+            &[Language::Python]
+        ));
+        assert!(!is_production_source(
+            "src/.venv/lib/helper.py",
+            &[Language::Python]
+        ));
+        assert!(!is_production_source(
+            "src/test_helper.py",
+            &[Language::Python]
+        ));
+        assert!(!is_production_source(
+            "src/helper_test.py",
+            &[Language::Python]
+        ));
+        assert!(is_production_source("src/helper.py", &[Language::Python]));
+        assert!(!is_production_source("tests/helper.rs", &[Language::Rust]));
+    }
+}

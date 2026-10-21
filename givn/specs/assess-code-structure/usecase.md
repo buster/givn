@@ -15,30 +15,34 @@ See the structure of an existing codebase and the units that are findings.
 
 ## Trigger
 
-The developer asks for a readability report.
+The developer asks for a outline report.
 
 ## Preconditions
 
 - The project is a Givn project.
-- The readability experiment is enabled.
+- The outline experiment is enabled.
 - Production sources are available.
 
 ## Main flow
 
-1. The developer requests a readability report; the system reads the production
+1. The developer requests a outline report; the system reads the production
    sources in the requested scope (the project-root `src/` by default, or the
    named `--path` roots).
-2. The system analyzes each source unit and reports its size, public surface,
-   cohesion and coupling indicators, and method complexity.
+2. The system analyzes each source unit and reports its outline first — method
+   declarations, signatures, and calls — then its size, public surface,
+   cohesion and coupling indicators, and method complexity. Same-unit calls
+   nest under their caller; calls to another component are leaves tagged with
+   the target component. Data is not part of the outline.
 3. The system classifies each unit and reports a finding for every unit above
    its threshold or carrying a long method; a within-limits unit is listed
    without a finding.
 4. The developer receives the report. It states findings only: no action, no
-   recommendation, and no advice.
+   recommendation, and no advice. The outline is the primary evidence; the
+   metrics support it.
 
 ## Extensions
 
-- 1: the readability experiment is disabled → the command reports that the experiment is disabled and exits non-zero; protects the preconditions.
+- 1: the outline experiment is disabled → the command reports that the experiment is disabled and exits non-zero; protects the preconditions.
 - 1: no production sources exist in the requested scope → the report says there are no production sources; protects the success guarantee.
 - 1: the requested scope does not exist → the command names the path and exits non-zero; protects the success guarantee.
 - 2: a source file cannot be analyzed → the report names the file and continues with the remaining units; protects the minimal guarantee.
@@ -53,6 +57,10 @@ The developer asks for a readability report.
 - Conditional code is counted as written: non-test `#[cfg(...)]` branches are not evaluated, and a parent-module `#[cfg(test)]` is not propagated.
 - The report format is independent of the analysis engine.
 - Every analyzed unit has exactly one classification.
+- The report leads with each unit's per-component call tree: declarations,
+  signatures, and calls, without data. Same-unit calls nest under the caller;
+  calls to another component are leaves tagged with the target. The metrics
+  hint at potential problems; they do not decide.
 - The report attaches no action or recommendation to a unit; a finding states the classification, the measured metrics, and the evidence.
 
 ## Examples
@@ -70,7 +78,7 @@ verification behaviour is unchanged.
 
 ## Success guarantee
 
-The developer receives a complete readability report for the production
+The developer receives a complete outline report for the production
 sources, with one classification and no recommendation for every analyzed
 unit.
 
@@ -82,13 +90,13 @@ unit.
 
 ## Capabilities
 
-- readability-report
+- outline-report
 
 ## Interactions
 
 | Capability | Consumer action | E2E scenario |
 |---|---|---|
-| readability-report | run a readability report | A developer runs a readability report and sees the classified units |
+| outline-report | run a outline report | A developer runs a outline report and sees the classified units |
 
 ## Includes
 
@@ -100,9 +108,9 @@ unit.
 
 ## Out of scope
 
-- Review enforcement; that is the `readability-review-gate` capability under `verify-change`.
+- Review enforcement; that is the `outline-review-gate` capability under `verify-change`.
 - A stored baseline or watchlist.
-- Languages other than Rust.
+- Languages other than Rust and Python.
 - Automatic refactoring.
 - Automatic Cargo workspace discovery; the developer names members with
   `--path`.
@@ -114,7 +122,7 @@ unit.
 
 ```mermaid
 flowchart LR
-  Developer((Developer)) --> Report[[Request readability report]]
+  Developer((Developer)) --> Report[[Request outline report]]
   Report --> Analyze[[Analyze production sources]]
   Analyze --> Classify[[Classify units and report findings]]
   Classify --> View[[Read the report]]

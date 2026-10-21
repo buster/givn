@@ -46,14 +46,19 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   and `givn timeline` renders one change or ideation topic as a self-contained
   interactive report: the workflow top to bottom, each phase's vertical
   session lanes and lane log, the longest steps, and where the time went.
-- **An opt-in readability report and review gate.** The default-off
-  `readability` addon adds `givn readability report`: an advisory,
-  deterministic findings-only snapshot of production Rust units — size, public
-  surface, cohesion/coupling, and method complexity — with one classification
-  and its evidence per unit at schema version 2, and no recommendation. When
-  the addon is enabled, `givn check review` also refuses any touched unit that
-  is still a finding at the committed `HEAD` unless it is fixed or carries a
-  change-scoped, owner-approved rationale. No baseline is stored.
+- **An opt-in outline report and review gate.** The default-off
+  `outline` addon adds `givn outline report`: an advisory snapshot of
+  production Rust and Python units that prints each unit's outline as a
+  per-component call tree — method declarations, signatures, and calls, with
+  same-component calls nested and other components as tagged leaves — first,
+  then size, public surface, cohesion/coupling, and method-complexity metrics
+  as hints. When the addon is enabled, `givn check review` prints the outline
+  of every touched unit with methods and requires a fresh-context reviewer's
+  per-unit `OUTLINE: PASS`, with a responsibility and call-order explanation,
+  or `FAIL`. Metrics are hints; an unreadable outline has no justification
+  path. No baseline is stored. See
+  [the outline addon guide](docs/outline.md#outline-comprehension--the-core-idea)
+  for an example outline, the phases, expected outcome, and warning signs.
 - **Scenario-by-scenario TDD with proof.** Each scenario runs RED (targeted,
   genuinely failing) → GREEN (minimum code) → REFACTOR → one atomic commit.
   The runner's strict mode is proven up front so an empty step definition can
@@ -154,6 +159,9 @@ Missing context never blocks a human commit.
   opt-in architecture-principles experiment: last-responsible-moment decision
   timing, consumer contracts now, component splits later, the phases it affects,
   and the signals that its rules need revision.
+- [`docs/outline.md`](docs/outline.md) — the experimental outline
+  addon: the advisory report, the change-relative review gate, its phases, and
+  the warning signs that the rules are not working.
 - [`docs/development-report.md`](docs/development-report.md) — the record
   settings (mode, default, privacy), the report screens, and analytics over the
   JSONL store with jq, SQLite, and DuckDB.

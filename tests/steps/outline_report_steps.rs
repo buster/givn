@@ -1,18 +1,18 @@
-//! Non-E2E step definitions for the readability report capability.
+//! Non-E2E step definitions for the outline report capability.
 //!
 //! CLI scenarios drive the real `givn` binary; pipeline scenarios call the
-//! public `givn::readability` API in process.
+//! public `givn::outline` API in process.
 
 use crate::common;
 use crate::steps::GivnWorld;
 use cucumber::{given, then, when};
 
-#[given("a Givn project with the readability experiment disabled")]
-fn readability_disabled_project(world: &mut GivnWorld) {
+#[given("a Givn project with the outline experiment disabled")]
+fn outline_disabled_project(world: &mut GivnWorld) {
     world.env = Some(common::make_init_root());
 }
 
-#[when(regex = r#"^the developer runs "(givn readability report[^"]*)"$"#)]
+#[when(regex = r#"^the developer runs "(givn outline report[^"]*)"$"#)]
 fn developer_runs(world: &mut GivnWorld, cmd: String) {
     crate::steps::user_runs_quoted(world, cmd);
 }
@@ -22,9 +22,9 @@ fn developer_runs_addons_list(world: &mut GivnWorld, cmd: String) {
     crate::steps::user_runs_quoted(world, cmd);
 }
 
-#[then("the readability addon is listed as disabled")]
-fn readability_addon_is_listed_as_disabled(world: &mut GivnWorld) {
-    readability_addon_is_disabled(world);
+#[then("the outline addon is listed as disabled")]
+fn outline_addon_is_listed_as_disabled(world: &mut GivnWorld) {
+    outline_addon_is_disabled(world);
 }
 
 #[given("a well-formed production source unit")]
@@ -33,7 +33,7 @@ fn well_formed_unit(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_small_unit(env);
+    crate::steps::outline_report_support::write_small_unit(env);
 }
 
 #[given("a malformed production source file")]
@@ -42,7 +42,7 @@ fn malformed_source(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_source(
+    crate::steps::outline_report_support::write_source(
         env,
         "src/malformed.rs",
         "pub struct Broken {\n",
@@ -94,22 +94,21 @@ fn command_exits_with_code_0(world: &mut GivnWorld) {
     assert_eq!(status, Some(0), "stderr: {}", crate::steps::stderr(world));
 }
 
-#[given("the readability fixture corpus")]
+#[given("the outline fixture corpus")]
 fn fixture_corpus(world: &mut GivnWorld) {
     let env = common::make_init_root();
-    crate::steps::readability_report_support::enable_readability(&env);
-    crate::steps::readability_report_support::write_fixture_corpus(&env);
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_fixture_corpus(&env);
     world.env = Some(env);
 }
 
-#[when("the readability report assesses every unit")]
+#[when("the outline report assesses every unit")]
 fn assess_every_unit(world: &mut GivnWorld) {
     let env = world
         .env
         .as_ref()
         .expect("a project root is required first");
-    let (units, classified, actions) =
-        crate::steps::readability_report_support::assessment_counts(env);
+    let (units, classified, actions) = crate::steps::outline_report_support::assessment_counts(env);
     world.additional_output = Some(format!("{units},{classified},{actions}"));
 }
 
@@ -129,10 +128,10 @@ fn every_unit_has_one(world: &mut GivnWorld) {
     assert_eq!(values[2], values[0], "some unit has no action");
 }
 
-#[given("a Givn project with the readability experiment enabled")]
-fn readability_enabled_project(world: &mut GivnWorld) {
+#[given("a Givn project with the outline experiment enabled")]
+fn outline_enabled_project(world: &mut GivnWorld) {
     let env = common::make_init_root();
-    crate::steps::readability_report_support::enable_readability(&env);
+    crate::steps::outline_report_support::enable_outline(&env);
     world.env = Some(env);
 }
 
@@ -142,7 +141,7 @@ fn data_only_enum(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_data_only_enum(env, "BigEnum", 520);
+    crate::steps::outline_report_support::write_data_only_enum(env, "BigEnum", 520);
 }
 
 #[given("a production source unit with a trait over the readable size")]
@@ -151,7 +150,7 @@ fn large_trait(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_large_trait(env, "BigTrait", 520);
+    crate::steps::outline_report_support::write_large_trait(env, "BigTrait", 520);
 }
 
 #[then("the command exits with code 1")]
@@ -169,7 +168,7 @@ fn report_written_to_file(world: &mut GivnWorld, relative: String) {
     let content = std::fs::read_to_string(env.path(&relative))
         .unwrap_or_else(|error| panic!("read {relative}: {error}"));
     assert!(
-        content.contains("readability report"),
+        content.contains("outline report"),
         "written report missing header: {content}"
     );
 }
@@ -186,7 +185,7 @@ fn over_readable_size(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_god_type(env, "GodType");
+    crate::steps::outline_report_support::write_god_type(env, "GodType");
 }
 
 #[then("the JSON report classifies the unit")]
@@ -203,28 +202,28 @@ fn json_report_classifies(world: &mut GivnWorld) {
 #[given("a production source unit supported by two analysis engines")]
 fn two_engines_fixture(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    crate::steps::readability_report_support::write_small_unit(&env);
+    crate::steps::outline_report_support::write_small_unit(&env);
     world.env = Some(env);
 }
 
-#[when("the readability report is produced twice")]
+#[when("the outline report is produced twice")]
 fn report_produced_twice(world: &mut GivnWorld) {
     let env = world
         .env
         .as_ref()
         .expect("a project root is required first");
-    let first = crate::steps::readability_report_support::assess_report(env);
-    let second = crate::steps::readability_report_support::assess_report(env);
+    let first = crate::steps::outline_report_support::assess_report(env);
+    let second = crate::steps::outline_report_support::assess_report(env);
     world.additional_output = Some(format!("{first}\u{0}{second}"));
 }
 
-#[when("the readability report is rendered from each engine")]
+#[when("the outline report is rendered from each engine")]
 fn render_from_each_engine(world: &mut GivnWorld) {
     let env = world
         .env
         .as_ref()
         .expect("a project root is required first");
-    let (syn, fake) = crate::steps::readability_report_support::engine_reports(env);
+    let (syn, fake) = crate::steps::outline_report_support::engine_reports(env);
     world.additional_output = Some(format!("{syn}\u{0}{fake}"));
 }
 
@@ -247,7 +246,7 @@ fn workspace_member(world: &mut GivnWorld, member: String) {
         .as_ref()
         .expect("a project root is required first");
     let relative = format!("{member}/src/engine.rs");
-    crate::steps::readability_report_support::write_god_type_at(env, "Engine", &relative);
+    crate::steps::outline_report_support::write_god_type_at(env, "Engine", &relative);
 }
 
 #[then("the report classifies the unit as a god type")]
@@ -274,8 +273,8 @@ fn production_and_test_sources(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_small_unit(env);
-    crate::steps::readability_report_support::write_god_type_at(env, "TestGod", "tests/big.rs");
+    crate::steps::outline_report_support::write_small_unit(env);
+    crate::steps::outline_report_support::write_god_type_at(env, "TestGod", "tests/big.rs");
 }
 
 #[then("the report does not name the test source")]
@@ -290,7 +289,7 @@ fn report_does_not_name_test_source(world: &mut GivnWorld) {
 #[given("a production source unit with a long method")]
 fn long_method(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    crate::steps::readability_report_support::write_long_method(&env);
+    crate::steps::outline_report_support::write_long_method(&env);
     world.env = Some(env);
 }
 
@@ -312,7 +311,7 @@ fn report_recommends_watch(world: &mut GivnWorld) {
 #[given("a production source unit with a module over the plan limit")]
 fn module_over_limit(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    crate::steps::readability_report_support::write_large_module(&env);
+    crate::steps::outline_report_support::write_large_module(&env);
     world.env = Some(env);
 }
 
@@ -328,7 +327,7 @@ fn report_classifies_module(world: &mut GivnWorld) {
 #[given("a production source unit with a large type in the inspect band")]
 fn inspect_band_type(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    crate::steps::readability_report_support::write_inspect_band_type(&env);
+    crate::steps::outline_report_support::write_inspect_band_type(&env);
     world.env = Some(env);
 }
 
@@ -344,14 +343,14 @@ fn report_recommends_exception(world: &mut GivnWorld) {
 #[given("a production source unit with more than 50 public methods")]
 fn many_public_methods(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    crate::steps::readability_report_support::write_many_public_methods(&env);
+    crate::steps::outline_report_support::write_many_public_methods(&env);
     world.env = Some(env);
 }
 
 #[given("a production source unit with platform-conditional methods")]
 fn platform_conditional(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    crate::steps::readability_report_support::write_conditional_unit(&env);
+    crate::steps::outline_report_support::write_conditional_unit(&env);
     world.env = Some(env);
 }
 
@@ -367,17 +366,17 @@ fn report_counts_both_variants(world: &mut GivnWorld) {
 #[given("a production source unit with exactly 500 code lines and cohesive methods")]
 fn boundary_500(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    crate::steps::readability_report_support::write_boundary_type(&env, 500);
+    crate::steps::outline_report_support::write_boundary_type(&env, 500);
     world.env = Some(env);
 }
 
-#[when("the readability report assesses the unit")]
+#[when("the outline report assesses the unit")]
 fn assess_unit_in_process(world: &mut GivnWorld) {
     let env = world
         .env
         .as_ref()
         .expect("a project root is required first");
-    world.additional_output = Some(crate::steps::readability_report_support::assess_report(env));
+    world.additional_output = Some(crate::steps::outline_report_support::assess_report(env));
 }
 
 #[then("the report classifies the unit as within-limits")]
@@ -410,7 +409,7 @@ fn unit_block(world: &GivnWorld, name: &str) -> String {
 #[given("a production source unit with 501 code lines and cohesive methods")]
 fn boundary_501(world: &mut GivnWorld) {
     let env = common::make_bare_root();
-    crate::steps::readability_report_support::write_boundary_type(&env, 501);
+    crate::steps::outline_report_support::write_boundary_type(&env, 501);
     world.env = Some(env);
 }
 
@@ -445,7 +444,7 @@ fn cohesive_type(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_cohesive_type(env, "Cohesive", 260);
+    crate::steps::outline_report_support::write_cohesive_type(env, "Cohesive", 260);
 }
 
 #[then("the report classifies the unit as a cohesive-large-type")]
@@ -463,16 +462,13 @@ fn within_readable_size(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_small_unit(env);
+    crate::steps::outline_report_support::write_small_unit(env);
 }
 
-#[then("the report labels the unit as a finding")]
-fn report_labels_finding(world: &mut GivnWorld) {
+#[then("the report labels the unit as a hint")]
+fn report_labels_hint(world: &mut GivnWorld) {
     let report = report_text(world);
-    assert!(
-        report.contains("FINDING"),
-        "expected a FINDING label: {report}"
-    );
+    assert!(report.contains("HINT"), "expected a HINT label: {report}");
 }
 
 #[then("the report records no recommendation")]
@@ -504,17 +500,17 @@ fn json_has_no_action_fields(world: &mut GivnWorld) {
     );
 }
 
-#[then("the JSON report reports 2 findings")]
-fn json_reports_two_findings(world: &mut GivnWorld) {
+#[then("the JSON report reports 2 hints")]
+fn json_reports_two_hints(world: &mut GivnWorld) {
     let value = json_output(world);
     assert_eq!(
-        value["summary"]["findings"], 2,
-        "unexpected findings count: {value}"
+        value["summary"]["hints"], 2,
+        "unexpected hints count: {value}"
     );
 }
 
-#[then("the JSON findings count matches the non-within-limits units")]
-fn json_findings_count_matches(world: &mut GivnWorld) {
+#[then("the JSON hints count matches the non-within-limits units")]
+fn json_hints_count_matches(world: &mut GivnWorld) {
     let value = json_output(world);
     let units = value["units"].as_array().expect("units");
     let expected = units
@@ -522,9 +518,9 @@ fn json_findings_count_matches(world: &mut GivnWorld) {
         .filter(|unit| unit["classification"] != "within-limits")
         .count();
     assert_eq!(
-        value["summary"]["findings"].as_u64(),
+        value["summary"]["hints"].as_u64(),
         Some(expected as u64),
-        "findings count does not match classifications: {value}"
+        "hints count does not match classifications: {value}"
     );
 }
 
@@ -560,7 +556,7 @@ fn no_unit_carries_action(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    let json = crate::steps::readability_report_support::assess_json(env);
+    let json = crate::steps::outline_report_support::assess_json(env);
     let value: serde_json::Value = serde_json::from_str(&json).expect("valid JSON");
     let text = value["units"].to_string();
     assert!(!text.contains("\"action\""), "action remains: {text}");
@@ -576,7 +572,7 @@ fn report_sorted_by_classification(world: &mut GivnWorld) {
     let mut keys = Vec::new();
     for line in report.lines() {
         let parts: Vec<&str> = line.split_whitespace().collect();
-        if parts.len() >= 5 && (parts[0] == "FINDING" || parts[0] == "WITHIN-LIMITS") {
+        if parts.len() >= 5 && (parts[0] == "HINT" || parts[0] == "WITHIN-LIMITS") {
             keys.push((
                 parts[4].to_string(),
                 parts[2].to_string(),
@@ -605,7 +601,7 @@ fn production_source_unit(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_small_unit(env);
+    crate::steps::outline_report_support::write_small_unit(env);
 }
 
 #[then("the JSON report names the supported constructs")]
@@ -629,10 +625,10 @@ fn json_analyzer_limitations(world: &mut GivnWorld) {
     );
 }
 
-#[then("the JSON report has schema version 2")]
+#[then("the JSON report has schema version 3")]
 fn json_schema_version(world: &mut GivnWorld) {
     let value = json_output(world);
-    assert_eq!(value["schema_version"], 2, "unexpected schema version");
+    assert_eq!(value["schema_version"], 3, "unexpected schema version");
 }
 
 #[then("the JSON report has rules version 1")]
@@ -652,7 +648,7 @@ fn item_position_macro(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    crate::steps::readability_report_support::write_item_macro(env);
+    crate::steps::outline_report_support::write_item_macro(env);
 }
 
 #[then("the report names the unsupported construct")]
@@ -724,17 +720,17 @@ fn report_recommends_no_plan(world: &mut GivnWorld) {
     );
 }
 
-#[given("the readability addon is disabled")]
-fn readability_addon_is_disabled_given(world: &mut GivnWorld) {
-    readability_addon_is_disabled(world);
+#[given("the outline addon is disabled")]
+fn outline_addon_is_disabled_given(world: &mut GivnWorld) {
+    outline_addon_is_disabled(world);
 }
 
-#[then("the readability addon is disabled")]
-fn readability_addon_is_disabled_then(world: &mut GivnWorld) {
-    readability_addon_is_disabled(world);
+#[then("the outline addon is disabled")]
+fn outline_addon_is_disabled_then(world: &mut GivnWorld) {
+    outline_addon_is_disabled(world);
 }
 
-fn readability_addon_is_disabled(world: &mut GivnWorld) {
+fn outline_addon_is_disabled(world: &mut GivnWorld) {
     let env = world
         .env
         .as_ref()
@@ -747,7 +743,275 @@ fn readability_addon_is_disabled(world: &mut GivnWorld) {
     );
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(
-        stdout.contains("[disabled]  readability"),
-        "readability should be disabled, got: {stdout}"
+        stdout.contains("[disabled]  outline"),
+        "outline should be disabled, got: {stdout}"
+    );
+}
+
+#[given("a Python module with a class and methods")]
+fn python_class_module(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::outline_report_support::write_python_class(env);
+}
+
+#[given("a Python module with top-level functions")]
+fn python_function_module(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::outline_report_support::write_python_module(env);
+}
+
+#[given("python3 is not on the PATH")]
+fn python3_absent(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    std::fs::create_dir_all(env.path(".empty-path")).expect("create empty PATH dir");
+}
+
+#[given("a python3 recorder that records every invocation")]
+fn python3_recorder(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::outline_report_support::write_python3_stub(env);
+}
+
+#[when("the developer runs the outline report")]
+fn developer_runs_report_without_python3(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let empty = env.path(".empty-path");
+    let empty_path = empty.to_string_lossy().into_owned();
+    let out = common::run_givn_with_envs(
+        env,
+        &["outline", "report"],
+        &[("PATH", empty_path.as_str())],
+    );
+    world.last_output = Some(out);
+}
+
+#[when("the developer runs the outline report with the recorder on the PATH")]
+fn developer_runs_report_with_recorder(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let recorder = env.path(".python3-stub");
+    let existing = std::env::var("PATH").unwrap_or_default();
+    let value = format!("{}:{existing}", recorder.display());
+    let out = common::run_givn_with_envs(env, &["outline", "report"], &[("PATH", value.as_str())]);
+    world.last_output = Some(out);
+}
+
+#[then(regex = r#"^the JSON report names the Python class "([^"]+)"$"#)]
+fn json_names_python_class(world: &mut GivnWorld, name: String) {
+    let value = json_output(world);
+    let units = value["units"].as_array().expect("units");
+    assert!(
+        units.iter().any(|unit| {
+            unit["name"].as_str() == Some(name.as_str())
+                && unit["language"].as_str() == Some("python")
+                && unit["kind"].as_str() == Some("type")
+                && unit["type_kind"].as_str() == Some("class")
+        }),
+        "no Python class {name}: {value}"
+    );
+}
+
+#[then(regex = r#"^the JSON report lists the class methods "([^"]+)" and "([^"]+)"$"#)]
+fn json_lists_class_methods(world: &mut GivnWorld, first: String, second: String) {
+    let value = json_output(world);
+    let unit = value["units"]
+        .as_array()
+        .expect("units")
+        .iter()
+        .find(|unit| {
+            unit["language"].as_str() == Some("python") && unit["kind"].as_str() == Some("type")
+        })
+        .unwrap_or_else(|| panic!("no Python class unit: {value}"));
+    let names: Vec<&str> = unit["methods"]
+        .as_array()
+        .expect("methods")
+        .iter()
+        .filter_map(|method| method["name"].as_str())
+        .collect();
+    assert!(
+        names.contains(&first.as_str()) && names.contains(&second.as_str()),
+        "expected methods {first} and {second}, got: {names:?}"
+    );
+}
+
+#[then(regex = r#"^the JSON outline records the call from "([^"]+)" to "([^"]+)"$"#)]
+fn json_outline_records_call(world: &mut GivnWorld, caller: String, callee: String) {
+    let value = json_output(world);
+    let items = value["units"]
+        .as_array()
+        .expect("units")
+        .iter()
+        .flat_map(|unit| unit["outline"].as_array().into_iter().flatten())
+        .collect::<Vec<_>>();
+    let item = items
+        .iter()
+        .find(|item| item["name"].as_str() == Some(caller.as_str()))
+        .unwrap_or_else(|| panic!("no outline item {caller}: {value}"));
+    let calls: Vec<&str> = item["calls"]
+        .as_array()
+        .expect("calls")
+        .iter()
+        .filter_map(|call| call["callee"].as_str())
+        .collect();
+    assert!(
+        calls.contains(&callee.as_str()),
+        "expected {caller} to call {callee}, got: {calls:?}"
+    );
+}
+
+#[then(regex = r#"^the JSON report records the file language "([^"]+)"$"#)]
+fn json_records_file_language(world: &mut GivnWorld, language: String) {
+    let value = json_output(world);
+    let files = value["files"].as_array().expect("files");
+    assert!(
+        files.iter().any(|file| {
+            file["path"].as_str() == Some("src/tracker.py")
+                && file["language"].as_str() == Some(language.as_str())
+        }),
+        "expected src/tracker.py to be {language}: {value}"
+    );
+}
+
+#[then("the JSON report names one Python module unit")]
+fn json_names_python_module(world: &mut GivnWorld) {
+    let value = json_output(world);
+    let modules: Vec<_> = value["units"]
+        .as_array()
+        .expect("units")
+        .iter()
+        .filter(|unit| {
+            unit["language"].as_str() == Some("python") && unit["kind"].as_str() == Some("module")
+        })
+        .collect();
+    assert_eq!(modules.len(), 1, "expected one Python module unit: {value}");
+    assert_eq!(
+        modules[0]["name"].as_str(),
+        Some("src/store.py"),
+        "unexpected module name: {value}"
+    );
+}
+
+#[then(regex = r#"^the JSON report lists the module functions "([^"]+)" and "([^"]+)"$"#)]
+fn json_lists_module_functions(world: &mut GivnWorld, first: String, second: String) {
+    let value = json_output(world);
+    let unit = value["units"]
+        .as_array()
+        .expect("units")
+        .iter()
+        .find(|unit| {
+            unit["language"].as_str() == Some("python") && unit["kind"].as_str() == Some("module")
+        })
+        .unwrap_or_else(|| panic!("no Python module unit: {value}"));
+    let names: Vec<&str> = unit["methods"]
+        .as_array()
+        .expect("methods")
+        .iter()
+        .filter_map(|method| method["name"].as_str())
+        .collect();
+    assert!(
+        names.contains(&first.as_str()) && names.contains(&second.as_str()),
+        "expected functions {first} and {second}, got: {names:?}"
+    );
+}
+
+#[then("the report names the analyzer as unavailable")]
+fn report_names_analyzer_unavailable(world: &mut GivnWorld) {
+    let report = report_text(world);
+    assert!(
+        report.contains("analyzer-unavailable"),
+        "expected an unavailable analyzer diagnostic, got: {report}"
+    );
+}
+
+#[then("the python3 recorder records no invocation")]
+fn recorder_records_no_invocation(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    assert!(
+        !crate::steps::outline_report_support::python3_stub_invoked(env),
+        "a Rust-only project must not invoke python3"
+    );
+}
+
+#[then("the report names only the rust language")]
+fn report_names_only_rust(world: &mut GivnWorld) {
+    let report = report_text(world);
+    let header = report.lines().next().unwrap_or_default();
+    assert!(
+        header.contains("outline report — rust,"),
+        "expected a rust-only header, got: {header}"
+    );
+    assert!(
+        !header.contains("python"),
+        "the header must not name python: {header}"
+    );
+}
+
+#[then(regex = r#"^the outline of the class "([^"]+)" shows "([^"]+)" calling "([^"]+)"$"#)]
+fn outline_class_shows_call(world: &mut GivnWorld, class: String, caller: String, callee: String) {
+    let out = world.last_output.as_ref().expect("report output");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let marker = format!("::{class}");
+    let section = stdout.split(&marker).nth(1).expect("class component");
+    let caller_marker = format!("def {caller}(");
+    let caller_offset = section.find(&caller_marker).expect("caller method");
+    let call_marker = format!("-> [public, {class}] {callee}");
+    assert!(
+        section[caller_offset..].contains(&call_marker),
+        "expected {caller} to call {callee} in {class}: {section}"
+    );
+}
+
+#[given("a production source unit whose method calls a module function")]
+fn cross_component_source(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::outline_report_support::write_cross_component_calls(env);
+}
+
+#[then("the type outline calls the module function without expanding it")]
+fn type_outline_keeps_cross_component_calls_leaf(world: &mut GivnWorld) {
+    let out = world.last_output.as_ref().expect("report output");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let engine = stdout
+        .split("type:src/component.rs::Engine")
+        .nth(1)
+        .expect("Engine component");
+    assert!(
+        engine.contains("-> [public, module] normalize"),
+        "expected the Engine outline to call normalize: {engine}"
+    );
+    assert!(
+        !engine.contains("helper"),
+        "a cross-component call must not expand the target's calls: {engine}"
+    );
+    let module = stdout
+        .split("module:src/component.rs")
+        .nth(1)
+        .expect("module component");
+    assert!(
+        module.contains("-> [private, module] helper"),
+        "expected normalize to call helper in the module component: {module}"
     );
 }

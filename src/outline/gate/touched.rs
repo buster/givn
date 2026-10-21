@@ -1,8 +1,8 @@
 //! Changed paths to touched units, including cross-file types and trait
 //! implementors.
 
-use crate::readability::classify::Assessment;
-use crate::readability::model::{Analysis, RepoPath, TypeKind, TypeRelation, UnitId, UnitKind};
+use crate::outline::classify::Assessment;
+use crate::outline::model::{Analysis, RepoPath, TypeKind, TypeRelation, UnitId, UnitKind};
 use std::collections::BTreeSet;
 
 pub struct TouchedSet {

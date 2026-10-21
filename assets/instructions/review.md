@@ -400,50 +400,40 @@ rather than trusting the subagent's report:
 9. Any contradiction: reject `REVIEW: PASS` and re-run the review subagent
    with the discrepancy named.
 
-{{#if addons.readability}}
-## Readability review gate
+{{#if addons.outline}}
+## Outline review gate
 
-When the `readability` addon is enabled, `givn check review --change <id>`
-runs the readability gate after the verification receipt. It analyzes every
-unit the change touched at the change base and at committed `HEAD` and reports
-each finding with its base/head size and classification.
+When the `outline` addon is enabled, `givn check review --change <id>`
+runs the outline gate after the verification receipt. The gate prints the
+outline of every touched unit that has methods: declarations, signatures, and
+the calls each method makes. Same-unit calls nest under the caller; calls to
+another component are leaves tagged with the target. The tree is forward-only:
+it never lists callers, and a cross-component leaf points at that component's
+own outline. An `[ambiguous]` edge means the analyzer could not choose a target;
+it is not the callee. The outline contains no method bodies or data.
 
-Every finding needs one of two decisions, at unit level:
+The review record must name the author and a fresh-context reviewer, and give
+every printed outline a verdict:
 
-- `READABILITY: FIXED <unit>` — the unit is under its threshold at head.
-- `READABILITY: JUSTIFIED <unit>` — the unit remains a finding and a rationale
-  exists at `givn/changes/<id>/readability/rationales/<slug>.md`.
+- `OUTLINE: AUTHOR <id>`
+- `OUTLINE: REVIEWER <id>`
+- `OUTLINE: PASS <unit> | <what the unit is responsible for; why its calls happen in that order>`
+- `OUTLINE: FAIL <unit> | <reason>`
+- `OUTLINE: PASS` when every outline passes.
 
-A rationale names the unit and classification, cites the evidence, states why
-the current shape is the right one and what the unit is responsible for, names
-at least one rejected alternative, and records the owner. It also records
-`Author:`, `Reviewed-by:`, and `Review verdict: accept`. The reviewer is a
-fresh-context subagent that did not write the rationale; `Reviewed-by` must
-differ from `Author`, and the author must not fill the reviewer fields. A
-temporary decision also records a follow-up and expiry. Truth and quality are the owner's
-judgment; the gate checks the mechanical floor only. A justification cannot
-use ownership or scope as a reason. Code is owned by everyone working on the
-project; leaving debt because it is not your code is not acceptable. The
-banned reasons include "not my code", "not this change", "legacy", "out of
-scope", "too risky", "no time", and "later".
+`REVIEWER` must differ from `AUTHOR`. A `PASS` needs a responsibility and
+call-order explanation; an empty explanation fails. A `FAIL` blocks review, and
+there is no justification path for an unreadable outline: fix the code and
+re-review. Every touched unit with an outline needs a verdict; a missing
+verdict fails. Unknown or conflicting `OUTLINE:` markers fail.
 
-The reviewer verifies the rationale rather than trusting it:
+The gate's metrics are hints, not the gate. A unit can be
+readable while a metric flags it, and a unit can be unreadable while every
+metric is clean; the outline verdict decides. `READABILITY: FIXED` and
+`READABILITY: JUSTIFIED` are retired. Historical rationales are evidence only;
+they do not satisfy the outline gate.
 
-- Verify every `Evidence:` and `Why this shape is right:` claim against the
-  actual base/head measurements and the unit's full responsibility set, and
-  reject a rationale that describes only part of the unit.
-- Reject an extraction that merely relocates a smell — a long method becoming
-  a long parameter list, a measured size lowered by hiding the literals, or a
-  suppression added to silence the symptom.
-- When a rationale claims a replaceable module boundary, require a consumer or
-  test that uses it through the neutral contract; reject a private
-  implementation split that only the current adapter can reach.
-
-When any finding exists, record `READABILITY: PASS` after a fresh reviewer
-context reads only the deterministic outline and can explain the unit's
-responsibility and call order. If it cannot, record `FAIL <reason>`; a `FAIL`
-always blocks review. A migration plan may be part of a rationale, but a plan
-alone is not an escape from fixing or justifying the current shape.
+A standalone `FAIL <reason>` still blocks the review.
 {{/if}}
 
 ## Result
