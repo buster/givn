@@ -40,7 +40,7 @@ Feature: Require Merged Step Definitions
     And  the candidate is still unproven
     And  no regular scope result exists for the candidate
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer archives a change whose delta step definitions are already in the permanent test tree
     Given  a givn project with a completed change "merged-steps" ready to archive
     And  the change's spec tree binds "an imported catalog" in "steps/catalog_steps.py"

@@ -293,7 +293,7 @@ scenario 1, the production gate and guidance).
   ```
 - COMMIT: one commit containing the resume call site and this scenario's
   regression test. Body: the scenario title.
-- [ ] COMMIT: `<!-- hash -->` — An unproven archive candidate with a missing step definition is not verified again
+- [x] COMMIT: `90a3b4bf8eeb90d1d1e66cbeb35927bc24ff28e9` — An unproven archive candidate with a missing step definition is not verified again
 
 ## Scenario 4 — Consumer archives a change whose delta step definitions are already in the permanent test tree
 
@@ -310,7 +310,10 @@ scenario 1, the production gate and guidance).
 - RED (captured before scenario 1's GREEN, while the e2e step is a `todo!()`
   stub):
   ```
-  <!-- paste the targeted RED output captured during setup -->
+  1 feature
+  1 scenario (1 failed)
+  2 steps (1 passed, 1 failed)
+  Step panicked. Captured output: not yet implemented: TODO: write the change's delta step file
   ```
 - GREEN: fill the success step functions. Run targeting this scenario with
   the real CLI; must exit 0.
@@ -321,7 +324,9 @@ scenario 1, the production gate and guidance).
     --exact --nocapture
   ```
   ```
-  <!-- paste GREEN output, exit 0 -->
+  1 feature
+  1 scenario (1 passed)
+  7 steps (7 passed)
   ```
 - REFACTOR: format/clippy; re-run targeted scenario and the delta e2e scope.
   ```
@@ -329,7 +334,7 @@ scenario 1, the production gate and guidance).
     ./run-tests.sh --e2e
   ```
   ```
-  <!-- paste output with the @e2e count, exit 0 -->
+  Summary [0.855s] 1 test run: 1 passed, 3 skipped
   ```
 - COMMIT: one commit containing the e2e fixture and regression coverage.
   Body: the scenario title.
