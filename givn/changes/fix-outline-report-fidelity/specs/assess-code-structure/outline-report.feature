@@ -72,7 +72,7 @@ Feature: Outline report
     And the report records the evidence "method-complexity > 50"
     And the report records no "method-code-lines" evidence
 
-  @givn.added @wip
+  @givn.added
   Scenario: A Rust module outline lists the types it declares
     Given a production Rust module with three declared types and one free function
     When the developer runs "givn outline report --json"

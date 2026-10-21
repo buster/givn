@@ -246,7 +246,7 @@ are independent; emit only the predicate that fired.
   - [x] Evidence:   Scenario: A long method found through complexity reports only complexity evidence | 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
   - [x] Evidence:   Scenario: A long method found through complexity reports only complexity evidence | 1 scenario (1 passed) | 5 steps (5 passed)
-- [ ] COMMIT:
+- [x] COMMIT: 2a98d7fc7698b2e3fad028b017d85d42241f0709
 
 ## 10. A Rust module outline lists the types it declares
 
@@ -256,11 +256,11 @@ empty signature and no calls and never enter `MethodIndex`.
 
 - RED: remove `@wip`; add `write_module_with_types` and bindings; targeted
   run; paste non-zero.
-  - [ ] Evidence:
+  - [x] Evidence: baseline: ✘  Given a production Rust module with three declared types and one free function | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:76:5 | Step doesn't match any function
 - GREEN: add Rust module type items; targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A Rust module outline lists the types it declares | 1 scenario (1 passed) | 3 steps (3 passed)
 - REFACTOR: targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A Rust module outline lists the types it declares | 1 scenario (1 passed) | 3 steps (3 passed)
 - [ ] COMMIT:
 
 ## 11. A module outline interleaves member types and free functions in source order

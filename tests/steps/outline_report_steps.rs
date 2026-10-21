@@ -399,9 +399,10 @@ fn report_recommends_no_action(world: &mut GivnWorld) {
 
 fn unit_block(world: &GivnWorld, name: &str) -> String {
     let report = report_text(world);
+    let marker = format!("::{name}");
     report
         .split("\n\n")
-        .find(|block| block.contains(name))
+        .find(|block| block.contains(&marker))
         .unwrap_or(&report)
         .to_string()
 }
@@ -1194,5 +1195,36 @@ fn complexity_method(world: &mut GivnWorld) {
     let env = common::make_bare_root();
     crate::steps::outline_report_support::write_complexity_method(&env);
     world.env = Some(env);
+}
+
+#[given("a production Rust module with three declared types and one free function")]
+fn module_with_types(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_module_with_types(&env);
+    world.env = Some(env);
+}
+
+#[then(regex = r#"^the JSON module outline lists the types "([^"]+)", "([^"]+)", and "([^"]+)"$"#)]
+fn json_module_lists_types(world: &mut GivnWorld, first: String, second: String, third: String) {
+    let value = json_output(world);
+    let names = module_outline_names(&value);
+    for name in [first, second, third] {
+        assert!(names.contains(&name), "module outline lacks {name}: {names:?}");
+    }
+}
+
+fn module_outline_names(value: &serde_json::Value) -> Vec<String> {
+    value["units"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .find(|unit| unit["kind"].as_str() == Some("module"))
+        .and_then(|unit| unit["outline"].as_array())
+        .into_iter()
+        .flatten()
+        .filter(|item| item["kind"].as_str() == Some("type"))
+        .filter_map(|item| item["name"].as_str().map(ToString::to_string))
+        .collect()
 }
 
