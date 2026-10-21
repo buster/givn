@@ -28,13 +28,16 @@ The developer asks for a readability report.
 1. The developer requests a readability report; the system reads the production
    sources in the requested scope (the project-root `src/` by default, or the
    named `--path` roots).
-2. The system analyzes each source unit and reports its size, public surface,
-   cohesion and coupling indicators, and method complexity.
+2. The system analyzes each source unit and reports its outline first — method
+   declarations, signatures, and internal calls — then its size, public
+   surface, cohesion and coupling indicators, and method complexity. Data is
+   not part of the outline.
 3. The system classifies each unit and reports a finding for every unit above
    its threshold or carrying a long method; a within-limits unit is listed
    without a finding.
 4. The developer receives the report. It states findings only: no action, no
-   recommendation, and no advice.
+   recommendation, and no advice. The outline is the primary evidence; the
+   metrics support it.
 
 ## Extensions
 
@@ -53,6 +56,8 @@ The developer asks for a readability report.
 - Conditional code is counted as written: non-test `#[cfg(...)]` branches are not evaluated, and a parent-module `#[cfg(test)]` is not propagated.
 - The report format is independent of the analysis engine.
 - Every analyzed unit has exactly one classification.
+- The report leads with each unit's method outline: declarations, signatures,
+  and internal calls, without data. The metrics support the outline.
 - The report attaches no action or recommendation to a unit; a finding states the classification, the measured metrics, and the evidence.
 
 ## Examples

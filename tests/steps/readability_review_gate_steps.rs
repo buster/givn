@@ -1085,6 +1085,52 @@ fn review_reports(world: &mut GivnWorld, expected: String) {
     );
 }
 
+#[then(regex = r#"^the review reports an outline for "([^"]+)"$"#)]
+fn review_reports_outline(world: &mut GivnWorld, unit: String) {
+    let report = gate_report(world);
+    assert!(
+        report.contains(&format!("OUTLINE   {unit}")),
+        "the review does not report an outline for {unit}:\n{report}"
+    );
+    assert!(
+        report.contains("outline:"),
+        "the outline block is missing:\n{report}"
+    );
+    assert!(
+        report
+            .lines()
+            .any(|line| line.trim_start().starts_with("method [")),
+        "the outline has no method entries:\n{report}"
+    );
+}
+
+#[then(regex = r#"^the review reports the outline check "([^"]+)" for "([^"]+)"$"#)]
+fn review_reports_outline_check(world: &mut GivnWorld, check: String, unit: String) {
+    let report = gate_report(world);
+    let start = report
+        .find(&format!("OUTLINE   {unit}"))
+        .unwrap_or_else(|| panic!("no outline for {unit}:\n{report}"));
+    let rest = &report[start + 1..];
+    let end = rest
+        .find("OUTLINE   ")
+        .map(|index| start + 1 + index)
+        .unwrap_or(report.len());
+    let block = &report[start..end];
+    assert!(
+        block.contains(&format!("CHECK     {check}")),
+        "outline check for {unit} is not {check}:\n{block}"
+    );
+}
+
+#[then(regex = r#"^the review reports a supporting metric finding for "([^"]+)"$"#)]
+fn review_reports_supporting_finding(world: &mut GivnWorld, unit: String) {
+    let report = gate_report(world);
+    let found = report
+        .lines()
+        .any(|line| line.trim_start().starts_with("SUPPORTING") && line.contains(&unit));
+    assert!(found, "no SUPPORTING line reports {unit}:\n{report}");
+}
+
 #[then(regex = r#"^the review reports no finding for "([^"]+)"$"#)]
 fn review_reports_no_finding(world: &mut GivnWorld, unit: String) {
     let report = gate_report(world);

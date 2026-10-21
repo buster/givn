@@ -29,7 +29,7 @@ pub fn render_human(assessment: &Assessment) -> String {
     out.push_str(
         "outline first: method declarations, signatures, and internal calls; metrics are supporting evidence\n",
     );
-    out.push_str("findings only: this report does not block review or archive\n\n");
+    out.push_str("advisory report: this report does not block review or archive\n\n");
 
     let mut units: Vec<&ClassifiedUnit> = assessment.units.iter().collect();
     units.sort_by(|left, right| {
@@ -116,7 +116,7 @@ pub fn render_human(assessment: &Assessment) -> String {
     out
 }
 
-fn render_outline(unit: &ClassifiedUnit) -> String {
+pub(crate) fn render_outline(unit: &ClassifiedUnit) -> String {
     let mut out = String::from("  outline:\n");
     if unit.outline.is_empty() {
         out.push_str("    (none)\n");

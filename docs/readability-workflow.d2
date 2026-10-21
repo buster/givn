@@ -8,7 +8,7 @@ implement: |md
 
   - `givn readability report`
   - **Outline** — signatures and calls
-  - Findings + supporting metrics
+  - Supporting metrics
 
   **Checks**
 
@@ -25,15 +25,15 @@ review: |md
 
   **Produces**
 
-  - `FIXED` or `JUSTIFIED` for every touched finding
-  - A rationale for each `JUSTIFIED` finding
-  - `READABILITY: PASS` when findings exist
+  - `OUTLINE PASS` or `FAIL` per touched unit
+  - `AUTHOR`, `REVIEWER`, `READABILITY: PASS`
 
   **Checks**
 
-  - Every touched finding has a decision
-  - The reviewer explains responsibility and call order from the outline
-  - A `JUSTIFIED` rationale has an independent reviewer accept
+  - Every printed outline has a verdict
+  - `PASS` explains responsibility and call order
+  - `FAIL` blocks; no justification path
+  - The reviewer differs from the author
 | {
   style.fill: "#fff7ed"
   style.stroke: "#ea580c"
@@ -51,7 +51,7 @@ archive: |md
   **Checks**
 
   - The review record is complete
-  - An unaccounted finding blocks archive
+  - An outlined unit without a verdict blocks archive
 | {
   style.fill: "#f0fdf4"
   style.stroke: "#16a34a"

@@ -47,14 +47,15 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   interactive report: the workflow top to bottom, each phase's vertical
   session lanes and lane log, the longest steps, and where the time went.
 - **An opt-in readability report and review gate.** The default-off
-  `readability` addon adds `givn readability report`: an advisory,
-  deterministic findings-only snapshot of production Rust units — size, public
-  surface, cohesion/coupling, and method complexity — with one classification
-  and its evidence per unit at schema version 2, and no recommendation. When
-  the addon is enabled, `givn check review` also refuses any touched unit that
-  is still a finding at the committed `HEAD` unless it is fixed or carries a
-  change-scoped, owner-approved rationale. No baseline is stored. See [the
-  readability addon guide](docs/readability.md#outline-comprehension--the-core-idea)
+  `readability` addon adds `givn readability report`: an advisory snapshot of
+  production Rust units that prints each unit's outline — method declarations,
+  signatures, and internal calls — first, then supporting size, public surface,
+  cohesion/coupling, and method-complexity metrics. When the addon is enabled,
+  `givn check review` prints the outline of every touched unit with methods and
+  requires a fresh-context reviewer's per-unit `OUTLINE PASS`, with a
+  responsibility and call-order explanation, or `FAIL`. Metrics are supporting
+  evidence; an unreadable outline has no justification path. No baseline is
+  stored. See [the readability addon guide](docs/readability.md#outline-comprehension--the-core-idea)
   for an example outline, the phases, expected outcome, and warning signs.
 - **Scenario-by-scenario TDD with proof.** Each scenario runs RED (targeted,
   genuinely failing) → GREEN (minimum code) → REFACTOR → one atomic commit.
