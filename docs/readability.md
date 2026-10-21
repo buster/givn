@@ -2,7 +2,7 @@
 
 **TL;DR:** The `readability` addon is an optional, default-off experiment for
 production Rust. Its core idea is outline comprehension: read the outline of a
-type or module — declarations, signatures, and calls, without bodies — and
+type or module — method declarations, signatures, and calls, without bodies — and
 check that it explains the unit's responsibility and call order. It also
 produces an advisory report of structural debt and, when enabled, a
 change-relative review gate: every type or module the change touches, including
@@ -14,8 +14,8 @@ change.
 ## What it does
 
 - **Report.** `givn readability report` prints each unit's outline first —
-  declarations, signatures, and internal calls — then the finding and the
-  supporting metrics, as human text or JSON. It never blocks a change and
+  method declarations, signatures, and internal calls — then the finding and
+  the supporting metrics, as human text or JSON. It never blocks a change and
   stores no baseline.
 - **Review gate.** With the addon enabled, `givn check review --change <id>`
   checks the types and modules the change touched, including their methods.
@@ -28,22 +28,21 @@ The addon is not only a size counter. Its central rule is R1: a reader given
 only a unit's outline should be able to state (a) what the unit is responsible
 for and (b) why its internal calls happen in that order.
 
-The outline lists the unit's declarations, field and method signatures, their
-order, and the internal calls each method makes. It contains no method bodies
-and no comments. `givn readability report` prints the outline for every unit;
-`--json` emits the full outline under `units[].outline`, including
-call-resolution labels.
+The outline lists the unit's method declarations and signatures, their order,
+and the internal calls each method makes. Data — fields and enum variants — is
+not part of the outline. It contains no method bodies and no comments.
+`givn readability report` prints the outline for every unit; `--json` emits the
+full outline under `units[].outline`, including call-resolution labels.
 
 An example, abridged from the report:
 
 ```text
 OUTLINE type:src/engine.rs::Engine
-  field data [private] Vec<String>
   method [public] fn build(&self) -> Engine
     calls: validate -> compile
   method [private] fn validate(&self) -> Result<()>
   method [private] fn compile(&self) -> Engine
-  metrics (supporting): code lines 120; methods 3; public methods 1; fields 1
+  metrics (supporting): code lines 120; methods 3; public methods 1
 ```
 
 The names and call order state the unit's job: build an `Engine` by validating,

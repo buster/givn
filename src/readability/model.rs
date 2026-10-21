@@ -321,7 +321,6 @@ pub struct Call {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum OutlineKind {
     Type,
-    Field,
     Method,
     TraitMethod,
 }

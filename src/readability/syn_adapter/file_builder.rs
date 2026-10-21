@@ -2,8 +2,8 @@
 
 use super::super::model::{
     Analysis, AnalysisDiagnostic, AnalyzedFile, Construct, DiagnosticKind, Field, FileStatus,
-    Method, OutlineItem, OutlineKind, RepoPath, SourceSpan, SourceUnit, TypeKind, TypeRelation,
-    UnitId, UnitKind, UnitOrigin, UnsupportedNote, Visibility,
+    Method, OutlineItem, RepoPath, SourceSpan, SourceUnit, TypeKind, TypeRelation, UnitId,
+    UnitKind, UnitOrigin, UnsupportedNote, Visibility,
 };
 use super::facts::{method_from_fn, method_without_body, outline_method};
 use super::impl_index::{ImplCollector, ImplRecord, PendingImpl};
@@ -237,18 +237,6 @@ impl FileBuilder {
                 origin: UnitOrigin::Production,
             })
             .collect::<Vec<_>>();
-        let outline = fields
-            .iter()
-            .enumerate()
-            .map(|(index, field)| OutlineItem {
-                kind: OutlineKind::Field,
-                name: field.name.clone(),
-                visibility: field.visibility,
-                signature: field.type_label.clone(),
-                order: index as u32,
-                calls: Vec::new(),
-            })
-            .collect();
         let span = span_for_ident(&item.ident, &self.content, &self.path);
         self.spans.push(span.clone());
         self.push_type(
@@ -258,26 +246,13 @@ impl FileBuilder {
             span,
             fields,
             Vec::new(),
-            outline,
+            Vec::new(),
         );
     }
 
     fn push_enum(&mut self, item: &ItemEnum, _module_path: &str) {
         let span = span_for_ident(&item.ident, &self.content, &self.path);
         self.spans.push(span.clone());
-        let outline = item
-            .variants
-            .iter()
-            .enumerate()
-            .map(|(index, variant)| OutlineItem {
-                kind: OutlineKind::Field,
-                name: variant.ident.to_string(),
-                visibility: Visibility::Public,
-                signature: String::new(),
-                order: index as u32,
-                calls: Vec::new(),
-            })
-            .collect();
         self.push_type(
             item.ident.to_string(),
             TypeKind::Enum,
@@ -285,7 +260,7 @@ impl FileBuilder {
             span,
             Vec::new(),
             Vec::new(),
-            outline,
+            Vec::new(),
         );
     }
 

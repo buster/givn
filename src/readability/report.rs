@@ -27,7 +27,7 @@ pub fn render_human(assessment: &Assessment) -> String {
         findings
     );
     out.push_str(
-        "outline first: declarations, signatures, and calls; metrics are supporting evidence\n",
+        "outline first: method declarations, signatures, and internal calls; metrics are supporting evidence\n",
     );
     out.push_str("findings only: this report does not block review or archive\n\n");
 
@@ -127,10 +127,6 @@ fn render_outline(unit: &ClassifiedUnit) -> String {
         let kind = outline_kind_label(item.kind);
         let visibility = visibility_label(item.visibility);
         match item.kind {
-            OutlineKind::Field => out.push_str(&format!(
-                "    {kind} {} [{}] {}\n",
-                item.name, visibility, item.signature
-            )),
             OutlineKind::Type => {
                 out.push_str(&format!("    {kind} {} [{}]\n", item.name, visibility));
             }
@@ -154,7 +150,6 @@ fn render_outline(unit: &ClassifiedUnit) -> String {
 fn outline_kind_label(kind: OutlineKind) -> &'static str {
     match kind {
         OutlineKind::Type => "type",
-        OutlineKind::Field => "field",
         OutlineKind::Method => "method",
         OutlineKind::TraitMethod => "trait method",
     }
@@ -266,7 +261,6 @@ fn outline_json(unit: &ClassifiedUnit) -> Vec<Value> {
             json!({
                 "kind": match item.kind {
                     OutlineKind::Type => "type",
-                    OutlineKind::Field => "field",
                     OutlineKind::Method => "method",
                     OutlineKind::TraitMethod => "trait_method",
                 },
@@ -414,27 +408,17 @@ mod tests {
             method_findings: vec![],
             method_names: vec!["build".to_string()],
             methods: vec![],
-            outline: vec![
-                OutlineItem {
-                    kind: OutlineKind::Field,
-                    name: "data".to_string(),
-                    visibility: Visibility::Private,
-                    signature: "Vec<String>".to_string(),
-                    order: 1,
-                    calls: vec![],
-                },
-                OutlineItem {
-                    kind: OutlineKind::Method,
-                    name: "build".to_string(),
-                    visibility: Visibility::Public,
-                    signature: "fn build(&self) -> Engine".to_string(),
-                    order: 2,
-                    calls: vec![
-                        call("new", Resolution::External),
-                        call("build", Resolution::SameFile),
-                    ],
-                },
-            ],
+            outline: vec![OutlineItem {
+                kind: OutlineKind::Method,
+                name: "build".to_string(),
+                visibility: Visibility::Public,
+                signature: "fn build(&self) -> Engine".to_string(),
+                order: 2,
+                calls: vec![
+                    call("new", Resolution::External),
+                    call("build", Resolution::SameFile),
+                ],
+            }],
             evidence: vec![],
         };
         let assessment = Assessment {
@@ -462,8 +446,11 @@ mod tests {
             .find("metrics (supporting):")
             .expect("supporting metrics");
         assert!(outline < metrics, "outline must come before metrics");
-        assert!(text.contains("field data [private] Vec<String>"));
         assert!(text.contains("method [public] fn build(&self) -> Engine"));
+        assert!(
+            !text.contains("field data"),
+            "data is not part of the outline"
+        );
         assert!(text.contains("calls: build"));
         assert!(
             !text.contains("calls: new"),
