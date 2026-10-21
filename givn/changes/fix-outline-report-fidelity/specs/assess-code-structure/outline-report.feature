@@ -64,7 +64,7 @@ Feature: Outline report
     And the report records the evidence "type-public-methods > 50"
     And the report records no "type-kind-trait" evidence
 
-  @givn.added @wip
+  @givn.added
   Scenario: A long method found through complexity reports only complexity evidence
     Given a production source unit with a method over the complexity limit but within the length limit
     When the outline report assesses the unit

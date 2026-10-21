@@ -231,7 +231,7 @@ no `type-kind-trait` for a public-method-only interface.
   - [x] Evidence:   Scenario: An interface found through its public methods reports only public-method evidence | 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
   - [x] Evidence:   Scenario: An interface found through its public methods reports only public-method evidence | 1 scenario (1 passed) | 5 steps (5 passed)
-- [ ] COMMIT:
+- [x] COMMIT: 59b2188f78e430bde5625a39bc920609d94166b7
 
 ## 9. A long method found through complexity reports only complexity evidence
 
@@ -240,12 +240,12 @@ are independent; emit only the predicate that fired.
 
 - RED: remove `@wip`; add `write_complexity_method` and bindings; targeted
   run; paste non-zero.
-  - [ ] Evidence:
+  - [x] Evidence: baseline: ✘  Given a production source unit with a method over the complexity limit but within the length limit | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:68:5 | Step doesn't match any function
 - GREEN: rewrite the method-length evidence branch and emit separate
   complexity evidence; targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A long method found through complexity reports only complexity evidence | 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A long method found through complexity reports only complexity evidence | 1 scenario (1 passed) | 5 steps (5 passed)
 - [ ] COMMIT:
 
 ## 10. A Rust module outline lists the types it declares
