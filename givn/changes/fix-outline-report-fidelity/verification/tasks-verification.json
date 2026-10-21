@@ -2,12 +2,12 @@
   "schema": 2,
   "change": "fix-outline-report-fidelity",
   "status": "passed",
-  "head": "203f57adc4bc9f256ea6d033a51b2aa570c41397",
+  "head": "656c1d587fd6b3b9efee4fdf02dbcf1e282b60bf",
   "features_path": "givn/changes/fix-outline-report-fidelity/specs",
   "features_digest": "27571b011a7550ad1e0a213ffaae0acff0c62084832158f7e34c60b442a10e59",
   "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
   "command": "./run-tests.sh --non-e2e",
-  "tested_content_digest": "04d09c0097d3601eb906c1bd4cafe09185b9b31854d53b267b5af08a33e762d1",
+  "tested_content_digest": "99f673a128d9a289d3578d9836e7ad19d48bfec9df329a2fe097aee86464cd4e",
   "content_scope": "change-proof/v1",
   "runner_exit": 0,
   "result": {
@@ -17,5 +17,5 @@
     "failed": 0,
     "skipped": 0
   },
-  "finished_at_unix": 1792590960
+  "finished_at_unix": 1792591478
 }

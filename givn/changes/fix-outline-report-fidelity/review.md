@@ -1,10 +1,12 @@
 # Review: fix-outline-report-fidelity
 
-Fresh-context re-review of the committed candidate at `HEAD` = `203f57ad`
+Fresh-context re-review of the committed candidate at `HEAD` = `656c1d58`
 against the proposal, delta spec, design, design-review, tasks, arc42, the
-owning use case, and the durable specs. The previous review ended with F1–F7;
-this review re-checked each remediation claim by reading the code, the tests,
-and the documentation, and by running the targeted checks below.
+owning use case, and the durable specs. The previous review ended
+`REVIEW: FAIL` on the two coverage findings R1 and R2. Commit `656c1d58` adds
+the two missing regression tests and corrects the design sentence about the
+qself type. This review re-read the code, the tests, and the documentation,
+re-ran both new tests and both gates, and re-checked the audit below.
 
 ## Fabrication Audit (do this first)
 
@@ -68,19 +70,19 @@ the CLI scenarios.
 
 **Previous findings disposition**
 
-| Previous finding | Status after 203f57ad | Evidence |
+| Previous finding | Status after 656c1d58 | Evidence |
 |---|---|---|
 | F1 — multi-segment external qualifier reported as same_file | remediated | `src/outline/resolve.rs:197-222`; `resolution_requires_shape_consistent_owners` at `:471` |
 | F2 — Python named receiver lost its unique candidate | remediated | `src/outline/resolve.rs:140-153`; same test asserts a qualifier with no matching owner becomes `name_only` |
 | F3 — Python `ast.unparse` callee fallback | remediated | `src/outline/python_adapter/extractor.py:19-51`; `a_computed_callee_is_not_invented` at `src/outline/python_adapter/mod.rs:420` |
-| F4 — qself call used the qself type | behaviour remediated for the as-trait form; regression test missing | `src/outline/syn_adapter/facts.rs:131-142`; R2 below |
-| F5 — promised resolver and gate regression tests absent | partially remediated | type-only gate test added at `tests/outline_gate_smoke.rs:611`; free-function gate test and qself test still absent (R1, R2) |
+| F4 — qself call used the qself type | remediated | `src/outline/syn_adapter/facts.rs:131-142`; `tests::qself_uses_the_trait_owner` at `src/outline/syn_adapter/facts.rs:321` asserts both `<Widget as Store>::make()` → `Store` and `<Widget>::run()` → `Widget` |
+| F5 — promised resolver and gate regression tests absent | remediated | type-only gate test at `tests/outline_gate_smoke.rs:611`; free-function gate test `a_module_with_free_functions_still_needs_a_verdict` at `tests/outline_gate_smoke.rs:635`; qself test at `src/outline/syn_adapter/facts.rs:321` |
 | F6 — durable docs and documentation plan diverged | remediated | chapters 01, 03, 04, 05, 06, 08, 10, 11, 12, arc42 README, use case updated; R-115 extended, R-122 added |
 | F7 — task record not machine-checkable; invalid hash | remediated | `givn check tasks --change fix-outline-report-fidelity` exits 0 with 20 scenarios; hashes corrected |
 
 **Promised-architecture cross-check** — every component, file, and test target
-design.md promised exists, except the two regression-test promises recorded as
-R1 and R2:
+design.md promised exists, including the two regression tests that R1 and R2
+previously reported as missing:
 
 | Component or file (from design.md) | Exists? | Path |
 |---|---|---|
@@ -97,8 +99,8 @@ R1 and R2:
 | JSON `target`, resolution tag, non-nesting `name_only` | yes | `src/outline/report.rs` |
 | Method-bearing touched-unit selection | yes | `src/outline/gate.rs:569` |
 | Gate regression test for a type-only module | yes | `tests/outline_gate_smoke.rs:611` |
-| Gate regression test for a module with free functions | **no** | R1 below |
-| Resolver unit test for every shape row, including qself | **partial** | R2 below |
+| Gate regression test for a module with free functions | yes | `tests/outline_gate_smoke.rs:635` |
+| Shape-row tests, including qself | yes | `src/outline/resolve.rs` resolver tests cover the shape-consistent rows; the qself shape row is covered at `src/outline/syn_adapter/facts.rs:321` |
 | Regular bindings, fixtures, e2e file | yes | `tests/steps/outline_report_steps.rs`, `outline_report_support.rs`, `outline_report_e2e_steps.rs` |
 | Durable docs and the owning use case | yes | `docs/outline.md`, `docs/arc42/*`, `givn/specs/assess-code-structure/usecase.md` |
 
@@ -172,19 +174,21 @@ evidence. The tag filters in `run-tests.sh:71-75` are complementary
 (`not @e2e` versus `@e2e`), so the scopes are disjoint. The archive receipt
 will carry the measured per-scope result.
 
-**Git tree status** — `git status --porcelain` reports two entries after this
-review record was rewritten:
+**Git tree status** — `git status --porcelain` was empty when this review
+started at `656c1d58`: no untracked or modified file was present. After the
+review runs it reports two entries:
 
 ```
  M givn/changes/fix-outline-report-fidelity/review.md
-?? givn/changes/fix-outline-report-fidelity/verification/
+ M givn/changes/fix-outline-report-fidelity/verification/tasks-verification.json
 ```
 
-The modified file is this review record; the caller must commit it before the
-archive gate. The untracked directory contains the generated
-`tasks-verification.json` and `tasks-result.json` from `givn check tasks`; it is
-generated evidence, not production, spec, or documentation work. No production,
-test, spec, design, or task file is modified.
+The first is this review record. The second is the generated tasks receipt,
+refreshed by the mandated `givn check tasks` run; it now names `656c1d58`
+instead of the older `203f57ad`. Both are generated or review artefacts, not
+production, test, spec, design, or task work. The caller must commit both
+before the archive gate. The earlier `verification/` directory is tracked
+since `656c1d58`, not untracked.
 
 **Design.md conformance check**
 
@@ -195,12 +199,12 @@ test, spec, design, or task file is modified.
 | Step files | regular bindings in `outline_report_steps.rs`; e2e file unchanged | same two files; e2e Given/When shared | yes | n/a |
 | Files and modules table | named production files and docs | all exist; extra existing `syn_adapter/spans.rs` | yes (extra helper) | note only |
 | Gate selection | `unit.metrics.methods > 0` | `!unit.method_names.is_empty()` (`gate.rs:569`); `method_names` is built from `unit.methods` (`classify.rs:163-168`) and `metrics.methods` is `unit.methods.len()` (`metrics.rs:147`) | yes, equivalent | n/a |
-| Gate regression test | design.md:185 and :368 promise a test for a module with only type items **and** a module with free functions | only the type-only test exists at `tests/outline_gate_smoke.rs:611`; no free-function module test or gate scenario exists | **no** | not resolved (R1) |
-| Resolver test | design.md:186 promises a table test for every shape row; the shape table includes qself | resolver tests cover the qualifier-prefix and Python-convention cases, but no test covers the qself owner derivation | **partial** | not resolved (R2) |
+| Gate regression test | design.md:185 and :368 promise a test for a module with only type items **and** a module with free functions | both tests exist: `a_module_with_only_type_items_needs_no_verdict` at `tests/outline_gate_smoke.rs:611` and `a_module_with_free_functions_still_needs_a_verdict` at `:635`; the free-function test asserts `!passed` and `MISSING outline module:src/free.rs` | yes | R1 resolved |
+| Resolver test | design.md:186 promises a table test for every shape row; the shape table includes qself | resolver tests cover the qualifier-prefix and Python-convention rows; `qself_uses_the_trait_owner` at `src/outline/syn_adapter/facts.rs:321` covers the qself shape row at the adapter, asserting `Store` for the as-trait form and `Widget` for the inherent form | yes, with the qself row covered at the adapter | R2 resolved |
 | Multi-segment qualifier (`std::path::Path`) is external | normative rule | `function_qualifier_matches` rejects a multi-segment qualifier unless rooted at `crate`/`self`/`super`; test asserts `std::path::Path` is external and `crate::line::Line` can match | yes | n/a |
 | Python `Qualifier` with no matching owner → unique candidate `name_only` | normative rule | `resolve.rs:140-153` returns `name_only_or_ambiguous` for a qualifier with no compatible owner | yes | n/a |
 | Python computed callee is not recorded | normative rule | `extractor.py:19-51` returns `None` for a non-`Name`/`Attribute` callee; test asserts no `make()` or `<call>` name | yes | n/a |
-| qself uses the trait owner segment before the callee | normative shape table | `facts.rs:131-142` takes the last segment before the callee when `qself.position > 0`; the as-trait form is correct | yes for `<T as Trait>`; no test | R2 |
+| qself uses the trait owner segment before the callee | normative shape table; design.md:238 now scopes the fallback: the last segment before the callee for `<T as Trait>::method()`, the qself type `T` for the inherent `<T>::method()` form | `facts.rs:131-142` takes the last segment before the callee when `qself.position > 0` and the qself type at position 0; `tests::qself_uses_the_trait_owner` asserts both forms | yes | R2 resolved |
 | Schema 3 / rules 1 | unchanged | `outline_json` schema 3, rules 1 | yes | n/a |
 | Documentation plan | chapters 01, 03, 04, 05, 06 §6.19, 08, 10, 11, 12, arc42 README, usecase, outline.md, README | all updated | yes | n/a |
 
@@ -261,7 +265,7 @@ did nest. Two consecutive runs were byte-identical.
 |---|---|---|---|
 | `developer--primary-user` | Read a call tree whose certainty labels are trustworthy | Tags lead with the resolution label, visibility, and owner; the tree reads in one pass; `name_only` stays a visible leaf | no finding |
 | `agent--technical-role` | Use JSON `target` without re-deriving it | JSON call objects carry `resolution` and `target`; a `name_only` target is explicitly a candidate | no finding |
-| `givn-maintainer--owner` | Audit resolver evidence through one neutral model | Tags distinguish same-file, cross-file, name-only, and ambiguous edges; the resolver and adapters are shape-neutral | no finding (the missing regression tests are coverage findings R1/R2, not text/format failures) |
+| `givn-maintainer--owner` | Audit resolver evidence through one neutral model | Tags distinguish same-file, cross-file, name-only, and ambiguous edges; the resolver and adapters are shape-neutral | no finding (the former R1/R2 regression-test gaps are closed and verified below) |
 
 **Baseline:** every call tag leads with a domain resolution label
 (`same_file`, `project_other_file`, `name_only`, `ambiguous`), every line has
@@ -348,41 +352,45 @@ exists yet. Static inspection and the committed tests are the only evidence.
 | `src/outline/resolve.rs::function_qualifier_matches` multi-segment qualifier branch | 197-222 | no gap: covered by `resolution_requires_shape_consistent_owners` and `a_crate_rooted_qualifier_can_match_a_project_type` | verified by targeted `cargo test --lib outline::resolve` (3 passed) |
 | `src/outline/resolve.rs` Python `Qualifier` fallback | 140-153 | no gap: covered by the same resolver test (a qualifier with no matching owner becomes `name_only`) and the Python mapping in `python_adapter/mod.rs` | verified by the same test |
 | `src/outline/python_adapter/extractor.py` non-`Name`/`Attribute` callee | 19-51 | no gap: covered by `a_computed_callee_is_not_invented` (1 passed) | targeted test |
-| `src/outline/syn_adapter/facts.rs` qself owner derivation | 131-142 | **2. Missing test coverage** (R2) | none; no unit test or scenario asserts the as-trait qualifier or the position-0 fallback |
+| `src/outline/syn_adapter/facts.rs` qself owner derivation | 131-142 | no gap: covered by `tests::qself_uses_the_trait_owner` at `src/outline/syn_adapter/facts.rs:321`, which asserts `Store` for `<Widget as Store>::make()` and `Widget` for `<Widget>::run()` | targeted `cargo test --locked --lib outline::syn_adapter::facts` (2 passed) |
 | `src/outline/gate.rs` type-only module selection | 569 | no gap: covered by `a_module_with_only_type_items_needs_no_verdict` (1 passed) | targeted test |
-| `src/outline/gate.rs` module with free functions | 569 | **2. Missing test coverage** (R1) | none; design.md:185 and :368 promise a regression test for both cases, but only the type-only case is tested |
+| `src/outline/gate.rs` module with free functions | 569 | no gap: covered by `a_module_with_free_functions_still_needs_a_verdict` at `tests/outline_gate_smoke.rs:635`, which asserts `!passed` and `MISSING outline module:src/free.rs` for a touched free-function module | targeted `cargo test --locked --test outline_gate_smoke a_module_with_free_functions_still_needs_a_verdict` (1 passed) |
 | `src/outline/resolve.rs` `Method { SelfUnit }` row | 111-123 | no gap: the delta scenario `A call on the unit's own receiver resolves within the unit` covers it through the real subprocess; a unit test would duplicate the black-box scenario | delta scenario passed |
 | `src/outline/classify.rs`, `metrics.rs`, `scan.rs`, `report.rs`, `file_builder.rs`, `python_adapter/mod.rs`, `syntax.rs` | changed regions | no uncovered region identified beyond the rows above; the 20 delta scenarios and unit tests exercise the changed report, metrics, and rendering paths | verified by the 20-scenario tasks run |
 
 No dead code was identified in the changed production files. No gap is
-classified as "hard to test"; no fourth bucket is used. The two bucket-2 gaps
-are recorded as R1 and R2 below; the reviewer did not add tests or change
+classified as "hard to test"; no fourth bucket is used. The two previous
+bucket-2 gaps, R1 and R2, are closed by the committed regression tests named
+above; no bucket-2 gap remains. The reviewer did not add tests or change
 production code, design, spec, or tasks.
 
 ## Scenario execution evidence
 
-Review does not re-run the full suite. The change-scoped tasks receipt is now
-produced:
+Review does not re-run the full suite. The change-scoped tasks receipt was
+refreshed during this review:
 
 ```
 givn check tasks --change fix-outline-report-fidelity -> exit 0
+1 feature
 20 scenarios (20 passed), 94 steps (94 passed)
 change verification receipt: 20 scenario(s), 0 failed, 0 skipped
-at 203f57adc4bc9f256ea6d033a51b2aa570c41397
+at 656c1d587fd6b3b9efee4fdf02dbcf1e282b60bf
 ```
 
-This run was made against the committed candidate at `203f57ad` before this
-review record was rewritten. The current working tree has the modified
-`review.md` (this file), so `givn check tasks` now stops at its clean-tree
-precondition until the review record is committed; the committed candidate's
-receipt is unaffected. The receipt is
-`givn/changes/fix-outline-report-fidelity/verification/tasks-verification.json`
-(untracked, generated). No archive receipt exists yet; the implementer-reported
-pre-archive full-suite runs recorded in `tasks.md` are `./run-tests.sh
---non-e2e` → 686 passed, 111 skipped, and `./run-tests.sh --e2e` → 111 passed,
-686 skipped. Those are not receipt evidence; the archive will produce the
-authoritative per-scope receipt. **Receipt status:** unproven candidate — not
-archived yet.
+The run was made against the committed candidate at `656c1d58` with a clean
+tree. The run itself refreshed the tracked receipt at
+`givn/changes/fix-outline-report-fidelity/verification/tasks-verification.json`,
+so the working tree now carries that generated modification alongside this
+review record. The two new regression tests were run directly during this
+review: `cargo test --locked --lib outline::syn_adapter::facts` → 2 passed, and
+`cargo test --locked --test outline_gate_smoke
+a_module_with_free_functions_still_needs_a_verdict` → 1 passed. No archive
+receipt exists yet; the implementer-reported pre-archive full-suite runs
+recorded in `tasks.md` predate `656c1d58`, so they do not include the new gate
+smoke test. They are `./run-tests.sh --non-e2e` → 686 passed, 111 skipped, and
+`./run-tests.sh --e2e` → 111 passed, 686 skipped. Those are not receipt
+evidence; the archive will produce the authoritative per-scope receipt.
+**Receipt status:** unproven candidate — not archived yet.
 
 ## Overlap dispositions
 
@@ -407,66 +415,66 @@ decision is required.
 
 ## Findings
 
-**R1 — the promised gate regression test for a module with free functions is
-missing (bucket 2: missing test coverage).** `design.md:185` and `design.md:368`
-promise a gate regression test for a module with only type items **and** a
-module with free functions ("A gate regression test covers both cases"). The
-remediation added only the type-only test at
-`tests/outline_gate_smoke.rs:611`; no test or scenario asserts that a touched
-module with free functions still needs an outline verdict. The behaviour
-currently works: `src/outline/gate.rs:569` filters on
-`!unit.method_names.is_empty()`, and this change's own gate output prints
-outlines for free-function modules such as `module:src/outline/python_adapter/extractor.py`,
-`module:src/outline/syn_adapter/facts.rs`, and
-`module:src/outline/syn_adapter/spans.rs`. A manual gate run is not a
-regression test: a future change that filtered out all modules would still pass
-the type-only test. Action: add the free-function module gate regression test,
-run RED→GREEN→REFACTOR, commit it, and re-review.
+No open findings.
 
-**R2 — the qself trait-owner derivation has no test (bucket 2: missing test
-coverage).** `src/outline/syn_adapter/facts.rs:131-142` was changed for F4, but
-no unit test or delta scenario asserts the shape derivation. The as-trait form
-is correct by inspection: `<Widget as Store>::make()` takes the last segment
-before the callee (`Store`) and does not use the qself type. The `position == 0`
-fallback (`<Widget>::make()`) still uses the qself type; that path is outside
-the design's `<T as Trait>::method()` row but the design sentence "the qself
-type is not used as a qualifier" (`design.md:238`) is absolute, so either the
-sentence must be scoped to the as-trait form or the fallback needs its own
-recorded decision. The design's shape-table risk also promises "one fixture and
-one scenario per shape" (`design.md:437`), and no qself fixture or scenario
-exists. Action: add a resolver/fixture test for the as-trait form (and, if the
-no-trait fallback is intended, record that decision), run RED→GREEN→REFACTOR,
-commit it, and re-review.
+**R1 — resolved.** The promised gate regression test for a module with free
+functions exists as `a_module_with_free_functions_still_needs_a_verdict`
+(`tests/outline_gate_smoke.rs:635`), added in `656c1d58`. It commits a touched
+production module containing only `pub fn load()`, writes a review record with
+no verdict for that unit, and asserts the gate fails with
+`MISSING outline module:src/free.rs`. That failure is only produced after the
+gate selects the module unit and renders its outline, so a regression that
+filtered free-function modules out would make the assertion fail. The test
+passed in this review: `cargo test --locked --test outline_gate_smoke
+a_module_with_free_functions_still_needs_a_verdict` → 1 passed (16 filtered
+out). The companion type-only test at `:611` still passes, and the pair covers
+both cases `design.md:185` and `design.md:368` promised.
 
-These are unfinished verification work, not coverage buckets outside the three
-allowed classes; both classify as bucket 2 (missing test coverage).
+**R2 — resolved.** The qself derivation is covered by
+`qself_uses_the_trait_owner`
+(`src/outline/syn_adapter/facts.rs:321`), added in `656c1d58`. It parses
+`{ <Widget as Store>::make(); <Widget>::run(); }` and asserts
+`Function { qualifier: Some("Store") }` and
+`Function { qualifier: Some("Widget") }`. Against the pre-remediation
+`Some(type_owner(&qself.ty))` code (`b1fffc9e`) the first assertion would read
+`Widget` and fail, so the test is a real guard for the as-trait form; the
+second assertion pins the inherent-form fallback. The test passed in this
+review: `cargo test --locked --lib outline::syn_adapter::facts` → 2 passed
+(358 filtered out). `design.md:238` now scopes the rule: the last segment
+before the callee for `<T as Trait>::method()`, the qself type `T` for the
+inherent `<T>::method()` form. The design row and the implementation agree.
+
+Both findings were bucket 2 (missing test coverage). The committed tests close
+them; no bucket-2 gap remains.
 
 ## Sign-off
 
 - [x] Fabrication audit: step bodies, commits, promised components, strict
       mode, e2e tag integrity, e2e scope, duplicate implementations, local
       environment, and design commands/file layout/framework are clean. The
-      audit found the two test promises in R1/R2, which are recorded as
-      coverage findings below.
+      R1/R2 test promises that the previous review reported are now delivered
+      and verified by direct runs.
 - [x] Every checked task has a verified commit touching production code or its
-      scenario regression test; `givn check tasks` validates all 20.
-- [x] Every promised component exists, except the two promised regression
-      tests recorded as R1/R2.
+      scenario regression test; `givn check tasks` validated all 20 at the
+      clean candidate before this review record was rewritten.
+- [x] Every promised component and regression test exists, including the two
+      tests recorded as R1 and R2 in the previous review.
 - [x] Every consumer uses only its declared contract; no consumer imports an
       adapter implementation.
 - [x] Strict-mode proof present and passing in `tasks.md:72-86`.
 - [x] Scenario execution evidence is recorded per scope in the change
-      verification receipt for the tasks scope; the archive per-scope receipt
-      does not exist yet and will carry the measured result (unproven
-      candidate).
+      verification receipt for the tasks scope at `656c1d58`; the archive
+      per-scope receipt does not exist yet and will carry the measured result
+      (unproven candidate).
 - [x] Coverage classification uses the most recent available measured
       evidence plus static inspection; no archive receipt exists yet.
-- [ ] Every coverage gap classified and resolved — R1 and R2 remain open.
-- [x] Dead code deleted: none found. Missing tests added: the F1–F3 tests were
-      added; the R1/R2 tests are not (see the unchecked item above). No
-      hard-to-test gap is claimed.
-- [x] No redundant unit tests were added; the new resolver tests cover
-      branch behaviour not asserted through the black-box scenarios.
+- [x] Every coverage gap classified and resolved — R1 and R2 are covered by
+      `a_module_with_free_functions_still_needs_a_verdict` and
+      `tests::qself_uses_the_trait_owner`; both tests pass.
+- [x] Dead code deleted: none found. Missing tests added: the F1–F3 tests and
+      the R1/R2 tests are present and passing. No hard-to-test gap is claimed.
+- [x] No redundant unit tests were added; the new resolver and shape tests
+      cover branch behaviour not asserted through the black-box scenarios.
 - [x] No `@wip` tags remain in the delta spec; the delta contains no
       implementation-layer detail.
 - [x] Canonical E2E policy was read from the resolved specs instruction; the
@@ -485,7 +493,8 @@ allowed classes; both classify as bucket 2 (missing test coverage).
       prove the scoped counts.
 - [x] Implementation (commands, file layout, framework/driver) matches what
       design.md explicitly named; no design.md update or design-review re-run
-      was needed for those decisions.
+      was needed for those decisions (the qself sentence update is recorded in
+      the design conformance table above).
 - [x] Interaction coverage verified: the one inventory entry maps to one design
       matrix row, one permanent `@e2e` scenario, and real-subprocess step
       definitions.
@@ -545,8 +554,13 @@ OUTLINE: PASS
 
 README-IMPACT: updated - Description
 
-The outline gate passes; the blocking findings are R1 and R2 in the coverage
-classification. No production code, design, spec, or tasks file was changed by
-this review; only this review record was rewritten.
+The outline gate passes at `656c1d58` with 34 outlines (12 module and 22
+type), 3 metric hints, and exit 0. Every per-unit `OUTLINE: PASS` verdict was
+kept because the gate emitted the same 34 unit ids and the same description
+sentence for each one as the record already held from the previous gate run;
+no verdict needed an update. R1 and R2 are resolved by the committed tests
+named in Findings. No production code, design, spec, tasks, or test file was
+changed by this review; only this review record was rewritten and the generated
+tasks receipt was refreshed.
 
-**REVIEW: FAIL**
+**REVIEW: PASS**
