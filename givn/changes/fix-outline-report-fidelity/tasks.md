@@ -371,7 +371,7 @@ excluded spans.
   - [x] Evidence:   Scenario: A unit's physical lines cover only its own spans | 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
   - [x] Evidence:   Scenario: A unit's physical lines cover only its own spans | 1 scenario (1 passed) | 5 steps (5 passed)
-- [ ] COMMIT:
+- [x] COMMIT: bda7ebdc0a7cd254da6e350c20115a1a70e5329e
 
 ## 18. An impl-level test method is excluded from the unit's lines
 
@@ -381,11 +381,11 @@ impl is excluded; the production method count stays correct.
 
 - RED: remove `@wip`; add `write_impl_test_method` with exact counts and
   bindings; targeted run; paste non-zero.
-  - [ ] Evidence:
+  - [x] Evidence: baseline: ✘  Given a production source unit with an impl-level test method | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:133:5 | Step doesn't match any function
 - GREEN: apply exclusions in unit metrics; targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: An impl-level test method is excluded from the unit's lines | 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: An impl-level test method is excluded from the unit's lines | 1 scenario (1 passed) | 5 steps (5 passed)
 - [ ] COMMIT:
 
 ## 19. A name-only guess does not connect methods for cohesion

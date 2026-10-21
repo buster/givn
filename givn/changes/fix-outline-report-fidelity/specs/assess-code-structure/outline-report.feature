@@ -129,7 +129,7 @@ Feature: Outline report
     And the JSON report records the unit "type:src/scoped.rs::Scoped" metric "code_lines" as 8
     And the JSON report records the file "src/scoped.rs" metric "physical_lines" as 32
 
-  @givn.added @wip
+  @givn.added
   Scenario: An impl-level test method is excluded from the unit's lines
     Given a production source unit with an impl-level test method
     When the developer runs "givn outline report --json"
