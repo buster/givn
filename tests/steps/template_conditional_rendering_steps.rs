@@ -336,39 +336,39 @@ fn consumer_enables_addon(world: &mut GivnWorld, addon: String) {
     world.last_output = Some(out);
 }
 
-#[then("the served design instruction omits the Contracts and cells section")]
+#[then("the served design instruction omits the Contracts and components section")]
 fn served_design_omits_contracts_section(world: &mut GivnWorld) {
     let content = support::served_artifact_instruction(world, "design");
     assert!(
-        !content.contains("## Contracts and cells (mandatory)"),
-        "the served design instruction still carries the Contracts and cells section:\n{content}",
+        !content.contains("## Contracts and components (mandatory)"),
+        "the served design instruction still carries the Contracts and components section:\n{content}",
     );
 }
 
-#[then("the served design instruction contains the Contracts and cells section")]
+#[then("the served design instruction contains the Contracts and components section")]
 fn served_design_contains_contracts_section(world: &mut GivnWorld) {
     let content = support::served_artifact_instruction(world, "design");
     assert!(
-        content.contains("## Contracts and cells (mandatory)"),
-        "the served design instruction is missing the Contracts and cells section:\n{content}",
+        content.contains("## Contracts and components (mandatory)"),
+        "the served design instruction is missing the Contracts and components section:\n{content}",
     );
 }
 
-#[then("the served design-review instruction omits the Contracts and cells branch")]
+#[then("the served design-review instruction omits the Contracts and components branch")]
 fn served_design_review_omits_contracts_branch(world: &mut GivnWorld) {
     let content = support::served_artifact_instruction(world, "design-review");
     assert!(
-        !content.contains("Contracts and cells"),
-        "the served design-review instruction still carries the Contracts and cells branch:\n{content}",
+        !content.contains("Contracts and components"),
+        "the served design-review instruction still carries the Contracts and components branch:\n{content}",
     );
 }
 
-#[then("the served design-review instruction contains the Contracts and cells branch")]
+#[then("the served design-review instruction contains the Contracts and components branch")]
 fn served_design_review_contains_contracts_branch(world: &mut GivnWorld) {
     let content = support::served_artifact_instruction(world, "design-review");
     assert!(
-        content.contains("Contracts and cells"),
-        "the served design-review instruction is missing the Contracts and cells branch:\n{content}",
+        content.contains("Contracts and components"),
+        "the served design-review instruction is missing the Contracts and components branch:\n{content}",
     );
 }
 

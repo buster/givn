@@ -59,7 +59,7 @@ meaning exists nowhere.
 Prefer revisable choices where suitable.
 {{#if addons.architecture_principles}}
 For an architecture or design question, `givn instructions
-architecture-principles` owns the contract and cell rules and the
+architecture-principles` owns the contract and component rules and the
 decision-timing classification; this policy owns how the question is presented.
 {{/if}}
 If a decision changes stored information, public expectations, access, or

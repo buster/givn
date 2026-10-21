@@ -38,22 +38,22 @@ from the proposal and the design alone. An unresolved, unrecorded `D<n>` is a
 design-review finding.
 
 {{#if addons.architecture_principles}}
-## Contracts and cells (mandatory)
+## Contracts and components (mandatory)
 
 Apply `givn instructions architecture-principles`. Every consumer use case
-touched by this change has a contract; one cell may implement several
-contracts. Add a `### Contracts and Cells` subsection under Architecture
+touched by this change has a contract; one component may implement several
+contracts. Add a `### Contracts and Components` subsection under Architecture
 Impact with this table:
 
-| Contract | Consumer use case | Consumers | Implementing cell today | Split trigger |
+| Contract | Consumer use case | Consumers | Implementing component today | Split trigger |
 |---|---|---|---|---|
 | (e.g. `BookLending`) | (e.g. lend a book) | (e.g. `BookDesk`) | (e.g. `LendingDesk`) | (e.g. book and CD policies diverge) |
 
-A component is a unit with a named responsibility used from outside its own
-implementation; internal helpers need no contract. Contracts are current
-requirements and are not carried; the implementation split is deferred until
-the cell's responsibilities diverge. Delete the subsection when the change
-declares no contract.
+A component is a unit with a named responsibility and a consumer outside
+itself; internal helpers need no contract. Contracts are current requirements
+and are not carried; the component split is deferred until the component's
+responsibilities diverge. Delete the subsection when the change declares no
+contract.
 
 When a decision is carried, record its default, the trigger that forces the
 answer, why switching is cheap, and its owner in the Decisions ledger.
