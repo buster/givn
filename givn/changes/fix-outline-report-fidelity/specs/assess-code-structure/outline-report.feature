@@ -41,7 +41,7 @@ Feature: Outline report
     Then the JSON report records the call "refresh" as "ambiguous"
     And the JSON call "refresh" names no target
 
-  @givn.added @wip
+  @givn.added
   Scenario: An associated-function call whose qualifier contradicts the target is external
     Given a production source unit that calls "Line::from" while the project declares "Error::from"
     When the developer runs "givn outline report --json"
