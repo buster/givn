@@ -1,21 +1,23 @@
 # Readability addon
 
-**Experimental, feature-gated, default off.** The `readability` addon is an
-opt-in experiment: it reports structural debt in production Rust and, when
-enabled, blocks a review until every touched finding is fixed or independently
-justified. It is not a product guarantee; the schema, thresholds,
-classifications, and gate rules may change.
+**TL;DR:** The `readability` addon is an optional, default-off experiment for
+production Rust. It produces an advisory report of structural debt and, when
+enabled, a change-relative review gate: every type or module the change
+touches, including its methods, must be fixed or justified, and a justification
+needs a reviewer who did not write it. It stores no baseline, ignores non-Rust
+code, and is not a product guarantee: the schema, thresholds, classifications,
+and gate rules may change.
 
 ## What it does
 
 - **Report.** `givn readability report` gives an advisory snapshot of the
-  production Rust code. It classifies each type, module, and method and prints
-  the finding with its evidence, as human text or JSON. It never blocks a
-  change and stores no baseline.
+  production Rust code. It classifies each type and module and lists its method
+  findings with evidence, as human text or JSON. It never blocks a change and
+  stores no baseline.
 - **Review gate.** With the addon enabled, `givn check review --change <id>`
-  checks the types, modules, and methods the change touched. Every touched
-  finding must be fixed or justified. A justified finding needs a rationale
-  accepted by a reviewer who did not write it.
+  checks the types and modules the change touched, including their methods.
+  Every touched finding must be fixed or justified. A justified finding needs a
+  rationale accepted by a reviewer who did not write it.
 
 ## Workflow
 
@@ -35,6 +37,71 @@ baseline; the gate only looks at the units the change touched.
 | Implement | An optional report with findings and evidence, as human text or JSON. | Nothing. The report never blocks a change. |
 | Review | `READABILITY: FIXED` or `READABILITY: JUSTIFIED` for every touched finding; a rationale for each justified finding; `READABILITY: PASS` when findings exist. | Every touched finding has a decision. A justified finding's rationale names the finding and its evidence and has an independent reviewer's accept. |
 | Archive | Nothing new. | The review record is complete. An unaccounted finding blocks archive. |
+
+## What is checked in the source code exactly
+
+The report and the gate share the same analysis:
+
+- **Scope.** Only production `.rs` files under `src/` (or explicit `--path`
+  roots). `tests/`, `benches/`, `examples/`, and `target/` are excluded;
+  `#[cfg(test)]` items are excluded; `src/bin/**` is included.
+- **Units.** A unit is a type (struct, enum, trait, union, or type alias) or a
+  module. Its methods are checked with it.
+- **Type size.** Over 500 code lines:
+  - a trait or a type with more than 50 public methods is an `interface`;
+  - a struct or enum with at most one method is `data-only` (size-exempt);
+  - LCOM4 over 2 or TCC below 50% is a `god-type`;
+  - otherwise it is a `cohesive-large-type`.
+- **Module size.** Over 1,000 code lines is a `module`; 500–1,000 with at least
+  two declared types is a `multi-type-module`; 500–1,000 otherwise is a
+  `module`.
+- **Methods.** A method over 100 code lines or over 50 flow complexity is a
+  `method-length` finding.
+- **Gate finding.** A unit is a finding when its classification is not
+  `within-limits` and not `data-only`, or when it has a method finding.
+  Data-only size is exempt unless a method finding exists. The gate compares
+  the touched units at the change base and at committed `HEAD`: new, crossed,
+  grown, not grown, removed, or fixed.
+- **Decisions.** `FIXED` only if the unit is under threshold at head.
+  `JUSTIFIED` only with a rationale that matches the unit and classification
+  and passes the field checks: evidence, responsibility, a rejected
+  alternative, a confirmed owner, no banned reason, a `Follow-up:` and
+  `Expiry:` pair when temporary, and an independent reviewer's `accept`.
+- **Markers and record.** `READABILITY: FIXED`, `JUSTIFIED`, `PASS`, and
+  `FAIL`. Unknown or conflicting markers fail. A missing decision, a missing
+  review record, or a missing `PASS` when findings exist fails. `FAIL` blocks.
+- **Fail-closed guards.** No reachable change commit, a shallow clone, dirty
+  production paths, a non-UTF8 or line-break path, a symlink, a submodule, an
+  unreadable blob, or a changed `.rs` file the analyzer cannot analyze fails
+  the gate.
+- **Removed units.** A removed unit that was a finding still needs `FIXED`.
+- **Accounting is unit-level.** A rationale for a type does not cover its
+  module.
+
+## Non-Rust code
+
+The addon is Rust-only. The report discovers only `.rs` files; non-Rust files
+under `src/` are ignored. The review gate applies the same scope and ignores
+changed paths that do not end in `.rs`.
+
+Non-Rust code is not “unsupported”: it is out of scope. A change that only
+touches non-Rust files has nothing for the gate to check. A mixed-language
+`src/` tree gets a Rust-only structural view.
+
+| Input | Report | Review gate |
+|---|---|---|
+| Non-Rust file under `src/` | Ignored | Ignored |
+| Changed non-Rust file | Not analyzed | No effect |
+| Rust file with an unsupported construct | Named in `unsupported` | Reported; not a failure by itself |
+| Rust file that cannot be parsed | Named as a parse failure | Fails closed if changed |
+| Rust file the analyzer skips under a production root | Not analyzed | Fails closed if changed |
+| Rust file under `tests/`, `benches/`, `examples/`, `target/` | Excluded | Not production scope |
+
+A Rust file the analyzer cannot parse fails closed if changed. An unsupported
+construct is named in the report's `unsupported` list; it is not automatically a
+gate failure. Supporting another language would need a second adapter behind
+the neutral `SourceAnalyzer` port (ADR-074); the Rust adapter does not pretend
+to understand other syntax.
 
 A `JUSTIFIED` decision is not an exemption: the unit is still a finding. The
 rationale explains why the current shape is right, names a rejected
@@ -59,7 +126,10 @@ prove the judgment is right.
 Success looks like fewer findings over time, rationales that survive independent
 review, and fixes that change structure rather than only the measurement.
 
-## What may hint at a problem
+## What may hint at a problem due to this addon
+
+Feedback on these signals is wanted. This is an experiment; if you see them,
+say so.
 
 - **Justify rate stays high.** A growing set of `JUSTIFIED` units means the
   gate is recording debt, not reducing it.
