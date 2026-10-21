@@ -481,3 +481,11 @@ pub fn write_module_with_types(env: &TestEnv) {
     );
 }
 
+pub fn write_interleaved_module(env: &TestEnv) {
+    write_source(
+        env,
+        "src/interleave.rs",
+        "pub fn alpha() -> u64 {\n    1\n}\n\npub struct Beta;\n\npub fn gamma() -> u64 {\n    2\n}\n\npub struct Delta;\n",
+    );
+}
+

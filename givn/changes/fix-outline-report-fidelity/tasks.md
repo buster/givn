@@ -261,7 +261,7 @@ empty signature and no calls and never enter `MethodIndex`.
   - [x] Evidence:   Scenario: A Rust module outline lists the types it declares | 1 scenario (1 passed) | 3 steps (3 passed)
 - REFACTOR: targeted run; paste zero.
   - [x] Evidence:   Scenario: A Rust module outline lists the types it declares | 1 scenario (1 passed) | 3 steps (3 passed)
-- [ ] COMMIT:
+- [x] COMMIT: f7e7e526be5db6dd3ad554778f394f812990752a
 
 ## 11. A module outline interleaves member types and free functions in source order
 
@@ -270,12 +270,12 @@ functions and type items interleave by declaration line.
 
 - RED: remove `@wip`; add the interleave fixture and bindings; targeted run;
   paste non-zero.
-  - [ ] Evidence:
+  - [x] Evidence: baseline: ✘  Given a production Rust module with a free function, a type, a free function, and a type in that order | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:82:5 | Step doesn't match any function
 - GREEN: sort module outlines and set type-item order; targeted run; paste
   zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A module outline interleaves member types and free functions in source order | 1 scenario (1 passed) | 3 steps (3 passed)
 - REFACTOR: targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A module outline interleaves member types and free functions in source order | 1 scenario (1 passed) | 3 steps (3 passed)
 - [ ] COMMIT:
 
 ## 12. A Python module outline lists its classes

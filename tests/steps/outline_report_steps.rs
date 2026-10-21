@@ -1228,3 +1228,37 @@ fn module_outline_names(value: &serde_json::Value) -> Vec<String> {
         .collect()
 }
 
+#[given("a production Rust module with a free function, a type, a free function, and a type in that order")]
+fn interleaved_module(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_interleaved_module(&env);
+    world.env = Some(env);
+}
+
+#[then(regex = r#"^the JSON module outline lists "([^"]+)", "([^"]+)", "([^"]+)", and "([^"]+)" in source order$"#)]
+fn json_module_lists_in_order(
+    world: &mut GivnWorld,
+    first: String,
+    second: String,
+    third: String,
+    fourth: String,
+) {
+    let value = json_output(world);
+    let names = module_outline_all_names(&value);
+    assert_eq!(names, vec![first, second, third, fourth], "{value}");
+}
+
+fn module_outline_all_names(value: &serde_json::Value) -> Vec<String> {
+    value["units"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .find(|unit| unit["kind"].as_str() == Some("module"))
+        .and_then(|unit| unit["outline"].as_array())
+        .into_iter()
+        .flatten()
+        .filter_map(|item| item["name"].as_str().map(ToString::to_string))
+        .collect()
+}
+

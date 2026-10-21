@@ -78,7 +78,7 @@ Feature: Outline report
     When the developer runs "givn outline report --json"
     Then the JSON module outline lists the types "First", "Second", and "Third"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A module outline interleaves member types and free functions in source order
     Given a production Rust module with a free function, a type, a free function, and a type in that order
     When the developer runs "givn outline report --json"
