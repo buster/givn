@@ -523,3 +523,11 @@ pub fn write_resolution_report(env: &TestEnv) {
     );
 }
 
+pub fn write_inline_test_module(env: &TestEnv) {
+    write_source(
+        env,
+        "src/counted.rs",
+        "pub struct Counted {\n    value: u64,\n}\n\nimpl Counted {\n    pub fn value(&self) -> u64 {\n        self.value\n    }\n}\n#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n    fn reads_value() {\n        assert_eq!(Counted { value: 1 }.value(), 1);\n    }\n}\n",
+    );
+}
+

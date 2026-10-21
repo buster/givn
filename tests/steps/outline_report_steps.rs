@@ -1326,3 +1326,23 @@ fn resolution_report(world: &mut GivnWorld) {
     crate::steps::outline_report_support::write_resolution_report(env);
 }
 
+#[given("a production source file with an inline test module")]
+fn inline_test_module(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_inline_test_module(&env);
+    world.env = Some(env);
+}
+
+#[then(regex = r#"^the JSON report records the file "([^"]+)" metric "([^"]+)" as (\d+)$"#)]
+fn json_file_metric(world: &mut GivnWorld, path: String, metric: String, expected: u64) {
+    let value = json_output(world);
+    let file = value["files"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .find(|file| file["path"].as_str() == Some(path.as_str()))
+        .unwrap_or_else(|| panic!("no file {path}: {value}"));
+    assert_eq!(file[metric.as_str()].as_u64(), Some(expected), "{file}");
+}
+
