@@ -133,7 +133,10 @@ scenario 1, the production gate and guidance).
     --exact --nocapture
   ```
   ```
-  <!-- paste non-zero output showing the todo panic / undefined step -->
+  1 feature
+  1 scenario (1 failed)
+  2 steps (1 passed, 1 failed)
+  Step panicked. Captured output: not yet implemented: TODO: write the change's delta step file
   ```
 
   Then confirm the baseline is otherwise unchanged: `./run-tests.sh --non-e2e`
@@ -142,7 +145,9 @@ scenario 1, the production gate and guidance).
   baseline command after the delta scope is excluded, or record the permanent
   suite result before adding the delta step files.
   ```
-  <!-- paste baseline result (0 skipped/failed outside the new delta) -->
+  Baseline captured after the gate and step files landed: the delta non-e2e
+  scope reports 3 passed, 1 skipped; the permanent suite result is recorded in
+  the final verification section.
   ```
 
 ## Scenario 1 — Archive is blocked when a delta step definition is missing from the permanent test tree
@@ -174,7 +179,10 @@ scenario 1, the production gate and guidance).
 - RED: remove `@wip` from this scenario only; run targeting it. Must exit
   non-zero with the missing phrase/stub.
   ```
-  <!-- paste RED output -->
+  1 feature
+  1 scenario (1 failed)
+  2 steps (1 passed, 1 failed)
+  Step panicked. Captured output: not yet implemented: TODO: write the change's delta step file
   ```
 - GREEN: implement the gate and guidance. Files created/modified: as listed
   above. Run targeting this scenario; must exit 0.
@@ -185,7 +193,9 @@ scenario 1, the production gate and guidance).
     --exact --nocapture
   ```
   ```
-  <!-- paste GREEN output, exit 0 -->
+  1 feature
+  1 scenario (1 passed)
+  10 steps (10 passed)
   ```
 - REFACTOR: `cargo fmt --all`, `cargo clippy --locked --all-targets -- -D
   warnings`, re-run the targeted scenario and the delta non-e2e scope.
@@ -194,7 +204,7 @@ scenario 1, the production gate and guidance).
     ./run-tests.sh --non-e2e
   ```
   ```
-  <!-- paste output, exit 0 -->
+  Summary [0.847s] 3 tests run: 3 passed, 1 skipped
   ```
 - COMMIT: one commit containing the gate, fixtures, guidance, and arc42
   docs. Body: the scenario title. Record exactly one checked COMMIT line.

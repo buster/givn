@@ -25,8 +25,18 @@ holds:
 3. `review.md` contains `REVIEW: PASS`.
 4. Every post hook of every `apply.requires` artifact passes — including the
    test suite, which must be GREEN.
+5. Every step phrase bound by the change's delta step-definition files is also
+   bound in the permanent test tree (the project root minus the change,
+   archive, history, version-control, build, and cache trees). A gap refuses
+   before any mutation and names the project-relative delta file and the
+   missing phrases (a bounded list followed by `+N more`). The repair is to
+   merge each definition into its permanent per-capability step file and rerun
+   the archive.
 
-A gate failure exits non-zero with a clear error; nothing is archived.
+A gate failure exits non-zero with a clear error; nothing is archived. A
+resumed unproven candidate repeats the step-definition comparison before its
+verification scopes run again, so it is never re-verified with a permanent tree
+that still lacks a phrase.
 
 On success the command has run the suite, merged the delta `.feature` files
 into `givn/specs/` with every `@givn.*` tag stripped, and moved the change

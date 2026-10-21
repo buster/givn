@@ -69,6 +69,8 @@
 | **Eject** | Materialization of an embedded default into a project-owned `givn/` override. |
 | **Facet** | An independently resolvable asset unit such as a template or instruction. |
 | **Feature file** | A Gherkin `.feature` file. In givn it is the executable behavior specification and, after archive, the permanent record. |
+| **Step definition** | The project source that binds Gherkin step text to executable behavior. It is durable project source: a delta step file/copy under `givn/changes/<id>/specs/` travels into the archive as history, while the permanent per-capability step file is its home. A step-definition file is a file under a directory named `steps` or ending in `_steps`, or a file whose name ends in `_steps.<ext>`. Archive never merges, copies, or deletes it, and refuses before mutation when a step phrase bound by a delta step file has no permanent binding. Anti-terms: step glue; avoid "delta step" alone (say delta step file or delta step copy). |
+| **Step phrase** | The literal bound by a step binding (for example `an imported catalog` in `@given("an imported catalog")`), normalized by collapsing internal whitespace. It is the unit archive compares between the delta step files and the permanent test tree; a binding whose phrase is computed dynamically yields no step phrase. Anti-term: step body. |
 | **Manifest** | YAML data describing artifacts, dependencies, archive requirements, verify settings, coverage settings, and addons. |
 | **Manifest overlay** | Project YAML applied to the embedded manifest. `givn/config.yaml` is applied first; `givn/commands.yaml` is applied later. |
 | **Permanent spec** | A tag-stripped `.feature` under `givn/specs/<usecase-id>/`, used as the durable behavior source. |

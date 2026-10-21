@@ -130,6 +130,10 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
         // 1. Every apply.requires artifact must be Done (or Skipped).
         ensure_artifact_gates(&change_dir, &manifest)?;
 
+        // 1a. Delta step definitions must already bind in the permanent test
+        //     tree; archive merges features and narratives only.
+        ensure_step_definitions_merged(&project_root, &change_dir, StepGatePhase::Fresh)?;
+
         // 2. Configured archive hooks.
         let features_path = if crate::state::is_skipped("specs", &change_dir) {
             manifest.verify.features_path.clone()
@@ -225,6 +229,10 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
         } else {
             ensure_clean(&backend, &project_root, change, &manifest, Witness::Project)?;
         }
+
+        // Re-check the step-definition precondition before the candidate is
+        // merged or verified again.
+        ensure_step_definitions_merged(&project_root, &archive_target, StepGatePhase::Resume)?;
 
         // Re-check the e2e precondition against the permanent corpus before
         // re-running.
@@ -365,6 +373,446 @@ fn receipt_targets(project_root: &Path, receipt: &crate::proof::Receipt) -> Vec<
         .values()
         .map(|value| project_root.join(value))
         .collect()
+}
+
+/// Which archive phase runs the step-definition preflight. The phase only
+/// changes the refusal lead-in; the comparison is identical.
+#[derive(Clone, Copy)]
+enum StepGatePhase {
+    Fresh,
+    Resume,
+}
+
+/// Directory pruning for the step-definition walks. `components` names are
+/// pruned at any depth; `prefixes` are project-relative paths pruned only on
+/// the permanent walk so the change/archive trees cannot satisfy their own
+/// phrases.
+#[derive(Clone, Copy)]
+struct PruneRules {
+    components: &'static [&'static str],
+    prefixes: &'static [&'static str],
+}
+
+const STEP_COMPONENT_PRUNES: &[&str] = &[
+    ".git",
+    ".hg",
+    ".svn",
+    "target",
+    "node_modules",
+    ".venv",
+    "venv",
+    "coverage",
+    "dist",
+    "build",
+    "vendor",
+    "__pycache__",
+];
+
+const PERMANENT_PREFIX_PRUNES: &[&str] = &["givn/changes", "givn/archive", "givn/history"];
+
+const DELTA_PRUNE: PruneRules = PruneRules {
+    components: STEP_COMPONENT_PRUNES,
+    prefixes: &[],
+};
+
+const PERMANENT_PRUNE: PruneRules = PruneRules {
+    components: STEP_COMPONENT_PRUNES,
+    prefixes: PERMANENT_PREFIX_PRUNES,
+};
+
+/// Caps the phrases named in one refusal. The refusal still reports the exact
+/// remainder so a large gap is visible without an unbounded error.
+const MAX_REPORTED_PHRASES: usize = 20;
+
+/// Binding tokens that introduce a step phrase. They are matched anywhere in
+/// a step-definition file and consumed as an expression, so multi-line
+/// bindings and raw-string regexes are read whole.
+const BINDING_TOKENS: &[&str] = &[
+    "#[given(", "#[when(", "#[then(", "@given(", "@when(", "@then(", "@step(", "@Given(", "@When(",
+    "@Then(", "@And(", "@But(", "@Step(", "Given(", "When(", "Then(", "And(", "But(", "Step(",
+    ".Given(", ".When(", ".Then(", ".Step(",
+];
+
+impl PruneRules {
+    fn prunes_dir(&self, relative: &Path) -> bool {
+        if self.components.iter().any(|name| {
+            relative
+                .components()
+                .any(|component| component.as_os_str().to_string_lossy() == *name)
+        }) {
+            return true;
+        }
+        self.prefixes
+            .iter()
+            .any(|prefix| relative.starts_with(prefix))
+    }
+}
+
+/// The documented path rule: a file under a directory named `steps` or ending
+/// in `_steps`, or a file whose name ends in `_steps` (with or without an
+/// extension).
+fn is_step_definition_path(path: &Path) -> bool {
+    if path
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .is_some_and(|stem| stem.ends_with("_steps"))
+    {
+        return true;
+    }
+    path.parent().is_some_and(|parent| {
+        parent.components().any(|component| {
+            let name = component.as_os_str().to_string_lossy();
+            name == "steps" || name.ends_with("_steps")
+        })
+    })
+}
+
+/// Return each supported binding expression's text between its `(` and the
+/// matching `)`. A token that starts inside an already-consumed expression is
+/// skipped, so `@Given(` is not parsed twice as `Given(`.
+fn step_binding_expressions(text: &str) -> Vec<&str> {
+    let mut matches: Vec<(usize, &'static str)> = Vec::new();
+    for token in BINDING_TOKENS {
+        for (index, _) in text.match_indices(token) {
+            if text[..index]
+                .chars()
+                .next_back()
+                .is_some_and(|before| before.is_alphanumeric() || before == '_')
+            {
+                continue;
+            }
+            matches.push((index, token));
+        }
+    }
+    matches.sort_unstable();
+    let mut expressions = Vec::new();
+    let mut consumed = 0;
+    for (index, token) in matches {
+        if index < consumed {
+            continue;
+        }
+        let open = index + token.len() - 1;
+        let Some(close) = matching_paren(text, open) else {
+            continue;
+        };
+        expressions.push(&text[open + 1..close]);
+        consumed = close + 1;
+    }
+    expressions
+}
+
+/// Find the `)` matching the `(` at `open`, skipping escaped strings, raw
+/// strings, regex literals, and comments.
+fn matching_paren(text: &str, open: usize) -> Option<usize> {
+    let bytes = text.as_bytes();
+    if bytes.get(open) != Some(&b'(') {
+        return None;
+    }
+    let mut depth = 1usize;
+    let mut index = open + 1;
+    while index < text.len() {
+        if let Some((_, end)) = parse_literal(text, index) {
+            index = end;
+            continue;
+        }
+        if let Some((_, end)) = parse_regex_literal(text, index) {
+            index = end;
+            continue;
+        }
+        if let Some(end) = skip_comment(text, index) {
+            index = end;
+            continue;
+        }
+        match bytes[index] {
+            b'(' => depth += 1,
+            b')' => {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(index);
+                }
+            }
+            _ => {}
+        }
+        index += char_len(text, index);
+    }
+    None
+}
+
+fn char_len(text: &str, index: usize) -> usize {
+    text[index..]
+        .chars()
+        .next()
+        .map(char::len_utf8)
+        .unwrap_or(1)
+}
+
+/// Skip a line or block comment starting at `index`. `#` is a Python comment
+/// only when it starts a line's content; inside an expression it is rare.
+fn skip_comment(text: &str, index: usize) -> Option<usize> {
+    let bytes = text.as_bytes();
+    if bytes.get(index) == Some(&b'/') && bytes.get(index + 1) == Some(&b'/') {
+        return text[index..].find('\n').map(|offset| index + offset + 1);
+    }
+    if bytes.get(index) == Some(&b'/') && bytes.get(index + 1) == Some(&b'*') {
+        return text[index + 2..]
+            .find("*/")
+            .map(|offset| index + 2 + offset + 2);
+    }
+    None
+}
+
+/// Parse a quoted literal, raw string, or template literal at `index`.
+/// Returns the literal content and the byte index after it.
+fn parse_literal(text: &str, index: usize) -> Option<(String, usize)> {
+    let bytes = text.as_bytes();
+    let first = *bytes.get(index)?;
+    if first == b'r' || first == b'R' {
+        let mut hashes = 0;
+        let mut cursor = index + 1;
+        while bytes.get(cursor) == Some(&b'#') {
+            hashes += 1;
+            cursor += 1;
+        }
+        let quote = *bytes.get(cursor)?;
+        if quote == b'"' || quote == b'\'' {
+            let content_start = cursor + 1;
+            let mut end = content_start;
+            while end < text.len() {
+                if bytes[end] == quote {
+                    let mut close = end + 1;
+                    let mut seen = 0;
+                    while seen < hashes && bytes.get(close) == Some(&b'#') {
+                        close += 1;
+                        seen += 1;
+                    }
+                    if seen == hashes {
+                        return Some((text[content_start..end].to_string(), close));
+                    }
+                }
+                end += 1;
+            }
+            return None;
+        }
+    }
+    if !matches!(first, b'"' | b'\'' | b'`') {
+        return None;
+    }
+    let mut escaped = false;
+    let mut cursor = index + 1;
+    while cursor < text.len() {
+        let byte = bytes[cursor];
+        if escaped {
+            escaped = false;
+        } else if byte == b'\\' {
+            escaped = true;
+        } else if byte == first {
+            return Some((text[index + 1..cursor].to_string(), cursor + 1));
+        }
+        cursor += 1;
+    }
+    None
+}
+
+/// Parse a `/regex/` literal when the slash starts a regex position. Returns
+/// the pattern and the index after the closing slash.
+fn parse_regex_literal(text: &str, index: usize) -> Option<(String, usize)> {
+    if text.as_bytes().get(index) != Some(&b'/') || !is_regex_start(text, index) {
+        return None;
+    }
+    let bytes = text.as_bytes();
+    let mut escaped = false;
+    let mut in_class = false;
+    let mut cursor = index + 1;
+    while cursor < text.len() {
+        let byte = bytes[cursor];
+        if escaped {
+            escaped = false;
+        } else if byte == b'\\' {
+            escaped = true;
+        } else if byte == b'[' {
+            in_class = true;
+        } else if byte == b']' {
+            in_class = false;
+        } else if byte == b'/' && !in_class {
+            return Some((text[index + 1..cursor].to_string(), cursor + 1));
+        }
+        cursor += 1;
+    }
+    None
+}
+
+fn is_regex_start(text: &str, index: usize) -> bool {
+    text[..index]
+        .chars()
+        .rev()
+        .find(|character| !character.is_whitespace())
+        .is_none_or(|before| matches!(before, '(' | ',' | '=' | ':'))
+}
+
+/// Extract the first phrase literal from one binding expression. Python's
+/// implicit adjacent literals are joined; internal whitespace is normalized.
+/// A binding whose phrase is computed dynamically yields `None`.
+fn binding_phrase(expression: &str) -> Option<String> {
+    let mut cursor = 0;
+    while cursor < expression.len() {
+        if let Some((literal, end)) = parse_literal(expression, cursor) {
+            let mut phrase = literal;
+            let mut next = end;
+            while let Some(joined) =
+                expression[next..].find(|character: char| !character.is_whitespace())
+            {
+                let at = next + joined;
+                let Some((adjacent, after)) = parse_literal(expression, at) else {
+                    break;
+                };
+                phrase.push_str(&adjacent);
+                next = after;
+            }
+            let normalized = phrase.split_whitespace().collect::<Vec<_>>().join(" ");
+            return (!normalized.is_empty()).then_some(normalized);
+        }
+        if let Some((regex, _end)) = parse_regex_literal(expression, cursor) {
+            let normalized = regex.split_whitespace().collect::<Vec<_>>().join(" ");
+            return (!normalized.is_empty()).then_some(normalized);
+        }
+        if let Some(end) = skip_comment(expression, cursor) {
+            cursor = end;
+            continue;
+        }
+        if let Some(character) = expression[cursor..].chars().next() {
+            cursor += character.len_utf8();
+        } else {
+            break;
+        }
+    }
+    None
+}
+
+fn collect_step_phrases(path: &Path) -> BTreeSet<String> {
+    let Ok(text) = std::fs::read_to_string(path) else {
+        return BTreeSet::new();
+    };
+    step_binding_expressions(&text)
+        .into_iter()
+        .filter_map(binding_phrase)
+        .collect()
+}
+
+fn collect_step_definition_files(root: &Path, rules: PruneRules) -> Vec<PathBuf> {
+    let mut files = Vec::new();
+    walk_step_definition_files(root, root, rules, &mut files);
+    files.sort();
+    files
+}
+
+fn walk_step_definition_files(
+    root: &Path,
+    directory: &Path,
+    rules: PruneRules,
+    files: &mut Vec<PathBuf>,
+) {
+    let Ok(entries) = std::fs::read_dir(directory) else {
+        return;
+    };
+    let mut entries: Vec<_> = entries.flatten().collect();
+    entries.sort_by_key(|entry| entry.file_name());
+    for entry in entries {
+        let path = entry.path();
+        let relative = path.strip_prefix(root).unwrap_or(&path);
+        let Ok(file_type) = entry.file_type() else {
+            continue;
+        };
+        if file_type.is_dir() {
+            if !rules.prunes_dir(relative) {
+                walk_step_definition_files(root, &path, rules, files);
+            }
+        } else if file_type.is_file() && is_step_definition_path(&path) {
+            files.push(path);
+        }
+    }
+}
+
+fn collect_phrases_in_tree(root: &Path, rules: PruneRules) -> BTreeSet<String> {
+    let mut phrases = BTreeSet::new();
+    for file in collect_step_definition_files(root, rules) {
+        phrases.extend(collect_step_phrases(&file));
+    }
+    phrases
+}
+
+/// Step definitions are durable project source, not delta artifacts. Archive
+/// merges `.feature` files and use-case documents only, so a delta step phrase
+/// with no binding in the permanent test tree would be buried in the archive
+/// while the merged suite fails with an undefined step. Refuse before any
+/// mutation and name the project-relative delta file and the missing phrases.
+fn ensure_step_definitions_merged(
+    project_root: &Path,
+    change_root: &Path,
+    phase: StepGatePhase,
+) -> Result<()> {
+    let delta_root = change_root.join("specs");
+    if !delta_root.exists() {
+        return Ok(());
+    }
+    let delta_files = collect_step_definition_files(&delta_root, DELTA_PRUNE);
+    if delta_files.is_empty() {
+        return Ok(());
+    }
+    let permanent = collect_phrases_in_tree(project_root, PERMANENT_PRUNE);
+    let mut gaps: BTreeMap<PathBuf, Vec<String>> = BTreeMap::new();
+    for file in delta_files {
+        let missing: Vec<String> = collect_step_phrases(&file)
+            .into_iter()
+            .filter(|phrase| !permanent.contains(phrase))
+            .collect();
+        if !missing.is_empty() {
+            gaps.insert(file, missing);
+        }
+    }
+    if gaps.is_empty() {
+        return Ok(());
+    }
+
+    let total: usize = gaps.values().map(Vec::len).sum();
+    let mut listed = Vec::new();
+    let mut shown = 0;
+    for (file, phrases) in &gaps {
+        let relative = file.strip_prefix(project_root).unwrap_or(file);
+        for phrase in phrases {
+            if shown == MAX_REPORTED_PHRASES {
+                break;
+            }
+            listed.push(format!("  - \"{phrase}\" ({})", relative.display()));
+            shown += 1;
+        }
+        if shown == MAX_REPORTED_PHRASES {
+            break;
+        }
+    }
+    let lead = match phase {
+        StepGatePhase::Fresh => {
+            "archive blocked: delta step definitions are not present in the permanent test tree:"
+        }
+        StepGatePhase::Resume => {
+            "archive blocked: the unproven candidate's delta step definitions are not present in the permanent test tree:"
+        }
+    };
+    let remainder = if total > shown {
+        format!("\n  +{} more", total - shown)
+    } else {
+        String::new()
+    };
+    let change = change_root
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("the change");
+    bail!(
+        "{lead}\n{}{remainder}\n\
+         The archive merges feature files and use-case documents only. Merge each definition \
+         into the permanent per-capability step file, keep the delta copy for the change suite, \
+         and rerun `givn archive --change {change}`.",
+        listed.join("\n")
+    )
 }
 
 fn build_merge_plan(
@@ -1696,6 +2144,147 @@ Feature: Dead capability
             .unwrap();
         merge_usecase_documents(project, &project.join("givn/changes/new-usecase/specs")).unwrap();
         assert!(project.join("givn/specs/project-run/usecase.md").exists());
+    }
+
+    fn write(path: &Path, content: &str) {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).unwrap();
+        }
+        std::fs::write(path, content).unwrap();
+    }
+
+    fn phrases_in(text: &str) -> BTreeSet<String> {
+        step_binding_expressions(text)
+            .into_iter()
+            .filter_map(binding_phrase)
+            .collect()
+    }
+
+    #[test]
+    fn step_binding_expressions_read_multiline_raw_and_regex_literals() {
+        let text = r##"
+#[given(regex = r#"^a givn project with a completed change "([^"]+)" ready to archive$"#)]
+@when(
+    "a multi-line "
+    "phrase"
+)
+@then("plain phrase")
+Given(/^a regex step$/, () => {})
+Step("a godog step")
+@Step("a java step")
+"##;
+        let phrases = phrases_in(text);
+        assert!(
+            phrases
+                .contains(r#"^a givn project with a completed change "([^"]+)" ready to archive$"#),
+            "{phrases:?}"
+        );
+        assert!(phrases.contains("a multi-line phrase"), "{phrases:?}");
+        assert!(phrases.contains("plain phrase"), "{phrases:?}");
+        assert!(phrases.contains("^a regex step$"), "{phrases:?}");
+        assert!(phrases.contains("a godog step"), "{phrases:?}");
+        assert!(phrases.contains("a java step"), "{phrases:?}");
+    }
+
+    #[test]
+    fn step_definition_paths_follow_the_documented_rule() {
+        assert!(is_step_definition_path(Path::new("tests/steps/foo.rs")));
+        assert!(is_step_definition_path(Path::new(
+            "givn/specs/run/steps/foo.py"
+        )));
+        assert!(is_step_definition_path(Path::new(
+            "givn/specs/run/e2e_steps/foo.py"
+        )));
+        assert!(is_step_definition_path(Path::new(
+            "givn/specs/run/foo_steps.py"
+        )));
+        assert!(!is_step_definition_path(Path::new("givn/specs/run/foo.py")));
+        assert!(!is_step_definition_path(Path::new(
+            "givn/specs/run/steps_helper/foo.py"
+        )));
+    }
+
+    #[test]
+    fn archive_copies_cannot_satisfy_their_own_delta_phrases() {
+        let root = tempfile::TempDir::new().unwrap();
+        let project = root.path();
+        let change = project.join("givn/changes/demo");
+        let archive = project.join("givn/archive/demo");
+        let other = project.join("givn/changes/other");
+        write(
+            &project.join("tests/steps/keep.rs"),
+            "#[given(\"permanent phrase\")]\nfn keep() {}\n",
+        );
+        for directory in [&change, &archive, &other] {
+            write(
+                &directory.join("specs/steps/demo_steps.py"),
+                "@given(\"delta phrase\")\ndef step():\n    pass\n",
+            );
+        }
+
+        let error = ensure_step_definitions_merged(project, &change, StepGatePhase::Fresh)
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("delta phrase"), "{error}");
+        assert!(
+            error.contains("givn/changes/demo/specs/steps/demo_steps.py"),
+            "{error}"
+        );
+        assert!(!error.contains("permanent phrase"), "{error}");
+
+        let error = ensure_step_definitions_merged(project, &archive, StepGatePhase::Resume)
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("delta phrase"), "{error}");
+
+        write(
+            &project.join("tests/steps/demo_steps.py"),
+            "@given(\"delta phrase\")\ndef step():\n    pass\n",
+        );
+        ensure_step_definitions_merged(project, &change, StepGatePhase::Fresh).unwrap();
+        ensure_step_definitions_merged(project, &archive, StepGatePhase::Resume).unwrap();
+    }
+
+    #[test]
+    fn refusal_lists_twenty_phrases_and_the_exact_remainder() {
+        let root = tempfile::TempDir::new().unwrap();
+        let project = root.path();
+        let change = project.join("givn/changes/demo");
+        let mut text = String::new();
+        for index in 1..=21 {
+            text.push_str(&format!(
+                "@given(\"catalog phrase {index:02}\")\ndef step_{index}():\n    pass\n"
+            ));
+        }
+        write(&change.join("specs/steps/demo_steps.py"), &text);
+
+        let error = ensure_step_definitions_merged(project, &change, StepGatePhase::Fresh)
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("catalog phrase 01"), "{error}");
+        assert!(error.contains("catalog phrase 20"), "{error}");
+        assert!(!error.contains("catalog phrase 21"), "{error}");
+        assert!(error.contains("+1 more"), "{error}");
+    }
+
+    #[test]
+    fn unreadable_step_cache_files_are_pruned() {
+        let root = tempfile::TempDir::new().unwrap();
+        let project = root.path();
+        let change = project.join("givn/changes/demo");
+        write(
+            &project.join("tests/steps/keep.rs"),
+            "#[given(\"delta phrase\")]\nfn keep() {}\n",
+        );
+        write(
+            &change.join("specs/steps/__pycache__/demo.cpython-312.pyc"),
+            "not utf-8",
+        );
+        write(
+            &change.join("specs/steps/demo_steps.py"),
+            "@given(\"delta phrase\")\ndef step():\n    pass\n",
+        );
+        ensure_step_definitions_merged(project, &change, StepGatePhase::Fresh).unwrap();
     }
 
     #[test]
