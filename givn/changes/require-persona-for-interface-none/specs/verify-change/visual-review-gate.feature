@@ -13,7 +13,7 @@ Feature: Visual Review Gate
     When the user runs `givn check review --change test-change`
     Then the command exits 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: A change that declares the interface none without a persona disposition fails review
     Given a givn project with a change that has passed design-review
     And the change's design.md declares the visual interface "none"
