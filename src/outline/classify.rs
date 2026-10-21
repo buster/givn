@@ -387,3 +387,50 @@ fn evidence(
         satisfied: true,
     }
 }
+
+#[cfg(test)]
+mod fidelity_tests {
+    use super::*;
+    use crate::outline::model::{Language, SourceUnit};
+
+    #[test]
+    fn public_method_interfaces_report_only_public_method_evidence() {
+        let unit = SourceUnit {
+            language: Language::Rust,
+            id: crate::outline::model::UnitId("type:src/many.rs::Many".to_string()),
+            kind: UnitKind::Type(TypeKind::Struct),
+            name: "Many".to_string(),
+            module_path: "many".to_string(),
+            declaration_file: crate::outline::model::RepoPath::new("src/many.rs"),
+            files: vec![crate::outline::model::RepoPath::new("src/many.rs")],
+            spans: Vec::new(),
+            visibility: crate::outline::model::Visibility::Public,
+            origin: crate::outline::model::UnitOrigin::Production,
+            methods: Vec::new(),
+            fields: Vec::new(),
+            relations: Vec::new(),
+            outline: Vec::new(),
+            complete: true,
+            unsupported: Vec::new(),
+        };
+        let metrics = UnitMetrics {
+            physical_lines: 0,
+            code_lines: 0,
+            methods: 51,
+            public_methods: 51,
+            fields: 0,
+            declared_types: 1,
+            public_surface: 51,
+            lcom4: 1,
+            tcc_permille: None,
+            lcc_permille: None,
+            max_method_code_lines: 1,
+            max_method_complexity: 1,
+            files: 1,
+        };
+        let (classification, evidence) = decide(&unit, &metrics);
+        assert_eq!(classification, Classification::Interface);
+        assert!(evidence.iter().any(|item| item.rule == "type-public-methods"));
+        assert!(!evidence.iter().any(|item| item.rule == "type-kind-trait"));
+    }
+}

@@ -56,7 +56,7 @@ Feature: Outline report
     And the report records the evidence "type-tcc < 500"
     And the report records no "type-lcom4" evidence
 
-  @givn.added @wip
+  @givn.added
   Scenario: An interface found through its public methods reports only public-method evidence
     Given a production source unit with more than 50 public methods
     When the outline report assesses the unit
