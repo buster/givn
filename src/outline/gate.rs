@@ -676,12 +676,12 @@ fn analyze(tree: &revision::RevisionTree, request: &GateRequest) -> Result<(Anal
     let analysis_request = AnalysisRequest {
         project_root: tree.root.path().to_path_buf(),
         scope: SourceScope {
-            language: Language::Rust,
+            languages: vec![Language::Rust, Language::Python],
             roots: request.roots.clone(),
             include_test_sources: false,
         },
     };
-    let analyzer = outline::rust_analyzer();
+    let analyzer = outline::outline_analyzer();
     let capabilities = analyzer.capabilities();
     let analysis = outline::analyze(&analysis_request, analyzer.as_ref()).with_context(|| {
         format!(

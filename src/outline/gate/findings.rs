@@ -3,7 +3,7 @@
 use super::revision::RevisionTree;
 use super::{GateFailure, Side};
 use crate::outline::classify::{Assessment, Classification, ClassifiedUnit};
-use crate::outline::model::{Analysis, FileStatus, RepoPath, UnitId, UnitKind};
+use crate::outline::model::{Analysis, FileStatus, Language, RepoPath, UnitId, UnitKind};
 use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -220,7 +220,7 @@ fn method_messages(unit: &ClassifiedUnit) -> Vec<String> {
         .collect()
 }
 
-/// Post-analysis guard: every changed production `.rs` path present at head
+/// Post-analysis guard: every changed production source path present at head
 /// must be analyzed or named by a diagnostic. A deletion needs no head entry.
 pub fn guard(
     changed: &BTreeSet<String>,
@@ -231,7 +231,7 @@ pub fn guard(
 ) -> Vec<GateFailure> {
     let mut failures = Vec::new();
     for path in changed {
-        if !path.ends_with(".rs") {
+        if !crate::outline::scan::is_production_source(path, &[Language::Rust, Language::Python]) {
             continue;
         }
         if let Some(kind) = head_tree.kind(path) {
@@ -347,6 +347,7 @@ mod tests {
     fn unit(id: &str, classification: Classification, code_lines: u32) -> ClassifiedUnit {
         ClassifiedUnit {
             unit_id: UnitId(id.to_string()),
+            language: crate::outline::model::Language::Rust,
             kind: UnitKind::Type(crate::outline::model::TypeKind::Struct),
             name: "Engine".to_string(),
             path: RepoPath::new("src/engine.rs"),

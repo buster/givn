@@ -107,7 +107,7 @@ unit.
 
 - Review enforcement; that is the `outline-review-gate` capability under `verify-change`.
 - A stored baseline or watchlist.
-- Languages other than Rust.
+- Languages other than Rust and Python.
 - Automatic refactoring.
 - Automatic Cargo workspace discovery; the developer names members with
   `--path`.

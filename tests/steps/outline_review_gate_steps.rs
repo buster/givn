@@ -1269,3 +1269,23 @@ fn guidance_run_command(world: &mut GivnWorld, expected: String) {
         "the review guidance does not say to run {expected:?}:\n{stdout}"
     );
 }
+
+#[given("a committed change that adds a Python class")]
+fn change_adds_python_class(world: &mut GivnWorld) {
+    let env = env(world);
+    let fixture = gate(env);
+    fixture.base_without_large_units();
+    fixture.change_dir_commit();
+    crate::steps::outline_report_support::write_python_class(env);
+    fixture.commit("feat(test-change): add the Python class");
+}
+
+#[given("a committed change that only adds a Python test module")]
+fn change_adds_python_test_module(world: &mut GivnWorld) {
+    let env = env(world);
+    let fixture = gate(env);
+    fixture.base_without_large_units();
+    fixture.change_dir_commit();
+    fixture.write("src/test_helper.py", "def helper() -> int:\n    return 1\n");
+    fixture.commit("test(test-change): add a Python test module");
+}

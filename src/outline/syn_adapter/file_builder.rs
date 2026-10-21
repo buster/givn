@@ -2,8 +2,8 @@
 
 use super::super::model::{
     Analysis, AnalysisDiagnostic, AnalyzedFile, Construct, DiagnosticKind, Field, FileStatus,
-    Method, OutlineItem, RepoPath, SourceSpan, SourceUnit, TypeKind, TypeRelation, UnitId,
-    UnitKind, UnitOrigin, UnsupportedNote, Visibility,
+    Language, Method, OutlineItem, RepoPath, SourceSpan, SourceUnit, TypeKind, TypeRelation,
+    UnitId, UnitKind, UnitOrigin, UnsupportedNote, Visibility,
 };
 use super::facts::{method_from_fn, method_without_body, outline_method};
 use super::impl_index::{ImplCollector, ImplRecord, PendingImpl};
@@ -27,6 +27,7 @@ pub(super) fn analyze_file(
         Ok(parsed) => parsed,
         Err(error) => {
             analysis.files.push(AnalyzedFile {
+                language: Language::Rust,
                 path: path.clone(),
                 physical_lines,
                 lines: source.lines,
@@ -65,6 +66,7 @@ pub(super) fn analyze_file(
     let mut unit_ids: Vec<UnitId> = file.units.iter().map(|unit| unit.id.clone()).collect();
     unit_ids.push(UnitId(format!("module:{}", path)));
     analysis.files.push(AnalyzedFile {
+        language: Language::Rust,
         path: path.clone(),
         physical_lines,
         lines: source.lines,
@@ -75,6 +77,7 @@ pub(super) fn analyze_file(
     analysis.diagnostics.extend(file.diagnostics);
 
     let mut module = SourceUnit {
+        language: Language::Rust,
         id: UnitId(format!("module:{}", path)),
         kind: UnitKind::Module,
         name: path.to_string(),
@@ -191,6 +194,7 @@ impl FileBuilder {
         // file is still one unit (see `attach_impls`).
         let id = UnitId(format!("type:{}::{name}", self.path));
         let mut unit = SourceUnit {
+            language: Language::Rust,
             id: id.clone(),
             kind: UnitKind::Type(type_kind),
             name: name.clone(),

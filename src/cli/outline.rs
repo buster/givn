@@ -1,7 +1,7 @@
 //! `givn outline report`: the opt-in, advisory code-structure report.
 //!
 //! The command is always registered and gated at runtime so the disabled path
-//! can name the reason. Findings never change the exit code.
+//! can name the reason. Hints never change the exit code.
 
 use crate::outline::{self, AnalysisRequest, SourceScope, model::Language};
 use anyhow::{Context, Result, bail};
@@ -35,12 +35,12 @@ pub fn run_report(json: bool, out: Option<PathBuf>, paths: Vec<PathBuf>) -> Resu
     let request = AnalysisRequest {
         project_root: project_root.clone(),
         scope: SourceScope {
-            language: Language::Rust,
+            languages: vec![Language::Rust, Language::Python],
             roots: roots.clone(),
             include_test_sources: false,
         },
     };
-    let analyzer = outline::rust_analyzer();
+    let analyzer = outline::outline_analyzer();
     let capabilities = analyzer.capabilities();
     let analysis = outline::analyze(&request, analyzer.as_ref())?;
     let assessment = outline::assess(&analysis, capabilities);

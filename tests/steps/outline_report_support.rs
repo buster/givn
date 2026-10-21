@@ -76,12 +76,12 @@ pub fn assessment_counts(env: &TestEnv) -> (usize, usize, usize) {
     let request = AnalysisRequest {
         project_root: env.root(),
         scope: SourceScope {
-            language: Language::Rust,
+            languages: vec![Language::Rust],
             roots: vec![PathBuf::from("src")],
             include_test_sources: false,
         },
     };
-    let analyzer = outline::rust_analyzer();
+    let analyzer = outline::analyzer::rust_analyzer();
     let capabilities = analyzer.capabilities();
     let analysis = outline::analyze(&request, analyzer.as_ref()).expect("analyze corpus");
     let assessment = outline::assess(&analysis, capabilities);
@@ -214,12 +214,12 @@ pub fn assess_json(env: &TestEnv) -> String {
     let request = AnalysisRequest {
         project_root: env.root(),
         scope: SourceScope {
-            language: Language::Rust,
+            languages: vec![Language::Rust],
             roots: vec![PathBuf::from("src")],
             include_test_sources: false,
         },
     };
-    let analyzer = outline::rust_analyzer();
+    let analyzer = outline::analyzer::rust_analyzer();
     let capabilities = analyzer.capabilities();
     let analysis = outline::analyze(&request, analyzer.as_ref()).expect("analyze fixture");
     let assessment = outline::assess(&analysis, capabilities);
@@ -230,12 +230,12 @@ pub fn assess_report(env: &TestEnv) -> String {
     let request = AnalysisRequest {
         project_root: env.root(),
         scope: SourceScope {
-            language: Language::Rust,
+            languages: vec![Language::Rust],
             roots: vec![PathBuf::from("src")],
             include_test_sources: false,
         },
     };
-    let analyzer = outline::rust_analyzer();
+    let analyzer = outline::analyzer::rust_analyzer();
     let capabilities = analyzer.capabilities();
     let analysis = outline::analyze(&request, analyzer.as_ref()).expect("analyze fixture");
     let assessment = outline::assess(&analysis, capabilities);
@@ -275,6 +275,7 @@ fn fake_analysis() -> Analysis {
     let module_id = UnitId("module:src/small.rs".to_string());
     let type_id = UnitId("type:src/small.rs::Small".to_string());
     let file = AnalyzedFile {
+        language: Language::Rust,
         path: path.clone(),
         physical_lines: 1,
         lines: vec![LineKind::Code],
@@ -282,6 +283,7 @@ fn fake_analysis() -> Analysis {
         unit_ids: vec![type_id.clone(), module_id.clone()],
     };
     let type_unit = SourceUnit {
+        language: Language::Rust,
         id: type_id,
         kind: UnitKind::Type(TypeKind::Struct),
         name: "Small".to_string(),
@@ -299,6 +301,7 @@ fn fake_analysis() -> Analysis {
         unsupported: Vec::new(),
     };
     let module = SourceUnit {
+        language: Language::Rust,
         id: module_id,
         kind: UnitKind::Module,
         name: "src/small.rs".to_string(),
@@ -326,12 +329,12 @@ pub fn engine_reports(env: &TestEnv) -> (String, String) {
     let request = AnalysisRequest {
         project_root: env.root(),
         scope: SourceScope {
-            language: Language::Rust,
+            languages: vec![Language::Rust],
             roots: vec![PathBuf::from("src")],
             include_test_sources: false,
         },
     };
-    let syn = outline::rust_analyzer();
+    let syn = outline::analyzer::rust_analyzer();
     let capabilities = syn.capabilities();
     let syn_analysis = outline::analyze(&request, syn.as_ref()).expect("syn analysis");
     let fake = FakeAnalyzer {
@@ -347,4 +350,42 @@ pub fn engine_reports(env: &TestEnv) -> (String, String) {
         outline::report::render_human(&outline::assess(&syn_analysis, capabilities.clone()));
     let fake_report = outline::report::render_human(&outline::assess(&fake_analysis, capabilities));
     (syn_report, fake_report)
+}
+
+pub fn write_python_class(env: &TestEnv) {
+    write_source(
+        env,
+        "src/tracker.py",
+        "class OrderBook:\n    \"\"\"Track incoming orders.\"\"\"\n\n    def __init__(self) -> None:\n        self.orders: list[str] = []\n\n    def add(self, order: str) -> int:\n        self.orders.append(order)\n        return len(self.orders)\n\n    def fill(self, order: str) -> int:\n        return self.add(order)\n",
+    );
+}
+
+pub fn write_python_module(env: &TestEnv) {
+    write_source(
+        env,
+        "src/store.py",
+        "def load(path: str) -> str:\n    return path\n\n\ndef save(path: str, value: str) -> int:\n    return len(value)\n",
+    );
+}
+
+pub fn write_python3_stub(env: &TestEnv) {
+    let stub_dir = env.path(".python3-stub");
+    std::fs::create_dir_all(&stub_dir).expect("create python3 stub dir");
+    let marker = stub_dir.join("invoked");
+    let script = format!(
+        "#!/bin/sh\nprintf invoked > '{}'\nexit 1\n",
+        marker.display()
+    );
+    let path = stub_dir.join("python3");
+    std::fs::write(&path, script).expect("write python3 stub");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755))
+            .expect("make python3 stub executable");
+    }
+}
+
+pub fn python3_stub_invoked(env: &TestEnv) -> bool {
+    env.path(".python3-stub/invoked").exists()
 }
