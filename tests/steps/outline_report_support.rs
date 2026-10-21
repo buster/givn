@@ -531,3 +531,12 @@ pub fn write_inline_test_module(env: &TestEnv) {
     );
 }
 
+pub fn write_span_scoped_unit(env: &TestEnv) {
+    let mut source = String::from("pub struct Scoped {\n    value: u64,\n}\n\nimpl Scoped {\n    pub fn value(&self) -> u64 {\n        self.value\n    }\n}\n\npub fn unrelated() -> u64 {\n");
+    for _ in 0..20 {
+        source.push_str("    let _value = 1;\n");
+    }
+    source.push_str("}\n");
+    write_source(env, "src/scoped.rs", &source);
+}
+

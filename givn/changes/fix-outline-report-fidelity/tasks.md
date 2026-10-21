@@ -355,7 +355,7 @@ outside those spans; file `physical_lines` stays the whole file.
   - [x] Evidence:   Scenario: A file's code lines exclude inline test modules | 1 scenario (1 passed) | 4 steps (4 passed)
 - REFACTOR: targeted run; paste zero.
   - [x] Evidence:   Scenario: A file's code lines exclude inline test modules | 1 scenario (1 passed) | 4 steps (4 passed)
-- [ ] COMMIT:
+- [x] COMMIT: 887b990d5c4cb1ea2209ae34ee2cd0c92601230a
 
 ## 17. A unit's physical lines cover only its own spans
 
@@ -365,12 +365,12 @@ excluded spans.
 
 - RED: remove `@wip`; add `write_span_scoped_unit` and bindings; targeted
   run; paste non-zero.
-  - [ ] Evidence:
+  - [x] Evidence: baseline: ✘  Given a production source file with a small type and a large unrelated function | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:125:5 | Step doesn't match any function
 - GREEN: compute physical lines from span unions in `metrics.rs`; targeted
   run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A unit's physical lines cover only its own spans | 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: A unit's physical lines cover only its own spans | 1 scenario (1 passed) | 5 steps (5 passed)
 - [ ] COMMIT:
 
 ## 18. An impl-level test method is excluded from the unit's lines
