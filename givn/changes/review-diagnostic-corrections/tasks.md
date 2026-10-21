@@ -169,15 +169,15 @@ Evidence:
   cargo test --locked --lib usecase_md: 7 passed, 326 filtered out
   ```
 - Production files: `src/gherkin/usecase_md.rs` (canonical suggestion on the exact-prefix `validate_id` path, `title_seen` suppresses the spurious missing-title diagnostic), `tests/steps/workflow_enforcement_steps.rs` (exact-prefix fixture).
-- [ ] COMMIT: `COMMIT:`
+- [x] COMMIT: `c1b8239d285ea959a5025098aad2f93f723ff20c`
 
 ## Scenario 4 — A malformed title does not fabricate missing-section or empty-section diagnostics
 
-- [ ] Scenario: `A malformed title does not fabricate missing-section or empty-section diagnostics`
+- [x] Scenario: `A malformed title does not fabricate missing-section or empty-section diagnostics`
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
+- [x] RED
+- [x] GREEN
+- [x] REFACTOR
 - [ ] COMMIT
 
 Design constraints:
@@ -195,14 +195,21 @@ Evidence:
 
 - RED output:
   ```
+  1 scenario (1 failed), 1 step (1 failed)
+  ✘ Given a clean committed change whose use-case contract starts with "# Use Case: Lending Register", omits "## Rules", and leaves "## Examples" empty
+    Step panicked. Captured output: not implemented: malformed title fixture with a missing Rule section and an empty Examples section
   ```
 - GREEN output:
   ```
+  1 scenario (1 passed), 6 steps (6 passed)
   ```
 - REFACTOR output:
   ```
+  cargo fmt --all; 1 scenario (1 passed), 6 steps (6 passed)
+  regression run for scenarios 1-4: 4 scenarios (4 passed), 25 steps (25 passed)
+  cargo test --locked --lib usecase_md: 7 passed, 326 filtered out
   ```
-- Production files:
+- Production files: `src/gherkin/usecase_md.rs` (`DocumentScan`, `report_missing_headings`, `title_seen` for duplicate/outside checks, `required_text` with `report_empty`), `tests/steps/workflow_enforcement_steps.rs` (missing/empty fixture).
 - [ ] COMMIT: `COMMIT:`
 
 ## Scenario 5 — A malformed Level does not fabricate missing-section or leaf-capability diagnostics

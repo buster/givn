@@ -30,7 +30,7 @@ Feature: Review use-case diagnostic corrections
     And stderr suggests exactly "# Use case: lending-register"
     And stderr does not contain "document is missing '# Use case:"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A malformed title does not fabricate missing-section or empty-section diagnostics
     Given a clean committed change whose use-case contract starts with "# Use Case: Lending Register", omits "## Rules", and leaves "## Examples" empty
     When the developer runs `givn check review --change review-diagnostics-demo`

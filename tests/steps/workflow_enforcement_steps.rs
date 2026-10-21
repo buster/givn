@@ -1796,3 +1796,29 @@ fn review_fixture_exact_prefix_non_kebab_title(world: &mut GivnWorld) {
         &[("alpha-capability", "NEW in review-diagnostics-demo")],
     );
 }
+
+#[given(
+    "a clean committed change whose use-case contract starts with \"# Use Case: Lending Register\", omits \"## Rules\", and leaves \"## Examples\" empty"
+)]
+fn review_fixture_malformed_title_missing_and_empty_sections(world: &mut GivnWorld) {
+    let contract = review_contract(
+        "review-diagnostics-demo",
+        Some("# Use Case: Lending Register"),
+        "- alpha-capability",
+        &valid_interactions(&["alpha-capability"]),
+        "",
+        "",
+    )
+    .replace(
+        "## Rules\n\n- Structural failures outrank other findings.\n\n",
+        "",
+    );
+    write_review_fixture(
+        world,
+        "review-diagnostics-demo",
+        "review-diagnostics-demo",
+        &contract,
+        &["alpha-capability"],
+        &[("alpha-capability", "NEW in review-diagnostics-demo")],
+    );
+}

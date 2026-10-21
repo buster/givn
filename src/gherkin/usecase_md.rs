@@ -211,12 +211,17 @@ type SectionLines = std::collections::BTreeMap<&'static str, Vec<(usize, String)
 
 /// Parse a strict use-case narrative, returning every diagnostic.
 pub fn parse_usecase_md_diagnostics(content: &str) -> (Option<UsecaseDoc>, UsecaseDiagnostics) {
-    let (title, sections, seen, mut diagnostics) =
-        parse_document(content, "Use case", USECASE_HEADINGS);
+    let DocumentScan {
+        title,
+        title_seen,
+        sections,
+        seen,
+        mut diagnostics,
+    } = parse_document(content, "Use case", USECASE_HEADINGS);
 
     let id = title.clone().unwrap_or_default();
-    let root_valid = title.is_some();
-    let level_text = required_text(&sections, HEADING_LEVEL, &mut diagnostics);
+    let root_valid = title.is_some() && title_seen;
+    let level_text = required_text(&sections, HEADING_LEVEL, false, &mut diagnostics);
     let level = match GoalLevel::parse(&level_text) {
         Ok(level) => level,
         Err(error) => {
@@ -224,6 +229,9 @@ pub fn parse_usecase_md_diagnostics(content: &str) -> (Option<UsecaseDoc>, Useca
             GoalLevel::Leaf
         }
     };
+    if root_valid {
+        report_missing_headings(&seen, USECASE_HEADINGS, &mut diagnostics);
+    }
     let capabilities = list_section(
         &sections,
         HEADING_CAPABILITIES,
@@ -242,47 +250,69 @@ pub fn parse_usecase_md_diagnostics(content: &str) -> (Option<UsecaseDoc>, Useca
         )));
     }
 
-    let doc = if root_valid
-        && seen.contains(HEADING_CAPABILITIES)
-        && seen.contains(HEADING_INTERACTIONS)
-    {
-        Some(UsecaseDoc {
-            id,
-            level,
-            actors: list_section(&sections, HEADING_ACTORS, "actor", &mut diagnostics),
-            goal: required_text(&sections, HEADING_GOAL, &mut diagnostics),
-            trigger: required_text(&sections, HEADING_TRIGGER, &mut diagnostics),
-            preconditions: list_section(
-                &sections,
-                HEADING_PRECONDITIONS,
-                "precondition",
-                &mut diagnostics,
-            ),
-            main_flow: required_text(&sections, HEADING_MAIN_FLOW, &mut diagnostics),
-            extensions: list_section(&sections, HEADING_EXTENSIONS, "extension", &mut diagnostics),
-            rules: list_section(&sections, HEADING_RULES, "rule", &mut diagnostics),
-            examples: list_section(&sections, HEADING_EXAMPLES, "example", &mut diagnostics),
-            minimal_guarantee: required_text(
-                &sections,
-                HEADING_MINIMAL_GUARANTEE,
-                &mut diagnostics,
-            ),
-            success_guarantee: required_text(
-                &sections,
-                HEADING_SUCCESS_GUARANTEE,
-                &mut diagnostics,
-            ),
-            personas: list_section(&sections, HEADING_PERSONAS, "persona", &mut diagnostics),
-            capabilities,
-            interactions,
-            includes: relationship_section(&sections, HEADING_INCLUDES, &mut diagnostics),
-            extends: relationship_section(&sections, HEADING_EXTENDS, &mut diagnostics),
-            out_of_scope: required_text(&sections, HEADING_OUT_OF_SCOPE, &mut diagnostics),
-            diagram: required_text(&sections, HEADING_DIAGRAM, &mut diagnostics),
-        })
-    } else {
-        None
-    };
+    let actors = list_section(&sections, HEADING_ACTORS, "actor", &mut diagnostics);
+    let goal = required_text(&sections, HEADING_GOAL, root_valid, &mut diagnostics);
+    let trigger = required_text(&sections, HEADING_TRIGGER, root_valid, &mut diagnostics);
+    let preconditions = list_section(
+        &sections,
+        HEADING_PRECONDITIONS,
+        "precondition",
+        &mut diagnostics,
+    );
+    let main_flow = required_text(&sections, HEADING_MAIN_FLOW, root_valid, &mut diagnostics);
+    let extensions = list_section(&sections, HEADING_EXTENSIONS, "extension", &mut diagnostics);
+    let rules = list_section(&sections, HEADING_RULES, "rule", &mut diagnostics);
+    let examples = list_section(&sections, HEADING_EXAMPLES, "example", &mut diagnostics);
+    let minimal_guarantee = required_text(
+        &sections,
+        HEADING_MINIMAL_GUARANTEE,
+        root_valid,
+        &mut diagnostics,
+    );
+    let success_guarantee = required_text(
+        &sections,
+        HEADING_SUCCESS_GUARANTEE,
+        root_valid,
+        &mut diagnostics,
+    );
+    let personas = list_section(&sections, HEADING_PERSONAS, "persona", &mut diagnostics);
+    let includes = relationship_section(&sections, HEADING_INCLUDES, &mut diagnostics);
+    let extends = relationship_section(&sections, HEADING_EXTENDS, &mut diagnostics);
+    let out_of_scope = required_text(
+        &sections,
+        HEADING_OUT_OF_SCOPE,
+        root_valid,
+        &mut diagnostics,
+    );
+    let diagram = required_text(&sections, HEADING_DIAGRAM, root_valid, &mut diagnostics);
+
+    let doc =
+        if root_valid && seen.contains(HEADING_CAPABILITIES) && seen.contains(HEADING_INTERACTIONS)
+        {
+            Some(UsecaseDoc {
+                id,
+                level,
+                actors,
+                goal,
+                trigger,
+                preconditions,
+                main_flow,
+                extensions,
+                rules,
+                examples,
+                minimal_guarantee,
+                success_guarantee,
+                personas,
+                capabilities,
+                interactions,
+                includes,
+                extends,
+                out_of_scope,
+                diagram,
+            })
+        } else {
+            None
+        };
 
     diagnostics.sort();
     (doc, diagnostics)
@@ -299,10 +329,16 @@ pub fn parse_usecase_md(content: &str) -> Result<UsecaseDoc> {
 
 /// Parse a fragment narrative, returning every diagnostic.
 pub fn parse_fragment_md_diagnostics(content: &str) -> (Option<FragmentDoc>, UsecaseDiagnostics) {
-    let (title, sections, seen, mut diagnostics) =
-        parse_document(content, "Fragment", FRAGMENT_HEADINGS);
+    let DocumentScan {
+        title,
+        title_seen,
+        sections,
+        seen,
+        mut diagnostics,
+    } = parse_document(content, "Fragment", FRAGMENT_HEADINGS);
 
     let id = title.clone().unwrap_or_default();
+    report_missing_headings(&seen, FRAGMENT_HEADINGS, &mut diagnostics);
     let capabilities = list_section(
         &sections,
         HEADING_CAPABILITIES,
@@ -316,7 +352,8 @@ pub fn parse_fragment_md_diagnostics(content: &str) -> (Option<FragmentDoc>, Use
     }
     let interactions = interaction_section(&sections, &capabilities, &mut diagnostics);
 
-    let doc = if title.is_some()
+    let doc = if title_seen
+        && title.is_some()
         && seen.contains(HEADING_CAPABILITIES)
         && seen.contains(HEADING_INTERACTIONS)
     {
@@ -324,7 +361,7 @@ pub fn parse_fragment_md_diagnostics(content: &str) -> (Option<FragmentDoc>, Use
             id,
             capabilities: capabilities.clone(),
             interactions,
-            diagram: required_text(&sections, HEADING_DIAGRAM, &mut diagnostics),
+            diagram: required_text(&sections, HEADING_DIAGRAM, true, &mut diagnostics),
         })
     } else {
         None
@@ -343,16 +380,15 @@ pub fn parse_fragment_md(content: &str) -> Result<FragmentDoc> {
     doc.ok_or_else(|| anyhow::anyhow!("fragment document could not be parsed"))
 }
 
-fn parse_document(
-    content: &str,
-    kind: &str,
-    headings: &[&'static str],
-) -> (
-    Option<String>,
-    SectionLines,
-    std::collections::BTreeSet<&'static str>,
-    UsecaseDiagnostics,
-) {
+struct DocumentScan {
+    title: Option<String>,
+    title_seen: bool,
+    sections: SectionLines,
+    seen: std::collections::BTreeSet<&'static str>,
+    diagnostics: UsecaseDiagnostics,
+}
+
+fn parse_document(content: &str, kind: &str, headings: &[&'static str]) -> DocumentScan {
     let expected_title = format!("# {kind}: ");
     let mut title: Option<String> = None;
     let mut title_seen = false;
@@ -395,11 +431,11 @@ fn parse_document(
             current = None;
             ignoring_section = false;
             outside_block_reported = false;
-            title_seen = true;
-            if title.is_some() {
+            if title_seen {
                 diagnostics.push(UsecaseDiagnostic::at(number, "duplicate document title"));
                 continue;
             }
+            title_seen = true;
             if trimmed.starts_with(&expected_title) {
                 let id = trimmed[expected_title.len()..].trim().to_string();
                 if let Err(error) = validate_id(&id, kind) {
@@ -484,7 +520,7 @@ fn parse_document(
             if let Some(lines) = sections.get_mut(heading) {
                 lines.push((number, line.to_string()));
             }
-        } else if !trimmed.is_empty() && title.is_some() && !outside_block_reported {
+        } else if !trimmed.is_empty() && title_seen && !outside_block_reported {
             diagnostics.push(UsecaseDiagnostic::at(
                 number,
                 "content is outside a recognised section",
@@ -498,15 +534,28 @@ fn parse_document(
             "document is missing '# {kind}: <id>'"
         )));
     }
+
+    DocumentScan {
+        title,
+        title_seen,
+        sections,
+        seen: seen_headings,
+        diagnostics,
+    }
+}
+
+fn report_missing_headings(
+    seen: &std::collections::BTreeSet<&'static str>,
+    headings: &[&'static str],
+    diagnostics: &mut UsecaseDiagnostics,
+) {
     for heading in headings {
-        if !seen_headings.contains(heading) {
+        if !seen.contains(heading) {
             diagnostics.push(UsecaseDiagnostic::document(format!(
                 "document schema does not recognise '{heading}'"
             )));
         }
     }
-
-    (title, sections, seen_headings, diagnostics)
 }
 
 struct TitleRecovery {
@@ -580,6 +629,7 @@ fn validate_id(id: &str, kind: &str) -> Result<()> {
 fn required_text(
     sections: &SectionLines,
     heading: &'static str,
+    report_empty: bool,
     diagnostics: &mut UsecaseDiagnostics,
 ) -> String {
     let text = sections
@@ -594,7 +644,7 @@ fn required_text(
                 .to_string()
         })
         .unwrap_or_default();
-    if text.is_empty() {
+    if text.is_empty() && report_empty {
         diagnostics.push(UsecaseDiagnostic::document(format!(
             "section '{heading}' must not be empty"
         )));
