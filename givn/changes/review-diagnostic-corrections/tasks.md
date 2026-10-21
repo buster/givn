@@ -92,15 +92,15 @@ Evidence:
   cargo test --locked --lib usecase_md: 7 passed, 326 filtered out
   ```
 - Production files: `src/gherkin/usecase_md.rs` (`TitleRecovery`, `recover_title`, `canonical_title_id`, title diagnostic), `tests/steps/workflow_enforcement_steps.rs` (fixture and exact-suggestion assertion). Planning artifacts: `design.md`, `design-review.md`, `tasks.md`, `arc42.md`, `README.md`, `givn/specs/verify-change/usecase.md`, arc42 chapters 6/8/11/12.
-- [ ] COMMIT: `COMMIT:`
+- [x] COMMIT: `251a4858e3f6875ba1f530041f9cd1bf73ff2cc9`
 
 ## Scenario 2 — Review does not accept a non-kebab-case title as the use-case identifier
 
-- [ ] Scenario: `Review does not accept a non-kebab-case title as the use-case identifier`
+- [x] Scenario: `Review does not accept a non-kebab-case title as the use-case identifier`
 
-- [ ] RED
-- [ ] GREEN
-- [ ] REFACTOR
+- [x] RED
+- [x] GREEN
+- [x] REFACTOR
 - [ ] COMMIT
 
 Design constraints:
@@ -117,14 +117,20 @@ Evidence:
 
 - RED output:
   ```
+  1 scenario (1 failed), 1 step (1 failed)
+  ✘ Given a clean committed change whose use-case contract starts with "# Use Case: Lending Register" and whose capability list is a table
+    Step panicked. Captured output: not implemented: non-kebab-case title fixture with a capability table
   ```
 - GREEN output:
   ```
+  1 scenario (1 passed), 7 steps (7 passed)
   ```
 - REFACTOR output:
   ```
+  cargo fmt --all; 1 scenario (1 passed), 7 steps (7 passed)
+  cargo test --locked --lib usecase_md: 7 passed, 326 filtered out
   ```
-- Production files:
+- Production files: `src/gherkin/usecase_md.rs` (`root_valid` gate for the leaf requirement, `## Capabilities` heading guard, document construction gate), `tests/steps/workflow_enforcement_steps.rs` (capability-table fixture).
 - [ ] COMMIT: `COMMIT:`
 
 ## Scenario 3 — Review corrects an exact-prefix non-kebab-case title with the canonical identifier

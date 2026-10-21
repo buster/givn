@@ -11,7 +11,7 @@ Feature: Review use-case diagnostic corrections
     And stderr suggests exactly "# Use case: lending-register"
     And stderr contains "unknown heading '## Guarantees'"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review does not accept a non-kebab-case title as the use-case identifier
     Given a clean committed change whose use-case contract starts with "# Use Case: Lending Register" and whose capability list is a table
     When the developer runs `givn check review --change review-diagnostics-demo`
