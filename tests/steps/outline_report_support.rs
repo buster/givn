@@ -454,3 +454,14 @@ pub fn write_tcc_god_type(env: &TestEnv) {
     write_source(env, "src/cohesion_evidence.rs", &source);
 }
 
+pub fn write_complexity_method(env: &TestEnv) {
+    let mut source = String::from("pub struct Long;\n\nimpl Long {\n    pub fn branchy(&self, value: u64) -> u64 {\n");
+    for index in 0..60 {
+        source.push_str(&format!(
+            "        if value == {index} {{ return {index}; }}\n"
+        ));
+    }
+    source.push_str("        value\n    }\n}\n");
+    write_source(env, "src/complex.rs", &source);
+}
+

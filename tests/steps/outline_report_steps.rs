@@ -1189,3 +1189,10 @@ fn latest_unit_id(world: &GivnWorld, _hint: &str) -> String {
         .to_string()
 }
 
+#[given("a production source unit with a method over the complexity limit but within the length limit")]
+fn complexity_method(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    crate::steps::outline_report_support::write_complexity_method(&env);
+    world.env = Some(env);
+}
+
