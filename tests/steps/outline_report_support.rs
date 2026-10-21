@@ -430,3 +430,11 @@ pub fn write_ambiguous_call(env: &TestEnv) {
     );
 }
 
+pub fn write_contradictory_qualifier(env: &TestEnv) {
+    write_source(
+        env,
+        "src/external.rs",
+        "pub struct Error;\n\nimpl Error {\n    pub fn from(value: u64) -> Self {\n        let _ = value;\n        Self\n    }\n}\n\npub struct Caller;\n\nimpl Caller {\n    pub fn make(&self) -> Error {\n        Line::from(1)\n    }\n}\n",
+    );
+}
+

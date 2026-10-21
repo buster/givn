@@ -1144,3 +1144,11 @@ fn ambiguous_call(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
+#[given("a production source unit that calls \"Line::from\" while the project declares \"Error::from\"")]
+fn contradictory_qualifier(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_contradictory_qualifier(&env);
+    world.env = Some(env);
+}
+

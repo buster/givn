@@ -187,7 +187,7 @@ no target; JSON emits `null`.
   - [x] Evidence:   Scenario: An ambiguous method name has no resolved target | 1 scenario (1 passed) | 4 steps (4 passed)
 - REFACTOR: targeted run; paste zero.
   - [x] Evidence:   Scenario: An ambiguous method name has no resolved target | 1 scenario (1 passed) | 4 steps (4 passed)
-- [ ] COMMIT:
+- [x] COMMIT: ea3d014306923460a1423f0746cebd6e65c2f140
 
 ## 6. An associated-function call whose qualifier contradicts the target is external
 
@@ -196,11 +196,11 @@ Design constraints: explicit qualifier `Line` cannot match candidate owner
 
 - RED: remove `@wip`; add `write_contradictory_qualifier` and bindings;
   targeted run; paste non-zero.
-  - [ ] Evidence:
+  - [x] Evidence: baseline: ✘  Given a production source unit that calls "Line::from" while the project declares "Error::from" | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:46:5 | Step doesn't match any function
 - GREEN: implement qualifier mismatch -> external; targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: An associated-function call whose qualifier contradicts the target is external |    ✔  Given a production source unit that calls "Line::from" while the project declares "Error::from" | 1 scenario (1 passed) | 4 steps (4 passed)
 - REFACTOR: targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: An associated-function call whose qualifier contradicts the target is external |    ✔  Given a production source unit that calls "Line::from" while the project declares "Error::from" | 1 scenario (1 passed) | 4 steps (4 passed)
 - [ ] COMMIT:
 
 ## 7. A god type found through cohesion reports only the cohesion evidence
