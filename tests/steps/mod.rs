@@ -191,6 +191,12 @@ pub struct GivnWorld {
     pub(crate) archive_receipt_snapshot: Option<String>,
     /// Keep a deliberately missing or stale change-scoped review receipt.
     pub(crate) skip_receipt_autowrite: bool,
+    /// Number of change-suite invocations recorded before a review/archive run.
+    pub(crate) verification_invocations_before: Option<usize>,
+    /// The tested-content boundary a stale-receipt outline example changed.
+    pub(crate) changed_boundary: Option<String>,
+    /// The verification invocation log before an archive run.
+    pub(crate) verification_log_before: Option<String>,
     /// State for the `@e2e` `development-report` scenarios: the generated
     /// report and the browser the browser scenarios drive.
     #[allow(dead_code)] // Tasks E5–E9 read it.
@@ -244,7 +250,7 @@ pub(crate) fn stderr(world: &GivnWorld) -> String {
 /// dropping the leading program name (`givn`). Double quotes delimit a single
 /// argument (which may be empty or contain spaces); unquoted whitespace
 /// separates arguments.
-fn parse_command(raw: &str) -> Vec<String> {
+pub(crate) fn parse_command(raw: &str) -> Vec<String> {
     let mut args: Vec<String> = Vec::new();
     let mut current = String::new();
     let mut in_quotes = false;

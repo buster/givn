@@ -330,11 +330,12 @@ Stages:
    coverage paths), which keep a failed attempt resumable.
 3. Fresh or interrupted-move only — structural gates before any mutation:
    `apply.requires` completeness, configured archive hooks, the run-declaration
-   gate, the README completeness gate, use-case and delta prevalidation, and the
-   e2e-runner configuration check. A resumed-move run repeats these gates before
-   retrying the rename; a pending candidate re-checks the e2e configuration. An
-   `@e2e` merge with an unconfigured `verify.e2e_command` blocks here, leaving
-   the change active.
+   gate, the README completeness gate, use-case and delta prevalidation, the
+   e2e-runner configuration check, and the shared change-receipt freshness check
+   (section 6.7.1). A resumed-move run repeats these gates before retrying the
+   rename; a pending candidate re-checks the e2e configuration. An `@e2e` merge
+   with an unconfigured `verify.e2e_command` blocks here, leaving the change
+   active.
 4. Fresh only — move and publish the candidate: write the pending receipt into
    the active change, then move the directory to `givn/archive/<id>/` with one
    rename. Both paths are under the project root; a failed rename leaves the
@@ -378,16 +379,44 @@ archive does not call the explicit `check review` mandatory branch.
 requires a clean committed tree except evidence/verification paths, sets
 `GIVN_FEATURES` to the delta specs and `GIVN_RESULT_FILE` to
 `givn/changes/<id>/verification/tasks-result.json`, runs `verify.command`, and
-validates four green counts. It then writes
-`givn/changes/<id>/verification/tasks-verification.json` with the tested
-revision, features digest, verify-command digest, and counts.
+validates four green counts. Before the run it captures the tested-content
+digest: every tracked and untracked non-ignored path outside the closed
+documentation/evidence allowlist, sorted, hashed with its executable marker and
+file bytes. It then writes
+`givn/changes/<id>/verification/tasks-verification.json` (schema 2) with the
+tested revision, features digest, verify-command digest, tested-content digest,
+`content_scope: "change-proof/v1"`, and counts.
 
 `givn check review` runs no tests: it reads that receipt and refuses a missing
 or stale one with `givn check tasks --change <id>`. `givn archive` performs the
 same validation before the move and merge; after the candidate is published it
-runs only the merged regular and e2e scopes. A receipt is stale when the
-revision, delta-feature digest, or verify-command digest differs, or when the
-counts are not green.
+runs only the merged regular and e2e scopes. Both commands use the same
+freshness result, in order: the counts must be green; the verify-command and
+delta-feature digests must match; a schema 2 receipt with the
+`change-proof/v1` scope must match the recomputed tested-content digest and its
+tested revision must be available: Git requires ancestry from `HEAD`, while
+Fossil's seam can prove only that the revision exists in the repository. A
+schema 1 receipt, or a schema 2 receipt without the scope, requires strict
+revision equality; an unknown content scope or unknown schema is refused
+without reuse. Unchanged tested content under a different, available revision
+is accepted as a documentation-only revision and keeps the proof current: the
+command prints the reused-proof message and runs no change-suite test. The
+check establishes tested-content equality; it does not inspect the intervening
+diff. A failed check reports every independent stale reason (changed features,
+changed command, changed tested content, unavailable tested revision, unbound
+schema 1 receipt, unsupported content scope, or unsupported schema) and routes
+to `givn check tasks --change <id>`.
+
+`givn check review` reports every use-case schema and capability-routing
+problem in one pass. The routing gate parses each referenced document and every
+active delta narrative once, collects parser diagnostics and independent
+routing checks, deduplicates the exact messages, and prints them grouped under
+the document path. The schema stays strict: a near-miss title or heading is
+refused with the exact accepted spelling. A non-recoverable parse failure
+suppresses only the routing checks that need the missing document structure;
+the parser's own diagnostics remain the complete report. Integrity, the run
+declaration, overlap, retirement, routing, and the receipt keep this order, so
+a structural failure still outranks routing findings.
 
 ### 6.7.1 Scenario commit evidence
 

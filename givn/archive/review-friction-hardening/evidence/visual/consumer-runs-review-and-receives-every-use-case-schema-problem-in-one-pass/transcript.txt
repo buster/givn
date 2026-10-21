@@ -1,0 +1,22 @@
+Scenario: Consumer runs review and receives every use-case schema problem in one pass
+argv: givn check review --change review-diagnostics-demo
+cwd (fixture project root): /tmp/.tmppVedbc
+exit code: 1
+--- stdout ---
+Mandatory checks for 'review':
+  ✓ integrity passed
+  ✓ run declaration passed
+net delta: 1 added, 0 modified, 0 removed
+net delta json: {"added":1,"modified":0,"removed":0}
+  ✓ overlap dispositions passed
+
+--- stderr ---
+error: capability routing decisions do not match the built delta:
+  usecase document 'givn/changes/review-diagnostics-demo/specs/review-diagnostics-demo/usecase.md':
+    line 1: expected '# Use case: <kebab-case-id>', got '# Use Case: review-diagnostics-demo'; headings are case-sensitive — did you mean '# Use case: review-diagnostics-demo'?
+    line 37: section '## Examples' must contain one example per bullet: 'This line is prose, not a bullet.'
+    line 39: unknown heading '## Guarantees'; expected one of '## Minimal guarantee', '## Success guarantee' — did you mean '## Minimal guarantee' or '## Success guarantee'?
+    line 58: section '## Capabilities' must contain one capability per bullet: 'this line is not a bullet'
+    line 64: interaction references undeclared capability 'register-readiness'
+  decision NEW in review-diagnostics-demo: usecase.md has no interaction for capability 'alpha-capability'
+

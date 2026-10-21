@@ -56,6 +56,43 @@ impl FossilCheckout {
         Ok(id.to_string())
     }
 
+    /// Tracked paths plus untracked (`EXTRA`) paths, relative to the root.
+    pub fn content_paths(&self) -> Result<Vec<crate::scm::ContentEntry>> {
+        let mut paths = Vec::new();
+        let listed = self.run(&["ls"])?;
+        if !listed.status.success() {
+            bail!(
+                "`fossil ls` failed in '{}': {}",
+                self.root.display(),
+                stderr(&listed)
+            );
+        }
+        for line in String::from_utf8_lossy(&listed.stdout).lines() {
+            let path = line.trim();
+            if !path.is_empty() {
+                paths.push(PathBuf::from(path));
+            }
+        }
+        let extras = self.run(&["extras"])?;
+        if extras.status.success() {
+            for line in String::from_utf8_lossy(&extras.stdout).lines() {
+                let path = line.trim().trim_start_matches("EXTRA ").trim();
+                if !path.is_empty() {
+                    paths.push(PathBuf::from(path));
+                }
+            }
+        }
+        paths.sort();
+        paths.dedup();
+        Ok(paths
+            .into_iter()
+            .map(|path| crate::scm::ContentEntry {
+                path,
+                gitlink: None,
+            })
+            .collect())
+    }
+
     /// Changed paths relative to the root, including `EXTRA` entries.
     pub fn dirty_entries(&self) -> Result<Vec<PathBuf>> {
         let output = self.run(&["changes", "--differ"])?;
@@ -441,6 +478,52 @@ fn stderr(output: &Output) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn content_paths_include_tracked_and_extra_files() {
+        use std::process::Command;
+        let available = Command::new("fossil")
+            .arg("version")
+            .output()
+            .map(|output| output.status.success())
+            .unwrap_or(false);
+        if !available {
+            return;
+        }
+        let dir = tempfile::TempDir::new().unwrap();
+        let root = dir.path();
+        let repository = dir.path().join("fossil-repo");
+        let run = |args: &[&str]| {
+            let output = Command::new("fossil")
+                .args(args)
+                .current_dir(root)
+                .env("FOSSIL_USER", "fixture")
+                .env("USER", "fixture")
+                .output()
+                .expect("run fossil");
+            assert!(
+                output.status.success(),
+                "fossil {:?} failed: {}",
+                args,
+                String::from_utf8_lossy(&output.stderr)
+            );
+        };
+        run(&["init", "-q", repository.to_str().unwrap()]);
+        run(&["open", repository.to_str().unwrap()]);
+        std::fs::write(root.join("tracked.txt"), "tracked\n").unwrap();
+        run(&["add", "tracked.txt"]);
+        run(&["commit", "-m", "fixture"]);
+        std::fs::write(root.join("extra.txt"), "extra\n").unwrap();
+        let checkout = FossilCheckout::at(root);
+        let paths: Vec<String> = checkout
+            .content_paths()
+            .unwrap()
+            .into_iter()
+            .map(|entry| entry.path.to_string_lossy().replace('\\', "/"))
+            .collect();
+        assert!(paths.contains(&"tracked.txt".to_string()), "{paths:?}");
+        assert!(paths.contains(&"extra.txt".to_string()), "{paths:?}");
+    }
 
     #[test]
     fn parses_status_lines_including_extra_and_renames() {

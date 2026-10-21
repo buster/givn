@@ -25,7 +25,7 @@ The developer archives a reviewed change.
 
 ## Main flow
 
-1. Run the archive gates, confirm the project state is clean in the active version-control system (only resolved evidence paths may be dirty), and validate the current green change-scoped verification receipt before any mutation.
+1. Run the archive gates, confirm the project state is clean in the active version-control system (only resolved evidence paths may be dirty), and validate the current green change-scoped verification receipt before any mutation; a revision that changed only documentation or evidence keeps the receipt current.
 2. Write the pending receipt and move the active change into the archive location as one state transition; the receipt marks the archive unproven.
 3. Merge the accepted behavior and use-case documents (delta merge with base-revision match, retirement and grouping rules).
 4. Resolve the evidence scope: the archive directory, the README when the readme addon is on, and the configured coverage outputs.
@@ -58,6 +58,8 @@ The developer archives a reviewed change.
 - Only a proven archive is complete; an unproven candidate is never reported as proven.
 - A rerun resumes an unproven candidate and refuses a proven archive.
 - Archive validates the current green change-scoped receipt before merging and does not rerun the change suite.
+- A receipt stays current across revisions that change only documentation or evidence; archive reuses it and still runs the merged suite once.
+- A receipt whose tested content changed is stale and archive refuses before mutation.
 - The candidate revision contains exactly the merged corpus paths.
 - The finalization revision contains only resolved evidence paths.
 - The tested revision equals the published candidate revision.
@@ -109,6 +111,7 @@ The permanent corpus contains the accepted change, bound to a verification recei
 | archive-proof | archive a completed change | Consumer archives a completed change and receives a proven archive |
 | archive-proof | repair a blocked archive | Consumer repairs a blocked archive and the rerun proves it |
 | archive-proof | inspect an unproven archive candidate | Consumer inspects an unproven archive candidate |
+| archive-proof | archive a change after documentation-only review edits | Consumer archives a change after documentation-only review edits and the proof is reused |
 | grouped-merge-for-new-capabilities | archive a new capability | Consumer archives a new capability and the merged spec lands in its declared use case |
 | grouped-merge-for-new-capabilities | archive without routing | Archive is blocked when a new capability has no declared routing decision |
 | grouped-merge-for-new-capabilities | archive a multi-file change | Nothing is merged when one delta file of a change has no routing decision |
@@ -140,4 +143,4 @@ flowchart LR
   Proof --> Archive[[Finalize archive]]
 ```
 
-<!-- givn:base-sha256:4e962c7ee4240b9d3e0a6ce33643ada3421bf1a5cc91900c14325353f764f2bd -->
+<!-- givn:base-sha256:5ea6e06cc498b6535a040e8df8524893dd3be084e63bdd6849ebb8a607cd20d6 -->

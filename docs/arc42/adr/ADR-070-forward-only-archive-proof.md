@@ -159,8 +159,109 @@ audit, and arc42 conformance.
 - Bad, because unproven candidates are visible project state and must be
   surfaced by status and instructions.
 
+## Amendment — tested-content receipt binding (review-friction-hardening)
+
+Amended by the `review-friction-hardening` change on 2026-10-21. This is a
+refinement of the existing durable receipt contract, not a new record.
+
+### Qualification
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: AMEND_ADR
+canonical_artifact: null
+target_adr: ADR-070
+replacement_adr: null
+
+- **alternatives** — proposal D2 compared a closed documentation/evidence
+  allowlist with treating every Markdown file as documentation and with
+  classifying an SCM diff; D3 compared a tested-content digest with a history
+  diff and with refreshing the receipt head; D6 compared a schema 2 receipt
+  with a schema 1 fallback against a permissive fallback and against rejecting
+  every schema 1 receipt.
+- **architectural_impact** — the receipt contract now fixes what review and
+  archive may reuse without rerunning the change suite, across both SCM
+  backends.
+- **durable_consequence** — receipts are durable project data; the schema
+  number and `change-proof/v1` scope are compatibility commitments, so a later
+  boundary change needs a new scope rather than a reinterpretation.
+- **lower_level_artifact** — the observable current, documentation-only, and
+  stale behavior is owned by the `verify-change` and `archive-change` specs and
+  the change design. This record gains only the durable binding and
+  compatibility boundary.
+- **existing_adr_check** — the active and archived registers were searched. No
+  record mentions `givn/changes/<id>/verification/tasks-verification.json`;
+  ADR-070 owns the archive proof and its driver requires that "verification
+  must not be duplicated across review and archive", which this pre-publication
+  receipt implements. ADR-028 owns the mandatory-check boundary and is not
+  affected. Route: `AMEND_ADR`.
+
+D2 (the documentation/evidence boundary) and D3 (the tested-content digest)
+are one binding decision; D6 is its schema-1 migration rule. They are recorded
+together because splitting them would leave an unbound receipt or a scope
+without a compatibility rule.
+
+### MADR checklist evidence
+
+- [x] **Hard to reverse** — the schema number and `change-proof/v1` scope are
+      durable compatibility commitments; changing them later requires a new
+      scope and a receipt migration, not a silent reinterpretation.
+- [x] **Shapes quality attributes** — the binding keeps the review/archive
+      audit guarantee while removing a full test rerun after documentation
+      edits; the tested bytes remain the unit of proof.
+- [x] **Structural** — it fixes what review and archive may reuse and keeps the
+      SCM seam as the single content-path authority on Git and Fossil.
+- [x] **Must be shared** — supporting only: an implementer must not infer
+      docs-only reuse from a diff or treat an unbound receipt as reusable.
+
+### Context and Problem Statement
+
+The original receipt bound the tested revision but not the tested content.
+A commit that touched only review, proposal, design, tasks, Arc42, evidence, or
+the receipt itself changed the revision and invalidated a proof that still
+held, forcing a full change-suite rerun with no new evidence.
+
+### Considered Options
+
+- Bind the receipt to a tested-content digest plus a versioned scope.
+- Derive reuse from the SCM diff between the receipt revision and `HEAD`.
+- Refresh the receipt head on a documentation-only edit without rerunning.
+
+### Decision Outcome
+
+Chosen option: bind the receipt to a tested-content digest plus the
+`change-proof/v1` scope, because the receipt itself must prove what was tested.
+Schema 2 writes the digest; schema 1 keeps strict revision equality; unknown
+schemas are refused.
+
+### Consequences
+
+- Good, because a documentation-only revision reuses a green proof and no
+  change-suite test runs.
+- Good, because code, tests, configuration, delta features, the verify command,
+  and every other tested path still stale the receipt, and the refusal names
+  every changed boundary.
+- Bad, because a change already in flight with a schema 1 receipt needs one
+  rerun (R-117).
+- Bad, because the documentation allowlist is a trust boundary: a future test
+  that reads an allowlisted path would need a new scope (R-116).
+
+### Confirmation
+
+The `verify-change` and `archive-change` delta scenarios assert the single-pass
+review report, proof reuse after documentation-only edits, and refusal after a
+delta-feature, verify-command, or source-code change. Receipt unit tests cover
+digest stability, schema 1 strict equality, and unknown-schema refusal.
+
 ## More Information
 
+- Amendment design: `givn/changes/review-friction-hardening/design.md` and
+  `givn/changes/review-friction-hardening/arc42.md`.
 - Executable specs: `givn/changes/archive-proof/specs/archive-change/`
   (`archive-proof`, `extract-coverage-gate`, `enforce-post-merge-e2e-gate`)
   and `specs/verify-change/givn-workflow-enforcement.feature`.

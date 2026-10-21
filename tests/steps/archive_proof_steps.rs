@@ -1178,3 +1178,103 @@ fn runner_never_used_change_features(world: &mut GivnWorld) {
         "the change suite was invoked during archive: {content}"
     );
 }
+
+// ─── proof reuse across documentation-only revisions ──────────────────────
+
+#[given(
+    "a clean committed change with a green change verification receipt recorded at an earlier revision"
+)]
+fn proof_reuse_fixture(world: &mut GivnWorld) {
+    super::workflow_enforcement_steps::write_archive_ready_review_fixture(
+        world,
+        "review-proof-demo",
+    );
+}
+
+#[given("the developer commits only the verification receipt after that revision")]
+fn commit_only_receipt(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    support::commit_path(
+        support::env(world),
+        &format!("givn/changes/{id}/verification/tasks-verification.json"),
+        "fixture: commit the change verification receipt",
+    );
+}
+
+#[given("the verify command records every invocation with its scope and features path")]
+fn verify_command_records_invocations(world: &mut GivnWorld) {
+    world.verification_invocations_before =
+        Some(super::workflow_enforcement_steps::change_suite_invocation_count(world));
+}
+
+#[then("the archive is proven")]
+fn archive_is_proven(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    assert_eq!(
+        support::receipt_status(world, &id),
+        "proven",
+        "the archive receipt is not proven"
+    );
+}
+
+#[then("the change suite was not invoked again")]
+fn change_suite_was_not_invoked(world: &mut GivnWorld) {
+    let before = world
+        .verification_invocations_before
+        .expect("the fixture must record the invocation count");
+    let after = super::workflow_enforcement_steps::change_suite_invocation_count(world);
+    assert_eq!(
+        after, before,
+        "the change suite ran again: {before} -> {after} invocations"
+    );
+}
+
+#[given(regex = r"^the (.+) is changed and committed after that revision$")]
+fn change_tested_content(world: &mut GivnWorld, boundary: String) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let root = support::root(world);
+    match boundary.as_str() {
+        "delta feature" => {
+            let path = root.join(format!(
+                "givn/changes/{id}/specs/{id}/alpha-capability.feature"
+            ));
+            let mut content = std::fs::read_to_string(&path).unwrap();
+            content.push_str("\n  @givn.added\n  Scenario: Fixture changed alpha-capability\n    Given a changed thing\n    Then it still works\n");
+            std::fs::write(path, content).unwrap();
+        }
+        "verify command" => {
+            let path = root.join("givn/commands.yaml");
+            let content = std::fs::read_to_string(&path).unwrap();
+            std::fs::write(
+                path,
+                content.replace(
+                    "command: \"./emit-result.sh regular\"",
+                    "command: \"./emit-result.sh regular-changed\"",
+                ),
+            )
+            .unwrap();
+        }
+        "source code" => {
+            std::fs::write(root.join("src/lib.rs"), "pub fn fixture() -> u32 { 2 }\n").unwrap();
+        }
+        other => panic!("unknown changed boundary '{other}'"),
+    }
+    common::commit_fixture(support::env(world));
+    world.changed_boundary = Some(boundary);
+}
+
+#[then("stderr names the changed boundary")]
+fn stderr_names_changed_boundary(world: &mut GivnWorld) {
+    let boundary = world
+        .changed_boundary
+        .clone()
+        .expect("the fixture must record the changed boundary");
+    let needle = match boundary.as_str() {
+        "delta feature" => "delta features changed",
+        "verify command" => "verify command changed",
+        "source code" => "tested content changed",
+        other => panic!("unknown changed boundary '{other}'"),
+    };
+    let text = crate::steps::stderr(world);
+    assert!(text.contains(needle), "stderr missing {needle:?}: {text}");
+}
