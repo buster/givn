@@ -1,7 +1,8 @@
 # Architecture Principles addon
 
-Optional, default-off guidance for designing replaceable components: **design
-the consumer's contract now, defer the component split.**
+**TL;DR:** Treat each consumer use case as a contract now. Let one component
+implement several contracts. Defer splitting the component until its
+responsibilities diverge.
 
 Canonical rule: `givn instructions architecture-principles`.
 
