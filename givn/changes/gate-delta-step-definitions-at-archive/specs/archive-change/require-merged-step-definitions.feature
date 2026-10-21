@@ -2,7 +2,7 @@
 
 Feature: Require Merged Step Definitions
 
-  @givn.added @wip
+  @givn.added
   Scenario: Archive is blocked when a delta step definition is missing from the permanent test tree
     Given  a givn project with a completed change "unmerged-steps" ready to archive
     And  the change's spec tree binds "an imported catalog" in "steps/catalog_steps.py"

@@ -70,10 +70,12 @@
 ## Step Definitions
 
 > Location of step definition files — **one file per capability**, never one
-> file for the whole change:
-> | Capability | Step definition file |
-> |---|---|
-> | | |
+> file for the whole change. Column 1 is the single path the integrity hook
+> resolves and validates; add column 3 only when a delta step copy has a
+> separate permanent merge target, and never put two paths in one cell.
+> | Capability | Step definition file | Permanent merge target |
+> |---|---|---|
+> | | | |
 >
 > Test runner command (from `verify.command` in givn/commands.yaml):
 > ```
