@@ -1128,3 +1128,11 @@ fn self_receiver_call(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
+#[given("a production source unit whose method calls an associated function on a project type")]
+fn named_receiver_call(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    crate::steps::outline_report_support::enable_outline(&env);
+    crate::steps::outline_report_support::write_named_receiver_call(&env);
+    world.env = Some(env);
+}
+

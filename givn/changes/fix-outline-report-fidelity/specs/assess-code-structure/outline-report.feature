@@ -26,7 +26,7 @@ Feature: Outline report
     And the JSON report records the call "check" as "same_file"
     And the JSON call names "engine::Engine::check" as its target
 
-  @givn.added @wip
+  @givn.added
   Scenario: A method call on a named receiver resolves to that owner
     Given a production source unit whose method calls an associated function on a project type
     When the developer runs "givn outline report --json"

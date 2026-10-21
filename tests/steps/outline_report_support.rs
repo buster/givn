@@ -414,3 +414,11 @@ pub fn write_self_receiver_call(env: &TestEnv) {
     );
 }
 
+pub fn write_named_receiver_call(env: &TestEnv) {
+    write_source(
+        env,
+        "src/line.rs",
+        "pub struct Line;\n\npub struct Consumer;\n\nimpl Line {\n    pub fn from(value: u64) -> Self {\n        let _ = value;\n        Self\n    }\n\n    pub fn other(&self) {}\n}\n\nimpl Consumer {\n    pub fn make(&self) -> Line {\n        Line::from(1)\n    }\n}\n",
+    );
+}
+
