@@ -173,7 +173,7 @@ resolver accepts candidates whose owner name equals the qualifier.
   - [x] Evidence:   Scenario: A method call on a named receiver resolves to that owner | 1 scenario (1 passed) | 5 steps (5 passed)
 - REFACTOR: targeted run; paste zero.
   - [x] Evidence:   Scenario: A method call on a named receiver resolves to that owner | 1 scenario (1 passed) | 5 steps (5 passed)
-- [ ] COMMIT:
+- [x] COMMIT: d3b72a1353ea16aadb76cd184aaeb941a96911c9
 
 ## 5. An ambiguous method name has no resolved target
 
@@ -182,11 +182,11 @@ no target; JSON emits `null`.
 
 - RED: remove `@wip`; add `write_ambiguous_call` and bindings; targeted run;
   paste non-zero.
-  - [ ] Evidence:
+  - [x] Evidence: baseline: ✘  Given a production source unit whose method calls an unknown receiver whose name two project types declare | Defined: givn/changes/fix-outline-report-fidelity/specs/assess-code-structure/outline-report.feature:39:5 | Step doesn't match any function
 - GREEN: implement the ambiguous branch; targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: An ambiguous method name has no resolved target | 1 scenario (1 passed) | 4 steps (4 passed)
 - REFACTOR: targeted run; paste zero.
-  - [ ] Evidence:
+  - [x] Evidence:   Scenario: An ambiguous method name has no resolved target | 1 scenario (1 passed) | 4 steps (4 passed)
 - [ ] COMMIT:
 
 ## 6. An associated-function call whose qualifier contradicts the target is external
