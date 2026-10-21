@@ -1752,3 +1752,25 @@ fn stderr_suggests_exactly(world: &mut GivnWorld, suggestion: String) {
     let needle = format!("did you mean '{suggestion}'?");
     assert!(text.contains(&needle), "stderr missing {needle:?}: {text}");
 }
+
+#[given(
+    "a clean committed change whose use-case contract starts with \"# Use Case: Lending Register\" and whose capability list is a table"
+)]
+fn review_fixture_non_kebab_title_table_capabilities(world: &mut GivnWorld) {
+    let contract = review_contract(
+        "review-diagnostics-demo",
+        Some("# Use Case: Lending Register"),
+        "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| alpha-capability | do it | Consumer does it |",
+        &valid_interactions(&["alpha-capability"]),
+        "- A valid example.",
+        "",
+    );
+    write_review_fixture(
+        world,
+        "review-diagnostics-demo",
+        "review-diagnostics-demo",
+        &contract,
+        &["alpha-capability"],
+        &[("alpha-capability", "NEW in review-diagnostics-demo")],
+    );
+}
