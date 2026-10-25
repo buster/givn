@@ -187,6 +187,20 @@ observable result asserted against the module instead of through the browser)
 is a duplicate: the layer is a driver, not an invariant. The overlap review
 flags it — distinguish it or delete it.
 
+A proposed scenario that passes on its first executable run is not
+automatically a new specification. Apply green-first triage: delete it if
+covered, fold data-only variants into one parameterized case, or change the
+setup. Do not add a second scenario for the same invariant.
+
+Every scenario title is globally unique in the active corpus. A modification
+replaces exactly one permanent scenario; an addition must not reuse a title.
+Duplicate titles are a hard error, never resolved by runner precedence.
+
+Add the smallest set of scenarios that distinguishes every rule and boundary.
+If a new case differs only in data, use one parameterized case. If it asserts
+the same invariant as an existing case, delete or merge. Stop when no new
+decision changes.
+
 **What an `@e2e` scenario is NOT:**
 - Not a unit test wrapped in Gherkin.
 - Not an in-process integration test.

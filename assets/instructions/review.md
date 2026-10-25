@@ -32,6 +32,16 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
 2. Cross-check every checked `[x]` task has a commit whose diff touches
    production source, not only the spec/stub. No commit or spec-only diff =
    fabricated task.
+2a. Read the recorded RED for every checked scenario. A RED that failed on
+   discovery, registration, step binding, import, fixture setup, or
+   environment startup is not behavioural. Reopen the task.
+2b. If `tasks.md` records `GREEN-FIRST`, confirm exactly one of `COVERED`,
+   `PARAMETERIZED`, `WRONG-SETUP`, or `UNNECESSARY` and that the action was
+   taken. Missing disposition = fabricated task.
+2c. Normal TDD commits contain the production change that turns RED green. A
+   regression-only commit must be marked `CHARACTERIZATION`.
+2d. A prior run's violation is not a compliance argument. Evaluate against the
+   rule, not the archive.
 3. Cross-check every component design.md promised (class/service/
    controller/module) exists in the tree. List anything missing —
    incomplete implementation, not a "hard to test" gap.
@@ -184,6 +194,11 @@ recorded in the project's arc42 glossary. Every spec or design term the
 glossary does not hold, or any inconsistent reuse, is a finding: fix the
 affected artifact and record the resolved term in `docs/arc42/12-glossary.md`.
 Do not write `REVIEW: PASS` while a ubiquitous-language finding remains.
+
+When a domain term, schema, or law changes, sweep README, glossary, ADRs,
+docs, tests, and code symbols for old values. Update them or mark them stale at
+their entry point. A single authoritative source must emerge; two unqualified
+definitions are a finding.
 {{/if}}
 {{/if}}
 
@@ -206,6 +221,11 @@ source of truth.
 1. Dead code (YAGNI/KISS) → delete.
 2. Missing test coverage → add scenario, run RED→GREEN→REFACTOR→COMMIT.
 3. Legitimately hard to test (rare) → concrete technical justification.
+
+External-input validation is bucket 2 (missing test coverage) until a scenario
+or fault-injection test covers it. It is never bucket 3 ("legitimately hard to
+test"). A fake boundary makes the case testable; classify it as missing test,
+not defensive code.
 
 These three buckets are exhaustive. **Any classification outside them is
 itself a fabrication-audit finding, not a valid outcome** — e.g. "acceptable

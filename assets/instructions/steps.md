@@ -133,11 +133,33 @@ never infer from whole-suite output) and captures output verbatim as evidence.
 2. New steps use the stub above; reused steps kept as-is.
 3. Run targeting this scenario. Non-@e2e: the project's `verify.command`.
    @e2e: `verify.e2e_command`. Capture output.
-   - Non-zero exit → RED confirmed, proceed to GREEN.
-   - Zero exit, all steps reused → legitimate immediate GREEN (record which
-     steps were reused).
-   - Zero exit with a new step → step is empty or runner isn't strict. STOP,
-     fix before proceeding.
+   - Non-zero exit → inspect the failure. If it is harness or setup, fix and
+     rerun. If it is the asserted behaviour, RED confirmed; proceed to GREEN.
+   - Zero exit, all steps reused → apply green-first triage before doing any
+     work.
+   - Zero exit with a new step → step is empty, the runner isn't strict, or the
+     behaviour already exists. STOP and triage.
+
+### Rule: RED is causal
+
+A non-zero exit is necessary but not sufficient. RED is valid only when the
+scenario is discoverable, its steps are bound, and it executes and fails on the
+asserted behaviour or at an explicitly unimplemented step body. A failure
+during discovery, registration, step binding,
+import, fixture setup, or environment startup is a harness failure. Fix it and
+rerun; do not write production code.
+
+### Rule: green-first triage
+
+If the first executable run passes, do not write production code. Record one
+disposition in tasks.md:
+
+| Disposition | When | Action |
+|---|---|---|
+| COVERED | An existing scenario asserts the same behaviour | Delete or merge |
+| PARAMETERIZED | Same behaviour, different data | One parameterized case |
+| WRONG-SETUP | Setup bypasses the intended path | Change Given/When/fixture; rerun |
+| UNNECESSARY | No setup can make it fail | Delete; record why only if unreachable |
 
 ### GREEN
 

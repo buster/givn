@@ -26,6 +26,17 @@ understood, or you want to compare approaches before committing to one.
 - **Follow the canonical dialog policy** (`givn instructions dialog`) when you
   ask a question: name artifacts in domain language, and give every option its
   meaning, gain, cost, and a concrete example.
+- **Failure budget** — after two identical failures from a tool or external
+  source, stop and change strategy. Do not retry a cancelled search, a 404, or
+  an unchanged command.
+- **Minimize before retry** — when a parser or gate rejects an artifact,
+  reduce it to a minimal reproducer. Change one dimension at a time; do not
+  rerun the full pipeline on guesses.
+- **Tool contract first** — read the supported dialect and capabilities before
+  use. Use the simplest tool that can do the job and do not mutate the host to
+  test a hypothesis.
+- **Capture output** — write stdout/stderr to files, check the exit status,
+  then inspect. Do not let `head` or `tail` mask or kill the producer.
 
 ## What you might do
 
