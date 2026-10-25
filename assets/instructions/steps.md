@@ -161,6 +161,36 @@ disposition in tasks.md:
 | WRONG-SETUP | Setup bypasses the intended path | Change Given/When/fixture; rerun |
 | UNNECESSARY | No setup can make it fail | Delete; record why only if unreachable |
 
+Examples:
+
+  valid RED:
+    AssertionError: expected certificate.status "full", got "provisional"
+    AssertionError: expected senses ["hearing", "smell"], got ["hearing"]
+    NotImplementedError: the issue operation is not implemented
+
+  invalid RED:
+    scenario is not registered in tests/regressions.py
+    UndefinedStep: no binding for "the clerk issues a certificate"
+    ModuleNotFoundError: test fixture
+
+  COVERED:
+    existing: "Issuing for an unknown citizen is refused"
+    proposed: "An unknown owner is refused"
+    -> same invariant; delete or merge.
+
+  PARAMETERIZED:
+    proposed: "A citizen aged 4 is refused"
+    proposed: "A citizen aged 0 is refused"
+    -> one parameterized case: age 4 refused, age 0 refused.
+
+  WRONG-SETUP:
+    proposed: "A mismatched provider licence id is refused"
+    -> the fake provider must return a licence naming another provider's id.
+
+  UNNECESSARY:
+    proposed: "A valid command exits 0"
+    -> already asserted by the real-interface e2e scenario; delete.
+
 ### GREEN
 
 4. Replace stubs with real assertions (concrete values, not "it ran").

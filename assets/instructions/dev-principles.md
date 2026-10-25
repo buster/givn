@@ -46,3 +46,14 @@ For every user-facing question, follow the effective policy from
   change does not require.
 - "Not my code" — leaving a defect or debt in a file because someone else wrote
   it.
+
+## Examples
+
+| Principle | Bad | Good |
+|---|---|---|
+| Operative source | `law.md` says one sense, `task.md` says two, both current. | `task.md` governs; `law.md` has a dated stale note pointing to it. |
+| Causal RED | `scenario is not registered` used as RED. | `expected full, got provisional` used as RED. |
+| External boundary | Provider licence-id mismatch called “defensive.” | Fake provider returns another provider's licence id. |
+| Measured population | Coverage is 83.9%, so exclude another file. | Exclusions are declared in design.md before the first run. |
+| Stop rule | 24 binary-string probes to infer a parser. | One minimal reproducer, then a documented assumption. |
+| Precedent | “The archived review did it.” | “The rule requires a production diff; this commit has none.” |

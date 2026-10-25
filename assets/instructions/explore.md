@@ -38,6 +38,17 @@ understood, or you want to compare approaches before committing to one.
 - **Capture output** — write stdout/stderr to files, check the exit status,
   then inspect. Do not let `head` or `tail` mask or kill the producer.
 
+Examples:
+
+  failure budget: a web search is cancelled, then a 404 on the same source;
+    stop, not a third identical attempt.
+  minimize: a parser rejects a document; remove one element at a time until
+    one empty class reproduces it, instead of rewriting the producer.
+  tool contract: a restricted evaluator rejects dynamic import; use a shell
+    command or a file read, not a workaround in the same dialect.
+  capture: `gate | tail` reports BrokenPipeError; capture to a file and check
+    the exit status first.
+
 ## What you might do
 
 - Explore the problem space (clarify, challenge, reframe).

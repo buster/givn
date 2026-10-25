@@ -42,6 +42,15 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
    regression-only commit must be marked `CHARACTERIZATION`.
 2d. A prior run's violation is not a compliance argument. Evaluate against the
    rule, not the archive.
+
+Examples:
+
+  RED: "scenario is not registered in tests/regressions.py"  -> invalid; reopen
+  RED: "expected full, got provisional"                      -> valid
+  GREEN-FIRST: COVERED, existing scenario retained           -> valid; no new commit
+  GREEN-FIRST: missing                                       -> fabricated task
+  normal TDD commit: only tests/regressions.py changed       -> missing production change
+  characterization commit: only the test changed, marked CHARACTERIZATION -> valid
 3. Cross-check every component design.md promised (class/service/
    controller/module) exists in the tree. List anything missing —
    incomplete implementation, not a "hard to test" gap.
@@ -199,6 +208,9 @@ When a domain term, schema, or law changes, sweep README, glossary, ADRs,
 docs, tests, and code symbols for old values. Update them or mark them stale at
 their entry point. A single authoritative source must emerge; two unqualified
 definitions are a finding.
+
+Examples: a glossary naming a deleted constant; a risk note still saying a
+migration backfills rows; a README still reporting the old law or old coverage.
 {{/if}}
 {{/if}}
 
@@ -226,6 +238,10 @@ External-input validation is bucket 2 (missing test coverage) until a scenario
 or fault-injection test covers it. It is never bucket 3 ("legitimately hard to
 test"). A fake boundary makes the case testable; classify it as missing test,
 not defensive code.
+
+Example: a provider licence response whose id names another provider. The fake
+returns that payload; the scenario asserts refusal. Before the test exists, it
+is bucket 2, not "defensive."
 
 These three buckets are exhaustive. **Any classification outside them is
 itself a fabrication-audit finding, not a valid outcome** — e.g. "acceptable
