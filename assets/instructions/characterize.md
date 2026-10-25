@@ -24,6 +24,10 @@ GREEN and REFACTOR content:
    An immediate GREEN is expected here: characterization probes existing
    behaviour. Record `CHARACTERIZATION`, not `RED`; do not break production
    code to force a red.
+
+   Example: a characterization test for an existing "unknown citizen is
+   refused" path passes on the first run. Record it as characterization; do
+   not remove the refusal guard to manufacture red.
 2. **GREEN**: Implement real assertions probing **observed** behaviour (read
    the actual code). Run verify → must pass. No production code
    changes. If it fails: diagnose (infrastructure → fix plumbing;

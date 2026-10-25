@@ -229,6 +229,13 @@ wrong identity, malformed shape, timeout, partial response, and replay. A
 boundary without an adversarial case is an incomplete design. An external
 input is never "defensive code"; it is testable through its fake or twin.
 
+Examples:
+
+  provider licence: wrong provider id, missing id, non-object payload
+  provider attestations: malformed entry, duplicate id, stale timestamp
+  persistence: corrupt file, schema mismatch, write failure
+  CLI/API: missing argument, unknown option, malformed value
+
 ## Local runnability & digital twins (mandatory)
 
 The system MUST be runnable and testable locally, in full, with one
@@ -286,6 +293,12 @@ For each process:
 - Name one exercised production path expected to be non-zero.
 - Declare the measured population and exclusions here, before the first run.
   Do not change them after seeing the result to hit a threshold.
+
+Example:
+
+  measured: application source under `src/`, plus the CLI entry point
+  excluded: tests, generated code, benchmark-owned probes and mocks
+  changed after result: forbidden; move the file or fix the measurement instead
 
 {{/if}}
 ## Interaction Coverage Matrix (mandatory)

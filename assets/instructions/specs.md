@@ -201,6 +201,25 @@ If a new case differs only in data, use one parameterized case. If it asserts
 the same invariant as an existing case, delete or merge. Stop when no new
 decision changes.
 
+Examples:
+
+```gherkin
+# Duplicate identity: a delta addition reusing a permanent title is an error.
+# Use @givn.modified with the exact permanent title instead.
+
+# Data variant: one parameterized case, not N scenarios.
+Scenario Outline: A citizen younger than five is refused
+  Given an empty register
+  And a citizen "<id>" born "<birth>"
+  When the clerk issues a certificate for citizen "<id>" and cat "k1"
+  Then the command fails with "citizen_too_young"
+
+  Examples:
+    | id | birth      |
+    | c1 | 2026-01-01 |
+    | c2 | 2025-12-31 |
+```
+
 **What an `@e2e` scenario is NOT:**
 - Not a unit test wrapped in Gherkin.
 - Not an in-process integration test.

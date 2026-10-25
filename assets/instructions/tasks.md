@@ -243,6 +243,12 @@ this.
 - Before generating many task sections or commit records, validate one through
   the real parser. Fix the format on one, then generate the rest.
 - Each scenario has a field for the commit hash.
+- Examples:
+  - `RED-EVIDENCE: AssertionError: expected full, got provisional`
+  - `GREEN-FIRST: COVERED — existing "unknown citizen is refused"; deleted`
+  - `GREEN-FIRST: PARAMETERIZED — ages 4 and 0 folded into one outline`
+  - normal TDD commit: production file + feature + regression registration
+  - characterization commit: test only, task marked `CHARACTERIZATION`
 - Non-@e2e scenarios first, @e2e last.
 - Check `[x]` only when evidence and commit hash are filled in. Empty fields
   = incomplete.

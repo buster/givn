@@ -23,6 +23,15 @@ change seed.
   references in one final pass.
 - Report the regression-check result even when the archive succeeded.
 
+Examples:
+
+  transactional: archive fails after moving the change to the archive;
+    re-read state before using `givn/changes/<id>` again.
+  exit status: `archive | tail` returns BrokenPipeError;
+    use `archive > log 2>&1; status=$?; tail log`.
+  receipt: a docs-only commit after the receipt makes it stale; freeze first,
+    then commit documentation and regenerate once.
+
 ## The archive gate
 
 `givn archive` enforces the gate; the archive proceeds only when all of it

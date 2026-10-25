@@ -104,3 +104,12 @@ Name the domain noun and give its contrast pair.
 - When a source must remain unmodified, add a dated stale note at its entry
   point and point to the operative source. Never leave two unqualified
   definitions.
+
+Examples:
+
+  authoritative: the task addendum governs this change; the root law carries
+    a dated note pointing to it.
+  sweep: a glossary names `TENANT_CATOPIA`, but the code uses a literal;
+    rename or remove the symbol reference.
+  sweep: a risk chapter says a migration backfills rows, but the design says
+    it does not; correct the chapter before review.
