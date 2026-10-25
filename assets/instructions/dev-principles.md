@@ -12,6 +12,21 @@ For every user-facing question, follow the effective policy from
   months out, not for cleverness today.
 - **Match the TDD loop.** RED (real failing test) -> GREEN (minimum code) ->
   REFACTOR (no behaviour change). Never skip RED; never suppress a test to pass.
+- **A red test fails for the reason it claims.** Discovery, registration,
+  binding, import, fixture, and environment failures are not RED. A green
+  first run is a design signal: covered, parameterize, fix the setup, or delete.
+- **Name the operative source.** When documents disagree, declare which one
+  governs and mark the other stale at its entry point. Never leave two
+  unqualified authorities.
+- **External boundaries are testable.** Every trust boundary gets adversarial
+  cases: wrong identity, malformed shape, timeout, partial response, replay.
+  Never classify external-input validation as "defensive."
+- **Define the measured population before measuring.** Do not change
+  exclusions after seeing the number to hit a threshold.
+- **Stop when uncertainty cannot change the decision.** Do not reverse-engineer
+  private validators or hidden graders beyond the documented contract.
+- **A prior violation is not a justification.** Evaluate against the rule, not
+  the archive.
 - **Boring when called for.** Prefer established patterns in the repo over new
   abstractions. A second convention beside an existing one is prohibited.
 - **No avoidable allocation or computation.** Consider what code compiles to.

@@ -89,8 +89,9 @@ so the text has exactly one home.
   raw Git commit is stamped by the hook, a raw Fossil check-in is not.
 - A checked scenario records exactly one `COMMIT:` revision in `tasks.md`.
   Allowed: a real revision that exists, is reachable from `HEAD`, names the
-  scenario in its message body, and contains the scenario's implementation
-  or its regression test. Not allowed: a revision shared by two scenarios,
+  scenario in its message body, and contains the scenario's implementation.
+  A regression-only commit is allowed only when `tasks.md` marks the task
+  `CHARACTERIZATION`. Not allowed: a revision shared by two scenarios,
   a placeholder or invented hash, an unreachable revision, a missing
   `COMMIT:` line, a message that does not name the scenario, or a commit
   that only edits `tasks.md` or the `.feature` scenario text. No commit
@@ -101,11 +102,14 @@ so the text has exactly one home.
 
 ```
 For each scenario:
-  RED:      Remove @wip from THIS scenario only. Unimplemented steps use the
-              stub above. Run the runner TARGETING THIS SCENARIO ONLY (name,
-              line, or tag — never infer from whole-suite output). PASTE the
-              output. MUST exit non-zero. Exit 0 = runner not strict or a
-              step is empty — hard stop, fix before continuing.
+  RED:      Make the scenario executable: remove @wip, bind or reuse steps,
+              and register it in the runner as required. Run targeting this
+              scenario only. PASTE the output. A non-zero exit is necessary
+              but not sufficient: the failure must be the scenario's asserted
+              behaviour or an explicitly unimplemented step body, not
+              discovery, registration, binding, import, or fixture setup.
+              If it passes, STOP and apply green-first triage; do not write
+              production code.
   GREEN:    Replace stubs with real assertions. Write minimum production
               code. LIST every production file created/modified — an empty
               list on a non-reuse scenario means investigate, not proceed.
@@ -233,6 +237,11 @@ this.
   the implementer never imports the component's implementation.
 {{/if}}
 - Each RED/GREEN/REFACTOR line has a field for pasted runner output.
+- Each scenario records one of: `RED-EVIDENCE` with the behavioural failure,
+  or `GREEN-FIRST` with one of `COVERED`, `PARAMETERIZED`, `WRONG-SETUP`,
+  `UNNECESSARY` and the action taken.
+- Before generating many task sections or commit records, validate one through
+  the real parser. Fix the format on one, then generate the rest.
 - Each scenario has a field for the commit hash.
 - Non-@e2e scenarios first, @e2e last.
 - Check `[x]` only when evidence and commit hash are filled in. Empty fields

@@ -13,6 +13,14 @@ change seed.
   pipeline must run.
 - If the archive command fails, fix the gate failure rather than working
   around it.
+- Treat archive and verification as transactions. Snapshot or commit first,
+  run in a disposable workspace, and inspect state after failure. Failure does
+  not mean no mutation.
+- Capture long-running gate output to a file, check the exit status, then
+  inspect the tail. Do not pipe a mutating command through `head` or `tail`.
+- Freeze the content before generating the receipt. Do not edit reviewed
+  artifacts after the receipt; if you must, regenerate once and update
+  references in one final pass.
 - Report the regression-check result even when the archive succeeded.
 
 ## The archive gate

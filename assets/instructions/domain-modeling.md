@@ -98,3 +98,9 @@ Name the domain noun and give its contrast pair.
   anti-terms column.
 - Keep it short - one page that the design, the lint gate, and the review all
   build on.
+- One authoritative definition per term. When a term, schema, or law changes,
+  sweep README, glossary, ADRs, docs, tests, and code symbols for old values.
+  Update them or mark them stale at their entry point.
+- When a source must remain unmodified, add a dated stale note at its entry
+  point and point to the operative source. Never leave two unqualified
+  definitions.

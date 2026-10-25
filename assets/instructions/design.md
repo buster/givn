@@ -222,6 +222,13 @@ the design must answer: **which case this test covers that the E2E does not**?
 If there is no concrete answer, use the E2E scenario instead. This policy
 prevents weaker duplicate scenarios from surviving under a new title.
 
+## External boundary cases (mandatory)
+
+For every external boundary, name the adversarial cases that must exist:
+wrong identity, malformed shape, timeout, partial response, and replay. A
+boundary without an adversarial case is an incomplete design. An external
+input is never "defensive code"; it is testable through its fake or twin.
+
 ## Local runnability & digital twins (mandatory)
 
 The system MUST be runnable and testable locally, in full, with one
@@ -277,6 +284,8 @@ For each process:
 - Flush data before shutdown.
 - Merge its profile before export.
 - Name one exercised production path expected to be non-zero.
+- Declare the measured population and exclusions here, before the first run.
+  Do not change them after seeing the result to hit a threshold.
 
 {{/if}}
 ## Interaction Coverage Matrix (mandatory)

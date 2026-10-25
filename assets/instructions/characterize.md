@@ -21,6 +21,9 @@ GREEN and REFACTOR content:
 1. **RED**: Remove `@wip` from this scenario only. Check for reusable step
    definitions first. New steps get unimplemented assertions. Run the
    project's verify command → must fail (or pass if all steps reused).
+   An immediate GREEN is expected here: characterization probes existing
+   behaviour. Record `CHARACTERIZATION`, not `RED`; do not break production
+   code to force a red.
 2. **GREEN**: Implement real assertions probing **observed** behaviour (read
    the actual code). Run verify → must pass. No production code
    changes. If it fails: diagnose (infrastructure → fix plumbing;
