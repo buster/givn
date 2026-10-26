@@ -1,9 +1,10 @@
 # Architecture Principles addon
 
 **TL;DR:** Answer questions at their last responsible moment — late enough for
-evidence, early enough to stay cheap. Treat each consumer use case as a contract
-now; let one component implement several contracts; defer splitting the
-component until its responsibilities diverge.
+evidence, early enough to stay cheap. Treat each consumer use case as a contract;
+one component implements that contract. Split a component when it owns more than
+one current responsibility. Use ports and adapters for external boundaries in a
+complex change; keep a minimal change simple.
 
 Canonical rule: `givn instructions architecture-principles`.
 
@@ -19,19 +20,25 @@ gate check without deleting project content.
 - A **contract** is the consumer's use case, expressed as the narrowest callable
   surface. It uses the consumer's language, parameters, and return values and
   contains only what the current use case needs.
-- A **component** is the replaceable unit of implementation behind one or more
-  contracts. Its internal methods are free.
+- A **component** is the replaceable unit of implementation behind one contract.
+  Its internal methods are free.
+- A **port** is the narrow callable interface one consumer uses. An **adapter**
+  translates between a port and one external mechanism: CLI, HTTP service,
+  database/file, CSV import, or equivalent. An adapter contains no business
+  rules.
 - **Interface Segregation splits contracts now.** `BookLending` and `CdLending`
-  are separate contracts even when one `LendingDesk` implements both. A consumer
-  never depends on a method it does not use.
-- **Single Responsibility governs the component.** If book and CD policies later
-  diverge, split `LendingDesk` into separate components. The contracts already
-  exist, so no consumer changes.
+  are separate contracts. A consumer never depends on a method it does not use.
+- **Single Responsibility governs the component.** One component implements one
+  contract and one named responsibility. A unit that owns more than one
+  contract, capability, or external adapter is split now.
 - Consumers use only the contract. The contract never imports the
   implementation; only the composition root names implementations.
 - A contract is not deferred. It is the current consumer use case.
 - YAGNI and KISS apply to the contract's content: no future-use-case methods,
   no generic `lendMedia`, no second implementation now.
+- A minimal change with one external dependency and no complex business rules
+  may stay in one file; do not add ports and adapters for it. A change with an
+  external service or complex rules uses ports and adapters.
 
 ## Decision timing
 
@@ -48,24 +55,19 @@ The rule is not "decide everything now." It is:
   Example: a deputy rule or digital-media support; record it as future scope,
   do not design for it.
 
-A contract is not carried; it is the current use case. A component split is the
-canonical carried decision.
+A contract is not carried; it is the current use case. A component split is not
+carried either: when a unit owns more than one current responsibility, split it
+now.
 
 ## Example
 
 ```text
-BookLending.lendBook(bookId)   implemented by LendingDesk
-CdLending.lendCd(cdId)         implemented by LendingDesk
+BookLending.lendBook(bookId)   implemented by BookLendingDesk
+CdLending.lendCd(cdId)         implemented by CdLendingDesk
 ```
 
-Later, when the policies diverge:
-
-```text
-BookLendingDesk implements BookLending
-CdLendingDesk   implements CdLending
-```
-
-`BookDesk` and `CdDesk` do not change.
+The two contracts and components are separate from the start. `BookDesk` and
+`CdDesk` depend only on their contract.
 
 A component is a replacement boundary, not a failure-isolation boundary. Do not
 add retries, circuit breakers, process isolation, or messaging in its name.
@@ -83,11 +85,14 @@ without making the code harder to read. Concretely:
   framework types. A consumer can work against the contract without reading the
   implementation.
 - **Right granularity.** Contracts correspond to consumer use cases, not to
-  modules or files. One component may implement several contracts; internal
-  helpers stay internal.
+  modules or files. One contract has one implementing component and one named
+  responsibility; a unit with more is split. Internal helpers stay internal.
+  A minimal change with one external dependency and simple rules may stay in
+  one file.
 - **Correct timing.** Foundational business and technology questions are
   answered now. Carried decisions name a default, trigger, switch cost, and
-  owner. Component splits are deferred until responsibilities diverge.
+  owner. Component splits are not carried; split when the second current
+  responsibility appears.
 - **No readability tax.** The contract table and review branches are used only
   where a component exists. Contracts reduce the surface a consumer must
   understand; they do not add a layer to helpers.
@@ -108,8 +113,8 @@ without making the code harder to read. Concretely:
 - **Decorative contracts.** The table is filled but consumers still import
   implementations, the composition-root exception is used everywhere, or tests
   bypass the contract.
-- **SRP erosion.** One component implements several contracts whose policies
-  diverge, but no split trigger is recorded or acted on.
+- **SRP erosion.** One unit owns several capabilities or external adapters
+  without a split, or one component implements more than one contract.
 - **Deferred foundation.** A business or enterprise rule is carried without a
   trigger or owner, or a scenario depends on a carried answer.
 - **No cheaper change.** When a component was actually replaced or split,
@@ -138,8 +143,9 @@ to add more abstraction.
 | Dialog | Points architecture questions at the canonical instruction. |
 
 The addon adds no artifact, generated skill, or archive gate. A durable contract
-is recorded in the building-block view when arc42 is enabled; ADR qualification
-is unchanged.
+is recorded in the building-block view when arc42 is enabled. Port/adapter
+boundaries, a component split, and the durable storage mechanism are ADR
+candidates.
 
 ## Enable and disable
 

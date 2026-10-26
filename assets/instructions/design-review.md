@@ -2,10 +2,14 @@
 
 Stress-test the plan before the task list is written.
 
-This review runs after design is complete — the full planning layer exists
-(proposal, spec, design) but tasks have not been written and implementation has
-not started. Its purpose is to catch scope, architecture, and testability
-problems now, when changing a decision costs a markdown edit, not a rewrite.
+This review runs after design is complete and before tasks are written. Existing
+code from earlier changes is expected and is context only: review the plan and
+the expected components in `design.md`, never the as-built structure. If an
+implementation already exists, ignore it for the architecture verdict; code that
+contradicts the plan is a finding, not a design input.
+
+Do not write `tasks.md` before this review signs off. The task list follows the
+reviewed plan.
 
 ## Mandatory, non-skippable, fresh context
 
@@ -63,18 +67,21 @@ Required branches — cover every one (or explicitly record "no issue found"):
 {{#if addons.architecture_principles}}
 - **Contracts and components** — apply `givn instructions
   architecture-principles` and check the design's `Contracts and Components`
-  table. Every consumer use case touched by this change has a contract; every
-  contract names its consumers and implementing component today. One component
-  may implement several contracts; a forced one-contract-per-component mapping
-  is a finding. The contract is consumer-shaped: no implementation or framework
-  types, no methods the consumer does not use, no future-use-case methods. A
-  component with two current responsibilities is split now; a component with
-  one responsibility may implement several contracts. Every contract can be
-  replaced by a separate implementing component later without changing its
-  consumers. No consumer is planned to import a component's implementation;
-  the composition root and implementation tests are the only exceptions. A
-  component with a named responsibility and a consumer outside itself but no
-  contract is a finding; an internal helper with no contract is correct.
+  table. Every consumer use case touched by this change has a contract and
+  exactly one implementing component. One component implements one contract and
+  one named responsibility; a unit that implements more than one contract,
+  capability, or external adapter is a finding. The contract is consumer-shaped:
+  no implementation or framework types, no methods the consumer does not use,
+  no future-use-case methods. Every contract can be replaced by a separate
+  implementing component later without changing its consumers. No consumer is
+  planned to import a component's implementation; the composition root and
+  implementation tests are the only exceptions. A component with a named
+  responsibility and a consumer outside itself but no contract is a finding; an
+  internal helper with no contract is correct. When the change has an external
+  service or more than one external boundary, the design names each port and
+  adapter. A single-file implementation is accepted only for one external
+  dependency and simple business rules; a complex change implemented as one
+  unit is a finding.
 - **Decision timing** — apply `givn instructions architecture-principles` to
   the change's open questions. A foundational question answered by usage
   is a finding. A carried question without default, trigger, switch cost, and
@@ -97,7 +104,9 @@ Required branches — cover every one (or explicitly record "no issue found"):
   canonical Arc42 addon instruction by running `givn instructions arc42-docs
   --change <id>`. Check only candidates whose structured verdict has all
   mandatory gates `PASS`; do not turn every non-trivial design choice into an
-  ADR. The verdict must include a completed existing-ADR or duplicate check. A
+  ADR. Enumerate the change's port/adapter boundaries, component split, and
+  durable storage mechanism as candidates before accepting “no ADR qualifies”.
+  The verdict must include a completed existing-ADR or duplicate check. A
   non-qualifying choice must name exactly one canonical feature, design,
   Arc42, process, project-documentation, or code destination. A refinement must
   amend an existing ADR, and a replacement must supersede it. For every

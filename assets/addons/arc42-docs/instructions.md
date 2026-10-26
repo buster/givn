@@ -135,11 +135,17 @@ is no numeric ADR cap — a foundational change may legitimately mint several
 genuine ADRs.
 
 1. **Single-change reversibility.** The decision is fully implementable and
-   reversible within one change and touches one component. File count or
-   interface breadth does not change this. Non-example: a project identity key split is a data-model decision owned by `design.md` and the glossary.
+   reversible within one change and touches one component, and it defines no
+   port/adapter boundary, component split, storage boundary, or compatibility
+   boundary. A boundary decision is not local merely because it touches one
+   component. Non-example: a project identity key split is a data-model
+   decision owned by `design.md` and the glossary.
 2. **No multi-change constraint.** The decision does not constrain at least
-   two future changes or two components. A boundary nobody else builds
-   against is a local decision. Non-example: a terminal state value plus its presentation filtering is feature behavior owned by the capability spec and design.
+   two future changes or two components, and it defines no port/adapter
+   boundary, component split, storage boundary, or compatibility boundary. A
+   boundary that future adapters or implementations build against is durable.
+   Non-example: a terminal state value plus its presentation filtering is
+   feature behavior owned by the capability spec and design.
 3. **Product-behavior exclusion.** The candidate is observable workflow
    behavior ownable by a use case plus Gherkin (who authorizes what, in which
    order, with which state values). It fails `lower_level_artifact` unless it
@@ -196,6 +202,12 @@ boundary or contract:
 - refactoring the internals of one module without an interface change;
 - choosing an interchangeable HTTP client package without quality-attribute
   implications.
+
+A port/adapter boundary, a component split, and the durable storage mechanism
+are not local implementation details. Assess each as a candidate. Do not reject
+one because it touches one component or is reversible within one change: that
+boundary is exactly what makes the decision durable for future adapters,
+implementations, or migrations.
 
 System-wide error handling is borderline. Record it as an ADR only when it is
 an enforced, cross-cutting contract that all relevant components must obey. Do

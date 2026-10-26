@@ -58,18 +58,20 @@ design-review finding.
 ## Contracts and components (mandatory)
 
 Apply `givn instructions architecture-principles`. Every consumer use case
-touched by this change has a contract; one component may implement several
-contracts. Add a `### Contracts and Components` subsection under Architecture
-Impact with this table:
+touched by this change has a contract and exactly one implementing component.
+Name each port and adapter when the change has an external service or more than
+one external boundary. Add a `### Contracts and Components` subsection under
+Architecture Impact with this table:
 
 | Contract | Consumer use case | Consumers | Implementing component today | Split trigger |
 |---|---|---|---|---|
 | (e.g. `BookLending`) | (e.g. lend a book) | (e.g. `BookDesk`) | (e.g. `LendingDesk`) | (e.g. book and CD policies diverge) |
 
-A component is a unit with a named responsibility and a consumer outside
-itself; internal helpers need no contract. Contracts are current requirements
-and are not carried; the component split is deferred until the component's
-responsibilities diverge. Delete the subsection when the change declares no
+A component is a unit with one named responsibility and a consumer outside
+itself; internal helpers need no contract. A unit that owns more than one
+contract, capability, or external adapter is split now. A single-file
+implementation is valid only when the change has one external dependency and no
+complex business rules. Delete the subsection when the change declares no
 contract.
 
 When a decision is carried, record its default, the trigger that forces the

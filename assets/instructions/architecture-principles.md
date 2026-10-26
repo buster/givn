@@ -1,7 +1,8 @@
 # Instruction: architecture-principles
 
 Answer questions at their last responsible moment. Design the consumer's
-contract now; defer the component split.
+contract now. Split a component when it owns more than one current
+responsibility; do not carry the split.
 
 **Opt-in.** This guidance applies only while `addons.architecture_principles`
 is enabled in `givn/config.yaml`. The workflow pointers and gate checks are
@@ -13,7 +14,7 @@ For every user-facing question, follow the effective policy from
 **Terminology.** This instruction uses *contract* for the callable surface
 between a consumer and a component. The product's external interface (Web UI,
 CLI, HTTP API, library) is a different thing. It uses *component* for the
-replaceable unit of implementation behind one or more contracts, and
+replaceable unit of implementation behind one contract, and
 *implementation* for the code inside it. "Cell-based architecture" is an
 informal name for the same pattern.
 
@@ -34,9 +35,9 @@ Not the earliest moment someone is willing to choose, and not never.
 - **Out of scope — do not decide it here.** The change does not need it. Record
   it as future scope and do not design for it.
 
-A component split is the canonical carried decision: defer it until the
-component's responsibilities actually diverge. The contracts already exist, so
-the split changes no consumer.
+A component split is not a carried decision. Split now when a unit owns more
+than one current responsibility. The contracts already exist, so the split
+changes no consumer.
 
 Technology choices and business rules follow the same test: answer now when
 reversal needs a migration, a broken contract, or a rewrite; carry them when
@@ -65,20 +66,29 @@ contract and the consumer change; that cost is the same as without a contract.
 The contract protects against changing implementations, not against changing
 requirements.
 
-## Components: one unit, many contracts
+## Components, ports, and adapters
 
 A consumer is any caller with a distinct use case: another component, a UI, an
-external system, or a test harness. A component is a replaceable unit of
-implementation behind one or more contracts. Its internal methods are free. A
-component may implement several contracts.
+external system, or a test harness. A **port** is the narrow callable interface
+a consumer uses. A **component** is a replaceable unit of implementation behind
+one contract. An **adapter** is a component that translates between a port and
+one external mechanism: terminal/CLI, HTTP service, database or file, CSV
+import, message broker, or equivalent. An adapter contains no business rules
+and exposes no mechanism types to the domain.
 
+- **One contract, one component.** One contract per consumer use case or
+  consumer role; one component implements that contract. A unit that implements
+  more than one contract, owns more than one capability, or implements more than
+  one external adapter is split now.
+- **A responsibility is a cohesive capability or mechanism.** "Maintain the
+  register" is not one responsibility when the same unit also parses commands,
+  talks HTTP, persists state, and imports CSV. Those are separate
+  responsibilities and separate components.
 - **ISP splits contracts now.** One contract per consumer use case or consumer
-  role. `BookLending` and `CdLending` are separate even when one component
-  implements both. A consumer must not depend on a method it does not use.
-- **SRP governs the component.** One named responsibility. A component with two
-  current responsibilities is split now. A component with one responsibility may
-  implement several contracts; when its responsibilities actually diverge, split
-  it then. The contracts already exist, so the split changes no consumer.
+  role. `BookLending` and `CdLending` are separate. A consumer must not depend
+  on a method it does not use.
+- **SRP governs the component.** One named responsibility per component. A
+  component with two current responsibilities is split now.
 - **Use only the contract.** Consumers import contracts, never implementations.
   The contract never imports the implementation. Only the composition root
   names implementations. The implementation's own tests may use it; consumer
@@ -86,6 +96,11 @@ component may implement several contracts.
 - **Co-locate, separate files.** Put the contract and the first implementation
   in the same directory, preferably in separate files. Follow the project's
   existing boundary convention; do not add a second one.
+- **Adapters and scope.** A minimal change with one external dependency and no
+  complex business rules may stay in one file; do not add ports and adapters
+  for it. KISS and YAGNI apply. A change with an external service or complex
+  business rules uses ports and adapters: the domain component imports only
+  ports, each adapter implements one port, and the composition root wires them.
 - **Enforce mechanically where possible.** Use the language's visibility rules
   (internal package, private module, non-exported implementation). If the
   language cannot enforce it, add a mechanical import check or a review check.
@@ -104,7 +119,8 @@ need no contract.
 - When the arc42 addon is enabled, a durable contract belongs in the
   building-block view; a change-local contract stays in `design.md`.
 - When the arc42 addon is enabled, a durable contract that passes the ADR
-  qualification gate is recorded as an ADR. Settling a contract early does not
-  make it an ADR.
+  qualification gate is recorded as an ADR. An adapter/port boundary, a
+  component split, and the durable storage mechanism are ADR candidates.
+  Settling a contract early does not make it an ADR.
 - Carrying a decision is not deferring a mandatory check; evidence gates stay
   mandatory.

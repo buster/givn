@@ -11,6 +11,15 @@ deliberately classified and resolved. No percentage threshold.
   finding to classify or remediate through the loop, not an edit made to turn
   the suite green.
 
+## Review agent (mandatory)
+
+Implementation is complete. Start one fresh review subagent. It loads this
+instruction, runs the outline, reads the metrics and the outline, and writes
+`review.md` including every `OUTLINE:` verdict and the final `REVIEW:` marker.
+Do not reuse the design-review subagent; its context predates implementation.
+The parent may verify the review and ask for rework, but must not author or edit
+the review verdict.
+
 ## Step 0 (mandatory, first): implementation evidence check
 
 A change can reach review with every task checked off, the runner exiting
@@ -481,19 +490,31 @@ every printed outline a verdict:
 - `OUTLINE: FAIL <unit> | <reason>`
 - `OUTLINE: PASS` when every outline passes.
 
-`REVIEWER` must differ from `AUTHOR`. A `PASS` needs a responsibility and
-call-order explanation; an empty explanation fails. A `FAIL` blocks review, and
-there is no justification path for an unreadable outline: fix the code and
-re-review. Every touched unit with an outline needs a verdict; a missing
-verdict fails. Unknown or conflicting `OUTLINE:` markers fail.
+`REVIEWER` must differ from `AUTHOR` and must be the fresh review subagent from
+the Review agent section, not the design-review subagent. A `PASS` needs a
+responsibility and call-order explanation; an empty explanation fails. A `FAIL`
+blocks review, and there is no justification path for an unreadable outline:
+fix the code and re-review. Every touched unit with an outline needs a verdict;
+a missing verdict fails. Unknown or conflicting `OUTLINE:` markers fail.
 
-The gate's metrics are hints, not the gate. A unit can be
-readable while a metric flags it, and a unit can be unreadable while every
-metric is clean; the outline verdict decides. `READABILITY: FIXED` and
-`READABILITY: JUSTIFIED` are retired. Historical rationales are evidence only;
-they do not satisfy the outline gate.
+The reviewer also applies the architecture check. A single-file implementation
+is acceptable only when the change has one external dependency and simple
+business rules. A change with an external service or complex rules must have
+distinct ports and adapters for each external mechanism and separate components
+for its named responsibilities. A single unit that owns CLI dispatch, an HTTP
+service, storage, and CSV import is a `FAIL`, even when its methods are readable.
+Weigh the outline and the metrics together; the metrics are hints, not the gate.
+A unit can be readable while a metric flags it, and unreadable while every
+metric is clean, so the reviewer decides. If a metric finding remains and the
+reviewer still passes, record a specific waiver:
 
-A standalone `FAIL <reason>` still blocks the review.
+```text
+WAIVER: <unit> | <metric or finding> | <why it is acceptable here> | <split trigger>
+```
+
+A waiver without all four fields does not satisfy the architecture check.
+There is no waiver for missing port/adapter boundaries in a complex change;
+fix the code and re-review.
 {{/if}}
 
 ## Result
