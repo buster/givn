@@ -20,6 +20,32 @@ Do not reuse the design-review subagent; its context predates implementation.
 The parent may verify the review and ask for rework, but must not author or edit
 the review verdict.
 
+The review subagent writes only `review.md`. It does not edit production code,
+tests, specs, design, tasks, ADRs, glossary, coverage, or README.
+
+## Preflight (before spawning review)
+
+The implementing agent runs the mechanical checks and fixes every failure before
+starting the review subagent:
+
+- full `verify.command`;
+- full `verify.e2e_command`;
+- the project's coverage command with branch instrumentation;
+- `givn check review --change <id>`;
+- dead code and dead port/contract members;
+- receipt freshness;
+- canonical proposal and use-case format;
+- README badges and other generated evidence.
+
+Do not spawn the review subagent on a tree that still fails a mechanical check.
+The review is for semantic findings, not for discovering work the implementer
+can verify deterministically.
+
+After review, fix every finding and verify each one. The re-review checks
+closure of the recorded finding IDs only; it is not another full audit. A new
+non-critical finding goes to the next change. A new critical finding invalidates
+the trial rather than extending the loop.
+
 ## Step 0 (mandatory, first): implementation evidence check
 
 A change can reach review with every task checked off, the runner exiting
@@ -38,37 +64,27 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
    whitespace-only, bare `pass`/`return`, or a body with no reference to any
    assertion library, mock, HTTP client, or domain object. Any match =
    fabricated step.
-2. Cross-check every checked scenario has `TEST-FIRST:` evidence and a `COMMIT:`
-   revision. The test-first evidence must precede the implementation. A shared
-   batch revision is allowed when every scenario sharing it has its own
-   evidence and the `COMMIT:` line names `Batch: <name>`.
-2a. Read the recorded test-first failures. A failure on discovery,
-   registration, step binding, import, fixture setup, or environment startup
-   is not behavioural. A passing example is valid when it protects a distinct
-   requirement and was written before implementation; duplicates must be
-   merged or parameterized.
-2b. Reject comment-only, whitespace-only, tag-only, task-only, feature-only,
-   and transcript-only changes presented as behaviour evidence. A batch commit
-   may contain tests, implementation, or both; it must not be a fabricated
-   scenario marker.
-2c. A normal change must not use `CHARACTERIZATION` to avoid writing tests.
+2. Cross-check every checked scenario has a `COMMIT:` revision. The commit
+   must contain the scenario's implementation or regression test; a
+   comment-only, whitespace-only, tag-only, task-only, feature-only, or
+   transcript-only change is not evidence. A shared batch revision is allowed
+   when the `COMMIT:` line names `Batch: <name>`.
+2a. A normal change must not use `CHARACTERIZATION` to avoid writing tests.
    Characterization is reserved for reverse-engineering changes.
-2d. For high-risk rules (identity, omitted alternative, boundary, lifetime
-   limit, precedence), confirm the tests reject a plausible wrong behavior.
-   Use a small risk-selected sample; exhaustive mutation testing is not
+2b. For high-risk rules (identity, omitted alternative, boundary, lifetime
+   limit, precedence), the reviewer may ask for a discrimination proof: revert
+   or mutate the production behavior and confirm the test fails. This is a
+   risk-based check, not a TDD record; exhaustive mutation testing is not
    required.
-2e. A prior run's violation is not a compliance argument. Evaluate against the
+2c. A prior run's violation is not a compliance argument. Evaluate against the
    rule, not the archive.
 
 Examples:
 
-  test-first: "expected full, got provisional"              -> valid RED
-  test-first: "scenario is not registered"                   -> invalid; fix setup
-  test-first: "vision-only example passed; kept"             -> valid distinct example
-  shared batch: two scenarios, same hash, `Batch: issuance`  -> valid
-  shared hash without `Batch:`                                -> invalid
   commit: only `# Scenario: ...` in production               -> not evidence
   commit: only `@wip` removed                                -> not evidence
+  shared batch: two scenarios, same hash, `Batch: issuance`  -> valid
+  shared hash without `Batch:`                                -> invalid
   normal change marked CHARACTERIZATION                       -> invalid
 3. Cross-check every component design.md promised (class/service/
    controller/module) exists in the tree. List anything missing —
@@ -164,10 +180,10 @@ Examples:
     e. Record the full cross-reference as a table in the implementation evidence check
        section of review.md.
 12. Any finding from 1-11 is unfinished work, not a coverage gap. Reopen the
-    batch: add the tests first, then implement and refactor — driving the real
-    interface per design.md's "Anticipated interface obstacles" fix, not by
-    asserting on the repository instead. Do not write `REVIEW: PASS` while
-    any finding remains.
+    batch: implement the missing behavior and tests, then refactor — driving
+    the real interface per design.md's "Anticipated interface obstacles" fix,
+    not by asserting on the repository instead. Do not write `REVIEW: PASS`
+    while any finding remains.
 
 Record the result even when clean: "0 empty step bodies found across N files."
 
@@ -235,16 +251,18 @@ migration backfills rows; a README still reporting the old rule or old coverage.
 
 ## Coverage
 
-Coverage is measured once by the archive against the committed candidate and
-published in the verification receipt and README. Review does not run an
-instrumented pass. Use the most recent available coverage evidence (the last
-archive receipt or published report) and static inspection to classify gaps;
-do not write "not measured" as a substitute for classification. If no
-coverage evidence exists yet for this change, say so explicitly and classify
-from inspection — the archive receipt will carry the measured result. The givn
-archive verification and its Cobertura report are authoritative; an external
-reporter that cannot execute the project runner is a measurement gap, not
-absent coverage.
+Coverage is measured by the implementation preflight with the project's coverage
+command and again by the archive against the committed candidate. Review uses
+the latest measured evidence and static inspection to classify gaps; do not
+write "not measured" as a substitute for classification. If no coverage evidence
+exists yet for this change, say so explicitly and classify from inspection —
+the archive receipt will carry the measured result. The givn archive
+verification and its Cobertura report are authoritative; an external reporter
+that cannot execute the project runner is a measurement gap, not absent
+coverage.
+
+Do not remove branch instrumentation to raise the line percentage. A line-only
+report is a finding; branch coverage is measured when the language supports it.
 
 Redundant unit tests (behaviour already covered by a `.feature` scenario
 through the black-box boundary) are removed — the `.feature` file is the
@@ -253,8 +271,8 @@ source of truth.
 ## Classification (three buckets — no fourth bucket)
 
 1. Dead code (YAGNI/KISS) → delete.
-2. Missing test coverage → add a test-first batch, implement, refactor, and
-   record the batch commit.
+2. Missing test coverage → add the tests, implement, refactor, and record the
+   batch commit.
 3. Legitimately hard to test (rare) → concrete technical justification.
 
 External-input validation is bucket 2 (missing test coverage) until a scenario

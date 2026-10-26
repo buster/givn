@@ -6,6 +6,26 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.9.8] - 2026-10-26
+
+### Features
+
+- **review:** run the mechanical preflight before spawning one fresh review
+  subagent; after fixes, check closure of the recorded finding IDs instead of
+  another full audit. The reviewer writes only `review.md`.
+- **coverage:** keep branch instrumentation; a line-only report is a finding.
+
+### Bug Fixes
+
+- **tasks:** remove `TEST-FIRST` and RED evidence fields. The design and tasks
+  guide the implementer's test-first order; the task list records only the
+  batch commit.
+- **review:** stop auditing TDD order, test revisions, and reconstructed RED
+  history. A high-risk discrimination proof remains an optional, risk-based
+  review technique.
+- **workflow:** remove test-first evidence claims from the workflow docs and
+  task template.
+
 ## [0.9.7] - 2026-10-26
 
 ### Features

@@ -196,7 +196,7 @@ ratio.
 Data-only variations belong in one `Scenario Outline` with `Examples`. A test
 that passes against the current implementation is valid when it protects a
 distinct requirement, such as the second acceptable alternative in a set of
-equivalent choices; keep it and record the test-first evidence.
+equivalent choices; keep it. Do not record a test-first or RED history.
 
 Two scenarios are duplicates only when the same rule and the same Given/When
 path produce the same assertion and observable state, and removing one loses no
@@ -204,8 +204,8 @@ distinct failure detection. The same expected error, status, or value is not
 enough: unrelated rules may share an outcome and must stay separate. Merge
 data-only cases; delete only a scenario that is genuinely redundant.
 
-Do not narrow correct production code merely to force a RED, and do not use
-`CHARACTERIZATION` to avoid writing tests first.
+Do not narrow correct production code merely to force a failure, and do not use
+`CHARACTERIZATION` to avoid writing tests.
 
 Every scenario title is globally unique in the active corpus. A modification
 replaces exactly one permanent scenario; an addition must not reuse a title.

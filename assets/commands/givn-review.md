@@ -6,7 +6,7 @@ description: Complete the coverage review for a givn change — classify every g
 
 **Input**: the change ID (kebab-case) after `/givn-review`.
 
-Complete the coverage review for change `<change-id>`. Load the step's rules with `givn instructions review --change <change-id>` and follow them; this file only triggers the step. Start one fresh review subagent after implementation; it runs the outline and writes the review verdict. Do not reuse the design-review subagent.
+Complete the coverage review for change `<change-id>`. Load the step's rules with `givn instructions review --change <change-id>` and follow them; this file only triggers the step. Run the mechanical preflight first and fix every failure. Then start one fresh review subagent; it runs the outline and writes the review verdict. Do not reuse the design-review subagent. Fix the review findings, then run a closure check of those finding IDs, not another full audit.
 
 When you delegate to a fresh context, pass this block with the change id filled in:
 

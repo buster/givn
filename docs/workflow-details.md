@@ -39,8 +39,8 @@ With the arc42 addon enabled, `arc42-docs` sits between `design` and
 | 3 | design | `/givn-design` | `design.md` — runner, strict mode, single-scenario command, step files, decisions ledger, interaction matrix, visual contract, local runnability | file exists | none |
 | 3a | arc42 (addon) | `/givn-design` | `arc42.md` plus affected `docs/arc42/` chapters | `STATUS: DONE` | archive requires it when enabled |
 | 4 | design-review | `/givn-design-review` | `design-review.md` ending in `DESIGN-REVIEW: PASS` | marker is the final non-empty line | archive refuses without it |
-| 5 | tasks | `/givn-tasks` | `tasks.md` — setup task, behavior batches, evidence and commit fields | all checkboxes `[x]` | `givn check tasks` |
-| 6 | implement | `/givn-implement` | production code, ticked `tasks.md`, batch commits | every scenario has `TEST-FIRST:` evidence and a `COMMIT:` revision | see §4 |
+| 5 | tasks | `/givn-tasks` | `tasks.md` — setup task, behavior batches, commit fields | all checkboxes `[x]` | `givn check tasks` |
+| 6 | implement | `/givn-implement` | production code, ticked `tasks.md`, batch commits | every scenario has a `COMMIT:` revision | see §4 |
 | 7 | review | `/givn-review` | `review.md` ending in `REVIEW: PASS` | marker is the final non-empty line | `givn check review --change` |
 | 8 | archive | `givn archive --change <id>` | moves to `givn/archive/<id>/`, merges deltas into `givn/specs/` | proven verification receipt | `givn archive` |
 
@@ -74,35 +74,26 @@ Enforcement: none. Ideation produces no manifest artifact and no gate.
 
 ## 4. The implement loop
 
-Work in test-first behavior batches. A batch is a coherent group of related
-scenarios, not a single scenario. One batch may satisfy several scenarios.
+Work in behavior batches. A batch is a coherent group of related scenarios,
+not a single scenario. One batch may satisfy several scenarios. The design and
+tasks describe the test-first order; the implementer follows it, and the task
+list records only the batch commit.
 
-```
-TEST-FIRST:     Bind every Given/When/Then phrase. Given establishes real
-                preconditions, When invokes the intended boundary, Then
-                asserts the observable result. Add or update tests and step
-                glue. Run against the current system. Capture the test
-                revision and results. A failing test must fail on its
-                assertion, not on discovery, registration, binding, import,
-                fixture, or environment setup. A passing test is allowed when
-                it protects a distinct requirement; keep it and record the
-                evidence. Do not change production code.
-IMPLEMENTATION: Implement the batch or wire the real implementation. List
-                every production file created or modified. Run the relevant
-                scenarios; they must exit zero. Capture the output.
-REFACTOR:       Clean up without changing behaviour. Re-run the relevant
-                scenarios; they must still exit zero. Capture the output.
-COMMIT:         One batch commit. The message carries the release note as its
-                subject and names the batch in the body. Scenarios record
-                `COMMIT: <hash> -- Batch: <batch-name>`.
-```
+- Bind every Given/When/Then phrase. Given establishes real preconditions, When
+  invokes the intended boundary, Then asserts the observable result.
+- Add or update tests and step glue, then implement the behavior batch. Run the
+  relevant scenarios; they must exit zero.
+- Clean up without changing behavior, re-run, and commit the batch.
+- One batch commit. The message carries the release note as its subject and
+  names the batch in the body. Scenarios record
+  `COMMIT: <hash> -- Batch: <batch-name>`.
 
 - The setup task comes first: install the runner, configure strict mode, set
   `verify.command`, create one step file per capability, and prove that an
   undefined or pending step fails the run. Remove the probe afterwards and
   return to a green baseline.
-- Tick each scenario box only when its batch evidence is complete. An
-  unchecked box means the scenario is not done.
+- Tick each scenario box when the batch tests pass and the commit is recorded.
+  An unchecked box means the scenario is not done.
 - Non-e2e scenarios first, `@e2e` last. The e2e setup task brings up the
   local stack, configures `verify.e2e_command`, and proves that the e2e filter
   is narrower than `verify.command`.
@@ -111,9 +102,9 @@ COMMIT:         One batch commit. The message carries the release note as its
 - Deviating from `design.md` requires stopping, updating `design.md`, and
   re-running design-review.
 
-`TEST-FIRST` evidence and commit identity are machine-checked at
-`givn check tasks`. Empty step bodies and downgraded e2e assertions are
-checked by the review's implementation evidence check.
+Commit identity is machine-checked at `givn check tasks`. Empty step bodies,
+downgraded e2e assertions, and test strength are checked by review; TDD order
+is not recorded or audited.
 
 ## 5. Checks and gates
 

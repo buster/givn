@@ -18,7 +18,7 @@ Status values:
 ## Process and Reference
 
 - [Workflow Overview](workflow.md) - `current`; the lifecycle, produced artifacts, hard gates, and where to find the details.
-- [Workflow Details](workflow-details.md) - `current`; ordered phases, the test-first behavior loop, advisory versus blocking gates, status semantics, archive mechanics, and the limits of enforcement.
+- [Workflow Details](workflow-details.md) - `current`; ordered phases, the behavior loop, advisory versus blocking gates, status semantics, archive mechanics, and the limits of enforcement.
 - [Multi-SCM support (ideation topic)](ideation/multi-scm-support.md) - `current`; the Git+Fossil topic record: decisions, use cases, and the seven archived seeds.
 - [Local-only integrations (ideation topic)](ideation/local-only-integrations.md) - `current`; the rules-policy topic record: local-only vs versioned rules, cleanup, and commit attribution.
 - [Rules through instructions (ideation topic)](ideation/rules-through-instructions.md) - `current`; the served-instruction topic record: rules through `givn instructions`, project extensions, and guidance integrity.

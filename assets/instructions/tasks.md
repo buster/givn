@@ -1,7 +1,8 @@
 # Instruction: tasks
 
-Write the implementation task breakdown as test-first behavior batches:
-tests before implementation, then bulk GREEN and REFACTOR, then one batch commit.
+Write the implementation task breakdown as coherent behavior batches. The
+design and tasks guide the test-first order; the implementer follows it. Do not
+record TDD order, RED proofs, or test-first evidence in the task list.
 
 ## Preconditions (before writing any task)
 
@@ -80,48 +81,37 @@ The managed project-start block (`AGENTS.md`) renders the section between the
 so the text has exactly one home.
 
 <!-- givn:resident-rules:begin -->
-- Tick off each scenario task when its batch evidence is complete — not when
-  the code merely compiles. Never batch-check boxes at the end.
-- One atomic `givn commit` per coherent behavior batch, not per scenario. A
-  test-first commit may contain tests and step glue; a later implementation
-  commit may satisfy several scenarios. The revision message carries the
-  release note as its subject and names the batch in the body. A raw Git
-  commit is stamped by the hook, a raw Fossil check-in is not.
-- Each checked scenario records `TEST-FIRST:` evidence and a `COMMIT:` revision
-  with a `Batch: <name>` label. A shared revision is allowed when every
-  scenario sharing it has test-first evidence. The commit message must name
-  the batch. A comment-only, tag-only, task-only, or feature-only change is
-  not evidence.
-- Do not force a production diff per scenario. Tests may pass immediately
-  when they protect a distinct requirement; keep them and record the test-first
-  evidence. Deduplicate or parameterize genuine repetition.
+- Tick off each scenario task when its batch is complete — not when the code
+  merely compiles. Never batch-check boxes at the end.
+- One atomic `givn commit` per coherent behavior batch, not per scenario. The
+  revision message carries the release note as its subject and names the batch
+  in the body. A raw Git commit is stamped by the hook, a raw Fossil check-in is
+  not.
+- Each checked scenario records the batch `COMMIT:` revision. The commit must
+  contain the scenario's implementation or regression test; a comment-only,
+  tag-only, task-only, or feature-only change is not evidence.
+- Tests may pass immediately when they protect a distinct requirement. Do not
+  force a production diff per scenario. Deduplicate or parameterize genuine
+  repetition.
 <!-- givn:resident-rules:end -->
 
-## Test-first behavior batches — non-@e2e
+## Behavior batches — non-@e2e
 
 Group related scenarios into one behavior batch (for example, certificate
 issuance and its refusals). Work the batch, not one scenario at a time.
 
-```
-TEST-FIRST: Add or update the scenarios and step glue. All steps must be
-            bound; Given establishes real preconditions, When invokes the
-            intended boundary, Then asserts the observable result. Run the
-            tests against the current system. PASTE the test revision and
-            results. A failing test must fail on its assertion, not on
-            discovery, registration, binding, import, fixture, or
-            environment setup. A test that passes is allowed when it
-            protects a distinct requirement; keep it. Merge, parameterize,
-            or delete genuine duplication. Do not change production code.
-IMPLEMENT:  Implement the behavior batch or wire the real implementation.
-            LIST every production file created/modified. Run the relevant
-            scenarios. PASTE the output. MUST exit zero.
-REFACTOR:   Clean up, no behaviour change. Re-run the relevant scenarios.
-            PASTE the output. MUST still exit zero.
-COMMIT:     One batch commit, e.g. "feat(<capability>): <release note>".
-            The message carries the release note as its subject and names
-            the batch in the body. Scenarios record it as
-            `COMMIT: <hash> -- Batch: <batch-name>`.
-```
+- Follow the test-first order the design and tasks describe. The implementer
+  writes the tests and production code in that order; the task list records the
+  batch commit, not the order.
+- All steps must be bound. Given establishes real preconditions, When invokes
+  the intended boundary, Then asserts the observable result.
+- A test may pass immediately when it protects a distinct requirement. Merge,
+  parameterize, or delete genuine duplication. Do not change production code
+  merely to force a failure.
+- Run the full batch. It must exit zero before the batch is committed.
+- One batch commit, e.g. `feat(<capability>): <release note>`. The message
+  carries the release note as its subject and names the batch in the body.
+  Scenarios record it as `COMMIT: <hash> -- Batch: <batch-name>`.
 
 ## Rule: @e2e tags are immutable — never remove them
 
@@ -132,7 +122,7 @@ content. If e2e is blocked by infrastructure, configure
 `verify.e2e_command` — never delete the tag. Removing `@e2e` tags to bypass
 a gate is a procedure violation.
 
-## Test-first behavior batches — @e2e
+## Behavior batches — @e2e
 
 Same batch loop with the e2e runner (`verify.e2e_command`), e2e step location,
 and e2e infrastructure setup from design.md. Before writing or reviewing E2E
@@ -225,7 +215,7 @@ this.
 ## Tasks file format
 
 - `[ ]`/`[x]` checkboxes. One section per scenario, grouped into behavior
-  batches: TEST-FIRST / IMPLEMENTATION / REFACTOR / COMMIT.
+  batches. Do not add TEST-FIRST, RED, or test-order fields.
 - Every scenario task carries a populated **Design constraints** block copied
   from `design.md` — the implementer may not read design.md, so the task must
   carry every decision it needs. Never leave the block empty or generic.
@@ -233,31 +223,25 @@ this.
   When the scenario touches a component, the block names the contract it uses;
   the implementer never imports the component's implementation.
 {{/if}}
-- Each TEST-FIRST/IMPLEMENTATION/REFACTOR line has a field for pasted output.
-- Each scenario records `TEST-FIRST:` evidence and a `COMMIT:` revision with a
-  `Batch: <name>` label. A shared batch revision is allowed.
-- Before generating many task sections or batch records, validate one through
-  the real parser. Fix the format on one, then generate the rest.
+- Each scenario records the batch `COMMIT:` revision with a `Batch: <name>`
+  label. A shared batch revision is allowed.
+- Before generating many task sections, validate one through the real parser.
+  Fix the format on one, then generate the rest.
 - Examples:
-  - `TEST-FIRST: expected full, got provisional`
   - `COMMIT: <hash> -- Batch: certificate-issuance`
-  - `TEST-FIRST: vision-only example passed because the current rule already
-    satisfies it; kept to protect the distinct sense`
-  - test-only batch commit: tests + step glue, no production change
 - Non-@e2e scenarios first, @e2e last.
-- Check `[x]` only when test-first evidence and a batch commit are filled in.
-  Empty fields = incomplete.
+- Check `[x]` only when the batch commit is filled in. An empty field is
+  incomplete.
 - **tasks.md must always be up-to-date.** Check each scenario's box
   immediately after completing it — before starting the next scenario.
-  An unchecked box means that scenario is not done. Never leave all
-  boxes unchecked and batch-check them at the end. Using `sed` or any
-  text-replacement tool to mass-check boxes without filling in evidence
-  and commit hashes is prohibited.
-- Done when: all boxes checked, every scenario has test-first evidence and a
-  batch commit, both `verify.command` and `verify.e2e_command` exit 0 on the
-  full suite, and the e2e setup task's scenario-count proof (e2e count
-  strictly less than full count, or an explicit "all scenarios are @e2e"
-  statement) is pasted.
+  An unchecked box means that scenario is not done. Never leave all boxes
+  unchecked then batch-check them at the end. Using `sed` or any
+  text-replacement tool to mass-check boxes without a commit hash is
+  prohibited.
+- Done when: all boxes checked, every scenario records its batch commit, both
+  `verify.command` and `verify.e2e_command` exit 0 on the full suite, and the
+  e2e setup task's scenario-count proof (e2e count strictly less than full
+  count, or an explicit "all scenarios are @e2e" statement) is pasted.
 
 ## Step orchestration (implement)
 
@@ -267,7 +251,7 @@ task-list rules above.
 
 Work the task list in one context, or split it into behavior batches, each
 batch delegated to one coding subagent. Delegation is per batch, never per
-scenario. Within a batch, write the tests first, then implement and refactor.
+scenario. Follow the test-first order described by the design and tasks.
 Finish one batch before starting the next.
 
 **Never trust subagent self-reports.** A "PASSED" claim is not proof: a
@@ -275,21 +259,21 @@ subagent has previously checked off every task while every step was an empty
 stub and the runner silently reported GREEN. Independently verify every batch
 when it returns — never a spot-check:
 
-1. Confirm the test-first evidence names the scenarios and records their
-   results. The test revision must precede the implementation.
-2. Re-run the relevant scenarios yourself and confirm zero exit.
-3. Inspect the batch commit. It may be test-only or may cover several
-   scenarios; it must not be a comment-only, tag-only, task-only, or
-   feature-only change presented as behavior evidence.
-4. Grep the step files for empty bodies (`{}`, bare `pass`/`return`) — any
+1. Re-run the relevant scenarios yourself and confirm zero exit.
+2. Inspect the batch commit. It may cover several scenarios; it must not be a
+   comment-only, tag-only, task-only, or feature-only change presented as
+   behavior evidence.
+3. Grep the step files for empty bodies (`{}`, bare `pass`/`return`) — any
    match rejects the batch.
-5. Confirm each scenario has its own `TEST-FIRST:` evidence and a `COMMIT:`
-   batch reference, not just a checked box.
-6. For every `@e2e` scenario, confirm at least one Then step asserts on the
+4. Confirm each scenario records its batch `COMMIT:` reference, not just a
+   checked box.
+5. For every `@e2e` scenario, confirm at least one Then step asserts on the
    named real interface's output — never repository-only state, and never an
    internal stub substituted for a browser or CLI E2E.
-7. For high-risk rules (identity, omitted alternative, boundary, lifetime
-   limit, precedence), confirm the tests reject a plausible wrong behavior.
+6. For high-risk rules (identity, omitted alternative, boundary, lifetime
+   limit, precedence), the reviewer may ask for a discrimination proof: revert
+   or mutate the production behavior and confirm the test fails. It is a
+   risk-based check, not a required TDD record.
 
 **GREEN requires all three**: the scenarios pass, the implementation matches
 the design, and independent verification confirms it. A batch that deviates
