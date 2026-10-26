@@ -8,7 +8,11 @@ use std::collections::BTreeSet;
 /// Working-tree production paths that prevent analysis. Non-production paths
 /// (`review.md`, rationales, docs, `givn/`) are deliberately ignored.
 pub fn dirty_production(backend: &Backend, request: &GateRequest) -> Result<Vec<String>> {
-    let roots = request.root_strings();
+    let roots = if request.roots.is_empty() {
+        vec!["src".to_string()]
+    } else {
+        request.root_strings()
+    };
     let mut paths = BTreeSet::new();
     for path in backend.dirty_entries()? {
         let path = path.to_string_lossy().replace('\\', "/");

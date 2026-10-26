@@ -15,20 +15,26 @@ pub fn run_report(json: bool, out: Option<PathBuf>, paths: Vec<PathBuf>) -> Resu
     }
 
     let project_root = std::env::current_dir().context("resolve the project root")?;
-    let explicit_scope = !paths.is_empty();
     let roots = if paths.is_empty() {
-        vec![PathBuf::from("src")]
+        // `src/` is the conventional Rust root. It is the only implicit root;
+        // Python or mixed layouts must name their production paths explicitly.
+        if project_root.join("src").is_dir() {
+            vec![PathBuf::from("src")]
+        } else {
+            bail!(
+                "outline report requires at least one --path; pass the production sources, \
+                 for example: givn outline report --path catopia --path app.py"
+            );
+        }
     } else {
         paths
             .into_iter()
             .map(|path| validate_scope(&path))
             .collect::<Result<Vec<_>>>()?
     };
-    if explicit_scope {
-        for root in &roots {
-            if !project_root.join(root).exists() {
-                bail!("--path does not exist: {}", root.display());
-            }
+    for root in &roots {
+        if !project_root.join(root).exists() {
+            bail!("--path does not exist: {}", root.display());
         }
     }
 
@@ -43,6 +49,16 @@ pub fn run_report(json: bool, out: Option<PathBuf>, paths: Vec<PathBuf>) -> Resu
     let analyzer = outline::outline_analyzer();
     let capabilities = analyzer.capabilities();
     let analysis = outline::analyze(&request, analyzer.as_ref())?;
+    if analysis.files.is_empty() {
+        bail!(
+            "outline report: no production sources found in: {}",
+            roots
+                .iter()
+                .map(|root| root.display().to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+    }
     let assessment = outline::assess(&analysis, capabilities);
 
     let document = if json {

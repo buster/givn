@@ -79,12 +79,12 @@ fn no_production_sources(world: &mut GivnWorld) {
     );
 }
 
-#[then("the report says there are no production sources")]
-fn report_says_no_sources(world: &mut GivnWorld) {
-    let stdout = report_text(world).to_lowercase();
+#[then("stderr says there are no production sources")]
+fn stderr_says_no_sources(world: &mut GivnWorld) {
+    let stderr = crate::steps::stderr(world).to_lowercase();
     assert!(
-        stdout.contains("no production sources"),
-        "expected the empty-scope message, got: {stdout}"
+        stderr.contains("no production sources"),
+        "expected the empty-scope message, got: {stderr}"
     );
 }
 

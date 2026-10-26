@@ -104,12 +104,13 @@ Feature: Outline review gate
     Then  the review fails
     And  the review says "conflicting outline verdicts for type:src/engine.rs::Engine"
 
-  Scenario: A change with no production sources passes without outlines
+  Scenario: A change with no production sources fails
     Given  a Givn project with the outline experiment enabled
     And  a committed change directory with no production sources at base or head
     And  the change's review record records "OUTLINE: PASS"
     When  the outline review assesses the change
-    Then  the review passes
+    Then  the review fails
+    And  the review says "no-production-sources"
 
   Scenario: Dirty production paths fail closed before analysis
     Given  a Givn project with the outline experiment enabled

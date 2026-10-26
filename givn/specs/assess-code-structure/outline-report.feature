@@ -114,6 +114,7 @@ Feature: Outline report
 
   Scenario: The JSON report carries analyzer capabilities and limitations
     Given  a Givn project with the outline experiment enabled
+    And  a production source unit
     When  the developer runs "givn outline report --json"
     Then  the JSON report names the supported constructs
     And  the JSON report names the analyzer limitations
@@ -140,12 +141,12 @@ Feature: Outline report
     Then  the report classifies the unit as a god type
     And  the report names the file "crates/core/src/engine.rs"
 
-  Scenario: The report says when the scope has no production sources
+  Scenario: The report fails when the scope has no production sources
     Given  a Givn project with the outline experiment enabled
     And  no production source files
-    When  the developer runs "givn outline report"
-    Then  the report says there are no production sources
-    And  the command exits with code 0
+    When  the developer runs "givn outline report --path ."
+    Then  stderr says there are no production sources
+    And  the command exits with code 1
 
   Scenario: An explicitly requested scope that does not exist is an error
     Given  a Givn project with the outline experiment enabled
