@@ -122,27 +122,27 @@ Exempt only once a step has a real assertion (GREEN) or performs a real
 reused action. Before trusting any PASS, confirm the runner is strict; the
 change's setup task proves it once, with evidence.
 
-## Test-first behavior batch (not per scenario)
+## Behavior batch (not per scenario)
 
-Group related scenarios into a coherent behavior batch. The batch gets one
-test-first phase, one implementation phase, one refactor phase, and one batch
-commit. Individual examples do not need their own RED or production diff.
+Group related scenarios into a coherent behavior batch. The batch gets one test
+phase, one implementation phase, one refactor phase, and one batch commit.
+Individual examples do not need their own failing test or production diff.
 
-### TEST-FIRST
+### TESTS
 
 1. Bind every Given/When/Then phrase. Given establishes real preconditions;
    When invokes the intended boundary; Then asserts the observable result.
 2. Add or update the tests and step glue. Run them against the current system.
-   Capture the test revision and the results.
+   Do not record a test revision, RED output, or TDD order.
 3. A failing test must fail on its assertion, not on discovery, registration,
    step binding, import, fixture, or environment startup. Fix setup failures
    and rerun; do not write production code for them.
-4. A passing test is allowed when it protects a distinct requirement. Keep it;
-   record the test-first evidence. Merge, parameterize, or delete genuine
-   duplication. Do not narrow correct production code merely to force RED.
+4. A passing test is allowed when it protects a distinct requirement. Merge,
+   parameterize, or delete genuine duplication. Do not narrow correct
+   production code merely to force a failure.
 5. For high-risk rules (identity, omitted alternative, boundary, lifetime
-   limit, precedence), ensure at least one test rejects a plausible wrong
-   behavior.
+   limit, precedence), the implementer may check that at least one test rejects
+   a plausible wrong behavior. It is not a required TDD record.
 
 ### IMPLEMENTATION
 
@@ -169,20 +169,18 @@ commit. Individual examples do not need their own RED or production diff.
 
 ### COMMIT
 
-8. One batch commit for TEST-FIRST + IMPLEMENTATION + REFACTOR. The message
-   carries the release note as its subject and names the batch in the body.
-   Scenarios record it as `COMMIT: <hash> -- Batch: <batch-name>`. A shared
-   revision is allowed when each scenario has its own test-first evidence.
+8. One batch commit for TESTS + IMPLEMENTATION + REFACTOR. The message carries
+   the release note as its subject and names the batch in the body. Scenarios
+   record it as `COMMIT: <hash> -- Batch: <batch-name>`.
 
 ### Done
 
-9. Paste the test-first evidence, implementation/refactor evidence, and the
-   batch commit into each scenario task. Check the boxes as their evidence is
-   complete; do not use mass text replacement to fake progress.
+9. Check the task boxes when the batch tests pass and the commit is recorded.
+   Do not use mass text replacement to fake progress.
 10. Move to the next behavior batch.
 
 Characterization is a separate reverse-engineering loop. A normal change may
-not use `CHARACTERIZATION` as an alternative to writing tests first.
+not use `CHARACTERIZATION` as an alternative to writing tests.
 
 ## Distinctions
 
@@ -196,7 +194,8 @@ for @e2e. Never conflate the three.
 - Step definitions: shared glue, one file per capability, never a
   hand-maintained parallel test file.
 - Reuse existing steps; never duplicate.
-- Capture test-first and implementation output; do not describe it from memory.
+- Capture the test and implementation results you rely on; do not describe them
+  from memory.
 - `@e2e` GREEN requires a real-interface assertion. Repository-only
   assertions never satisfy an `@e2e` scenario, no matter how the
   interface's obstacle is explained.

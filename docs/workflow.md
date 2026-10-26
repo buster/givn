@@ -2,8 +2,8 @@
 
 Givn is a spec-driven workflow. The `.feature` file is the executable
 specification; its owning use case supplies the domain contract. A change
-moves through planning, design review, test-first implementation, review, and
-archive. State is derived from files on disk, not stored separately.
+moves through planning, design review, implementation, review, and archive.
+State is derived from files on disk, not stored separately.
 
 Lifecycle rendering: [`workflow.svg`](workflow.svg) (GitHub-safe) and
 [`workflow.html`](workflow.html) (self-contained HTML).
@@ -20,8 +20,8 @@ proposal → specs → design → [arc42-docs] → design-review → tasks → r
 | Spec | `/givn-spec` | delta features under `specs/<usecase-slug>/`, tagged `@givn.delta`, `@givn.added/modified/removed`, `@wip` | delta features exist |
 | Design | `/givn-design` | `design.md`: runner, strict mode, step files, decisions, interaction matrix, visual contract, local runnability | file exists |
 | Design review | `/givn-design-review` | `design-review.md` ending in `DESIGN-REVIEW: PASS` | marker present |
-| Tasks | `/givn-tasks` | `tasks.md`: setup task, test-first behavior batches, evidence and commit fields | tasks written |
-| Implement | `/givn-implement` | production code, ticked tasks, one batch commit per behavior batch | every scenario has evidence and a commit |
+| Tasks | `/givn-tasks` | `tasks.md`: setup task, behavior batches, commit fields | tasks written |
+| Implement | `/givn-implement` | production code, ticked tasks, one batch commit per behavior batch | every scenario has a commit |
 | Review | `/givn-review` | `review.md` ending in `REVIEW: PASS` | marker present |
 | Archive | `givn archive` | merged permanent specs, archived change, proven receipt | archive proves |
 
