@@ -202,6 +202,16 @@ pub(crate) fn write_change_artifacts_at(base: &Path, id: &str, with_e2e: bool) {
         ),
     )
     .expect("write delta feature");
+    let usecase = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", "demo-cap")
+        .replace("<capability-id>", "demo-cap")
+        .replace("<actor role>", "Fixture operator")
+        .replace("<the domain goal>", "Exercise the fixture behavior.")
+        .replace("<consumer action>", "exercise the capability")
+        .replace("<scenario title>", "Demo scenario");
+    let permanent = base.join("givn/specs/demo-cap");
+    fs::create_dir_all(&permanent).expect("create permanent fixture usecase dir");
+    fs::write(permanent.join("usecase.md"), usecase).expect("write fixture usecase.md");
     fs::write(
         change.join("design.md"),
         "# Design\n\n## Step Definitions\n\n| Step | File |\n|---|---|\n| archive scenarios | tests/steps/archive_proof_steps.rs |\n",
@@ -210,9 +220,14 @@ pub(crate) fn write_change_artifacts_at(base: &Path, id: &str, with_e2e: bool) {
     fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n")
         .expect("write design-review");
     fs::write(change.join("tasks.md"), "- [x] COMMIT: a1b2c3d4 -- done\n").expect("write tasks");
+    let dispositions = if with_e2e {
+        "\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| Demo scenario | Demo e2e scenario | boundary |\n"
+    } else {
+        ""
+    };
     fs::write(
         change.join("review.md"),
-        "REVIEW: PASS\nREADME-IMPACT: none\n",
+        format!("README-IMPACT: none\n{dispositions}\nREVIEW: PASS\n"),
     )
     .expect("write review");
     let steps = base.join("tests/steps");

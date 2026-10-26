@@ -21,7 +21,7 @@ fn change_dir(world: &GivnWorld) -> std::path::PathBuf {
 fn review_md_disposition_row(world: &mut GivnWorld, title_a: String, title_b: String) {
     let path = change_dir(world).join("review.md");
     let content = format!(
-        "REVIEW: PASS\nREADME-IMPACT: none\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `{title_a}` | `{title_b}` | boundary |\n"
+        "README-IMPACT: none\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `{title_a}` | `{title_b}` | boundary |\n\nREVIEW: PASS\n"
     );
     std::fs::write(&path, content).expect("write review.md disposition row");
 
@@ -86,7 +86,7 @@ fn review_md_disposition_row(world: &mut GivnWorld, title_a: String, title_b: St
 fn review_md_split_or_keep_row(world: &mut GivnWorld, title: String) {
     let path = change_dir(world).join("review.md");
     let content = format!(
-        "REVIEW: PASS\nREADME-IMPACT: none\n\n## Split-or-keep\n\n| Scenario | Decision |\n|---|---|\n| `{title}` | keep |\n"
+        "README-IMPACT: none\n\n## Split-or-keep\n\n| Scenario | Decision |\n|---|---|\n| `{title}` | keep |\n\nREVIEW: PASS\n"
     );
     std::fs::write(&path, content).expect("write review.md split-or-keep row");
 }
@@ -96,7 +96,7 @@ fn review_md_no_dispositions(world: &mut GivnWorld) {
     let path = change_dir(world).join("review.md");
     std::fs::write(
         &path,
-        "REVIEW: PASS\nREADME-IMPACT: none\n\n# Review\n\nNo overlap dispositions recorded.\n",
+        "README-IMPACT: none\n\n# Review\n\nNo overlap dispositions recorded.\n\nREVIEW: PASS\n",
     )
     .expect("write review.md without dispositions");
 }

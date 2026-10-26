@@ -6,6 +6,25 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.9.5] - 2026-10-26
+
+### Features
+
+- **workflow:** `givn archive` refuses a change whose design review is missing
+  or unsigned, unless the artifact is skipped.
+- **workflow:** `givn archive` re-runs the static review gates — integrity,
+  overlap dispositions, retirement disclosure, capability placement, and the
+  outline gate — before mutation, without running a test suite.
+- **lint:** `givn check review --change` runs the change-scoped lint gate;
+  parse errors, duplicate titles, empty features, invalid use-case documents,
+  and interaction mismatches block review.
+- **markers:** `REVIEW: PASS`, `DESIGN-REVIEW: PASS`, and `STATUS: DONE` count
+  only as the final non-empty line outside fenced code blocks and HTML
+  comments.
+- **guidance:** the review check is named implementation evidence check, and
+  the workflow documentation is split into an overview and
+  `docs/workflow-details.md`.
+
 ## [0.9.2] - 2026-10-17
 
 ### Bug Fixes

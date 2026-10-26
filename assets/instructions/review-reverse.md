@@ -3,7 +3,7 @@
 Confirm characterization is complete, no behaviour changed during
 refactoring, and all discovered bugs/code smells are documented.
 
-## Step 0 (mandatory, first): fabrication audit
+## Step 0 (mandatory, first): implementation evidence check
 
 Same mechanical check as the prescriptive `review` instruction. Before
 trusting tasks.md:

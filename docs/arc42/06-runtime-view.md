@@ -263,7 +263,7 @@ flowchart TD
 
 Review does not execute `verify.command` or `verify.e2e_command`. Scenario
 execution is proven once per archive by the verification receipt; review
-inspects the static artifacts and the fabrication audit instead.
+inspects the static artifacts and the implementation evidence check instead.
 
 These mandatory checks are in `src/cli/check.rs` and cannot be removed by
 removing a `post` entry. Built-in hook names also ignore `allow_failure` when

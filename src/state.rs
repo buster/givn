@@ -328,22 +328,64 @@ pub fn parse_tasks_progress(path: &Path) -> TasksProgress {
     TasksProgress { total, done }
 }
 
-/// Detect if design-review.md contains the `DESIGN-REVIEW: PASS` marker.
+/// Detect if design-review.md ends with the `DESIGN-REVIEW: PASS` marker.
 pub fn detect_design_review_pass(path: &Path) -> bool {
-    let content = std::fs::read_to_string(path).unwrap_or_default();
-    content.contains("DESIGN-REVIEW: PASS")
+    final_marker(path, "DESIGN-REVIEW: PASS")
 }
 
-/// Detect if review.md contains the `REVIEW: PASS` marker.
+/// Detect if review.md ends with the `REVIEW: PASS` marker.
 pub fn detect_review_pass(path: &Path) -> bool {
-    let content = std::fs::read_to_string(path).unwrap_or_default();
-    content.contains("REVIEW: PASS")
+    final_marker(path, "REVIEW: PASS")
 }
 
-/// Detect if arc42.md (the change-level marker) contains `STATUS: DONE`.
+/// Detect if arc42.md (the change-level marker) ends with `STATUS: DONE`.
 pub fn detect_arc42_done(path: &Path) -> bool {
+    final_marker(path, "STATUS: DONE")
+}
+
+/// A sign-off marker counts only when it is the last non-empty line outside
+/// fenced code blocks and HTML comments. A template example or a quoted guide
+/// must never satisfy the gate.
+fn final_marker(path: &Path, marker: &str) -> bool {
     let content = std::fs::read_to_string(path).unwrap_or_default();
-    content.contains("STATUS: DONE")
+    let content = strip_fenced_blocks(&content);
+    let content = strip_html_comments(&content);
+    content
+        .lines()
+        .rev()
+        .find(|line| !line.trim().is_empty())
+        .is_some_and(|line| line.contains(marker))
+}
+
+fn strip_fenced_blocks(content: &str) -> String {
+    let mut out = String::new();
+    let mut in_fence = false;
+    for line in content.lines() {
+        let trimmed = line.trim_start();
+        if trimmed.starts_with("```") || trimmed.starts_with("~~~") {
+            in_fence = !in_fence;
+            continue;
+        }
+        if !in_fence {
+            out.push_str(line);
+            out.push('\n');
+        }
+    }
+    out
+}
+
+fn strip_html_comments(content: &str) -> String {
+    let mut out = String::new();
+    let mut rest = content;
+    while let Some(start) = rest.find("<!--") {
+        out.push_str(&rest[..start]);
+        let Some(end) = rest[start..].find("-->") else {
+            return out;
+        };
+        rest = &rest[start + end + 3..];
+    }
+    out.push_str(rest);
+    out
 }
 
 /// Per-change skip file name (one artifact-id per line).
@@ -486,6 +528,41 @@ mod tests {
 
         std::fs::write(&path, "Some content\n\n**REVIEW: FAIL**\n").unwrap();
         assert!(!detect_review_pass(&path));
+    }
+
+    #[test]
+    fn a_fenced_marker_does_not_satisfy_the_gate() {
+        let dir = std::env::temp_dir().join("givn_state_marker_fence");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("review.md");
+        std::fs::write(
+            &path,
+            "## Sign-off\n\n```text\nREVIEW: PASS\n```\n\nREVIEW: FAIL\n",
+        )
+        .unwrap();
+        assert!(!detect_review_pass(&path));
+    }
+
+    #[test]
+    fn a_marker_before_trailing_text_does_not_satisfy_the_gate() {
+        let dir = std::env::temp_dir().join("givn_state_marker_trailing");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("review.md");
+        std::fs::write(&path, "REVIEW: PASS\n\nFollow-up notes.\n").unwrap();
+        assert!(!detect_review_pass(&path));
+    }
+
+    #[test]
+    fn a_trailing_html_comment_does_not_hide_the_marker() {
+        let dir = std::env::temp_dir().join("givn_state_marker_comment");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("review.md");
+        std::fs::write(
+            &path,
+            "## Sign-off\n\n**REVIEW: PASS** <!-- change to FAIL if needed -->\n",
+        )
+        .unwrap();
+        assert!(detect_review_pass(&path));
     }
 
     #[test]

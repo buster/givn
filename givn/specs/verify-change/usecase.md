@@ -94,7 +94,7 @@ The developer receives a complete verification result.
 | givn-workflow-enforcement | run the change-scoped checks | Consumer runs check tasks and receives a change verification receipt |
 | givn-workflow-enforcement | write a runner result | The result helper writes four counts without a scope |
 | givn-workflow-enforcement | run the review check on a change with use-case schema errors | Consumer runs review and receives every use-case schema problem in one pass |
-| outline-review-gate | run the outline review during check review | A developer runs the review with accounted outline findings and it passes |
+| outline-review-gate | run the outline review during check review | A developer runs the review with readable outlines and it passes |
 
 ## Includes
 

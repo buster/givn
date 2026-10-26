@@ -261,12 +261,12 @@ commit path all run on Git and Fossil.
   (enforcement site: `check review` deferral pair).
 - A browser-rendered capability is classified as a Web UI and driven by a
   browser, never by an HTTP client (enforcement site: review and
-  design-review guidance plus the fabrication audit).
+  design-review guidance plus the implementation evidence check).
 - An unverified verdict never passes without human sign-off (enforcement
   site: `check review` marker validation).
 - A style improvement that stays within the contract updates the contract;
   it is never a review failure (enforcement site: review guidance and
-  fabrication audit).
+  implementation evidence check).
 
 ### Run-declaration invariants
 

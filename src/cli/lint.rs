@@ -22,6 +22,20 @@ pub fn run(change: Option<&str>, paths: Vec<String>, json: bool) -> Result<i32> 
     run_with_root(&project_root, change, paths, json)
 }
 
+/// Run the change-scoped lint gate and refuse a non-zero exit.
+///
+/// Used by `givn check review --change`, where a duplicate title, an invalid
+/// use-case document, or an interaction mismatch is a blocking finding.
+pub(crate) fn run_scoped(project_root: &std::path::Path, change: &str) -> Result<()> {
+    let code = run_with_root(project_root, Some(change), Vec::new(), false)?;
+    if code != 0 {
+        anyhow::bail!(
+            "lint gate failed for change '{change}' (exit code {code}); fix the findings above"
+        );
+    }
+    Ok(())
+}
+
 fn run_with_root(
     project_root: &std::path::Path,
     change: Option<&str>,

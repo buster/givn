@@ -536,7 +536,7 @@ fn change_complete_for_archive(world: &mut GivnWorld) {
     .unwrap();
     std::fs::write(
         change.join("review.md"),
-        "REVIEW: PASS\nREADME-IMPACT: noneREADME-IMPACT: none",
+        "README-IMPACT: none\n\nREVIEW: PASS\n",
     )
     .unwrap();
     std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
@@ -549,6 +549,21 @@ fn change_complete_for_archive(world: &mut GivnWorld) {
         "Feature: Test Capability\n",
     )
     .unwrap();
+}
+
+#[given("the change's review.md has no README impact decision")]
+fn review_md_no_readme_impact(world: &mut GivnWorld) {
+    std::fs::write(
+        change_dir(world).join("review.md"),
+        "# Review\n\nREVIEW: PASS\n",
+    )
+    .expect("write review.md without README impact");
+}
+
+#[given("the change's design-review.md is removed")]
+fn design_review_removed(world: &mut GivnWorld) {
+    std::fs::remove_file(change_dir(world).join("design-review.md"))
+        .expect("remove design-review.md");
 }
 
 #[given("the project's verify.command exits 0 on the current permanent specs")]
@@ -619,7 +634,7 @@ fn archive_ready_change_with_wip(world: &mut GivnWorld) {
     .unwrap();
     std::fs::write(
         change.join("review.md"),
-        "REVIEW: PASS\nREADME-IMPACT: noneREADME-IMPACT: none",
+        "README-IMPACT: none\n\nREVIEW: PASS\n",
     )
     .unwrap();
     std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
@@ -664,7 +679,7 @@ fn archive_ready_change_wip_only_on_removed(world: &mut GivnWorld) {
     .unwrap();
     std::fs::write(
         change.join("review.md"),
-        "REVIEW: PASS\nREADME-IMPACT: noneREADME-IMPACT: none",
+        "README-IMPACT: none\n\nREVIEW: PASS\n",
     )
     .unwrap();
     std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
@@ -701,7 +716,7 @@ fn change_with_wip_spec(world: &mut GivnWorld) {
     std::fs::write(change.join("tasks.md"), "- [x] COMMIT: a1b2c3d4 -- Task\n").unwrap();
     std::fs::write(
         change.join("review.md"),
-        "REVIEW: PASS\nREADME-IMPACT: noneREADME-IMPACT: none",
+        "README-IMPACT: none\n\nREVIEW: PASS\n",
     )
     .unwrap();
     std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
@@ -780,6 +795,16 @@ fn change_new_capability(world: &mut GivnWorld) {
         std::fs::remove_dir_all(&specs_root).unwrap();
     }
     std::fs::create_dir_all(&specs_root).unwrap();
+    let permanent = specs_root.join("new-cap");
+    std::fs::create_dir_all(&permanent).unwrap();
+    let document = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", "new-cap")
+        .replace("<capability-id>", "new-cap")
+        .replace("<actor role>", "Fixture operator")
+        .replace("<the domain goal>", "Exercise the fixture behavior.")
+        .replace("<consumer action>", "exercise the capability")
+        .replace("<scenario title>", "New scenario");
+    std::fs::write(permanent.join("usecase.md"), document).unwrap();
 
     let change = root.join("givn/changes/integrity-hook-and-archive-gate");
     std::fs::write(
@@ -805,7 +830,7 @@ fn change_new_capability(world: &mut GivnWorld) {
     .unwrap();
     std::fs::write(
         change.join("review.md"),
-        "REVIEW: PASS\nREADME-IMPACT: noneREADME-IMPACT: none",
+        "README-IMPACT: none\n\nREVIEW: PASS\n",
     )
     .unwrap();
     std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
@@ -1220,7 +1245,7 @@ fn write_review_fixture_with_options(
     std::fs::write(change.join("design.md"), "# Design\n").unwrap();
     std::fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n").unwrap();
     let mut review = String::from(
-        "REVIEW: PASS\nREADME-IMPACT: none\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n",
+        "README-IMPACT: none\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n",
     );
     for (index, left) in capabilities.iter().enumerate() {
         for right in capabilities.iter().skip(index + 1) {
@@ -1229,6 +1254,7 @@ fn write_review_fixture_with_options(
             ));
         }
     }
+    review.push_str("\nREVIEW: PASS\n");
     std::fs::write(change.join("review.md"), review).unwrap();
 
     set_verify_true(world);

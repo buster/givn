@@ -11,7 +11,7 @@ deliberately classified and resolved. No percentage threshold.
   finding to classify or remediate through the loop, not an edit made to turn
   the suite green.
 
-## Step 0 (mandatory, first): fabrication audit
+## Step 0 (mandatory, first): implementation evidence check
 
 A change can reach review with every task checked off, the runner exiting
 0, and almost nothing actually implemented — if steps were left as
@@ -20,7 +20,7 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
 0. **Verify @e2e tag integrity.** Grep every delta `.feature` file in
    `givn/changes/<change-id>/specs/`. If any scenario's tags were changed
    from including `@e2e` to excluding it, record this as a
-   fabrication-audit finding: `@e2e` coverage was planned and then removed
+   implementation-evidence finding: `@e2e` coverage was planned and then removed
    to bypass the verify-e2e gate. The fix is to restore the `@e2e` tag and
    configure `verify.e2e_command`. Tag removal is independently detected by
    `givn check review` and `givn lint` through tasks.md cross-reference.
@@ -93,25 +93,25 @@ Examples:
    or uncommitted files. If more than one implementation exists, read all
    of them. A weaker/downgraded implementation being reviewed while a
    stronger, real-interface implementation already exists elsewhere in the
-   tree (committed or not) is itself a fabrication-audit finding — the
+   tree (committed or not) is itself a implementation-evidence finding — the
    review must use and credit the strongest one, not whichever one
    `verify.e2e_command` happens to point at if that is the wrong one.
 8. **Check E2E scope using the canonical specs instruction.** Confirm that
    inventory entries are normalized distinct user actions and that each has one
    E2E scenario. Variants, error cases, and output-affecting flag combinations
    of the same action are regular scenarios. Excess E2E scenarios are a
-   fabrication-audit finding.
+   implementation-evidence finding.
 9. **Confirm `verify.e2e_command` is actually scoped to `@e2e`, not a copy
    of `verify.command`.** Read both values from `givn/commands.yaml`
    literally. If they are identical strings, the "e2e run" re-runs the
    entire suite and proves nothing about e2e isolation specifically — this
-   is always a fabrication-audit finding, never an acceptable
+   is always a implementation-evidence finding, never an acceptable
    configuration. The archive verification receipt records the per-scope
    scenario counts; read it and confirm the e2e scope count is strictly
    smaller than the regular scope count, unless literally every in-scope
    scenario is tagged `@e2e` (state this explicitly if so). If the counts
    are equal without that justification, the tag filter is missing or
-   broken — reopen as a fabrication finding. Do not re-run the suite in
+   broken — reopen as an implementation-evidence finding. Do not re-run the suite in
    review; the receipt is the execution evidence.
 10. **Diff the implementation against design.md's stated commands, file
     layout, and framework choices — do not just check they exist.**
@@ -124,7 +124,7 @@ Examples:
     driver — and `design.md` was never updated to reflect a deliberate,
     re-reviewed change, this is not a coverage gap or an acceptable
     "practical" shortcut. It is an implementation that silently overrode an
-    already-reviewed design decision. Record it as a fabrication-audit
+    already-reviewed design decision. Record it as a implementation-evidence
     finding: the fix is to either (a) conform the implementation to
     design.md as originally reviewed, or (b) update design.md with the
     corrected decision and re-run design-review (and reassess the arc42
@@ -152,7 +152,7 @@ Examples:
        API-only capability, confirm the step file uses that HTTP client.
        Mismatch = driving-mechanism finding: the implementation silently
        used a different driver than the reviewed design committed to.
-    e. Record the full cross-reference as a table in the fabrication audit
+    e. Record the full cross-reference as a table in the implementation evidence check
        section of review.md.
 12. Any finding from 1-11 is unfinished work, not a coverage gap. Reopen the
     batch: add the tests first, then implement and refactor — driving the real
@@ -165,7 +165,7 @@ Record the result even when clean: "0 empty step bodies found across N files."
 {{#if addons.arc42}}
 ## Arc42 implementation conformance
 
-Run this block after the fabrication audit and before coverage classification.
+Run this block after the implementation evidence check and before coverage classification.
 
 The check is mandatory. It catches both directions of
 drift: durable architecture documentation that is stale or missing a completed
@@ -258,7 +258,7 @@ returns that payload; the scenario asserts refusal. Before the test exists, it
 is bucket 2, not "defensive."
 
 These three buckets are exhaustive. **Any classification outside them is
-itself a fabrication-audit finding, not a valid outcome** — e.g. "acceptable
+itself a implementation-evidence finding, not a valid outcome** — e.g. "acceptable
 for this iteration scope," "sufficient for current scope," "future scope,"
 "good enough for now," or any similar invented exception that waves off a
 required check instead of fixing it or explicitly justifying it under

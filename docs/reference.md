@@ -46,7 +46,7 @@ Emitted by `givn init` / `givn skills sync` to `.agents/skills/<name>/SKILL.md`
 | `givn-tasks` | Break the design down into a scenario-by-scenario RED/GREEN/REFACTOR/COMMIT task list. |
 | `givn-implement` | Execute the TDD loop, one scenario at a time, ending in an atomic commit per scenario. |
 | `givn-steps` | Shared step-writing mechanics (step reuse, RED/GREEN/REFACTOR loop, never-empty-step rule) — referenced by `givn-implement` and `givn-characterize`. |
-| `givn-review` | Complete the coverage review: fabrication audit, gap classification, sign-off. |
+| `givn-review` | Complete the coverage review: implementation evidence check, gap classification, sign-off. |
 | `givn-archive` | Archive a completed change: gate hooks, merge deltas, move to `archive/`. |
 | `givn-reverse-engineer` | Discover an existing capability's black-box boundary and write descriptive baseline specs. |
 | `givn-characterize` | Execute the characterization loop against existing behaviour, with testability seams and a reverse review. |
