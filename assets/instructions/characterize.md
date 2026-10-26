@@ -14,6 +14,10 @@ For every user-facing question, follow the effective policy from
 
 ## The characterization technique
 
+Characterization is only for a reverse-engineering change. A normal change must
+not use this loop or `CHARACTERIZATION` as an alternative to writing tests
+before implementation.
+
 RED/GREEN/REFACTOR (same loop structure as normal TDD — see
 `givn instructions steps` for the shared mechanics). What differs is the
 GREEN and REFACTOR content:

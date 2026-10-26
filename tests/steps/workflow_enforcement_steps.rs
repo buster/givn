@@ -1051,10 +1051,24 @@ fn tasks_checked_scenario_without_commit(world: &mut GivnWorld) {
     );
 }
 
-#[given("the change's tasks.md checks two scenarios with the same revision")]
+#[given("the change's tasks.md checks two scenarios with the same batch revision")]
 fn tasks_duplicate_scenario_revision(world: &mut GivnWorld) {
     let id = world.last_change_id.clone().expect("a change id");
-    let hash = empty_commit_with_message(world, "feat: first and second scenario");
+    let hash = empty_commit_with_message(world, "feat: Batch first-and-second");
+    write_tasks_and_commit(
+        world,
+        &id,
+        &format!(
+            "- [x] Scenario: First scenario\n  - [x] COMMIT: {hash} -- Batch: first-and-second\n\
+             - [x] Scenario: Second scenario\n  - [x] COMMIT: {hash} -- Batch: first-and-second\n"
+        ),
+    );
+}
+
+#[given("the change's tasks.md checks two scenarios with the same revision and no batch label")]
+fn tasks_duplicate_scenario_revision_without_batch(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let hash = empty_commit_with_message(world, "feat: shared revision");
     write_tasks_and_commit(
         world,
         &id,
@@ -1098,12 +1112,12 @@ fn stderr_names_missing_scenario_commit(world: &mut GivnWorld) {
     );
 }
 
-#[then("stderr says each scenario needs its own commit")]
-fn stderr_says_unique_scenario_commit(world: &mut GivnWorld) {
+#[then("stderr says a shared revision needs a batch label")]
+fn stderr_says_shared_revision_needs_batch(world: &mut GivnWorld) {
     let stderr = crate::steps::stderr(world);
     assert!(
-        stderr.contains("each scenario needs its own commit"),
-        "stderr missing the duplicate revision finding: {stderr}"
+        stderr.contains("shares revision") && stderr.contains("no `Batch:` label"),
+        "stderr missing the shared revision finding: {stderr}"
     );
 }
 

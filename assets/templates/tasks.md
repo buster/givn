@@ -1,30 +1,35 @@
 # Tasks: {{CHANGE_ID}}
 
-RED→GREEN→REFACTOR→COMMIT per scenario. Non-@e2e first, then @e2e.
+Test-first behavior batches. Non-@e2e first, then @e2e. One commit may serve
+several scenarios in a batch.
 
-Legend: `[ ]` pending · `[x]` done only when evidence + commit hash are filled in. Check boxes immediately after each scenario — tasks.md must always reflect true state.
+Legend: `[ ]` pending · `[x]` done only when evidence and a batch commit are
+filled in. Check boxes immediately after each batch — tasks.md must always
+reflect true state.
 
 ## Scenario revisions
 
 Allowed:
 
-- exactly one `COMMIT:` line per checked scenario;
-- a real revision that exists and is reachable from `HEAD`;
-- a commit message body that names the scenario;
-- a commit containing the scenario's implementation, or its regression test
-  when the behavior already exists.
+- one test-first commit for a behavior batch;
+- one implementation commit that satisfies several scenarios when each
+  scenario has its own `TEST-FIRST:` evidence;
+- a shared `COMMIT:` revision with a `Batch: <name>` label and a commit
+  message that names the batch;
+- a real revision that exists and is reachable from `HEAD`.
 
 Not allowed:
 
-- one revision shared by two or more scenarios;
 - a placeholder, invented, or non-existent hash;
 - a revision not reachable from `HEAD`;
-- a checked scenario without a `COMMIT:` line;
-- a commit message that does not name the scenario;
-- a commit that only edits `tasks.md` or the `.feature` scenario text.
+- a checked scenario without `TEST-FIRST:` evidence and a `COMMIT:` line;
+- a shared revision without a `Batch:` label;
+- a commit message that names neither the scenario nor its batch;
+- a comment-only, tag-only, task-only, or feature-only change presented as
+  behavior evidence.
 
-`givn check tasks` and `givn check review` enforce the first five
-mechanically; review checks the last one.
+`givn check tasks` mechanically verifies the revision and batch label; review
+checks the evidence and sensitivity.
 
 ---
 
@@ -56,14 +61,15 @@ runner rejects an unimplemented step before any scenario work.
 - [ ] Set up step definitions (one file per capability) and configure the
       runner in strict mode. Proof-of-strictness above must be filled in first.
 - [ ] Scenario: `{{FIRST_SCENARIO_TITLE}}`
-  - [ ] RED: unimplemented steps use the not-implemented stub, never empty.
-        Run `{{VERIFY_COMMAND}}` targeting this scenario only. Must fail.
+  - [ ] TEST-FIRST: add the test and step glue before production; run against
+        the current system. Record the test revision and result. A test that
+        passes may be kept when it protects a distinct requirement.
         ```
-        <!-- paste RED evidence -->
+        <!-- paste test-first evidence -->
         ```
-  - [ ] GREEN: replace stubs with real assertions; write minimum production
-        code. Files created/modified: <!-- list them -->
-        Run targeting this scenario only. Must pass.
+  - [ ] IMPLEMENTATION: implement the behavior batch (or wire the real
+        implementation). Files created/modified: <!-- list them -->
+        Run the relevant scenarios. Must pass.
         ```
         <!-- paste GREEN evidence -->
         ```
@@ -71,7 +77,7 @@ runner rejects an unimplemented step before any scenario work.
         ```
         <!-- paste REFACTOR evidence -->
         ```
-  - [ ] COMMIT: `<hash>` — `<message>`
+  - [ ] COMMIT: `<hash>` -- Batch: `<batch-name>`
 
 <!-- One section per non-@e2e scenario. -->
 
@@ -93,21 +99,17 @@ runner rejects an unimplemented step before any scenario work.
       <!-- paste e2e proof-of-strictness command + output -->
       ```
 - [ ] @e2e Scenario: `{{FIRST_E2E_SCENARIO_TITLE}}`
-  - [ ] RED: unimplemented steps use the not-implemented stub. Run
-        `verify.e2e_command` targeting this scenario only. Must fail.
+  - [ ] TEST-FIRST: add the test and glue before production; run against the
+        current system. Record the test revision and result. E2E asserts the
+        real external interface, never an internal stub.
         ```
-        <!-- paste RED evidence -->
+        <!-- paste test-first evidence -->
         ```
-  - [ ] GREEN: set up test infrastructure if needed; replace stubs with real
-        assertions driving the actual interface (primary) — repository
-        checks are secondary/additional only, never the sole assertion.
-        For a browser-UI capability, drive the actual browser (click/type/
-        navigate) — never an HTTP request or in-page `fetch()` standing in
-        for browser interaction. If a real-interface obstacle appears, fix
-        it per design.md's Anticipated Interface Obstacles section — do not
-        substitute a repository-only or HTTP/fetch() shortcut.
-        Files: <!-- list them -->
-        Run targeting this scenario only. Must pass.
+  - [ ] IMPLEMENTATION: set up test infrastructure if needed; wire the real
+        interface. Primary assertion on the real interface; repository checks
+        are secondary. For a browser UI, drive the actual browser. Files:
+        <!-- list them -->
+        Run the relevant scenarios. Must pass.
         ```
         <!-- paste GREEN evidence -->
         ```
@@ -115,11 +117,11 @@ runner rejects an unimplemented step before any scenario work.
         ```
         <!-- paste REFACTOR evidence -->
         ```
-  - [ ] COMMIT: `<hash>` — `<message>`
+  - [ ] COMMIT: `<hash>` -- Batch: `<batch-name>`
 
 <!-- One section per @e2e scenario. -->
 
 ---
 
-**Done when:** every box checked with evidence and commit hash, both
-`{{VERIFY_COMMAND}}` and `verify.e2e_command` exit 0 on the full suite.
+**Done when:** every box checked with test-first evidence and a batch commit,
+both `{{VERIFY_COMMAND}}` and `verify.e2e_command` exit 0 on the full suite.

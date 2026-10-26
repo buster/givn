@@ -187,17 +187,13 @@ observable result asserted against the module instead of through the browser)
 is a duplicate: the layer is a driver, not an invariant. The overlap review
 flags it — distinguish it or delete it.
 
-A proposed scenario that passes on its first executable run is not
-automatically a new specification. Apply green-first triage: delete it if
-covered, fold data-only variants into one parameterized case, or change the
-setup. Do not add a second scenario for the same invariant.
-
-A scenario that asserts a distinct invariant but passes because an earlier
-scenario implemented the whole capability is not a new TDD increment. Either
-merge it into the earlier scenario or a parameterized case, mark it
-`CHARACTERIZATION`, or narrow the earlier implementation so this scenario
-fails before the missing code is written. A comment in production code is not
-a scenario implementation.
+A test-first batch may contain scenarios that pass against the current
+implementation. A passing example is valid when it protects a distinct
+requirement, such as the second acceptable sense in a two-sense law. Keep it
+and record the test-first evidence. Merge or parameterize genuine duplication;
+fix setup that bypasses the intended path; delete an example that adds no
+distinct requirement. Do not narrow correct production code merely to force a
+RED, and do not use `CHARACTERIZATION` to avoid writing tests first.
 
 Every scenario title is globally unique in the active corpus. A modification
 replaces exactly one permanent scenario; an addition must not reuse a title.
