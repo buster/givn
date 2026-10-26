@@ -6,6 +6,24 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.9.6] - 2026-10-26
+
+### Features
+
+- **outline:** `givn outline report` requires an explicit `--path` when `src/`
+  is absent, and fails instead of returning an empty successful report when the
+  scope contains no production sources. The review gate reuses the reviewed
+  `OUTLINE-COMMAND` paths and refuses a change whose outline scope is missing.
+- **specs:** scenario writing derives examples from the owning use case and its
+  authoritative requirements. It removes the separate rule catalogue and
+  rule-to-scenario ratio; duplication requires the same rule, path, assertion,
+  and observable state, not merely the same outcome.
+
+### Bug Fixes
+
+- **guidance:** instruction assets no longer use benchmark-specific law
+  vocabulary.
+
 ## [0.9.5] - 2026-10-26
 
 ### Features
