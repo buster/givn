@@ -15,6 +15,10 @@ For every user-facing question, follow the effective policy from
 - **A red test fails for the reason it claims.** Discovery, registration,
   binding, import, fixture, and environment failures are not RED. A green
   first run is a design signal: covered, parameterize, fix the setup, or delete.
+- **A scenario commit changes behaviour.** A normal scenario commit must
+  change executable production behaviour. A comment, whitespace, task edit, or
+  transcript is not an implementation. `COVERED` removes the scenario task; it
+  does not justify a fabricated production diff.
 - **Name the operative source.** When documents disagree, declare which one
   governs and mark the other stale at its entry point. Never leave two
   unqualified authorities.
@@ -57,3 +61,4 @@ For every user-facing question, follow the effective policy from
 | Measured population | Coverage is 83.9%, so exclude another file. | Exclusions are declared in design.md before the first run. |
 | Stop rule | 24 binary-string probes to infer a parser. | One minimal reproducer, then a documented assumption. |
 | Precedent | “The archived review did it.” | “The rule requires a production diff; this commit has none.” |
+| Scenario diff | `authority.py` adds only `# Scenario: ...`. | `authority.py` adds or changes the validation, condition, or error path. |

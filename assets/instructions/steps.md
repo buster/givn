@@ -161,6 +161,18 @@ disposition in tasks.md:
 | WRONG-SETUP | Setup bypasses the intended path | Change Given/When/fixture; rerun |
 | UNNECESSARY | No setup can make it fail | Delete; record why only if unreachable |
 
+**`COVERED` is terminal.** It means an existing scenario asserts the same
+invariant. It never means "the capability was implemented by an earlier
+scenario", and it never means "this scenario happens to pass".
+
+- Remove this scenario's task section from `tasks.md`.
+- Do not create a scenario commit for it.
+- If a checked task remains in `tasks.md` with `COVERED`, the task is invalid.
+- If the scenario asserts a distinct invariant that already exists, mark it
+  `CHARACTERIZATION` and keep a test-only commit; it is not TDD evidence.
+- If it should drive code, narrow the earlier implementation so the assertion
+  fails before writing that code.
+
 Examples:
 
   valid RED:
@@ -176,7 +188,7 @@ Examples:
   COVERED:
     existing: "Issuing for an unknown citizen is refused"
     proposed: "An unknown owner is refused"
-    -> same invariant; delete or merge.
+    -> same invariant; remove the new task; no commit.
 
   PARAMETERIZED:
     proposed: "A citizen aged 4 is refused"
@@ -190,6 +202,11 @@ Examples:
   UNNECESSARY:
     proposed: "A valid command exits 0"
     -> already asserted by the real-interface e2e scenario; delete.
+
+  FIRST-SCENARIO TRAP:
+    first scenario implements validation for the whole capability; second
+    scenario passes immediately. Do not add a comment to production code.
+    Remove/merge it, parameterize it, or mark it CHARACTERIZATION.
 
 ### GREEN
 

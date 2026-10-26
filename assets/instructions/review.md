@@ -29,15 +29,18 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
    whitespace-only, bare `pass`/`return`, or a body with no reference to any
    assertion library, mock, HTTP client, or domain object. Any match =
    fabricated step.
-2. Cross-check every checked `[x]` task has a commit whose diff touches
-   production source, not only the spec/stub. No commit or spec-only diff =
-   fabricated task.
+2. Cross-check every checked `[x]` task has a commit whose diff contains an
+   executable production change: a function body, condition, call, data model,
+   or error path. A comment-only, whitespace-only, task-only, feature-only, or
+   transcript-only diff is not a production change. No commit or non-executable
+   diff = fabricated task.
 2a. Read the recorded RED for every checked scenario. A RED that failed on
    discovery, registration, step binding, import, fixture setup, or
    environment startup is not behavioural. Reopen the task.
 2b. If `tasks.md` records `GREEN-FIRST`, confirm exactly one of `COVERED`,
    `PARAMETERIZED`, `WRONG-SETUP`, or `UNNECESSARY` and that the action was
-   taken. Missing disposition = fabricated task.
+   taken. A checked task with `COVERED` is invalid: the task must be removed
+   or marked `CHARACTERIZATION`. Missing disposition = fabricated task.
 2c. Normal TDD commits contain the production change that turns RED green. A
    regression-only commit must be marked `CHARACTERIZATION`.
 2d. A prior run's violation is not a compliance argument. Evaluate against the
@@ -47,9 +50,11 @@ Examples:
 
   RED: "scenario is not registered in tests/regressions.py"  -> invalid; reopen
   RED: "expected full, got provisional"                      -> valid
-  GREEN-FIRST: COVERED, existing scenario retained           -> valid; no new commit
+  GREEN-FIRST: COVERED, task removed/merged                  -> valid; no commit
+  GREEN-FIRST: COVERED, task retained + commit               -> invalid; reopen
   GREEN-FIRST: missing                                       -> fabricated task
   normal TDD commit: only tests/regressions.py changed       -> missing production change
+  normal TDD commit: authority.py adds only a scenario comment -> missing executable change
   characterization commit: only the test changed, marked CHARACTERIZATION -> valid
 3. Cross-check every component design.md promised (class/service/
    controller/module) exists in the tree. List anything missing —

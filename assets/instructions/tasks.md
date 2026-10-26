@@ -89,13 +89,19 @@ so the text has exactly one home.
   raw Git commit is stamped by the hook, a raw Fossil check-in is not.
 - A checked scenario records exactly one `COMMIT:` revision in `tasks.md`.
   Allowed: a real revision that exists, is reachable from `HEAD`, names the
-  scenario in its message body, and contains the scenario's implementation.
+  scenario in its message body, and contains an executable production change
+  for that scenario: a function body, condition, call, data model, or error
+  path. A comment-only, whitespace-only, task-only, feature-only, or
+  transcript-only diff is not a scenario commit.
   A regression-only commit is allowed only when `tasks.md` marks the task
   `CHARACTERIZATION`. Not allowed: a revision shared by two scenarios,
   a placeholder or invented hash, an unreachable revision, a missing
   `COMMIT:` line, a message that does not name the scenario, or a commit
   that only edits `tasks.md` or the `.feature` scenario text. No commit
   means the scenario is not done.
+- `COVERED` is terminal: remove the scenario's task section and create no
+  commit. A checked task with `COVERED` is invalid; if the scenario is kept,
+  mark it `CHARACTERIZATION`.
 <!-- givn:resident-rules:end -->
 
 ## TDD loop — non-@e2e scenarios (in .feature order)
@@ -245,9 +251,10 @@ this.
 - Each scenario has a field for the commit hash.
 - Examples:
   - `RED-EVIDENCE: AssertionError: expected full, got provisional`
-  - `GREEN-FIRST: COVERED — existing "unknown citizen is refused"; deleted`
+  - `GREEN-FIRST: COVERED — existing "unknown citizen is refused"; task removed`
   - `GREEN-FIRST: PARAMETERIZED — ages 4 and 0 folded into one outline`
-  - normal TDD commit: production file + feature + regression registration
+  - normal TDD commit: executable production change + feature + regression registration
+  - invalid normal commit: `authority.py` adds only `# Scenario: ...`
   - characterization commit: test only, task marked `CHARACTERIZATION`
 - Non-@e2e scenarios first, @e2e last.
 - Check `[x]` only when evidence and commit hash are filled in. Empty fields
