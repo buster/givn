@@ -214,13 +214,13 @@ glossary does not hold, or any inconsistent reuse, is a finding: fix the
 affected artifact and record the resolved term in `docs/arc42/12-glossary.md`.
 Do not write `REVIEW: PASS` while a ubiquitous-language finding remains.
 
-When a domain term, schema, or law changes, sweep README, glossary, ADRs,
+When a domain term, schema, or governing rule changes, sweep README, glossary, ADRs,
 docs, tests, and code symbols for old values. Update them or mark them stale at
 their entry point. A single authoritative source must emerge; two unqualified
 definitions are a finding.
 
 Examples: a glossary naming a deleted constant; a risk note still saying a
-migration backfills rows; a README still reporting the old law or old coverage.
+migration backfills rows; a README still reporting the old rule or old coverage.
 {{/if}}
 {{/if}}
 

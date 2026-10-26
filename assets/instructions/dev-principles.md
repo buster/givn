@@ -54,7 +54,7 @@ For every user-facing question, follow the effective policy from
 
 | Principle | Bad | Good |
 |---|---|---|
-| Operative source | `law.md` says one sense, `task.md` says two, both current. | `task.md` governs; `law.md` has a dated stale note pointing to it. |
+| Operative source | The stale policy says one option, the current brief says two, both presented as current. | The current brief governs; the stale policy carries a dated note pointing to it. |
 | Causal RED | `scenario is not registered` used as RED. | `expected full, got provisional` used as RED. |
 | External boundary | Provider licence-id mismatch called “defensive.” | Fake provider returns another provider's licence id. |
 | Measured population | Coverage is 83.9%, so exclude another file. | Exclusions are declared in design.md before the first run. |

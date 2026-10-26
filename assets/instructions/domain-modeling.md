@@ -98,7 +98,7 @@ Name the domain noun and give its contrast pair.
   anti-terms column.
 - Keep it short - one page that the design, the lint gate, and the review all
   build on.
-- One authoritative definition per term. When a term, schema, or law changes,
+- One authoritative definition per term. When a term, schema, or governing rule changes,
   sweep README, glossary, ADRs, docs, tests, and code symbols for old values.
   Update them or mark them stale at their entry point.
 - When a source must remain unmodified, add a dated stale note at its entry
@@ -107,8 +107,8 @@ Name the domain noun and give its contrast pair.
 
 Examples:
 
-  authoritative: the task addendum governs this change; the root law carries
-    a dated note pointing to it.
+  authoritative: the current brief governs this change; the stale policy
+    document carries a dated note pointing to it.
   sweep: a glossary names `TENANT_CATOPIA`, but the code uses a literal;
     rename or remove the symbol reference.
   sweep: a risk chapter says a migration backfills rows, but the design says
