@@ -187,15 +187,16 @@ observable result asserted against the module instead of through the browser)
 is a duplicate: the layer is a driver, not an invariant. The overlap review
 flags it — distinguish it or delete it.
 
-Scenarios are derived from the rules already present in the owning use case,
-law, and contract. If the rules are clear, the scenarios follow: one scenario
-for each distinct outcome, boundary, refusal, or precedence case. Do not create
-a second rule catalogue or a rule-to-scenario ratio.
+Scenarios are derived from the rules already present in the owning use case
+and its authoritative requirements. If the rules are clear, the scenarios
+follow: one scenario for each distinct outcome, boundary, refusal, or
+precedence case. Do not create a second rule catalogue or a rule-to-scenario
+ratio.
 
 Data-only variations belong in one `Scenario Outline` with `Examples`. A test
 that passes against the current implementation is valid when it protects a
-distinct requirement, such as the second acceptable sense in a two-sense law;
-keep it and record the test-first evidence.
+distinct requirement, such as the second acceptable alternative in a set of
+equivalent choices; keep it and record the test-first evidence.
 
 Two scenarios are duplicates only when the same rule and the same Given/When
 path produce the same assertion and observable state, and removing one loses no
