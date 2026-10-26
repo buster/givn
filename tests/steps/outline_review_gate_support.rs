@@ -220,6 +220,9 @@ impl<'a> GateFixture<'a> {
         if content.is_empty() {
             content.push_str("# Review\n\n");
         }
+        if !content.contains("OUTLINE-COMMAND:") {
+            content.push_str("OUTLINE-COMMAND: givn outline report --path src\n");
+        }
         content.push_str(line);
         content.push('\n');
         self.write(&relative, &content);
@@ -682,7 +685,7 @@ pub(crate) fn write_review_preconditions(env: &TestEnv, change_id: &str, task_co
     write_file(
         env,
         &format!("{change}/review.md"),
-        "# Review\n\nREADME-IMPACT: none\n\nPERSONAS: fixture-persona\n",
+        "# Review\n\nREADME-IMPACT: none\nOUTLINE-COMMAND: givn outline report --path src\n\nPERSONAS: fixture-persona\n",
     );
     write_file(
         env,

@@ -33,15 +33,88 @@ pub struct GateRequest {
     pub change_id: String,
     pub change_dir: PathBuf,
     pub roots: Vec<PathBuf>,
+    pub scope_error: Option<String>,
+}
+
+fn outline_scope(change_dir: &Path) -> (Vec<PathBuf>, Option<String>) {
+    let review = change_dir.join("review.md");
+    let Ok(text) = std::fs::read_to_string(&review) else {
+        return (
+            Vec::new(),
+            Some(
+                "review.md must record `OUTLINE-COMMAND: givn outline report --path <source>`"
+                    .to_string(),
+            ),
+        );
+    };
+    let mut in_fence = false;
+    for raw in text.lines() {
+        let trimmed = raw.trim();
+        if trimmed.starts_with("```") || trimmed.starts_with("~~~") {
+            in_fence = !in_fence;
+            continue;
+        }
+        if in_fence {
+            continue;
+        }
+        let Some(command) = trimmed.strip_prefix("OUTLINE-COMMAND:") else {
+            continue;
+        };
+        let command = command.trim().trim_matches('`');
+        let mut roots = Vec::new();
+        let mut tokens = command.split_whitespace().peekable();
+        while let Some(token) = tokens.next() {
+            let token = token.trim_matches('"').trim_matches('\'');
+            if token == "--path" {
+                if let Some(value) = tokens.next() {
+                    roots.push(PathBuf::from(value.trim_matches('"').trim_matches('\'')));
+                }
+            } else if let Some(value) = token.strip_prefix("--path=") {
+                roots.push(PathBuf::from(value.trim_matches('"').trim_matches('\'')));
+            }
+        }
+        if roots.is_empty() {
+            return (
+                Vec::new(),
+                Some("OUTLINE-COMMAND must pass at least one --path".to_string()),
+            );
+        }
+        for root in &roots {
+            if root.is_absolute()
+                || root
+                    .components()
+                    .any(|component| matches!(component, std::path::Component::ParentDir))
+            {
+                return (
+                    Vec::new(),
+                    Some(format!(
+                        "OUTLINE-COMMAND --path must be project-relative: {}",
+                        root.display()
+                    )),
+                );
+            }
+        }
+        return (roots, None);
+    }
+    (
+        Vec::new(),
+        Some(
+            "review.md must record `OUTLINE-COMMAND: givn outline report --path <source>`"
+                .to_string(),
+        ),
+    )
 }
 
 impl GateRequest {
     pub fn new(project_root: &Path, change_id: &str) -> Self {
+        let change_dir = project_root.join("givn/changes").join(change_id);
+        let (roots, scope_error) = outline_scope(&change_dir);
         Self {
             project_root: project_root.to_path_buf(),
             change_id: change_id.to_string(),
-            change_dir: project_root.join("givn/changes").join(change_id),
-            roots: vec![PathBuf::from("src")],
+            change_dir,
+            roots,
+            scope_error,
         }
     }
 
@@ -90,6 +163,8 @@ pub enum GateFailure {
     NoChangeCommit(String),
     ShallowRepository,
     DirtyProduction(Vec<String>),
+    MissingOutlineScope(String),
+    NoProductionSources(String),
     AnalysisFailed {
         side: Side,
         path: String,
@@ -166,6 +241,8 @@ impl GateFailure {
             Self::NoChangeCommit(_) => "no-change-commit",
             Self::ShallowRepository => "shallow-repository",
             Self::DirtyProduction(_) => "dirty-production",
+            Self::MissingOutlineScope(_) => "missing-outline-scope",
+            Self::NoProductionSources(_) => "no-production-sources",
             Self::AnalysisFailed { .. } => "analysis-failed",
             Self::UnanalyzedFile(_) => "unanalyzed-file",
             Self::UnsupportedUnit { .. } => "unsupported-unit",
@@ -207,6 +284,11 @@ impl GateFailure {
             Self::DirtyProduction(paths) => format!(
                 "production paths are dirty; commit or discard before review: {}",
                 paths.join(", ")
+            ),
+            Self::MissingOutlineScope(reason) => reason.clone(),
+            Self::NoProductionSources(paths) => format!(
+                "outline scope found no production sources: {paths}; \
+                 record an explicit OUTLINE-COMMAND with --path"
             ),
             Self::AnalysisFailed { side, path, detail } => {
                 if detail.is_empty() {
@@ -289,6 +371,8 @@ impl GateFailure {
             Self::NoChangeCommit(id) => (0, 0, String::new(), id.clone()),
             Self::ShallowRepository => (0, 1, String::new(), String::new()),
             Self::DirtyProduction(paths) => (0, 2, paths.join(","), String::new()),
+            Self::MissingOutlineScope(reason) => (0, 3, String::new(), reason.clone()),
+            Self::NoProductionSources(paths) => (1, 6, paths.clone(), String::new()),
             Self::AnalysisFailed { path, side, .. } => {
                 (1, 0, format!("{}:{path}", side.label()), String::new())
             }
@@ -488,7 +572,6 @@ fn review(request: &GateRequest) -> Result<GateOutcome> {
             request.change_id
         );
     }
-
     let backend = scm::select(&request.project_root)?;
     let base = match base::resolve(&backend, &request.change_id)? {
         base::Resolution::Resolved(base) => base,
@@ -511,6 +594,22 @@ fn review(request: &GateRequest) -> Result<GateOutcome> {
         ));
     }
 
+    if let Some(reason) = &request.scope_error {
+        return Ok(GateOutcome::early(
+            None,
+            GateFailure::MissingOutlineScope(reason.clone()),
+        ));
+    }
+    if request.roots.is_empty() {
+        return Ok(GateOutcome::early(
+            None,
+            GateFailure::MissingOutlineScope(
+                "review.md must record `OUTLINE-COMMAND: givn outline report --path <source>`"
+                    .to_string(),
+            ),
+        ));
+    }
+
     let roots = request.root_strings();
     let mut failures = Vec::new();
 
@@ -530,6 +629,12 @@ fn review(request: &GateRequest) -> Result<GateOutcome> {
 
     let (base_analysis, base_assessment) = analyze(&base_tree, request)?;
     let (head_analysis, head_assessment) = analyze(&head_tree, request)?;
+    if head_analysis.files.is_empty() {
+        return Ok(GateOutcome::early(
+            Some(base),
+            GateFailure::NoProductionSources(roots.join(", ")),
+        ));
+    }
 
     let changed = match head::changed_production_paths(&backend, base.parent.as_deref(), &roots) {
         Ok(changed) => changed,

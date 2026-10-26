@@ -187,13 +187,24 @@ observable result asserted against the module instead of through the browser)
 is a duplicate: the layer is a driver, not an invariant. The overlap review
 flags it — distinguish it or delete it.
 
-A test-first batch may contain scenarios that pass against the current
-implementation. A passing example is valid when it protects a distinct
-requirement, such as the second acceptable sense in a two-sense law. Keep it
-and record the test-first evidence. Merge or parameterize genuine duplication;
-fix setup that bypasses the intended path; delete an example that adds no
-distinct requirement. Do not narrow correct production code merely to force a
-RED, and do not use `CHARACTERIZATION` to avoid writing tests first.
+Scenarios are derived from the rules already present in the owning use case,
+law, and contract. If the rules are clear, the scenarios follow: one scenario
+for each distinct outcome, boundary, refusal, or precedence case. Do not create
+a second rule catalogue or a rule-to-scenario ratio.
+
+Data-only variations belong in one `Scenario Outline` with `Examples`. A test
+that passes against the current implementation is valid when it protects a
+distinct requirement, such as the second acceptable sense in a two-sense law;
+keep it and record the test-first evidence.
+
+Two scenarios are duplicates only when the same rule and the same Given/When
+path produce the same assertion and observable state, and removing one loses no
+distinct failure detection. The same expected error, status, or value is not
+enough: unrelated rules may share an outcome and must stay separate. Merge
+data-only cases; delete only a scenario that is genuinely redundant.
+
+Do not narrow correct production code merely to force a RED, and do not use
+`CHARACTERIZATION` to avoid writing tests first.
 
 Every scenario title is globally unique in the active corpus. A modification
 replaces exactly one permanent scenario; an addition must not reuse a title.
