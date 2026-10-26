@@ -6,6 +6,28 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.9.7] - 2026-10-26
+
+### Features
+
+- **architecture:** define ports and adapters, require one component per
+  contract, and split a unit that owns more than one contract, capability, or
+  external adapter. A single-file implementation remains valid for one external
+  dependency and simple business rules; complex changes use ports and adapters.
+- **design-review:** review the plan and expected components, treat existing
+  code as context only, and require the task list to wait for the review.
+- **review:** require one fresh review subagent after implementation. It runs
+  the outline, reads the metrics, applies the architecture check, and records a
+  four-field waiver when it accepts a remaining metric finding.
+- **ADR:** treat port/adapter boundaries, component splits, and durable storage
+  mechanisms as candidates; a boundary decision is not local merely because it
+  touches one component.
+
+### Bug Fixes
+
+- **guidance:** remove the deferred component split and the
+  one-component-many-contracts escape hatch.
+
 ## [0.9.6] - 2026-10-26
 
 ### Features
