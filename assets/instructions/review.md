@@ -29,33 +29,38 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
    whitespace-only, bare `pass`/`return`, or a body with no reference to any
    assertion library, mock, HTTP client, or domain object. Any match =
    fabricated step.
-2. Cross-check every checked `[x]` task has a commit whose diff contains an
-   executable production change: a function body, condition, call, data model,
-   or error path. A comment-only, whitespace-only, task-only, feature-only, or
-   transcript-only diff is not a production change. No commit or non-executable
-   diff = fabricated task.
-2a. Read the recorded RED for every checked scenario. A RED that failed on
-   discovery, registration, step binding, import, fixture setup, or
-   environment startup is not behavioural. Reopen the task.
-2b. If `tasks.md` records `GREEN-FIRST`, confirm exactly one of `COVERED`,
-   `PARAMETERIZED`, `WRONG-SETUP`, or `UNNECESSARY` and that the action was
-   taken. A checked task with `COVERED` is invalid: the task must be removed
-   or marked `CHARACTERIZATION`. Missing disposition = fabricated task.
-2c. Normal TDD commits contain the production change that turns RED green. A
-   regression-only commit must be marked `CHARACTERIZATION`.
-2d. A prior run's violation is not a compliance argument. Evaluate against the
+2. Cross-check every checked scenario has `TEST-FIRST:` evidence and a `COMMIT:`
+   revision. The test-first evidence must precede the implementation. A shared
+   batch revision is allowed when every scenario sharing it has its own
+   evidence and the `COMMIT:` line names `Batch: <name>`.
+2a. Read the recorded test-first failures. A failure on discovery,
+   registration, step binding, import, fixture setup, or environment startup
+   is not behavioural. A passing example is valid when it protects a distinct
+   requirement and was written before implementation; duplicates must be
+   merged or parameterized.
+2b. Reject comment-only, whitespace-only, tag-only, task-only, feature-only,
+   and transcript-only changes presented as behaviour evidence. A batch commit
+   may contain tests, implementation, or both; it must not be a fabricated
+   scenario marker.
+2c. A normal change must not use `CHARACTERIZATION` to avoid writing tests.
+   Characterization is reserved for reverse-engineering changes.
+2d. For high-risk rules (identity, omitted alternative, boundary, lifetime
+   limit, precedence), confirm the tests reject a plausible wrong behavior.
+   Use a small risk-selected sample; exhaustive mutation testing is not
+   required.
+2e. A prior run's violation is not a compliance argument. Evaluate against the
    rule, not the archive.
 
 Examples:
 
-  RED: "scenario is not registered in tests/regressions.py"  -> invalid; reopen
-  RED: "expected full, got provisional"                      -> valid
-  GREEN-FIRST: COVERED, task removed/merged                  -> valid; no commit
-  GREEN-FIRST: COVERED, task retained + commit               -> invalid; reopen
-  GREEN-FIRST: missing                                       -> fabricated task
-  normal TDD commit: only tests/regressions.py changed       -> missing production change
-  normal TDD commit: authority.py adds only a scenario comment -> missing executable change
-  characterization commit: only the test changed, marked CHARACTERIZATION -> valid
+  test-first: "expected full, got provisional"              -> valid RED
+  test-first: "scenario is not registered"                   -> invalid; fix setup
+  test-first: "vision-only example passed; kept"             -> valid distinct example
+  shared batch: two scenarios, same hash, `Batch: issuance`  -> valid
+  shared hash without `Batch:`                                -> invalid
+  commit: only `# Scenario: ...` in production               -> not evidence
+  commit: only `@wip` removed                                -> not evidence
+  normal change marked CHARACTERIZATION                       -> invalid
 3. Cross-check every component design.md promised (class/service/
    controller/module) exists in the tree. List anything missing —
    incomplete implementation, not a "hard to test" gap.
@@ -150,7 +155,7 @@ Examples:
     e. Record the full cross-reference as a table in the fabrication audit
        section of review.md.
 12. Any finding from 1-11 is unfinished work, not a coverage gap. Reopen the
-    task, run RED→GREEN→REFACTOR→COMMIT for real — driving the real
+    batch: add the tests first, then implement and refactor — driving the real
     interface per design.md's "Anticipated interface obstacles" fix, not by
     asserting on the repository instead. Do not write `REVIEW: PASS` while
     any finding remains.
@@ -227,7 +232,10 @@ instrumented pass. Use the most recent available coverage evidence (the last
 archive receipt or published report) and static inspection to classify gaps;
 do not write "not measured" as a substitute for classification. If no
 coverage evidence exists yet for this change, say so explicitly and classify
-from inspection — the archive receipt will carry the measured result.
+from inspection — the archive receipt will carry the measured result. The givn
+archive verification and its Cobertura report are authoritative; an external
+reporter that cannot execute the project runner is a measurement gap, not
+absent coverage.
 
 Redundant unit tests (behaviour already covered by a `.feature` scenario
 through the black-box boundary) are removed — the `.feature` file is the
@@ -236,7 +244,8 @@ source of truth.
 ## Classification (three buckets — no fourth bucket)
 
 1. Dead code (YAGNI/KISS) → delete.
-2. Missing test coverage → add scenario, run RED→GREEN→REFACTOR→COMMIT.
+2. Missing test coverage → add a test-first batch, implement, refactor, and
+   record the batch commit.
 3. Legitimately hard to test (rare) → concrete technical justification.
 
 External-input validation is bucket 2 (missing test coverage) until a scenario

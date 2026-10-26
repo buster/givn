@@ -236,6 +236,10 @@ Examples:
   persistence: corrupt file, schema mismatch, write failure
   CLI/API: missing argument, unknown option, malformed value
 
+Name the high-risk rules that need sensitivity checks: identity, alternative
+coverage, boundaries, lifetime limits, and precedence. A test batch that
+cannot distinguish a plausible wrong implementation is incomplete.
+
 ## Local runnability & digital twins (mandatory)
 
 The system MUST be runnable and testable locally, in full, with one

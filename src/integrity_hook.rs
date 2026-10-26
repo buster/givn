@@ -456,7 +456,6 @@ fn check_revision_identifier_presence(change_dir: &Path) -> Result<()> {
     let content = std::fs::read_to_string(&tasks_path)?;
     let mut found_any = false;
     let mut errors = Vec::new();
-    let mut seen_hashes: std::collections::HashSet<String> = std::collections::HashSet::new();
 
     for (line_idx, line) in content.lines().enumerate() {
         let trimmed = line.trim();
@@ -502,15 +501,8 @@ fn check_revision_identifier_presence(change_dir: &Path) -> Result<()> {
             continue;
         }
 
-        // Check for duplicate hashes — each scenario requires its own atomic commit.
-        if !seen_hashes.insert(hash.to_string()) {
-            errors.push(format!(
-                "line {}: revision identifier `{}` is also used by another task — \
-                 each scenario needs its own atomic commit",
-                line_idx + 1,
-                hash
-            ));
-        }
+        // Shared batch revisions are valid; the scenario commit check verifies
+        // that a shared revision declares a Batch: label.
     }
 
     if !found_any {
@@ -1090,14 +1082,14 @@ mod tests {
     }
 
     #[test]
-    fn hash_presence_fails_with_duplicate_hash() {
+    fn hash_presence_passes_with_shared_batch_hash() {
         let (_dir, change) = make_change_dir();
         std::fs::write(
             change.join("tasks.md"),
-            "- [x] COMMIT: a1b2c3d4 -- Scenario one\n- [x] COMMIT: a1b2c3d4 -- Scenario two\n",
+            "- [x] COMMIT: a1b2c3d4 -- Batch: scenario-batch\n- [x] COMMIT: a1b2c3d4 -- Batch: scenario-batch\n",
         )
         .unwrap();
-        assert!(check_revision_identifier_presence(&change).is_err());
+        assert!(check_revision_identifier_presence(&change).is_ok());
     }
 
     #[test]

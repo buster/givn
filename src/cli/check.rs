@@ -1,6 +1,6 @@
 use crate::config::overlay::load_effective;
 use anyhow::{Result, bail};
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 /// Run an artifact's post hooks (e.g. verify.command, lint).
 ///
@@ -187,6 +187,7 @@ struct ScenarioCommit {
     title: String,
     checked: bool,
     hash: Option<String>,
+    batch: Option<String>,
 }
 
 fn scenario_title(line: &str) -> Option<(bool, String)> {
@@ -207,22 +208,25 @@ fn scenario_title(line: &str) -> Option<(bool, String)> {
     Some((checked, title.to_string()))
 }
 
-fn commit_line(line: &str) -> Option<(bool, Option<String>)> {
+fn commit_line(line: &str) -> Option<(bool, Option<String>, Option<String>)> {
     let trimmed = line.trim();
     if !trimmed.starts_with("- [") || !trimmed.contains("COMMIT:") {
         return None;
     }
     let checked = trimmed.starts_with("- [x]") || trimmed.starts_with("- [X]");
-    let hash = trimmed
+    let rest = trimmed
         .split_once("COMMIT:")
         .map(|(_, rest)| rest)
-        .unwrap_or("")
-        .split("--")
-        .next()
-        .unwrap_or("")
-        .trim()
-        .trim_matches('`');
-    Some((checked, (!hash.is_empty()).then(|| hash.to_string())))
+        .unwrap_or("");
+    let (hash_part, label_part) = rest.split_once("--").unwrap_or((rest, ""));
+    let hash = hash_part.trim().trim_matches('`');
+    let batch = label_part
+        .find("Batch:")
+        .or_else(|| label_part.find("batch:"))
+        .map(|index| label_part[index + "Batch:".len()..].trim())
+        .filter(|value| !value.is_empty())
+        .map(|value| value.trim_matches('`').to_string());
+    Some((checked, (!hash.is_empty()).then(|| hash.to_string()), batch))
 }
 
 fn parse_scenario_commits(content: &str) -> Vec<ScenarioCommit> {
@@ -233,12 +237,14 @@ fn parse_scenario_commits(content: &str) -> Vec<ScenarioCommit> {
                 title,
                 checked,
                 hash: None,
+                batch: None,
             });
-        } else if let Some((checked, hash)) = commit_line(line)
+        } else if let Some((checked, hash, batch)) = commit_line(line)
             && let Some(current) = scenarios.last_mut()
             && current.hash.is_none()
         {
             current.hash = hash;
+            current.batch = batch;
             if checked {
                 current.checked = true;
             }
@@ -266,8 +272,8 @@ fn placeholder_hash(hash: &str) -> bool {
         || lower.starts_with('<')
 }
 
-/// Block unless every checked scenario has one unique, real commit whose
-/// message body contains the scenario title. A change with no checked
+/// Block unless every checked scenario has a real commit whose message names
+/// either the scenario or its declared batch. A change with no checked
 /// scenario has not started implementation; it is not blocked here.
 fn check_scenario_commits(
     backend: &crate::scm::Backend,
@@ -282,7 +288,12 @@ fn check_scenario_commits(
         return Ok(());
     }
     let mut errors = Vec::new();
-    let mut seen: HashSet<String> = HashSet::new();
+    let mut counts: HashMap<&str, usize> = HashMap::new();
+    for scenario in &scenarios {
+        if let Some(hash) = scenario.hash.as_deref() {
+            *counts.entry(hash).or_default() += 1;
+        }
+    }
     for scenario in &scenarios {
         if !scenario.checked {
             errors.push(format!(
@@ -305,9 +316,9 @@ fn check_scenario_commits(
             ));
             continue;
         }
-        if !seen.insert(hash.to_string()) {
+        if counts.get(hash).copied().unwrap_or(0) > 1 && scenario.batch.is_none() {
             errors.push(format!(
-                "scenario '{}' reuses revision `{hash}`; each scenario needs its own commit",
+                "scenario '{}' shares revision `{hash}` with another scenario but has no `Batch:` label",
                 scenario.title
             ));
             continue;
@@ -333,9 +344,15 @@ fn check_scenario_commits(
             ));
             continue;
         };
-        if !normalize_commit_text(&message).contains(&normalize_commit_text(&scenario.title)) {
+        let required = scenario.batch.as_deref().unwrap_or(&scenario.title);
+        if !normalize_commit_text(&message).contains(&normalize_commit_text(required)) {
+            let subject = if scenario.batch.is_some() {
+                "does not name the batch"
+            } else {
+                "does not name the scenario"
+            };
             errors.push(format!(
-                "scenario '{}' commit `{hash}` does not name the scenario in its message",
+                "scenario '{}' commit `{hash}` {subject} in its message",
                 scenario.title
             ));
         }
@@ -598,13 +615,15 @@ mod tests {
         check_retirement_disclosed(&project, "plain-change").unwrap();
     }
     #[test]
-    fn parses_two_scenarios_with_the_same_revision() {
-        let content = "- [x] Scenario: First\n  - [x] COMMIT: abc -- first\n\
-                       - [x] Scenario: Second\n  - [x] COMMIT: abc -- second\n";
+    fn parses_two_scenarios_with_the_same_batch_revision() {
+        let content = "- [x] Scenario: First\n  - [x] COMMIT: abc -- Batch: first-batch\n\
+                       - [x] Scenario: Second\n  - [x] COMMIT: abc -- Batch: first-batch\n";
         let scenarios = parse_scenario_commits(content);
         assert_eq!(scenarios.len(), 2);
         assert_eq!(scenarios[0].hash.as_deref(), Some("abc"));
         assert_eq!(scenarios[1].hash.as_deref(), Some("abc"));
+        assert_eq!(scenarios[0].batch.as_deref(), Some("first-batch"));
+        assert_eq!(scenarios[1].batch.as_deref(), Some("first-batch"));
     }
 
     #[test]

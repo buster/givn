@@ -122,141 +122,67 @@ Exempt only once a step has a real assertion (GREEN) or performs a real
 reused action. Before trusting any PASS, confirm the runner is strict; the
 change's setup task proves it once, with evidence.
 
-## RED → GREEN → REFACTOR → COMMIT (one scenario at a time)
+## Test-first behavior batch (not per scenario)
 
-Every phase targets the runner **at this scenario only** (name/line/tag —
-never infer from whole-suite output) and captures output verbatim as evidence.
+Group related scenarios into a coherent behavior batch. The batch gets one
+test-first phase, one implementation phase, one refactor phase, and one batch
+commit. Individual examples do not need their own RED or production diff.
 
-### RED
+### TEST-FIRST
 
-1. Remove `@wip` from this scenario only.
-2. New steps use the stub above; reused steps kept as-is.
-3. Run targeting this scenario. Non-@e2e: the project's `verify.command`.
-   @e2e: `verify.e2e_command`. Capture output.
-   - Non-zero exit → inspect the failure. If it is harness or setup, fix and
-     rerun. If it is the asserted behaviour, RED confirmed; proceed to GREEN.
-   - Zero exit, all steps reused → apply green-first triage before doing any
-     work.
-   - Zero exit with a new step → step is empty, the runner isn't strict, or the
-     behaviour already exists. STOP and triage.
+1. Bind every Given/When/Then phrase. Given establishes real preconditions;
+   When invokes the intended boundary; Then asserts the observable result.
+2. Add or update the tests and step glue. Run them against the current system.
+   Capture the test revision and the results.
+3. A failing test must fail on its assertion, not on discovery, registration,
+   step binding, import, fixture, or environment startup. Fix setup failures
+   and rerun; do not write production code for them.
+4. A passing test is allowed when it protects a distinct requirement. Keep it;
+   record the test-first evidence. Merge, parameterize, or delete genuine
+   duplication. Do not narrow correct production code merely to force RED.
+5. For high-risk rules (identity, omitted alternative, boundary, lifetime
+   limit, precedence), ensure at least one test rejects a plausible wrong
+   behavior.
 
-### Rule: RED is causal
+### IMPLEMENTATION
 
-A non-zero exit is necessary but not sufficient. RED is valid only when the
-scenario is discoverable, its steps are bound, and it executes and fails on the
-asserted behaviour or at an explicitly unimplemented step body. A failure
-during discovery, registration, step binding,
-import, fixture setup, or environment startup is a harness failure. Fix it and
-rerun; do not write production code.
-
-### Rule: green-first triage
-
-If the first executable run passes, do not write production code. Record one
-disposition in tasks.md:
-
-| Disposition | When | Action |
-|---|---|---|
-| COVERED | An existing scenario asserts the same behaviour | Delete or merge |
-| PARAMETERIZED | Same behaviour, different data | One parameterized case |
-| WRONG-SETUP | Setup bypasses the intended path | Change Given/When/fixture; rerun |
-| UNNECESSARY | No setup can make it fail | Delete; record why only if unreachable |
-
-**`COVERED` is terminal.** It means an existing scenario asserts the same
-invariant. It never means "the capability was implemented by an earlier
-scenario", and it never means "this scenario happens to pass".
-
-- Remove this scenario's task section from `tasks.md`.
-- Do not create a scenario commit for it.
-- If a checked task remains in `tasks.md` with `COVERED`, the task is invalid.
-- If the scenario asserts a distinct invariant that already exists, mark it
-  `CHARACTERIZATION` and keep a test-only commit; it is not TDD evidence.
-- If it should drive code, narrow the earlier implementation so the assertion
-  fails before writing that code.
-
-Examples:
-
-  valid RED:
-    AssertionError: expected certificate.status "full", got "provisional"
-    AssertionError: expected senses ["hearing", "smell"], got ["hearing"]
-    NotImplementedError: the issue operation is not implemented
-
-  invalid RED:
-    scenario is not registered in tests/regressions.py
-    UndefinedStep: no binding for "the clerk issues a certificate"
-    ModuleNotFoundError: test fixture
-
-  COVERED:
-    existing: "Issuing for an unknown citizen is refused"
-    proposed: "An unknown owner is refused"
-    -> same invariant; remove the new task; no commit.
-
-  PARAMETERIZED:
-    proposed: "A citizen aged 4 is refused"
-    proposed: "A citizen aged 0 is refused"
-    -> one parameterized case: age 4 refused, age 0 refused.
-
-  WRONG-SETUP:
-    proposed: "A mismatched provider licence id is refused"
-    -> the fake provider must return a licence naming another provider's id.
-
-  UNNECESSARY:
-    proposed: "A valid command exits 0"
-    -> already asserted by the real-interface e2e scenario; delete.
-
-  FIRST-SCENARIO TRAP:
-    first scenario implements validation for the whole capability; second
-    scenario passes immediately. Do not add a comment to production code.
-    Remove/merge it, parameterize it, or mark it CHARACTERIZATION.
-
-### GREEN
-
-4. Replace stubs with real assertions (concrete values, not "it ran").
-   - Normal TDD: write minimum production code. List every file
-     created/modified — empty list on a non-reuse scenario is a red flag.
-   - Characterization: probe observed behaviour, no production code
-     changes. On failure, run the mismatch diagnostic.
-   - E2e: bring up the local environment (design.md's Local Runnability
-     section) if not already running, write glue driving the real
-     interface, and assert PRIMARILY on its output. If a real-interface
-     obstacle appears, apply the fix design.md names for it; if none is
-     named, STOP and report the blocker — never downgrade to a
-     repository-only assertion.
-5. Run targeting this scenario → zero exit. Capture output.
+6. Implement the behavior batch or wire the real implementation. List every
+   production file created or modified. Run the relevant scenarios; they must
+   exit zero. Capture the output.
+   - E2e: bring up the local environment from design.md if needed; assert
+     primarily on the real external interface. Never substitute an internal
+     stub for a browser or CLI E2E.
 
 5a. Validate coverage measurement before evaluating gaps:
 
-    - Instrument every production process used by the scenario.
+    - Instrument every production process used by the batch.
     - Launch instrumented artifacts, not normal builds.
     - Use collision-safe output; flush; merge all profiles.
     - Verify one exercised production path is non-zero.
     - Reject runner-only, test-only, absent, or zero-production coverage as
       `COVERAGE MEASUREMENT: INVALID`; fix instrumentation and rerun.
-    - Only then treat uncovered production code as RED. Capture output.
 
 ### REFACTOR
 
-6. Normal TDD: general cleanup. Characterization: testability seams only —
-   revert if red. E2e: clean up infrastructure code.
-7. Re-run targeting this scenario → still zero exit. Capture output.
+7. Clean up without changing behaviour. Run the relevant scenarios; they must
+   still exit zero. Capture the output.
 
 ### COMMIT
 
-8. One commit for RED+GREEN+REFACTOR, following the commit contract
-   served by `givn instructions tasks --change <id>`. Record the hash.
-   No commit, or a commit touching only the spec, means the work is not
-   done.
+8. One batch commit for TEST-FIRST + IMPLEMENTATION + REFACTOR. The message
+   carries the release note as its subject and names the batch in the body.
+   Scenarios record it as `COMMIT: <hash> -- Batch: <batch-name>`. A shared
+   revision is allowed when each scenario has its own test-first evidence.
 
 ### Done
 
-9. Paste RED/GREEN/REFACTOR evidence, files touched, and commit hash into
-   the task in `tasks.md`. Only then check it: `- [ ]` → `- [x]`. Do this
-   **immediately** — before moving to the next scenario. tasks.md must
-   always reflect true state: an unchecked box means the scenario is not
-   complete. Never leave boxes unchecked and batch-check them later.
-   Using `sed` or any text-replacement tool to mass-check boxes is
-   prohibited — each box is checked individually, with evidence and
-   commit hash filled in.
-10. Move to the next scenario.
+9. Paste the test-first evidence, implementation/refactor evidence, and the
+   batch commit into each scenario task. Check the boxes as their evidence is
+   complete; do not use mass text replacement to fake progress.
+10. Move to the next behavior batch.
+
+Characterization is a separate reverse-engineering loop. A normal change may
+not use `CHARACTERIZATION` as an alternative to writing tests first.
 
 ## Distinctions
 
@@ -266,11 +192,11 @@ for @e2e. Never conflate the three.
 
 ## Guardrails
 
-- One scenario at a time.
+- One behavior batch at a time; batch GREEN and batch REFACTOR are allowed.
 - Step definitions: shared glue, one file per capability, never a
   hand-maintained parallel test file.
 - Reuse existing steps; never duplicate.
-- Every run targets the single scenario; output is captured, not described.
+- Capture test-first and implementation output; do not describe it from memory.
 - `@e2e` GREEN requires a real-interface assertion. Repository-only
   assertions never satisfy an `@e2e` scenario, no matter how the
   interface's obstacle is explained.
