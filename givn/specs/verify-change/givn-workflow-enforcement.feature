@@ -91,6 +91,46 @@ Feature: givn Workflow Enforcement
     Then the command exits 0
     And stdout contains "integrity"
 
+  Scenario: Review refuses a change whose delta fails the lint gate
+    Given a givn project with a change that has passed design-review
+    And a .feature file at "givn/changes/test-change/specs/cap-a/a.feature" with:
+      """
+      Feature: Cap A
+        Scenario: Repeated title
+          Given a project root with givn/ initialised
+          When the user runs `givn lint`
+          Then the command exits 0
+      """
+    And a .feature file at "givn/changes/test-change/specs/cap-b/b.feature" with:
+      """
+      Feature: Cap B
+        Scenario: Repeated title
+          Given a project root with givn/ initialised
+          When the user runs `givn lint`
+          Then the command exits 0
+      """
+    And the project declares a complete run declaration
+    When the user runs `givn check review --change test-change`
+    Then the command exits non-zero
+    And stderr contains "lint gate failed"
+
+  Scenario: Archive re-runs the static review gates
+    Given a givn project with a completed change configured for archive
+    And the change's review.md has no README impact decision
+    And the project's verify.command exits 0 on the current permanent specs
+    When the user runs `givn archive --change integrity-hook-and-archive-gate`
+    Then the command exits non-zero
+    And stderr contains "README impact"
+
+  Scenario: Archive refuses a change without a signed design-review
+    Given a givn project with a completed change configured for archive
+    And the change's design-review.md is removed
+    And the project's verify.command exits 0 on the current permanent specs
+    When the user runs `givn archive --change integrity-hook-and-archive-gate`
+    Then the command exits non-zero
+    And stderr contains "design-review"
+    And stderr contains "does not exist"
+
   Scenario: Archive re-runs verify against merged permanent specs and passes
     Given  a givn project with a completed change configured for archive
     And  the project's verify.command exits 0 on the current permanent specs

@@ -129,17 +129,21 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
 
         // 1. Every apply.requires artifact must be Done (or Skipped).
         ensure_artifact_gates(&change_dir, &manifest)?;
+        // 1b. The planning-layer gate is mandatory in the default graph even
+        //     when a custom apply.requires omits it.
+        ensure_design_review_gate(&change_dir, &manifest)?;
+
+        let features_path = if crate::state::is_skipped("specs", &change_dir) {
+            manifest.verify.features_path.clone()
+        } else {
+            change_dir.join("specs").to_string_lossy().into_owned()
+        };
 
         // 1a. Delta step definitions must already bind in the permanent test
         //     tree; archive merges features and narratives only.
         ensure_step_definitions_merged(&project_root, &change_dir, StepGatePhase::Fresh)?;
 
         // 2. Configured archive hooks.
-        let features_path = if crate::state::is_skipped("specs", &change_dir) {
-            manifest.verify.features_path.clone()
-        } else {
-            change_dir.join("specs").to_string_lossy().into_owned()
-        };
         println!(
             "[{}] Running archive gate hooks...",
             crate::subprocess::local_timestamp()
@@ -157,6 +161,10 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
         if manifest.addons.readme {
             ensure_readme(&project_root)?;
         }
+
+        // 4b. Re-run the static review gates. No test suite runs here; lint
+        //     stays review-only.
+        run_static_review_gates(&project_root, change, &features_path, &manifest)?;
 
         // 5. Merge preconditions: use-case base revisions and delta parsing.
         let source_specs = change_dir.join("specs");
@@ -1092,6 +1100,76 @@ fn ensure_artifact_gates(
         }
     }
     Ok(())
+}
+
+/// Re-run the static review gates at archive time. No test suite runs here:
+/// scenario execution is proven by the change receipt and the archive scopes.
+fn run_static_review_gates(
+    project_root: &Path,
+    change: &str,
+    features_path: &str,
+    manifest: &crate::config::manifest::Manifest,
+) -> Result<()> {
+    println!(
+        "[{}] Running static review gates...",
+        crate::subprocess::local_timestamp()
+    );
+    crate::integrity_hook::run_integrity_hook(
+        features_path,
+        manifest.addons.arc42,
+        manifest.addons.coverage,
+        manifest.addons.readme,
+    )?;
+    crate::overlap::analysis::run_review_overlap_gate(project_root, change)?;
+    crate::cli::check::check_retirement_disclosed(project_root, change)?;
+    crate::spec::routing_table::check_routing_consistency(project_root, change)?;
+    if manifest.addons.outline {
+        crate::outline::gate::enforce(project_root, change)?;
+    }
+    println!(
+        "[{}] ✓ Static review gates passed",
+        crate::subprocess::local_timestamp()
+    );
+    Ok(())
+}
+
+/// Refuse archive when the planning-layer review is missing or unsigned.
+///
+/// `design-review` is a normal optional-skippable artifact: `.givn-skip`
+/// satisfies it, and a manifest without the artifact is unaffected. The check
+/// exists because `apply.requires` is configurable and a custom list must not
+/// silently drop the planning gate.
+fn ensure_design_review_gate(
+    change_dir: &Path,
+    manifest: &crate::config::manifest::Manifest,
+) -> Result<()> {
+    if !manifest
+        .artifacts
+        .iter()
+        .any(|artifact| artifact.id == "design-review")
+        || crate::state::is_skipped("design-review", change_dir)
+    {
+        return Ok(());
+    }
+    let state = ChangeState::from_manifest(change_dir, manifest);
+    let Some(artifact) = state
+        .artifacts
+        .iter()
+        .find(|artifact| artifact.id == "design-review")
+    else {
+        return Ok(());
+    };
+    match artifact.status {
+        ArtifactStatus::Done | ArtifactStatus::Skipped => Ok(()),
+        ArtifactStatus::Pending => bail!(
+            "archive blocked: required artifact 'design-review' does not exist for change '{}'",
+            change_dir.file_name().unwrap_or_default().to_string_lossy()
+        ),
+        ArtifactStatus::Partial => bail!(
+            "archive blocked: artifact 'design-review' is incomplete. \
+             Ensure the sign-off marker is present (e.g. 'DESIGN-REVIEW: PASS')."
+        ),
+    }
 }
 
 fn ensure_run_declaration(manifest: &crate::config::manifest::Manifest) -> Result<()> {

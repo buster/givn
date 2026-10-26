@@ -154,9 +154,10 @@ Missing context never blocks a human commit.
 
 - [`docs/INDEX.md`](docs/INDEX.md) — the documentation index: every durable
   document under `docs/`, current or archived.
-- [`docs/workflow.md`](docs/workflow.md) — the process in detail: every step in
-  order, what is created, what is checked, and how givn enforces process
-  quality.
+- [`docs/workflow.md`](docs/workflow.md) — the workflow overview: phases,
+  produced artifacts, and the hard gates.
+- [`docs/workflow-details.md`](docs/workflow-details.md) — every phase, check,
+  failure condition, archive step, and the limits of enforcement.
 - [`docs/reference.md`](docs/reference.md) — full CLI reference, agent skills,
   addons, configuration keys, project layout, dev scripts.
 - [`docs/architecture-principles.md`](docs/architecture-principles.md) — the

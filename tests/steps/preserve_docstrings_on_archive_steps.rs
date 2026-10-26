@@ -78,9 +78,9 @@ fn complete_change_with_delta(
         if *file == "design-review.md" {
             writeln!(f, "DESIGN-REVIEW: PASS").ok();
         } else if *file == "review.md" {
-            writeln!(f, "REVIEW: PASS\nREADME-IMPACT: none").ok();
+            writeln!(f, "README-IMPACT: none\n\nREVIEW: PASS").ok();
         } else if *file == "tasks.md" {
-            writeln!(f, "- [x] all done").ok();
+            writeln!(f, "- [x] COMMIT: a1b2c3d4 -- all done").ok();
         }
     }
     std::fs::write(change_dir.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();

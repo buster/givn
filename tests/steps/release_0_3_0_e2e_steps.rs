@@ -749,7 +749,7 @@ fn completed_automatic_migration(world: &mut GivnWorld) {
     .expect("write completed tasks");
     std::fs::write(
         migration.join("review.md"),
-        "# Review\n\nREVIEW: PASS\nREADME-IMPACT: none\n",
+        "# Review\n\nREADME-IMPACT: none\n\nREVIEW: PASS\n",
     )
     .expect("write completed review");
     world.env = Some(env);

@@ -176,7 +176,7 @@ PHASES = [
     dict(
         num="7", name="review", sub="givn check review",
         artifact="review.md",
-        art_lines=["coverage gap classification, fabrication audit, overlap dispositions"],
+        art_lines=["coverage gap classification, implementation evidence check, overlap dispositions"],
         checks=[
             Card("check review battery",
                  ["verify suite &#8594; verify-e2e anti-bypass &#8594; integrity (commit hashes, promised files)",

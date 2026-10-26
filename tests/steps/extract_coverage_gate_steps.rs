@@ -183,11 +183,21 @@ fn e2e_given_completed_change(world: &mut GivnWorld, id: String) {
         if *file == "design-review.md" {
             writeln!(f, "DESIGN-REVIEW: PASS").ok();
         } else if *file == "review.md" {
-            writeln!(f, "REVIEW: PASS\nREADME-IMPACT: none").ok();
+            writeln!(f, "README-IMPACT: none\n\nREVIEW: PASS").ok();
         } else if *file == "tasks.md" {
-            writeln!(f, "- [x] all done").ok();
+            writeln!(f, "- [x] COMMIT: a1b2c3d4 -- all done").ok();
         }
     }
+    let permanent = env.path("givn/specs/example");
+    std::fs::create_dir_all(&permanent).expect("create permanent usecase dir");
+    let document = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", "example")
+        .replace("<capability-id>", "example")
+        .replace("<actor role>", "Fixture operator")
+        .replace("<the domain goal>", "Exercise the fixture behavior.")
+        .replace("<consumer action>", "exercise the capability")
+        .replace("<scenario title>", "stub");
+    std::fs::write(permanent.join("usecase.md"), document).expect("write permanent usecase");
     let specs_dir = change_dir.join("specs").join("example");
     std::fs::create_dir_all(&specs_dir).expect("create specs dir");
     std::fs::write(

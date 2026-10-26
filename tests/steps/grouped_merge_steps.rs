@@ -16,8 +16,8 @@ fn write_passing_artifacts(change_dir: &std::path::Path) {
         let mut f = std::fs::File::create(change_dir.join(file)).expect("create artifact");
         match file {
             "design-review.md" => writeln!(f, "DESIGN-REVIEW: PASS").ok(),
-            "review.md" => writeln!(f, "REVIEW: PASS\nREADME-IMPACT: none").ok(),
-            "tasks.md" => writeln!(f, "- [x] all done").ok(),
+            "review.md" => writeln!(f, "README-IMPACT: none\n\nRETIRE: only-cap — retiring its last capability\n\nREVIEW: PASS").ok(),
+            "tasks.md" => writeln!(f, "- [x] all done\n- [x] COMMIT: a1b2c3d4 -- fixture").ok(),
             "arc42.md" => writeln!(f, "## Status\n\nSTATUS: DONE").ok(),
             _ => writeln!(f, "# Design").ok(),
         };

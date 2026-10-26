@@ -213,11 +213,12 @@ fn completed_change_with_e2e_delta(world: &mut GivnWorld, id: String) {
         if *file == "design-review.md" {
             writeln!(f, "DESIGN-REVIEW: PASS").ok();
         } else if *file == "review.md" {
-            writeln!(f, "REVIEW: PASS\nREADME-IMPACT: none").ok();
+            writeln!(f, "README-IMPACT: none\n\nREVIEW: PASS").ok();
         } else if *file == "tasks.md" {
-            writeln!(f, "- [x] all done").ok();
+            writeln!(f, "- [x] COMMIT: a1b2c3d4 -- all done").ok();
         }
     }
+    write_permanent_usecase(env, "example");
     // Create specs dir with an @e2e-tagged scenario.
     let specs_dir = change_dir.join("specs").join("example");
     std::fs::create_dir_all(&specs_dir).expect("create specs dir");
@@ -264,11 +265,12 @@ fn completed_change_no_e2e_delta(world: &mut GivnWorld, id: String) {
         if *file == "design-review.md" {
             writeln!(f, "DESIGN-REVIEW: PASS").ok();
         } else if *file == "review.md" {
-            writeln!(f, "REVIEW: PASS\nREADME-IMPACT: none").ok();
+            writeln!(f, "README-IMPACT: none\n\nREVIEW: PASS").ok();
         } else if *file == "tasks.md" {
-            writeln!(f, "- [x] all done").ok();
+            writeln!(f, "- [x] COMMIT: a1b2c3d4 -- all done").ok();
         }
     }
+    write_permanent_usecase(env, "example");
     // Create specs dir with no @e2e scenario.
     let specs_dir = change_dir.join("specs").join("example");
     std::fs::create_dir_all(&specs_dir).expect("create specs dir");
@@ -427,9 +429,9 @@ fn e2e_given_change_with_e2e_delta(world: &mut GivnWorld, id: String) {
         if *file == "design-review.md" {
             writeln!(f, "DESIGN-REVIEW: PASS").ok();
         } else if *file == "review.md" {
-            writeln!(f, "REVIEW: PASS\nREADME-IMPACT: none").ok();
+            writeln!(f, "README-IMPACT: none\n\nREVIEW: PASS").ok();
         } else if *file == "tasks.md" {
-            writeln!(f, "- [x] all done").ok();
+            writeln!(f, "- [x] COMMIT: a1b2c3d4 -- all done").ok();
         }
     }
     let specs_dir = change_dir.join("specs/e2e-check");
@@ -441,4 +443,18 @@ fn e2e_given_change_with_e2e_delta(world: &mut GivnWorld, id: String) {
     .unwrap();
     std::fs::write(change_dir.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
     world.last_change_id = Some(id);
+}
+
+fn write_permanent_usecase(env: &crate::common::TestEnv, usecase: &str) {
+    let path = env.path(&format!("givn/specs/{usecase}/usecase.md"));
+    std::fs::create_dir_all(path.parent().expect("usecase parent"))
+        .expect("create permanent usecase dir");
+    let document = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", usecase)
+        .replace("<capability-id>", usecase)
+        .replace("<actor role>", "Fixture operator")
+        .replace("<the domain goal>", "Exercise the fixture behavior.")
+        .replace("<consumer action>", "exercise the capability")
+        .replace("<scenario title>", "e2e test");
+    std::fs::write(path, document).expect("write permanent usecase");
 }

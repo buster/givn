@@ -106,7 +106,7 @@ fn has_captured_transcript(world: &mut GivnWorld, title: String) {
 #[given(regex = r##"^the change's review\.md contains "([^"]+)"$"##)]
 fn review_md_contains(world: &mut GivnWorld, text: String) {
     let review = format!(
-        "# Review: fixture\n\nREADME-IMPACT: none\n\nREVIEW: PASS\n\nPERSONAS: fixture-persona\n\n{text}\n"
+        "# Review: fixture\n\nREADME-IMPACT: none\n\nPERSONAS: fixture-persona\n\n{text}\n\nREVIEW: PASS\n"
     );
     std::fs::write(change_dir(world).join("review.md"), review).expect("write review.md");
 }

@@ -1183,7 +1183,7 @@ fn change_all_required_done(world: &mut GivnWorld, id: String) {
     // Write REVIEW: PASS marker.
     std::fs::write(
         change_dir.join("review.md"),
-        "REVIEW: PASS\nREADME-IMPACT: none",
+        "README-IMPACT: none\n\nREVIEW: PASS",
     )
     .unwrap();
     // Create specs dir + feature for specs artifact Done status.

@@ -80,7 +80,21 @@ fn commit_archive_documentation_edits(world: &mut GivnWorld) {
     ] {
         let path = change.join(name);
         let mut content = std::fs::read_to_string(&path).unwrap_or_default();
-        content.push_str("\nDocumentation-only archive edit.\n");
+        let marker = match name {
+            "review.md" => Some("REVIEW: PASS"),
+            "design-review.md" => Some("DESIGN-REVIEW: PASS"),
+            "arc42.md" => Some("STATUS: DONE"),
+            _ => None,
+        };
+        if let Some(marker) = marker {
+            content = content.replacen(
+                marker,
+                &format!("Documentation-only archive edit.\n\n{marker}"),
+                1,
+            );
+        } else {
+            content.push_str("\nDocumentation-only archive edit.\n");
+        }
         std::fs::write(path, content).unwrap();
     }
     let head = support::current_revision(world);

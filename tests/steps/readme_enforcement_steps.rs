@@ -289,10 +289,28 @@ fn completed_change_short(world: &mut GivnWorld, id: String) {
     std::fs::write(change_dir.join("design.md"), "# Design\n").expect("write design");
     std::fs::write(change_dir.join("design-review.md"), "DESIGN-REVIEW: PASS\n")
         .expect("write design-review");
-    std::fs::write(change_dir.join("tasks.md"), "- [x] all done\n").expect("write tasks");
-    std::fs::write(change_dir.join("review.md"), "REVIEW: PASS\n").expect("write review");
+    std::fs::write(
+        change_dir.join("tasks.md"),
+        "- [x] COMMIT: a1b2c3d4 -- all done\n",
+    )
+    .expect("write tasks");
+    std::fs::write(
+        change_dir.join("review.md"),
+        "README-IMPACT: none\n\nREVIEW: PASS\n",
+    )
+    .expect("write review");
     std::fs::write(change_dir.join("arc42.md"), "## Status\n\nSTATUS: DONE\n")
         .expect("write arc42");
+    let permanent = env.path("givn/specs/example");
+    std::fs::create_dir_all(&permanent).expect("create permanent usecase dir");
+    let document = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", "example")
+        .replace("<capability-id>", "example")
+        .replace("<actor role>", "Fixture operator")
+        .replace("<the domain goal>", "Exercise the fixture behavior.")
+        .replace("<consumer action>", "exercise the capability")
+        .replace("<scenario title>", "stub");
+    std::fs::write(permanent.join("usecase.md"), document).expect("write permanent usecase");
     let specs_dir = change_dir.join("specs").join("example");
     std::fs::create_dir_all(&specs_dir).expect("create specs dir");
     std::fs::write(

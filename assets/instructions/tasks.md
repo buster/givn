@@ -209,7 +209,7 @@ around unilaterally:
 
 A tasks-phase shortcut that never touches design.md is not a faster path —
 it is an unreviewed, unrecorded design decision made by the wrong artifact.
-Reviewers (see review.md fabrication audit) diff actual implementation
+Reviewers (see review.md implementation evidence check) diff actual implementation
 against design.md's stated commands/files/approach specifically to catch
 this.
 

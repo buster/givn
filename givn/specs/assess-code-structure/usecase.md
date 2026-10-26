@@ -43,26 +43,25 @@ The developer asks for a outline report.
 ## Extensions
 
 - 1: the outline experiment is disabled → the command reports that the experiment is disabled and exits non-zero; protects the preconditions.
-- 1: no production sources exist in the requested scope → the report says there are no production sources; protects the success guarantee.
+- 1: no production sources exist in the requested scope → the command names the empty scope and exits non-zero; protects the success guarantee.
 - 1: the requested scope does not exist → the command names the path and exits non-zero; protects the success guarantee.
 - 2: a source file cannot be analyzed → the report names the file and continues with the remaining units; protects the minimal guarantee.
 - 2: the analysis engine does not support a construct → the report marks the unit as unsupported and does not invent data; protects the minimal guarantee.
 
 ## Rules
 
-- The report is advisory; it does not block review or archive.
+- The report is advisory; when the outline addon is enabled, the review gate requires a verdict for every touched unit and fails on an unreadable outline.
 - The report stores no baseline or historical classification.
 - The report is deterministic and offline.
 - The report uses production sources only, from the project-root `src/` or explicit `--path` roots, in the first release.
 - Conditional code is counted as written: non-test `#[cfg(...)]` branches are not evaluated, and a parent-module `#[cfg(test)]` is not propagated.
 - The report format is independent of the analysis engine.
 - Every analyzed unit has exactly one classification.
-- The report leads with each unit's per-component call tree: declarations,
-  signatures, and calls, without data. A module outline also lists its
-  declared member types as type items. Same-unit calls nest under the caller;
-  calls to another component are leaves tagged with the target and their
-  resolution. An unknown-receiver call stays a visible `name_only` leaf. The
-  metrics hint at potential problems; they do not decide.
+- The report leads with each unit's per-component call tree: declarations, signatures, and calls, without data.
+- A module outline also lists its declared member types as type items.
+- Same-unit calls nest under the caller; calls to another component are leaves tagged with the target and their resolution.
+- An unknown-receiver call stays a visible `name_only` leaf.
+- The metrics hint at potential problems; they do not decide.
 - The report attaches no action or recommendation to a unit; a finding states the classification, the measured metrics, and the evidence.
 
 ## Examples

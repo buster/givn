@@ -164,6 +164,7 @@ fn run_mandatory_checks(
             }
             println!("  ✓ run declaration passed");
             if let Some(id) = change {
+                crate::cli::lint::run_scoped(project_root, id)?;
                 crate::overlap::analysis::run_review_overlap_gate(project_root, id)?;
                 check_retirement_disclosed(project_root, id)?;
                 crate::spec::routing_table::check_routing_consistency(project_root, id)?;
@@ -505,7 +506,7 @@ fn check_change_receipt(
 /// simple so there is no heading-name mismatch to get wrong (see the
 /// disposition-table parser in overlap/disposition.rs for what that
 /// class of bug looks like).
-fn check_retirement_disclosed(
+pub(crate) fn check_retirement_disclosed(
     project_root: &std::path::Path,
     change_id: &str,
 ) -> anyhow::Result<()> {
