@@ -32,6 +32,9 @@ pub(crate) struct ReleaseState {
     changelog_file: Option<std::path::PathBuf>,
     /// The release version whose section the guard checks.
     section_version: Option<String>,
+    migration_catalog: Option<givn::cli::migration::MigrationCatalog>,
+    migration_yaml: Option<String>,
+    migration_error: Option<String>,
 }
 
 #[derive(Debug)]
@@ -485,4 +488,173 @@ fn then_section_check_accepts(world: &mut GivnWorld) {
         String::from_utf8_lossy(&out.stdout),
         String::from_utf8_lossy(&out.stderr)
     );
+}
+
+impl ReleaseState {
+    fn synthetic_catalog_without(&self, omitted: Option<&str>) -> String {
+        let mut lines = vec![
+            "schema_version: 1".to_string(),
+            "migrations:".to_string(),
+            "  - id: synthetic-1-0-to-1-1".to_string(),
+        ];
+        for (name, value) in [
+            ("source_version", "\"1.0.0\""),
+            ("target_version", "\"1.1.0\""),
+            ("order", "10"),
+            (
+                "proposal_asset",
+                "\"migrations/fixtures/synthetic/proposal.md\"",
+            ),
+            (
+                "design_asset",
+                "\"migrations/fixtures/synthetic/design.md\"",
+            ),
+        ] {
+            if Some(name) != omitted {
+                lines.push(format!("    {name}: {value}"));
+            }
+        }
+        lines.push(String::new());
+        lines.join("\n")
+    }
+
+    fn synthetic_catalog(&self, field: &str) -> String {
+        let key = match field {
+            "source" => "source_version",
+            "target" => "target_version",
+            "order" => "order",
+            "proposal asset" => "proposal_asset",
+            "design asset" => "design_asset",
+            other => panic!("unknown migration bundle field '{other}'"),
+        };
+        self.synthetic_catalog_without(Some(key))
+    }
+
+    fn partial_synthetic_catalog(&self) -> String {
+        self.synthetic_catalog_without(None)
+    }
+}
+
+#[given("the embedded Givn migration catalog with 1.0 as the supported migration baseline")]
+fn embedded_catalog_at_baseline(world: &mut GivnWorld) {
+    let catalog = givn::cli::migration::load_catalog().expect("load embedded migration catalog");
+    assert_eq!(catalog.schema_version, 1);
+    for bundle in &catalog.migrations {
+        let source: u32 = bundle
+            .source_version
+            .split('.')
+            .next()
+            .and_then(|value| value.parse().ok())
+            .expect("source version");
+        assert!(
+            source >= 1,
+            "embedded catalog ships a pre-1.0 route: {bundle:?}"
+        );
+    }
+    world.release.migration_catalog = Some(catalog);
+}
+
+#[then("it declares a catalog schema and a route collection that may be empty")]
+fn catalog_schema_and_routes(world: &mut GivnWorld) {
+    let yaml = world
+        .release
+        .migration_yaml
+        .as_deref()
+        .or(world.additional_output.as_deref())
+        .expect("catalog YAML");
+    let value: serde_yaml_ng::Value = serde_yaml_ng::from_str(yaml).expect("catalog YAML");
+    assert!(value.get("schema_version").is_some());
+    assert!(value["migrations"].as_sequence().is_some());
+}
+
+#[then("it contains no embedded pre-1.0 migration routes")]
+fn no_pre_one_routes(world: &mut GivnWorld) {
+    let catalog = world
+        .release
+        .migration_catalog
+        .as_ref()
+        .expect("catalog inspected");
+    for bundle in &catalog.migrations {
+        let source: u32 = bundle
+            .source_version
+            .split('.')
+            .next()
+            .and_then(|value| value.parse().ok())
+            .expect("source version");
+        let target: u32 = bundle
+            .target_version
+            .split('.')
+            .next()
+            .and_then(|value| value.parse().ok())
+            .expect("target version");
+        assert!(source >= 1 && target >= 1, "pre-1.0 route: {bundle:?}");
+    }
+}
+
+#[then(
+    "every declared migration bundle has a source, target, order, proposal asset, and design asset"
+)]
+fn every_bundle_complete(world: &mut GivnWorld) {
+    let catalog = world
+        .release
+        .migration_catalog
+        .as_ref()
+        .expect("catalog inspected");
+    for bundle in &catalog.migrations {
+        assert!(!bundle.id.is_empty());
+        assert!(!bundle.source_version.is_empty());
+        assert!(!bundle.target_version.is_empty());
+        assert!(!bundle.proposal_asset.is_empty());
+        assert!(!bundle.design_asset.is_empty());
+    }
+}
+
+#[given(
+    "a synthetic future supported migration catalog fixture starting at or after the 1.0 baseline"
+)]
+fn synthetic_catalog_fixture(world: &mut GivnWorld) {
+    world.release.migration_yaml = Some(world.release.partial_synthetic_catalog());
+}
+
+#[given(regex = r#"^its migration bundle omits only the "([^"]+)" field$"#)]
+fn synthetic_catalog_omits_field(world: &mut GivnWorld, field: String) {
+    world.release.migration_yaml = Some(world.release.synthetic_catalog(&field));
+}
+
+#[when("a maintainer validates the migration catalog fixture")]
+fn validate_migration_catalog_fixture(world: &mut GivnWorld) {
+    let yaml = world.release.migration_yaml.clone().expect("catalog YAML");
+    match givn::cli::migration::validate_catalog_yaml(&yaml) {
+        Ok(catalog) => {
+            world.release.migration_catalog = Some(catalog);
+            world.release.migration_error = None;
+        }
+        Err(error) => {
+            world.release.migration_catalog = None;
+            world.release.migration_error = Some(error.to_string());
+        }
+    }
+}
+
+#[then(regex = r#"^validation fails and names the incomplete bundle and missing "([^"]+)"$"#)]
+fn validation_names_missing_field(world: &mut GivnWorld, field: String) {
+    let error = world
+        .release
+        .migration_error
+        .as_deref()
+        .expect("validation must fail");
+    assert!(
+        error.contains("synthetic-1-0-to-1-1"),
+        "error lacks the bundle id: {error}"
+    );
+    assert!(
+        error.contains(&format!("'{field}'")),
+        "error lacks the missing field: {error}"
+    );
+}
+
+#[then("the same fixture validates once the missing field is restored")]
+fn validation_recovers_restored_field(world: &mut GivnWorld) {
+    let restored = world.release.partial_synthetic_catalog();
+    givn::cli::migration::validate_catalog_yaml(&restored).expect("restored catalog validates");
 }

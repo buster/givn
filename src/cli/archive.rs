@@ -49,7 +49,7 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
     let specs_dir = project_root.join("givn/specs");
 
     if change_dir.exists() {
-        crate::proof::change_verification_not_applicable(&change_dir)?;
+        crate::proof::validate_no_behavior_change(&change_dir)?;
     }
 
     let backend = crate::scm::select(&project_root)?;
@@ -140,6 +140,7 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
         // 1a. Delta step definitions must already bind in the permanent test
         //     tree; archive merges features and narratives only.
         ensure_step_definitions_merged(&project_root, &change_dir, StepGatePhase::Fresh)?;
+        validate_delta_publication(&change_dir.join("specs"))?;
 
         // 2. Configured archive hooks.
         println!(
@@ -242,6 +243,7 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
         // Re-check the step-definition precondition before the candidate is
         // merged or verified again.
         ensure_step_definitions_merged(&project_root, &archive_target, StepGatePhase::Resume)?;
+        validate_delta_publication(&archive_target.join("specs"))?;
 
         // Re-check the e2e precondition against the permanent corpus before
         // re-running.
@@ -345,10 +347,13 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
         started_at_unix,
         crate::proof::unix_now(),
     )?;
-    backend.publish(
+    if let Err(error) = backend.publish(
         &finalization_evidence_paths(&project_root, &manifest, change),
         &format!("chore({change}): prove archive"),
-    )?;
+    ) {
+        crate::proof::Receipt::resume_pending(&archive_target)?;
+        return Err(error);
+    }
 
     print_archived(change, &archive_target);
     Ok(())
@@ -832,6 +837,15 @@ fn ensure_step_definitions_merged(
     )
 }
 
+fn validate_delta_publication(specs: &Path) -> Result<()> {
+    for path in collect_feature_files(specs) {
+        let source = std::fs::read_to_string(&path)
+            .with_context(|| format!("failed to read delta feature '{}'", path.display()))?;
+        crate::gherkin::parse::parse_supported_source(&source, &path)?;
+    }
+    Ok(())
+}
+
 fn build_merge_plan(
     project_root: &Path,
     change_root: &Path,
@@ -919,7 +933,8 @@ fn build_merge_plan(
         let target = permanent_dir.join(format!("{cap}.feature"));
         if validate {
             let permanent_text = std::fs::read_to_string(&target).ok();
-            validate_feature_merge(permanent_text.as_deref(), &feature)?;
+            validate_feature_merge(permanent_text.as_deref(), &feature)
+                .map_err(|error| anyhow::anyhow!("{}: {error}", delta_path.display()))?;
         }
         plan.push(MergeEntry {
             relative: rel,

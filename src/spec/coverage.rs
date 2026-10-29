@@ -294,7 +294,7 @@ pub fn check_migration(root: &Path, migration_id: &str) -> Result<()> {
         bail!("migration coverage regression; see coverage-comparison.json");
     }
     println!(
-        "migration coverage passed: {} behavior entries, {} @e2e",
+        "migration coverage passed: {} behavior entries, {} @e2e (supported executable-content preservation; not semantic equivalence)",
         after.entries.len(),
         after.entries.iter().filter(|entry| entry.e2e).count()
     );

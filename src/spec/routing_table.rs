@@ -286,6 +286,13 @@ pub fn check_routing_consistency(project_root: &Path, change_id: &str) -> Result
                 continue;
             }
         };
+        if let Some(owner) = &owner {
+            println!(
+                "capability '{}' already owned by {}",
+                delta.capability,
+                owner.display()
+            );
+        }
         if matches!(row.decision, Decision::NewIn(_)) && owner.is_some() {
             errors.insert(format!(
                 "decision NEW: capability '{}' already exists in the permanent corpus; record 'EXTEND {}' instead",
