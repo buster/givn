@@ -21,6 +21,7 @@ pub fn run_integrity_hook(
 
     check_revision_identifier_presence(&change_dir)?;
     check_promised_files_exist(&change_dir)?;
+    crate::review_context::check(&change_dir)?;
     check_visual_review(&change_dir)?;
     check_deferrals(&change_dir)?;
     if arc42_enabled {

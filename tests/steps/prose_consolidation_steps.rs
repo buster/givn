@@ -86,8 +86,7 @@ pub(crate) const REPLACEMENT_COMMAND: &str =
     "---\ndescription: Project-owned propose command\n---\n\nProject-owned propose command body.\n";
 
 const MANAGED_POLICY_REFERENCE: &str = "follow the effective dialog policy from";
-const MANAGED_HANDOFF_REFERENCE: &str =
-    "pass the obligation explicitly to fresh delegated contexts";
+const MANAGED_HANDOFF_REFERENCE: &str = "when work is handed to another context";
 
 #[given("a Givn project with all agent skill targets selected")]
 fn project_with_all_skill_targets(world: &mut GivnWorld) {
@@ -184,8 +183,10 @@ fn managed_guidance_references_policy(world: &mut GivnWorld) {
         .find("<!-- givn:end:givn-project -->")
         .expect("managed block end missing");
     let block = &agents[start..end];
+    let normalized = block.split_whitespace().collect::<Vec<_>>().join(" ");
     assert!(
-        block.contains(MANAGED_POLICY_REFERENCE) && block.contains(MANAGED_HANDOFF_REFERENCE),
+        normalized.contains(MANAGED_POLICY_REFERENCE)
+            && normalized.contains(MANAGED_HANDOFF_REFERENCE),
         "managed project-start guidance lost the effective-policy reference: {block}"
     );
 }

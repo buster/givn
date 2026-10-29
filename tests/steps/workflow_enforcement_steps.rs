@@ -338,6 +338,285 @@ fn change_passed_design_review(world: &mut GivnWorld) {
     write_fixture_change_receipt(world, "test-change");
 }
 
+#[given(regex = r#"^the change's proposal records review kind "([^"]+)"$"#)]
+fn proposal_records_review_kind(world: &mut GivnWorld, kind: String) {
+    let path = change_dir(world).join("proposal.md");
+    let mut content = std::fs::read_to_string(&path).unwrap_or_default();
+    if !content.ends_with('\n') && !content.is_empty() {
+        content.push('\n');
+    }
+    content.push_str(&format!("\nReview kind: {kind}\n"));
+    std::fs::write(path, content).unwrap();
+}
+
+fn write_review_record(path: &std::path::Path, kind: &str, author: &str, reviewer: &str) {
+    std::fs::write(
+        path,
+        format!(
+            "Review kind: {kind}\nAuthor: {author}\nReviewer context: {reviewer}\n\nREADME-IMPACT: none\n\nREVIEW: PASS\n"
+        ),
+    )
+    .unwrap();
+}
+
+#[given(
+    regex = r#"^the change's design-review records review kind "([^"]+)" by author "([^"]+)" in reviewer context "([^"]+)"$"#
+)]
+fn design_review_records_review_context(
+    world: &mut GivnWorld,
+    kind: String,
+    author: String,
+    reviewer: String,
+) {
+    write_review_record(
+        &change_dir(world).join("design-review.md"),
+        &kind,
+        &author,
+        &reviewer,
+    );
+    let mut content = std::fs::read_to_string(change_dir(world).join("design-review.md")).unwrap();
+    content.push_str("\nDESIGN-REVIEW: PASS\n");
+    std::fs::write(change_dir(world).join("design-review.md"), content).unwrap();
+}
+
+#[given(
+    regex = r#"^the change's review records review kind "([^"]+)" by author "([^"]+)" in reviewer context "([^"]+)"$"#
+)]
+fn review_records_review_context(
+    world: &mut GivnWorld,
+    kind: String,
+    author: String,
+    reviewer: String,
+) {
+    write_review_record(
+        &change_dir(world).join("review.md"),
+        &kind,
+        &author,
+        &reviewer,
+    );
+}
+
+#[when("the user runs `givn check review --change test-change` twice")]
+fn run_check_review_twice(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let first = common::run_givn(env, &["check", "review", "--change", "test-change"]);
+    let second = common::run_givn(env, &["check", "review", "--change", "test-change"]);
+    world.previous_output = Some(first);
+    world.last_output = Some(second);
+}
+
+#[then("both runs exit non-zero")]
+fn both_runs_exit_non_zero(world: &mut GivnWorld) {
+    let first = world
+        .previous_output
+        .as_ref()
+        .expect("the first run must be recorded");
+    let second = output(world);
+    assert!(!first.status.success(), "first run unexpectedly succeeded");
+    assert!(
+        !second.status.success(),
+        "second run unexpectedly succeeded"
+    );
+}
+
+#[when("the developer reads the review instruction")]
+fn developer_reads_review_instruction(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let changes = env.path("givn/changes");
+    let has_change = std::fs::read_dir(&changes)
+        .map(|mut entries| entries.next().is_some())
+        .unwrap_or(false);
+    if !has_change {
+        let out = common::run_givn(env, &["new", "instruction-demo"]);
+        assert!(
+            out.status.success(),
+            "givn new failed: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+    world.last_output = Some(common::run_givn(env, &["instructions", "review"]));
+}
+
+fn normalized(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+fn review_instruction_stdout(world: &GivnWorld) -> String {
+    let out = output(world);
+    assert!(
+        out.status.success(),
+        "givn instructions review failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    String::from_utf8_lossy(&out.stdout).into_owned()
+}
+
+#[then("the review instruction says the default is `Review kind: self-review`")]
+fn review_instruction_names_default_kind(world: &mut GivnWorld) {
+    let text = review_instruction_stdout(world);
+    assert!(
+        normalized(&text).contains("Review kind: self-review"),
+        "review instruction does not name the self-review default: {text}"
+    );
+}
+
+#[then("the review instruction permits exactly one fresh context for a major change")]
+fn review_instruction_permits_one_context(world: &mut GivnWorld) {
+    let text = review_instruction_stdout(world);
+    assert!(
+        normalized(&text).contains("exactly one fresh context"),
+        "review instruction does not permit exactly one fresh context: {text}"
+    );
+}
+
+#[then("the review instruction says one context covers design review and final review")]
+fn review_instruction_shares_one_context(world: &mut GivnWorld) {
+    let text = review_instruction_stdout(world);
+    assert!(
+        normalized(&text)
+            .contains("One context covers both the design-review and final-review obligations"),
+        "review instruction does not state the shared-context rule: {text}"
+    );
+}
+
+#[then("the review instruction forbids more than one review context")]
+fn review_instruction_forbids_second_context(world: &mut GivnWorld) {
+    let text = review_instruction_stdout(world);
+    assert!(
+        normalized(&text).contains("Never start more than one review context"),
+        "review instruction does not forbid a second review context: {text}"
+    );
+}
+
+#[then("the review instruction says the reviewer must not be the author")]
+fn review_instruction_requires_different_author(world: &mut GivnWorld) {
+    let text = review_instruction_stdout(world);
+    assert!(
+        normalized(&text).contains("must not be the author"),
+        "review instruction does not separate author and reviewer: {text}"
+    );
+}
+
+const GUIDANCE_ROOTS: &[&str] = &[
+    "assets/instructions",
+    "assets/commands",
+    "assets/skills",
+    "assets/templates",
+];
+
+fn collect_guidance_files(root: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(root) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_guidance_files(&path, out);
+        } else if path.is_file() {
+            out.push(path);
+        }
+    }
+}
+
+fn guidance_asset_paths() -> Vec<std::path::PathBuf> {
+    let repo = crate::common::repo_path("");
+    let mut paths = Vec::new();
+    for root in GUIDANCE_ROOTS {
+        collect_guidance_files(&repo.join(root), &mut paths);
+    }
+    let hint = repo.join("assets/agents-project-hint.md");
+    if hint.is_file() {
+        paths.push(hint);
+    }
+    paths.sort();
+    paths
+}
+
+#[when("the guidance assets are scanned for subagent vocabulary")]
+fn scan_guidance_assets(world: &mut GivnWorld) {
+    let mut subagent_matches = Vec::new();
+    let mut prescriptions = Vec::new();
+    let forbidden = [
+        "fresh-context agent",
+        "delegate to a fresh context",
+        "fresh delegated context",
+        "architect subagent",
+        "grilling subagent",
+        "hardening subagent",
+        "coding subagent",
+        "review subagent",
+        "spawn both subagents",
+        "start one fresh review subagent",
+    ];
+    for path in guidance_asset_paths() {
+        let Ok(text) = std::fs::read_to_string(&path) else {
+            continue;
+        };
+        let lower = text.to_lowercase();
+        let relative = path
+            .strip_prefix(crate::common::repo_path(""))
+            .unwrap_or(&path)
+            .display()
+            .to_string();
+        if lower.contains("subagent") || lower.contains("sub-agent") {
+            subagent_matches.push(relative.clone());
+        }
+        if relative != "assets/instructions/review.md" {
+            for phrase in forbidden {
+                if lower.contains(phrase) {
+                    prescriptions.push(format!("{relative}: {phrase}"));
+                }
+            }
+        }
+    }
+    world.additional_output = Some(format!(
+        "subagent matches:\n{}\nprescriptions:\n{}",
+        subagent_matches.join("\n"),
+        prescriptions.join("\n")
+    ));
+}
+
+#[then("only assets/instructions/review.md names a review subagent")]
+fn only_review_instruction_names_subagent(world: &mut GivnWorld) {
+    let text = world
+        .additional_output
+        .as_deref()
+        .expect("the guidance assets were not scanned");
+    let matches = text
+        .split("prescriptions:")
+        .next()
+        .unwrap_or("")
+        .trim_start_matches("subagent matches:")
+        .trim();
+    let paths: Vec<&str> = matches.lines().filter(|line| !line.is_empty()).collect();
+    assert_eq!(
+        paths,
+        vec!["assets/instructions/review.md"],
+        "guidance assets other than the review instruction name a subagent: {matches}"
+    );
+}
+
+#[then(
+    "no other guidance asset prescribes a separate agent, session, architect, or reviewer to execute a step"
+)]
+fn no_other_guidance_prescribes_delegation(world: &mut GivnWorld) {
+    let text = world
+        .additional_output
+        .as_deref()
+        .expect("the guidance assets were not scanned");
+    let prescriptions = text.split("prescriptions:").nth(1).unwrap_or("").trim();
+    assert!(
+        prescriptions.is_empty(),
+        "guidance assets still prescribe execution topology:\n{prescriptions}"
+    );
+}
+
 #[given(regex = r"^the change's tasks\.md contains `(.+)`$")]
 fn tasks_md_contains(world: &mut GivnWorld, content: String) {
     std::fs::write(change_dir(world).join("tasks.md"), &content).unwrap();

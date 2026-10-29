@@ -11,6 +11,7 @@ mod integrity_hook;
 mod outline;
 mod overlap;
 mod proof;
+mod review_context;
 mod scm;
 mod skills;
 mod spec;

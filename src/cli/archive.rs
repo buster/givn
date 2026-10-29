@@ -1114,6 +1114,7 @@ fn run_static_review_gates(
         "[{}] Running static review gates...",
         crate::subprocess::local_timestamp()
     );
+    crate::review_context::check(&project_root.join("givn/changes").join(change))?;
     crate::integrity_hook::run_integrity_hook(
         features_path,
         manifest.addons.arc42,
