@@ -759,6 +759,6 @@ REFACTOR: Shared fixture helpers now write policy to config.yaml, produce fresh 
 - [x] Reconcile current docs/glossary/Personas/ADRs, remove duplicate workflow-details authority and obsolete0.x operational bundles; preserve historical evidence.
 - [x] Track concrete post1.0 matching, outline, recording and unrelated findings in existing risks/debt chapter without reopening acceptance.
 - [x] Complete arc42 assessment honestly and capture terminal evidence for applicable E2Es.
-- [ ] Execute agreed project validation and one substantive final review by preparation-reviewer, then targeted closure only.
+- [x] Execute agreed project validation and one substantive final review by preparation-reviewer, then targeted closure only.
 
 No box above is complete merely because the planning phases are committed.

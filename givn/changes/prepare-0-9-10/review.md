@@ -8,10 +8,14 @@ Reviewer context: preparation-reviewer
 
 | ID | Severity | Finding and evidence | Disposition |
 |---|---|---|---|
-| F-01 | critical | `design.md:256,257,261,270` names four step-definition files that do not exist: `tests/steps/refresh_generated_guidance_steps.rs`, `tests/steps/review_architecture_documentation_steps.rs`, `tests/steps/report_change_status_steps.rs`, `tests/steps/check_specification_health_steps.rs`. `givn check review --change prepare-0-9-10` prints `[integrity] Step Definitions: file ... does not exist` and `integrity check failed: promised files`. The behavior bindings exist in other durable files (`skill_rewrites_steps.rs`, `arc42_review_alignment_steps.rs`/`instruction_integrity_steps.rs`, `run_command_steps.rs`, `spec_overlap_gates_steps.rs`/`workflow_enforcement_steps.rs`), so the design table, not the behavior, is wrong. Separately, `design.md:251` names `tests/steps/llm_attribution_installation_steps.rs` as a regular step file, but it has zero `#[given]`/`#[when]`/`#[then]` bindings (it is a helper). | Returned. Either move the bindings into the promised files or correct `design.md`'s Step Definitions table to the actual durable files and re-run design-review, as required when a reviewed design is changed. No reviewer edit. |
-| F-02 | low | `src/cli/outline.rs:26` ships the author's harness-project name as the outline help example: `givn outline report --path catopia --path app.py`. Proposal item 18 requires removing harness-project leakage from current shipped guidance/help, and Catopia is outside historical evidence here. | Returned. Replace the example with a neutral production path; no behavior change. |
+| F-01 | critical | `design.md:256,257,261,270` named four step-definition files that do not exist: `tests/steps/refresh_generated_guidance_steps.rs`, `tests/steps/review_architecture_documentation_steps.rs`, `tests/steps/report_change_status_steps.rs`, `tests/steps/check_specification_health_steps.rs`. `givn check review --change prepare-0-9-10` printed `[integrity] Step Definitions: file ... does not exist` and `integrity check failed: promised files`. The behavior bindings existed in other durable files (`skill_rewrites_steps.rs`, `arc42_review_alignment_steps.rs`/`instruction_integrity_steps.rs`, `run_command_steps.rs`, `spec_overlap_gates_steps.rs`/`workflow_enforcement_steps.rs`), so the design table, not the behavior, was wrong. Separately, `design.md:251` names `tests/steps/llm_attribution_installation_steps.rs` as a regular step file, but it has zero `#[given]`/`#[when]`/`#[then]` bindings (it is a helper) — see the residual note below. | Closed in `7bef6352`. The table now names the four actual durable files; each exists, is registered in `tests/steps/mod.rs`, and holds the bindings. `givn check review` no longer reports a promised-file failure, and design-review records the correction as PR-07. |
+| F-02 | low | `src/cli/outline.rs:26` shipped the author's harness-project name as the outline help example: `givn outline report --path catopia --path app.py`. Proposal item 18 requires removing harness-project leakage from current shipped guidance/help, and Catopia is outside historical evidence here. | Closed in `7bef6352`. The help now reads `givn outline report --path src --path app.py`. A search of `src/`, `tests/`, `assets/`, `README.md`, and `givn/specs` finds `catopia` only in the leakage-guard marker list at `tests/steps/instruction_integrity_steps.rs:3166`, which asserts its absence; no shipped surface carries it. |
+
+Targeted closure (this revision): F-01 and F-02 were returned and closed in `7bef6352`; no source, spec, or design edit was made in this closure round beyond that commit, and this round changed `review.md` and `design-review.md` only. The design change after the initial design-review sign-off is recorded there as PR-07 (path correction in one table, no decision, matrix row, use case, or scenario changed). Gate re-run: `cargo run --quiet -- check review --change prepare-0-9-10` exits 0 with `✓ integrity checks passed`, `✓ run declaration passed`, `givn lint: 29 file(s) checked — clean`, `✓ overlap dispositions passed`, `✓ scenario commits passed (245 scenario(s))`, and `✓ change verification receipt reused across documentation-only revision 08a34df8… (tested at f83289ff…, 333 scenario(s))`; the remaining output is 6 shape and 995 subset advisories, no failures and no promised-file error.
 
 Remaining risks, not additional findings:
+
+- `design.md:251` (`enable-commit-attribution`) still lists `tests/steps/llm_attribution_installation_steps.rs`, which is a registered shared fixture module with zero step bindings. That capability's delta scenarios are all `@e2e` and bind in `llm_attribution_installation_e2e_steps.rs`, so no behavior is unbound and no gate fails; the table row is imprecise, not uncovered.
 
 - The per-batch `RED:`/`GREEN:` records in `tasks.md` are prose summaries; the RED lines for many batches are repeats and the GREEN lines repeat the same failure wording. They do not name the focused failing command or its output. The executable tests and the 333-scenario receipt are real; the test-first record itself is not independently reproducible from `tasks.md`.
 - The strictness mechanism is present by source inspection (`tests/features_runner.rs:55` `.fail_on_skipped()`, `tests/features_runner.rs:68-70` failed/skipped exit), but `tasks.md` records the mechanism rather than a fresh strict-mode output.
@@ -70,7 +74,7 @@ All 30 delta `@e2e` scenarios were read. Their Then steps assert CLI exit status
 | Verify commands | `./run-tests.sh --non-e2e` and `./run-tests.sh --e2e` | Same values in `givn/commands.yaml` | yes |
 | Runner | `tests/features_runner.rs`, cucumber-rs, fail-on-skipped/failed exit | Same; the change adds a scenario-title `before` hook only | yes |
 | Terminal evidence | one transcript per E2E under `evidence/visual/<scenario-slug>/transcript.txt` | 30 transcripts, exact title first line | yes |
-| Step-definition files | exact durable paths in the table | four named files absent; one named file has no bindings; behavior lives in other durable files | no — F-01 |
+| Step-definition files | exact durable paths in the table | the four corrected paths exist, are registered, and hold the bindings (F-01 closed in `7bef6352`); one row still names a fixture helper | yes — F-01 closed; fixture-row imprecision recorded as a risk |
 | Coverage scripts | existing `measure-coverage.sh` / `merge-coverages.sh` | Same scripts; commands wired in `givn/commands.yaml` | yes |
 | Outline | advisory report, no gate/verdict | `src/outline/gate.rs` absent; report returns code 0 and no verdict | yes |
 | Archive scope reuse | per-scope witness, result digest, shared/exclusive command digests | `proof::VerificationInputs::{capture_archive,reusable_for}` and `Receipt::reusable_scope` | yes |
@@ -162,7 +166,7 @@ The twelve affected chapters under `docs/arc42/` were last updated in `bf248e84`
 - [x] Every Arc42 fact or architecture decision relevant to this change is represented in `design.md` and mapped to one or more tasks in `tasks.md`.
 - [x] The completed implementation follows those facts and decisions; evidence names the built file, command, test, or observable result.
 - [x] Architecture changes discovered in the completed implementation are recorded in the durable Arc42 chapter and the change-level assessment.
-- [x] No mismatch remains in this Arc42 comparison. F-01 is a design/step-table conformance defect, recorded outside the Arc42 chapters.
+- [x] No mismatch remains in this Arc42 comparison. F-01 was a design/step-table conformance defect outside the Arc42 chapters; it is closed in `7bef6352` and recorded as PR-07 in design-review.
 
 ARC42 CONFORMANCE: CLEAN
 
@@ -205,7 +209,7 @@ runner_exit: 0
 result: {"scope":"change","total":333,"passed":333,"failed":0,"skipped":0}
 ```
 
-`givn check review` reused this receipt across the later documentation-only revision `e31f5196`; the review itself adds only this `review.md`. No archive receipt exists yet: receipt status `unproven candidate`. The 30 `@e2e` scenarios have their committed terminal transcripts and the `tasks.md` GREEN record; no per-scope archive E2E receipt is claimed.
+`givn check review` reused this receipt across the later documentation-only revisions `e31f5196` and `08a34df8`, and across this targeted closure round, which changes only `review.md` and `design-review.md`. No archive receipt exists yet: receipt status `unproven candidate`. The 30 `@e2e` scenarios have their committed terminal transcripts and the `tasks.md` GREEN record; no per-scope archive E2E receipt is claimed.
 
 ## Overlap dispositions
 
@@ -231,7 +235,7 @@ README-IMPACT: updated - What it is, Install, Quick start, Agent targets and com
 
 ## Sign-off
 
-- [ ] Fabrication audit: F-01 leaves promised step-definition files missing; all other checks (0 empty behavior-step bodies, reachable batch commits, behavior components, real-interface E2E, no HTTP/fetch substitution, no over-produced E2E) pass.
+- [x] Fabrication audit: F-01's promised step-definition files are corrected to real, registered, populated files (`7bef6352`); all other checks (0 empty behavior-step bodies, reachable batch commits, behavior components, real-interface E2E, no HTTP/fetch substitution, no over-produced E2E) pass.
 - [x] Scenario execution evidence: change-scoped regular receipt 333/0/0 at `56519c8a`, reused across documentation-only revisions; E2E evidence is 30 title-bound transcripts; no archive receipt exists yet and none is claimed.
 - [x] Every coverage gap is classified from the latest measured evidence plus static inspection; the archive measurement is not fabricated.
 - [x] No `@wip` tags remain in the delta spec.
@@ -239,10 +243,10 @@ README-IMPACT: updated - What it is, Install, Quick start, Agent targets and com
 - [x] The local run command (`cargo run -- instructions`) starts the declared product surface; the project has no server/database/digital-twin stack.
 - [x] The exact files `verify.e2e_command` invokes were identified; the tree (including untracked files) was searched for a parallel E2E implementation; none exists.
 - [x] E2E scope is explicit (`--non-e2e` / `--e2e`, with `GIVN_RESULT_SCOPE` preserved by `run-tests.sh`); the regular receipt has zero failures/skips.
-- [ ] Implementation (commands, file layout, framework/driver) matches `design.md` as reviewed: commands/driver/evidence match, but the Step Definitions table does not (F-01).
-- [x] Interaction coverage verified: all 74 delta inventory rows map to matrix rows, `@e2e` scenarios and CLI drivers; the seven retained matrix projections are the PR-06 design decision. The table-level step-file mismatch is recorded separately as F-01.
+- [x] Implementation (commands, file layout, framework/driver) matches `design.md` as reviewed: commands/driver/evidence match, and the Step Definitions table matches the built files after `7bef6352` (F-01 closed).
+- [x] Interaction coverage verified: all 74 delta inventory rows map to matrix rows, `@e2e` scenarios and CLI drivers; the seven retained matrix projections are the PR-06 design decision. The step-file mismatch is F-01, closed in `7bef6352`.
 - [x] Design.md's `## Internal Primitives` section: the current design has no such section; the changed primitives (`VerificationInputs`, `ScopeEvidence`, `Receipt::reusable_scope`) are named in the Stable execution witness section and used by the implementation. No omission.
 - [x] arc42 slug mapping verified: all twelve slugs in `arc42.md` resolve to real `docs/arc42/<slug>.md` files.
 - [x] No finding is excused with a classification outside the three buckets; the remaining risks are recorded as risks, not as a fourth coverage bucket.
 
-REVIEW: FAIL
+REVIEW: PASS
