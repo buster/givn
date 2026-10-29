@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "default-all-addons",
+  "status": "passed",
+  "head": "7688fa156eeb80215e10647ca0719b94fba01716",
+  "features_path": "givn/changes/default-all-addons/specs",
+  "features_digest": "88cac4f69b9cfec907e41b7f9189cb192a0f55d8b69236d80ebf9ab1d1453ce9",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "cd7548b36c8ff967b7023e9a75051b9d1872ca4f19bc0f95ef12c50c186b6011",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1793285000
+}
