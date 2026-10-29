@@ -17,6 +17,7 @@ pub mod integrity_hook;
 pub mod outline;
 pub mod overlap;
 pub mod proof;
+pub mod review_context;
 pub mod scm;
 pub mod skills;
 pub mod spec;
