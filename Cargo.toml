@@ -8,6 +8,7 @@ description = "A single-binary, Gherkin-first spec-driven workflow tool"
 # see README.md § License and the note at the end of LICENSE.
 license = "GPL-3.0-or-later"
 repository = "https://github.com/buster/givn"
+exclude = ["harness/**", "reports/**", "test-corpus/**"]
 
 
 [lib]

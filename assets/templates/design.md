@@ -69,25 +69,28 @@
 
 ## Step Definitions
 
-> Location of step definition files — **one file per capability**, never one
-> file for the whole change. Column 1 is the single path the integrity hook
-> resolves and validates; add column 3 only when a delta step copy has a
-> separate permanent merge target, and never put two paths in one cell.
-> | Capability | Step definition file | Permanent merge target |
-> |---|---|---|
-> | | | |
->
-> Test runner command (from `verify.command` in givn/commands.yaml):
-> ```
-> {{VERIFY_COMMAND}}
-> ```
->
-> Single-scenario run command (exact invocation to run ONE named scenario,
-> not the whole suite — used by every RED/GREEN check in tasks.md):
-> ```
- > (e.g. cargo test <name> -- --exact, mvn test -Dcucumber.filter.name="<title>",
- >  cucumber-js --name "<title>", behave -n "<title>")
- > ```
+Location of step definition files — **one file per capability**, never one
+file for the whole change. Column 2 is the single path the integrity hook
+resolves and validates; add column 3 only when a delta step copy has a
+separate permanent merge target, and never put two paths in one cell.
+
+| Capability | Step definition file | Permanent merge target |
+|---|---|---|
+| | | |
+
+Test runner command (from `verify.command` in givn/commands.yaml):
+
+```
+{{VERIFY_COMMAND}}
+```
+
+Single-scenario run command (exact invocation to run ONE named scenario, not
+the whole suite — used by every RED/GREEN check in tasks.md):
+
+```
+(e.g. cargo test <name> -- --exact, mvn test -Dcucumber.filter.name="<title>",
+ cucumber-js --name "<title>", behave -n "<title>")
+```
 
 ## Internal Primitives
 

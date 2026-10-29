@@ -219,6 +219,7 @@ inspection, and say explicitly when no measured evidence exists yet.
 <!-- paste the coverage summary from the archive receipt or the last
      published merged report. The archive receipt is the durable measured
      result; review classification uses it rather than re-running the suite. -->
+```
 
 ## Coverage gap classification
 

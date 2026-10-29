@@ -368,8 +368,8 @@ mod tests {
         let peer = std::thread::spawn(move || {
             let (mut stream, _) = listener.accept().unwrap();
             if consume_request {
-                let mut request = [0; 8192];
-                stream.read(&mut request).unwrap();
+                let mut first = [0; 1];
+                stream.read_exact(&mut first).unwrap();
             }
             stream.write_all(response).unwrap();
             std::thread::sleep(Duration::from_millis(600));
