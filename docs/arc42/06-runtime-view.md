@@ -13,29 +13,30 @@ The sequence is:
    write: `--agents`, else one piped answer line, else the interactive
    checkbox prompt, which opens with `.opencode` marked and re-asks — with an
    error naming the requirement — until a target is marked. Recognized
-   selections are `.opencode`, `.agents`, and `.claude`. A non-terminal empty
-   or unknown-only selection refuses with a non-zero exit and leaves the
-   checkout unchanged.
+   selections are `.opencode`, `.agents`, `.claude`, `.omp`, and `.maki`. A
+   non-terminal empty or unknown-only selection refuses with a non-zero exit
+   and leaves the checkout unchanged.
 3. Create `givn/specs`, `givn/changes`, and `givn/archive`.
 4. Write `givn/config.yaml` from the embedded, versioned scaffold unless the
    file already exists and `--force` is absent; append the resolved selection
    as `skills.targets`.
 5. Write `givn/commands.yaml` from the embedded project command template unless
-   it already exists and `--force` is absent. The current template contains
-   `./run-tests.sh`, `./run-tests.sh --e2e`, and coverage script/path entries.
+   it already exists and `--force` is absent. The shipped template contains the
+   `givn missing-testrunner`, `givn missing-e2e-runner`, and
+   `givn missing-run-command` sentinels plus coverage paths; it does not invent
+   project scripts.
 6. Unless `--no-addons` is set, enable every registered addon. In the current
-   registry this scaffolds Arc42, manages the Absolute Mode fenced block, may
-   scaffold README content, enables the archive coverage gate, and toggles the
-   project-level skills, commands, and the outline report. With `--no-addons`,
-   write an explicit `false` for every known addon instead, so the opt-out is
-   visible in `givn/config.yaml`.
-7. Synchronize skills, commands, and attribution integrations to the selected
-   targets. The sync
-   updates only givn-owned fenced blocks in `AGENTS.md` and leaves all other
-   content unchanged.
-   The pending decision-ready-question change adds an unconditional dialog
-   obligation to the same `givn-project` block; it does not require enabling
-   the Absolute Mode addon or alter the surrounding human instructions.
+   registry this scaffolds Arc42, manages the `communication-policy` fenced
+   block, may scaffold README content, enables the archive coverage gate, and
+   enables the project-level skills plus the advisory outline report. With
+   `--no-addons`, write an explicit `false` for every known addon instead, so
+   the opt-out is visible in `givn/config.yaml`.
+7. Synchronize skills and attribution/reporter integrations to the selected
+   targets. The sync writes only skills (never command files), updates only
+   givn-owned fenced blocks in `AGENTS.md`, removes the retired `absolute-mode`
+   block while preserving surrounding content, and leaves all other content
+   unchanged. The unconditional `givn-project` block carries the dialog-policy
+   obligation; the communication-policy addon controls only presentation.
 8. Materialize the checked-in commit-attribution hook and, when a Git worktree
    exists, install or refresh the local dispatcher without replacing an
    existing `commit-msg` hook.
@@ -142,13 +143,12 @@ addon is enabled and the README check reports findings, both report paths
 append one text-only status line naming `givn readme check` and the finding
 count; the JSON report shape is unchanged.
 
-Target flow, pending `make-user-questions-decision-ready` implementation:
-the shared generic overview directs each fresh context to load the effective
-dialog policy before its first user-facing question. Text and JSON state
-reports retain their existing next-action and metadata contracts. A delegated
+The shared generic overview directs each fresh context to load the effective
+dialog policy before its first user-facing question. Text and JSON state reports
+retain their existing next-action and metadata contracts. A delegated
 question-preparing context receives the obligation explicitly; no parent-context
 inheritance is assumed. The presenting agent checks the question before asking
-the person. This is authoring guidance, not a new runtime hook or question API.
+the person. This is authoring guidance, not a runtime hook or question API.
 
 ## 6.4 `givn lint`
 
@@ -212,8 +212,9 @@ The state rules are:
 ## 6.6 `givn check`
 
 The command resolves command and coverage settings from the effective manifest.
-The current project obtains them from `givn/commands.yaml`, which is applied as
-the later overlay after `givn/config.yaml`.
+The current project obtains them from `givn/commands.yaml`, which is applied
+through its dedicated `verify`/`coverage`/`run` schema after the
+`givn/config.yaml` policy overlay.
 
 ### Explicit artifact check
 
@@ -233,11 +234,14 @@ For `givn check review`, it runs:
    an independent record requires a reviewer context different from the author,
    and the design-review and review records must name one reviewer context.
 3. The deterministic run-declaration check.
-4. For a named change, the overlap disposition gate.
-5. The change-scoped verification receipt, so a stale receipt is reported before
-   any change-relative outline analysis runs.
-6. For a named change with `addons.outline` enabled, the outline review
-   gate (6.20).
+4. For a named change, change-scoped lint; when it passes, the overlap
+   disposition gate, retirement disclosure, and capability-routing checks.
+5. The change-scoped verification receipt, so a stale receipt is reported
+   without running the suite.
+6. For a named change, the scenario-commit evidence check.
+
+There is no outline review step in `givn check review`; the outline addon is
+advisory only.
 
 The visual gate reads the `## Visual Design Contract` section from
 `design.md`. An absent section fully exempts the change from the Persona
@@ -456,11 +460,14 @@ a structural failure still outranks routing findings.
 ### 6.7.1 Scenario commit evidence
 
 `givn check tasks` parses each checked scenario in `tasks.md` and requires one
-unique revision. The revision must exist, be reachable from `HEAD`, and carry
-the scenario title in its commit message. Missing, duplicate, placeholder,
-unreachable, and untitled revisions are reported together and block. `givn
-check review` repeats the gate. Every scenario needs its own commit: the work
-must be split into scenario commits before the check, not asserted after it.
+recorded revision. A revision shared by several scenarios is accepted only
+with the batch label described below. The revision must exist, be reachable from `HEAD`, and carry
+the scenario title in its commit message. A shared revision is valid only when
+the scenario line names the batch (`Batch: <name>`). Missing, duplicate,
+placeholder, unreachable, untitled, and unlabelled-shared revisions are
+reported together and block. `givn check review` repeats the gate. One coherent
+completed batch may satisfy several scenarios; per-phase or per-scenario commits
+are not required.
 
 A change whose design declares no visual contract may record
 `VISUAL-REVIEW: NOT APPLICABLE`; a rendered interface still requires
@@ -475,52 +482,61 @@ A reported turn stores its inline usage once and marks a linked usage entry
 failed command stores the bounded first line of its dispatch error. Provider,
 model, and variant are recorded where known; unavailable usage stays explicit.
 
-## 6.12 Addons, Upgrade, and Completion Commands
+## 6.12 Addons and Completion Commands
 
 `givn addons list` reads enabled flags from `givn/config.yaml` and lists every
-registered addon, marking a default-off entry whose flag is absent or false as
-`[disabled]`. `enable arc42` sets the flag, scaffolds missing fixed-path chapter
-files, and expands the effective graph; `disable arc42` leaves existing docs in
-place. The same commands manage other registered addon flags. `enable
-outline` sets its flag, prints the report command, and generates no skill or
-command file; `disable outline` makes the report exit 1 with the named
-disabled reason.
+registered addon with its effective default. All registered addons are enabled
+by default; a missing key resolves to enabled, and only an explicit `false`
+disables a flag. `enable arc42` sets the flag, scaffolds missing fixed-path
+chapter files, and expands the effective graph; `disable arc42` leaves existing
+docs in place. `enable outline` sets its flag and generates no skill or command
+file; `disable outline` makes the report exit 1 with the named disabled reason.
+Enabling or disabling an addon resyncs generated skills.
 
 `givn skills sync` resolves the selected targets, writes generated skills and
-the commands of the command-owning targets, refreshes the `givn-project` block, and applies/removes the
-Absolute Mode block according to its addon flag. `givn upgrade` rewrites the
-managed config scaffold, preserves uncommented user blocks, and auto-enables
-newly known default-on addons not represented in the old config; a default-off
-addon is never enabled by upgrade.
+per-target attribution/reporter integrations, refreshes the `givn-project`
+block, applies or removes the `communication-policy` block according to its
+addon flag, removes the retired `absolute-mode` block, and reconciles ignore
+state. No command files are generated; recognizable old ones are removed and
+custom files are reported for manual transition.
 
 `givn completions <shell>` writes no project files and prints a shell completion
 script to stdout.
 
-## 6.13 `givn upgrade` and declared migration bundles
+## 6.13 `givn upgrade` and the migration baseline
 
-The command selects a declared migration path from the active config marker to
-the installed package version. It first selects the project's version-control
-backend through the SCM seam (section 6.16) and verifies that the checkout is
-clean on that backend; a dirty checkout or a missing backend executable is
-refused before any file changes. Managed staging records exactly the
-calculated allowlist on both backends — `git add [-f]` on Git, `fossil add
-[--force]` on Fossil — and the managed and plan revisions are committed
-through the same seam. A failed preflight returns before changing any project
-file.
+The command first validates `givn/config.yaml`. Malformed YAML, a retired addon
+key, or a `verify`/`coverage`/`run` block in `config.yaml` is refused with a
+manual-transition message before any write. It then selects the project's
+version-control backend through the SCM seam (section 6.16) and verifies that
+the checkout is clean; a dirty checkout or missing backend is refused before any
+file changes. Managed staging records exactly the calculated allowlist on both
+backends — `git add [-f]` on Git, `fossil add [--force]` on Fossil — and the
+managed revision is committed through the same seam. A failed preflight returns
+before changing any project file.
 
-The command then refreshes `givn/config.yaml`, backfills the `run:` scaffold
-into `givn/commands.yaml` when the file exists and has no top-level `run:` key
-(idempotent; a project that already declares `run:` produces no diff), and
-synchronizes generated skills, commands, and Givn-owned `AGENTS.md` blocks. It
-stages an explicit allowlist — including `givn/commands.yaml` for the backfill —
-never a complete directory or worktree, and creates one managed commit when
-files changed. The backfill application reports
-`wrote run: scaffold to givn/commands.yaml — fill it in; givn archive is
-blocked until you do`. If the catalog returns one or more bundles, the command
-then writes one aggregate `givn/changes/<aggregate-id>/` with Proposal, Design,
+The command records the checkpoint revision, refreshes `givn/config.yaml`,
+backfills the `run:` scaffold into `givn/commands.yaml` when the file exists and
+has no top-level `run:` key (idempotent; a project that already declares `run:`
+produces no diff), and synchronizes generated skills and Givn-owned `AGENTS.md`
+blocks. It stages an explicit allowlist — including `givn/commands.yaml` for the
+backfill — never a complete directory or worktree, and creates one managed
+commit when files changed.
+
+The shipped catalog is `migrations: []` at the 1.0 baseline. No pre-1.0 route is
+resolved, so no aggregate maintenance change is created; a project must have a
+current-format configuration after its manual transition. Future routes use the
+same resolver: when the catalog returns one or more bundles, the command writes
+one aggregate `givn/changes/<aggregate-id>/` with Proposal, Design,
 `migration.yaml`, and `.givn-skip` for `specs`; its Design records the managed
-commit hash and all bundle phases in order. A second commit contains only that
-aggregate plan. A gap with no declared route creates no migration change.
+commit hash and all bundle phases in order, and a second commit contains only
+that aggregate plan. A gap with no declared route creates no migration change.
+
+On failure, `givn upgrade` reports the checkpoint, completed writes, revisions
+actually published, best-effort restoration, remaining partial state, and
+pending work. It performs no reset, clean, or history rewrite and promises no
+complete rollback. The developer restores from the checkpoint manually or fixes
+forward.
 
 An existing active or archived migration plan is reported and never
 overwritten. The generated plan contains no product feature delta and no
@@ -758,7 +774,7 @@ workflow.
 ## 6.19 `givn outline report`
 
 The command is registered unconditionally and gated at runtime so that a
-disabled experiment can explain itself:
+disabled addon can explain itself:
 
 ```mermaid
 sequenceDiagram
@@ -773,9 +789,9 @@ sequenceDiagram
   Developer->>CLI: run report [--json] [--out]
   CLI->>CFG: load_effective()
   alt outline disabled
-    CLI-->>Developer: exit 1, stderr names the disabled experiment
+    CLI-->>Developer: exit 1, stderr names the disabled addon
   else enabled
-    CLI->>ORCH: report(project root, production src scope)
+    CLI->>ORCH: report(project root, production roots)
     ORCH->>AN: analyze(request)
     AN-->>ORCH: neutral Analysis plus per-file diagnostics
     ORCH->>MET: compute(analysis)
@@ -790,13 +806,17 @@ sequenceDiagram
 1. `clap` dispatches `outline report`; the handler loads the effective
    configuration. An absent or false `addons.outline` stops with exit 1 and
    a stderr message naming the enabling command.
-2. With the addon enabled, the orchestration scans the project-root `src/`
-   tree, excludes test, benchmark, example, target, and Python cache/virtualenv
+2. With the addon enabled, the orchestration scans the requested production
+   roots: `src/` by default, or every explicit `--path` root. A project without
+   `src/` and without `--path` refuses and asks for production paths. The scan
+   excludes test, benchmark, example, target, and Python cache/virtualenv
    directories, Python test modules, and `#[cfg(test)]` items, discovers `.rs`
    and `.py` files, and presents a deterministic request to the
    `SourceAnalyzer`. The Python adapter starts `python3` only after `.py`
    discovery, so a Rust-only scope never invokes it; a missing interpreter
-   becomes a per-file `analyzer-unavailable` diagnostic, not an abort.
+   becomes a per-file `analyzer-unavailable` diagnostic, not an abort. An
+   unsupported-only scope names the unsupported production sources and refuses
+   rather than claiming no sources exist.
 3. The adapter returns one neutral `Analysis`. A shared resolution pass matches
    every call's shape — free function with an optional qualifier, or method
    with `self`/named/unknown receiver evidence — against candidate owners. It
@@ -824,94 +844,18 @@ sequenceDiagram
    explicit `--out` path. The command appends no development-record entry and
    stores no baseline, cache, or classification history.
 
-## 6.20 `givn check review` outline gate
+## 6.20 Retired outline review gate
 
-The gate is an additional member of the existing review check, not a command:
-`src/cli/check.rs` calls it after the verification receipt and before the
-review returns success, and only for a named change whose effective
-configuration enables `addons.outline`. With the addon absent or false the
-gate emits nothing and no marker is required.
+The blocking outline review gate is retired. `givn check review` contains no
+outline analysis, no per-unit verdict, no metric waiver, and no forced reviewer
+context. The outline addon still produces the advisory report described in
+6.19, and the served implementation and review guidance may refer to that
+evidence during REFACTOR and final review, but the report cannot block review or
+archive.
 
-```mermaid
-sequenceDiagram
-  actor Developer
-  participant CHECK as givn check review
-  participant GATE as outline gate
-  participant SCM as scm::Backend
-  participant AN as outline analysis
-  participant REVIEW as review.md outline verdicts
-  Developer->>CHECK: check review --change <id>
-  CHECK->>CHECK: integrity, run declaration, overlap, receipt
-  CHECK->>GATE: review(project root, change id, roots = src)
-  alt addon disabled or no change id
-    GATE-->>CHECK: skipped
-  else addon enabled
-    GATE->>SCM: first touching revision of givn/changes/<id>/ and its parent
-    SCM-->>GATE: first touch and first parent, or root
-    GATE->>SCM: changed paths base..HEAD and HEAD..worktree
-    SCM-->>GATE: changed set, or dirty production paths
-    GATE->>SCM: revision files and bytes at base and HEAD
-    SCM-->>GATE: two revision trees
-    GATE->>AN: analyze base tree, analyze HEAD tree
-    AN-->>GATE: two assessments and diagnostics
-    GATE->>GATE: touched units, outlines, metric hints, post-analysis guard
-    GATE->>REVIEW: outlines and metric hints
-    REVIEW-->>GATE: AUTHOR/REVIEWER, OUTLINE PASS/FAIL, PASS
-    GATE-->>CHECK: PASS, or named failures
-  end
-  CHECK-->>Developer: exit 0, or non-zero with the exact failure
-```
-
-1. **Change base.** The base is the first revision reachable from `HEAD` that
-   touched `givn/changes/<id>/`, then its first parent. Git uses
-   `rev-list --reverse --full-history --parents` and the first parent; Fossil
-   uses `timeline ... --reverse -r ancestors current`, takes the first (oldest)
-   line, and reads the recorded `parent:` (never `merged-from:`). A merge uses
-   its first parent, a rebase recomputes the first touch, a root commit yields
-   an empty base tree, and a shallow clone fails closed. No reachable touch fails with a
-   named error; there is no fallback to `HEAD`, the working tree, or a
-   merge-base.
-2. **Dirty guard.** The head is the committed `HEAD`. A tracked, untracked, or
-   extra production path in the working tree fails before analysis with
-   `production paths are dirty; commit or discard before review: <paths>`.
-   Non-production paths such as `review.md` may stay uncommitted.
-3. **Revision trees.** The backend's files under the production roots are
-   materialized into two temporary directories outside the project and analyzed
-   with the same request scope. Entry kinds are regular, symlink, and submodule;
-   a non-UTF-8 path, a path containing a line break, a symlink, a submodule, or
-   an unreadable blob is a named diagnostic, and a touched unit that depends on
-   it fails closed. Git paths and blobs are read with NUL delimiters
-   (`ls-tree -r -z`, `cat-file --batch -z`). The temporary paths never enter the
-   output and are removed before the command returns.
-4. **Touched units and outlines.** A changed path marks the units that declare
-   in it, every unit whose files include it, and the file's module; a touched
-   trait also marks its implementors. Base and head units are matched by unit
-   id. The gate prints the per-component call tree of every touched head unit with
-   methods. A unit with no methods has no outline and needs no verdict; a base
-   unit with no head counterpart is removed and also needs no verdict.
-5. **Metric hints.** The report's classification and method findings are
-   recomputed for the touched units and printed as `HINT` lines with their
-   base/head evidence. They are advisory. They never create, satisfy, or block
-   an outline verdict. A changed production source path present at head that
-   the analyzer never saw fails the post-analysis guard; a deleted file is proven by the base
-   unit's removal.
-6. **Outline verdicts.** Every printed outline needs exactly one verdict from a
-   fresh-context reviewer. `OUTLINE: PASS <unit> | <responsibility; call order>`
-   needs a non-empty responsibility and call-order explanation; `OUTLINE: FAIL
-   <unit> | <reason>` blocks. `OUTLINE: AUTHOR <id>` and `OUTLINE: REVIEWER <id>`
-   are required when any verdict exists and must differ. A missing verdict, an
-   empty PASS explanation, a FAIL, conflicting verdicts, a missing reviewer, or
-   a self-review fails. There is no justification path for an unreadable
-   outline.
-7. **Verdict.** `review.md` must carry `OUTLINE: PASS` when any outline exists;
-   `FAIL <reason>` always fails, and fenced examples are ignored. The gate prints
-   the base revision, the head, the touched-unit, outline, and hint counts, each
-   outline with its `CHECK` verdict, each metric hint, and either `outline
-   review: PASS` or `outline review: FAIL (<reason>)`; several failures print
-   one `FAILURE` line each and an aggregate final line. The CLI exit contract
-   stays `0`/`1`; a missing base, a dirty production path, an unreadable file, a
-   parse failure, or an unanalyzed changed production source file fails closed with the path
-   and diagnostic. The only writes are the two temporary trees; no project file,
-   baseline, watchlist, or ledger is written.
+The current report behavior is owned by the `outline-report` capability and the
+advisory outline guide ([`docs/outline.md`](../outline.md)). Historical gate
+material remains in archived changes and ADR history; it is not current
+architecture.
 
 *[Architecture documentation index](README.md)*

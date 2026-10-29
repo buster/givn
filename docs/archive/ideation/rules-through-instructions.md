@@ -1,3 +1,10 @@
+> **Historical handoff, retained for provenance.** This is the readable record of a
+> completed ideation topic. Its rationale and the state at handoff are kept as
+> written; it is not current product or operational documentation. The rules now
+> ship through skills only, and retired commands are no longer generated. Current
+> behavior is documented in the [workflow](../../workflow.md),
+> [reference](../../reference.md), and [architecture documentation](../../arc42/README.md).
+
 # Rules through instructions
 
 Topic: `rules-through-instructions` — ideation handoff, 2026-10-13.
@@ -131,4 +138,4 @@ concrete example.
 - Splitting the work into two changes, and deciding the cut at handoff:
   one change on the experiment branch (Q3, user).
 
-*[Documentation index](../INDEX.md)*
+*[Documentation index](../../INDEX.md)*

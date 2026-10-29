@@ -1,3 +1,9 @@
+> **Historical handoff, retained for provenance.** This is the readable record of a
+> completed ideation topic. Its rationale and the state at handoff are kept as
+> written; it is not current product or operational documentation. Current
+> behavior is documented in the [workflow](../../workflow.md),
+> [reference](../../reference.md), and [architecture documentation](../../arc42/README.md).
+
 # multi-scm-support — Ideation topic
 
 Status: handed off 2026-09-14. Topic state lives in
@@ -111,4 +117,4 @@ Seeds 5-7 may be folded into 1-3. Seed files with full decision records live
 under `givn/ideation/multi-scm-support/changes/`. Handoff does not start any
 change; run `/givn-propose <id>` per seed when ready.
 
-*[Documentation index](../INDEX.md)*
+*[Documentation index](../../INDEX.md)*

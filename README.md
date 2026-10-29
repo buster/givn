@@ -18,71 +18,39 @@ A single-binary, Gherkin-first spec-driven workflow tool.
 
 ## What it is
 
-- **The `.feature` file IS the specification.** The same file is the change's
-  delta document, the executable test your runner executes, and — after
-  archiving — the permanent spec under `givn/specs/`. No parallel `spec.md`.
-- **Rules are served, not copied.** The rules an agent follows for a step
-  come from the instruction served by `givn instructions <id>`; each
-  installed skill and command carries its trigger and orchestration and
-  directs the agent there. A project extends any instruction with its own
-  rules in `givn/config.yaml` — synchronization and upgrades never fight
-  them.
-- **One change lifecycle.** propose → spec → design → design-review → tasks →
-  implement → review → archive. Archive is forward-only and SCM-backed (Git or Fossil): it
-  commits the merged archive candidate, runs each verification scope once
-  against that commit, and records a verification receipt; a failed candidate
-  stays in place and is repaired forward. Review names the root cause of an
-  invalid use-case document first and then all actionable schema and
-  capability-routing problems in one pass, and review/archive reuse
-  a green change verification receipt when a later revision leaves the tested
-  content unchanged; the merged archive suite still runs once. Tagged delta
-  scenarios merge into the permanent specs and the tags are stripped. Archive
-  also refuses before mutation when a delta step-definition phrase has no
-  binding in the permanent test tree: step definitions are durable project
-  source, not merged code. Optionally preceded by
-  `/givn-ideation` — a domain-driven event storming flow that turns a vague
-  idea into change-ready use cases.
-- **A development record and report.** Givn records the steps it runs and the
-  activity each supported coding-agent harness reports — tool calls, subagent
-  spans, question waits, and token usage — in one local, append-only record
-  kept out of repository history. `givn history` reads it (text or `--json`),
-  and `givn timeline` renders one change or ideation topic as a self-contained
-  interactive report: the workflow top to bottom, each phase's vertical
-  session lanes and lane log, the longest steps, and where the time went.
-- **An opt-in outline report and review gate.** The default-off
-  `outline` addon adds `givn outline report`: an advisory snapshot of
-  production Rust and Python units that prints each unit's outline as a
-  per-component call tree — method declarations, signatures, and calls, with
-  same-component calls nested and other components as tagged leaves carrying
-  their resolution — first, then size, public surface, cohesion/coupling, and
-  method-complexity metrics as hints. JSON calls name their resolved target;
-  an unknown receiver stays a visible `name_only` guess. When the addon is enabled, `givn check review` prints the outline
-  of every touched unit with methods and requires a fresh-context reviewer's
-  per-unit `OUTLINE: PASS`, with a responsibility and call-order explanation,
-  or `FAIL`. Metrics are hints; an unreadable outline has no justification
-  path. No baseline is stored. See
-  [the outline addon guide](docs/outline.md#outline-comprehension--the-core-idea)
-  for an example outline, the phases, expected outcome, and warning signs.
-- **Scenario-by-scenario TDD with proof.** Each scenario runs RED (targeted,
-  genuinely failing) → GREEN (minimum code) → REFACTOR → one atomic commit.
-  The runner's strict mode is proven up front so an empty step definition can
-  never report GREEN.
-- **Blocking gates.** Artifact post hooks (`verify`, `verify-e2e`, `lint`),
-  integrity checks (commit hashes, promised files), overlap dispositions, a
-  visual review gate (a declared visual interface needs a `VISUAL-REVIEW`
-  verdict, a confirmed-persona disposition, and committed per-viewport and
-  per-state evidence; a deferral needs a recorded operator decision), and a
-  README completeness gate: `givn readme check` reports open scaffold
-  placeholders and managed-block damage, the review records a
-  machine-checkable README impact decision, and the archive refuses an
-  unfinished README.
-- **Runner-agnostic.** A standalone Rust binary driving any Cucumber-family
-  runner (cucumber-rs, behave, cucumber-js, …); it does not replace it. Skills
-  are emitted for AI agents in `agents` neutral plus `claude`, `opencode`,
-  `omp`, and `maki` formats.
-- **Configurable without forking.** Embedded defaults overlaid CSS-cascade-style
-  by `givn/config.yaml`; the workflow graph itself (steps, order, hooks) is
-  data. One feature-free binary — `[features] default = []`.
+- **The `.feature` file is the specification.** The same file is the change's
+  delta, the executable test the runner executes, and — after archiving — the
+  permanent spec under `givn/specs/`. There is no parallel `spec.md`.
+- **One change lifecycle.** proposal → spec → design → design-review → tasks →
+  implementation → review → archive. State is derived from files on disk; there
+  is no separate state database. With the arc42 addon enabled, the design step
+  also maintains durable architecture documentation.
+- **Skills are the agent entry surface.** `givn skills sync` generates skills
+  for the selected agent targets. Each skill carries a trigger and points the
+  agent at the rules served by `givn instructions <id>`; rules are not copied
+  into the skill. Project rules extend the served instruction through
+  `extensions:` in `givn/config.yaml`.
+- **Genuine test-first behavior batches.** Related scenarios form one batch with
+  an observed RED, a minimum GREEN, optional REFACTOR, and one coherent commit
+  with explicit paths. Existing requirements may be protected by immediately
+  passing regression tests without a production edit for them.
+- **Forward-only, SCM-backed archive.** Archive publishes the merged candidate
+  on Git or Fossil, runs the regular and E2E verification scopes against it
+  under a fail-closed runner-result contract, and records a verification
+  receipt. A failed candidate remains in place and is repaired forward.
+- **Advisory structure evidence.** The `outline` addon produces a
+  deterministic report of production Rust and Python units: each unit's
+  per-component call tree first, then size, cohesion, coupling, and method
+  metrics as hints. It never blocks review or archive and stores no baseline.
+- **A local development record.** Givn records its own commands and phases plus
+  the activity supported coding-agent harnesses report — tool calls, turns,
+  subagent spans, question waits, and token usage — in an append-only local
+  store. `givn history` reads it and `givn timeline` renders one change or
+  ideation topic as a self-contained HTML report.
+- **Configuration without forking.** Embedded defaults are overlaid by
+  `givn/config.yaml` for policy, graph, addons, targets, and extensions, and by
+  `givn/commands.yaml` for the test, coverage, and product-start commands. Every
+  registered addon is enabled by default; an explicit `false` is the opt-out.
 
 ## Install
 
@@ -92,88 +60,87 @@ a recent stable Rust toolchain; installs to `~/.cargo/bin`.
 ```sh
 git clone https://github.com/buster/givn.git
 cd givn
-cargo install --path .                        # the single feature-free binary
+cargo install --path . --locked
 ```
 
-## Quickstart
+## Quick start
 
-Run "givn init" in your repository, then /givn-propose in your agent. Let the agent handle the rest.
+Run `givn init` in your repository, then invoke the proposal skill in your
+agent. The agent loads the rules from `givn instructions` and handles the rest.
 
 ```sh
-git init
-givn init                             # scaffold givn/ + generate skills + AGENTS.md hint
-/givn-ideation my-domain              # (optional, in your AI agent) event-storm a vague idea into use cases
-/givn-propose add-user-auth           # (in your AI agent) proposal → spec → design → tasks
-/givn-implement                       # (in your AI agent) scenario-by-scenario TDD loop
-/givn-review                          # (in your AI agent) coverage review, sign off
-/givn-archive
+givn init                            # scaffold givn/, write config and commands, generate skills
+givn instructions                    # first action of every session: the next required command
 ```
 
+In your agent, invoke the skills it received:
+
+| Harness | Invocation |
+|---|---|
+| Claude Code, OpenCode | the skill slash, for example `/givn-propose` |
+| OMP | skill syntax, for example `/skill:givn-propose` |
+| neutral `agents` target | skill discovery by name |
+| Maki | an explicit request, or an agent-selected skill such as `givn-propose` |
+
+Typical sequence: `givn-propose` → `givn-spec` → `givn-design` →
+`givn-design-review` → `givn-tasks` → `givn-implement` → `givn-review`, then
+`givn archive`. `givn-ideation` is the optional pre-change exploration skill;
+`givn-explore` clarifies an idea without producing lifecycle artifacts.
+
 Before the first archive, set `verify.command` in `givn/commands.yaml` to a
-Gherkin runner that executes the `.feature` files; the shipped sentinel fails
-on purpose until you do.
+Gherkin runner that executes the `.feature` files, and set `run:` if the project
+has a startable product. Both fields ship with sentinel commands
+(`givn missing-testrunner`, `givn missing-run-command`) that print setup
+guidance and exit non-zero. `givn init` does not invent runner or start scripts.
 
-Watch the work as it happens, or afterwards: `givn timeline --change <id>` (or
-`--topic <id>`) writes one self-contained HTML report of the development
-record — the workflow top to bottom, each phase's lanes and lane log, and where
-the time went — and `givn history --change <id> --json` prints the record
-itself. The record lives under `givn/history/` as local runtime state and stays
-out of repository history.
+Watch the work as it happens or afterwards:
 
-[![Development report of an example change: current state, KPI tiles, and the top-to-bottom workflow phase stack.](docs/development-report-mobile.png)](docs/development-report.md)
+```sh
+givn timeline --change <id>          # self-contained HTML report
+givn history --change <id> --json    # the recorded entries
+```
 
-`givn init` asks which agent targets receive the generated skills and commands;
-the list opens with `.opencode` marked and re-asks until at least one target is
-marked. Scripted runs state the selection explicitly:
-`givn init --agents opencode,claude,omp` (valid targets: `opencode`, `agents`,
-`claude`, `omp`, `maki`) — a missing or unknown-only selection is
-refused before anything is written. `givn skills sync` keeps writing to the
-persisted selection and falls back to `opencode` only for a config without a
-skills block.
+The record lives under `givn/history/`, is ignored by the selected backend, and
+never enters repository history.
 
-Commit each scenario with `givn commit -m "feat(<capability>): <release note>"`:
-the revision message carries the release note as its message subject, with the
-scenario title in the message body. It works on Git and Fossil, records the
-named paths or every pending change, and stamps the managed attribution
-trailer when the harness provides context.
+## Agent targets and commit attribution
 
-`givn init` checks in shared Git commit-attribution plumbing and activates it
-locally when the project is a Git worktree; a Fossil checkout receives no hook
-and reports `commit attribution: givn commit path only` (a raw `fossil commit`
-carries no attribution). OpenCode, Claude Code, and omp targets receive
-best-effort runtime integrations; when an agent exposes attribution context,
-the commit committer and message show the LLM, reasoning mode, harness, and
-Givn version.
-Missing context never blocks a human commit.
+`givn init` asks which targets receive generated skills: `opencode`, `agents`,
+`claude`, `omp`, and `maki`. The interactive prompt opens with `.opencode`
+marked and re-asks until something is marked; scripted runs state the selection
+explicitly, for example `givn init --agents opencode,claude,omp`. `givn skills
+sync` writes only to the persisted selection.
 
-## Default workflow
+Skills are written under `.opencode/`, `.agents/`, `.claude/`, `.omp/`, and
+`.maki/`. OpenCode, Claude Code, omp, and Maki also receive best-effort
+development reporters. Maki additionally loads Givn only after the folder is
+trusted in Maki.
 
-![Givn change lifecycle: proposal to archive](docs/workflow.svg)
+`givn commit -m "<release note>" <explicit paths...>` creates one revision
+through the selected backend. It requires explicit paths and preserves unrelated
+staged and working-tree changes. Git also has a checked-in `commit-msg` hook that
+stamps attribution for raw Git commits when an OpenCode, Claude Code, or omp
+integration supplies context; Fossil check-ins carry attribution only through
+`givn commit`. Missing attribution context never blocks a commit. Givn does not
+enforce a commit-message convention.
 
 ## Documentation
 
-- [`docs/INDEX.md`](docs/INDEX.md) — the documentation index: every durable
-  document under `docs/`, current or archived.
-- [`docs/workflow.md`](docs/workflow.md) — the workflow overview: phases,
-  produced artifacts, and the hard gates.
-- [`docs/workflow-details.md`](docs/workflow-details.md) — every phase, check,
-  failure condition, archive step, and the limits of enforcement.
-- [`docs/reference.md`](docs/reference.md) — full CLI reference, agent skills,
-  addons, configuration keys, project layout, dev scripts.
-- [`docs/architecture-principles.md`](docs/architecture-principles.md) — the
-  opt-in architecture-principles experiment: last-responsible-moment decision
-  timing, consumer contracts now, component splits later, the phases it affects,
-  and the signals that its rules need revision.
-- [`docs/outline.md`](docs/outline.md) — the experimental outline
-  addon: the advisory report, the change-relative review gate, its phases, and
-  the warning signs that the rules are not working.
-- [`docs/development-report.md`](docs/development-report.md) — the record
-  settings (mode, default, privacy), the report screens, and analytics over the
-  JSONL store with jq, SQLite, and DuckDB.
-- [`docs/arc42/README.md`](docs/arc42/README.md) — architecture documentation,
-  one file per chapter.
+- [`docs/INDEX.md`](docs/INDEX.md) — the documentation index, current and
+  historical.
+- [`docs/workflow.md`](docs/workflow.md) — the lifecycle overview and gates.
+- [`docs/reference.md`](docs/reference.md) — authoritative CLI, configuration,
+  skills, runner, and recovery contracts.
+- [`docs/outline.md`](docs/outline.md) — the advisory outline report: examples,
+  supported languages, limitations, and how it supports REFACTOR and review.
+- [`docs/development-report.md`](docs/development-report.md) — the local record,
+  its settings, and analytics over the JSONL store.
+- [`docs/use-case-model.md`](docs/use-case-model.md) — use-case identity,
+  scoping, and review criteria.
+- [`docs/arc42/README.md`](docs/arc42/README.md) — current architecture and the
+  ADR register.
 - [`CHANGELOG.md`](CHANGELOG.md) · [`docs/migrations/README.md`](docs/migrations/README.md) —
-  release history and upgrade guides.
+  release history and the manual 1.0 transition.
 
 ## License
 
@@ -182,15 +149,14 @@ GPL-3.0-or-later. See [LICENSE](LICENSE).
 As a special exception under section 7 of the GNU General Public License,
 version 3, text that givn generates, writes, or emits — the managed blocks
 it maintains in files such as `AGENTS.md` and `README.md`, the generated
-rules (skills, commands, plugins, hooks), the instruction text it prints,
-and the scaffolds it instantiates such as `commands.yaml` and the `run`
-block — is not subject to the conditions of this license. You may use,
-modify, and distribute that text under terms of your choice, and it does
-not affect the license of the project it appears in. The exception covers
-givn's output, not givn itself. It does not apply when that text, or a
-modified version of it, is used as the rules, skills, or instructions of
-another spec-driven workflow tool; in that use, the text remains subject
-to the conditions of this license.
+skills, integrations, and hooks, the instruction text it prints, and the
+scaffolds it instantiates such as `commands.yaml` and the `run` block — is not
+subject to the conditions of this license. You may use, modify, and distribute
+that text under terms of your choice, and it does not affect the license of the
+project it appears in. The exception covers givn's output, not givn itself. It
+does not apply when that text, or a modified version of it, is used as the
+rules, skills, or instructions of another spec-driven workflow tool; in that
+use, the text remains subject to the conditions of this license.
 
 <!-- givn:begin:coverage -->
 ## Coverage

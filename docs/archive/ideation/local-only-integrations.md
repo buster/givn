@@ -1,3 +1,11 @@
+> **Historical handoff, retained for provenance.** This is the readable record of a
+> completed ideation topic. Its rationale and the state at handoff are kept as
+> written; it is not current product or operational documentation. In particular,
+> statements about Givn's source availability or then-current upgrade staging
+> reflect the handoff date, not current behavior. Current behavior is documented
+> in the [workflow](../../workflow.md), [reference](../../reference.md), and
+> [architecture documentation](../../arc42/README.md).
+
 # Local-only Givn rules
 
 Topic: `local-only-integrations` — ideation handoff, 2026-09-23.
@@ -154,4 +162,4 @@ upgrade path", and "Upgrade revision".
   upgrade does not honor; the rewrite ships separately because it is
   destructive and tool-gated.
 
-*[Documentation index](../INDEX.md)*
+*[Documentation index](../../INDEX.md)*

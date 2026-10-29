@@ -5,7 +5,8 @@ self-contained HTML report. This guide covers the record settings, the report
 screens, and analytics over the raw JSONL store.
 
 The record is **local runtime state**, written to `givn/history/events.jsonl`
-and ignored by both backends. It never enters repository history. The report is
+and ignored by both backends. It never enters repository history. It may contain
+sensitive content; it is not a privacy-filtered or redacted store. The report is
 one HTML file with no server, no network access, and no third-party JavaScript.
 
 ## Screens
@@ -59,13 +60,29 @@ record:
 
 | Mode | What is recorded | Notes |
 |---|---|---|
-| `on` (default) | Bounded metadata and the full question text: commands, phases, hooks, steps, revisions, turns, tool calls, subagent spans, waits, usage, cost, context, and reported metadata. Labels ≤ 120 chars, text metadata ≤ 240, error text ≤ 1,000, question text ≤ 4,000. No LLM-facing content. | The default when the key is absent or unreadable; an invalid value falls back to `on` with one warning. |
-| `off` | Nothing new: no entry, no pending state, and no record-side ignore write. | Absolute: `givn history ingest --with-full-content` is ignored with one warning and exit 0. |
-| `full` | `on` plus complete LLM-facing content: tool input/output, assistant/thinking text, user prompts, compaction summaries, plan content, subagent transcript excerpts. | Capped at 64 KiB per field and 256 KiB per entry; the store keeps every byte. Content is sensitive: enable it deliberately. |
+| `on` (default) | Bounded metadata and the full question text: commands, phases, hooks, steps, revisions, turns, tool calls, subagent spans, waits, usage, cost, context, and reported metadata. Labels ≤ 120 chars, text metadata ≤ 240, error text ≤ 1,000, question text ≤ 4,000. No complete LLM-facing tool content. | The default when the key is absent or unreadable; an invalid value falls back to `on` with one warning. Labels, paths, prompts, and error text can still be sensitive. |
+| `off` | Nothing new: no entry, no pending state, and no record-side ignore write. | Absolute: `givn history ingest --with-full-content` is ignored with one warning and exit 0. Existing entries remain. |
+| `full` | `on` plus complete LLM-facing content: tool input/output, assistant/thinking text, user prompts, compaction summaries, plan content, subagent transcript excerpts. | Capped at 64 KiB per field and 256 KiB per entry; the store keeps every byte. Content is unfiltered: enable it deliberately. |
 
 Lowering the mode keeps entries already captured; it never purges. `givn
 upgrade` preserves the key. The intake enforces the mode and every bound, so a
 stale reporter cannot turn content capture on by sending content.
+
+### Sensitivity and retention
+
+Recordings are local and git-ignored, not private. Even the default `on` mode
+keeps command lines, file paths, error text, session labels, and full question
+text; `full` adds unfiltered tool input/output, prompts, and assistant text. A
+credential that appears inside captured work travels with that work. There is no
+redaction, encryption, access-control, or filtering guarantee, and no retention
+policy: the append-only store grows until the project removes it. Do not commit
+`givn/history/`, do not publish it, and treat it as sensitive as the work it
+records.
+
+Recording is best-effort. Reporters use bounded waits and buffers; a slow or
+failed helper is killed or abandoned after its deadline, and the agent action
+continues. A failed write, flush, or rejected payload warns and is counted, but
+never changes the outcome, exit code, or timing guarantee of the primary work.
 
 Inspect the resolved setting:
 
@@ -131,6 +148,11 @@ headless gaps and the missing `task`-tool subagent span (`R-90`). Question text
 is always captured by all four; per-subagent tool attribution remains
 session-based (`R-93`).
 
+All four reporters are best-effort and bounded: they hold a bounded buffer, use
+a short helper deadline for settings/intake, warn and count dropped events, and
+never block or fail the agent action they observe. A missing measurement is
+rendered as unavailable, not as zero.
+
 ## Analytics on the JSONL store
 
 The store is one JSON object per line at `givn/history/events.jsonl`. It is
@@ -147,11 +169,12 @@ Four traps before summing:
   or use a phase's wall time — never all kinds together.
 - The recorder records its own intake commands (`history ingest`,
   `history harness-hook`). Exclude them for work analytics.
-- Token fields are per turn; `usage.total_tokens`/`context_size` repeat context
-  each turn, so cumulative sums are not unique tokens.
+- Token fields are per turn; `usage.input`, `usage.output`, and `usage.reasoning` are incremental, while `context_size` repeats the context each turn. Do not sum `context_size` as unique tokens.
+- Cost is reported by the harness for a turn, not computed by Givn. A turn without a measured cost is unavailable, not zero, and the values from different harnesses or providers are not comparable without checking their own accounting.
 
-The outputs below come from a frozen snapshot of **8,981 entries**; the live
-file grows as work continues.
+The outputs below come from a frozen snapshot of **8,981 entries** from an
+earlier run; they are illustrative, not current totals. The live file grows as
+work continues.
 
 ### jq — no setup, whole-file JSON
 
@@ -201,9 +224,10 @@ jq -s 'map(select(.duration_ms != null
 737.3  turn      turn 21
 ```
 
-**How much token work and cost do the turns carry?**
+**How much token work and recorded cost do the turns carry?**
 Select turns whose `usage` is an object (the harness may report
-`"unavailable"`), then sum the recorded counts and cost.
+`"unavailable"`), then sum the recorded counts. The cost sum includes only turns
+that record a cost; it is a reported value, not a Givn estimate.
 
 ```sh
 jq -s 'map(select(.kind=="turn" and (.data.usage|type)=="object")) as $t
@@ -216,8 +240,12 @@ jq -s 'map(select(.kind=="turn" and (.data.usage|type)=="object")) as $t
 ```
 
 ```text
-turns 2086 · input 5,019,281 · output 1,461,596 · reasoning 697,945 · cost $2.60
+turns 2086 · input 5,019,281 · output 1,461,596 · reasoning 697,945 · recorded cost $2.60
 ```
+
+The cost is the sum of the `data.cost` values that were present in that snapshot;
+a harness that reports no cost contributes nothing rather than zero, so the
+result is not a complete invoice.
 
 ### SQLite — a persistent local table and SQL
 
@@ -318,9 +346,8 @@ development-timeline  tasks.md          2026-10-17T10:42:33.994Z  2567
 
 DuckDB's strength is reading the file itself: `read_json_auto` infers the
 schema, structs and nested JSON stay queryable, and window/`QUALIFY` analytics
-run without an import step. Install the 2.0 alpha with
-`curl https://install.duckdb.org | DUCKDB_VERSION=alpha bash`; quote `"at"`
-(reserved) and add `-no-agent` in scripts.
+run without an import step. Install DuckDB by its current documented method;
+quote `"at"` (reserved) and add `-no-agent` in scripts.
 
 **Can I answer from the file without importing it?**
 Read the JSONL directly and group by kind.
@@ -394,6 +421,6 @@ recorder's own commands for work analytics.
 
 ## See also
 
-- [Architecture, chapter 8.25](arc42/08-crosscutting-concepts.md) — the record's ownership, privacy bound, and report packaging.
+- [Architecture, chapter 8.25](arc42/08-crosscutting-concepts.md) — the record's ownership, capture limits, and report packaging.
 - [Design system](design/design-system.md) — the report's tokens, primitives, breakpoints, and reference views.
 - [CLI and configuration reference](reference.md) — command flags and every configuration key.

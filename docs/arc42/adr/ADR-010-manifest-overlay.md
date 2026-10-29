@@ -53,11 +53,19 @@ Projects need to add, remove, or alter lifecycle artifacts while still receiving
 
 ## Decision Outcome
 
-Chosen option: **Overlay/patch the embedded manifest**. Existing artifact ids are deep-merged field by field; new ids are appended; `remove: true` removes an artifact; scalar blocks such as `verify`, `coverage`, and `apply` replace their corresponding effective blocks.
+Chosen option: **Overlay/patch the embedded manifest**. Existing artifact ids are deep-merged field by field; new ids are appended; `remove: true` removes an artifact; the `apply` block replaces its effective block.
+
+**Current amendment (prepare-0-9-10).** The generic overlay is the policy and
+artifact-graph authority in `givn/config.yaml`. Executable settings are not a
+second generic overlay: `givn/commands.yaml` is parsed through a dedicated
+schema limited to `verify`, `coverage`, and `run`, and its block defaults are
+resolved there. A policy key in the commands file and an executable key in the
+policy file are refused by name before any use. Both files remain
+project-owned; the split gives each kind of setting one authority.
 
 ### Consequences
 
-- The effective graph is the embedded manifest plus `givn/config.yaml`, then `givn/commands.yaml` for command and coverage settings.
+- The effective graph is the embedded manifest plus `givn/config.yaml`; `givn/commands.yaml` supplies only the executable `verify`, `coverage`, and `run` values through its dedicated schema.
 - Graph validation rejects dangling dependencies and cycles.
 - A project can intentionally change lifecycle order and archive requirements, so the effective manifest must be inspected when debugging state.
 

@@ -11,196 +11,40 @@ remain under [`adr/archive/`](adr/archive/) and are not current architecture.
 historical duplicate-ID migration and the later removal of records that do not
 meet the strict qualification gate.
 
-ADR-028 is amended by the `run-command` change. The mandatory-binary-check
-boundary it established gains one more non-deactivatable member: the
-run-declaration gate. It runs in `givn check review` and in `givn archive`
-before the README completeness gate, independently of the readme addon, so a
-project without a README addon is still held to declaring how its product
-starts. This is an extension of ADR-028's existing boundary, not a new record.
+## Current Amendments
 
-ADR-028 is amended again by the `visual-ui-review` change. The integrity
-mandatory check gains the visual review gate: when a change's `design.md`
-declares a visual interface, `givn check review` requires the visual verdict
-(`VISUAL-REVIEW: PASS`, with `VISUAL-REVIEW: UNVERIFIED` blocking until a
-human signs off) and complete per-viewport evidence. The check lives inside
-the existing integrity member, so it cannot be disabled by a `post` hook
-entry. This is a further extension of the same boundary, not a new record.
+An amendment changes an existing record's scope while preserving its original
+rationale and identity. It does not create a parallel decision.
 
-ADR-028 is amended a third time by the `web-ui-verification-hardening`
-change. The same integrity member gains the persona disposition, the
-per-state evidence, and the deferral pair: a declared visual interface
-requires a `PERSONAS:` line naming at least one confirmed Persona, every
-declared UI state requires committed `<viewport>--<state>.png` evidence, and
-a `DEFERRAL:` line requires a matching `OPERATOR-DECISION:` record. The
-classification reasoning and the quality of a persona disposition stay
-guidance-level. This remains an extension of the same boundary, not a new
-record.
+| Record | Current amendment |
+|---|---|
+| [ADR-010](adr/ADR-010-manifest-overlay.md) | Configuration authority is split: `givn/config.yaml` owns policy and graph, `givn/commands.yaml` owns executable `verify`/`coverage`/`run` settings through a dedicated schema. A policy key in the commands file and an executable key in the policy file are refused. |
+| [ADR-013](adr/ADR-013-agent-integration.md) | The generated invocation surface is skills-only. `.opencode`, `.agents`, `.claude`, `.omp`, and `.maki` receive `<target>/skills/<name>/SKILL.md`; no target receives generated command files. Maki remains a full skills target and receives the development reporter through merged user-owned configuration. |
+| [ADR-023](adr/ADR-023-versioned-config-upgrade.md) | The managed upgrade runs on Git and Fossil through the SCM seam, captures a checkpoint, stages only the calculated allowlist, and reports actual publication and partial state. The supported migration baseline is 1.0 with an empty shipped catalog; retired 0.x keys require manual repair, not an alias or an embedded route. |
+| [ADR-028](adr/ADR-028-hooks-and-mandatory-checks.md) | Mandatory review checks remain non-deactivatable: integrity, the run declaration, change-scoped lint, overlap/retirement/routing, the verification receipt, and scenario commits. The later conditional readability/outline review member is retired; the outline addon is advisory only and no `OUTLINE`/`READABILITY` verdict or waiver is required. |
+| [ADR-070](adr/ADR-070-forward-only-archive-proof.md) | A change verification receipt binds a stable execution witness (revision, selected features, command, tested content, scope). A no-behavior-change declaration reports applicability instead of a fabricated green result. Successful archive scopes are persisted per scope and reused only when their inputs and results still match; changed inputs conservatively invalidate both scopes. |
+| [ADR-072](adr/ADR-072-witness-bounded-publication.md) | The witness-bounded publication contract is unchanged. `givn commit` additionally uses explicit selected paths on both backends; witness-bounded archive publication remains the archive's own boundary. |
 
-ADR-028 is amended a fourth time by the `persona-identity-reuse` change. The
-same integrity member's persona disposition now resolves its value against
-the project persona collection: a declared visual interface's `PERSONAS:`
-line must name a persona that exists at `givn/personas/<id>.md`, and a
-reasoned `none` is valid only for a change without a user-visible surface.
-The identity criteria and the reuse protocol stay guidance-level. This
-remains an extension of the same boundary, not a new record.
+## Historical Amendments
 
-The current Persona trigger is broader than the fourth amendment. The
-`require-persona-for-interface-none` change makes every declared
-`## Visual Design Contract`, including `Interface: none`, require a confirmed
-Persona. The qualification gate returns `NOT_QUALIFIED`/`CANONICAL_ARTIFACT`:
-ADR-028's non-deactivatable member and its requirement are unchanged, and only
-the trigger that selects changes for it is observable review behavior owned by
-the `visual-review-gate` capability. The current facts live in chapters 6, 8,
-10, and 12; no ADR file is added or amended.
+These amendments are retained in the individual ADR files and the register:
 
-ADR-013 is amended by the `require-agent-target` change; its interaction
-wording is refined by `keep-agent-prompt-open`. Its target-selection contract
-no longer accepts an empty selection at initialization: the interactive
-prompt opens with `.opencode` marked and re-asks, with an error naming the
-requirement, until a target is marked; an empty or unknown-only answer and EOF
-without `--agents` refuse with a non-zero exit before the first write.
-Synchronization keeps the `opencode` fallback for a configuration without a
-`skills:` block. This refines ADR-013's existing agent-integration boundary;
-it introduces no new decision.
+- ADR-028 by `run-command` (run declaration), `visual-ui-review` (visual
+  verdict/evidence), `web-ui-verification-hardening` (persona/state/deferral),
+  and `persona-identity-reuse` (persona-ID resolution);
+- ADR-013 by `require-agent-target` and `keep-agent-prompt-open` (explicit
+  target selection), and `add-omp-agent-target`, `development-timeline` (target
+  additions and the Maki reporter);
+- ADR-070 by `review-friction-hardening` (tested-content digest and
+  documentation-only reuse);
+- ADR-071 by `maintain-project` (upgrade on both backends).
 
-ADR-013 is amended a third time by the `add-omp-agent-target` change: the
-generated-guidance destinations gain `.omp` (`omp`) alongside `.opencode`,
-`.agents`, and `.claude`, and the command-owning targets write commands into
-their own `<target>/commands/` directory. The ownership rule — givn writes only
-to configured target directories plus its own fenced blocks — is unchanged,
-so this extends the same boundary rather than deciding a new one.
-
-ADR-013 is amended a fourth time by the `development-timeline` change: the
-generated-guidance destinations gain `maki` (`.maki`) alongside `.opencode`,
-`.agents`, `.claude`, and `.omp`. It is a full target — Givn writes skills to
-`.maki/skills/` and commands to `.maki/commands/` (the only project command
-location Maki reads that Givn can write), so a `maki`-only selection is fully
-equipped — and it additionally receives the development reporter: the Lua module
-`.maki/lua/givn-timeline.lua`, grants merged into `.maki/plugin.toml`, and a
-managed fail-soft fence inside `.maki/init.lua`. Two of those files are merged
-user-owned configuration, so only the fenced region and the grant keys change.
-The ownership rule — givn writes only its own generated files plus its own
-fenced blocks, and all surrounding content stays user-owned — is unchanged, so
-this extends the same boundary rather than deciding a new one.
-
-ADR-071 is accepted by the `scm-backend` change: repository-state commands ask
-one selection seam which version-control system owns the project root. Detection
-uses the project's own markers (Git worktree first, then a Fossil checkout) and
-refuses ambiguity, absence, a nested root, or a missing executable by name; no
-configuration key declares the backend. The seam is the prerequisite for the
-Fossil backend and for moving the archive publication onto the same contract.
-The mixed-setup and missing-executable consequences are carried by R-63 and
-R-64 in chapter 11.
-
-ADR-071 is amended by the `maintain-project` change: the managed upgrade and
-the migration bundles consume the selection seam on both backends. The Fossil
-backend gained the upgrade-side operations (allowlist staging with
-`fossil add [--force]`, pending-change detection, and commit), the temporary
-managed-upgrade refusal was removed, and the plan revision records the
-upgrade revision identifier on either backend. This refines ADR-071's
-boundary; it introduces no new decision.
-
-ADR-072 is accepted by the `archive-change` change: publication through the SCM
-seam is witness-bounded. Givn resolves the publication paths, validates the
-exact dirty set against them, and then records only that set — Git stages the
-candidate paths, Fossil records all changes and commits the witnessed dirty set
-because it has no index and cannot name a directory that contains missing
-files. The archive consumes the Fossil backend, and the resume path republishes
-a candidate whose publication a backend hook rejected. The witness-bounded
-consequence is carried by R-65 in chapter 11.
-
-ADR-073 is accepted by the `development-timeline` change: Givn owns the
-development record and its format, and harness integrations report activity
-through one intake command instead of writing the record themselves. The
-record is append-only, scope-tagged (change, ideation, or project), written
-best-effort so it can never change the outcome of the work it records, bounded
-to metadata and a truncated label, and kept out of repository history by its
-own fenced ignore block. Every supported harness that executes an agent (omp,
-opencode, Claude Code) gets one generated reporter against that same intake,
-while the `agents` skills mirror gets none; a process-per-hook harness maps its
-raw payloads in the binary and keeps its start timestamps in pending state. The
-rejected alternatives (each integration writing lines itself, and reading the
-harness's private session log at report time) stay readable in the record. The
-compatibility surface of a stale installed reporter and the accepted record
-gaps are carried by R-84, R-88, and D-22 in chapter 11.
-
-ADR-074 is accepted by the `add-readability-report` change: source analysis sits
-behind a neutral `SourceAnalyzer` port, `SynAnalyzer` is the first adapter, and
-`syn` types stay inside that adapter. The decision fixes the dependency direction
-and the engine-independent report contract that the later
-`add-readability-review-gate` change and a later tree-sitter adapter build on. It
-is separate from ADR-069's feature-free dependency surface: the record owns the
-analysis boundary and replaceability contract, not the dependency list itself.
-Its consequences are carried by R-104 through R-108 in chapter 11.
-
-The `add-readability-review-gate` change consumes ADR-074 rather than deciding a
-new analyzer boundary: the gate calls the same public analysis pipeline, imports
-no parser, and adds no second metric or classification. Its own decision —
-change-relative outline review, the `OUTLINE: AUTHOR` / `OUTLINE: REVIEWER` /
-`OUTLINE: PASS <unit> | <explanation>` / `OUTLINE: FAIL <unit> | <reason>` /
-`OUTLINE: PASS` vocabulary, per-unit outline verdicts, committed-`HEAD`
-analysis, and the absence of a stored baseline or ledger — is observable review
-behavior owned by the `outline-review-gate` Gherkin capability, the
-`verify-change` use case, and the change design; it is `NOT_QUALIFIED` and
-routed as `CANONICAL_ARTIFACT`. No new ADR file is created.
-
-That change qualified three candidates and routed them separately on 2026-10-20:
-the gate behavior to the canonical capability artifact, and two amendments to
-existing records. ADR-028 is amended a
-fifth time: the mandatory review check gains a conditional outline member
-that refuses while any printed outline lacks a `PASS` with a responsibility and
-call-order explanation or carries a `FAIL`, and the member cannot be removed by
-a `post` entry once the addon is enabled. ADR-071 is amended a second time: the
-SCM seam gains five history/revision operations (`first_touching_revision`,
-`parent_revision`,
-`revision_files`, `revision_blobs`, and `changed_paths`), with entry kinds,
-non-UTF-8 and line-break refusal, `dirty_entries` plus the revision diff for
-changed paths, Git shallow refusal, and Fossil `timeline --reverse -r ancestors
-current` reachability with `parent:` (never `merged-from:`) as the first parent. The active register count stays at 26 accepted
-records with no proposed records. The gate's durable facts and risk profile live
-in chapters 2, 3, 5, 6.20, 8.26a, 10, 11, and 12.
+The earlier conditional outline review member and its `add-readability-*`
+amendments are retained as historical rationale only. They do not describe the
+current gate.
 
 Individual ADRs preserve decision rationale and links. Current architecture
 facts remain in the relevant Arc42 chapters or implementation; the register is
 not a second copy of those facts.
-
-ADR-023 is amended by the 0.3.0 release migration protocol. The amendment keeps
-config scaffold upgrades preservation-oriented and adds a clean-worktree,
-allowlisted managed commit plus a visible aggregate maintenance change when the
-embedded migration catalog declares a route. It does not make Givn responsible
-for semantic project decisions.
-
-ADR-069 supersedes the fifteen semantic-engine records: the semantic retrieval
-engine (E5 retrieval, BGE/NLI evidence, model-cache acquisition, and the
-semantic gates) was removed by the `drop-embedding-features` change, leaving a
-single feature-free binary. The register in [`adr/README.md`](adr/README.md)
-is the authoritative list of active decisions, statuses, and relationships.
-
-ADR-067 is accepted by the `run-command` change: the same tool that declares
-the product start (`run:` in `givn/commands.yaml`) also executes it
-(`givn run`) under one spec'd machine contract — ready line, exit-code table,
-port hand-off, and signal forwarding. The record was proposed with the
-change's design and left `proposed` until the full suite and the @e2e scope
-stayed green; the compatibility obligation is carried by R-45 in chapter 11.
-
-ADR-070 is accepted by the `archive-proof` change: publication becomes
-forward-only and SCM-backed — the merged archive candidate is published before
-verification, each verification scope runs once with a fail-closed runner
-result, and the verification receipt is committed as the evidence-only
-finalization. Unlike ADR-067, this record is accepted before the archive runs:
-the permanent ADR register scenario asserts that no register record is left
-`proposed`, and that scenario is itself verified by the archive, so a
-`proposed` record could never satisfy the merged corpus. The recovery and
-review-evidence consequences are carried by R-53 through R-55 in chapter 11.
-
-ADR-070 is amended by the `review-friction-hardening` change. The receipt now
-also binds the tested content through a SHA-256 digest and the versioned
-`change-proof/v1` scope, so review and archive reuse a green proof when only
-documentation or evidence changed after it was recorded. Any tested-content
-change still makes the receipt stale, schema 1 receipts keep strict revision
-equality, and unknown schemas are refused. The archive publication boundary,
-candidate exactness, and fail-closed scope results are unchanged; the
-boundary risk is carried by R-116 and the compatibility cost by R-117 in
-chapter 11.
 
 *[Architecture documentation index](README.md)*

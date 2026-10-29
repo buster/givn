@@ -60,26 +60,38 @@ Givn-owned path allowlist when files changed. Ignored generated paths are
 force-staged only as individual allowlisted paths; no directory or complete
 worktree is force-staged. Addon enablement remains explicit.
 
-The 0.3.0 refinement adds the embedded migration catalog. A declared route is
+A later refinement added the embedded migration catalog. A declared route is
 resolved from the active config version to the installed package version,
-including compatible skipped patch releases. The managed preparation is Commit
-A; the catalog bundles are then combined into one visible aggregate maintenance
-change and committed as Commit B. The aggregate metadata records every bundle
-in source-to-target order, and the plan contains no synthetic product feature.
-Non-Git or dirty projects are refused before any write; an active aggregate plan
-is detected through its visible `migration.yaml` and is preserved.
+including compatible skipped patch releases. The managed preparation is the
+first revision; the catalog bundles are then combined into one visible aggregate
+maintenance change and committed as the second revision. The aggregate metadata
+records every bundle in source-to-target order, and the plan contains no
+synthetic product feature. Dirty projects and projects without a usable backend
+are refused before any write; an active aggregate plan is detected through its
+visible `migration.yaml` and is preserved.
+
+**Current amendment (prepare-0-9-10).** The managed upgrade runs through the
+Git/Fossil selection seam on both backends, captures a checkpoint revision, and
+stages only the calculated allowlist. The supported migration baseline is 1.0.
+The shipped catalog is empty, so no pre-1.0 route is selected; retired 0.x
+configuration is refused with a manual-transition message and no alias. Future
+routes keep the same bundle contract and resolver. On failure the command
+reports the checkpoint, completed writes, revisions actually published,
+best-effort restoration, remaining partial state, and pending work; it performs
+no reset or history rewrite. `givn commit` separately requires explicit paths on
+both backends.
 
 ### Consequences
 
-- Users review the resulting files and managed/migration commits with `git diff`.
+- Users review the resulting files and managed/migration revisions with their backend diff (`git show` or `fossil diff`).
 - Ejected facets are not automatically upgraded; they remain project-owned.
 - Line-based preservation is intentionally conservative and can leave legacy keys for manual review.
 - The config marker records the managed scaffold version; it does not mean that the aggregate project migration was reviewed or archived.
-- A transition with no catalog route creates no migration change, while its managed files still receive one allowlist-only commit when changed.
+- A transition with no catalog route creates no migration change, while its managed files still receive one allowlist-only commit when changed. At the 1.0 baseline there is no pre-1.0 route.
 
 ### Confirmation
 
-Upgrade tests assert version replacement, valid YAML, idempotent rendering for the same version, preservation of `verify` and addon overrides, catalog path ordering, skipped-patch resolution, managed-only refresh, and aggregate plan creation.
+Upgrade tests assert version replacement, valid YAML, idempotent rendering for the same version, preservation of user overrides, refusal of retired/misplaced settings, catalog path ordering, skipped-patch resolution, managed-only refresh, aggregate plan creation for synthetic future routes, and the empty shipped 1.0 catalog.
 
 ## Pros and Cons of the Options
 

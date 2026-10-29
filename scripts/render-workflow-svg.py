@@ -117,13 +117,13 @@ def render_card(card, x, y, w):
 
 PHASES = [
     dict(
-        num="1", name="propose", sub="/givn-propose",
+        num="1", name="propose", sub="skill: givn-propose",
         artifact="proposal.md",
         art_lines=["WHAT and WHY, domain language, no implementation detail"],
         checks=[],
     ),
     dict(
-        num="2", name="spec", sub="/givn-spec",
+        num="2", name="spec", sub="skill: givn-spec",
         artifact="specs/*.feature",
         art_lines=["delta scenarios (add/modified/removed), &#8805; 1 E2E-tested per capability"],
         checks=[
@@ -137,13 +137,13 @@ PHASES = [
         ],
     ),
     dict(
-        num="3", name="design", sub="/givn-design",
+        num="3", name="design", sub="skill: givn-design",
         artifact="design.md",
         art_lines=["HOW to implement, config, e2e infrastructure"],
         checks=[],
     ),
     dict(
-        num="4", name="design-review", sub="/givn-design-review",
+        num="4", name="design-review", sub="skill: givn-design-review",
         artifact="design-review.md",
         art_lines=["plan stress-tested one question at a time, then hardened"],
         checks=[
@@ -153,7 +153,7 @@ PHASES = [
         ],
     ),
     dict(
-        num="5", name="tasks", sub="/givn-tasks",
+        num="5", name="tasks", sub="skill: givn-tasks",
         artifact="tasks.md",
         art_lines=["setup task first, then RED / GREEN / REFACTOR / COMMIT",
                    "per scenario &#8212; @e2e scenarios last"],
@@ -163,7 +163,7 @@ PHASES = [
         ],
     ),
     dict(
-        num="6", name="implement", sub="/givn-implement",
+        num="6", name="implement", sub="skill: givn-implement",
         artifact="production code",
         art_lines=["one targeted TDD cycle per scenario, one atomic commit",
                    "&#8212; hash recorded in tasks.md immediately"],
@@ -211,7 +211,7 @@ PHASES = [
 # manifest artifact, no gates, rendered dashed to mark it as skippable.
 ENTRY = dict(
     name="ideation",
-    sub="/givn-ideation &#183; event storming",
+    sub="skill: givn-ideation &#183; event storming",
     artifact="givn/ideation/&lt;topic&gt;/",
     art_lines=[
         "multi-session storm: domain events, personas, use cases, change seeds",

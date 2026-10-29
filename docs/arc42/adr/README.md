@@ -27,9 +27,9 @@ owning documents.
 ## Active Register
 
 The active register contains only independent durable architecture decisions:
-26 accepted records and no proposed records. The fifteen semantic-engine records were
-superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
-[`archive/`](archive/) by the `drop-embedding-features` change.
+26 accepted records and no proposed records. The fifteen semantic-engine
+records were superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and
+moved to [`archive/`](archive/) by the `drop-embedding-features` change.
 
 | ID | Status | Decision | Qualification basis |
 |---|---|---|---|
@@ -66,12 +66,13 @@ superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 |---|---|
 | ADR-019 -> retired ADR-027 | ADR-027 superseded the old `givn verify` naming and was later retired as non-qualifying; the lint naming contract lives in `givn/specs/verify-change/`. |
 | ADR-039, 041, 044, 045, 046, 047, 052, 054, 055-061, 063, 064, 066, 068 -> ADR-069 | ADR-069 supersedes the semantic-engine records; the deterministic overlap boundary of ADR-037 remains current. |
-| ADR-070 -> ADR-072 | ADR-072 generalizes ADR-070's Git-specific publication consequence onto the backend seam; ADR-070 keeps the forward-only proof decision. |
-| ADR-070 (amended by review-friction-hardening) | The receipt now binds the tested content through a SHA-256 digest and the versioned `change-proof/v1` scope. A documentation-only revision reuses the proof; any tested-content change, a schema 1 receipt after a revision change, and an unknown schema stay stale. |
-| ADR-071 (amended by maintain-project, amended by add-readability-review-gate) | The seam decision now also governs the managed upgrade and migration bundles on Fossil, and it carries the five history/revision operations the outline review gate consumes: first-touch and parent resolution, revision files with entry kinds, revision blobs, and changed paths including worktree extras. Git refuses a shallow repository for the base lookup; Fossil walks only `ancestors current`. |
-| ADR-013 (amended by require-agent-target, refined by keep-agent-prompt-open, amended by development-timeline) | Initialization requires an explicitly selected target set: the interactive prompt opens with `opencode` marked and re-asks until something is marked, while a non-terminal empty selection is refused before the first write; synchronization keeps the fallback for a configuration without a `skills:` block. The destinations later gained `maki` (`.maki`) as a full target — skills to `.maki/skills/`, commands to `.maki/commands/`, plus the development reporter (module, merged grants, and a managed fail-soft fence in `.maki/init.lua`) — so a `maki`-only selection is fully equipped. |
-| ADR-023 (amended by 0.3.0) | The versioned-config decision now also governs managed-only commits, catalog-selected migrations, aggregate plans, and their clean-worktree boundary. |
-| ADR-028 (amended by add-readability-review-gate) | The mandatory review check gains a conditional outline member: with the addon enabled, every printed outline needs a fresh-context `OUTLINE: PASS` with a responsibility and call-order explanation or an `OUTLINE: FAIL`, and the member cannot be disabled by a `post` entry. There is no rationale path. |
+| ADR-070 -> ADR-072 | ADR-072 generalizes ADR-070's publication consequence onto the backend seam; ADR-070 keeps the forward-only proof decision. |
+| ADR-070 (amended by review-friction-hardening, prepare-0-9-10) | The receipt binds tested content through a SHA-256 digest and `change-proof/v1`. A documentation-only revision reuses the proof. The later amendment adds the stable execution witness captured before/after launch, the no-behavior-change applicability result, and per-scope archive evidence reused only when inputs and results match. |
+| ADR-071 (amended by maintain-project) | The seam decision now also governs the managed upgrade and migration preparation on Fossil. |
+| ADR-013 (amended by require-agent-target, keep-agent-prompt-open, development-timeline, prepare-0-9-10) | Initialization requires an explicitly selected target set. The destinations are `opencode`, `agents`, `claude`, `omp`, and `maki`. The current invocation surface is skills-only; no target receives generated commands. Maki remains a full skills target and receives the development reporter through merged user-owned configuration. |
+| ADR-010 (amended by prepare-0-9-10) | The generic overlay owns policy and graph in `givn/config.yaml`; `givn/commands.yaml` uses a dedicated `verify`/`coverage`/`run` schema. Cross-owned keys are refused. |
+| ADR-023 (amended by prepare-0-9-10) | The upgrade runs on Git and Fossil through the seam, captures a checkpoint, stages only the allowlist, and reports publication/recovery honestly. The 1.0 baseline ships no pre-1.0 route; retired keys require manual repair. |
+| ADR-028 (amended by prepare-0-9-10) | Mandatory review checks remain non-deactivatable. The later conditional readability/outline review member is retired; the outline addon is advisory and no `OUTLINE`/`READABILITY` verdict or waiver is required. |
 | ADR-073 (related to ADR-014, ADR-013, ADR-028) | The development record is a durable journal deliberately outside ADR-014's filesystem-derived state, delivered as one generated agent integration under ADR-013's ownership rule, and explicitly outside ADR-028's gate boundary — the record is never a gate input. |
 
 ## Evidence
@@ -82,9 +83,10 @@ superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 | Hooks and mandatory checks | [`src/cli/check.rs`](../../../src/cli/check.rs), [`src/hooks.rs`](../../../src/hooks.rs), [`src/cli/archive.rs`](../../../src/cli/archive.rs) |
 | Archive proof | [`src/scm.rs`](../../../src/scm.rs), [`src/fossil.rs`](../../../src/fossil.rs), [`src/proof.rs`](../../../src/proof.rs), [`src/cli/archive.rs`](../../../src/cli/archive.rs), [`givn/archive/archive-proof/`](../../../givn/archive/archive-proof/) |
 | SCM backend selection | [`src/scm.rs`](../../../src/scm.rs), [`src/cli/migration.rs`](../../../src/cli/migration.rs), [`givn/specs/fragments/detect-the-project-repository.feature`](../../../givn/specs/fragments/detect-the-project-repository.feature) |
-| Agent ownership | [`src/skills/targets.rs`](../../../src/skills/targets.rs), [`src/cli/agents_block.rs`](../../../src/cli/agents_block.rs), [`src/cli/absolute_mode.rs`](../../../src/cli/absolute_mode.rs) |
-| Release migration | [`src/cli/migration.rs`](../../../src/cli/migration.rs), [`assets/migrations/catalog.yaml`](../../../assets/migrations/catalog.yaml), [`docs/migrations/README.md`](../../migrations/README.md), and release migration feature scenarios |
+| Agent ownership | [`src/skills/targets.rs`](../../../src/skills/targets.rs), [`src/cli/agents_block.rs`](../../../src/cli/agents_block.rs), [`src/cli/project_hint.rs`](../../../src/cli/project_hint.rs) |
+| Release migration | [`src/cli/migration.rs`](../../../src/cli/migration.rs), [`assets/migrations/catalog.yaml`](../../../assets/migrations/catalog.yaml), [`docs/migrations/README.md`](../../migrations/README.md), and migration feature scenarios |
 | Development record and report | [`src/history.rs`](../../../src/history.rs), [`src/cli/history.rs`](../../../src/cli/history.rs), [`src/cli/timeline.rs`](../../../src/cli/timeline.rs), [`assets/timeline/report.html`](../../../assets/timeline/report.html), [`assets/agent-integrations/omp/givn-timeline.js`](../../../assets/agent-integrations/omp/givn-timeline.js), and the `inspect-development-history` scenarios |
+| Outline analysis | [`src/outline/`](../../../src/outline/), [`src/cli/outline.rs`](../../../src/cli/outline.rs), [`givn/specs/assess-code-structure/outline-report.feature`](../../../givn/specs/assess-code-structure/outline-report.feature) |
 | PR #27 measurements | [`semantic-duplicates-real-model-analysis.md`](../../archive/analysis/semantic-duplicates-real-model-analysis.md) and its linked benchmark/manual reports; raw JSON reports are local and ephemeral under the paths stated there. |
 
 ## Archived ADRs

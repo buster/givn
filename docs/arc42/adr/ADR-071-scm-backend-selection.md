@@ -1,10 +1,11 @@
 ---
-
 status: accepted
 date: 2026-09-14
 decision-makers: buster (project owner)
 consulted: none
 informed: none
+
+---
 
 # Select the SCM backend from project markers through one seam
 
@@ -82,10 +83,13 @@ command the same refusals without a config migration.
 
 ### Consequences
 
-Amended 2026-10-20 by the `add-readability-review-gate` change. The seam gains
-five history and revision operations used by the review gate:
+Amended 2026-10-20 by the `add-readability-review-gate` change. The seam gained
+five history and revision operations:
 `first_touching_revision`, `parent_revision`, `revision_files`,
-`revision_blobs`, and `changed_paths`. `revision_files` returns each
+`revision_blobs`, and `changed_paths`. The outline review gate that consumed
+them was retired by `prepare-0-9-10`; the operations remain in the seam as
+tested capabilities and a possible future consumer, not as a current gate
+dependency. `revision_files` returns each
 project-relative path with its entry kind (`regular`, `symlink`, or
 `submodule`) from `git ls-tree -r -z` or `fossil ls`; a non-UTF-8 path is
 refused. `changed_paths` includes untracked and extra working-tree paths when

@@ -258,6 +258,63 @@ review report, proof reuse after documentation-only edits, and refusal after a
 delta-feature, verify-command, or source-code change. Receipt unit tests cover
 digest stability, schema 1 strict equality, and unknown-schema refusal.
 
+## Amendment — fresh stable witness and lean scope reuse (prepare-0-9-10)
+
+Amended by the `prepare-0-9-10` change on 2026-10-29. This refines the receipt
+and recovery contract; it does not replace the forward-only publication
+boundary.
+
+### Qualification
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: AMEND_ADR
+canonical_artifact: null
+target_adr: ADR-070
+replacement_adr: null
+
+- **alternatives** — stale receipts accepted after launch, arbitrary source-path
+  exemptions, fine-grained dependency inference, and blanket retry
+  revalidation were rejected in favor of a captured execution witness and
+  conservative shared input digests.
+- **architectural_impact** — the receipt now binds the stable inputs captured
+  before launch and the equality checked after launch, and a no-behavior-change
+  declaration stores applicability instead of a fabricated green result.
+- **durable_consequence** — archive scope evidence becomes durable per scope;
+  a later input-identity change needs a new witness scope rather than a silent
+  reinterpretation.
+- **lower_level_artifact** — the observable freshness, applicability, and
+  retry behavior is owned by the verify-change and archive-change specs.
+- **existing_adr_check** — the receipt and forward-only boundary remain owned
+  by ADR-070. ADR-072 owns witness-bounded publication and is unchanged. Route:
+  `AMEND_ADR`.
+
+### Current consequences
+
+- A change verification receipt captures current revision, selected-feature
+  digest, command digest, relevant content digest, and declared scope before
+  launch, and requires equality after the run. A launch, result, or stability
+  failure leaves no green receipt.
+- `Behavior change: none` with skipped specs and no delta features reports
+  changed-scenario verification as not applicable. It stores applicability, not
+  a fabricated runner result.
+- A successful archive scope is persisted immediately with its inputs, command
+  digest, result digest/status, and tested revision. A retry reuses it only when
+  the inputs and result still match.
+- Shared source/spec/helper/coverage/runtime-setting changes invalidate both
+  scopes. Only a change confined to one verify command can invalidate that
+  scope alone. Formatting-only settings changes preserve canonical equality.
+- No arbitrary source-path exclusion or blanket retry re-review is introduced.
+
+The original tested-content binding (the `review-friction-hardening`
+amendment) remains in force; this amendment adds the stable execution witness
+and the lean per-scope recovery rule.
+
 ## More Information
 
 - Amendment design: `givn/changes/review-friction-hardening/design.md` and
