@@ -155,6 +155,10 @@ pub struct Receipt {
     #[serde(default)]
     pub coverage: Option<CoverageOutcome>,
     #[serde(default)]
+    pub scope_evidence: BTreeMap<String, ScopeEvidence>,
+    #[serde(default)]
+    pub coverage_inputs: Option<VerificationInputs>,
+    #[serde(default)]
     pub merge_completed: bool,
     #[serde(default)]
     pub merged_deltas: Vec<String>,
@@ -170,7 +174,67 @@ pub struct Receipt {
     pub finished_at_unix: Option<u64>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScopeEvidence {
+    pub inputs: VerificationInputs,
+    pub result_digest: String,
+}
+
 impl Receipt {
+    pub fn record_scope(
+        archive_dir: &Path,
+        scope: &str,
+        outcome: ScopeOutcome,
+        inputs: VerificationInputs,
+        result_path: &Path,
+    ) -> Result<()> {
+        let mut receipt = read_receipt(archive_dir).context("archive receipt missing")?;
+        let result_digest = digest_text(&std::fs::read_to_string(result_path)?);
+        receipt.scopes.insert(scope.to_owned(), outcome);
+        receipt.scope_evidence.insert(
+            scope.to_owned(),
+            ScopeEvidence {
+                inputs,
+                result_digest,
+            },
+        );
+        write_receipt(archive_dir, &receipt)
+    }
+
+    pub fn reusable_scope(
+        &self,
+        scope: &str,
+        inputs: &VerificationInputs,
+        result_path: &Path,
+    ) -> bool {
+        let Some(evidence) = self.scope_evidence.get(scope) else {
+            return false;
+        };
+        self.scopes
+            .get(scope)
+            .is_some_and(|outcome| outcome.status == "passed")
+            && evidence.inputs.reusable_for(inputs)
+            && std::fs::read_to_string(result_path)
+                .is_ok_and(|text| digest_text(&text) == evidence.result_digest)
+            && RunnerResult::read(result_path, scope).is_ok()
+    }
+
+    pub fn record_coverage(
+        archive_dir: &Path,
+        outcome: CoverageOutcome,
+        inputs: VerificationInputs,
+    ) -> Result<()> {
+        let mut receipt = read_receipt(archive_dir).context("archive receipt missing")?;
+        receipt.coverage = Some(outcome);
+        receipt.coverage_inputs = Some(inputs);
+        write_receipt(archive_dir, &receipt)
+    }
+
+    pub fn resume_pending(archive_dir: &Path) -> Result<()> {
+        let mut receipt = read_receipt(archive_dir).context("archive receipt missing")?;
+        receipt.status = STATUS_PENDING.to_owned();
+        write_receipt(archive_dir, &receipt)
+    }
     /// Write the pending receipt committed with the candidate. It cannot name
     /// the candidate revision's own identifier, so both revision fields stay unset.
     #[cfg(test)]
@@ -212,6 +276,8 @@ impl Receipt {
             tested_revision: None,
             scopes: BTreeMap::new(),
             coverage: None,
+            scope_evidence: BTreeMap::new(),
+            coverage_inputs: None,
             started_at_unix: Some(started_at_unix),
             finished_at_unix: None,
         };
@@ -243,6 +309,10 @@ impl Receipt {
             tested_revision: Some(tested_revision.to_string()),
             scopes,
             coverage,
+            scope_evidence: read_receipt(archive_dir)
+                .map(|r| r.scope_evidence)
+                .unwrap_or_default(),
+            coverage_inputs: read_receipt(archive_dir).and_then(|r| r.coverage_inputs),
             started_at_unix: Some(started_at_unix),
             finished_at_unix: Some(finished_at_unix),
         };
@@ -536,6 +606,99 @@ pub const CHANGE_RECEIPT_FILE: &str = "verification/tasks-verification.json";
 /// Path of the raw change-scoped runner result.
 pub const CHANGE_RESULT_FILE: &str = "verification/tasks-result.json";
 
+pub fn remove_previous_output(path: &Path) -> Result<()> {
+    match std::fs::remove_file(path) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(error).with_context(|| format!("remove stale output {}", path.display())),
+    }
+}
+
+pub fn change_verification_not_applicable(change_dir: &Path) -> Result<bool> {
+    let proposal = std::fs::read_to_string(change_dir.join("proposal.md")).unwrap_or_default();
+    let declared = crate::state::actual_entries(&proposal, "Behavior change:")
+        .iter()
+        .any(|v| v == "none");
+    let features = crate::gherkin::parse::collect_feature_files(&change_dir.join("specs"));
+    if declared {
+        if !features.is_empty() {
+            bail!(
+                "executable deltas contradict no behavior change; remove the declaration or delta feature files"
+            );
+        }
+        if !crate::state::is_skipped("specs", change_dir) {
+            bail!("Behavior change: none requires an explicit specs skip in .givn-skip");
+        }
+        return Ok(true);
+    }
+    if features.is_empty() {
+        bail!("missing delta specs or explicit Behavior change: none declaration and specs skip");
+    }
+    Ok(false)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct VerificationInputs {
+    pub revision: String,
+    pub features_digest: String,
+    pub command_digest: String,
+    pub content_digest: String,
+    pub scope: String,
+}
+
+impl VerificationInputs {
+    pub fn reusable_for(&self, current: &Self) -> bool {
+        self.features_digest == current.features_digest
+            && self.command_digest == current.command_digest
+            && self.content_digest == current.content_digest
+            && self.scope == current.scope
+    }
+
+    pub fn capture_archive(
+        project_root: &Path,
+        backend: &crate::scm::Backend,
+        change: &str,
+        manifest: &crate::config::manifest::Manifest,
+        command: &str,
+        scope: &str,
+    ) -> Result<Self> {
+        Ok(Self {
+            revision: backend.revision()?,
+            features_digest: digest_features(&project_root.join("givn/specs"))?,
+            command_digest: digest_text(command),
+            content_digest: digest_content(project_root, backend, change, manifest, true)?,
+            scope: scope.to_owned(),
+        })
+    }
+
+    pub fn capture(
+        project_root: &Path,
+        backend: &crate::scm::Backend,
+        change: &str,
+        manifest: &crate::config::manifest::Manifest,
+        features: &Path,
+        command: &str,
+        scope: &str,
+    ) -> Result<Self> {
+        Ok(Self {
+            revision: backend.revision()?,
+            features_digest: digest_features(features)?,
+            command_digest: digest_text(command),
+            content_digest: digest_tested_content(project_root, backend, change, manifest)?,
+            scope: scope.to_owned(),
+        })
+    }
+
+    pub fn ensure_unchanged(&self, after: &Self) -> Result<()> {
+        if self != after {
+            bail!(
+                "tested inputs changed during execution; no passing verification evidence was issued"
+            );
+        }
+        Ok(())
+    }
+}
+
 pub fn digest_text(text: &str) -> String {
     Sha256::digest(text.as_bytes())
         .iter()
@@ -769,13 +932,32 @@ pub fn digest_tested_content(
     change: &str,
     manifest: &crate::config::manifest::Manifest,
 ) -> Result<String> {
+    digest_content(project_root, backend, change, manifest, false)
+}
+
+fn digest_content(
+    project_root: &Path,
+    backend: &crate::scm::Backend,
+    change: &str,
+    manifest: &crate::config::manifest::Manifest,
+    archive: bool,
+) -> Result<String> {
     let mut entries = backend.content_paths()?;
     entries.retain(|entry| {
         !is_documentation_or_evidence_path(project_root, change, manifest, &entry.path)
+            && !(archive && (entry.path == Path::new("givn/commands.yaml") || is_evidence_path(project_root, change, manifest, &entry.path)))
     });
     entries.sort_by(|left, right| left.path.cmp(&right.path));
 
     let mut hasher = Sha256::new();
+    if archive {
+        let mut settings = serde_json::to_value(manifest)?;
+        if let Some(verify) = settings.get_mut("verify").and_then(|v| v.as_object_mut()) {
+            verify.remove("command");
+            verify.remove("e2e_command");
+        }
+        hasher.update(serde_json::to_vec(&settings)?);
+    }
     for entry in entries {
         let relative = entry.path.to_string_lossy().replace('\\', "/");
         hasher.update(relative.as_bytes());
@@ -932,6 +1114,134 @@ pub fn result_path(archive_dir: &Path, scope: &str) -> PathBuf {
 mod tests {
     use super::*;
     use crate::config::manifest::Manifest;
+
+    #[test]
+    fn archive_exclusive_commands_and_shared_inputs_have_distinct_witnesses() {
+        let (root, backend) = git_fixture();
+        let mut manifest = Manifest::load_embedded().unwrap();
+        std::fs::create_dir_all(root.path().join("givn")).unwrap();
+        std::fs::write(root.path().join("givn/commands.yaml"), "first").unwrap();
+        let capture = |manifest: &Manifest, scope: &str| {
+            VerificationInputs::capture_archive(
+                root.path(),
+                &backend,
+                "demo",
+                manifest,
+                if scope == "regular" {
+                    &manifest.verify.command
+                } else {
+                    &manifest.verify.e2e_command
+                },
+                scope,
+            )
+            .unwrap()
+        };
+        let regular = capture(&manifest, "regular");
+        let e2e = capture(&manifest, "e2e");
+        manifest.verify.e2e_command = "repaired e2e runner".into();
+        std::fs::write(root.path().join("givn/commands.yaml"), "reformatted").unwrap();
+        assert!(regular.reusable_for(&capture(&manifest, "regular")));
+        assert!(!e2e.reusable_for(&capture(&manifest, "e2e")));
+        std::fs::write(root.path().join("src/lib.rs"), "changed source").unwrap();
+        assert!(!regular.reusable_for(&capture(&manifest, "regular")));
+        let before = capture(&manifest, "regular");
+        manifest.verify.features_path = "other features".into();
+        assert!(!before.reusable_for(&capture(&manifest, "regular")));
+    }
+
+    #[test]
+    fn stable_witness_rejects_changes_in_each_input() {
+        let (root, backend) = git_fixture();
+        let mut manifest = Manifest::load_embedded().unwrap();
+        let features = root.path().join("givn/changes/demo/specs");
+        std::fs::create_dir_all(&features).unwrap();
+        std::fs::write(features.join("demo.feature"), "Feature: Demo\n").unwrap();
+        let capture = |m: &Manifest| {
+            VerificationInputs::capture(
+                root.path(),
+                &backend,
+                "demo",
+                m,
+                &features,
+                &m.verify.command,
+                "change",
+            )
+            .unwrap()
+        };
+        let before = capture(&manifest);
+        assert!(before.ensure_unchanged(&before).is_ok());
+        manifest.verify.command = "changed runner".into();
+        assert!(before.ensure_unchanged(&capture(&manifest)).is_err());
+        let before = capture(&manifest);
+        std::fs::write(features.join("demo.feature"), "Feature: Changed\n").unwrap();
+        assert!(before.ensure_unchanged(&capture(&manifest)).is_err());
+        let before = capture(&manifest);
+        std::fs::write(root.path().join("src/lib.rs"), "changed source").unwrap();
+        assert!(before.ensure_unchanged(&capture(&manifest)).is_err());
+        let before = capture(&manifest);
+        commit_git(root.path(), "repair");
+        assert!(before.ensure_unchanged(&capture(&manifest)).is_err());
+    }
+
+    #[test]
+    fn no_behavior_change_requires_both_skip_and_absent_features() {
+        let root = tempfile::TempDir::new().unwrap();
+        assert!(change_verification_not_applicable(root.path()).is_err());
+        std::fs::write(root.path().join("proposal.md"), "Behavior change: none").unwrap();
+        assert!(change_verification_not_applicable(root.path()).is_err());
+        std::fs::write(root.path().join(".givn-skip"), "specs\n").unwrap();
+        assert!(change_verification_not_applicable(root.path()).unwrap());
+        std::fs::create_dir_all(root.path().join("specs")).unwrap();
+        std::fs::write(root.path().join("specs/demo.feature"), "Feature: Demo\n").unwrap();
+        assert!(change_verification_not_applicable(root.path()).is_err());
+    }
+
+    #[test]
+    fn archive_evidence_survives_finalization_and_checks_result_bytes() {
+        let root = tempfile::TempDir::new().unwrap();
+        Receipt::write_pending(root.path(), "demo", 1).unwrap();
+        let path = result_path(root.path(), "regular");
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(
+            &path,
+            r#"{"scope":"regular","total":1,"passed":1,"failed":0,"skipped":0}"#,
+        )
+        .unwrap();
+        let inputs = VerificationInputs {
+            revision: "a".into(),
+            features_digest: "f".into(),
+            command_digest: "c".into(),
+            content_digest: "s".into(),
+            scope: "regular".into(),
+        };
+        Receipt::record_scope(
+            root.path(),
+            "regular",
+            ScopeOutcome::passed(&RunnerResult::read(&path, "regular").unwrap(), 1.0),
+            inputs.clone(),
+            &path,
+        )
+        .unwrap();
+        let receipt = read_receipt(root.path()).unwrap();
+        assert!(receipt.reusable_scope("regular", &inputs, &path));
+        let mut repaired = inputs.clone();
+        repaired.revision = "b".into();
+        assert!(receipt.reusable_scope("regular", &repaired, &path));
+        repaired.content_digest = "changed".into();
+        assert!(!receipt.reusable_scope("regular", &repaired, &path));
+        Receipt::write_proven(root.path(), "demo", "a", receipt.scopes, None, 1, 2).unwrap();
+        assert!(
+            read_receipt(root.path())
+                .unwrap()
+                .reusable_scope("regular", &inputs, &path)
+        );
+        std::fs::write(&path, "tampered").unwrap();
+        assert!(
+            !read_receipt(root.path())
+                .unwrap()
+                .reusable_scope("regular", &inputs, &path)
+        );
+    }
 
     fn temp_receipt_dir() -> tempfile::TempDir {
         tempfile::TempDir::new().unwrap()

@@ -5,8 +5,14 @@ use std::collections::HashMap;
 /// Run an artifact's post hooks (e.g. verify.command, lint).
 ///
 /// `givn check <artifact>` — runs that artifact's hooks.
-/// `givn check` (no arg) — runs hooks for all artifacts with existing output.
+/// `givn check` (no arg) — prints non-executing guidance.
 pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
+    if artifact.is_none() {
+        println!(
+            "No checks were executed. Select an explicit command:\n  givn check tasks --change <change> — executes changed-scenario verification\n  givn check review --change <change> — checks evidence without running verification suites\n  givn check <artifact> --change <change> — runs that artifact's configured hooks\n  givn check migration --change <change> — checks preservation\n  givn check rules — checks rule cleanliness"
+        );
+        return Ok(());
+    }
     let project_root = std::env::current_dir()?;
     if artifact == Some("migration") {
         let migration_id = change.ok_or_else(|| {
@@ -33,11 +39,7 @@ pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
     // Determine features_path: active change's features, or default specs.
     let features_path = if let Some(id) = change {
         let change_dir = crate::state::resolve_change_dir(&project_root, id)?;
-        if crate::state::is_skipped("specs", &change_dir) {
-            manifest.verify.features_path.clone()
-        } else {
-            change_dir.join("specs").to_string_lossy().into_owned()
-        }
+        change_dir.join("specs").to_string_lossy().into_owned()
     } else {
         manifest.verify.features_path.clone()
     };
@@ -71,33 +73,13 @@ pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
             phase.mark(if checks.is_ok() { "ok" } else { "failed" });
         }
         checks?;
-        crate::hooks::run_artifact_hooks(artifact_id, &manifest, &features_path)
+        let mut hooks_manifest = manifest.clone();
+        if artifact_id == "tasks" || artifact_id == "review" {
+            remove_verification_hooks(&mut hooks_manifest);
+        }
+        crate::hooks::run_artifact_hooks(artifact_id, &hooks_manifest, &features_path)
     } else {
-        // Run hooks for all artifacts whose output exists.
-        let change_dir = change
-            .map(|id| crate::state::resolve_change_dir(&project_root, id))
-            .transpose()?;
-
-        let mut ran_any = false;
-        for artifact in &manifest.artifacts {
-            if artifact.post.is_empty() {
-                continue;
-            }
-
-            let output_exists = match change_dir.as_ref() {
-                Some(dir) => artifact_output_exists(artifact, dir),
-                None => true, // global check: run all
-            };
-
-            if output_exists {
-                ran_any = true;
-                crate::hooks::run_artifact_hooks(&artifact.id, &manifest, &features_path)?;
-            }
-        }
-        if !ran_any {
-            println!("No artifact outputs found to check.");
-        }
-        Ok(())
+        unreachable!()
     }
 }
 
@@ -146,37 +128,65 @@ fn run_mandatory_checks(
         }
         "review" => {
             println!("Mandatory checks for 'review':");
-            crate::integrity_hook::run_integrity_hook(
+            let mut failures = Vec::new();
+            if let Err(error) = crate::integrity_hook::run_integrity_hook(
                 features_path,
                 manifest.addons.arc42,
                 manifest.addons.coverage,
                 manifest.addons.readme,
-            )?;
-            println!("  ✓ integrity passed");
+            ) {
+                failures.push(error.to_string());
+            }
             let run_findings = crate::cli::run_block::check_run(manifest);
             if !run_findings.is_empty() {
                 for f in &run_findings {
                     println!("  [{}] {}", crate::cli::run_block::label(f.kind), f.message);
                 }
-                anyhow::bail!(
+                failures.push(
                     "run declaration incomplete — configure `run:` in givn/commands.yaml"
+                        .to_owned(),
                 );
             }
-            println!("  ✓ run declaration passed");
+            if run_findings.is_empty() {
+                println!("  ✓ run declaration passed");
+            }
             if let Some(id) = change {
-                crate::cli::lint::run_scoped(project_root, id)?;
-                crate::overlap::analysis::run_review_overlap_gate(project_root, id)?;
-                check_retirement_disclosed(project_root, id)?;
-                crate::spec::routing_table::check_routing_consistency(project_root, id)?;
-                check_change_receipt(manifest, project_root, id)?;
-                if manifest.addons.outline {
-                    crate::outline::gate::enforce(project_root, id)?;
+                let lint = crate::cli::lint::run_scoped(project_root, id);
+                let lint_ok = lint.is_ok();
+                if let Err(error) = lint {
+                    failures.push(error.to_string());
+                }
+                if lint_ok {
+                    for result in [
+                        crate::overlap::analysis::run_review_overlap_gate(project_root, id),
+                        check_retirement_disclosed(project_root, id),
+                        crate::spec::routing_table::check_routing_consistency(project_root, id),
+                    ] {
+                        if let Err(error) = result {
+                            failures.push(error.to_string());
+                        }
+                    }
+                } else {
+                    println!(
+                        "  capability checks requiring valid specification identity: not performed"
+                    );
+                }
+                if let Err(error) = check_change_receipt(manifest, project_root, id) {
+                    failures.push(error.to_string());
+                }
+                let change_dir = crate::state::resolve_change_dir(project_root, id)?;
+                let backend = crate::scm::select(project_root)?;
+                if let Err(error) = check_scenario_commits(&backend, &change_dir) {
+                    failures.push(error.to_string());
                 }
             } else {
                 println!(
                     "  ⚠ no --change given — overlap, retirement, routing, and receipt checks were skipped \
                      (they require a specific change to scope to)"
                 );
+            }
+            if !failures.is_empty() {
+                bail!("review checks failed:\n  {}", failures.join("\n  "));
             }
         }
         _ => {}
@@ -393,6 +403,12 @@ fn run_change_verification(
     preflight_readme_impact(&change_dir);
     let backend = crate::scm::select(project_root)?;
     check_scenario_commits(&backend, &change_dir)?;
+    if crate::proof::change_verification_not_applicable(&change_dir)? {
+        println!(
+            "  changed-scenario verification: not applicable (Behavior change: none; specs explicitly skipped)"
+        );
+        return Ok(());
+    }
     let offending: Vec<String> = backend
         .dirty_entries()?
         .iter()
@@ -415,6 +431,16 @@ fn run_change_verification(
         std::fs::create_dir_all(parent)?;
     }
     let result_path = result_file.to_string_lossy().into_owned();
+    crate::proof::remove_previous_output(&result_file)?;
+    let before = crate::proof::VerificationInputs::capture(
+        project_root,
+        &backend,
+        change_id,
+        manifest,
+        &rules,
+        &manifest.verify.command,
+        "change",
+    )?;
     let status = crate::subprocess::sh_streamed(
         &manifest.verify.command,
         &[
@@ -432,13 +458,20 @@ fn run_change_verification(
             status.code().unwrap_or(-1)
         );
     }
-    let result = crate::proof::RunnerResult::read_counts(
-        std::path::Path::new(&result_path),
-        "the change verification",
+    let result = crate::proof::RunnerResult::read(&result_file, "change")?;
+    let current_manifest = load_effective()?;
+    let after = crate::proof::VerificationInputs::capture(
+        project_root,
+        &backend,
+        change_id,
+        &current_manifest,
+        &rules,
+        &current_manifest.verify.command,
+        "change",
     )?;
-    let head = backend.revision()?;
-    let tested_content_digest =
-        crate::proof::digest_tested_content(project_root, &backend, change_id, manifest)?;
+    before.ensure_unchanged(&after)?;
+    let head = before.revision;
+    let tested_content_digest = before.content_digest;
     crate::proof::write_change_receipt(
         project_root,
         &change_dir,
@@ -463,6 +496,14 @@ fn check_change_receipt(
     change_id: &str,
 ) -> anyhow::Result<()> {
     let change_dir = crate::state::resolve_change_dir(project_root, change_id)?;
+    if crate::proof::change_verification_not_applicable(&change_dir)? {
+        let backend = crate::scm::select(project_root)?;
+        check_scenario_commits(&backend, &change_dir)?;
+        println!(
+            "  changed-scenario verification: not applicable (Behavior change: none; specs explicitly skipped)"
+        );
+        return Ok(());
+    }
     let receipt = crate::proof::ChangeReceipt::read(&change_dir).map_err(|error| {
         anyhow::anyhow!("{error}. Run `givn check tasks --change {change_id}` before review.")
     })?;
@@ -547,24 +588,16 @@ pub(crate) fn check_retirement_disclosed(
     Ok(())
 }
 
-/// Check if an artifact's output files exist in the change directory.
-fn artifact_output_exists(
-    artifact: &crate::config::manifest::Artifact,
-    change_dir: &std::path::Path,
-) -> bool {
-    for pattern in &artifact.generates {
-        let path = change_dir.join(pattern);
-        if path.exists() {
-            return true;
-        }
-        // Handle glob patterns like "specs/**/*.feature"
-        if pattern.contains('*')
-            && !crate::gherkin::parse::collect_feature_files(&change_dir.join("specs")).is_empty()
-        {
-            return true;
-        }
+pub(crate) fn remove_verification_hooks(manifest: &mut crate::config::manifest::Manifest) {
+    for artifact in &mut manifest.artifacts {
+        artifact.post.retain(|hook| {
+            let command = match hook {
+                crate::config::manifest::HookEntry::Short(command) => command,
+                crate::config::manifest::HookEntry::Full(hook) => &hook.run,
+            };
+            command != "verify" && command != "verify-e2e"
+        });
     }
-    false
 }
 
 #[cfg(test)]

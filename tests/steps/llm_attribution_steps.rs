@@ -411,7 +411,7 @@ fn when_givn_commit_with_context(
     std::fs::write(env.root().join("fixture.txt"), &message).expect("write fixture");
     let output = common::run_givn_with_envs(
         env,
-        &["commit", "-m", &message],
+        &["commit", "fixture.txt", "-m", &message],
         &[
             ("GIVN_ATTRIBUTION_ACTIVE", "1"),
             ("GIVN_ATTRIBUTION_LLM", &llm),
@@ -430,7 +430,7 @@ fn when_givn_commit_without_context(world: &mut GivnWorld, message: String) {
     // run inside a harness that exports it.
     let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_givn"));
     command
-        .args(["commit", "-m", &message])
+        .args(["commit", "fixture.txt", "-m", &message])
         .current_dir(env.root())
         .env_remove("GIVN_FEATURES")
         .env("FOSSIL_USER", "fixture")
@@ -487,4 +487,277 @@ fn then_latest_revision_lacks(world: &mut GivnWorld, path: String) {
         !crate::steps::archive_proof_support::revision_contains(world, &path),
         "the latest revision unexpectedly contains {path}"
     );
+}
+
+#[given(regex = r#"^an initialized (Git|Fossil) project with a change to "([^"]+)"$"#)]
+fn given_selected_project(world: &mut GivnWorld, backend: String, path: String) {
+    world.env = Some(if backend == "Git" {
+        common::make_init_root()
+    } else {
+        common::make_fossil_root()
+    });
+    let env = world.env.as_ref().unwrap();
+    std::fs::write(env.path(&path), "selected working content").unwrap();
+}
+
+#[when(
+    regex = r#"^the consumer commits only "([^"]+)" with message "([^"]+)" attributing LLM "([^"]+)", reasoning "([^"]+)", and harness "([^"]+)"$"#
+)]
+fn when_selected_with_context(
+    world: &mut GivnWorld,
+    path: String,
+    message: String,
+    llm: String,
+    reasoning: String,
+    harness: String,
+) {
+    let env = world.env.as_ref().unwrap();
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["commit", &path, "-m", &message],
+        &[
+            ("GIVN_ATTRIBUTION_ACTIVE", "1"),
+            ("GIVN_ATTRIBUTION_LLM", &llm),
+            ("GIVN_ATTRIBUTION_REASONING", &reasoning),
+            ("GIVN_ATTRIBUTION_HARNESS", &harness),
+        ],
+    ));
+}
+
+#[given(
+    regex = r#"^an initialized Fossil project with pending changes to "([^"]+)" and "([^"]+)"$"#
+)]
+fn given_fossil_selected_changes(world: &mut GivnWorld, first: String, second: String) {
+    world.env = Some(common::make_fossil_root());
+    let env = world.env.as_ref().unwrap();
+    for path in [&first, &second] {
+        std::fs::write(env.path(path), "initial").unwrap();
+    }
+    common::fossil_commit_all(env, "initial paths");
+    for path in [&first, &second] {
+        std::fs::write(env.path(path), "selected working content").unwrap();
+    }
+}
+
+#[given(regex = r#"^an unrelated pending addition "([^"]+)"$"#)]
+fn given_fossil_pending_addition(world: &mut GivnWorld, path: String) {
+    let env = world.env.as_ref().unwrap();
+    std::fs::write(env.path(&path), "pending addition").unwrap();
+    assert!(common::fossil(env, &["add", &path]).status.success());
+}
+
+#[then(regex = r#"^the revision contains only "([^"]+)"$"#)]
+fn then_revision_only(world: &mut GivnWorld, path: String) {
+    let env = world.env.as_ref().unwrap();
+    match env.backend() {
+        common::BackendKind::Git => {
+            let output = git(
+                &env.root(),
+                &[
+                    "diff-tree",
+                    "--root",
+                    "--no-commit-id",
+                    "--name-only",
+                    "-r",
+                    "HEAD",
+                ],
+            );
+            assert!(output.status.success());
+            assert_eq!(String::from_utf8_lossy(&output.stdout).trim(), path);
+        }
+        common::BackendKind::Fossil => {
+            let checkout = givn::fossil::FossilCheckout::at(&env.root());
+            let parent = checkout
+                .parent_revision(&checkout.revision().unwrap())
+                .unwrap()
+                .unwrap();
+            let output = common::fossil(
+                env,
+                &["diff", "--from", &parent, "--to", "current", "--brief"],
+            );
+            assert!(output.status.success());
+            let changed: Vec<String> = String::from_utf8_lossy(&output.stdout)
+                .lines()
+                .map(|line| line.split_whitespace().last().unwrap().to_string())
+                .collect();
+            assert_eq!(changed, vec![path]);
+        }
+    }
+}
+
+#[then("the pending changes and addition for the other paths remain unchanged")]
+fn then_fossil_others_unchanged(world: &mut GivnWorld) {
+    let env = world.env.as_ref().unwrap();
+    assert_eq!(
+        std::fs::read_to_string(env.path("second.txt")).unwrap(),
+        "selected working content"
+    );
+    assert_eq!(
+        std::fs::read_to_string(env.path("third.txt")).unwrap(),
+        "pending addition"
+    );
+    let output = common::fossil(env, &["changes", "--differ"]);
+    assert!(output.status.success());
+    let changes = String::from_utf8_lossy(&output.stdout);
+    assert!(changes.contains("EDITED     second.txt"), "{changes}");
+    assert!(changes.contains("ADDED      third.txt"), "{changes}");
+    assert!(!changes.contains("first.txt"), "{changes}");
+}
+
+#[given("a Git project using `.githooks` with a user commit-msg hook")]
+#[given("a new Git project with `core.hooksPath` set to `.githooks`")]
+#[given("a new Git project with `core.hooksPath` set to `.githooks` and a user commit-msg hook")]
+fn given_shared_user_hook(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    common::git_init(&env);
+    assert!(
+        git(&env.root(), &["config", "core.hooksPath", ".githooks"])
+            .status
+            .success()
+    );
+    std::fs::create_dir_all(env.path(".githooks")).unwrap();
+    let hook = env.path(".githooks/commit-msg");
+    std::fs::write(&hook, "#!/bin/sh\nprintf 'user\\n' >> hook-marker\n").unwrap();
+    make_executable(&hook);
+    world.env = Some(env);
+}
+
+#[given("an existing user commit-msg hook that writes a marker")]
+fn given_user_hook_marker(world: &mut GivnWorld) {
+    let env = world.env.as_ref().unwrap();
+    assert!(
+        std::fs::read_to_string(env.path(".githooks/commit-msg"))
+            .unwrap()
+            .contains("hook-marker")
+    );
+}
+
+#[when(
+    "the consumer initializes Givn twice and then creates a human commit without attribution context"
+)]
+fn when_init_twice_human_commit(world: &mut GivnWorld) {
+    let env = world.env.as_ref().unwrap();
+    for _ in 0..2 {
+        let output = common::run_givn(env, &["init", "--agents", "opencode,claude,omp"]);
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    create_bounded_human_commit(world);
+}
+
+fn create_bounded_human_commit(world: &mut GivnWorld) {
+    let env = world.env.as_ref().unwrap();
+    std::fs::write(env.path("human.txt"), "human content").unwrap();
+    assert!(git(&env.root(), &["add", "human.txt"]).status.success());
+    world.last_output = Some(
+        Command::new("timeout")
+            .args(["5", "git", "commit", "-m", "human message"])
+            .current_dir(env.root())
+            .env_remove("GIVN_ATTRIBUTION_ACTIVE")
+            .env_remove("GIVN_ATTRIBUTION_LLM")
+            .env_remove("GIVN_ATTRIBUTION_HARNESS")
+            .output()
+            .unwrap(),
+    );
+}
+
+#[then("the commit succeeds within the hook completion deadline")]
+#[then("the commit succeeds without waiting indefinitely")]
+fn then_bounded_human_success(world: &mut GivnWorld) {
+    let output = world.last_output.as_ref().unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[then("the user hook runs exactly once and remains preserved")]
+fn then_user_hook_once(world: &mut GivnWorld) {
+    let env = world.env.as_ref().unwrap();
+    assert_eq!(
+        std::fs::read_to_string(env.path("hook-marker")).unwrap(),
+        "user\n"
+    );
+    assert!(
+        std::fs::read_to_string(env.path(".githooks/commit-msg.givn-original"))
+            .unwrap()
+            .contains("hook-marker")
+    );
+}
+
+#[then("no launcher invokes itself directly or through a saved hook")]
+#[then("the installed hook does not dispatch itself")]
+fn then_no_launcher_recursion(world: &mut GivnWorld) {
+    let env = world.env.as_ref().unwrap();
+    let shared = std::fs::read_to_string(env.path(".githooks/commit-msg")).unwrap();
+    assert!(!shared.contains("exec \"$root/.githooks/commit-msg\""));
+    let backup = std::fs::read_to_string(env.path(".githooks/commit-msg.givn-original")).unwrap();
+    assert!(!backup.contains("givn commit-attribution launcher"));
+}
+
+#[then("no managed attribution is invented")]
+#[then("the human commit message is unchanged")]
+fn then_human_message_unchanged(world: &mut GivnWorld) {
+    let env = world.env.as_ref().unwrap();
+    let output = git(&env.root(), &["log", "-1", "--format=%B"]);
+    assert!(output.status.success());
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "human message\n\n");
+}
+
+#[then(
+    "a subsequent human Git commit succeeds and runs the user hook exactly once without recursive dispatch"
+)]
+fn then_subsequent_human_commit(world: &mut GivnWorld) {
+    create_bounded_human_commit(world);
+    then_bounded_human_success(world);
+    then_user_hook_once(world);
+    then_no_launcher_recursion(world);
+}
+
+#[then("the command exits 0 and reports installed attribution plumbing")]
+fn then_installed_success(world: &mut GivnWorld) {
+    let output = world.last_output.as_ref().unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(String::from_utf8_lossy(&output.stdout).contains("commit attribution"));
+}
+
+#[then("the checked-in attribution hook and selected harness integrations exist")]
+fn then_integrations_exist(world: &mut GivnWorld) {
+    let env = world.env.as_ref().unwrap();
+    for path in [
+        ".githooks/commit-msg",
+        ".opencode/plugins/givn-attribution.js",
+        ".claude/hooks/givn-attribution.sh",
+        ".omp/hooks/pre/givn-attribution.js",
+    ] {
+        assert!(env.path(path).exists(), "missing {path}");
+    }
+}
+
+#[then("stdout reports the shared Git hook and each selected harness attribution integration")]
+fn then_installation_report(world: &mut GivnWorld) {
+    let output = world.last_output.as_ref().unwrap();
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    for path in [
+        ".githooks/commit-msg",
+        ".opencode/plugins/givn-attribution.js",
+        ".claude/hooks/givn-attribution.sh",
+        ".omp/hooks/pre/givn-attribution.js",
+    ] {
+        assert!(stdout.contains(path), "missing {path}: {stdout}");
+    }
+}
+
+#[then("the report states that the existing user hook was preserved")]
+fn then_preservation_report(world: &mut GivnWorld) {
+    let output = world.last_output.as_ref().unwrap();
+    assert!(String::from_utf8_lossy(&output.stdout).contains("existing user hook preserved"));
 }

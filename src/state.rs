@@ -53,6 +53,38 @@ pub struct ChangeState {
     pub artifacts: Vec<ArtifactState>,
     pub verify_command: String,
     pub e2e_command: String,
+    pub verification: String,
+}
+
+pub(crate) fn inspect_verification(change_dir: &Path, manifest: &Manifest) -> String {
+    if crate::proof::change_verification_not_applicable(change_dir).is_ok_and(|value| value) {
+        return "not applicable".to_owned();
+    }
+    let path = change_dir.join(crate::proof::CHANGE_RECEIPT_FILE);
+    if !path.exists() {
+        return "missing".to_owned();
+    }
+    let inspected = (|| -> anyhow::Result<crate::proof::ProofStatus> {
+        let project_root = change_dir
+            .parent()
+            .and_then(Path::parent)
+            .and_then(Path::parent)
+            .ok_or_else(|| anyhow::anyhow!("project root unavailable"))?;
+        let backend = crate::scm::select(project_root)?;
+        crate::proof::ChangeReceipt::read(change_dir)?.freshness(
+            manifest,
+            change_dir,
+            &backend,
+            project_root,
+        )
+    })();
+    match inspected {
+        Ok(crate::proof::ProofStatus::Current) => "current",
+        Ok(crate::proof::ProofStatus::DocumentationOnly { .. }) => "documentation-only reuse",
+        Ok(crate::proof::ProofStatus::Stale(_)) => "stale",
+        Err(_) => "not checked",
+    }
+    .to_owned()
 }
 
 impl ChangeState {
@@ -100,6 +132,7 @@ impl ChangeState {
             artifacts,
             verify_command: manifest.verify.command.clone(),
             e2e_command: manifest.verify.e2e_command.clone(),
+            verification: inspect_verification(change_dir, manifest),
         }
     }
 
@@ -348,13 +381,45 @@ pub fn detect_arc42_done(path: &Path) -> bool {
 /// must never satisfy the gate.
 fn final_marker(path: &Path, marker: &str) -> bool {
     let content = std::fs::read_to_string(path).unwrap_or_default();
-    let content = strip_fenced_blocks(&content);
-    let content = strip_html_comments(&content);
+    let content = actual_markdown(&content);
+    if marker == "REVIEW: PASS"
+        && actual_entries(&content, "VERDICT:")
+            .iter()
+            .any(|v| v != "PASS")
+    {
+        return false;
+    }
+    let key = marker.split_once(':').unwrap().0;
+    if actual_entries(&content, &format!("{key}:"))
+        .iter()
+        .any(|value| format!("{key}: {value}") != marker)
+    {
+        return false;
+    }
     content
         .lines()
         .rev()
         .find(|line| !line.trim().is_empty())
-        .is_some_and(|line| line.contains(marker))
+        .is_some_and(|line| normalize_marker(line) == marker)
+}
+
+pub(crate) fn normalize_marker(line: &str) -> &str {
+    line.trim().trim_matches(['*', '_', '`']).trim()
+}
+
+pub(crate) fn actual_markdown(content: &str) -> String {
+    strip_fenced_blocks(&strip_html_comments(content))
+}
+
+pub(crate) fn actual_entries(content: &str, key: &str) -> Vec<String> {
+    actual_markdown(content)
+        .lines()
+        .filter_map(|line| {
+            normalize_marker(line)
+                .strip_prefix(key)
+                .map(|v| v.trim().to_owned())
+        })
+        .collect()
 }
 
 fn strip_fenced_blocks(content: &str) -> String {
@@ -500,6 +565,41 @@ pub fn list_unproven_archives(project_root: &Path) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn proof_inspection_does_not_turn_missing_or_unavailable_evidence_green() {
+        let root = tempfile::TempDir::new().unwrap();
+        let manifest = crate::config::manifest::Manifest::load_embedded().unwrap();
+        assert_eq!(
+            super::inspect_verification(root.path(), &manifest),
+            "missing"
+        );
+        std::fs::write(root.path().join("proposal.md"), "Behavior change: none").unwrap();
+        std::fs::write(root.path().join(".givn-skip"), "specs").unwrap();
+        assert_eq!(
+            super::inspect_verification(root.path(), &manifest),
+            "not applicable"
+        );
+    }
+
+    #[test]
+    fn actual_signoff_rejects_prose_and_conflicts() {
+        let root = tempfile::TempDir::new().unwrap();
+        let path = root.path().join("review.md");
+        for text in [
+            "This is not REVIEW: PASS",
+            "REVIEW: FAIL\nREVIEW: PASS",
+            "VERDICT: FAIL\nREVIEW: PASS",
+        ] {
+            std::fs::write(&path, text).unwrap();
+            assert!(!super::detect_review_pass(&path), "{text}");
+        }
+        std::fs::write(
+            &path,
+            "<!-- REVIEW: FAIL -->\n~~~md\nREVIEW: FAIL\n~~~\n**REVIEW: PASS**",
+        )
+        .unwrap();
+        assert!(super::detect_review_pass(&path));
+    }
     use super::*;
     use crate::config::manifest::Manifest;
 

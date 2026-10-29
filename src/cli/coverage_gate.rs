@@ -33,6 +33,9 @@ fn run_coverage_gate_inner(
 
     let paths = CoveragePaths::new(project_root, cov)?;
 
+    for path in [&paths.non_e2e, &paths.e2e, &paths.output] {
+        crate::proof::remove_previous_output(path)?;
+    }
     println!("  Running coverage measurement: {}", cov.measure_command);
     run_command(
         project_root,
@@ -41,10 +44,8 @@ fn run_coverage_gate_inner(
         "coverage measurement",
     )?;
 
-    let non_e2e_report = parse_and_validate(&paths.non_e2e, "non-e2e")?;
-    let e2e_report = parse_and_validate(&paths.e2e, "e2e")?;
-    crate::cobertura::assert_distinct(&non_e2e_report, &e2e_report)
-        .map_err(|e| anyhow::anyhow!("archive blocked: {e}"))?;
+    parse_and_validate(&paths.non_e2e, "non-e2e")?;
+    parse_and_validate(&paths.e2e, "e2e")?;
 
     if paths.output.exists() {
         std::fs::remove_file(&paths.output).with_context(|| {
@@ -164,4 +165,47 @@ fn parse_and_validate(path: &Path, label: &str) -> Result<crate::cobertura::Cobe
     crate::cobertura::validate(&report)
         .map_err(|e| anyhow::anyhow!("archive blocked: {label} coverage validation failed: {e}"))?;
     Ok(report)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn manifest() -> crate::config::manifest::Manifest {
+        serde_yaml_ng::from_str("{}").unwrap()
+    }
+
+    #[test]
+    fn equal_coverage_measurements_are_valid() {
+        let root = tempfile::TempDir::new().unwrap();
+        std::fs::write(root.path().join("README.md"), "# Demo\n").unwrap();
+        let mut manifest = manifest();
+        let xml = "<coverage line-rate=\"0.5\" branch-rate=\"0\" lines-covered=\"1\" lines-valid=\"2\" branches-covered=\"0\" branches-valid=\"0\"><packages/></coverage>";
+        manifest.coverage.measure_command = format!(
+            "mkdir -p target; printf '%s' '{xml}' > \"$GIVN_COVERAGE_NON_E2E_PATH\"; cp \"$GIVN_COVERAGE_NON_E2E_PATH\" \"$GIVN_COVERAGE_E2E_PATH\""
+        );
+        manifest.coverage.merge_command =
+            "cp \"$GIVN_COVERAGE_NON_E2E_PATH\" \"$GIVN_COVERAGE_OUTPUT_PATH\"".into();
+        let paths = CoveragePaths::new(root.path(), &manifest.coverage).unwrap();
+        std::fs::create_dir_all(paths.non_e2e.parent().unwrap()).unwrap();
+        std::fs::create_dir_all(paths.e2e.parent().unwrap()).unwrap();
+        std::fs::create_dir_all(paths.output.parent().unwrap()).unwrap();
+        run_coverage_gate(root.path(), &manifest).unwrap();
+    }
+
+    #[test]
+    fn measurement_cannot_reuse_stale_inputs() {
+        let root = tempfile::TempDir::new().unwrap();
+        let mut manifest = manifest();
+        manifest.coverage.measure_command = "true".into();
+        manifest.coverage.merge_command = "true".into();
+        let paths = CoveragePaths::new(root.path(), &manifest.coverage).unwrap();
+        for path in [&paths.non_e2e, &paths.e2e] {
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(path, "stale").unwrap();
+        }
+        assert!(run_coverage_gate(root.path(), &manifest).is_err());
+        assert!(!paths.non_e2e.exists());
+        assert!(!paths.e2e.exists());
+    }
 }

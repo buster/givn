@@ -19,21 +19,31 @@ pub fn run_integrity_hook(
         }
     };
 
-    check_revision_identifier_presence(&change_dir)?;
-    check_promised_files_exist(&change_dir)?;
-    crate::review_context::check(&change_dir)?;
-    check_visual_review(&change_dir)?;
-    check_deferrals(&change_dir)?;
-    if arc42_enabled {
-        check_arc42_conformance(&change_dir)?;
+    let mut findings = Vec::new();
+    for result in [
+        check_revision_identifier_presence(&change_dir),
+        check_promised_files_exist(&change_dir),
+        crate::review_context::check(&change_dir),
+        check_review_verdict(&change_dir),
+        check_visual_review(&change_dir),
+        check_deferrals(&change_dir),
+    ] {
+        if let Err(error) = result {
+            findings.push(error.to_string());
+        }
     }
-    if coverage_enabled {
-        check_coverage_config()?;
+    if arc42_enabled && let Err(error) = check_arc42_conformance(&change_dir) {
+        findings.push(error.to_string());
     }
-    if readme_enabled {
-        check_readme_impact(&change_dir)?;
+    if coverage_enabled && let Err(error) = check_coverage_config() {
+        findings.push(error.to_string());
     }
-
+    if readme_enabled && let Err(error) = check_readme_impact(&change_dir) {
+        findings.push(error.to_string());
+    }
+    if !findings.is_empty() {
+        bail!("integrity checks failed:\n  {}", findings.join("\n  "));
+    }
     Ok(())
 }
 
@@ -42,6 +52,23 @@ pub fn run_integrity_hook(
 /// Gated on `manifest.addons.readme` — with the addon off, the decision is not
 /// required. A valid decision is exactly one line per occurrence:
 /// `README-IMPACT: none` or `README-IMPACT: updated - <sections>`.
+fn check_review_verdict(change_dir: &Path) -> Result<()> {
+    let review = std::fs::read_to_string(change_dir.join("review.md"))
+        .map_err(|_| anyhow::anyhow!("review.md is missing required review verdict evidence"))?;
+    let mut values = crate::state::actual_entries(&review, "VERDICT:");
+    values.extend(crate::state::actual_entries(&review, "REVIEW:"));
+    if values.is_empty() {
+        bail!("review.md is missing a valid actual verdict (REVIEW: PASS or VERDICT: PASS)");
+    }
+    if values.iter().any(|v| v == "PASS") && values.iter().any(|v| v != "PASS") {
+        bail!("review.md contains conflicting actual verdicts");
+    }
+    if values.iter().any(|v| v != "PASS") {
+        bail!("review.md actual verdict is {}", values.join(", "));
+    }
+    Ok(())
+}
+
 fn check_readme_impact(change_dir: &Path) -> Result<()> {
     let review_path = change_dir.join("review.md");
     if !review_path.exists() {
@@ -50,6 +77,7 @@ fn check_readme_impact(change_dir: &Path) -> Result<()> {
     }
     let content = std::fs::read_to_string(&review_path)?;
     let mut found_any = false;
+    let content = crate::state::actual_markdown(&content);
     for line in content.lines() {
         let Some(value) = line
             .trim_start()
@@ -350,8 +378,12 @@ enum VisualVerdict {
 
 fn visual_verdict(review: &str) -> VisualVerdict {
     match (
-        review.contains("VISUAL-REVIEW: PASS"),
-        review.contains("VISUAL-REVIEW: UNVERIFIED"),
+        crate::state::actual_entries(review, "VISUAL-REVIEW:")
+            .iter()
+            .any(|v| v == "PASS"),
+        crate::state::actual_entries(review, "VISUAL-REVIEW:")
+            .iter()
+            .any(|v| v == "UNVERIFIED"),
     ) {
         (true, true) => VisualVerdict::Ambiguous,
         (false, true) => VisualVerdict::Unverified,
@@ -830,6 +862,30 @@ fn find_file_in_dir(dir: &Path, file_name: &str) -> Option<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn actual_review_verdict_ignores_examples_and_rejects_conflicts() {
+        let root = tempfile::TempDir::new().unwrap();
+        let path = root.path().join("review.md");
+        for text in [
+            "VERDICT: FAIL\n<!-- VERDICT: PASS -->",
+            "VERDICT: FAIL\n```\nVERDICT: PASS\n```",
+            "VERDICT: PASS\nVERDICT: FAIL",
+            "This review does not PASS",
+        ] {
+            std::fs::write(&path, text).unwrap();
+            assert!(check_review_verdict(root.path()).is_err(), "{text}");
+        }
+        for text in [
+            "VERDICT: PASS\n<!-- VERDICT: FAIL -->",
+            "**REVIEW: PASS**",
+            "VERDICT: PASS\n~~~\nVERDICT: FAIL\n~~~",
+        ] {
+            std::fs::write(&path, text).unwrap();
+            check_review_verdict(root.path()).unwrap();
+        }
+    }
+
     use crate::state::find_change_dir;
     use tempfile::TempDir;
 
