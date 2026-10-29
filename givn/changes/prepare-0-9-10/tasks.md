@@ -725,6 +725,35 @@ REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was 
 - [x] Scenario: A completed split satisfies the scenario-length disposition (regular)
   - [x] COMMIT: 595abe2a -- Batch: verification-acceptance
 
+## Batch: full-suite-reconciliation
+
+Design constraints: preserve the approved skills-only, evidence-bound, advisory and 1.0 migration contracts. These scenarios close obsolete permanent expectations that were not covered by the first delta projection; no additional product scope is introduced.
+
+RED: The full permanent corpus reproduced outdated addon placement, generated-command promises, obsolete migration guidance and retired shape requirements.
+GREEN: 200 changed non-E2E scenarios and 30 E2E scenarios pass; 444 unit tests and strict clippy pass. Every remaining permanent failure is replaced by a delta modification or retirement.
+REFACTOR: Shared fixture helpers now write policy to config.yaml, produce fresh results and real review evidence.
+
+- [x] Scenario: Shared guidance alone does not qualify an ADR (regular)
+  - [x] COMMIT: 1b2ef01f -- Batch: full-suite-reconciliation
+- [x] Scenario: The guidance routes normal design decisions to one canonical artifact (regular)
+  - [x] COMMIT: 1b2ef01f -- Batch: full-suite-reconciliation
+- [x] Scenario: The guidance requires an existing-ADR check before drafting (regular)
+  - [x] COMMIT: 1b2ef01f -- Batch: full-suite-reconciliation
+- [x] Scenario: The guidance forbids invented ADR evidence (regular)
+  - [x] COMMIT: 1b2ef01f -- Batch: full-suite-reconciliation
+- [x] Scenario: An ADR refinement is routed to amendment without duplication (regular)
+  - [x] COMMIT: 1b2ef01f -- Batch: full-suite-reconciliation
+- [x] Scenario: An architectural replacement preserves supersession history (regular)
+  - [x] COMMIT: 1b2ef01f -- Batch: full-suite-reconciliation
+- [x] Scenario: An initialized project documents reusable test and coverage scripts (@e2e)
+  - [x] COMMIT: 1b2ef01f -- Batch: full-suite-reconciliation
+- [x] Scenario: A consumer synchronizes skills and every agent target receives the ideation facilitation skill (regular)
+  - [x] COMMIT: 1b2ef01f -- Batch: full-suite-reconciliation
+- [x] Scenario: The generated ideation files direct the agent to the ideation instruction (regular)
+  - [x] COMMIT: 1b2ef01f -- Batch: full-suite-reconciliation
+- [x] Scenario: The migration guide is an executable prompt sequence (retirement)
+  - [x] COMMIT: 1b2ef01f -- Batch: full-suite-reconciliation
+
 ## Documentation and deferred work closeout
 
 - [x] Reconcile current docs/glossary/Personas/ADRs, remove duplicate workflow-details authority and obsolete0.x operational bundles; preserve historical evidence.
