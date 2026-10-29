@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "prepare-0-9-10",
+  "status": "passed",
+  "head": "8fd4e876d20c840b634d0e761899f39153aaa6a8",
+  "features_path": "givn/changes/prepare-0-9-10/specs",
+  "features_digest": "74187869abdd7d9afc64335cd5438ddda138606651b81da3bcdc833899c984a8",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "4b53b89bab5e41ec2adf26e31be32c2dd17e8d09f2391c4252f2bb7816b6bad3",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 325,
+    "passed": 325,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1793311383
+}
