@@ -5,6 +5,6 @@ description: Enter explore mode — think through ideas, investigate problems, c
 
 # givn-explore
 
-**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.
+Explore the topic at hand — investigate and clarify; never implement.
 
-Enter explore mode for the topic at hand — think, investigate, clarify; never implement. The rules for this step are served by `givn instructions explore` — load the instruction and follow it. This file triggers the step and carries no rules of its own.
+The rules for this step are served by `givn instructions explore` — load the instruction and follow it.
